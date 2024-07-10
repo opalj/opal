@@ -59,6 +59,7 @@ abstract class NativeAnalysis(
                             //    var oldEPS:             SomeEPS                              = null
                               ) extends BaseAnalysisState with TypeIteratorState
 
+
   def runSVF(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized{
     println("run SVF")
     implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
@@ -69,23 +70,30 @@ abstract class NativeAnalysis(
     val listener = new SVFAnalysisListener() {
 
       override def nativeToJavaCallDetected(basePTS: Array[Long], className: String, methodName: String, methodSignature: String, argsPTSs: Array[Array[Long]]): Array[Long] = {
-        val objectType = ObjectType(className.replace(";", "").substring(1))
+
         var possibleMethods = Iterable.empty[Method]
+          var objectTypeOptional: Option[ObjectType] = None
         for (ptElement <- basePTS) {
           val parameterPointsToSet = svfConnectorState.javaJNITranslator.getPTS(ptElement)
           parameterPointsToSet.forNewestNTypes(parameterPointsToSet.numElements) {
             tpe =>
               if (tpe.isObjectType) {
-                val objectType = tpe.asObjectType
-                if (project.instanceMethods.contains(objectType)) {
-                  possibleMethods ++= project.instanceMethods(objectType).filter(_.name == methodName).map(_.method)
+
+                val ot = tpe.asObjectType
+                  objectTypeOptional = Some(ot)
+                if (project.instanceMethods.contains(ot)) {
+                  possibleMethods ++= project.instanceMethods(ot).filter(_.name == methodName).map(_.method)
                 }
               }
           }
         }
+          val resultListBuffer: ListBuffer[Long] = new ListBuffer[Long]
+        objectTypeOptional.foreach(objectType =>
+        {
         if (possibleMethods.isEmpty) {
           possibleMethods ++= project.allMethods.filter(method => method.name.equals(methodName) && method.signature.descriptor.toJVMDescriptor.equals(methodSignature))
         }
+
         if (!project.instanceMethods.contains(objectType)) {
           throw new RuntimeException("unknown method; "+className)
           //return Array()
@@ -95,7 +103,7 @@ abstract class NativeAnalysis(
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
           new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
 
-        val resultListBuffer: ListBuffer[Long] = new ListBuffer[Long]
+
         possibleMethods.foreach(method => {
             println(s"method: $method")
           val declaredMethod = declaredMethods(method)
@@ -162,12 +170,13 @@ abstract class NativeAnalysis(
           }
           svfConnectorState.connectorResults ++= createResults
         })
+      })
         resultListBuffer.toArray
       }
 
       override def jniNewObject(className: String, context: String): Long = {
 
-        val referenceType = ObjectType(className.replace(";", "").substring(1))
+        val referenceType = ObjectType(if (className.startsWith("L") && className.endsWith(";")) className.replace(";", "").substring(1) else className)
 
         val newPointsToSet = createPointsToSet(
           svfConnectorState.n,
