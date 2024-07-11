@@ -1,13 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string_analysis.l1;
 
+import org.opalj.fpcf.fixtures.string_analysis.l0.StringProvider;
 import org.opalj.fpcf.fixtures.string_analysis.l1.hierarchies.GreetingService;
 import org.opalj.fpcf.fixtures.string_analysis.l1.hierarchies.HelloGreeting;
 import org.opalj.fpcf.fixtures.string_analysis.l0.L0TestMethods;
-import org.opalj.fpcf.properties.string_analysis.AllowedDomainLevels;
-import org.opalj.fpcf.properties.string_analysis.DomainLevel;
-import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
-import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
+import org.opalj.fpcf.properties.string_analysis.*;
 
 import javax.management.remote.rmi.RMIServer;
 import java.io.File;
@@ -103,6 +101,18 @@ public class L1TestMethods extends L0TestMethods {
         analyzeString(sb.toString());
     }
 
+    @AllowedSoundnessModes(SoundnessMode.LOW)
+    @StringDefinitionsCollection(
+            value = "a case where a static method is called that returns a string but are not "
+                    + "within this project => cannot / will not be interpret",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = INVALID, expectedStrings = StringDefinitions.INVALID_FLOW),
+            })
+    public void staticMethodOutOfScopeLowSoundnessTest() {
+        analyzeString(System.clearProperty("os.version"));
+    }
+
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "a case where a static method is called that returns a string but are not "
                     + "within this project => cannot / will not be interpret",
@@ -138,15 +148,15 @@ public class L1TestMethods extends L0TestMethods {
             value = "a case where function calls are involved in append operations",
             stringDefinitions = {
                     @StringDefinitions(
-                            expectedLevel = PARTIALLY_CONSTANT,
-                            expectedStrings = "classname:StringBuilder,osname:.*"
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "classname:StringBuilder,osname:someValue"
                     )
             })
     public void appendTest() {
         StringBuilder sb = new StringBuilder("classname:");
         sb.append(getSimpleStringBuilderClassName());
         sb.append(",osname:");
-        sb.append(System.clearProperty("os.name:"));
+        sb.append(StringProvider.getSomeValue());
         analyzeString(sb.toString());
     }
 
@@ -169,6 +179,7 @@ public class L1TestMethods extends L0TestMethods {
         analyzeString(greetingService.getGreeting("World"));
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "a case taken from javax.management.remote.rmi.RMIConnector where a GetStatic is involved",
             stringDefinitions = {
@@ -193,6 +204,7 @@ public class L1TestMethods extends L0TestMethods {
         analyzeString(new StringBuilder("It is ").append(s).toString());
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "a case taken from com.sun.javafx.property.PropertyReference#reflect where "
                     + "a dependency within the finalize procedure is present",
@@ -355,13 +367,21 @@ public class L1TestMethods extends L0TestMethods {
         analyzeString(noWriteField);
     }
 
+    @AllowedSoundnessModes(SoundnessMode.LOW)
     @StringDefinitionsCollection(
             value = "a case where a field is read whose type is not supported",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = ".*"
-                    )
+                    @StringDefinitions(expectedLevel = INVALID, expectedStrings = StringDefinitions.INVALID_FLOW)
+            })
+    public void nonSupportedFieldTypeReadLowSoundness() {
+        analyzeString(myObject.toString());
+    }
+
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
+    @StringDefinitionsCollection(
+            value = "a case where a field is read whose type is not supported",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = ".*")
             })
     public void nonSupportedFieldTypeRead() {
         analyzeString(myObject.toString());
@@ -522,6 +542,7 @@ public class L1TestMethods extends L0TestMethods {
         analyzeString(someKey);
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "a case where a String array field is read",
             stringDefinitions = {
@@ -574,7 +595,21 @@ public class L1TestMethods extends L0TestMethods {
             stringDefinitions = {
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder")
             })
+    public void fromFunctionCallLowSoundness() {}
+
+    @StringDefinitionsCollection(
+            value = "can handle virtual function calls",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder")
+            })
     public void fromFunctionCall() {}
+
+    @StringDefinitionsCollection(
+            value = "constant string + string from function call => CONSTANT",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "java.lang.StringBuilder")
+            })
+    public void fromConstantAndFunctionCallLowSoundness() {}
 
     @StringDefinitionsCollection(
             value = "constant string + string from function call => CONSTANT",

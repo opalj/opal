@@ -24,4 +24,7 @@ public class StringProvider {
         return (new StringBuilder()).append(packageName).append(".").append(className).toString();
     }
 
+    public static String getSomeValue() {
+        return "someValue";
+    }
 }

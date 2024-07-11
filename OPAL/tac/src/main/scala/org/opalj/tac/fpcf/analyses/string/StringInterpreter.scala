@@ -9,6 +9,7 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
@@ -26,11 +27,8 @@ trait StringInterpreter {
      */
     def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult
 
-    def computeFinalLBFor(v: V)(implicit state: InterpretationState): Result =
-        StringInterpreter.computeFinalLBFor(v)
-
-    def computeFinalLBFor(v: PV)(implicit state: InterpretationState): Result =
-        StringInterpreter.computeFinalLBFor(v)
+    def failure(v: PV)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
+        StringInterpreter.failure(v)
 
     def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
         StringInterpreter.computeFinalResult(web, sff)
@@ -44,11 +42,16 @@ trait StringInterpreter {
 
 object StringInterpreter {
 
-    def computeFinalLBFor(v: V)(implicit state: InterpretationState): Result =
-        computeFinalLBFor(v.toPersistentForm(state.tac.stmts))
+    def failure(v: V)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
+        failure(v.toPersistentForm(state.tac.stmts))
 
-    def computeFinalLBFor(v: PV)(implicit state: InterpretationState): Result =
-        computeFinalResult(StringFlowFunctionProperty.lb(state.pc, v))
+    def failure(pv: PV)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result = {
+        if (soundnessMode.isHigh) {
+            computeFinalResult(StringFlowFunctionProperty.lb(state.pc, pv))
+        } else {
+            computeFinalResult(StringFlowFunctionProperty.noFlow(state.pc, pv))
+        }
+    }
 
     def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
         Result(FinalEP(InterpretationHandler.getEntity(state), StringFlowFunctionProperty(web, sff)))

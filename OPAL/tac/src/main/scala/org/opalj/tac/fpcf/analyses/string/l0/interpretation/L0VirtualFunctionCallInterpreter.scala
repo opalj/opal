@@ -21,6 +21,7 @@ import org.opalj.br.fpcf.properties.string.StringTreeDynamicFloat
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicInt
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 import org.opalj.value.TheIntegerValue
@@ -30,8 +31,9 @@ import org.opalj.value.TheIntegerValue
  *
  * @author Maximilian Rüsch
  */
-case class L0VirtualFunctionCallInterpreter()
-    extends AssignmentLikeBasedStringInterpreter
+class L0VirtualFunctionCallInterpreter(
+    implicit val soundnessMode: SoundnessMode
+) extends AssignmentLikeBasedStringInterpreter
     with L0ArbitraryVirtualFunctionCallInterpreter
     with L0AppendCallInterpreter
     with L0SubstringCallInterpreter {
@@ -97,10 +99,11 @@ case class L0VirtualFunctionCallInterpreter()
 
 private[string] trait L0ArbitraryVirtualFunctionCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
+    implicit val soundnessMode: SoundnessMode
+
     protected def interpretArbitraryCall(target: PV, call: E)(implicit
         state: InterpretationState
-    ): ProperPropertyComputationResult =
-        computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
+    ): ProperPropertyComputationResult = failure(target)
 }
 
 /**

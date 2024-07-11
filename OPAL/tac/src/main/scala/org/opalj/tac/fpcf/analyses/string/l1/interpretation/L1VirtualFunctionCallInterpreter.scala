@@ -22,6 +22,7 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0FunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0SystemPropertiesInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0VirtualFunctionCallInterpreter
@@ -35,9 +36,10 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  * @author Maximilian Rüsch
  */
 class L1VirtualFunctionCallInterpreter(
-    implicit val ps:              PropertyStore,
-    implicit val contextProvider: ContextProvider,
-    implicit val project:         SomeProject
+    implicit val ps:                     PropertyStore,
+    implicit val contextProvider:        ContextProvider,
+    implicit val project:                SomeProject,
+    override implicit val soundnessMode: SoundnessMode
 ) extends L0VirtualFunctionCallInterpreter
     with StringInterpreter
     with L0SystemPropertiesInterpreter
@@ -60,6 +62,7 @@ private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends L0Functi
 
     implicit val ps: PropertyStore
     implicit val contextProvider: ContextProvider
+    implicit val soundnessMode: SoundnessMode
 
     override type CallState = CalleeDepender
 
@@ -103,7 +106,7 @@ private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends L0Functi
                 val newMethods = getNewMethodsFromCallees(callState.methodContext, c)(state, callState)
                 if (newMethods.isEmpty && eps.isFinal) {
                     // Improve add previous results back
-                    computeFinalLBFor(callState.target)(state)
+                    failure(callState.target)(state, soundnessMode)
                 } else {
                     for {
                         method <- newMethods

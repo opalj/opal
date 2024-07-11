@@ -30,7 +30,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  */
 class L1InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
 
-    val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
+    implicit val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
     implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
     override protected def processStatement(implicit
@@ -40,10 +40,10 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
 
         // Currently unsupported
-        case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.computeFinalLBFor(target)
+        case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.failure(target)
 
         case stmt @ Assignment(_, _, expr: FieldRead[V]) =>
-            L1FieldReadInterpreter(ps, p, declaredFields, contextProvider).interpretExpr(stmt, expr)
+            new L1FieldReadInterpreter().interpretExpr(stmt, expr)
         // Field reads without result usage are irrelevant
         case ExprStmt(_, _: FieldRead[V]) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
@@ -82,7 +82,7 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
         case Assignment(_, target, _) =>
-            StringInterpreter.computeFinalLBFor(target)
+            StringInterpreter.failure(target)
 
         case ReturnValue(pc, expr) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(
