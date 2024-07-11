@@ -250,6 +250,24 @@ public class L1TestMethods extends L0TestMethods {
     }
 
     @StringDefinitionsCollection(
+            value = "a function parameter being analyzed on its own",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "(Hello, World|my.helper.Class)")
+            })
+    public String callerWithFunctionParameterMultipleCallsInSameMethodTest(String s, float i) {
+        analyzeString(s);
+        return s;
+    }
+
+    /**
+     * Necessary for the callerWithFunctionParameterMultipleCallsInSameMethodTest.
+     */
+    public void belongsToSomeTestCase3() {
+        callerWithFunctionParameterMultipleCallsInSameMethodTest(belongsToTheSameTestCase(), 900);
+        callerWithFunctionParameterMultipleCallsInSameMethodTest(belongsToTheSameTestCaseAnotherTime(), 900);
+    }
+
+    @StringDefinitionsCollection(
             value = "a case where a function takes another function as one of its parameters",
             stringDefinitions = {
                     @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "Hello, World!"),

@@ -72,7 +72,10 @@ private[string] case class ContextStringAnalysisState(
             _paramIndexToEntityMapping(index) = mutable.Map.empty
         }
 
-        _paramIndexToEntityMapping(index).put(m, Seq(dependee.e))
+        _paramIndexToEntityMapping(index).updateWith(m) {
+            case None           => Some(Seq(dependee.e))
+            case Some(previous) => Some(previous :+ dependee.e)
+        }
         _entityToParamIndexMapping(dependee.e) = (index, m)
         _paramDependees(dependee.e) = dependee
     }
