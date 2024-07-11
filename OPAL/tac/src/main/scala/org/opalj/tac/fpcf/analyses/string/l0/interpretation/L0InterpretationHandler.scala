@@ -29,16 +29,16 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
         case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(stmt, expr)
 
         // Currently unsupported
-        case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.computeFinalLBFor(target)
-        case Assignment(_, target, _: FieldRead[V]) => StringInterpreter.computeFinalLBFor(target)
+        case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.failure(target)
+        case Assignment(_, target, _: FieldRead[V]) => StringInterpreter.failure(target)
 
         case Assignment(_, _, _: New) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
         case stmt @ Assignment(_, _, expr: VirtualFunctionCall[V]) =>
-            L0VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+            new L0VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
         case stmt @ ExprStmt(_, expr: VirtualFunctionCall[V]) =>
-            L0VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+            new L0VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
 
         case stmt @ Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
             L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
@@ -55,7 +55,7 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
         case nvmc: NonVirtualMethodCall[V] => L0NonVirtualMethodCallInterpreter.interpret(nvmc)
 
         case Assignment(_, target, _) =>
-            StringInterpreter.computeFinalLBFor(target)
+            StringInterpreter.failure(target)
 
         case ReturnValue(pc, expr) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(

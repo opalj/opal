@@ -12,9 +12,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
-import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
@@ -24,7 +24,8 @@ case class L0StaticFunctionCallInterpreter()(
     implicit
     override val p:       SomeProject,
     override val ps:      PropertyStore,
-    override val project: SomeProject
+    override val project: SomeProject,
+    val soundnessMode:    SoundnessMode
 ) extends AssignmentBasedStringInterpreter
     with L0ArbitraryStaticFunctionCallInterpreter
     with L0StringValueOfFunctionCallInterpreter
@@ -43,7 +44,7 @@ case class L0StaticFunctionCallInterpreter()(
                 if call.descriptor.returnType == ObjectType.String ||
                     call.descriptor.returnType == ObjectType.Object =>
                 interpretArbitraryCall(target, call)
-            case _ => computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
+            case _ => failure(target)
         }
     }
 }
@@ -53,6 +54,7 @@ private[string] trait L0ArbitraryStaticFunctionCallInterpreter
     with L0FunctionCallInterpreter {
 
     implicit val p: SomeProject
+    implicit val soundnessMode: SoundnessMode
 
     override type E <: StaticFunctionCall[V]
     override type CallState = FunctionCallState
@@ -62,7 +64,7 @@ private[string] trait L0ArbitraryStaticFunctionCallInterpreter
     ): ProperPropertyComputationResult = {
         val calleeMethod = call.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
         if (calleeMethod.isEmpty) {
-            return computeFinalLBFor(target)
+            return failure(target)
         }
 
         val m = calleeMethod.value

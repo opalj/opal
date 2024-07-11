@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string_analysis.l0;
 
+import org.opalj.fpcf.properties.string_analysis.AllowedSoundnessModes;
+import org.opalj.fpcf.properties.string_analysis.SoundnessMode;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitions;
 import org.opalj.fpcf.properties.string_analysis.StringDefinitionsCollection;
 
@@ -194,6 +196,18 @@ public class L0TestMethods {
         analyzeString(sb2.toString());
     }
 
+    @AllowedSoundnessModes(SoundnessMode.LOW)
+    @StringDefinitionsCollection(
+            value = "at this point, function call cannot be handled => DYNAMIC",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = INVALID, expectedStrings = StringDefinitions.INVALID_FLOW)
+            })
+    public void fromFunctionCallLowSoundness() {
+        String className = getStringBuilderClassName();
+        analyzeString(className);
+    }
+
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "at this point, function call cannot be handled => DYNAMIC",
             stringDefinitions = {
@@ -204,6 +218,20 @@ public class L0TestMethods {
         analyzeString(className);
     }
 
+    @AllowedSoundnessModes(SoundnessMode.LOW)
+    @StringDefinitionsCollection(
+            value = "constant string + string from function call => PARTIALLY_CONSTANT",
+            stringDefinitions = {
+                    @StringDefinitions(expectedLevel = INVALID, expectedStrings = StringDefinitions.INVALID_FLOW)
+            })
+    public void fromConstantAndFunctionCallLowSoundness() {
+        String className = "java.lang.";
+        System.out.println(className);
+        className += getSimpleStringBuilderClassName();
+        analyzeString(className);
+    }
+
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "constant string + string from function call => PARTIALLY_CONSTANT",
             stringDefinitions = {
@@ -216,6 +244,28 @@ public class L0TestMethods {
         analyzeString(className);
     }
 
+    @AllowedSoundnessModes(SoundnessMode.LOW)
+    @StringDefinitionsCollection(
+            value = "array access with unknown index",
+            stringDefinitions = {
+                    @StringDefinitions(
+                            expectedLevel = CONSTANT,
+                            expectedStrings = "(java.lang.String|java.lang.StringBuilder|java.lang.System|java.lang.Runnable)",
+                            realisticLevel = INVALID,
+                            realisticStrings = StringDefinitions.INVALID_FLOW
+                    )
+            })
+    public void fromStringArrayLowSoundness(int index) {
+        String[] classes = {
+                "java.lang.String", "java.lang.StringBuilder",
+                "java.lang.System", "java.lang.Runnable"
+        };
+        if (index >= 0 && index < classes.length) {
+            analyzeString(classes[index]);
+        }
+    }
+
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "array access with unknown index",
             stringDefinitions = {
@@ -236,6 +286,7 @@ public class L0TestMethods {
         }
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "a case where an array access needs to be interpreted with multiple static and virtual function calls",
             stringDefinitions = {
@@ -302,6 +353,7 @@ public class L0TestMethods {
         analyzeString(flag ? s1 + param : s2);
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "a more comprehensive case where multiple definition sites have to be "
                     + "considered each with a different string generation mechanism",
@@ -743,6 +795,7 @@ public class L0TestMethods {
         analyzeString(sb.toString());
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "an extensive example with many control structures",
             stringDefinitions = {
@@ -783,6 +836,7 @@ public class L0TestMethods {
         analyzeString(sb.toString());
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "an example with a throw (and no try-catch-finally)",
             stringDefinitions = {
@@ -795,6 +849,7 @@ public class L0TestMethods {
         analyzeString(sb.toString());
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "case with a try-finally exception",
             // Multiple string definition values are necessary because the three-address code contains multiple calls to
@@ -815,6 +870,7 @@ public class L0TestMethods {
         }
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "case with a try-catch-finally exception",
             stringDefinitions = {
@@ -840,6 +896,7 @@ public class L0TestMethods {
         }
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "case with a try-catch-finally throwable",
             stringDefinitions = {
@@ -1071,6 +1128,7 @@ public class L0TestMethods {
         analyzeString(sb1.toString());
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "a test case which tests the interpretation of String#valueOf",
             stringDefinitions = {
@@ -1084,6 +1142,7 @@ public class L0TestMethods {
         analyzeString(String.valueOf(getRuntimeClassName()));
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "an example that uses a non final field",
             stringDefinitions = {
@@ -1237,6 +1296,7 @@ public class L0TestMethods {
         }
     }
 
+    @AllowedSoundnessModes(SoundnessMode.HIGH)
     @StringDefinitionsCollection(
             value = "an example with an unknown character read",
             stringDefinitions = {

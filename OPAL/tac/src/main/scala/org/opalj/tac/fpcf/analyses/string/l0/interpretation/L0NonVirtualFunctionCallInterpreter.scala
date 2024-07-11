@@ -10,6 +10,7 @@ package interpretation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -18,8 +19,9 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Maximilian Rüsch
  */
 case class L0NonVirtualFunctionCallInterpreter()(
-    implicit val p:  SomeProject,
-    implicit val ps: PropertyStore
+    implicit val p:             SomeProject,
+    implicit val ps:            PropertyStore,
+    implicit val soundnessMode: SoundnessMode
 ) extends AssignmentLikeBasedStringInterpreter
     with L0FunctionCallInterpreter {
 
@@ -33,7 +35,7 @@ case class L0NonVirtualFunctionCallInterpreter()(
         val target = expr.receiver.asVar.toPersistentForm(state.tac.stmts)
         val calleeMethod = expr.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
         if (calleeMethod.isEmpty) {
-            return computeFinalLBFor(target)
+            return failure(target)
         }
 
         val m = calleeMethod.value

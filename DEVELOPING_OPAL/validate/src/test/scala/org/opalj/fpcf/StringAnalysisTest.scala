@@ -4,6 +4,9 @@ package fpcf
 
 import java.net.URL
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -17,6 +20,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.properties.string_analysis.DomainLevel
+import org.opalj.fpcf.properties.string_analysis.SoundnessMode
 import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.PV
 import org.opalj.tac.TACMethodParameter
@@ -26,6 +30,7 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.string.VariableContext
+import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
 import org.opalj.tac.fpcf.analyses.systemproperties.EagerSystemPropertiesAnalysisScheduler
@@ -37,6 +42,17 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
 
     def level: Int
     def domainLevel: DomainLevel
+    def soundnessMode: SoundnessMode
+
+    override def createConfig(): Config = {
+        val highSoundness = soundnessMode match {
+            case SoundnessMode.HIGH => true
+            case SoundnessMode.LOW  => false
+        }
+
+        super.createConfig()
+            .withValue(InterpretationHandler.SoundnessModeConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
+    }
 
     override final def init(p: Project[URL]): Unit = {
         val domain = domainLevel match {
@@ -101,6 +117,12 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
                     r.isEmpty || r.get
                 }
             }
+            .filter {
+                _._1.runtimeInvisibleAnnotations.forall { a =>
+                    val r = isAllowedSoundnessMode(a)
+                    r.isEmpty || r.get
+                }
+            }
             .foldLeft(Seq.empty[(VariableContext, Method)]) { (entities, m) =>
                 entities ++ extractPUVars(tacProvider(m._1)).map(e =>
                     (VariableContext(e._1, e._2, contextProvider.newContext(declaredMethods(m._1))), m._2)
@@ -147,6 +169,15 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         else Some {
             a.elementValuePairs.head.value.asArrayValue.values.exists { v =>
                 DomainLevel.valueOf(v.asEnumValue.constName) == domainLevel
+            }
+        }
+    }
+
+    def isAllowedSoundnessMode(a: Annotation): Option[Boolean] = {
+        if (a.annotationType.toJava != "org.opalj.fpcf.properties.string_analysis.AllowedSoundnessModes") None
+        else Some {
+            a.elementValuePairs.head.value.asArrayValue.values.exists { v =>
+                SoundnessMode.valueOf(v.asEnumValue.constName) == soundnessMode
             }
         }
     }
@@ -229,6 +260,7 @@ sealed abstract class L0StringAnalysisTest extends StringAnalysisTest {
 class L0StringAnalysisWithL1DefaultDomainTest extends L0StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L1
+    override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 
     describe("using the l1 default domain") { runL0Tests() }
 }
@@ -236,8 +268,17 @@ class L0StringAnalysisWithL1DefaultDomainTest extends L0StringAnalysisTest {
 class L0StringAnalysisWithL2DefaultDomainTest extends L0StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L2
+    override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 
     describe("using the l2 default domain") { runL0Tests() }
+}
+
+class HighSoundnessL0StringAnalysisWithL2DefaultDomainTest extends L0StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L2
+    override def soundnessMode: SoundnessMode = SoundnessMode.HIGH
+
+    describe("using the l2 default domain and the high soundness mode") { runL0Tests() }
 }
 
 /**
@@ -281,6 +322,7 @@ sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
 class L1StringAnalysisWithL1DefaultDomainTest extends L1StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L1
+    override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 
     describe("using the l1 default domain") { runL1Tests() }
 }
@@ -288,6 +330,15 @@ class L1StringAnalysisWithL1DefaultDomainTest extends L1StringAnalysisTest {
 class L1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L2
+    override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 
     describe("using the l2 default domain") { runL1Tests() }
+}
+
+class HighSoundnessL1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L2
+    override def soundnessMode: SoundnessMode = SoundnessMode.HIGH
+
+    describe("using the l2 default domain and the high soundness mode") { runL1Tests() }
 }

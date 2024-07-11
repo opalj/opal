@@ -21,9 +21,7 @@ import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1InterpretationHand
  */
 object L1StringAnalysis {
 
-    private[l1] final val FieldWriteThresholdConfigKey = {
-        "org.opalj.fpcf.analyses.string_analysis.l1.L1StringAnalysis.fieldWriteThreshold"
-    }
+    private[l1] final val ConfigLogCategory = "analysis configuration - l1 string analysis"
 }
 
 object LazyL1StringAnalysis {

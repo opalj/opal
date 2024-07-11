@@ -28,8 +28,10 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.log.Error
 import org.opalj.log.Info
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.l1.L1StringAnalysis
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
@@ -39,37 +41,38 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  *
  * @author Maximilian Rüsch
  */
-case class L1FieldReadInterpreter(
-    ps:                           PropertyStore,
-    project:                      SomeProject,
+class L1FieldReadInterpreter(
+    implicit val ps:              PropertyStore,
+    implicit val project:         SomeProject,
     implicit val declaredFields:  DeclaredFields,
-    implicit val contextProvider: ContextProvider
+    implicit val contextProvider: ContextProvider,
+    implicit val soundnessMode:   SoundnessMode
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = FieldRead[V]
+
+    private final val FieldWriteThresholdConfigKey = {
+        "org.opalj.fpcf.analyses.string.l1.L1StringAnalysis.fieldWriteThreshold"
+    }
 
     /**
      * To analyze a read operation of field, ''f'', all write accesses, ''wa_f'', to ''f'' have to be analyzed.
      * ''fieldWriteThreshold'' determines the threshold of ''|wa_f|'' when ''f'' is to be approximated as the lower bound.
      */
     private val fieldWriteThreshold = {
+        implicit val logContext: LogContext = project.logContext
         val threshold =
             try {
-                project.config.getInt(L1StringAnalysis.FieldWriteThresholdConfigKey)
+                project.config.getInt(FieldWriteThresholdConfigKey)
             } catch {
                 case t: Throwable =>
-                    logOnce(Error(
-                        "analysis configuration - l1 string analysis",
-                        s"couldn't read: ${L1StringAnalysis.FieldWriteThresholdConfigKey}",
-                        t
-                    ))(project.logContext)
+                    logOnce {
+                        Error(L1StringAnalysis.ConfigLogCategory, s"couldn't read: $FieldWriteThresholdConfigKey", t)
+                    }
                     10
             }
 
-        logOnce(Info(
-            "analysis configuration - l1 string analysis",
-            "l1 string analysis uses a field write threshold of " + threshold
-        ))(project.logContext)
+        logOnce(Info(L1StringAnalysis.ConfigLogCategory, "uses a field write threshold of " + threshold))
         threshold
     }
 
@@ -113,7 +116,7 @@ case class L1FieldReadInterpreter(
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         if (!InterpretationHandler.isSupportedType(fieldRead.declaredFieldType)) {
-            return computeFinalLBFor(target)
+            return failure(target)
         }
 
         val field = declaredFields(fieldRead.declaringClass, fieldRead.name, fieldRead.declaredFieldType)
