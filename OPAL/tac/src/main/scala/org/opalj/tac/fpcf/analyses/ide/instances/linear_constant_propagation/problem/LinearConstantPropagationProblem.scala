@@ -142,7 +142,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
                             /* Always propagate null facts */
                             immutable.Set(sourceFact)
 
-                        case VariableFact(name, definedAtIndex) =>
+                        case VariableFact(_, definedAtIndex) =>
                             val callStmt = JavaIFDSProblem.asCall(callSite.stmt)
 
                             /* Parameters and their types (excluding the implicit 'this' reference) */
@@ -157,25 +157,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
                                     paramTypes(index).isIntegerType && param.asVar.definedBy.contains(definedAtIndex)
                                 }
                                 .map { case (_, index) =>
-                                    // TODO (IDE) CREATING A FACT WITH A NAME MADE UP OF THE ORIGINAL NAME AND THE
-                                    //  PARAMETER NAME IS REQUIRED AS ANALYZING A CALL TO A CALLEE THAT ALREADY HAS BEEN
-                                    //  ANALYZED WOULD STOP IMMEDIATELY OTHERWISE
-                                    //  REASON:
-                                    //   - THE PATH THAT IS PROPAGATED IS MADE UP OF THE START STATEMENT AND THE
-                                    //     PARAMETER AS THE FACT AND THUS ONLY DEPENDS ON THE CALLEE AND IS ALREADY KNOWN
-                                    //   - CALLING 'propagate' RETURNS WITHOUT ENQUEUING BECAUSE IT FINDS THE IDENTITY
-                                    //     FUNCTION FOR EXACTLY THIS PATH
-                                    //   - WE NEVER REACH THE RETURN STATEMENT OF THE CALLEE AGAIN
-                                    //   - THE CALL STATEMENT IS ADDED AS POSSIBLE CALL SOURCE BUT IT IS NEVER PROCESSED
-                                    //     IN THE RETURN FLOW
-                                    //   - THERE WILL NEVER BE A COMPLETE SUMMARY FUNCTION FOR THE CALL
-                                    //   - IF THE CALL HAPPENED IN AN ASSIGNMENT: THE ASSIGNED VARIABLE WILL NEVER BE
-                                    //     GENERATED A FACT FOR
-                                    //  SOLUTION:
-                                    //   - EITHER KEEP FACTS UNIQUE (THE CURRENT SOLUTION) -> ALWAYS REANALYZES THE
-                                    //     CALLEE COMPLETELY
-                                    //   - ADJUST SOLVER TO USE A CONCEPT LIKE ENDSUMMARIES (SEE naeem2010practical)
-                                    VariableFact(s"$name-param${index + 1}", -(index + 2))
+                                    VariableFact(s"param${index + 1}", -(index + 2))
                                 }
                                 .toSet
                     }
