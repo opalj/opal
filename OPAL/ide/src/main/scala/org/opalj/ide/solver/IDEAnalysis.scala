@@ -75,12 +75,18 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         private val summaryFunctions: SummaryFunctions = mutable.Map.empty
 
         /**
+         * Collection of seen end nodes with corresponding jump function (needed for endSummaries extension)
+         */
+        private val endSummaries = mutable.Map.empty[Node, mutable.Set[(Node, JumpFunction)]]
+
+        /**
          * Collection of all callables that were visited in P1
          */
         private val seenCallables = mutable.Set.empty[Callable]
 
         /**
-         * Map call targets to all possible (resp. seen) call sources (similar to a call graph but reversed)
+         * Map call targets to all seen call sources (similar to a call graph but reversed; needed for endSummaries
+         * extension)
          */
         private val callTargetsToSources = mutable.Map.empty[Node, mutable.Set[Node]]
 
@@ -140,6 +146,16 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         def getSummaryFunction(path: Path): SummaryFunction = {
             summaryFunctions.getOrElse(path, allTopEdgeFunction) // else part handels IDE lines 3 - 4
+        }
+
+        def addEndSummary(path: Path, jumpFunction: JumpFunction): Unit = {
+            val (start, end) = path
+            val set = endSummaries.getOrElseUpdate(start, mutable.Set.empty)
+            set.add((end, jumpFunction))
+        }
+
+        def getEndSummaries(start: Node): collection.Set[(Node, JumpFunction)] = {
+            endSummaries.getOrElse(start, collection.Set.empty)
         }
 
         def rememberCallable(callable: Callable): Unit = {
@@ -303,6 +319,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             logWarn(s"Statement ${icfg.stringifyStatement(n)} is detected as call statement but no callees were found!")
         }
 
+        val rs = icfg.getNextStatements(n) // IDE P1 line 14
+
         qs.foreach { q =>
             logDebug(s"handling call target q=$q")
 
@@ -318,11 +336,36 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
                 d3s.foreach { d3 =>
                     s.rememberCallEdge(((n, d2), (sq, d3)))
-                    propagate(((sq, d3), (sq, d3)), identityEdgeFunction)
+
+                    val endSummaries = s.getEndSummaries((sq, d3))
+                    // Handling for end summaries extension
+                    if (endSummaries.nonEmpty) {
+                        endSummaries.foreach { case ((eq, d4), fEndSummary) =>
+                            val f4 = problem.getCallEdgeFunction(n, d2, sq, d3, q)
+                            rs.foreach { r =>
+                                val d5s = problem.getReturnFlowFunction(eq, q, r).compute(d4)
+                                d5s.foreach { d5 =>
+                                    val f5 = problem.getReturnEdgeFunction(eq, d4, q, r, d5)
+                                    val callToReturnPath = ((n, d2), (r, d5))
+                                    val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
+                                    val fPrime =
+                                        f4.composeWith(fEndSummary).composeWith(f5).meetWith(oldSummaryFunction)
+
+                                    if (!fPrime.equalTo(oldSummaryFunction)) {
+                                        s.setSummaryFunction(callToReturnPath, fPrime)
+
+                                        propagate(((sp, d1), (r, d5)), f.composeWith(fPrime))
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Default algorithm behavior
+                        propagate(((sq, d3), (sq, d3)), identityEdgeFunction)
+                    }
                 }
             }
 
-            val rs = icfg.getNextStatements(n) // IDE P1 line 14
             rs.foreach { r =>
                 val d3s = problem.getCallToReturnFlowFunction(n, q, r).compute(d2)
 
@@ -349,6 +392,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         val ((sp, d1), (n, d2)) = path
         val p = icfg.getCallable(n)
+
+        // Handling for end summaries extension
+        s.addEndSummary(path, f)
 
         // IDE P1 line 20
         val callSources = s.lookupCallSourcesForTarget(sp, d1)
