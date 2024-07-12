@@ -9,23 +9,41 @@ import org.opalj.ide.problem.IdentityEdgeFunction
 /**
  * Edge function to calculate the value of a variable `i` for a statement `val i = a * x + b`
  */
-case class LinearCombinationEdgeFunction(a: Int, b: Int)
-    extends EdgeFunction[LinearConstantPropagationValue] {
+case class LinearCombinationEdgeFunction(
+        a: Int,
+        b: Int,
+        c: LinearConstantPropagationValue = LinearConstantPropagationLattice.top
+) extends EdgeFunction[LinearConstantPropagationValue] {
     override def compute(sourceValue: LinearConstantPropagationValue): LinearConstantPropagationValue = {
-        sourceValue match {
-            case ConstantValue(x)        => ConstantValue(a * x + b)
-            case VariableValue if a == 0 => ConstantValue(b)
-            case VariableValue           => VariableValue
-            case UnknownValue            => UnknownValue
-        }
+        LinearConstantPropagationLattice.meet(
+            sourceValue match {
+                case ConstantValue(x)        => ConstantValue(a * x + b)
+                case VariableValue if a == 0 => ConstantValue(b)
+                case VariableValue           => VariableValue
+                case UnknownValue            => UnknownValue
+            },
+            c
+        )
     }
 
     override def composeWith(
         secondEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
     ): EdgeFunction[LinearConstantPropagationValue] = {
         secondEdgeFunction match {
-            case LinearCombinationEdgeFunction(a2, b2) => LinearCombinationEdgeFunction(a2 * a, a2 * b + b2)
-            case VariableValueEdgeFunction             => secondEdgeFunction
+            case LinearCombinationEdgeFunction(a2, b2, c2) =>
+                LinearCombinationEdgeFunction(
+                    a2 * a,
+                    a2 * b + b2,
+                    LinearConstantPropagationLattice.meet(
+                        c match {
+                            case UnknownValue          => UnknownValue
+                            case ConstantValue(cValue) => ConstantValue(a2 * cValue + b2)
+                            case VariableValue         => VariableValue
+                        },
+                        c2
+                    )
+                )
+            case VariableValueEdgeFunction => secondEdgeFunction
 
             case IdentityEdgeFunction() => this
             case AllTopEdgeFunction(_)  => secondEdgeFunction
@@ -39,8 +57,19 @@ case class LinearCombinationEdgeFunction(a: Int, b: Int)
         otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
     ): EdgeFunction[LinearConstantPropagationValue] = {
         otherEdgeFunction match {
-            case LinearCombinationEdgeFunction(a2, b2) if a2 == a && b2 == b => this
-            case LinearCombinationEdgeFunction(_, _)                         => VariableValueEdgeFunction
+            case LinearCombinationEdgeFunction(a2, b2, c2) if a2 == a && b2 == b =>
+                LinearCombinationEdgeFunction(a, b, LinearConstantPropagationLattice.meet(c, c2))
+            case LinearCombinationEdgeFunction(a2, b2, c2) if a2 != a && (b - b2) % (a2 - a) == 0 =>
+                val cNew = LinearConstantPropagationLattice.meet(
+                    ConstantValue(a * ((b - b2) / (a2 - a)) + b),
+                    LinearConstantPropagationLattice.meet(c, c2)
+                )
+                cNew match {
+                    case VariableValue => VariableValueEdgeFunction
+                    case _             => LinearCombinationEdgeFunction(a, b, cNew)
+                }
+            case LinearCombinationEdgeFunction(_, _, _) =>
+                VariableValueEdgeFunction
 
             case VariableValueEdgeFunction => otherEdgeFunction
 
@@ -55,8 +84,8 @@ case class LinearCombinationEdgeFunction(a: Int, b: Int)
     override def equalTo(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean = {
         otherEdgeFunction == this ||
         (otherEdgeFunction match {
-            case LinearCombinationEdgeFunction(a2, b2) => a == a2 && b == b2
-            case _                                     => false
+            case LinearCombinationEdgeFunction(a2, b2, c2) => a == a2 && b == b2 && c == c2
+            case _                                         => false
         })
     }
 }
@@ -69,9 +98,9 @@ object VariableValueEdgeFunction extends AllBottomEdgeFunction[LinearConstantPro
         secondEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
     ): EdgeFunction[LinearConstantPropagationValue] = {
         secondEdgeFunction match {
-            case LinearCombinationEdgeFunction(0, _) => secondEdgeFunction
-            case LinearCombinationEdgeFunction(_, _) => this
-            case _                                   => this
+            case LinearCombinationEdgeFunction(0, _, _) => secondEdgeFunction
+            case LinearCombinationEdgeFunction(_, _, _) => this
+            case _                                      => this
         }
     }
 }
