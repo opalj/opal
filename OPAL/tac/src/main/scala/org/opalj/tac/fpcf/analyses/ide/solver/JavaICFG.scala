@@ -51,9 +51,20 @@ class JavaICFG(project: SomeProject) extends ICFG[JavaStatement, Method] {
         if (stmt.isReturnNode) {
             None
         } else {
-            baseICFG.getCalleesIfCallStatement(
+            val calleesOption = baseICFG.getCalleesIfCallStatement(
                 org.opalj.tac.fpcf.analyses.ifds.JavaStatement(stmt.method, stmt.index, stmt.code, stmt.cfg)
             )
+            calleesOption match {
+                case None => None
+                case Some(callees) =>
+                    if (callees.isEmpty) {
+                        throw new IllegalStateException(
+                            s"Statement ${stringifyStatement(stmt)} is detected as call statement but no callees were found!"
+                        )
+                    } else {
+                        Some(callees)
+                    }
+            }
         }
     }
 

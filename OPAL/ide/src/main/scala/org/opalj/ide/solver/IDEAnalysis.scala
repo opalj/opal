@@ -314,11 +314,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         val ((sp, d1), (n, d2)) = path
 
-        if (qs.isEmpty) {
-            // TODO (IDE) THIS CASE SHOULD NEVER OCCUR -> REQUIRES FURTHER DEBUGGING
-            logWarn(s"Statement ${icfg.stringifyStatement(n)} is detected as call statement but no callees were found!")
-        }
-
         val rs = icfg.getNextStatements(n) // IDE P1 line 14
 
         qs.foreach { q =>
