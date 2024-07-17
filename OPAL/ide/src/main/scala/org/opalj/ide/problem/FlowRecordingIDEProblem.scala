@@ -215,7 +215,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
     /**
      * Stop recording and finish writing
      */
-    def stopRecording(): Unit = {
+    def stopRecording(): Writer = {
         if (uniqueFlowsOnly) {
             val seenFlows = mutable.Set.empty[String]
             collectedFlows.foreach { dotEdge =>
@@ -232,7 +232,12 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         writer.write("}\n")
         writer.flush()
 
+        val writerTmp = writer
+        this.writer = null
+
         collectedFlows.clear()
         collectedEdgeFunctions.clear()
+
+        writerTmp
     }
 }

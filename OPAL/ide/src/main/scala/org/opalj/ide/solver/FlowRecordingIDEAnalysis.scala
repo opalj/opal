@@ -88,15 +88,15 @@ class FlowRecordingIDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Ca
         completePath.toFile
     }
 
-    override def performAnalysis(callable: Callable): ProperPropertyComputationResult = {
+    def startRecording(): Unit = {
         val writer = new FileWriter(getFile)
 
         flowRecordingProblem.startRecording(writer)
-        val result = super.performAnalysis(callable)
-        flowRecordingProblem.stopRecording()
+    }
+
+    def stopRecording(): Unit = {
+        val writer = flowRecordingProblem.stopRecording()
 
         writer.close()
-
-        result
     }
 }
