@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ide.solver
 
+import scala.annotation.unused
+
 import scala.collection.mutable
 
 import org.opalj.br.analyses.SomeProject
@@ -228,15 +230,16 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         s"Path(\n$indent\t${nodeToString(path._1, s"$indent\t")} ->\n$indent\t${nodeToString(path._2, s"$indent\t")}\n$indent)"
     }
 
-    private def logWarn(message: => String): Unit = {
+    @unused
+    protected def logWarn(message: => String): Unit = {
         OPALLogger.warn(FrameworkName, message)
     }
 
-    private def logDebug(message: => String): Unit = {
+    protected def logDebug(message: => String): Unit = {
         OPALLogger.debug({ isDebug }, s"$FrameworkName - debug", message)
     }
 
-    private def logTrace(message: => String): Unit = {
+    protected def logTrace(message: => String): Unit = {
         OPALLogger.debug({ isTrace }, s"$FrameworkName - trace", message)
     }
 
@@ -246,6 +249,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
      */
     // TODO (IDE) WHAT HAPPENS WHEN ANALYZING MULTIPLE CALLABLES? CAN WE CACHE E.G. JUMP/SUMMARY FUNCTIONS?
     def performAnalysis(callable: Callable): ProperPropertyComputationResult = {
+        logDebug(s"performing ${getClass.getSimpleName} for $callable")
+
         implicit val state: State = new State
 
         logDebug("starting phase 1")

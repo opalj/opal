@@ -11,7 +11,6 @@ import java.nio.file.Paths
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.ide.problem.FlowRecorderModes
 import org.opalj.ide.problem.FlowRecorderModes.FlowRecorderMode
@@ -89,12 +88,16 @@ class FlowRecordingIDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Ca
     }
 
     def startRecording(): Unit = {
+        logDebug("Starting recording")
+
         val writer = new FileWriter(getFile)
 
         flowRecordingProblem.startRecording(writer)
     }
 
     def stopRecording(): Unit = {
+        logDebug("Stopping recording")
+
         val writer = flowRecordingProblem.stopRecording()
 
         writer.close()
