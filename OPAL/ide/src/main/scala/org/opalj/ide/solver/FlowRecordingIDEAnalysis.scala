@@ -88,7 +88,7 @@ class FlowRecordingIDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Ca
     }
 
     def startRecording(): Unit = {
-        logDebug("Starting recording")
+        logDebug("starting recording")
 
         val writer = new FileWriter(getFile)
 
@@ -96,7 +96,7 @@ class FlowRecordingIDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Ca
     }
 
     def stopRecording(): Unit = {
-        logDebug("Stopping recording")
+        logDebug("stopping recording")
 
         val writer = flowRecordingProblem.stopRecording()
 

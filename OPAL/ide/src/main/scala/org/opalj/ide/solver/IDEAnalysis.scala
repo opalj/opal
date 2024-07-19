@@ -167,7 +167,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
 
         def getEndSummaries(start: Node): collection.Set[(Node, JumpFunction)] = {
-            endSummaries.getOrElse(start, collection.Set.empty)
+            endSummaries.getOrElse(start, Set.empty)
         }
 
         def rememberCallable(callable: Callable): Unit = {
@@ -186,7 +186,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
 
         def lookupCallSourcesForTarget(target: Statement, targetFact: Fact): collection.Set[Node] = {
-            callTargetsToSources.getOrElse((target, targetFact), collection.Set.empty)
+            callTargetsToSources.getOrElse((target, targetFact), Set.empty)
         }
 
         def enqueueNode(node: Node): Unit = {
@@ -379,8 +379,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
-    private def processCallFlow(path: Path, f: JumpFunction, qs: collection.Set[? <: Callable])(implicit
-        s: State
+    private def processCallFlow(path: Path, f: JumpFunction, qs: collection.Set[? <: Callable])(
+        implicit s: State
     ): Unit = {
         logDebug("processing as call flow")
 
