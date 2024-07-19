@@ -8,6 +8,7 @@ import java.util.Calendar
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.xl.logger.PointsToInteractionLogger
 import svfjava.SVFAnalysisListener
 import svfjava.SVFModule
 
@@ -95,8 +96,8 @@ abstract class NativeAnalysis(
         }
 
         if (!project.instanceMethods.contains(objectType)) {
-          throw new RuntimeException("unknown method; "+className)
-          //return Array()
+          //throw new RuntimeException("unknown method; "+className)
+          return Array()
         }
         possibleMethods = project.instanceMethods(objectType).filter(_.name == methodName).map(_.method)
 
@@ -171,6 +172,7 @@ abstract class NativeAnalysis(
           svfConnectorState.connectorResults ++= createResults
         })
       })
+          PointsToInteractionLogger.nativeToJavaCalls.put(methodName, resultListBuffer.toArray)
         resultListBuffer.toArray
       }
 
@@ -414,20 +416,14 @@ abstract class NativeAnalysis(
       throw new RuntimeException("native function not found :"+javaFunctionFullName)
     }
     for (f <- functionSelection) {
-        println("x1")
       val resultPTS = svfConnectorState.svfModule.processFunction(f, basePTS.toArray, parameterPointsToSets, listener)
-        println("x2")
+        PointsToInteractionLogger.javaToNativeCalls.put(f, resultPTS)
       if (resultPTS.isEmpty) {
-          println("i1")
         pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, emptyPointsToSet, PointsToSetLike.noFilter)
       } else {
-          println("i2")
         resultPTS.foreach(l => {
-            println("i3")
           val pointsToSet = svfConnectorState.javaJNITranslator.getPTS(l)
-            println("i4")
           pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, pointsToSet, PointsToSetLike.noFilter)
-            println("i5")
         })
       }
     }
