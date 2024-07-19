@@ -9,6 +9,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunction
+import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.MeetLattice
@@ -218,7 +219,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         sourceFact: LinearConstantPropagationFact,
         target:     JavaStatement,
         targetFact: LinearConstantPropagationFact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
         if (sourceFact == targetFact) {
             /* Simply propagates a fact through the method */
             return identityEdgeFunction
@@ -327,7 +328,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         calleeEntry:     JavaStatement,
         calleeEntryFact: LinearConstantPropagationFact,
         callee:          Method
-    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = identityEdgeFunction
 
     override def getReturnEdgeFunction(
         calleeExit:     JavaStatement,
@@ -335,12 +336,12 @@ class LinearConstantPropagationProblem(project: SomeProject)
         callee:         Method,
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = identityEdgeFunction
 
     override def getCallToReturnEdgeFunction(
         callSite:       JavaStatement,
         callSiteFact:   LinearConstantPropagationFact,
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = identityEdgeFunction
 }

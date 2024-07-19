@@ -111,10 +111,13 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         sourceFact: Fact,
         target:     Statement,
         targetFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
-        val edgeFunction = baseProblem.getNormalEdgeFunction(source, sourceFact, target, targetFact)
-        collectedEdgeFunctions.put(createDotEdge(source, sourceFact, target, targetFact, "normal flow"), edgeFunction)
-        edgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
+        val edgeFunctionResult = baseProblem.getNormalEdgeFunction(source, sourceFact, target, targetFact)
+        collectedEdgeFunctions.put(
+            createDotEdge(source, sourceFact, target, targetFact, "normal flow"),
+            getEdgeFunctionFromEdgeFunctionResult(edgeFunctionResult)
+        )
+        edgeFunctionResult
     }
 
     override def getCallEdgeFunction(
@@ -123,13 +126,13 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         calleeEntry:     Statement,
         calleeEntryFact: Fact,
         callee:          Callable
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
-        val edgeFunction = baseProblem.getCallEdgeFunction(callSite, callSiteFact, calleeEntry, calleeEntryFact, callee)
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
+        val edgeFunctionResult = baseProblem.getCallEdgeFunction(callSite, callSiteFact, calleeEntry, calleeEntryFact, callee)
         collectedEdgeFunctions.put(
             createDotEdge(callSite, callSiteFact, calleeEntry, calleeEntryFact, "call flow"),
-            edgeFunction
+            getEdgeFunctionFromEdgeFunctionResult(edgeFunctionResult)
         )
-        edgeFunction
+        edgeFunctionResult
     }
 
     override def getReturnEdgeFunction(
@@ -138,14 +141,14 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         callee:         Callable,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
-        val edgeFunction =
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
+        val edgeFunctionResult =
             baseProblem.getReturnEdgeFunction(calleeExit, calleeExitFact, callee, returnSite, returnSiteFact)
         collectedEdgeFunctions.put(
             createDotEdge(calleeExit, calleeExitFact, returnSite, returnSiteFact, "return flow"),
-            edgeFunction
+            getEdgeFunctionFromEdgeFunctionResult(edgeFunctionResult)
         )
-        edgeFunction
+        edgeFunctionResult
     }
 
     override def getCallToReturnEdgeFunction(
@@ -153,13 +156,14 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         callSiteFact:   Fact,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
-        val edgeFunction = baseProblem.getCallToReturnEdgeFunction(callSite, callSiteFact, returnSite, returnSiteFact)
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
+        val edgeFunctionResult =
+            baseProblem.getCallToReturnEdgeFunction(callSite, callSiteFact, returnSite, returnSiteFact)
         collectedEdgeFunctions.put(
             createDotEdge(callSite, callSiteFact, returnSite, returnSiteFact, "call-to-return flow"),
-            edgeFunction
+            getEdgeFunctionFromEdgeFunctionResult(edgeFunctionResult)
         )
-        edgeFunction
+        edgeFunctionResult
     }
 
     private def createDotEdge(
@@ -170,6 +174,15 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         flowType:   String
     ): DotEdge = {
         (source, sourceFact, target, targetFact, flowType)
+    }
+
+    private def getEdgeFunctionFromEdgeFunctionResult(
+        edgeFunctionResult: EdgeFunctionResult[Value]
+    ): EdgeFunction[Value] = {
+        edgeFunctionResult match {
+            case FinalEdgeFunction(edgeFunction)             => edgeFunction
+            case InterimEdgeFunction(interimEdgeFunction, _) => interimEdgeFunction
+        }
     }
 
     /**

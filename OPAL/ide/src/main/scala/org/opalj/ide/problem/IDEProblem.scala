@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ide.problem
 
+import scala.language.implicitConversions
+
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.solver.ICFG
@@ -11,6 +13,10 @@ import org.opalj.ide.solver.ICFG
 abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
         val icfg: ICFG[Statement, Callable]
 ) {
+    implicit def edgeFunctionToFinalEdgeFunction(edgeFunction: EdgeFunction[Value]): EdgeFunctionResult[Value] = {
+        FinalEdgeFunction(edgeFunction)
+    }
+
     /**
      * The null fact to use. Also used to bootstrap the analysis at the entry points.
      */
@@ -72,7 +78,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         sourceFact: Fact,
         target:     Statement,
         targetFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value]
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value]
 
     /**
      * Generate an edge function for a call flow
@@ -88,7 +94,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         calleeEntry:     Statement,
         calleeEntryFact: Fact,
         callee:          Callable
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value]
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value]
 
     /**
      * Generate an edge function for a return flow
@@ -104,7 +110,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         callee:         Callable,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value]
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value]
 
     /**
      * Generate an edge function for a call-to-return flow
@@ -118,5 +124,5 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         callSiteFact:   Fact,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value]
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value]
 }

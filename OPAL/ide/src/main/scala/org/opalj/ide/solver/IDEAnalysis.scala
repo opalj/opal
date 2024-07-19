@@ -8,18 +8,23 @@ import scala.collection.mutable
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEPK
 import org.opalj.ide.ConfigKeyDebugLog
 import org.opalj.ide.ConfigKeyTraceLog
 import org.opalj.ide.FrameworkName
 import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.ide.problem.AllTopEdgeFunction
 import org.opalj.ide.problem.EdgeFunction
+import org.opalj.ide.problem.EdgeFunctionResult
+import org.opalj.ide.problem.FinalEdgeFunction
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.IDEValue
+import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.log.OPALLogger
 
 /**
@@ -101,6 +106,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
          * Store all calculated (intermediate) values
          */
         private val values: Values = mutable.Map.empty
+
+        /**
+         * Map outstanding EPKs to the continuations to be executed when a new result is available
+         */
+        private val dependees = mutable.Map.empty[SomeEPK, mutable.Set[() => Unit]]
 
         def enqueuePath(path: Path): Unit = {
             pathWorkList.enqueue(path)
@@ -215,6 +225,27 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 (s1, s2) => s1.union(s2)
             }
         }
+
+        def addDependee(epk: SomeEPK, c: () => Unit): Unit = {
+            val set = dependees.getOrElseUpdate(epk, mutable.Set.empty)
+            set.add(c)
+        }
+
+        def areDependeesEmpty: Boolean = {
+            dependees.isEmpty
+        }
+
+        def getDependeesSize: Int = {
+            dependees.size
+        }
+
+        def getDependees: collection.Set[SomeEPK] = {
+            dependees.keySet
+        }
+
+        def getAndRemoveDependeeContinuations(epk: SomeEPK): Set[() => Unit] = {
+            dependees.remove(epk).getOrElse(Set.empty).toSet
+        }
     }
 
     private val icfg: ICFG[Statement, Callable] = problem.icfg
@@ -259,21 +290,57 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         seedPhase1(callable)
         processPathWorkList()
 
-        logDebug("finished phase 1")
+        def c(): ProperPropertyComputationResult = {
+            logDebug("finished phase 1")
 
-        logDebug("starting phase 2")
+            logDebug("starting phase 2")
 
-        // Phase 2
-        seedPhase2(callable)
-        computeValues()
+            // Phase 2
+            seedPhase2(callable)
+            computeValues()
 
-        logDebug("finished phase 2")
+            logDebug("finished phase 2")
 
-        logDebug("collecting results for property creation")
+            logDebug("collecting results for property creation")
 
-        // Build and return result
-        val property = propertyMetaInformation.createProperty(state.collectResults(callable))
-        Result(callable, property)
+            // Build and return result
+            val property = propertyMetaInformation.createProperty(state.collectResults(callable))
+            Result(callable, property)
+        }
+
+        if (!state.areDependeesEmpty) {
+            logDebug(s"there are ${state.getDependeesSize} outstanding dependees")
+
+            def createInterimResult(): ProperPropertyComputationResult = {
+                InterimResult.forUB(
+                    callable,
+                    // TODO (IDE) THIS WILL BE AN 'EMPTY' PROPERTY -> PROBLEMATIC WITH CYCLIC IDE ANALYSES
+                    //  - WHAT IF WE RUN PHASE 2 BEFORE RETURNING?
+                    //  - DOES THIS PRODUCE VALID RESULTS (I.E. ALWAYS UPPER BOUND)?
+                    //  - DO WE NEED TO RERUN PHASE 2 FROM SCRATCH EACH TIME?
+                    propertyMetaInformation.createProperty(state.collectResults(callable)),
+                    state.getDependees.toSet,
+                    eps => {
+                        // Get and call continuations that are remembered for the EPK
+                        val cs = state.getAndRemoveDependeeContinuations(eps.toEPK)
+                        cs.foreach(c => c())
+                        // The continuations could have enqueued paths to the path work list
+                        processPathWorkList()
+
+                        if (state.areDependeesEmpty) {
+                            logDebug(s"all outstanding dependees have been processed")
+                            c()
+                        } else {
+                            logDebug(s"there are ${state.getDependeesSize} outstanding dependees left")
+                            createInterimResult()
+                        }
+                    }
+                )
+            }
+            createInterimResult()
+        } else {
+            c()
+        }
     }
 
     private def seedPhase1(callable: Callable)(implicit s: State): Unit = {
@@ -341,11 +408,14 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     // Handling for end summaries extension
                     if (endSummaries.nonEmpty) {
                         endSummaries.foreach { case ((eq, d4), fEndSummary) =>
-                            val f4 = problem.getCallEdgeFunction(n, d2, sq, d3, q)
+                            val f4 = handleEdgeFunctionResult(problem.getCallEdgeFunction(n, d2, sq, d3, q), path)
                             rs.foreach { r =>
                                 val d5s = problem.getReturnFlowFunction(eq, q, r).compute(d4)
                                 d5s.foreach { d5 =>
-                                    val f5 = problem.getReturnEdgeFunction(eq, d4, q, r, d5)
+                                    val f5 = handleEdgeFunctionResult(
+                                        problem.getReturnEdgeFunction(eq, d4, q, r, d5),
+                                        path
+                                    )
                                     val callToReturnPath = ((n, d2), (r, d5))
                                     val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
                                     val fPrime =
@@ -373,7 +443,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
                 // IDE P1 lines 15 - 16
                 d3s.foreach { d3 =>
-                    propagate(((sp, d1), (r, d3)), f.composeWith(problem.getCallToReturnEdgeFunction(n, d2, r, d3)))
+                    propagate(
+                        ((sp, d1), (r, d3)),
+                        f.composeWith(handleEdgeFunctionResult(problem.getCallToReturnEdgeFunction(n, d2, r, d3), path))
+                    )
                 }
 
                 // IDE P1 lines 17 - 18
@@ -411,8 +484,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
                     d5s.foreach { d5 =>
                         // IDE P1 lines 22 - 23
-                        val f4 = problem.getCallEdgeFunction(c, d4, sp, d1, p)
-                        val f5 = problem.getReturnEdgeFunction(n, d2, p, r, d5)
+                        val f4 = handleEdgeFunctionResult(problem.getCallEdgeFunction(c, d4, sp, d1, p), path)
+                        val f5 = handleEdgeFunctionResult(problem.getReturnEdgeFunction(n, d2, p, r, d5), path)
 
                         // IDE P1 line 24
                         val callToReturnPath = ((c, d4), (r, d5))
@@ -450,7 +523,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             logTrace(s"generated the following d3s=$d3s for next statement m=${icfg.stringifyStatement(m)}")
 
             d3s.foreach { d3 =>
-                propagate(((sp, d1), (m, d3)), f.composeWith(problem.getNormalEdgeFunction(n, d2, m, d3)))
+                propagate(
+                    ((sp, d1), (m, d3)),
+                    f.composeWith(handleEdgeFunctionResult(problem.getNormalEdgeFunction(n, d2, m, d3), path))
+                )
             }
         }
     }
@@ -469,6 +545,30 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             s.enqueuePath(e)
         } else {
             logTrace(s"nothing to do as oldJumpFunction=$oldJumpFunction == fPrime=$fPrime")
+        }
+    }
+
+    /**
+     * @param path the path to re-enqueue when getting an interim edge function
+     * @return the (interim) edge function from the result
+     */
+    private def handleEdgeFunctionResult(
+        edgeFunctionResult: EdgeFunctionResult[Value],
+        path:               Path
+    )(
+        implicit s: State
+    ): EdgeFunction[Value] = {
+        edgeFunctionResult match {
+            case FinalEdgeFunction(edgeFunction) =>
+                edgeFunction
+            case InterimEdgeFunction(intermediateEdgeFunction, dependees) =>
+                dependees.foreach { dependee =>
+                    s.addDependee(
+                        dependee,
+                        () => s.enqueuePath(path)
+                    )
+                }
+                intermediateEdgeFunction
         }
     }
 
@@ -595,7 +695,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 dPrimes.foreach { dPrime =>
                     propagateValue(
                         (sq, dPrime),
-                        problem.getCallEdgeFunction(n, d, sq, dPrime, q).compute(s.getValue(node))
+                        enforceFinalEdgeFunction(problem.getCallEdgeFunction(n, d, sq, dPrime, q))
+                            .compute(s.getValue(node))
                     )
                 }
             }
@@ -616,6 +717,18 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             s.enqueueNode(nSharp)
         } else {
             logTrace(s"nothing to do as oldValue=$oldValue == vPrime=$vPrime")
+        }
+    }
+
+    // TODO (IDE) THIS WILL NOT BE POSSIBLE ANY LONGER IF RETURNING AN INTERIM RESULT INVOLVES EXECUTING PHASE 2
+    private def enforceFinalEdgeFunction(edgeFunctionResult: EdgeFunctionResult[Value]): EdgeFunction[Value] = {
+        edgeFunctionResult match {
+            case FinalEdgeFunction(edgeFunction) =>
+                edgeFunction
+            case _ =>
+                throw new IllegalStateException(
+                    s"All edge functions should be final in phase 2 but got $edgeFunctionResult!"
+                )
         }
     }
 }
