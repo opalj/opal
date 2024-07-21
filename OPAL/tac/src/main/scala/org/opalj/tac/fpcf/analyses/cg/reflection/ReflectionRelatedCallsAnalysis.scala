@@ -135,8 +135,9 @@ class ClassForNameAnalysis private[analyses] (
     final val classNameIndex:     Int = 0
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
+    private final val allowDynamicStringTrees: Boolean = HighSoundnessMode.contains("class")
+
     private class State(
-        val stmts:       Array[Stmt[V]],
         loadedClassesUB: UIDSet[ClassType],
         callContext:     ContextType,
         val callPC:      Int
@@ -197,7 +198,7 @@ class ClassForNameAnalysis private[analyses] (
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         implicit val incompleteCallSites: IncompleteCallSites = new IncompleteCallSites {}
-        implicit val state: State = new State(tac.stmts, loadedClassesUB(), callerContext, callPC)
+        implicit val state: State = new State(loadedClassesUB(), callerContext, callPC)
 
         if (params.nonEmpty && params(classNameIndex).isDefined) {
             handleForName(callPC, params(classNameIndex).get.asVar, callerContext, tac.stmts)
@@ -253,7 +254,8 @@ class ClassForNameAnalysis private[analyses] (
         callContext: ContextType,
         stmts:       Array[Stmt[V]]
     )(implicit state: State): Unit = {
-        val possibleClasses = TypesUtil.getPossibleForNameClasses(pc, className, callContext, stmts, project)
+        val possibleClasses =
+            TypesUtil.getPossibleForNameClasses(pc, className, callContext, stmts, project, allowDynamicStringTrees)
         state.addNewLoadedClasses(possibleClasses)
     }
 
@@ -262,10 +264,11 @@ class ClassForNameAnalysis private[analyses] (
         implicit val incompleteCallSites: IncompleteCallSites = new IncompleteCallSites {}
 
         val scpUpdate = eps.asInstanceOf[EOptionP[VariableContext, StringConstancyProperty]]
-        if (!scpUpdate.ub.sci.tree.isInvalid) {
-            val newRegex = scpUpdate.ub.sci.toRegex
-            state.addNewLoadedClasses(TypesUtil.getPossibleForNameClasses(newRegex, project))
-        }
+        state.addNewLoadedClasses(TypesUtil.getPossibleForNameClasses(
+            scpUpdate.ub.sci.tree,
+            project,
+            allowDynamicStringTrees
+        ))
 
         if (eps.isFinal) {
             state.removeDependee(eps.toEPK)

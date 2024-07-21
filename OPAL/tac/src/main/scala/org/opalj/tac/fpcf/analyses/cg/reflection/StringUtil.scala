@@ -9,6 +9,7 @@ package reflection
 import org.opalj.br.ClassType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.UBP
@@ -81,7 +82,7 @@ object StringUtil {
      * Clients MUST handle dependencies where the depender is the given one and the dependee provides string constancy
      * information.
      */
-    def getPossibleStringsRegex(
+    def getPossibleStrings(
         pc:      Int,
         value:   V,
         context: Context,
@@ -90,15 +91,15 @@ object StringUtil {
         implicit
         ps:    PropertyStore,
         state: TypeIteratorState
-    ): Option[String] = {
+    ): Option[StringTreeNode] = {
         val stringEOptP = ps(VariableContext(pc, value.toPersistentForm(stmts), context), StringConstancyProperty.key)
         if (stringEOptP.isRefinable) {
             state.addDependency(pc.asInstanceOf[Entity], stringEOptP)
         }
 
         stringEOptP match {
-            case UBP(ub) if !ub.sci.tree.isInvalid => Some(ub.sci.toRegex)
-            case _                                 => None
+            case UBP(ub) => Some(ub.sci.tree)
+            case _       => None
         }
     }
 

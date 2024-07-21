@@ -17,6 +17,8 @@ import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.ForNameClasses
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -48,35 +50,47 @@ object TypesUtil {
      * provides a string regex that matches the FQN class names of the loaded classes.
      */
     def getPossibleForNameClasses(
-        pc:        Int,
-        className: V,
-        context:   Context,
-        stmts:     Array[Stmt[V]],
-        project:   SomeProject
+        pc:           Int,
+        className:    V,
+        context:      Context,
+        stmts:        Array[Stmt[V]],
+        project:      SomeProject,
+        allowDynamic: Boolean
     )(
         implicit
         ps:    PropertyStore,
         state: TypeIteratorState
     ): Set[ClassType] = {
-        val stringRegex = StringUtil.getPossibleStringsRegex(pc, className, context, stmts)
-        stringRegex.map(getPossibleForNameClasses(_, project)).getOrElse(Set.empty)
+        val stringTree = StringUtil.getPossibleStrings(pc, className, context, stmts)
+        stringTree.map(getPossibleForNameClasses(_, project, allowDynamic)).getOrElse(Set.empty)
     }
 
     /**
      * Returns class that may be loaded by an invocation of Class.forName with the given String.
      */
     def getPossibleForNameClasses(
-        classNameRegex: String,
-        project:        SomeProject,
+        classNameStringTree: StringTreeNode,
+        project:             SomeProject,
+        allowDynamic:        Boolean
     ): Set[ClassType] = {
-        try {
-            project.allClassFiles.filter { cf =>
-                cf.thisType.fqn.matches(classNameRegex) || cf.thisType.toJava.matches(classNameRegex)
-            }.map(_.thisType).toSet
-        } catch {
-            case _: PatternSyntaxException =>
-                // Workaround for now to handle non-compatible regexes
-                Set.empty
+        if (classNameStringTree.isInvalid || (
+                classNameStringTree.constancyLevel == StringConstancyLevel.DYNAMIC
+                && !allowDynamic
+            )
+        ) {
+            Set.empty
+        } else {
+            val regex = classNameStringTree.toRegex
+            try {
+                project.allClassFiles.filter { cf =>
+                    cf.thisType.fqn.matches(regex) || cf.thisType.toJava.matches(regex)
+                }.map(_.thisType).toSet
+            } catch {
+                case _: PatternSyntaxException =>
+                    // Workaround for now to handle non-compatible regexes
+                    System.out.println(s"FOUND PATTERN EXCEPTION FOR REGEX $regex")
+                    Set.empty
+            }
         }
     }
 
