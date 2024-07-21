@@ -100,7 +100,7 @@ abstract class InterpretationHandler extends FPCFAnalysis {
 
 object InterpretationHandler {
 
-    final val SoundnessModeConfigKey = "org.opalj.tac.analyses.string.InterpretationHandler.highSoundness"
+    final val SoundnessModeConfigKey = "org.opalj.fpcf.analyses.string.InterpretationHandler.highSoundness"
 
     def getEntity(implicit state: InterpretationState): MethodPC = MethodPC(state.pc, state.dm)
 
