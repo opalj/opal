@@ -12,6 +12,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.ControlTree
+import org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.FlowGraph
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.SuperFlowGraph
 import org.opalj.tac.fpcf.properties.TACAI
@@ -35,6 +36,7 @@ case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: 
     var flowGraph: FlowGraph = _
     var superFlowGraph: SuperFlowGraph = _
     var controlTree: ControlTree = _
+    var flowAnalysis: DataFlowAnalysis = _
 
     private val pcToDependeeMapping: mutable.Map[Int, EOptionP[MethodPC, StringFlowFunctionProperty]] =
         mutable.Map.empty
