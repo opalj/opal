@@ -69,6 +69,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
             StructuralAnalysis.analyze(state.flowGraph, FlowGraph.entry)
         state.superFlowGraph = superFlowGraph
         state.controlTree = controlTree
+        state.flowAnalysis = new DataFlowAnalysis(state.controlTree, state.superFlowGraph)
 
         state.flowGraph.nodes.toOuter.foreach {
             case Statement(pc) if pc >= 0 =>
@@ -127,10 +128,6 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
             }
         }.toMap)
 
-        MethodStringFlow(DataFlowAnalysis.compute(
-            state.controlTree,
-            state.superFlowGraph,
-            state.getFlowFunctionsByPC
-        )(startEnv))
+        MethodStringFlow(state.flowAnalysis.compute(state.getFlowFunctionsByPC)(startEnv))
     }
 }

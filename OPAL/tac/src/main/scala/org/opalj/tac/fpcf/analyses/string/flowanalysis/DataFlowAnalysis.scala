@@ -17,11 +17,14 @@ import scalax.collection.GraphTraversal.Parameters
 import scalax.collection.generic.Edge
 import scalax.collection.immutable.Graph
 
-object DataFlowAnalysis {
+class DataFlowAnalysis(
+    private val controlTree:    ControlTree,
+    private val superFlowGraph: SuperFlowGraph
+) {
+
+    private val _removedBackEdgesGraphs = mutable.Map.empty[FlowGraphNode, (Boolean, SuperFlowGraph)]
 
     def compute(
-        controlTree:      ControlTree,
-        superFlowGraph:   SuperFlowGraph,
         flowFunctionByPc: Map[Int, StringFlowFunction]
     )(startEnv: StringTreeEnvironment): StringTreeEnvironment = {
         val startNodeCandidates = controlTree.nodes.filter(_.diPredecessors.isEmpty)
@@ -30,22 +33,18 @@ object DataFlowAnalysis {
         }
 
         val startNode = startNodeCandidates.head.outer
-        pipeThroughNode(controlTree, superFlowGraph, flowFunctionByPc)(startNode, startEnv)
+        pipeThroughNode(flowFunctionByPc)(startNode, startEnv)
     }
 
     /**
      * @note This function should be stable with regards to an ordering on the piped flow graph nodes, e.g. a proper
      *       region should always be traversed in the same way.
      */
-    private def pipeThroughNode(
-        controlTree:      ControlTree,
-        superFlowGraph:   SuperFlowGraph,
-        flowFunctionByPc: Map[Int, StringFlowFunction]
-    )(
+    private def pipeThroughNode(flowFunctionByPc: Map[Int, StringFlowFunction])(
         node: FlowGraphNode,
         env:  StringTreeEnvironment
     ): StringTreeEnvironment = {
-        val pipe = pipeThroughNode(controlTree, superFlowGraph, flowFunctionByPc) _
+        val pipe = pipeThroughNode(flowFunctionByPc) _
         val innerChildNodes = controlTree.get(node).diSuccessors.map(n => superFlowGraph.get(n.outer))
 
         def processBlock(entry: FlowGraphNode): StringTreeEnvironment = {
@@ -144,14 +143,20 @@ object DataFlowAnalysis {
         }
 
         def processNaturalLoop(entry: FlowGraphNode): StringTreeEnvironment = {
-            val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
-            val entryPredecessors = limitedFlowGraph.get(entry).diPredecessors
-            val removedBackEdgesGraph = limitedFlowGraph.filterNot(
-                edgeP = edge =>
-                    edge.sources.toList.toSet.intersect(entryPredecessors).nonEmpty
-                        && edge.targets.contains(limitedFlowGraph.get(entry))
+            val (isCyclic, removedBackEdgesGraph) = _removedBackEdgesGraphs.getOrElseUpdate(
+                node, {
+                    val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
+                    val entryPredecessors = limitedFlowGraph.get(entry).diPredecessors
+                    val computedRemovedBackEdgesGraph = limitedFlowGraph.filterNot(
+                        edgeP = edge =>
+                            edge.sources.toList.toSet.intersect(entryPredecessors).nonEmpty
+                                && edge.targets.contains(limitedFlowGraph.get(entry))
+                    )
+                    (computedRemovedBackEdgesGraph.isCyclic, computedRemovedBackEdgesGraph)
+                }
             )
-            if (removedBackEdgesGraph.isCyclic) {
+
+            if (isCyclic) {
                 env.updateAll(StringTreeDynamicString)
             } else {
                 // Handle resulting acyclic region
