@@ -58,7 +58,7 @@ case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: 
     def getWebs: Iterator[PDUWeb] = pcToDependeeMapping.values.flatMap { v =>
         if (v.hasUBP) v.ub.webs
         else StringFlowFunctionProperty.ub.webs
-    }.toSeq.sortBy(_.defPCs.toList.min).foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
+    }.foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
         val mappedWebs = reducedWebs.map(w => (w, w.identifiesSameVarAs(web)))
         if (!mappedWebs.exists(_._2)) {
             reducedWebs :+ web
