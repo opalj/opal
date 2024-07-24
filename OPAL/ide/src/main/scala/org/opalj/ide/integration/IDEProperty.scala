@@ -31,4 +31,16 @@ class BasicIDEProperty[Statement, Fact <: IDEFact, Value <: IDEValue](
                 s"\t$stmt:\n\t\t${result.map { case (fact, value) => s"($fact,$value)" }.mkString("\n\t\t")}"
             }.mkString("\n")}"
     }
+
+    override def equals(obj: Any): Boolean = {
+        obj match {
+            case basicIDEProperty: BasicIDEProperty[?, ?, ?] =>
+                results == basicIDEProperty.results && propertyMetaInformation == basicIDEProperty.propertyMetaInformation
+            case _ => false
+        }
+    }
+
+    override def hashCode(): Int = {
+        results.hashCode() * 31 + propertyMetaInformation.hashCode()
+    }
 }
