@@ -11,6 +11,7 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.ide.ConfigKeyDebugLog
 import org.opalj.ide.ConfigKeyTraceLog
@@ -108,9 +109,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         private val values: Values = mutable.Map.empty
 
         /**
-         * Map outstanding EPKs to the continuations to be executed when a new result is available
+         * Map outstanding EPKs to the last processed property result and the continuations to be executed when a new
+         * result is available
          */
-        private val dependees = mutable.Map.empty[SomeEPK, mutable.Set[() => Unit]]
+        private val dependees = mutable.Map.empty[SomeEPK, (SomeEOptionP, mutable.Set[() => Unit])]
 
         def enqueuePath(path: Path): Unit = {
             pathWorkList.enqueue(path)
@@ -226,8 +228,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             }
         }
 
-        def addDependee(epk: SomeEPK, c: () => Unit): Unit = {
-            val set = dependees.getOrElseUpdate(epk, mutable.Set.empty)
+        def addDependee(eOptionP: SomeEOptionP, c: () => Unit): Unit = {
+            // The eOptionP is only inserted the first time the corresponding EPK occurs. Consequently, it is the most
+            // precise property result that is seen by all dependents.
+            val (_, set) = dependees.getOrElseUpdate(eOptionP.toEPK, (eOptionP, mutable.Set.empty))
             set.add(c)
         }
 
@@ -239,12 +243,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             dependees.size
         }
 
-        def getDependees: collection.Set[SomeEPK] = {
-            dependees.keySet
+        def getDependees: collection.Set[SomeEOptionP] = {
+            dependees.values.map(_._1).toSet
         }
 
-        def getAndRemoveDependeeContinuations(epk: SomeEPK): Set[() => Unit] = {
-            dependees.remove(epk).getOrElse(Set.empty).toSet
+        def getAndRemoveDependeeContinuations(eOptionP: SomeEOptionP): Set[() => Unit] = {
+            dependees.remove(eOptionP.toEPK).map(_._2).getOrElse(Set.empty).toSet
         }
     }
 
@@ -322,7 +326,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     state.getDependees.toSet,
                     eps => {
                         // Get and call continuations that are remembered for the EPK
-                        val cs = state.getAndRemoveDependeeContinuations(eps.toEPK)
+                        val cs = state.getAndRemoveDependeeContinuations(eps)
                         cs.foreach(c => c())
                         // The continuations could have enqueued paths to the path work list
                         processPathWorkList()

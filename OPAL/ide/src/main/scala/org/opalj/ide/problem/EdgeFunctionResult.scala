@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ide.problem
 
-import org.opalj.fpcf.SomeEPK
+import org.opalj.fpcf.SomeEOptionP
 
 /**
  * Interface for encapsulating different states of edge functions
@@ -18,5 +18,7 @@ case class FinalEdgeFunction[Value <: IDEValue](edgeFunction: EdgeFunction[Value
  * @param interimEdgeFunction an interim edge function to use until new results are present (has to be an upper bound of
  *                            the final edge function)
  */
-case class InterimEdgeFunction[Value <: IDEValue](interimEdgeFunction: EdgeFunction[Value], dependees: Set[SomeEPK])
-    extends EdgeFunctionResult[Value]
+case class InterimEdgeFunction[Value <: IDEValue](
+        interimEdgeFunction: EdgeFunction[Value],
+        dependees:           Set[SomeEOptionP]
+) extends EdgeFunctionResult[Value]
