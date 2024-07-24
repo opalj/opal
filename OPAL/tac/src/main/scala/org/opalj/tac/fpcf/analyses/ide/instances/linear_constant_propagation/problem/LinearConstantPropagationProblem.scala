@@ -24,7 +24,7 @@ import org.opalj.tac.Var
 import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
 
 /**
  * Definition of the linear constant propagation problem
@@ -64,7 +64,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
     }
 
     private def isExpressionInfluencedByFact(
-        expr:       Expr[JavaIFDSProblem.V],
+        expr:       Expr[JavaStatement.V],
         sourceFact: LinearConstantPropagationFact
     ): Boolean = {
         expr.astID match {
@@ -144,7 +144,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
                             immutable.Set(sourceFact)
 
                         case VariableFact(_, definedAtIndex) =>
-                            val callStmt = JavaIFDSProblem.asCall(callSite.stmt)
+                            val callStmt = callSite.stmt.asCall()
 
                             /* Parameters and their types (excluding the implicit 'this' reference) */
                             val params = callStmt.params
@@ -234,8 +234,8 @@ class LinearConstantPropagationProblem(project: SomeProject)
     }
 
     private def getEdgeFunctionForExpression(
-        expr: Expr[JavaIFDSProblem.V]
     ): EdgeFunction[LinearConstantPropagationValue] = {
+        expr:   Expr[JavaStatement.V]
         expr.astID match {
             case IntConst.ASTID =>
                 LinearCombinationEdgeFunction(0, expr.asIntConst.value)
@@ -252,7 +252,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
                 }
 
                 /* Try to resolve an constant or variable expression to a constant value */
-                val getValueForExpr: Expr[JavaIFDSProblem.V] => Option[Int] = expr => {
+                val getValueForExpr: Expr[JavaStatement.V] => Option[Int] = expr => {
                     expr.astID match {
                         case Var.ASTID =>
                             val var0 = expr.asVar
