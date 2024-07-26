@@ -15,5 +15,5 @@ import org.opalj.ide.solver.IDEAnalysis
 class JavaIDEAnalysis[Fact <: IDEFact, Value <: IDEValue](
         project:                 SomeProject,
         problem:                 IDEProblem[Fact, Value, JavaStatement, Method],
-        propertyMetaInformation: IDEPropertyMetaInformation[JavaStatement, Fact, Value]
+        propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
 ) extends IDEAnalysis[Fact, Value, JavaStatement, Method](project, problem, propertyMetaInformation)

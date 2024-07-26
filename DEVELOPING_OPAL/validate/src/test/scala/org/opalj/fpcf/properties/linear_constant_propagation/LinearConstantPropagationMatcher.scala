@@ -31,15 +31,12 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher {
             getValue(p, singleAnnotationType, a.elementValuePairs, "value").asIntValue.value
 
         if (properties.exists {
-                case property: BasicIDEProperty[?, ?, ?] =>
+                case property: BasicIDEProperty[?, ?] =>
                     property.results.exists {
-                        case (_, results) =>
-                            results.exists {
-                                case (LCPProblem.VariableFact(name, _), LCPProblem.ConstantValue(value)) =>
-                                    expectedVariableName == name && expectedVariableValue == value
+                        case (LCPProblem.VariableFact(name, _), LCPProblem.ConstantValue(value)) =>
+                            expectedVariableName == name && expectedVariableValue == value
 
-                                case _ => false
-                            }
+                        case _ => false
                     }
 
                 case _ => false
@@ -72,15 +69,12 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
             getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
 
         if (properties.exists {
-                case property: BasicIDEProperty[?, ?, ?] =>
+                case property: BasicIDEProperty[?, ?] =>
                     property.results.exists {
-                        case (_, results) =>
-                            results.exists {
-                                case (LCPProblem.VariableFact(name, _), LCPProblem.VariableValue) =>
-                                    expectedVariableName == name
+                        case (LCPProblem.VariableFact(name, _), LCPProblem.VariableValue) =>
+                            expectedVariableName == name
 
-                                case _ => false
-                            }
+                        case _ => false
                     }
             }
         ) {

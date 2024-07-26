@@ -18,7 +18,7 @@ abstract class IDEAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue, Statemen
     extends FPCFLazyAnalysisScheduler {
     override final type InitializationData = IDEAnalysis[Fact, Value, Statement, Callable]
 
-    def property: IDEPropertyMetaInformation[Statement, Fact, Value]
+    def property: IDEPropertyMetaInformation[Fact, Value]
 
     override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
 

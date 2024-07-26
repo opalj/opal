@@ -35,7 +35,7 @@ import org.opalj.log.OPALLogger
 class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
         val project:                 SomeProject,
         val problem:                 IDEProblem[Fact, Value, Statement, Callable],
-        val propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value]
+        val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
 ) extends FPCFAnalysis {
     private type Node = (Statement, Fact)
     /**
@@ -215,17 +215,19 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             values.put(node, newValue)
         }
 
-        def collectResults(callable: Callable): collection.Map[Statement, collection.Set[(Fact, Value)]] = {
-            values.filter {
-                case ((n, d), _) =>
+        def collectResults(callable: Callable): collection.Set[(Fact, Value)] = {
+            values
+                .filter { case ((n, d), _) =>
                     icfg.getCallable(n) == callable && icfg.isNormalExitStatement(n) && d != problem.nullFact
-            }.groupMapReduce {
-                case ((n, _), _) => n
-            } {
-                case ((_, d), value) => Set((d, value))
-            } {
-                (s1, s2) => s1.union(s2)
-            }
+                }
+                .groupMapReduce {
+                    case ((_, d), _) => d
+                } {
+                    case (_, value) => value
+                } {
+                    (value1, value2) => problem.lattice.meet(value1, value2)
+                }
+                .toSet
         }
 
         def addDependee(eOptionP: SomeEOptionP, c: () => Unit): Unit = {
