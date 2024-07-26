@@ -13,6 +13,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
+import org.opalj.fpcf.SomeEPS
 import org.opalj.ide.ConfigKeyDebugLog
 import org.opalj.ide.ConfigKeyTraceLog
 import org.opalj.ide.FrameworkName
@@ -215,10 +216,14 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             values.put(node, newValue)
         }
 
-        def collectResults(callable: Callable, stmtOption: Option[Statement]): collection.Set[(Fact, Value)] = {
-            val relevantValues = stmtOption match {
-                case Some(stmt) =>
-                    values.filter { case ((n, d), _) => n == stmt && d != problem.nullFact }
+        def clearValues(): Unit = {
+            values.clear()
+        }
+
+        def collectResults(callable: Callable, stmt: Option[Statement]): collection.Set[(Fact, Value)] = {
+            val relevantValues = stmt match {
+                case Some(statement) =>
+                    values.filter { case ((n, d), _) => n == statement && d != problem.nullFact }
                 case None =>
                     values.filter { case ((n, d), _) =>
                         icfg.getCallable(n) == callable && icfg.isNormalExitStatement(n) && d != problem.nullFact
@@ -302,63 +307,104 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         implicit val state: State = new State
 
+        performPhase1(callable)
+        performPhase2(callable)
+
+        createResult(entity, callable, stmt)
+    }
+
+    /**
+     * @return whether the phase is finished or has to be continued once the dependees are resolved
+     */
+    private def performPhase1(callable: Callable)(implicit s: State): Boolean = {
         logDebug("starting phase 1")
 
-        // Phase 1
         seedPhase1(callable)
         processPathWorkList()
 
-        def c(): ProperPropertyComputationResult = {
+        if (s.areDependeesEmpty) {
             logDebug("finished phase 1")
-
-            logDebug("starting phase 2")
-
-            // Phase 2
-            seedPhase2(callable)
-            computeValues()
-
-            logDebug("finished phase 2")
-
-            logDebug("collecting results for property creation")
-
-            // Build and return result
-            val property = propertyMetaInformation.createProperty(state.collectResults(callable, stmt))
-            Result(entity, property)
-        }
-
-        if (!state.areDependeesEmpty) {
-            logDebug(s"there are ${state.getDependeesSize} outstanding dependees")
-
-            def createInterimResult(): ProperPropertyComputationResult = {
-                InterimResult.forUB(
-                    entity,
-                    // TODO (IDE) THIS WILL BE AN 'EMPTY' PROPERTY -> PROBLEMATIC WITH CYCLIC IDE ANALYSES
-                    //  - WHAT IF WE RUN PHASE 2 BEFORE RETURNING?
-                    //  - DOES THIS PRODUCE VALID RESULTS (I.E. ALWAYS UPPER BOUND)?
-                    //  - DO WE NEED TO RERUN PHASE 2 FROM SCRATCH EACH TIME?
-                    propertyMetaInformation.createProperty(state.collectResults(callable, stmt)),
-                    state.getDependees.toSet,
-                    eps => {
-                        // Get and call continuations that are remembered for the EPK
-                        val cs = state.getAndRemoveDependeeContinuations(eps)
-                        cs.foreach(c => c())
-                        // The continuations could have enqueued paths to the path work list
-                        processPathWorkList()
-
-                        if (state.areDependeesEmpty) {
-                            logDebug(s"all outstanding dependees have been processed")
-                            c()
-                        } else {
-                            logDebug(s"there are ${state.getDependeesSize} outstanding dependees left")
-                            createInterimResult()
-                        }
-                    }
-                )
-            }
-            createInterimResult()
+            true
         } else {
-            c()
+            logDebug(s"there are ${s.getDependeesSize} outstanding dependees")
+            logDebug("pausing phase 1")
+            false
         }
+    }
+
+    /**
+     * @return whether the phase is finished or has to be continued once the dependees are resolved
+     */
+    private def continuePhase1()(implicit s: State): Boolean = {
+        logDebug("continuing phase 1")
+
+        processPathWorkList()
+
+        if (s.areDependeesEmpty) {
+            logDebug("all outstanding dependees have been processed")
+            logDebug("finished phase 1")
+            true
+        } else {
+            logDebug(s"there are ${s.getDependeesSize} outstanding dependees left")
+            logDebug("pausing phase 1 again")
+            false
+        }
+    }
+
+    /**
+     * Perform phase 2 from scratch
+     */
+    private def performPhase2(callable: Callable)(implicit s: State): Unit = {
+        logDebug("starting phase 2")
+
+        // TODO (IDE) PHASE 2 IS PERFORMED ALSO FOR INTERIM RESULTS TO MAKE CYCLIC ANALYSES POSSIBLE
+        //  - PHASE 2 IS PERFORMED FROM SCRATCH ON EACH UPDATE AT THE MOMENT (THIS SHOULD ALWAYS PROCUDE AN UPPER BOUND
+        //      OF THE FINAL VALUE)
+        //  - DO WE NEED TO RERUN IT FROM SCRATCH EACH TIME OR IS THERE AN INCREMENTAL SOLUTION?
+        s.clearValues()
+
+        seedPhase2(callable)
+        computeValues()
+
+        logDebug("finished phase 2")
+    }
+
+    // TODO (IDE) REMOVE/SIMPLIFY PARAMETERS WHEN USING MultiResult/Results
+    private def createResult(entity: Entity, callable: Callable, stmt: Option[Statement])(
+        implicit s: State
+    ): ProperPropertyComputationResult = {
+        logDebug("starting creation of properties")
+
+        val property = propertyMetaInformation.createProperty(s.collectResults(callable, stmt))
+
+        logDebug("finished creation of properties")
+
+        if (s.areDependeesEmpty) {
+            Result(entity, property)
+        } else {
+            InterimResult.forUB(
+                entity,
+                property,
+                s.getDependees.toSet,
+                onDependeeUpdateContinuation(entity, callable, stmt)
+            )
+        }
+    }
+
+    private def onDependeeUpdateContinuation(
+        entity:   Entity,
+        callable: Callable,
+        stmt:     Option[Statement]
+    )(eps: SomeEPS)(implicit s: State): ProperPropertyComputationResult = {
+        // Call and remove all continuations that are remembered for the EPS
+        val cs = s.getAndRemoveDependeeContinuations(eps)
+        cs.foreach(c => c())
+
+        // The continuations can have enqueued paths to the path work list
+        continuePhase1()
+        performPhase2(callable)
+
+        createResult(entity, callable, stmt)
     }
 
     private def seedPhase1(callable: Callable)(implicit s: State): Unit = {
