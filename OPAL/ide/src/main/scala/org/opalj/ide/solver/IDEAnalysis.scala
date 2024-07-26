@@ -215,11 +215,17 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             values.put(node, newValue)
         }
 
-        def collectResults(callable: Callable): collection.Set[(Fact, Value)] = {
-            values
-                .filter { case ((n, d), _) =>
-                    icfg.getCallable(n) == callable && icfg.isNormalExitStatement(n) && d != problem.nullFact
-                }
+        def collectResults(callable: Callable, stmtOption: Option[Statement]): collection.Set[(Fact, Value)] = {
+            val relevantValues = stmtOption match {
+                case Some(stmt) =>
+                    values.filter { case ((n, d), _) => n == stmt && d != problem.nullFact }
+                case None =>
+                    values.filter { case ((n, d), _) =>
+                        icfg.getCallable(n) == callable && icfg.isNormalExitStatement(n) && d != problem.nullFact
+                    }
+            }
+
+            relevantValues
                 .groupMapReduce {
                     case ((_, d), _) => d
                 } {
@@ -281,12 +287,18 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
-     * Run the IDE solver and calculate (and return) the results at the end of the requested callable
-     * @param callable the callable to analyze
+     * Run the IDE solver and calculate (and return) the result
+     * @param entity either only a callable or a pair of callable and statement that should be analyzed (if no statement
+     *               is given, the result for all exit statements is calculated)
      */
     // TODO (IDE) WHAT HAPPENS WHEN ANALYZING MULTIPLE CALLABLES? CAN WE CACHE E.G. JUMP/SUMMARY FUNCTIONS?
-    def performAnalysis(callable: Callable): ProperPropertyComputationResult = {
-        logDebug(s"performing ${getClass.getSimpleName} for $callable")
+    def performAnalysis(entity: Entity): ProperPropertyComputationResult = {
+        logDebug(s"performing ${getClass.getSimpleName} for $entity")
+
+        val (callable, stmt) = entity match {
+            case (c: Entity, s: Entity) => (c.asInstanceOf[Callable], Some(s.asInstanceOf[Statement]))
+            case c                      => (c.asInstanceOf[Callable], None)
+        }
 
         implicit val state: State = new State
 
@@ -310,8 +322,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             logDebug("collecting results for property creation")
 
             // Build and return result
-            val property = propertyMetaInformation.createProperty(state.collectResults(callable))
-            Result(callable, property)
+            val property = propertyMetaInformation.createProperty(state.collectResults(callable, stmt))
+            Result(entity, property)
         }
 
         if (!state.areDependeesEmpty) {
@@ -319,12 +331,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
             def createInterimResult(): ProperPropertyComputationResult = {
                 InterimResult.forUB(
-                    callable,
+                    entity,
                     // TODO (IDE) THIS WILL BE AN 'EMPTY' PROPERTY -> PROBLEMATIC WITH CYCLIC IDE ANALYSES
                     //  - WHAT IF WE RUN PHASE 2 BEFORE RETURNING?
                     //  - DOES THIS PRODUCE VALID RESULTS (I.E. ALWAYS UPPER BOUND)?
                     //  - DO WE NEED TO RERUN PHASE 2 FROM SCRATCH EACH TIME?
-                    propertyMetaInformation.createProperty(state.collectResults(callable)),
+                    propertyMetaInformation.createProperty(state.collectResults(callable, stmt)),
                     state.getDependees.toSet,
                     eps => {
                         // Get and call continuations that are remembered for the EPK
