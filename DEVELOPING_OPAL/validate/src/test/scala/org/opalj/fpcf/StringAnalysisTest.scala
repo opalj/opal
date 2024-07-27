@@ -18,6 +18,8 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.properties.string_analysis.DomainLevel
 import org.opalj.fpcf.properties.string_analysis.SoundnessMode
@@ -41,6 +43,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
     val nameTestMethod: String = "analyzeString"
 
     def level: Int
+    def analyses: Iterable[ComputationSpecification[FPCFAnalysis]]
     def domainLevel: DomainLevel
     def soundnessMode: SoundnessMode
 
@@ -70,6 +73,27 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
     }
 
     def initBeforeCallGraph(p: Project[URL]): Unit = {}
+
+    def runTests(): Unit = {
+        describe(s"the string analysis on level $level is started") {
+            var entities = Iterable.empty[(VariableContext, Method)]
+            val as = executeAnalyses(
+                analyses,
+                (project, currentPhaseAnalyses) => {
+                    if (currentPhaseAnalyses.exists(_.derives.exists(_.pk == StringConstancyProperty))) {
+                        val ps = project.get(PropertyStoreKey)
+                        entities = determineEntitiesToAnalyze(project)
+                        entities.foreach(entity => ps.force(entity._1, StringConstancyProperty.key))
+                    }
+                }
+            )
+
+            as.propertyStore.waitOnPhaseCompletion()
+            as.propertyStore.shutdown()
+
+            validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
+        }
+    }
 
     override def fixtureProjectPackage: List[String] = {
         StringAnalysisTest.getFixtureProjectPackages(level).toList
@@ -239,21 +263,9 @@ sealed abstract class L0StringAnalysisTest extends StringAnalysisTest {
 
     override final def level = 0
 
-    final def runL0Tests(): Unit = {
-        describe("the org.opalj.fpcf.L0StringAnalysis is started") {
-            val as = executeAnalyses(
-                LazyL0StringAnalysis.allRequiredAnalyses :+
-                    EagerSystemPropertiesAnalysisScheduler
-            )
-
-            val entities = determineEntitiesToAnalyze(as.project)
-            entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))
-
-            as.propertyStore.waitOnPhaseCompletion()
-            as.propertyStore.shutdown()
-
-            validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
-        }
+    override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
+        LazyL0StringAnalysis.allRequiredAnalyses :+
+            EagerSystemPropertiesAnalysisScheduler
     }
 }
 
@@ -262,7 +274,7 @@ class L0StringAnalysisWithL1DefaultDomainTest extends L0StringAnalysisTest {
     override def domainLevel: DomainLevel = DomainLevel.L1
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 
-    describe("using the l1 default domain") { runL0Tests() }
+    describe("using the l1 default domain") { runTests() }
 }
 
 class L0StringAnalysisWithL2DefaultDomainTest extends L0StringAnalysisTest {
@@ -270,7 +282,7 @@ class L0StringAnalysisWithL2DefaultDomainTest extends L0StringAnalysisTest {
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 
-    describe("using the l2 default domain") { runL0Tests() }
+    describe("using the l2 default domain") { runTests() }
 }
 
 class HighSoundnessL0StringAnalysisWithL2DefaultDomainTest extends L0StringAnalysisTest {
@@ -278,7 +290,7 @@ class HighSoundnessL0StringAnalysisWithL2DefaultDomainTest extends L0StringAnaly
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.HIGH
 
-    describe("using the l2 default domain and the high soundness mode") { runL0Tests() }
+    describe("using the l2 default domain and the high soundness mode") { runTests() }
 }
 
 /**
@@ -291,30 +303,16 @@ sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
 
     override def level = 1
 
+    override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
+        LazyL1StringAnalysis.allRequiredAnalyses :+
+            EagerFieldAccessInformationAnalysis :+
+            EagerSystemPropertiesAnalysisScheduler
+    }
+
     override def initBeforeCallGraph(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(FieldAccessInformationKey) {
             case None               => Seq(EagerFieldAccessInformationAnalysis)
             case Some(requirements) => requirements :+ EagerFieldAccessInformationAnalysis
-        }
-    }
-
-    final def runL1Tests(): Unit = {
-        describe("the org.opalj.fpcf.L1StringAnalysis is started") {
-            val as = executeAnalyses(
-                LazyL1StringAnalysis.allRequiredAnalyses :+
-                    EagerFieldAccessInformationAnalysis :+
-                    EagerSystemPropertiesAnalysisScheduler
-            )
-
-            val entities = determineEntitiesToAnalyze(as.project)
-                // Currently broken L1 Tests
-                .filterNot(entity => entity._2.name.startsWith("cyclicDependencyTest"))
-            entities.foreach(entity => as.propertyStore.force(entity._1, StringConstancyProperty.key))
-
-            as.propertyStore.waitOnPhaseCompletion()
-            as.propertyStore.shutdown()
-
-            validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
         }
     }
 }
@@ -324,7 +322,7 @@ class L1StringAnalysisWithL1DefaultDomainTest extends L1StringAnalysisTest {
     override def domainLevel: DomainLevel = DomainLevel.L1
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 
-    describe("using the l1 default domain") { runL1Tests() }
+    describe("using the l1 default domain") { runTests() }
 }
 
 class L1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
@@ -332,7 +330,7 @@ class L1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 
-    describe("using the l2 default domain") { runL1Tests() }
+    describe("using the l2 default domain") { runTests() }
 }
 
 class HighSoundnessL1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
@@ -340,5 +338,5 @@ class HighSoundnessL1StringAnalysisWithL2DefaultDomainTest extends L1StringAnaly
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.HIGH
 
-    describe("using the l2 default domain and the high soundness mode") { runL1Tests() }
+    describe("using the l2 default domain and the high soundness mode") { runTests() }
 }

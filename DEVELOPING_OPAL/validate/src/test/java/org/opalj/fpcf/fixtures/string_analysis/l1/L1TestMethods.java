@@ -358,10 +358,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where a field is read which is not written",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = "(^null$|.*)"
-                    )
+                    @StringDefinitions(expectedLevel = DYNAMIC, expectedStrings = "(.*|^null$)")
             })
     public void fieldWithNoWriteTest() {
         analyzeString(noWriteField);
@@ -426,10 +423,7 @@ public class L1TestMethods extends L0TestMethods {
     @StringDefinitionsCollection(
             value = "a case where no callers information need to be computed",
             stringDefinitions = {
-                    @StringDefinitions(
-                            expectedLevel = DYNAMIC,
-                            expectedStrings = "(.*|value)"
-                    )
+                    @StringDefinitions(expectedLevel = CONSTANT, expectedStrings = "value")
             })
     public String cyclicDependencyTest(String s) {
         String value = getProperty(s);

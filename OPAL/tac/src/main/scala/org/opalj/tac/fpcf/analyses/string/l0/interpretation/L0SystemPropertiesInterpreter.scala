@@ -43,8 +43,9 @@ private[string] trait L0SystemPropertiesInterpreter extends StringInterpreter {
                 Set(depender.dependee),
                 continuation(state, depender)
             )
+        } else {
+            continuation(state, depender)(depender.dependee.asInstanceOf[SomeEPS])
         }
-        continuation(state, depender)(depender.dependee.asInstanceOf[SomeEPS])
     }
 
     private def continuation(
