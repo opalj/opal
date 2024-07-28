@@ -2,11 +2,11 @@
 package org.opalj.tactobc
 
 import org.opalj.BinaryArithmeticOperators.{Add, And, Divide, Modulo, Multiply, Or, ShiftLeft, ShiftRight, Subtract, UnsignedShiftRight, XOr}
-import org.opalj.br.{ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, ObjectType}
-import org.opalj.br.instructions.{ALOAD, ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3, ASTORE, ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3, BIPUSH, DADD, DCONST_0, DCONST_1, DDIV, DLOAD, DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3, DMUL, DREM, DSTORE, DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3, DSUB, FADD, FCONST_0, FCONST_1, FCONST_2, FDIV, FLOAD, FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3, FMUL, FREM, FSTORE, FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3, FSUB, GETFIELD, GETSTATIC, IADD, IAND, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, ICONST_M1, IDIV, ILOAD, ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3, IMUL, INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, IOR, IREM, ISHL, ISHR, ISTORE, ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3, ISUB, IUSHR, IXOR, Instruction, LADD, LAND, LCONST_0, LCONST_1, LDIV, LLOAD, LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3, LMUL, LOR, LREM, LSHL, LSHR, LSTORE, LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3, LSUB, LUSHR, LXOR, LoadClass, LoadDouble, LoadFloat, LoadInt, LoadLong, LoadMethodHandle, LoadMethodType, LoadString, NEW, SIPUSH}
+import org.opalj.br.{ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FloatType, IntegerType, LongType, ObjectType, ShortType}
+import org.opalj.br.instructions.{ALOAD, ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3, ASTORE, ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3, BIPUSH, D2F, D2I, D2L, DADD, DCONST_0, DCONST_1, DDIV, DLOAD, DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3, DMUL, DREM, DSTORE, DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3, DSUB, F2D, F2I, F2L, FADD, FCONST_0, FCONST_1, FCONST_2, FDIV, FLOAD, FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3, FMUL, FREM, FSTORE, FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3, FSUB, GETFIELD, GETSTATIC, I2B, I2C, I2D, I2F, I2L, I2S, IADD, IAND, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, ICONST_M1, IDIV, ILOAD, ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3, IMUL, INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, IOR, IREM, ISHL, ISHR, ISTORE, ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3, ISUB, IUSHR, IXOR, Instruction, L2D, L2F, L2I, LADD, LAND, LCONST_0, LCONST_1, LDIV, LLOAD, LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3, LMUL, LOR, LREM, LSHL, LSHR, LSTORE, LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3, LSUB, LUSHR, LXOR, LoadClass, LoadDouble, LoadFloat, LoadInt, LoadLong, LoadMethodHandle, LoadMethodType, LoadString, NEW, SIPUSH}
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{BinaryExpr, ClassConst, Const, DUVar, DVar, DoubleConst, Expr, FloatConst, GetField, GetStatic, IntConst, LongConst, MethodHandleConst, MethodTypeConst, New, StaticFunctionCall, StringConst, UVar, Var, VirtualFunctionCall}
+import org.opalj.tac.{BinaryExpr, ClassConst, Const, DUVar, DVar, DoubleConst, Expr, FloatConst, GetField, GetStatic, IntConst, LongConst, MethodHandleConst, MethodTypeConst, New, PrimitiveTypecastExpr, StaticFunctionCall, StringConst, UVar, Var, VirtualFunctionCall}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -23,6 +23,7 @@ object ExprUtils {
       case virtualFunctionCallExpr: VirtualFunctionCall[_] => handleVirtualFunctionCall(virtualFunctionCallExpr, instructionsWithPCs, currentPC)
       case staticFunctionCallExpr: StaticFunctionCall[_] => handleStaticFunctionCall(staticFunctionCallExpr, instructionsWithPCs, currentPC)
       case newExpr: New => handleNewExpr(newExpr.tpe, instructionsWithPCs, currentPC)
+      case primitiveTypecaseExpr: PrimitiveTypecastExpr[_] => handlePrimitiveTypeCastExpr(primitiveTypecaseExpr, instructionsWithPCs, currentPC)
       case _ =>
         throw new UnsupportedOperationException("Unsupported expression type" + expr)
     }
@@ -34,8 +35,13 @@ object ExprUtils {
       case binaryExpr: BinaryExpr[_] => collectFromBinaryExpr(binaryExpr, duVars)
       case virtualFunctionCallExpr: VirtualFunctionCall[_] => collectFromVirtualMethodCall(virtualFunctionCallExpr, duVars)
       case staticFunctionCallExpr: StaticFunctionCall[_] => collectFromStaticFunctionCall(staticFunctionCallExpr, duVars)
+      case primitiveTypecaseExpr: PrimitiveTypecastExpr[_] => collectFromPrimitiveTypeCastExpr(primitiveTypecaseExpr, duVars)
       case _ =>
     }
+  }
+
+  def collectFromPrimitiveTypeCastExpr(primitiveTypecaseExpr: PrimitiveTypecastExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    collectFromExpr(primitiveTypecaseExpr.operand, duVars)
   }
 
   def collectFromStaticFunctionCall(staticFunctionCallExpr: StaticFunctionCall[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
@@ -387,5 +393,39 @@ object ExprUtils {
     val offsetPC = currentPC + (rightPC - currentPC)
     instructionsWithPCs += ((offsetPC, instruction))
     offsetPC + instructionLength
+  }
+  def handlePrimitiveTypeCastExpr(primitiveTypecastExpr: PrimitiveTypecastExpr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    //todo: handle loading of operand Expr
+    val instruction = (primitiveTypecastExpr.operand.cTpe, primitiveTypecastExpr.targetTpe) match {
+      // -> to Float
+      case (ComputationalTypeDouble, FloatType) => D2F
+      case (ComputationalTypeInt, FloatType) => I2F
+      case (ComputationalTypeLong, FloatType) => L2F
+      // -> to Int
+      case (ComputationalTypeDouble, IntegerType) => D2I
+      case (ComputationalTypeFloat, IntegerType) => F2I
+      case (ComputationalTypeLong, IntegerType) => L2I
+      // -> to Long
+      case (ComputationalTypeDouble, LongType) => D2L
+      case (ComputationalTypeInt, LongType) => I2L
+      case (ComputationalTypeFloat, LongType) => F2L
+      // -> to Double
+      case (ComputationalTypeFloat, DoubleType) => F2D
+      case (ComputationalTypeInt, DoubleType) => I2D
+      case (ComputationalTypeLong, DoubleType) => L2D
+      // -> to Char
+      case (ComputationalTypeInt, CharType) => I2C
+      // -> to Byte
+      case (ComputationalTypeInt, ByteType) => I2B
+      // -> to Short
+      case (ComputationalTypeInt, ShortType) => I2S
+      // -> other cases are not supported
+      case _ => throw new UnsupportedOperationException("Unsupported operation or computational type in PrimitiveTypecastExpr" + primitiveTypecastExpr)
+    }
+    instructionsWithPCs += ((currentPC, instruction))
+    currentPC + instruction.length
+    // process the left expr and save the pc to give in the right expr processing
+    val finalPC = processExpression(primitiveTypecastExpr.operand, instructionsWithPCs, currentPC)
+    finalPC
   }
 }

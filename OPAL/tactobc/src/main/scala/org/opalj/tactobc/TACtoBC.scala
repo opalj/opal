@@ -60,7 +60,7 @@ object TACtoBC {
       bytecode.foreach(instr => println(instr.toString))
     }
 
-    val TheType = ObjectType("org/opalj/tactobc/testingtactobc/HelloWorldToString")
+    val TheType = ObjectType("org/opalj/tactobc/testingtactobc/Stopwatch")
 
     // Debugging: Print the location of the class loader and resources
     val loader = this.getClass.getClassLoader
@@ -70,8 +70,8 @@ object TACtoBC {
 
 
     val in = () => {
-      val stream = this.getClass.getResourceAsStream("/org/opalj/tactobc/testingtactobc/HelloWorldToString.class")
-      if (stream == null) throw new RuntimeException("Resource not found: /HelloWorldToString.class")
+      val stream = this.getClass.getResourceAsStream("/org/opalj/tactobc/testingtactobc/Stopwatch.class")
+      if (stream == null) throw new RuntimeException("Resource not found: /Stopwatch.class")
       stream
     }
     val cf = Java8Framework.ClassFile(in).head
@@ -203,18 +203,18 @@ object TACtoBC {
     }
     val cfWithNewInstructionsForReal = cf.copy(methods = newMethodsForReal)
     val newRawCF = Assembler(toDA(cfWithNewInstructionsForReal))
-    val assembledMyIntfPath = Paths.get("tmp", "org", "opalj", "tactobc", "testingtactobc", "HelloWorldToString.class")
+    val assembledMyIntfPath = Paths.get("tmp", "org", "opalj", "tactobc", "testingtactobc", "Stopwatch.class")
     val newClassFile = Files.write(assembledMyIntfPath, newRawCF)
     println("Created class file: " + newClassFile.toAbsolutePath)
 
     // Let's see the old class file...
     val odlCFHTML = ClassFile(in).head.toXHTML(None)
-    val oldCFHTMLFile = writeAndOpen(odlCFHTML, "HelloWorldToString", ".html")
+    val oldCFHTMLFile = writeAndOpen(odlCFHTML, "Stopwatch", ".html")
     println("original: " + oldCFHTMLFile)
 
     // Let's see the new class file...
     val newCF = ClassFile(() => new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
-    println("genetated from TAC: " + writeAndOpen(newCF, "NewHelloWorldToString", ".html"))
+    println("genetated from TAC: " + writeAndOpen(newCF, "Stopwatch", ".html"))
 
     //println("Class file GeneratedHelloWorldToStringDALEQUEE.class has been generated." + newClass)
     // Let's test that the new class does what it is expected to do... (we execute the
@@ -328,6 +328,9 @@ object TACtoBC {
           for (param <- params) {
             ExprUtils.collectFromExpr(param, duVars)
           }
+        case PutField(_, _, _, _, objRef, value) =>
+          ExprUtils.collectFromExpr(objRef, duVars)
+          ExprUtils.collectFromExpr(value, duVars)
         case NonVirtualMethodCall(_, _, _, _, _, receiver, params) =>
           ExprUtils.collectFromExpr(receiver, duVars)
           for (param <- params) {
