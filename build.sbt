@@ -177,6 +177,7 @@ lazy val `OPAL` = (project in file("."))
     ai,
     ifds,
     tac,
+    tactobc,
     de,
     av,
     apk,
@@ -321,6 +322,42 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
     assembly / mainClass := Some("org.opalj.tac.TAC"),
     run / fork := true
   )
+  .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
+  .configs(IntegrationTest)
+
+lazy val tactobc = `ThreeAddressCodeToBytecode`
+lazy val `ThreeAddressCodeToBytecode` = (project in file("OPAL/tactobc"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "Three Address Code to Bytecode",
+    Compile / doc / scalacOptions := (Opts.doc
+      .title("OPAL - Three Address Code to Bytecode") ++ Seq("-groups", "-implicits")),
+    assembly / mainClass := Some("org.opalj.tactobc.TACtoBC"),
+    run / fork := true,
+
+    // Ensure resources directory is included in the classpath
+    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
+    Test / resourceDirectory := baseDirectory.value / "src" / "test" / "resources",
+
+    // Include resources in the classpath
+    Compile / resourceGenerators += Def.task {
+      val resources = (Compile / resourceDirectory).value
+      val targetDir = (Compile / classDirectory).value / "resources"
+      IO.copyDirectory(resources, targetDir)
+      Seq(targetDir)
+    },
+    Test / resourceGenerators += Def.task {
+      val resources = (Test / resourceDirectory).value
+      val targetDir = (Test / classDirectory).value / "resources"
+      IO.copyDirectory(resources, targetDir)
+      Seq(targetDir)
+    }
+  )
+  .dependsOn(br % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(da % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(ba % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
