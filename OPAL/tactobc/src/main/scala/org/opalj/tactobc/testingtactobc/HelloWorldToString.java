@@ -3,11 +3,11 @@ package org.opalj.tactobc.testingtactobc;
 public class HelloWorldToString {
 
     public static void main(String[] args) {
-        System.out.println("Holi Fiooooo");
+        System.out.println("HelloWorld!");
         int i = 0;
         System.out.println(i);
         int x = 1;
-        for(; i < 6; i++){
+        for(; i < 3; i++){
             dumbPrint(i,x);
             x++;
         }
@@ -15,14 +15,14 @@ public class HelloWorldToString {
     }
 
     public static void dumbPrint(int i, int x){
-        System.out.println("esto es de otro metodo".concat(String.valueOf(i)));
+        System.out.println("this is a method ".concat(String.valueOf(i)));
         System.out.println(i);
         System.out.println(x);
         foo();
     }
 
     public static void foo(){
-        System.out.println("y este tambien, osea mi StaticMethodCall funciona :D");
+        System.out.println("StaticMethod call works :)");
     }
 }
 
