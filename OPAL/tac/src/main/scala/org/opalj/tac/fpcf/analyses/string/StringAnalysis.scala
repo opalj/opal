@@ -5,12 +5,15 @@ package fpcf
 package analyses
 package string
 
+import scala.collection.mutable.ListBuffer
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.string.StringConstancyInformation
@@ -135,16 +138,21 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
         oldCallers: Callers,
         newCallers: Callers
     )(implicit state: ContextStringAnalysisState): Unit = {
+        val relevantCallerContexts = ListBuffer.empty[(Context, Int)]
         newCallers.forNewCallerContexts(oldCallers, state.dm) { (_, callerContext, pc, _) =>
             if (callerContext.hasContext && callerContext.method.hasSingleDefinedMethod) {
-                val callerMethod = callerContext.method.definedMethod
+                relevantCallerContexts.append((callerContext, pc))
+            }
+        }
 
-                val tacEOptP = ps(callerMethod, TACAI.key)
-                state.registerTacaiDepender(tacEOptP, (callerContext, pc))
+        for { (context, pc) <- relevantCallerContexts } {
+            val callerMethod = context.method.definedMethod
 
-                if (tacEOptP.hasUBP) {
-                    handleTACAI(callerMethod, tacEOptP.ub)
-                }
+            val tacEOptP = ps(callerMethod, TACAI.key)
+            state.registerTacaiDepender(tacEOptP, (context, pc))
+
+            if (tacEOptP.hasUBP) {
+                handleTACAI(callerMethod, tacEOptP.ub)
             }
         }
     }
@@ -187,6 +195,12 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
     }
 
     private def computeResults(implicit state: ContextStringAnalysisState): ProperPropertyComputationResult = {
+        if (state.dm.name == "newInstance" && state.dm.declaringClassType.fqn.endsWith("FactoryFinder")) {
+            System.out.println("DAMN")
+        } else if (state.dm.name == "find" && state.dm.declaringClassType.fqn.endsWith("FactoryFinder")) {
+            System.out.println("DAMN2")
+        }
+
         if (state.hasDependees) {
             InterimResult(
                 state.entity,
