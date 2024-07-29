@@ -3,13 +3,10 @@ package org.opalj.fpcf.properties.string_analysis;
 
 import java.lang.annotation.*;
 
-/**
- * @author Maximilian Rüsch
- */
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({ ElementType.METHOD })
-public @interface AllowedSoundnessModes {
+public @interface Constants {
 
-    SoundnessMode[] value();
+    Constant[] value();
 }
