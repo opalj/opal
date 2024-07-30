@@ -16,16 +16,16 @@ object StmtProcessor {
   //Assignment
   def processAssignment(targetVar: Var[_], expr: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     // Evaluate the RHS and update the PC accordingly
-    val afterExprPC = ExprUtils.processExpression(expr, instructionsWithPCs, currentPC)
+    val afterExprPC = ExprProcessor.processExpression(expr, instructionsWithPCs, currentPC)
     // Store the result into the target variable and update the PC
-    val finalPC = ExprUtils.storeVariable(targetVar, instructionsWithPCs, afterExprPC)
+    val finalPC = ExprProcessor.storeVariable(targetVar, instructionsWithPCs, afterExprPC)
     // Return the updated PC
     finalPC
   }
 
   def processSwitch(defaultOffset: Int, index: Expr[_], npairs: ArraySeq[IntIntPair /*(Case Value, Jump Target)*/], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     // Translate the index expression first
-    val afterExprPC = ExprUtils.processExpression(index, instructionsWithPCs, currentPC)
+    val afterExprPC = ExprProcessor.processExpression(index, instructionsWithPCs, currentPC)
 
     // Prepare the bytecode pairs with placeholders for targets
     val bCnpairs = prepareBCnpairs(npairs)
@@ -83,7 +83,7 @@ object StmtProcessor {
   }
 
   def processReturnValue(expr: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    val afterExprPC = ExprUtils.processExpression(expr, instructionsWithPCs, currentPC)
+    val afterExprPC = ExprProcessor.processExpression(expr, instructionsWithPCs, currentPC)
     val instruction = expr.cTpe match {
       case ComputationalTypeInt => IRETURN
       case ComputationalTypeLong => LRETURN
@@ -99,14 +99,14 @@ object StmtProcessor {
 
   def processVirtualMethodCall(declaringClass: ReferenceType, isInterface: Boolean, methodName: String, methodDescriptor: MethodDescriptor, receiver: Expr[_], params: Seq[Expr[_]], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     // Process the receiver object (e.g., aload_0 for `this`)
-    val afterReceiverPC = ExprUtils.processExpression(receiver, instructionsWithPCs, currentPC)
+    val afterReceiverPC = ExprProcessor.processExpression(receiver, instructionsWithPCs, currentPC)
 
     // Initialize the PC after processing the receiver
     var currentAfterParamsPC = afterReceiverPC
 
     // Process each parameter and update the PC accordingly
     for (param <- params) {
-      currentAfterParamsPC = ExprUtils.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
+      currentAfterParamsPC = ExprProcessor.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
     }
 
     val instruction = { /*if (isInterface) {
@@ -188,14 +188,14 @@ object StmtProcessor {
   }
 
   def processNonVirtualMethodCall(declaringClass: ObjectType, isInterface: Boolean, methodName: String, methodDescriptor: MethodDescriptor, receiver: Expr[_], params: Seq[Expr[_]], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    val afterReceiverPC = ExprUtils.processExpression(receiver, instructionsWithPCs, currentPC)
+    val afterReceiverPC = ExprProcessor.processExpression(receiver, instructionsWithPCs, currentPC)
 
     // Initialize the PC after processing the receiver
     var currentAfterParamsPC = afterReceiverPC
 
     // Process each parameter and update the PC accordingly
     for (param <- params) {
-      currentAfterParamsPC = ExprUtils.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
+      currentAfterParamsPC = ExprProcessor.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
     }
     val instruction = INVOKESPECIAL(declaringClass, isInterface, methodName, methodDescriptor)
     val finalPC = currentPC + currentAfterParamsPC
@@ -209,7 +209,7 @@ object StmtProcessor {
 
     // Process each parameter and update the PC accordingly
     for (param <- params) {
-      currentAfterParamsPC = ExprUtils.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
+      currentAfterParamsPC = ExprProcessor.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
     }
     val instruction = INVOKESTATIC(declaringClass, isInterface, methodName, methodDescriptor)
     instructionsWithPCs += ((currentAfterParamsPC, instruction))
@@ -225,9 +225,9 @@ object StmtProcessor {
 
   def processIf(left: Expr[_], condition: RelationalOperator, right: Expr[_], gotoLabel: Int, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     // process the left expr and save the pc to give in the right expr processing
-    val leftPC = ExprUtils.processExpression(left, instructionsWithPCs, currentPC)
+    val leftPC = ExprProcessor.processExpression(left, instructionsWithPCs, currentPC)
     // process the right expr
-    val rightPC = ExprUtils.processExpression(right, instructionsWithPCs, leftPC)
+    val rightPC = ExprProcessor.processExpression(right, instructionsWithPCs, leftPC)
     generateIfInstruction(left, condition, right, instructionsWithPCs, currentPC, rightPC)
   }
 

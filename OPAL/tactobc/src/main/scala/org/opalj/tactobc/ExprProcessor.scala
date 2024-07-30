@@ -6,12 +6,12 @@ import org.opalj.br.{ByteType, CharType, ComputationalTypeDouble, ComputationalT
 import org.opalj.br.instructions.{ALOAD, ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3, ASTORE, ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3, BIPUSH, D2F, D2I, D2L, DADD, DCONST_0, DCONST_1, DDIV, DLOAD, DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3, DMUL, DREM, DSTORE, DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3, DSUB, F2D, F2I, F2L, FADD, FCONST_0, FCONST_1, FCONST_2, FDIV, FLOAD, FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3, FMUL, FREM, FSTORE, FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3, FSUB, GETFIELD, GETSTATIC, I2B, I2C, I2D, I2F, I2L, I2S, IADD, IAND, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, ICONST_M1, IDIV, ILOAD, ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3, IMUL, INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, IOR, IREM, ISHL, ISHR, ISTORE, ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3, ISUB, IUSHR, IXOR, Instruction, L2D, L2F, L2I, LADD, LAND, LCONST_0, LCONST_1, LDIV, LLOAD, LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3, LMUL, LOR, LREM, LSHL, LSHR, LSTORE, LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3, LSUB, LUSHR, LXOR, LoadClass, LoadDouble, LoadFloat, LoadInt, LoadLong, LoadMethodHandle, LoadMethodType, LoadString, NEW, SIPUSH}
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{BinaryExpr, ClassConst, Const, DUVar, DVar, DoubleConst, Expr, FloatConst, GetField, GetStatic, IntConst, LongConst, MethodHandleConst, MethodTypeConst, New, PrimitiveTypecastExpr, StaticFunctionCall, StringConst, UVar, Var, VirtualFunctionCall}
+import org.opalj.tac.{BinaryExpr, ClassConst, Const, DVar, DoubleConst, Expr, FloatConst, GetField, GetStatic, IntConst, LongConst, MethodHandleConst, MethodTypeConst, New, PrimitiveTypecastExpr, StaticFunctionCall, StringConst, UVar, Var, VirtualFunctionCall}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-object ExprUtils {
+object ExprProcessor {
 
 
   def processExpression(expr: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
@@ -29,40 +29,6 @@ object ExprUtils {
     }
   }
 
-  def collectFromExpr(expr: Expr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-    expr match {
-      case duVar: DUVar[_] => duVars += duVar
-      case binaryExpr: BinaryExpr[_] => collectFromBinaryExpr(binaryExpr, duVars)
-      case virtualFunctionCallExpr: VirtualFunctionCall[_] => collectFromVirtualMethodCall(virtualFunctionCallExpr, duVars)
-      case staticFunctionCallExpr: StaticFunctionCall[_] => collectFromStaticFunctionCall(staticFunctionCallExpr, duVars)
-      case primitiveTypecaseExpr: PrimitiveTypecastExpr[_] => collectFromPrimitiveTypeCastExpr(primitiveTypecaseExpr, duVars)
-      case _ =>
-    }
-  }
-
-  def collectFromPrimitiveTypeCastExpr(primitiveTypecaseExpr: PrimitiveTypecastExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-    collectFromExpr(primitiveTypecaseExpr.operand, duVars)
-  }
-
-  def collectFromStaticFunctionCall(staticFunctionCallExpr: StaticFunctionCall[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-    // Process each parameter and collect from each
-    for (param <- staticFunctionCallExpr.params) {
-      collectFromExpr(param, duVars)
-    }
-  }
-
-  def collectFromBinaryExpr(binaryExpr: BinaryExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-    collectFromExpr(binaryExpr.left, duVars)
-    collectFromExpr(binaryExpr.right, duVars)
-  }
-
-  def collectFromVirtualMethodCall(virtualFunctionCallExpr: VirtualFunctionCall[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-    collectFromExpr(virtualFunctionCallExpr.receiver, duVars)
-    for (param <- virtualFunctionCallExpr.params) {
-      collectFromExpr(param, duVars)
-    }
-  }
-
   def handleNewExpr(tpe: ObjectType, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     val instruction = NEW(tpe)
     instructionsWithPCs += ((currentPC, instruction))
@@ -75,7 +41,7 @@ object ExprUtils {
 
     // Process each parameter and update the PC accordingly
     for (param <- expr.params) {
-      currentAfterParamsPC = ExprUtils.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
+      currentAfterParamsPC = ExprProcessor.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
     }
     val instruction = if (expr.isInterface) {
       INVOKEINTERFACE(expr.declaringClass, expr.name, expr.descriptor)
@@ -90,14 +56,14 @@ object ExprUtils {
 
   def handleVirtualFunctionCall(expr: VirtualFunctionCall[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     // Process the receiver object (e.g., aload_0 for `this`)
-    val afterReceiverPC = ExprUtils.processExpression(expr.receiver, instructionsWithPCs, currentPC)
+    val afterReceiverPC = ExprProcessor.processExpression(expr.receiver, instructionsWithPCs, currentPC)
 
     // Initialize the PC after processing the receiver
     var currentAfterParamsPC = afterReceiverPC
 
     // Process each parameter and update the PC accordingly
     for (param <- expr.params) {
-      currentAfterParamsPC = ExprUtils.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
+      currentAfterParamsPC = ExprProcessor.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
     }
     val instruction = if (expr.isInterface) {
       //INVOKEINTERFACE(expr.declaringClass, expr.name, expr.descriptor)
@@ -160,74 +126,20 @@ object ExprUtils {
     currentPC + instruction.length // Update and return the new program counter
   }
 
-  var uvarToLVIndex = mutable.Map[IntTrieSet, Int]()
+  var uVarToLVIndex = mutable.Map[IntTrieSet, Int]()
   var nextLVIndex = 1
-
-  def collectAllUVarsAndPopulate(duVars: mutable.ListBuffer[DUVar[_]]): mutable.Map[IntTrieSet, Int] = {
-    duVars.toArray.foreach {
-      case uVar : UVar[_] => populateUvarAndDvarToLVIndexMap(uVar)
-      case _ =>
-    }
-    uvarToLVIndex
-  }
-
-  def mapParametersAndPopulate(duVars: mutable.ListBuffer[DUVar[_]]): mutable.Map[IntTrieSet, Int] = {
-    duVars.foreach {
-      case uVar: UVar[_] if uVar.defSites.exists(origin => origin < 0) =>
-        // Check if the defSites contain a parameter origin
-        uVar.defSites.foreach { origin =>
-          if (origin == -1) {
-            // Assign LV index 0 for 'this' only for instance methods
-            uvarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
-          } else if (origin < -1) {
-            if (origin == -2) {
-              // Assign LV index 0 for 'this' only for instance methods
-              uvarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
-            } else {
-              // Assign LV indexes for parameters
-              uvarToLVIndex.getOrElseUpdate(IntTrieSet(origin), {
-                val lvIndex = nextLVIndex
-                nextLVIndex += 1
-                lvIndex
-              })
-            }
-          }
-        }
-      case _ =>
-    }
-    uvarToLVIndex
-  }
-
-  def populateUvarAndDvarToLVIndexMap(uVar: UVar[_]): Unit = {
-    // Check if any existing key contains any of the def-sites
-    val existingEntry = uvarToLVIndex.find { case (key, _) => key.intersect(uVar.defSites).nonEmpty }
-    existingEntry match {
-      case Some((existingDefSites, index)) =>
-        // Merge the def-sites and update the map
-        val mergedDefSites = existingDefSites ++ uVar.defSites
-        uvarToLVIndex -= existingDefSites
-        uvarToLVIndex(mergedDefSites) = index
-      case None =>
-        // No overlapping def-sites found, add a new entry
-        uvarToLVIndex.getOrElseUpdate(uVar.defSites, {
-          val lvIndex = nextLVIndex
-          nextLVIndex += 1
-          lvIndex
-        })
-    }
-  }
 
   // Method to get LVIndex for a variable
   def getVariableLvlIndex(variable: Var[_]): Int = {
     variable match {
       case dVar: DVar[_] =>
-        val uVarDefSites = uvarToLVIndex.find { case (defSites, _) => defSites.contains(dVar.origin) }
+        val uVarDefSites = uVarToLVIndex.find { case (defSites, _) => defSites.contains(dVar.origin) }
         uVarDefSites match {
           case Some((_, index)) => index
           case None => throw new NoSuchElementException(s"No LVIndex found for DVar with origin ${dVar.origin}")
         }
       case uVar: UVar[_] =>
-        val defSiteMatch = uvarToLVIndex.find { case (defSites, _) => defSites.exists(uVar.defSites.contains) }
+        val defSiteMatch = uVarToLVIndex.find { case (defSites, _) => defSites.exists(uVar.defSites.contains) }
         defSiteMatch match {
           case Some((_, index)) => index
           case None => throw new NoSuchElementException(s"No LVIndex found for UVar with defSites ${uVar.defSites}")

@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.tactobc
+package org.opalj.tactobc
 
 import org.opalj.ba.CodeAttributeBuilder.computeStackMapTable
 import org.opalj.ba.toDA
@@ -16,7 +16,7 @@ import org.opalj.util.InMemoryClassLoader
 import java.io.ByteArrayInputStream
 import java.nio.file.{Files, Paths}
 import org.opalj.tac._
-import org.opalj.tactobc.{ExprUtils, StmtProcessor}
+import org.opalj.tactobc.{ExprProcessor, FirstPass, StmtProcessor}
 import org.opalj.value.ValueInformation
 
 import java.io.File
@@ -60,7 +60,7 @@ object TACtoBC {
       bytecode.foreach(instr => println(instr.toString))
     }
 
-    val TheType = ObjectType("org/opalj/tactobc/testingtactobc/Stopwatch")
+    val TheType = ObjectType("org/opalj/tactobc/testingtactobc/HelloWorld")
 
     // Debugging: Print the location of the class loader and resources
     val loader = this.getClass.getClassLoader
@@ -68,10 +68,9 @@ object TACtoBC {
     println(s"ClassLoader: $loader")
     println(s"Resources: ${resources.mkString(", ")}")
 
-
     val in = () => {
-      val stream = this.getClass.getResourceAsStream("/org/opalj/tactobc/testingtactobc/Stopwatch.class")
-      if (stream == null) throw new RuntimeException("Resource not found: /Stopwatch.class")
+      val stream = this.getClass.getResourceAsStream("/org/opalj/tactobc/testingtactobc/HelloWorld.class")
+      if (stream == null) throw new RuntimeException("Resource not found: /HelloWorld.class")
       stream
     }
     val cf = Java8Framework.ClassFile(in).head
@@ -203,18 +202,18 @@ object TACtoBC {
     }
     val cfWithNewInstructionsForReal = cf.copy(methods = newMethodsForReal)
     val newRawCF = Assembler(toDA(cfWithNewInstructionsForReal))
-    val assembledMyIntfPath = Paths.get("tmp", "org", "opalj", "tactobc", "testingtactobc", "Stopwatch.class")
+    val assembledMyIntfPath = Paths.get("tmp", "org", "opalj", "tactobc", "testingtactobc", "HelloWorld.class")
     val newClassFile = Files.write(assembledMyIntfPath, newRawCF)
     println("Created class file: " + newClassFile.toAbsolutePath)
 
     // Let's see the old class file...
     val odlCFHTML = ClassFile(in).head.toXHTML(None)
-    val oldCFHTMLFile = writeAndOpen(odlCFHTML, "Stopwatch", ".html")
+    val oldCFHTMLFile = writeAndOpen(odlCFHTML, "HelloWorld", ".html")
     println("original: " + oldCFHTMLFile)
 
     // Let's see the new class file...
     val newCF = ClassFile(() => new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
-    println("genetated from TAC: " + writeAndOpen(newCF, "Stopwatch", ".html"))
+    println("genetated from TAC: " + writeAndOpen(newCF, "HelloWorld", ".html"))
 
     //println("Class file GeneratedHelloWorldToStringDALEQUEE.class has been generated." + newClass)
     // Let's test that the new class does what it is expected to do... (we execute the
@@ -299,7 +298,7 @@ object TACtoBC {
   }
 
   /**
-   * Converts the TAC representation of a single method into bytecode instructions.
+   * Converts the TAC Stmts of a single method into bytecode instructions.
    *
    * This helper method processes one method's TAC representation at a time, converting it into a sequence
    * of bytecode instructions. It handles various types of TAC statements and expressions, translating them
@@ -310,45 +309,14 @@ object TACtoBC {
    */
   def translateSingleTACtoBC(tac: AITACode[TACMethodParameter, ValueInformation]): ArrayBuffer[(Int, Instruction)] = {
     val generatedByteCodeWithPC = ArrayBuffer[(Int, Instruction)]()
+    val tacStmts = tac.stmts.zipWithIndex
+    //first pass
+    val duVars = mutable.ListBuffer[DUVar[_]]()
+    FirstPass.prepareLVIndexes(tacStmts, duVars)
+    //second pass
     var currentPC = 0
     val tacTargetToByteCodePcs = ArrayBuffer[(Int, Int)]()
     val switchCases = ArrayBuffer[(Int, Int)]() // To store switch case targets
-    val duVars = mutable.ListBuffer[DUVar[_]]()
-    val tacStmts = tac.stmts.zipWithIndex
-    tacStmts.foreach { case (stmt, _) =>
-      stmt match {
-        case Assignment(_, targetVar, expr) =>
-          ExprUtils.collectFromExpr(targetVar, duVars)
-          ExprUtils.collectFromExpr(expr, duVars)
-        case If(_, left, _, right, _) =>
-          ExprUtils.collectFromExpr(left, duVars)
-          ExprUtils.collectFromExpr(right, duVars)
-        case VirtualMethodCall(_, _, _, _, _, receiver, params) =>
-          ExprUtils.collectFromExpr(receiver, duVars)
-          for (param <- params) {
-            ExprUtils.collectFromExpr(param, duVars)
-          }
-        case PutField(_, _, _, _, objRef, value) =>
-          ExprUtils.collectFromExpr(objRef, duVars)
-          ExprUtils.collectFromExpr(value, duVars)
-        case NonVirtualMethodCall(_, _, _, _, _, receiver, params) =>
-          ExprUtils.collectFromExpr(receiver, duVars)
-          for (param <- params) {
-            ExprUtils.collectFromExpr(param, duVars)
-          }
-        case ReturnValue(_, expr) =>
-          ExprUtils.collectFromExpr(expr, duVars)
-        case _ =>
-      }
-    }
-    val resultDUVars = duVars
-    println(resultDUVars)
-    //ExprUtils.populateVariableLVIndexMap(duVars)
-    val parameters = ExprUtils.mapParametersAndPopulate(duVars)
-    println(parameters)
-    val resultingLVIndexMap = ExprUtils.collectAllUVarsAndPopulate(duVars)
-    println(resultingLVIndexMap)
-    //first pass
     tacStmts.foreach { case (stmt, _) =>
       stmt match {
         case Assignment(_, targetVar, expr) =>
@@ -362,7 +330,7 @@ object TACtoBC {
           currentPC = StmtProcessor.processCaughtException(exceptionType, throwingStmts, generatedByteCodeWithPC, currentPC)
         case ExprStmt(_, expr) =>
           tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = ExprUtils.processExpression(expr, generatedByteCodeWithPC, currentPC)
+          currentPC = ExprProcessor.processExpression(expr, generatedByteCodeWithPC, currentPC)
         case If(_, left, condition, right, target) =>
           tacTargetToByteCodePcs += ((target, currentPC))
           currentPC = StmtProcessor.processIf(left, condition, right, target, generatedByteCodeWithPC, currentPC)
@@ -485,8 +453,8 @@ object TACtoBC {
           tacTargetToByteCodePcsIndex += 1
         }
     }
-    ExprUtils.uvarToLVIndex = mutable.Map[IntTrieSet, Int]()
-    ExprUtils.nextLVIndex = 1
+    ExprProcessor.uVarToLVIndex = mutable.Map[IntTrieSet, Int]()
+    ExprProcessor.nextLVIndex = 1
     result
   }
 
