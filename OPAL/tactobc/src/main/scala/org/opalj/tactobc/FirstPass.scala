@@ -16,7 +16,8 @@ object FirstPass {
    *             The parameter "stmt" represents the current stmt to be inspected
    * @param duVars a ListBuffer[DUVar[_]] that is extended with all DUVars of the given method
    */
-  def prepareLVIndexes(tacStmts: Array[(Stmt[DUVar[ValueInformation]], Int)], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+  def prepareLVIndexes(tacStmts: Array[(Stmt[DUVar[ValueInformation]], Int)]): Unit = {
+    val duVars = mutable.ListBuffer[DUVar[_]]()
     tacStmts.foreach { case (stmt, _) => {
       stmt match {
         case Assignment(_, targetVar, expr) =>
