@@ -7,16 +7,29 @@ import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
 
+/**
+ * Handles the initial preparation of local variable (LV) indexes
+ * for translating three-address code (TAC) to bytecode. This involves collecting all
+ * defined-use variables (DUVars) in the method, assigning LV indexes to parameters,
+ * and populating a map that assigns unique LV indexes to each unique variable.
+ *
+ * Key responsibilities:
+ * - Collect all DUVars from the method's statements.
+ * - Assign LV indexes to method parameters.
+ * - Populate a map (`uVarToLVIndex`) with unique LV indexes for each variable used in the method.
+ */
 object FirstPass {
 
   /**
-   * Collects all DUVars of the current method, adds parameters (if given) in the first available LVIndexes,
-   * populates then the uVarToLVIndex map so that each used (and unique) variable does have a unique LVIndex.
-   * @param stmt translateSingleTACtoBC iterates through all exisiting stmts for the method to be translated.
-   *             The parameter "stmt" represents the current stmt to be inspected
-   * @param duVars a ListBuffer[DUVar[_]] that is extended with all DUVars of the given method
+   * Prepares local variable (LV) indexes for the given method by:
+   * 1. Collecting all defined-use variables (DUVars) from the method's statements.
+   * 2. Assigning LV indexes to method parameters.
+   * 3. Populating the `uVarToLVIndex` map with unique LV indexes for each unique variable.
+   *
+   * @param tacStmts Array of tuples where each tuple contains a TAC statement and its index.
    */
   def prepareLVIndexes(tacStmts: Array[(Stmt[DUVar[ValueInformation]], Int)]): Unit = {
+    // container for all DUVars in the method
     val duVars = mutable.ListBuffer[DUVar[_]]()
     tacStmts.foreach { case (stmt, _) => {
       stmt match {
@@ -53,10 +66,10 @@ object FirstPass {
   }
 
   /**
-   * Filters all UVars of the duVars map in the parameter and populates the uVarToLVIndex map in order so that
-   * each unique uVar has a unique LVIndex
-   * @param duVars a ListBuffer[DUVar[_]] that is extended with all DUVars of the given method
-   * @return a mutable.Map[IntTrieSet, Int]: the IntTrieSet corresponds a UVars defsites, the Int represents the LVIndex
+   * Populates the `uVarToLVIndex` map with unique LV indexes for each variable in the given DUVars list.
+   *
+   * @param duVars ListBuffer containing all DUVars of the method.
+   * @return A map where keys are def-sites of UVars and values are their corresponding LV indexes.
    */
   def collectAllUVarsAndPopulateUVarToLVIndexMap(duVars: mutable.ListBuffer[DUVar[_]]): mutable.Map[IntTrieSet, Int] = {
     duVars.toArray.foreach {
@@ -67,9 +80,10 @@ object FirstPass {
   }
 
   /**
-   * Gives the first available LVIndexes to the parameters of the method
-   * @param duVars a ListBuffer[DUVar[_]] that is extended with all DUVars of the given method
-   * @return a mutable.Map[IntTrieSet, Int]: the IntTrieSet corresponds a UVars defsites, the Int represents the LVIndex
+   * Assigns the first available LV indexes to method parameters.
+   *
+   * @param duVars ListBuffer containing all DUVars of the method.
+   * @return A map where keys are def-sites of UVars and values are their corresponding LV indexes.
    */
   def mapParametersAndPopulate(duVars: mutable.ListBuffer[DUVar[_]]): mutable.Map[IntTrieSet, Int] = {
     duVars.foreach {
@@ -99,8 +113,9 @@ object FirstPass {
   }
 
   /**
-   * Populates the uVarToLVIndex map by givin each unique uVar a unique LVIndex
-   * @param uVar an used variable
+   * Populates the `uVarToLVIndex` map with unique LV indexes for each unique UVar.
+   *
+   * @param uVar A variable used in the method.
    */
   def populateUvarToLVIndexMap(uVar: UVar[_]): Unit = {
     // Check if any existing key contains any of the def-sites
@@ -122,9 +137,10 @@ object FirstPass {
   }
 
   /**
-   * Helper method to traverse over expressions and collect the DUVars "embedded" in them
-   * @param expr the expression to be traversed
-   * @param duVars a ListBuffer[DUVar[_]] that is extended with all DUVars of the given method
+   * Traverses an expression to collect all DUVars embedded within it.
+   *
+   * @param expr The expression to be traversed
+   * @param duVars ListBuffer to be extended with all DUVars found in the expression.
    */
   def collectDUVarFromExpr(expr: Expr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
     expr match {
@@ -138,18 +154,20 @@ object FirstPass {
   }
 
   /**
-   * Helper method to traverse through a PrimitiveTypeCastExpr and collect the DUVars
-   * @param primitiveTypecaseExpr an Expr of type PrimitiveTypecastExpr
-   * @param duVars a ListBuffer[DUVar[_]] that is extended with all DUVars of the given method
+   * Traverses a `PrimitiveTypeCastExpr` to collect all DUVars embedded within it.
+   *
+   * @param primitiveTypecaseExpr The `PrimitiveTypecastExpr` to be traversed.
+   * @param duVars ListBuffer to be extended with all DUVars found in the expression.
    */
   def collectDUVarFromPrimitiveTypeCastExpr(primitiveTypecaseExpr: PrimitiveTypecastExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
     collectDUVarFromExpr(primitiveTypecaseExpr.operand, duVars)
   }
 
   /**
-   * Helper method to traverse through a StaticFunctionCall Expr and collect the DUVars
-   * @param staticFunctionCallExpr an Expr of type StaticFunctionCall
-   * @param duVars a ListBuffer[DUVar[_]] that is extended with all DUVars of the given method
+   * Traverses a `StaticFunctionCall` expression to collect all DUVars embedded within it.
+   *
+   * @param staticFunctionCallExpr The `StaticFunctionCall` expression to be traversed.
+   * @param duVars ListBuffer to be extended with all DUVars found in the expression.
    */
   def collectDUVarFromStaticFunctionCall(staticFunctionCallExpr: StaticFunctionCall[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
     // Process each parameter and collect from each
@@ -159,9 +177,10 @@ object FirstPass {
   }
 
   /**
-   * Helper method to traverse through a BinaryExpr Expr and collect the DUVars
-   * @param binaryExpr an Expr of type BinaryExpr
-   * @param duVars a ListBuffer[DUVar[_]] that is extended with all DUVars of the given method
+   * Traverses a `BinaryExpr` to collect all DUVars embedded within it.
+   *
+   * @param binaryExpr The `BinaryExpr` to be traversed.
+   * @param duVars ListBuffer to be extended with all DUVars found in the expression.
    */
   def collectDUVarFromBinaryExpr(binaryExpr: BinaryExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
     collectDUVarFromExpr(binaryExpr.left, duVars)
@@ -169,9 +188,10 @@ object FirstPass {
   }
 
   /**
-   * Helper method to traverse through a VirtualFunctionCall Expr and collect the DUVars
-   * @param virtualFunctionCallExpr an Expr of type VirtualFunctionCall
-   * @param duVars a ListBuffer[DUVar[_]] that is extended with all DUVars of the given method
+   * Traverses a `VirtualFunctionCall` expression to collect all DUVars embedded within it.
+   *
+   * @param virtualFunctionCallExpr The `VirtualFunctionCall` expression to be traversed.
+   * @param duVars ListBuffer to be extended with all DUVars found in the expression.
    */
   def collectDUVarFromVirtualMethodCall(virtualFunctionCallExpr: VirtualFunctionCall[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
     collectDUVarFromExpr(virtualFunctionCallExpr.receiver, duVars)
