@@ -16,7 +16,7 @@ import org.opalj.util.InMemoryClassLoader
 import java.io.ByteArrayInputStream
 import java.nio.file.{Files, Paths}
 import org.opalj.tac._
-import org.opalj.tactobc.{ExprProcessor, FirstPass, StmtProcessor}
+import org.opalj.tactobc.{ExprProcessor, FirstPass}
 import org.opalj.value.ValueInformation
 
 import java.io.File
@@ -308,87 +308,16 @@ object TACtoBC {
    * @return An array of bytecode instructions representing the method's functionality
    */
   def translateSingleTACtoBC(tac: AITACode[TACMethodParameter, ValueInformation]): ArrayBuffer[(Int, Instruction)] = {
-    val generatedByteCodeWithPC = ArrayBuffer[(Int, Instruction)]()
     val tacStmts = tac.stmts.zipWithIndex
-    //first pass
+    //first pass -> prepare the LVIndexes to map the Variable to Indexes
     val duVars = mutable.ListBuffer[DUVar[_]]()
     FirstPass.prepareLVIndexes(tacStmts, duVars)
-    //second pass
-    var currentPC = 0
+    //second pass -> generate Bytecode Instructions from TAC Stmts
+    val generatedByteCodeWithPC = ArrayBuffer[(Int, Instruction)]()
     val tacTargetToByteCodePcs = ArrayBuffer[(Int, Int)]()
     val switchCases = ArrayBuffer[(Int, Int)]() // To store switch case targets
-    tacStmts.foreach { case (stmt, _) =>
-      stmt match {
-        case Assignment(_, targetVar, expr) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processAssignment(targetVar, expr, generatedByteCodeWithPC, currentPC)
-        case ArrayStore(_, arrayRef, index, value) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processArrayStore(arrayRef, index, value, generatedByteCodeWithPC, currentPC)
-        case CaughtException(_, exceptionType, throwingStmts) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processCaughtException(exceptionType, throwingStmts, generatedByteCodeWithPC, currentPC)
-        case ExprStmt(_, expr) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = ExprProcessor.processExpression(expr, generatedByteCodeWithPC, currentPC)
-        case If(_, left, condition, right, target) =>
-          tacTargetToByteCodePcs += ((target, currentPC))
-          currentPC = StmtProcessor.processIf(left, condition, right, target, generatedByteCodeWithPC, currentPC)
-        case Goto(_, target) =>
-          tacTargetToByteCodePcs += ((target, currentPC))
-          currentPC = StmtProcessor.processGoto(generatedByteCodeWithPC, currentPC)
-        case Switch(_, defaultTarget, index, npairs) =>
-          npairs.foreach { pair =>
-            switchCases += ((pair._1, pair._2)) //case values to jump target
-          }
-          tacTargetToByteCodePcs += ((defaultTarget, currentPC))
-          currentPC = StmtProcessor.processSwitch(defaultTarget, index, npairs, generatedByteCodeWithPC, currentPC)
-        case JSR(_, target) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processJSR(target, generatedByteCodeWithPC, currentPC)
-        case VirtualMethodCall(_, declaringClass, isInterface, name, descriptor, receiver, params) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processVirtualMethodCall(declaringClass, isInterface, name, descriptor, receiver, params, generatedByteCodeWithPC, currentPC)
-        case NonVirtualMethodCall(_, declaringClass, isInterface, name, descriptor, receiver, params) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processNonVirtualMethodCall(declaringClass, isInterface, name, descriptor, receiver, params, generatedByteCodeWithPC, currentPC)
-        case StaticMethodCall(_, declaringClass, isInterface, name, descriptor, params) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processStaticMethodCall(declaringClass, isInterface, name, descriptor, params, generatedByteCodeWithPC, currentPC)
-        case InvokedynamicMethodCall(_, bootstrapMethod, name, descriptor, params) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processInvokeDynamicMethodCall(bootstrapMethod, name, descriptor, params)
-        case MonitorEnter(_, objRef) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processMonitorEnter(objRef, generatedByteCodeWithPC, currentPC)
-        case MonitorExit(_, objRef) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processMonitorExit(objRef, generatedByteCodeWithPC, currentPC)
-        case PutField(_, declaringClass, name, declaredFieldType, objRef, value) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processPutField(declaringClass, name, declaredFieldType, objRef, value, generatedByteCodeWithPC, currentPC)
-        case PutStatic(_, declaringClass, name, declaredFieldType, value) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processPutStatic(declaringClass, name, declaredFieldType, value, generatedByteCodeWithPC, currentPC)
-        case Checkcast(_, value, cmpTpe) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processCheckCast(value, cmpTpe, generatedByteCodeWithPC, currentPC)
-        case Ret(_, returnAddresses) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processRet(returnAddresses, generatedByteCodeWithPC, currentPC)
-        case ReturnValue(_, expr) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processReturnValue(expr, generatedByteCodeWithPC, currentPC)
-        case Return(_) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processReturn(generatedByteCodeWithPC, currentPC)
-        case Throw(_, exception) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processThrow(exception, generatedByteCodeWithPC, currentPC)
-        case _ =>
-      }
-    }
-    //second pass -> this time through the translated bytecode to calculate the right branching targets
+    SecondPass.translateStmtsToInstructions(tacStmts, generatedByteCodeWithPC, tacTargetToByteCodePcs, switchCases)
+    //third pass -> this time through the translated bytecode to calculate the right branching targets
     val result = ArrayBuffer[(Int, Instruction)]()
     // Index for TAC statements
     var tacTargetToByteCodePcsIndex = 0
