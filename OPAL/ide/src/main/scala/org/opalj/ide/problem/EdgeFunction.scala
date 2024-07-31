@@ -51,7 +51,7 @@ case class IdentityEdgeFunction[Value <: IDEValue]() extends EdgeFunction[Value]
     }
 
     override def equalTo(otherEdgeFunction: EdgeFunction[Value]): Boolean =
-        otherEdgeFunction == this || otherEdgeFunction.isInstanceOf[IdentityEdgeFunction[Value]]
+        (otherEdgeFunction eq this) || otherEdgeFunction.isInstanceOf[IdentityEdgeFunction[Value]]
 }
 
 /**
@@ -66,7 +66,7 @@ abstract case class AllTopEdgeFunction[Value <: IDEValue](private val top: Value
         otherEdgeFunction
 
     override def equalTo(otherEdgeFunction: EdgeFunction[Value]): Boolean =
-        otherEdgeFunction == this ||
+        (otherEdgeFunction eq this) ||
             otherEdgeFunction.isInstanceOf[AllTopEdgeFunction[Value]] &&
             otherEdgeFunction.asInstanceOf[AllTopEdgeFunction[Value]].top == top
 }
@@ -83,7 +83,7 @@ abstract case class AllBottomEdgeFunction[Value <: IDEValue](private val bottom:
         this
 
     override def equalTo(otherEdgeFunction: EdgeFunction[Value]): Boolean =
-        otherEdgeFunction == this ||
+        (otherEdgeFunction eq this) ||
             otherEdgeFunction.isInstanceOf[AllBottomEdgeFunction[Value]] &&
             otherEdgeFunction.asInstanceOf[AllBottomEdgeFunction[Value]].bottom == bottom
 }

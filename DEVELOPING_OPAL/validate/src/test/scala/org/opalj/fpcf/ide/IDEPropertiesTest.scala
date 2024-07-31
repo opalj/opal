@@ -35,7 +35,7 @@ class IDEPropertiesTest extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
-    def getEntryPointsByICFG(icfg: JavaICFG, project: Project[URL]): Set[Method] = {
+    def getEntryPointsByICFG(icfg: JavaICFG, project: Project[URL]): collection.Set[Method] = {
         icfg.getCallablesCallableFromOutside
             .filter { method =>
                 val packageOfEntryPoint = method.classFile.thisType.packageName

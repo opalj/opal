@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ide.solver
 
+import scala.collection.immutable
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ide.solver.ICFG
@@ -13,15 +15,15 @@ class JavaICFG(project: SomeProject) extends ICFG[JavaStatement, Method] {
     // TODO (IDE) CURRENTLY DEPENDS ON IMPLEMENTATION FROM IFDS
     private val baseICFG = new JavaForwardICFG(project)
 
-    override def getStartStatements(callable: Method): Set[JavaStatement] =
+    override def getStartStatements(callable: Method): collection.Set[JavaStatement] =
         baseICFG.startStatements(callable).map {
             case org.opalj.tac.fpcf.analyses.ifds.JavaStatement(method, index, code, cfg) =>
                 JavaStatement(method, index, isReturnNode = false, code, cfg)
         }
 
-    override def getNextStatements(stmt: JavaStatement): Set[JavaStatement] = {
+    override def getNextStatements(stmt: JavaStatement): collection.Set[JavaStatement] = {
         if (isCallStatement(stmt)) {
-            Set(JavaStatement(stmt.method, stmt.index, isReturnNode = true, stmt.code, stmt.cfg))
+            immutable.Set(JavaStatement(stmt.method, stmt.index, isReturnNode = true, stmt.code, stmt.cfg))
         } else {
             baseICFG.nextStatements(
                 org.opalj.tac.fpcf.analyses.ifds.JavaStatement(stmt.method, stmt.index, stmt.code, stmt.cfg)
@@ -47,7 +49,7 @@ class JavaICFG(project: SomeProject) extends ICFG[JavaStatement, Method] {
     }
 
     // TODO (IDE) REFACTOR AS 'getCallees(...): Set[Method]'
-    override def getCalleesIfCallStatement(stmt: JavaStatement): Option[Set[Method]] = {
+    override def getCalleesIfCallStatement(stmt: JavaStatement): Option[collection.Set[Method]] = {
         if (stmt.isReturnNode) {
             None
         } else {
@@ -70,7 +72,7 @@ class JavaICFG(project: SomeProject) extends ICFG[JavaStatement, Method] {
 
     override def getCallable(stmt: JavaStatement): Method = stmt.method
 
-    def getCallablesCallableFromOutside: Set[Method] = {
+    def getCallablesCallableFromOutside: collection.Set[Method] = {
         baseICFG.methodsCallableFromOutside.map { declaredMethod => declaredMethod.asDefinedMethod.definedMethod }
     }
 

@@ -10,12 +10,12 @@ trait ICFG[Statement, Callable <: Entity] {
     /**
      * Get all statements a callable can be entered at
      */
-    def getStartStatements(callable: Callable): Set[Statement]
+    def getStartStatements(callable: Callable): collection.Set[Statement]
 
     /**
      * Get all statements that can directly follow the given one
      */
-    def getNextStatements(stmt: Statement): Set[Statement]
+    def getNextStatements(stmt: Statement): collection.Set[Statement]
 
     /**
      * Check whether a statement exits a callable in a normal way (e.g. with a return)
@@ -35,7 +35,7 @@ trait ICFG[Statement, Callable <: Entity] {
     /**
      * Get all possible callees a call statement could call
      */
-    def getCalleesIfCallStatement(stmt: Statement): Option[Set[? <: Callable]]
+    def getCalleesIfCallStatement(stmt: Statement): Option[collection.Set[? <: Callable]]
 
     /**
      * Get the callable a statement belongs to

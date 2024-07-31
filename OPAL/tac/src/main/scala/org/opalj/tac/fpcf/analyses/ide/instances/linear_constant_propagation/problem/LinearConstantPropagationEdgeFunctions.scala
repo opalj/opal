@@ -82,7 +82,7 @@ case class LinearCombinationEdgeFunction(
     }
 
     override def equalTo(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean = {
-        otherEdgeFunction == this ||
+        (otherEdgeFunction eq this) ||
         (otherEdgeFunction match {
             case LinearCombinationEdgeFunction(a2, b2, c2) => a == a2 && b == b2 && c == c2
             case _                                         => false

@@ -173,7 +173,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
 
         def getEndSummaries(start: Node): collection.Set[(Node, JumpFunction)] = {
-            endSummaries.getOrElse(start, Set.empty)
+            endSummaries.getOrElse(start, immutable.Set.empty)
         }
 
         def rememberCallable(callable: Callable): Unit = {
@@ -192,7 +192,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
 
         def lookupCallSourcesForTarget(target: Statement, targetFact: Fact): collection.Set[Node] = {
-            callTargetsToSources.getOrElse((target, targetFact), Set.empty)
+            callTargetsToSources.getOrElse((target, targetFact), immutable.Set.empty)
         }
 
         def enqueueNode(node: Node): Unit = {
@@ -276,8 +276,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             dependees.values.map(_._1).toSet
         }
 
-        def getAndRemoveDependeeContinuations(eOptionP: SomeEOptionP): Set[() => Unit] = {
-            dependees.remove(eOptionP.toEPK).map(_._2).getOrElse(Set.empty).toSet
+        def getAndRemoveDependeeContinuations(eOptionP: SomeEOptionP): collection.Set[() => Unit] = {
+            dependees.remove(eOptionP.toEPK).map(_._2).getOrElse(immutable.Set.empty).toSet
         }
     }
 
@@ -414,14 +414,14 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     InterimResult.forUB(
                         callable,
                         propertyForExit,
-                        Set.empty,
+                        immutable.Set.empty,
                         _ => { throw new IllegalStateException() }
                     )
                 ) ++ propertiesByStatement.map { case (stmt, property) =>
                     InterimResult.forUB(
                         (callable, stmt),
                         property,
-                        Set.empty,
+                        immutable.Set.empty,
                         _ => { throw new IllegalStateException() }
                     )
                 }
@@ -771,7 +771,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         val (n, d) = node
 
         // IDE P2 line 8
-        val cs = collectReachableStmts(collection.Set(n), stmt => icfg.isCallStatement(stmt))
+        val cs = collectReachableStmts(immutable.Set(n), stmt => icfg.isCallStatement(stmt))
 
         // IDE P2 lines 9 - 10
         cs.foreach { c =>
