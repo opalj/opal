@@ -185,8 +185,8 @@ sealed trait Type extends UIDValue with Ordered[Type] {
     def toJava: String
 
     /**
-     * Returns the binary name of this type as used by the Java runtime. Basically
-     * returns the same name as produced by `Class.getName`.
+     * Returns the binary name of this type as used by the Java runtime.
+     * Returns the same name as produced by `Class.getName`.
      */
     def toBinaryJavaName: String = toJava
 
