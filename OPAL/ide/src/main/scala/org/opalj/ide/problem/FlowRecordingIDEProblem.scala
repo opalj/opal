@@ -38,7 +38,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
     /**
      * Wrapper class for flow functions doing the actual recording
      */
-    private class RecodingFlowFunction(
+    private class RecordingFlowFunction(
             baseFlowFunction: FlowFunction[Fact],
             val source:       Statement,
             val target:       Statement,
@@ -66,7 +66,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
     override def getNormalFlowFunction(source: Statement, target: Statement)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact] = {
-        new RecodingFlowFunction(baseProblem.getNormalFlowFunction(source, target), source, target, "normal flow")
+        new RecordingFlowFunction(baseProblem.getNormalFlowFunction(source, target), source, target, "normal flow")
     }
 
     override def getCallFlowFunction(
@@ -74,7 +74,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         calleeEntry: Statement,
         callee:      Callable
     )(implicit propertyStore: PropertyStore): FlowFunction[Fact] = {
-        new RecodingFlowFunction(
+        new RecordingFlowFunction(
             baseProblem.getCallFlowFunction(callSite, calleeEntry, callee),
             callSite,
             calleeEntry,
@@ -87,7 +87,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         callee:     Callable,
         returnSite: Statement
     )(implicit propertyStore: PropertyStore): FlowFunction[Fact] = {
-        new RecodingFlowFunction(
+        new RecordingFlowFunction(
             baseProblem.getReturnFlowFunction(calleeExit, callee, returnSite),
             calleeExit,
             returnSite,
@@ -98,7 +98,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
     override def getCallToReturnFlowFunction(callSite: Statement, callee: Callable, returnSite: Statement)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact] = {
-        new RecodingFlowFunction(
+        new RecordingFlowFunction(
             baseProblem.getCallToReturnFlowFunction(callSite, callee, returnSite),
             callSite,
             returnSite,
@@ -127,7 +127,8 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         calleeEntryFact: Fact,
         callee:          Callable
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
-        val edgeFunctionResult = baseProblem.getCallEdgeFunction(callSite, callSiteFact, calleeEntry, calleeEntryFact, callee)
+        val edgeFunctionResult =
+            baseProblem.getCallEdgeFunction(callSite, callSiteFact, calleeEntry, calleeEntryFact, callee)
         collectedEdgeFunctions.put(
             createDotEdge(callSite, callSiteFact, calleeEntry, calleeEntryFact, "call flow"),
             getEdgeFunctionFromEdgeFunctionResult(edgeFunctionResult)

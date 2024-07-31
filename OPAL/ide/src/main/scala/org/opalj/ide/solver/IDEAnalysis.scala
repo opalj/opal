@@ -338,7 +338,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             logDebug("finished phase 1")
             true
         } else {
-            logDebug(s"there are ${s.getDependeesSize} outstanding dependees")
+            logDebug(s"there is/are ${s.getDependeesSize} outstanding dependee(s)")
             logDebug("pausing phase 1")
             false
         }
@@ -357,7 +357,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             logDebug("finished phase 1")
             true
         } else {
-            logDebug(s"there are ${s.getDependeesSize} outstanding dependees left")
+            logDebug(s"there is/are ${s.getDependeesSize} outstanding dependee(s) left")
             logDebug("pausing phase 1 again")
             false
         }
