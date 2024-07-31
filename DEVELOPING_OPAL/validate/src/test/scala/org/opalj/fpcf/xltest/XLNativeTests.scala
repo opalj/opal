@@ -7,16 +7,10 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
 import org.opalj.fpcf.PropertiesTest
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.SomeEPS
-import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.SimpleContext
-import org.opalj.br.fpcf.properties.pointsto.{AllocationSitePointsToSet, PointsToSetLike}
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
 import org.scalatest.tools.Runner
@@ -26,13 +20,14 @@ import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorSchedul
 object RunXLNativeTests {
     def main(args: Array[String]): Unit = {
         //val test = new XLJavaScriptTests()
-        Runner.run(Array("-s", "org.opalj.fpcf.xltest.XLNativeTests"))
+        Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporter", "-s", "org.opalj.fpcf.xltest.XLNativeTests"))
     }
 }
 
 /**
  * Tests XL interaction by validating Points-to-sets
  *
+ * @author Julius Naeumann
  * @author Tobias Roth
  */
 class XLNativeTests extends PropertiesTest {
@@ -40,16 +35,14 @@ class XLNativeTests extends PropertiesTest {
     override def withRT = false
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/xl/llvm/controlflow/")
+        List("org/opalj/fpcf/fixtures/xl/llvm/")
     }
 
     override def createConfig(): Config = ConfigFactory.load("reference.conf")
 
     override def init(p: Project[URL]): Unit = {
 
-        p.updateProjectInformationKeyInitializationData(TypeIteratorKey) {
-            case _ => () => new AllocationSitesPointsToTypeIterator(p)
-        }
+        p.updateProjectInformationKeyInitializationData(TypeIteratorKey)(_ => new AllocationSitesPointsToTypeIterator(p))
     }
     def addAnalyses(): Iterable[FPCFAnalysisScheduler] = {
         Iterable(
@@ -72,7 +65,7 @@ class XLNativeTests extends PropertiesTest {
         )
 
         as.propertyStore.shutdown()
-
+        /*
         val filter: SomeEPS => Boolean = _ => true
         val allEntities = as.propertyStore.entities(propertyFilter = filter).toList
 
@@ -84,12 +77,10 @@ class XLNativeTests extends PropertiesTest {
             val contextP = properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).
                 map(_.asInstanceOf[PointsToSetLike[_, _, _]])
 
-            println(contextP)
         }
         val definedMethods = allEntities.filter(_.isInstanceOf[DefinedMethod]).map(_.asInstanceOf[DefinedMethod])
 
         val allContexts = allEntities.filter(_.isInstanceOf[SimpleContext]).map(_.asInstanceOf[SimpleContext])
-        println((allEntities, definedMethods, allContexts))
 
         for (c <- allContexts) {
             val epss = as.propertyStore.properties(c).toIndexedSeq
@@ -98,7 +89,6 @@ class XLNativeTests extends PropertiesTest {
             val contextP = properties.find(_.isInstanceOf[PointsToSetLike[_, _, _]]).
                 map(_.asInstanceOf[PointsToSetLike[_, _, _]])
 
-            println(contextP)
         }
         val _ = as.project.allProjectClassFiles.flatMap(_.methods)
         implicit val ps: PropertyStore = as.propertyStore
@@ -111,6 +101,7 @@ class XLNativeTests extends PropertiesTest {
             println("points to sets: ")
             println(pts)
         }
+        */
         validateProperties(as, methodsWithAnnotations(as.project), Set("PointsToSetIncludes"))
     }
 }

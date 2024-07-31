@@ -3,31 +3,25 @@ package org.opalj
 package fpcf
 package xltest
 
-import java.net.URL
-
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
-
-import org.opalj.fpcf.PropertiesTest
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.SomeEPS
+import com.typesafe.config.{Config, ConfigFactory}
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.pointsto.{AllocationSitePointsToSet, PointsToSetLike}
+import org.opalj.br.fpcf.{ContextProviderKey, FPCFAnalysisScheduler}
+import org.opalj.fpcf.{PropertiesTest, PropertyStore, SomeEPS}
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
-import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
+import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
+import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 import org.scalatest.Reporter
 import org.scalatest.events.{Event, SuiteCompleted, TestFailed, TestSucceeded}
 import org.scalatest.tools.Runner
-import scala.util.matching.Regex
 
-import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
+import java.net.URL
+import scala.util.matching.Regex
 
 object RunXLTests {
     def main(args: Array[String]): Unit = {
@@ -53,7 +47,7 @@ class MyCustomReporter extends Reporter {
         }
     }
     def extractClassname(testname: String): Option[String] = {
-        val regex = new Regex("test JavaScript XL points-to-sets ([a-zA-Z0-9\\._]*)\\{.+")
+        val regex = new Regex("test .* points-to-sets ([a-zA-Z0-9\\._]*)\\{.+")
         regex.findFirstMatchIn(testname).map(_.group(1))
     }
     def extractCategory(testcase: String): Option[String] = {
@@ -126,10 +120,7 @@ class XLJavaScriptTests extends PropertiesTest {
     override def createConfig(): Config = ConfigFactory.load("reference.conf")
 
     override def init(p: Project[URL]): Unit = {
-
-        p.updateProjectInformationKeyInitializationData(ContextProviderKey) {
-            case _ => () => new AllocationSitesPointsToTypeIterator(p)
-        }
+        p.updateProjectInformationKeyInitializationData(ContextProviderKey)(_ => new AllocationSitesPointsToTypeIterator(p))
     }
     def addAnalyses(): Iterable[FPCFAnalysisScheduler] = {
         Iterable(
