@@ -3,14 +3,17 @@ package org.opalj.ide.solver
 
 import scala.annotation.unused
 
+import scala.collection.immutable
 import scala.collection.mutable
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
@@ -220,25 +223,38 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             values.clear()
         }
 
-        def collectResults(callable: Callable, stmt: Option[Statement]): collection.Set[(Fact, Value)] = {
-            val relevantValues = stmt match {
-                case Some(statement) =>
-                    values.filter { case ((n, d), _) => n == statement && d != problem.nullFact }
-                case None =>
-                    values.filter { case ((n, d), _) =>
-                        icfg.getCallable(n) == callable && icfg.isNormalExitStatement(n) && d != problem.nullFact
-                    }
-            }
+        /**
+         * @return a map from statements to results and the results for the callable in total
+         */
+        def collectResults(callable: Callable): (
+            collection.Map[Statement, collection.Set[(Fact, Value)]],
+            collection.Set[(Fact, Value)]
+        ) = {
+            val relevantValues = values
+                .filter { case ((n, d), _) =>
+                    icfg.getCallable(n) == callable && d != problem.nullFact
+                }
 
-            relevantValues
-                .groupMapReduce {
-                    case ((_, d), _) => d
-                } {
-                    case (_, value) => value
-                } {
+            val resultsByStatement = relevantValues
+                .groupMap(_._1._1) { case ((_, d), value) => (d, value) }
+                .map { case (n, dValuePairs) =>
+                    (
+                        n,
+                        dValuePairs.groupMapReduce(_._1)(_._2) { (value1, value2) =>
+                            problem.lattice.meet(value1, value2)
+                        }.toSet
+                    )
+                }
+
+            val resultsForExit = resultsByStatement
+                .filter { case (n, _) => icfg.isNormalExitStatement(n) }
+                .flatMap(_._2.toList)
+                .groupMapReduce(_._1)(_._2) {
                     (value1, value2) => problem.lattice.meet(value1, value2)
                 }
                 .toSet
+
+            (resultsByStatement, resultsForExit)
         }
 
         def addDependee(eOptionP: SomeEOptionP, c: () => Unit): Unit = {
@@ -293,24 +309,20 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
     /**
      * Run the IDE solver and calculate (and return) the result
-     * @param entity either only a callable or a pair of callable and statement that should be analyzed (if no statement
-     *               is given, the result for all exit statements is calculated)
+     * @param callable the callable that should be analyzed
+     * @return a result for each statement of the callable plus a result for the callable itself (combining the results
+     *         of all exit statements)
      */
     // TODO (IDE) WHAT HAPPENS WHEN ANALYZING MULTIPLE CALLABLES? CAN WE CACHE E.G. JUMP/SUMMARY FUNCTIONS?
-    def performAnalysis(entity: Entity): ProperPropertyComputationResult = {
-        logDebug(s"performing ${getClass.getSimpleName} for $entity")
-
-        val (callable, stmt) = entity match {
-            case (c: Entity, s: Entity) => (c.asInstanceOf[Callable], Some(s.asInstanceOf[Statement]))
-            case c                      => (c.asInstanceOf[Callable], None)
-        }
+    def performAnalysis(callable: Callable): ProperPropertyComputationResult = {
+        logDebug(s"performing ${getClass.getSimpleName} for $callable")
 
         implicit val state: State = new State
 
         performPhase1(callable)
         performPhase2(callable)
 
-        createResult(entity, callable, stmt)
+        createResult(callable)
     }
 
     /**
@@ -369,42 +381,68 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         logDebug("finished phase 2")
     }
 
-    // TODO (IDE) REMOVE/SIMPLIFY PARAMETERS WHEN USING MultiResult/Results
-    private def createResult(entity: Entity, callable: Callable, stmt: Option[Statement])(
+    private def createResult(callable: Callable)(
         implicit s: State
     ): ProperPropertyComputationResult = {
         logDebug("starting creation of properties")
 
-        val property = propertyMetaInformation.createProperty(s.collectResults(callable, stmt))
+        val (resultsByStatement, resultsForExit) = s.collectResults(callable)
+        val propertiesByStatement = resultsByStatement.map { case (stmt, results) =>
+            (stmt, propertyMetaInformation.createProperty(results))
+        }
+        val propertyForExit = propertyMetaInformation.createProperty(resultsForExit)
 
         logDebug("finished creation of properties")
 
         if (s.areDependeesEmpty) {
-            Result(entity, property)
+            logDebug("creating final results")
+            Results(
+                Iterable(
+                    Result(callable, propertyForExit)
+                ) ++ propertiesByStatement.map { case (stmt, property) =>
+                    Result((callable, stmt), property)
+                }
+            )
         } else {
-            InterimResult.forUB(
-                entity,
-                property,
-                s.getDependees.toSet,
-                onDependeeUpdateContinuation(entity, callable, stmt)
+            logDebug("creating interim results")
+            Results(
+                Iterable(
+                    InterimPartialResult(
+                        s.getDependees.toSet,
+                        onDependeeUpdateContinuation(callable)
+                    ),
+                    InterimResult.forUB(
+                        callable,
+                        propertyForExit,
+                        Set.empty,
+                        _ => { throw new IllegalStateException() }
+                    )
+                ) ++ propertiesByStatement.map { case (stmt, property) =>
+                    InterimResult.forUB(
+                        (callable, stmt),
+                        property,
+                        Set.empty,
+                        _ => { throw new IllegalStateException() }
+                    )
+                }
             )
         }
     }
 
-    private def onDependeeUpdateContinuation(
-        entity:   Entity,
-        callable: Callable,
-        stmt:     Option[Statement]
-    )(eps: SomeEPS)(implicit s: State): ProperPropertyComputationResult = {
-        // Call and remove all continuations that are remembered for the EPS
+    private def onDependeeUpdateContinuation(callable: Callable)(eps: SomeEPS)(
+        implicit s: State
+    ): ProperPropertyComputationResult = {
+        // Get and remove all continuations that are remembered for the EPS
         val cs = s.getAndRemoveDependeeContinuations(eps)
+
+        // Call continuations
         cs.foreach(c => c())
 
         // The continuations can have enqueued paths to the path work list
         continuePhase1()
         performPhase2(callable)
 
-        createResult(entity, callable, stmt)
+        createResult(callable)
     }
 
     private def seedPhase1(callable: Callable)(implicit s: State): Unit = {

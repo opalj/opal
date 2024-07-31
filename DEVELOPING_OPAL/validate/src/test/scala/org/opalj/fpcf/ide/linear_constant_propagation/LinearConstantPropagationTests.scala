@@ -21,6 +21,7 @@ class LinearConstantPropagationTests extends IDEPropertiesTest {
                     .foreach { method => testContext.propertyStore.force(method, analysis.propertyMetaInformation.key) }
         }
 
+        testContext.propertyStore.waitOnPhaseCompletion()
         testContext.propertyStore.shutdown()
 
         validateProperties(
