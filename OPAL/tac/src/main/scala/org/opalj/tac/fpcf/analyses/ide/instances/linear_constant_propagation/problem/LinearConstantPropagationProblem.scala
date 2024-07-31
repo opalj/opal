@@ -11,7 +11,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FlowFunction
-import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.MeetLattice
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.Assignment
@@ -33,8 +32,6 @@ class LinearConstantPropagationProblem(project: SomeProject)
     extends JavaIDEProblem[LinearConstantPropagationFact, LinearConstantPropagationValue](
         new JavaICFG(project)
     ) {
-    private val identityEdgeFunction = new IdentityEdgeFunction[LinearConstantPropagationValue]
-
     override val nullFact: LinearConstantPropagationFact =
         NullFact
 
@@ -158,7 +155,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
 
                             /* Parameters and their types (excluding the implicit 'this' reference) */
                             val params = callStmt.params
-                            val paramTypes = callee.descriptor.parameterTypes
+                            val paramTypes = callee.parameterTypes
 
                             params
                                 .zipWithIndex

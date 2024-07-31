@@ -20,6 +20,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         FinalEdgeFunction(edgeFunction)
     }
 
+    protected val identityEdgeFunction = new IdentityEdgeFunction[Value]
+
     /**
      * The null fact to use. Also used to bootstrap the analysis at the entry points.
      */
