@@ -63,6 +63,12 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
 
     override val lattice: MeetLattice[Value] = baseProblem.lattice
 
+    override def getAdditionalSeeds(stmt: Statement, callee: Callable)(
+        implicit propertyStore: PropertyStore
+    ): collection.Set[Fact] = {
+        baseProblem.getAdditionalSeeds(stmt, callee)
+    }
+
     override def getNormalFlowFunction(source: Statement, target: Statement)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact] = {

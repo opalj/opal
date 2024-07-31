@@ -7,6 +7,8 @@ import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValues;
 
 public class PropagationAcrossMethodsExample {
+    @VariableValue(variable = "param2")
+    @VariableValue(variable = "param3")
     public int linearCalculation1(String msg, int a, int b) {
         System.out.println(msg + ": " + a);
         return 42 - 5 * b;

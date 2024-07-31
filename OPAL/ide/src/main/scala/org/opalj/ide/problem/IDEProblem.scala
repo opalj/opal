@@ -1,7 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ide.problem
 
+import scala.annotation.unused
 import scala.language.implicitConversions
+
+import scala.collection.immutable
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
@@ -26,6 +29,17 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * The lattice that orders the used values
      */
     val lattice: MeetLattice[Value]
+
+    /**
+     * Add additional facts that the analysis should be seeded with. Traditionally, IDE starts with the null fact at the
+     * start statements of the callable. E.g. additional seeds can be used for adding facts about the parameters of the
+     * analyzed callable.
+     * @param stmt the start statement
+     * @param callee the analyzed callable
+     */
+    def getAdditionalSeeds(stmt: Statement, callee: Callable)(
+        implicit @unused propertyStore: PropertyStore
+    ): collection.Set[Fact] = immutable.Set.empty
 
     /**
      * Generate a flow function for a normal flow

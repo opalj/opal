@@ -453,6 +453,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             val path = ((stmt, problem.nullFact), (stmt, problem.nullFact))
             s.enqueuePath(path)
             s.setJumpFunction(path, identityEdgeFunction)
+
+            problem.getAdditionalSeeds(stmt, callable).foreach { fact =>
+                val path = ((stmt, problem.nullFact), (stmt, fact))
+                s.enqueuePath(path)
+                s.setJumpFunction(path, identityEdgeFunction)
+            }
         }
 
         logDebug(s"seeded with ${s.getPathWorkListSize} path(s)")

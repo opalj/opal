@@ -41,6 +41,16 @@ class LinearConstantPropagationProblem(project: SomeProject)
     override val lattice: MeetLattice[LinearConstantPropagationValue] =
         LinearConstantPropagationLattice
 
+    override def getAdditionalSeeds(stmt: JavaStatement, callee: Method)(
+        implicit propertyStore: PropertyStore
+    ): collection.Set[LinearConstantPropagationFact] = {
+        callee.parameterTypes
+            .zipWithIndex
+            .filter { case (paramType, _) => paramType.isIntegerType }
+            .map { case (_, index) => VariableFact(s"param${index + 1}", -(index + 2)) }
+            .toSet
+    }
+
     override def getNormalFlowFunction(
         source: JavaStatement,
         target: JavaStatement
