@@ -128,9 +128,6 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         implicit val state: AnalysisState = createState(field)
 
-        val fieldName = field.name
-        println(fieldName)
-
         state.fieldAssignability =
             if (field.isFinal)
                 NonAssignable
