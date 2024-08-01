@@ -121,7 +121,6 @@ object StmtProcessor {
 
   def processArrayStore(arrayRef: Expr[_], index: Expr[_], value: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     //todo: handle this correctly
-    // Load the array reference onto the stack
     val pcAfterArrayRefLoad = ExprProcessor.processExpression(arrayRef, instructionsWithPCs, currentPC)
 
     // Load the index onto the stack
@@ -201,16 +200,18 @@ object StmtProcessor {
   }
 
   def processMonitorEnter(objRef: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: look what to do with the objRef :)
+    // Load the object reference onto the stack
+    val pcAfterObjRefLoad = ExprProcessor.processExpression(objRef, instructionsWithPCs, currentPC)
     val instruction = MONITORENTER
-    instructionsWithPCs += ((currentPC, instruction))
-    currentPC + instruction.length
+    instructionsWithPCs += ((pcAfterObjRefLoad, instruction))
+    pcAfterObjRefLoad + instruction.length
   }
   def processMonitorExit(objRef: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: look what to do with the objRef :)
+    // Load the object reference onto the stack
+    val pcAfterObjRefLoad = ExprProcessor.processExpression(objRef, instructionsWithPCs, currentPC)
     val instruction = MONITOREXIT
-    instructionsWithPCs += ((currentPC, instruction))
-    currentPC + instruction.length
+    instructionsWithPCs += ((pcAfterObjRefLoad, instruction))
+    pcAfterObjRefLoad + instruction.length
   }
 
   def processJSR(target: Int, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {

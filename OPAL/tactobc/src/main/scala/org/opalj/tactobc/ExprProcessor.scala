@@ -44,9 +44,6 @@ object ExprProcessor {
       instructionsWithPCs += ((currentAfterCountsPC, instruction))
       return currentAfterCountsPC + instruction.length
     }
-    //todo: handle the differenciation between:
-    //NEWARRAY, ANEWARRAY and MULTIANEWARRAY (done)
-    //val instruction = NEWARRAY(newArrayExpr.tpe.id)
     val instruction = newArrayExpr.tpe.componentType match {
       case _: ReferenceType => ANEWARRAY(newArrayExpr.tpe)
       case _: BooleanType => NEWARRAY(BooleanType.atype)
@@ -296,16 +293,10 @@ object ExprProcessor {
           case 3 => ASTORE_3
           case _ => ASTORE(index)
         }
-        //todo: handle AASTORE
         case _ => throw new UnsupportedOperationException("Unsupported computational type for storing variable" + variable)
       }
     instructionsWithPCs += ((currentPC, storeInstruction))
     currentPC + (if (index < 4) 1 else 2)
-  }
-
-  //todo: probably get rid of this :)
-  def handleArrayStore(variable: Var[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    1
   }
 
   private def handleFieldAccess(fieldExpr: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
