@@ -191,10 +191,13 @@ object StmtProcessor {
   }
 
   def processPutField(declaringClass: ObjectType, name: String, declaredFieldType: FieldType, objRef: Expr[_], value: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: look what to do with the value AND the objRef :)
+    // Load the object reference onto the stack
+    val pcAfterObjRefLoad = ExprProcessor.processExpression(objRef, instructionsWithPCs, currentPC)
+    // Load the value to be stored onto the stack
+    val pcAfterValueLoad = ExprProcessor.processExpression(value, instructionsWithPCs, pcAfterObjRefLoad)
     val instruction = PUTFIELD(declaringClass, name, declaredFieldType)
-    instructionsWithPCs += ((currentPC, instruction))
-    currentPC + instruction.length
+    instructionsWithPCs += ((pcAfterValueLoad, instruction))
+    pcAfterValueLoad + instruction.length
   }
 
   def processMonitorEnter(objRef: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
