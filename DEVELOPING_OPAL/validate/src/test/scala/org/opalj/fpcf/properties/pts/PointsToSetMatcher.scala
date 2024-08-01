@@ -8,14 +8,13 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.{Project, VirtualFormalParameter}
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.{AllocationSitePointsToSet, longToAllocationSite}
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
-import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
 
 import scala.collection.immutable.ArraySeq
 import org.opalj.br.fpcf.properties.NoContext

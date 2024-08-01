@@ -4,11 +4,11 @@ package org.opalj.fpcf.properties.xl
 import org.opalj.br._
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.{FinalEP, Property, PropertyStore}
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
-import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
 import org.opalj.xl.Coordinator.ScriptEngineInstance
 import org.opalj.xl.utility.AnalysisResult
 import org.opalj.xl.utility.InterimAnalysisResult
