@@ -3,10 +3,10 @@ package org.opalj.tactobc
 
 import org.opalj.BinaryArithmeticOperators.{Add, And, Divide, Modulo, Multiply, Or, ShiftLeft, ShiftRight, Subtract, UnsignedShiftRight, XOr}
 import org.opalj.br.{ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FloatType, IntegerType, LongType, ObjectType, ShortType}
-import org.opalj.br.instructions.{ALOAD, ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3, ASTORE, ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3, BIPUSH, D2F, D2I, D2L, DADD, DCONST_0, DCONST_1, DDIV, DLOAD, DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3, DMUL, DREM, DSTORE, DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3, DSUB, F2D, F2I, F2L, FADD, FCONST_0, FCONST_1, FCONST_2, FDIV, FLOAD, FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3, FMUL, FREM, FSTORE, FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3, FSUB, GETFIELD, GETSTATIC, I2B, I2C, I2D, I2F, I2L, I2S, IADD, IAND, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, ICONST_M1, IDIV, ILOAD, ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3, IMUL, INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, IOR, IREM, ISHL, ISHR, ISTORE, ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3, ISUB, IUSHR, IXOR, Instruction, L2D, L2F, L2I, LADD, LAND, LCONST_0, LCONST_1, LDIV, LLOAD, LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3, LMUL, LOR, LREM, LSHL, LSHR, LSTORE, LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3, LSUB, LUSHR, LXOR, LoadClass, LoadDouble, LoadFloat, LoadInt, LoadLong, LoadMethodHandle, LoadMethodType, LoadString, NEW, SIPUSH}
+import org.opalj.br.instructions.{AALOAD, ALOAD, ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3, ANEWARRAY, ARRAYLENGTH, ASTORE, ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3, BIPUSH, D2F, D2I, D2L, DADD, DALOAD, DCONST_0, DCONST_1, DDIV, DLOAD, DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3, DMUL, DREM, DSTORE, DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3, DSUB, F2D, F2I, F2L, FADD, FALOAD, FCONST_0, FCONST_1, FCONST_2, FDIV, FLOAD, FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3, FMUL, FREM, FSTORE, FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3, FSUB, GETFIELD, GETSTATIC, I2B, I2C, I2D, I2F, I2L, I2S, IADD, IALOAD, IAND, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, ICONST_M1, IDIV, ILOAD, ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3, IMUL, INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, IOR, IREM, ISHL, ISHR, ISTORE, ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3, ISUB, IUSHR, IXOR, Instruction, L2D, L2F, L2I, LADD, LALOAD, LAND, LCONST_0, LCONST_1, LDIV, LLOAD, LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3, LMUL, LOR, LREM, LSHL, LSHR, LSTORE, LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3, LSUB, LUSHR, LXOR, LoadClass, LoadDouble, LoadFloat, LoadInt, LoadLong, LoadMethodHandle, LoadMethodType, LoadString, NEW, NEWARRAY, SIPUSH}
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{BinaryExpr, ClassConst, Const, DVar, DoubleConst, Expr, FloatConst, GetField, GetStatic, IntConst, LongConst, MethodHandleConst, MethodTypeConst, New, PrimitiveTypecastExpr, StaticFunctionCall, StringConst, UVar, Var, VirtualFunctionCall}
+import org.opalj.tac.{ArrayLength, ArrayLoad, BinaryExpr, ClassConst, Const, DVar, DoubleConst, Expr, FloatConst, GetField, GetStatic, IntConst, LongConst, MethodHandleConst, MethodTypeConst, New, NewArray, PrimitiveTypecastExpr, StaticFunctionCall, StringConst, UVar, Var, VirtualFunctionCall}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -24,9 +24,60 @@ object ExprProcessor {
       case staticFunctionCallExpr: StaticFunctionCall[_] => handleStaticFunctionCall(staticFunctionCallExpr, instructionsWithPCs, currentPC)
       case newExpr: New => handleNewExpr(newExpr.tpe, instructionsWithPCs, currentPC)
       case primitiveTypecaseExpr: PrimitiveTypecastExpr[_] => handlePrimitiveTypeCastExpr(primitiveTypecaseExpr, instructionsWithPCs, currentPC)
+      case arrayLength: ArrayLength[_] => handleArrayLength(arrayLength, instructionsWithPCs, currentPC)
+      case arrayLoadExpr: ArrayLoad[_] => handleArrayLoad(arrayLoadExpr, instructionsWithPCs, currentPC)
+      case newArrayExpr: NewArray[_] => handleNewArray(newArrayExpr, instructionsWithPCs, currentPC)
       case _ =>
         throw new UnsupportedOperationException("Unsupported expression type" + expr)
     }
+  }
+
+  def handleNewArray(newArrayExpr: NewArray[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    // Initialize the PC after processing the counts
+    var currentAfterCountsPC = currentPC
+
+    // Process each parameter and update the PC accordingly
+    for (count <- newArrayExpr.counts) {
+      currentAfterCountsPC = ExprProcessor.processExpression(count, instructionsWithPCs, currentAfterCountsPC)
+    }
+    //todo: handle the differenciation between:
+    //NEWARRAY, ANEWARRAY and MULTIANEWARRAY
+    //val instruction = NEWARRAY(newArrayExpr.tpe.id)
+    val instruction = newArrayExpr.tpe.elementType.computationalType match {
+      case ComputationalTypeReference => ANEWARRAY(newArrayExpr.tpe)
+      case _ => NEWARRAY
+    }
+    instructionsWithPCs += ((currentAfterCountsPC, instruction))
+    currentAfterCountsPC + instruction.length
+  }
+
+  def handleArrayLoad(arrayLoadExpr: ArrayLoad[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    // Load the array reference onto the stack
+    val pcAfterArrayRefLoad = processExpression(arrayLoadExpr.arrayRef, instructionsWithPCs, currentPC)
+    // Load the index onto the stack
+    val pcAfterIndexLoad = processExpression(arrayLoadExpr.index, instructionsWithPCs, pcAfterArrayRefLoad)
+    val instruction = arrayLoadExpr.arrayRef.cTpe match {
+      case ComputationalTypeInt => IALOAD
+      case ComputationalTypeLong => LALOAD
+      case ComputationalTypeFloat => FALOAD
+      case ComputationalTypeDouble => DALOAD
+      //Todo: look how to compare with primitives (?)
+      //case ComputationalType => BALOAD
+      //case Compu => CALOAD
+      //case C => SALOAD
+      case ComputationalTypeReference => AALOAD
+      case _ => throw new IllegalArgumentException("Unsupported array load type")
+    }
+    instructionsWithPCs += ((pcAfterIndexLoad, instruction))
+    pcAfterIndexLoad + instruction.length
+  }
+
+  def handleArrayLength(arrayLength: ArrayLength[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    // Process the receiver object (e.g., aload_0 for `this`)
+    val afterReceiverPC = ExprProcessor.processExpression(arrayLength.arrayRef, instructionsWithPCs, currentPC)
+    val instruction = ARRAYLENGTH
+    instructionsWithPCs += ((afterReceiverPC, instruction))
+    afterReceiverPC + instruction.length
   }
 
   def handleNewExpr(tpe: ObjectType, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
@@ -240,6 +291,7 @@ object ExprProcessor {
     currentPC + (if (index < 4) 1 else 2)
   }
 
+  //todo: probably get rid of this :)
   def handleArrayStore(variable: Var[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     1
   }

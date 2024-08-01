@@ -1,7 +1,7 @@
 package org.opalj.tactobc
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{Assignment, BinaryExpr, DUVar, Expr, If, NonVirtualMethodCall, PrimitiveTypecastExpr, PutField, ReturnValue, StaticFunctionCall, Stmt, UVar, VirtualFunctionCall, VirtualMethodCall}
+import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, DUVar, Expr, ExprStmt, If, NewArray, NonVirtualMethodCall, PrimitiveTypecastExpr, PutField, ReturnValue, StaticFunctionCall, Stmt, UVar, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tactobc.ExprProcessor.{nextLVIndex, uVarToLVIndex}
 import org.opalj.value.ValueInformation
 
@@ -53,6 +53,12 @@ object FirstPass {
             collectDUVarFromExpr(param, duVars)
           }
         case ReturnValue(_, expr) =>
+          collectDUVarFromExpr(expr, duVars)
+        case ArrayStore(_, arrayRef, index, value) =>
+          collectDUVarFromExpr(arrayRef, duVars)
+          collectDUVarFromExpr(index, duVars)
+          collectDUVarFromExpr(value, duVars)
+        case ExprStmt(_, expr) =>
           collectDUVarFromExpr(expr, duVars)
         case _ =>
       }
@@ -149,8 +155,39 @@ object FirstPass {
       case virtualFunctionCallExpr: VirtualFunctionCall[_] => collectDUVarFromVirtualMethodCall(virtualFunctionCallExpr, duVars)
       case staticFunctionCallExpr: StaticFunctionCall[_] => collectDUVarFromStaticFunctionCall(staticFunctionCallExpr, duVars)
       case primitiveTypecaseExpr: PrimitiveTypecastExpr[_] => collectDUVarFromPrimitiveTypeCastExpr(primitiveTypecaseExpr, duVars)
+      case arrayLengthExpr: ArrayLength[_] => collectDUVarFromArrayLengthExpr(arrayLengthExpr, duVars)
+      case arrayLoadExpr: ArrayLoad[_] => collectDUVarFromArrayLoadExpr(arrayLoadExpr, duVars)
+      case newArrayExpr: NewArray[_] => collectDUVarFromNewArrayExpr(newArrayExpr, duVars)
       case _ =>
     }
+  }
+
+  def collectDUVarFromNewArrayExpr(newArrayExpr: NewArray[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    for (count <- newArrayExpr.counts) {
+      collectDUVarFromExpr(count, duVars)
+    }
+    // tpe does not contain any expr
+  }
+
+  /**
+   * Traverses a `ArrayLoad` expr to collect all DUVars embedded within it.
+   *
+   * @param arrayLoadExpr The `ArrayLength` expr to be traversed.
+   * @param duVars ListBuffer to be extended with all DUVars found in the expression.
+   */
+  def collectDUVarFromArrayLoadExpr(arrayLoadExpr: ArrayLoad[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    collectDUVarFromExpr(arrayLoadExpr.index, duVars)
+    collectDUVarFromExpr(arrayLoadExpr.arrayRef, duVars)
+  }
+
+  /**
+   * Traverses a `ArrayLength` expr to collect all DUVars embedded within it.
+   *
+   * @param arrayLength The `ArrayLength` expr to be traversed.
+   * @param duVars ListBuffer to be extended with all DUVars found in the expression.
+   */
+  def collectDUVarFromArrayLengthExpr(arrayLength: ArrayLength[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    collectDUVarFromExpr(arrayLength.arrayRef, duVars)
   }
 
   /**

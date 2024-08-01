@@ -5,6 +5,8 @@ import org.opalj.ba.CodeAttributeBuilder.computeStackMapTable
 import org.opalj.ba.toDA
 import org.opalj.bc.Assembler
 import org.opalj.br.{ArrayType, Code, CompactLineNumberTable, LocalVariable, LocalVariableTable, Method, ObjectType, StackMapTable}
+
+import scala.Console.println
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.reader.Java8Framework
@@ -18,7 +20,6 @@ import org.opalj.tac._
 import org.opalj.value.ValueInformation
 
 import java.io.File
-import scala.Console.println
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
@@ -27,36 +28,51 @@ object TACtoBC {
 
   def main(args: Array[String]): Unit = {
     if (args.length != 1) {
-      println("Usage: TACtoBC <path to class or jar file>")
+      println("Usage: ListClassFiles <path to class files directory>")
       return
     }
 
-    val file = new File(args(0))
-    if (!file.exists()) {
-      println(s"File ${file.getPath} does not exist.")
+    val inputDirPath = args(0)
+    val inputDir = new File(inputDirPath)
+    if (!inputDir.exists() || !inputDir.isDirectory) {
+      println(s"Directory ${inputDir.getPath} does not exist or is not a directory.")
       return
     }
-    //do this implicit val
-    val p = Project(file)
-    compileByteCode(file)
 
-    val tacs = compileTAC(file)
-
-    // Print out TAC
-    tacs.foreach { case (method, tac) =>
-      tac.detach()
-      println(s"Method: ${method.toJava}")
-      println(tac.toString)
-      println("\n")
+    val classFiles = listClassFiles(inputDir)
+    classFiles.foreach{
+      classfile =>
+        //todo: figure out how to get the input stream of the file
+        //(1) compile bytecode
+        compileByteCode(classfile)
+        //(2) compile tac
+        val tacs = compileTAC(classfile)
+        // Print out TAC
+        tacs.foreach { case (method, tac) =>
+          tac.detach()
+          println(s"Method: ${method.toJava}")
+          println(tac.toString)
+          println("\n")
+        }
+        //(3) generate bc from compiled tac
+        // > Print out the translation from TAC to Bytecode
+        val byteCodes = translateTACtoBC(tacs)
+        byteCodes.foreach { case (method, bytecode) =>
+          println(s"Method: ${method.toJava}")
+          bytecode.foreach(instr => println(instr.toString))
+        }
+        //(4) generate .class files from translation
+        val p = Project(classfile)
+        generateClassFiles(byteCodes, p)
+        // println(classfile.getAbsolutePath)))
     }
+  }
 
-    // Print out the translation from TAC to Bytecode
-    val byteCodes = translateTACtoBC(tacs)
-    byteCodes.foreach { case (method, bytecode) =>
-      println(s"Method: ${method.toJava}")
-      bytecode.foreach(instr => println(instr.toString))
-    }
+  def listClassFiles(directory: File): List[File] = {
+    directory.listFiles().toList.filter(_.getName.endsWith(".class"))
+  }
 
+  def generateClassFiles(byteCodes: Map[Method, ArrayBuffer[(Int, Instruction)]], p: Project[_]) : Unit = {
     val TheType = ObjectType("org/opalj/tactobc/testingtactobc/HelloWorld")
 
     // Debugging: Print the location of the class loader and resources
@@ -66,6 +82,7 @@ object TACtoBC {
     println(s"Resources: ${resources.mkString(", ")}")
 
     val in = () => {
+      //todo: change this to be the input stream of the class file and give the classfile as parameter
       val stream = this.getClass.getResourceAsStream("/org/opalj/tactobc/testingtactobc/HelloWorld.class")
       if (stream == null) throw new RuntimeException("Resource not found: /HelloWorld.class")
       stream
@@ -116,17 +133,12 @@ object TACtoBC {
                 val newLocalVariableTable = LocalVariableTable(ArraySeq(
                   LocalVariable(0, maxPc + 1, "args", ArrayType(ObjectType("java/lang/String")), 0)
                 ))
-                /*val newCompactLineNumber = CompactLineNumber(
-                  Array(LineNumber(0, maxPc + 1))
-                )*/
-                //live variable
 
                 // Remove CompactLineNumberTable attribute
                 val newAttributes = attributesOfOriginalBody.filterNot(_.isInstanceOf[CompactLineNumberTable])
                 // Replace the LocalVariableTable attribute in the original attributes
                 val finalAttributes = newAttributes.map {
                   case _: LocalVariableTable => newLocalVariableTable
-                  //case _: CompactLineNumberTable =>
                   case other => other
                 }
 
@@ -215,6 +227,7 @@ object TACtoBC {
     //println("Class file GeneratedHelloWorldToStringDALEQUEE.class has been generated." + newClass)
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
+    //todo: the map should have all class files
     val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
     val newClass = cl.findClass(TheType.toJava)
     //val instance = newClass.getDeclaredConstructor().newInstance()
