@@ -80,15 +80,7 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
                 org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = 1
                 org.opalj.fpcf.par.PKECPropertyStore(context: _*)
             }
-        )
 
-        project.getOrCreateProjectInformationKeyInitializationData(
-            PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) => {
-
-
-
-            }
         )
 
         analyses ++= AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
