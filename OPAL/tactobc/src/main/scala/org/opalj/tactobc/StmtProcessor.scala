@@ -184,10 +184,10 @@ object StmtProcessor {
   }
 
   def processPutStatic(declaringClass: ObjectType, name: String, declaredFieldType: FieldType, value: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: look what to do with the value :)
+    val pcAfterValueExpr = ExprProcessor.processExpression(value, instructionsWithPCs, currentPC)
     val instruction = PUTSTATIC(declaringClass, name, declaredFieldType)
-    instructionsWithPCs += ((currentPC, instruction))
-    currentPC + instruction.length
+    instructionsWithPCs += ((pcAfterValueExpr, instruction))
+    pcAfterValueExpr + instruction.length
   }
 
   def processPutField(declaringClass: ObjectType, name: String, declaredFieldType: FieldType, objRef: Expr[_], value: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
