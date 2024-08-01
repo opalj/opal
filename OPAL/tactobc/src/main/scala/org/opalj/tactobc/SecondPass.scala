@@ -1,7 +1,7 @@
 package org.opalj.tactobc
 
 import org.opalj.br.instructions.Instruction
-import org.opalj.tac.{ArrayStore, Assignment, CaughtException, Checkcast, DUVar, ExprStmt, Goto, If, InvokedynamicMethodCall, JSR, MonitorEnter, MonitorExit, NonVirtualMethodCall, PutField, PutStatic, Ret, Return, ReturnValue, StaticMethodCall, Stmt, Switch, Throw, VirtualMethodCall}
+import org.opalj.tac.{ArrayStore, Assignment, CaughtException, Checkcast, DUVar, ExprStmt, Goto, If, InvokedynamicMethodCall, JSR, MonitorEnter, MonitorExit, NonVirtualMethodCall, Nop, PutField, PutStatic, Ret, Return, ReturnValue, StaticMethodCall, Stmt, Switch, Throw, VirtualMethodCall}
 import org.opalj.value.ValueInformation
 
 import scala.collection.mutable.ArrayBuffer
@@ -102,6 +102,9 @@ object SecondPass {
         case Throw(_, exception) =>
           tacTargetToByteCodePcs += ((-1, currentPC))
           currentPC = StmtProcessor.processThrow(exception, generatedByteCodeWithPC, currentPC)
+        case Nop(_) =>
+          tacTargetToByteCodePcs += ((-1, currentPC))
+          currentPC = StmtProcessor.processNop(generatedByteCodeWithPC, currentPC)
         case _ =>
       }
     }

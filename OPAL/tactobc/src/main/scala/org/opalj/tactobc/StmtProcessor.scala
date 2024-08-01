@@ -4,7 +4,7 @@ package org.opalj.tactobc
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
 import org.opalj.br.{BootstrapMethod, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, FieldType, MethodDescriptor, ObjectType, PCs, ReferenceType}
-import org.opalj.br.instructions.{ARETURN, ATHROW, DRETURN, FRETURN, GOTO, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, PUTFIELD, PUTSTATIC, RET, RETURN, TABLESWITCH}
+import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, TABLESWITCH}
 import org.opalj.collection.immutable.{IntIntPair, IntTrieSet}
 import org.opalj.tac.{Expr, UVar, Var}
 
@@ -121,7 +121,37 @@ object StmtProcessor {
 
   def processArrayStore(arrayRef: Expr[_], index: Expr[_], value: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     //todo: handle this correctly
-    1
+    // Load the array reference onto the stack
+    val pcAfterArrayRefLoad = ExprProcessor.processExpression(arrayRef, instructionsWithPCs, currentPC)
+
+    // Load the index onto the stack
+    val pcAfterIndexLoad = ExprProcessor.processExpression(index, instructionsWithPCs, pcAfterArrayRefLoad)
+
+    // Load the value to be stored onto the stack
+    val pcAfterValueLoad = ExprProcessor.processExpression(value, instructionsWithPCs, pcAfterIndexLoad)
+
+    // Determine the type of the value to be stored and select the appropriate store instruction
+    val instruction = value.cTpe match {
+      case ComputationalTypeInt => IASTORE
+      case ComputationalTypeLong => LASTORE
+      case ComputationalTypeFloat => FASTORE
+      case ComputationalTypeDouble => DASTORE
+      //case UVar(_, _: Byte) => BASTORE
+      //case UVar(_, _: Char) => CASTORE
+      //case UVar(_, _: Short) => SASTORE
+      case ComputationalTypeReference => AASTORE
+      case _ => throw new IllegalArgumentException("Unsupported array store type")
+    }
+
+    // Add the store instruction
+    instructionsWithPCs += ((pcAfterValueLoad, instruction))
+    pcAfterValueLoad + instruction.length
+  }
+
+  def processNop(instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    val instruction = NOP
+    instructionsWithPCs += ((currentPC, instruction))
+    currentPC + instruction.length
   }
 
   def processInvokeDynamicMethodCall(bootstrapMethod: BootstrapMethod, name: String, descriptor: MethodDescriptor, params: Seq[Expr[_]]): Int = {
