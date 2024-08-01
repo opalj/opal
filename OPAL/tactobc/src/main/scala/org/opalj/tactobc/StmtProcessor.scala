@@ -232,9 +232,8 @@ object StmtProcessor {
       currentAfterParamsPC = ExprProcessor.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
     }
     val instruction = INVOKESPECIAL(declaringClass, isInterface, methodName, methodDescriptor)
-    val finalPC = currentPC + currentAfterParamsPC
-    instructionsWithPCs += ((finalPC, instruction))
-    finalPC + instruction.length
+    instructionsWithPCs += ((currentAfterParamsPC, instruction))
+    currentAfterParamsPC + instruction.length
   }
 
   def processStaticMethodCall(declaringClass: ObjectType, isInterface: Boolean, methodName: String, methodDescriptor: MethodDescriptor, params: Seq[Expr[_]], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
