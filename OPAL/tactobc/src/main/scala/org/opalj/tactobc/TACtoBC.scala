@@ -27,16 +27,22 @@ import scala.jdk.CollectionConverters.EnumerationHasAsScala
 object TACtoBC {
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 1) {
-      println("Usage: ListClassFiles <path to class files directory>")
+    if (args.length != 2) {
+      println("Usage: ListClassFiles <path to input class files directory> <path to output class files directory>")
       return
     }
 
     val inputDirPath = args(0)
+    val outputDirPath = args(1)
     val inputDir = new File(inputDirPath)
     if (!inputDir.exists() || !inputDir.isDirectory) {
       println(s"Directory ${inputDir.getPath} does not exist or is not a directory.")
       return
+    }
+
+    val outputDir = new File(outputDirPath)
+    if (!outputDir.exists()) {
+      outputDir.mkdirs()
     }
 
     val classFiles = listClassFiles(inputDir)
@@ -63,7 +69,7 @@ object TACtoBC {
         }
         //(4) generate .class files from translation
         val p = Project(classfile)
-        generateClassFiles(byteCodes, p)
+        generateClassFiles(byteCodes, p, inputDirPath, outputDirPath, classfile.getName)
         // println(classfile.getAbsolutePath)))
     }
   }
@@ -72,7 +78,7 @@ object TACtoBC {
     directory.listFiles().toList.filter(_.getName.endsWith(".class"))
   }
 
-  def generateClassFiles(byteCodes: Map[Method, ArrayBuffer[(Int, Instruction)]], p: Project[_]) : Unit = {
+  def generateClassFiles(byteCodes: Map[Method, ArrayBuffer[(Int, Instruction)]], p: Project[_], inputDirPath: String, outputDirPath: String, classFileName: String): Unit = {
     val TheType = ObjectType("org/opalj/tactobc/testingtactobc/HelloWorld")
 
     // Debugging: Print the location of the class loader and resources
@@ -81,10 +87,13 @@ object TACtoBC {
     println(s"ClassLoader: $loader")
     println(s"Resources: ${resources.mkString(", ")}")
 
+    // Dynamically determine the type and resource stream
+    val inputFilePath = Paths.get(inputDirPath, classFileName).toString
+    val outputFilePath = Paths.get(outputDirPath, classFileName).toString
+
     val in = () => {
-      //todo: change this to be the input stream of the class file and give the classfile as parameter
-      val stream = this.getClass.getResourceAsStream("/org/opalj/tactobc/testingtactobc/HelloWorld.class")
-      if (stream == null) throw new RuntimeException("Resource not found: /HelloWorld.class")
+      val stream = Files.newInputStream(Paths.get(inputFilePath))
+      if (stream == null) throw new RuntimeException(s"Resource not found: $inputFilePath")
       stream
     }
     val cf = Java8Framework.ClassFile(in).head
@@ -211,18 +220,19 @@ object TACtoBC {
     }
     val cfWithNewInstructionsForReal = cf.copy(methods = newMethodsForReal)
     val newRawCF = Assembler(toDA(cfWithNewInstructionsForReal))
-    val assembledMyIntfPath = Paths.get("tmp", "org", "opalj", "tactobc", "testingtactobc", "HelloWorld.class")
-    val newClassFile = Files.write(assembledMyIntfPath, newRawCF)
+    val outputClassFilePath = Paths.get(outputFilePath + classFileName)
+    Files.createDirectories(outputClassFilePath.getParent)
+    val newClassFile = Files.write(outputClassFilePath, newRawCF)
     println("Created class file: " + newClassFile.toAbsolutePath)
 
     // Let's see the old class file...
     val odlCFHTML = ClassFile(in).head.toXHTML(None)
-    val oldCFHTMLFile = writeAndOpen(odlCFHTML, "HelloWorld", ".html")
+    val oldCFHTMLFile = writeAndOpen(odlCFHTML, "original", ".html")
     println("original: " + oldCFHTMLFile)
 
     // Let's see the new class file...
     val newCF = ClassFile(() => new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
-    println("genetated from TAC: " + writeAndOpen(newCF, "HelloWorld", ".html"))
+    println("genetated from TAC: " + writeAndOpen(newCF, "translated", ".html"))
 
     //println("Class file GeneratedHelloWorldToStringDALEQUEE.class has been generated." + newClass)
     // Let's test that the new class does what it is expected to do... (we execute the
