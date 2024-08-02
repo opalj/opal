@@ -76,6 +76,8 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
 
                         case _ => false
                     }
+
+                case _ => false
             }
         ) {
             None

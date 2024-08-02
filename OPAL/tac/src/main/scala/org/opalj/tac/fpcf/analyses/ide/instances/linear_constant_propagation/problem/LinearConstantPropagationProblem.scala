@@ -14,6 +14,7 @@ import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.MeetLattice
 import org.opalj.tac.ArrayLength
+import org.opalj.tac.ArrayLoad
 import org.opalj.tac.Assignment
 import org.opalj.tac.BinaryExpr
 import org.opalj.tac.Expr
@@ -120,6 +121,13 @@ class LinearConstantPropagationProblem(project: SomeProject)
             case ArrayLength.ASTID =>
                 /* Generate for array length expressions only by null fact */
                 sourceFact == nullFact
+
+            case ArrayLoad.ASTID =>
+                val arrayLoadExpr = expr.asArrayLoad
+                val arrayVar = arrayLoadExpr.arrayRef.asVar
+                /* Generate for array access expressions only by null fact and if array stores integers */
+                sourceFact == nullFact &&
+                    arrayVar.value.asReferenceValue.asReferenceType.asArrayType.componentType.isIntegerType
 
             case GetField.ASTID =>
                 val getFieldExpr = expr.asGetField
@@ -315,6 +323,9 @@ class LinearConstantPropagationProblem(project: SomeProject)
                 }
 
             case ArrayLength.ASTID =>
+                VariableValueEdgeFunction
+
+            case ArrayLoad.ASTID =>
                 VariableValueEdgeFunction
 
             case GetField.ASTID =>

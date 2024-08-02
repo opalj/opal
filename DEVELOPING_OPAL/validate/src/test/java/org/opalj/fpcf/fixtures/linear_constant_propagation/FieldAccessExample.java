@@ -7,6 +7,7 @@ public class FieldAccessExample {
     private final int a;
     int b;
     static int c = 42;
+    int[] d = new int[]{23};
 
     public FieldAccessExample(int a, int b) {
         this.a = a;
@@ -20,7 +21,9 @@ public class FieldAccessExample {
     @VariableValues({
             @VariableValue(variable = "lv4"),
             @VariableValue(variable = "lv5"),
-            @VariableValue(variable = "lv6")
+            @VariableValue(variable = "lv6"),
+            @VariableValue(variable = "lv8"),
+            @VariableValue(variable = "lvb")
     })
     public static void main(String[] args) {
         FieldAccessExample example = new FieldAccessExample(11, 22);
@@ -28,7 +31,9 @@ public class FieldAccessExample {
         int i = example.getA();
         int j = example.b;
         int k = c;
+        int l = example.d.length;
+        int m = example.d[0];
 
-        System.out.println("i: " + i + ", j: " + j + ", k: " + k);
+        System.out.println("i: " + i + ", j: " + j + ", k: " + k + ", l: " + l + ", m: " + m);
     }
 }
