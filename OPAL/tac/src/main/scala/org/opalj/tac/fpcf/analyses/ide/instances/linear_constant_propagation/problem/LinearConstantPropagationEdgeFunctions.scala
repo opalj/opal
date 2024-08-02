@@ -43,7 +43,9 @@ case class LinearCombinationEdgeFunction(
                         c2
                     )
                 )
+
             case VariableValueEdgeFunction => secondEdgeFunction
+            case UnknownValueEdgeFunction => secondEdgeFunction
 
             case IdentityEdgeFunction() => this
             case AllTopEdgeFunction(_)  => secondEdgeFunction
@@ -72,6 +74,7 @@ case class LinearCombinationEdgeFunction(
                 VariableValueEdgeFunction
 
             case VariableValueEdgeFunction => otherEdgeFunction
+            case UnknownValueEdgeFunction => this
 
             case IdentityEdgeFunction() => this
             case AllTopEdgeFunction(_)  => this
@@ -101,6 +104,28 @@ object VariableValueEdgeFunction extends AllBottomEdgeFunction[LinearConstantPro
             case LinearCombinationEdgeFunction(0, _, _) => secondEdgeFunction
             case LinearCombinationEdgeFunction(_, _, _) => this
             case _                                      => this
+        }
+    }
+}
+
+/**
+ * Edge function for variables whose value is unknown
+ */
+object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropagationValue](UnknownValue) {
+    override def composeWith(
+        secondEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
+    ): EdgeFunction[LinearConstantPropagationValue] = {
+        secondEdgeFunction match {
+            case LinearCombinationEdgeFunction(_, _, _) => secondEdgeFunction
+
+            case VariableValueEdgeFunction => secondEdgeFunction
+            case UnknownValueEdgeFunction => secondEdgeFunction
+
+            case IdentityEdgeFunction() => this
+            case AllTopEdgeFunction(_)  => secondEdgeFunction
+
+            case _ =>
+                throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
     }
 }

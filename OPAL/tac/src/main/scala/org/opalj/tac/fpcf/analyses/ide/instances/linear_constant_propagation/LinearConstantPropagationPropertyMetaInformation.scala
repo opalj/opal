@@ -11,5 +11,5 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
  */
 object LinearConstantPropagationPropertyMetaInformation
     extends IDEPropertyMetaInformation[LinearConstantPropagationFact, LinearConstantPropagationValue] {
-    final val key: PropertyKey[Self] = PropertyKey.create("IDELinearConstantPropagation")
+    final val key: PropertyKey[Self] = PropertyKey.create("opalj.ide.LinearConstantPropagation")
 }
