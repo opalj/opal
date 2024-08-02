@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ide.problem
 
+import scala.collection.immutable
+
 /**
  * Interface representing IDE flow functions
  */
@@ -10,4 +12,20 @@ trait FlowFunction[Fact <: IDEFact] {
      * @param sourceFact the incoming fact
      */
     def compute(sourceFact: Fact): collection.Set[Fact]
+}
+
+/**
+ * Special flow function that always returns the input fact
+ */
+case class IdentityFlowFunction[Fact <: IDEFact]() extends FlowFunction[Fact] {
+    override def compute(sourceFact: Fact): collection.Set[Fact] =
+        immutable.Set(sourceFact)
+}
+
+/**
+ * Special flow function that always returns an empty set
+ */
+case class EmptyFlowFunction[Fact <: IDEFact]() extends FlowFunction[Fact] {
+    override def compute(sourceFact: Fact): collection.Set[Fact] =
+        immutable.Set.empty
 }

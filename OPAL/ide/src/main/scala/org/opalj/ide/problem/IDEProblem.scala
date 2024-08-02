@@ -20,6 +20,18 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         FinalEdgeFunction(edgeFunction)
     }
 
+    /**
+     * Identity flow function that can be used when implementing problems
+     */
+    protected val identityFlowFunction = new IdentityFlowFunction[Fact]
+    /**
+     * Empty flow function that can be used when implementing problems
+     */
+    protected val emptyFlowFunction = new EmptyFlowFunction[Fact]
+
+    /**
+     * Identity edge function that can be used when implementing problems
+     */
     protected val identityEdgeFunction = new IdentityEdgeFunction[Value]
 
     /**
