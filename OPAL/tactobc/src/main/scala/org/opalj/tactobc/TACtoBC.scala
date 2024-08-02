@@ -79,7 +79,7 @@ object TACtoBC {
   }
 
   def generateClassFiles(byteCodes: Map[Method, ArrayBuffer[(Int, Instruction)]], p: Project[_], inputDirPath: String, outputDirPath: String, classFileName: String): Unit = {
-    val TheType = ObjectType("org/opalj/tactobc/testingtactobc/HelloWorld")
+    val TheType = ObjectType("jnt/scimark2/".concat(classFileName.replace(".class", "")))
 
     // Debugging: Print the location of the class loader and resources
     val loader = this.getClass.getClassLoader
@@ -220,7 +220,7 @@ object TACtoBC {
     }
     val cfWithNewInstructionsForReal = cf.copy(methods = newMethodsForReal)
     val newRawCF = Assembler(toDA(cfWithNewInstructionsForReal))
-    val outputClassFilePath = Paths.get(outputFilePath + classFileName)
+    val outputClassFilePath = Paths.get(outputFilePath)
     Files.createDirectories(outputClassFilePath.getParent)
     val newClassFile = Files.write(outputClassFilePath, newRawCF)
     println("Created class file: " + newClassFile.toAbsolutePath)
