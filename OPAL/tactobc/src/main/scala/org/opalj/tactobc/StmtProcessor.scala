@@ -92,9 +92,8 @@ object StmtProcessor {
       case ComputationalTypeReference => ARETURN
       case _ => throw new UnsupportedOperationException("Unsupported computational type:" + expr.cTpe)
     }
-    val offsetPC = currentPC + (afterExprPC - currentPC)
-    instructionsWithPCs += ((currentPC, instruction))
-    currentPC + offsetPC
+    instructionsWithPCs += ((afterExprPC, instruction))
+    afterExprPC + instruction.length
   }
 
   def processVirtualMethodCall(declaringClass: ReferenceType, isInterface: Boolean, methodName: String, methodDescriptor: MethodDescriptor, receiver: Expr[_], params: Seq[Expr[_]], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
