@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem
 
+import scala.annotation.unused
+
 import scala.collection.immutable
 
 import org.opalj.BinaryArithmeticOperators
@@ -8,7 +10,6 @@ import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyStore
-import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.MeetLattice
@@ -70,7 +71,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
             }
     }
 
-    private def isExpressionInfluencedByFact(
+    protected def isExpressionInfluencedByFact(
         expr:       Expr[JavaStatement.V],
         sourceFact: LinearConstantPropagationFact
     ): Boolean = {
@@ -215,10 +216,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         callee:     Method,
         returnSite: JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
-        (sourceFact: LinearConstantPropagationFact) =>
-            {
-                immutable.Set(sourceFact)
-            }
+        identityFlowFunction
     }
 
     override def getNormalEdgeFunction(
@@ -235,14 +233,15 @@ class LinearConstantPropagationProblem(project: SomeProject)
         source.stmt.astID match {
             case Assignment.ASTID =>
                 val assignment = source.stmt.asAssignment
-                getEdgeFunctionForExpression(assignment.expr)
+                getEdgeFunctionForExpression(assignment.expr, source)
             case _ => identityEdgeFunction
         }
     }
 
-    private def getEdgeFunctionForExpression(
-    ): EdgeFunction[LinearConstantPropagationValue] = {
-        expr:   Expr[JavaStatement.V]
+    protected def getEdgeFunctionForExpression(
+        expr:   Expr[JavaStatement.V],
+        source: JavaStatement
+    )(implicit @unused propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
         expr.astID match {
             case IntConst.ASTID =>
                 LinearCombinationEdgeFunction(0, expr.asIntConst.value)
