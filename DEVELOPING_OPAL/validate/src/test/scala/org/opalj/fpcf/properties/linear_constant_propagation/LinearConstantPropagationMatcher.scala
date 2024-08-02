@@ -44,7 +44,9 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher {
         ) {
             None
         } else {
-            Some(s"Result should contain (VariableFact(${expectedVariableName}),ConstantValue(${expectedVariableValue}))!")
+            Some(
+                s"Result should contain (${LCPProblem.VariableFact(expectedVariableName, 0)}, ${LCPProblem.ConstantValue(expectedVariableValue)})!"
+            )
         }
     }
 }
@@ -82,7 +84,9 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
         ) {
             None
         } else {
-            Some(s"Result should contain (VariableFact(${expectedVariableName}),VariableValue)!")
+            Some(
+                s"Result should contain (${LCPProblem.VariableFact(expectedVariableName, 0)}, ${LCPProblem.VariableValue})!"
+            )
         }
     }
 }
