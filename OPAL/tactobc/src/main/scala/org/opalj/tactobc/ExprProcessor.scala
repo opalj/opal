@@ -224,7 +224,42 @@ object ExprProcessor {
     }
   }
 
+  def isArrayType(variable: Var[_]): Boolean = {
+    try{
+      variable.asInstanceOf[UVar[_]].value.asInstanceOf[IsSReferenceValue[_]].theUpperTypeBound.asInstanceOf[ArrayType]
+      true
+    }catch {
+      case _: Exception => false
+    }
+  }
+
+  def loadArray(variable: Var[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    // Infer the element type from the array reference expression
+    val elementType = inferElementType(variable)
+
+    val instruction = elementType match {
+      case IntegerType => IALOAD
+      case LongType => LALOAD
+      case FloatType => FALOAD
+      case DoubleType => DALOAD
+      case ByteType => BALOAD
+      case CharType => CALOAD
+      case ShortType => SALOAD
+      case _ =>
+        if(elementType.isReferenceType){
+          AALOAD
+        }else{
+          throw new IllegalArgumentException("Unsupported array load type" + variable)
+        }
+    }
+    instructionsWithPCs += ((currentPC, instruction))
+    currentPC + instruction.length
+  }
+
   def loadVariable(variable: Var[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    if(isArrayType(variable)){
+      return loadArray(variable, instructionsWithPCs, currentPC)
+    }
     val index = getVariableLvlIndex(variable)
       val instruction = variable.cTpe match {
         case ComputationalTypeInt => index match {
