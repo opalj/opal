@@ -107,8 +107,15 @@ object FirstPass {
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
           } else if (origin < -1) {
             if (origin == -2) {
-              // Assign LV index 0 for 'this' only for instance methods
-              uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
+              if(uVarToLVIndex.contains(IntTrieSet(-1,-1))){
+                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), {
+                  val lvIndex = nextLVIndex
+                  nextLVIndex += 1
+                  lvIndex
+                })
+              }else{
+                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
+              }
             } else {
               // Assign LV indexes for parameters
               uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), {
