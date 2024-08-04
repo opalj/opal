@@ -19,7 +19,8 @@ object ExprProcessor {
     expr match {
       case const: Const => loadConstant(const, instructionsWithPCs, currentPC)
       case variable: Var[_] => loadVariable(variable, instructionsWithPCs, currentPC)
-      case fieldExpr: Expr[_] if fieldExpr.isInstanceOf[GetField[_]] || fieldExpr.isInstanceOf[GetStatic] => handleFieldAccess(fieldExpr, instructionsWithPCs, currentPC)
+      case getField: GetField[_] => handleGetField(getField, instructionsWithPCs, currentPC)
+      case getStatic: GetStatic => handleGetStatic(getStatic, instructionsWithPCs, currentPC)
       case binaryExpr: BinaryExpr[_] => handleBinaryExpr(binaryExpr, instructionsWithPCs, currentPC)
       case virtualFunctionCallExpr: VirtualFunctionCall[_] => handleVirtualFunctionCall(virtualFunctionCallExpr, instructionsWithPCs, currentPC)
       case staticFunctionCallExpr: StaticFunctionCall[_] => handleStaticFunctionCall(staticFunctionCallExpr, instructionsWithPCs, currentPC)
@@ -315,14 +316,17 @@ object ExprProcessor {
     currentPC + (if (index < 4) 1 else 2)
   }
 
-  private def handleFieldAccess(fieldExpr: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    val instruction = fieldExpr match {
-      case getFieldExpr: GetField[_] =>
-        GETFIELD(getFieldExpr.declaringClass, getFieldExpr.name, getFieldExpr.declaredFieldType)
-      case getStaticExpr: GetStatic =>
-        GETSTATIC(getStaticExpr.declaringClass, getStaticExpr.name, getStaticExpr.declaredFieldType)
-      case _ => throw new IllegalArgumentException("Expected a field access expression" + fieldExpr)
-    }
+  def handleGetField(getField: GetField[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    // Load the object reference onto the stack
+    val pcAfterObjectRefLoad = processExpression(getField.objRef, instructionsWithPCs, currentPC)
+    // Generate the GETFIELD instruction
+    val instruction = GETFIELD(getField.declaringClass, getField.name, getField.declaredFieldType)
+    instructionsWithPCs += ((pcAfterObjectRefLoad, instruction))
+    pcAfterObjectRefLoad + instruction.length // Update and return the new program counter
+  }
+
+  def handleGetStatic(getStatic: GetStatic, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    val instruction = GETSTATIC(getStatic.declaringClass, getStatic.name, getStatic.declaredFieldType)
     instructionsWithPCs += ((currentPC, instruction))
     currentPC + instruction.length // Update and return the new program counter
   }
