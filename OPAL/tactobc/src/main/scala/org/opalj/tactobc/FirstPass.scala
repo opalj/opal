@@ -100,7 +100,6 @@ object FirstPass {
    * @return A map where keys are def-sites of UVars and values are their corresponding LV indexes.
    */
   def mapParametersAndPopulate(duVars: mutable.ListBuffer[DUVar[_]], isStaticMethod: Boolean): mutable.Map[IntTrieSet, Int] = {
-    nextLVIndex = if (isStaticMethod) 0 else 1 // Start at 1 for instance methods to reserve 0 for 'this'
     duVars.foreach {
       case uVar: UVar[_] if uVar.defSites.exists(origin => origin < 0) =>
         // Check if the defSites contain a parameter origin
@@ -109,6 +108,7 @@ object FirstPass {
             // Assign LV index 0 for 'this' for instance methods
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
           } else if (origin == -2) {
+            nextLVIndex = if (isStaticMethod) 0 else 1 // Start at 1 for instance methods to reserve 0 for 'this'
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
             nextLVIndex += 1
           } else if (origin < -2) {
