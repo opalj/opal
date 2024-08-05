@@ -29,7 +29,7 @@ import org.opalj.value.ValueInformation
  *
  * - [[AliasStaticField]]: A static field.
  *
- * - [[AliasUVar]]: A UVar, represented by a [[PersistentUVar]] and a [[Method]].
+ * - [[AliasUVar]]: A UVar, represented by a [[PUVar]] and a [[Method]].
  */
 sealed trait AliasSourceElement {
 
@@ -137,7 +137,7 @@ object AliasSourceElement {
             case f: Field =>
                 if (f.isStatic) AliasStaticField(f)
                 else throw new IllegalArgumentException("Non-static fields must be represented by a FieldReference")
-            case (uVar: PersistentUVar, m: Method) => AliasUVar(uVar, m, project)
+            case (uVar: PUVar[ValueInformation], m: Method) => AliasUVar(uVar, m, project)
             case _                                 => throw new UnknownError("unhandled entity type")
         }
     }
@@ -244,34 +244,27 @@ case class AliasFormalParameter(fp: VirtualFormalParameter) extends AliasSourceE
 }
 
 /**
- * A persistent representation (using pcs instead of TAC value origins) for a UVar.
- *
- * @see [[org.opalj.tac.fpcf.analyses.cg.persistentUVar]]
- */
-case class PersistentUVar(valueInformation: ValueInformation, defSites: IntTrieSet)
-
-/**
  * Represents a UVar that is part of an alias relation.
  */
 case class AliasUVar(
-    persistentUVar:      PersistentUVar,
+    persistentUVar:      PUVar[ValueInformation],
     override val method: Method,
     project:             SomeProject
 ) extends AliasSourceElement {
 
     private[this] val dm = project.get(DeclaredMethodsKey)(method)
 
-    override def element: (PersistentUVar, Method) = (persistentUVar, method)
+    override def element: (PUVar[ValueInformation], Method) = (persistentUVar, method)
 
     override def isMethodBound: Boolean = true
 
     override def declaredMethod: DeclaredMethod = dm
 
-    override def isReferenceType: Boolean = persistentUVar.valueInformation.isReferenceValue
+    override def isReferenceType: Boolean = persistentUVar.value.isReferenceValue
 
-    override def isNullValue: Boolean = persistentUVar.valueInformation.isInstanceOf[IsNullValue]
+    override def isNullValue: Boolean = persistentUVar.value.isInstanceOf[IsNullValue]
 
-    override def referenceType: ReferenceType = persistentUVar.valueInformation.asReferenceValue.asReferenceType
+    override def referenceType: ReferenceType = persistentUVar.value.asReferenceValue.asReferenceType
 
     override def isAliasUVar: Boolean = true
 
