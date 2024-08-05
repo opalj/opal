@@ -198,7 +198,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * to specify that a (set of) specific source element(s) is not allowed to depend
      * on any other source elements (belonging to the project).
      */
-    val empty = {
+    val empty: Symbol = {
         ensemble(Symbol("Empty"))(NoSourceElementsMatcher)
         Symbol("Empty")
     }
@@ -210,11 +210,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     @throws(classOf[SpecificationError])
     implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
         if (matcher endsWith ".*")
-            PackageMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
+            PackageMatcher(matcher.substring(0, matcher.length() - 2))
         else if (matcher endsWith ".**")
-            PackageMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
+            PackageMatcher(matcher.substring(0, matcher.length() - 3), true)
         else if (matcher endsWith "*")
-            ClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
+            ClassMatcher(matcher.substring(0, matcher.length() - 1), matchPrefix = true)
         else if (matcher.indexOf('*') == -1)
             ClassMatcher(matcher.replace('.', '/'))
         else
@@ -577,11 +577,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     case s: VirtualClass => project.classFile(s.classType.asObjectType).get
                     case _               => throw SpecificationError(sourceElement.toJava + " is not a class")
                 }
-                if sourceClassFile.superclassType.map(s =>
+                if sourceClassFile.superclassType.exists(s =>
                     !allLocalTargetSourceElements.exists(v =>
                         v.classType.asObjectType.equals(s)
                     )
-                ).getOrElse(false)
+                )
             } yield {
                 PropertyViolation(
                     project,
@@ -843,7 +843,7 @@ object Specification {
      * Load all jar files.
      */
     def ProjectJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
-        jarNames.map(ProjectJAR(_)).flatten
+        jarNames.flatMap(ProjectJAR)
     }
 
     /**
@@ -870,7 +870,7 @@ object Specification {
      * Load all jar files using the library class loader.
      */
     def LibraryJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
-        jarNames.map(LibraryJAR(_)).flatten
+        jarNames.flatMap(LibraryJAR)
     }
 
     /**
@@ -889,7 +889,7 @@ object Specification {
         pathSeparatorChar: Char = java.io.File.pathSeparatorChar
     ): Iterable[String] = {
         processSource(Source.fromFile(new java.io.File(fileName))) { s =>
-            s.getLines().map(_.split(pathSeparatorChar)).flatten.toSet
+            s.getLines().flatMap(_.split(pathSeparatorChar)).toSet
         }
     }
 
