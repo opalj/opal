@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.alias;
 
 import org.opalj.fpcf.properties.alias.MayAlias;
 import org.opalj.fpcf.properties.alias.NoAlias;
-//import org.opalj.tac.fpcf.analyses.alias.AllocationSiteBasedAliasAnalysis;
+
 
 public class ArrayAlias {
 
