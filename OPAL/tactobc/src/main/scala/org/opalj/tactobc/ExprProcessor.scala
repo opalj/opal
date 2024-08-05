@@ -110,12 +110,8 @@ object ExprProcessor {
       case ByteType => BALOAD
       case CharType => CALOAD
       case ShortType => SALOAD
-      case _ =>
-        if(elementType.isReferenceType){
-          AALOAD
-        }else{
-          throw new IllegalArgumentException("Unsupported array load type" + arrayLoadExpr.arrayRef.asVar)
-        }
+      case _: ReferenceType => AALOAD
+      case _ => throw new IllegalArgumentException("Unsupported array load type" + elementType)
     }
     instructionsWithPCs += ((pcAfterIndexLoad, instruction))
     pcAfterIndexLoad + instruction.length
