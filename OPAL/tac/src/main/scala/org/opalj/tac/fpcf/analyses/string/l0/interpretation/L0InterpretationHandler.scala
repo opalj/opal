@@ -9,9 +9,7 @@ package interpretation
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.tac.fpcf.analyses.string.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string.interpretation.SimpleValueConstExprInterpreter
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
@@ -28,34 +26,17 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
         case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(stmt, expr)
 
-        // Currently unsupported
-        case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.failure(target)
-        case Assignment(_, target, _: FieldRead[V]) => StringInterpreter.failure(target)
+        case ExprStmt(_, expr: VirtualFunctionCall[V])    => StringInterpreter.failure(expr.receiver.asVar)
+        case ExprStmt(_, expr: NonVirtualFunctionCall[V]) => StringInterpreter.failure(expr.receiver.asVar)
 
-        case Assignment(_, _, _: New) =>
-            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
-
-        case stmt @ Assignment(_, _, expr: VirtualFunctionCall[V]) =>
-            new L0VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
-        case stmt @ ExprStmt(_, expr: VirtualFunctionCall[V]) =>
-            new L0VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
-
-        case stmt @ Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
-            L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
-        case stmt @ ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
-            L0NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
-
-        case stmt @ Assignment(_, _, expr: StaticFunctionCall[V]) =>
-            L0StaticFunctionCallInterpreter().interpretExpr(stmt, expr)
         // Static function calls without return value usage are irrelevant
         case ExprStmt(_, _: StaticFunctionCall[V]) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
-        case vmc: VirtualMethodCall[V]     => L0VirtualMethodCallInterpreter.interpret(vmc)
-        case nvmc: NonVirtualMethodCall[V] => L0NonVirtualMethodCallInterpreter.interpret(nvmc)
+        case vmc: VirtualMethodCall[V]     => StringInterpreter.failure(vmc.receiver.asVar)
+        case nvmc: NonVirtualMethodCall[V] => StringInterpreter.failure(nvmc.receiver.asVar)
 
-        case Assignment(_, target, _) =>
-            StringInterpreter.failure(target)
+        case Assignment(_, target, _) => StringInterpreter.failure(target)
 
         case ReturnValue(pc, expr) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(

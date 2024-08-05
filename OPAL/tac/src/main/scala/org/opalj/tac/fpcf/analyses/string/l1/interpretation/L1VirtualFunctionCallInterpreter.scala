@@ -7,130 +7,211 @@ package string
 package l1
 package interpretation
 
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
+import org.opalj.br.ComputationalTypeDouble
+import org.opalj.br.ComputationalTypeFloat
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.DoubleType
+import org.opalj.br.FloatType
+import org.opalj.br.IntLikeType
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.InterimResult
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string.StringTreeConcat
+import org.opalj.br.fpcf.properties.string.StringTreeConst
+import org.opalj.br.fpcf.properties.string.StringTreeDynamicFloat
+import org.opalj.br.fpcf.properties.string.StringTreeDynamicInt
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
-import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
-import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0FunctionCallInterpreter
-import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0SystemPropertiesInterpreter
-import org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0VirtualFunctionCallInterpreter
-import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
+import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
+import org.opalj.value.TheIntegerValue
 
 /**
- * Processes [[VirtualFunctionCall]]s similar to the [[L0VirtualFunctionCallInterpreter]] but handles arbitrary calls
- * with a call graph.
+ * Responsible for processing [[VirtualFunctionCall]]s without a call graph.
  *
  * @author Maximilian Rüsch
  */
 class L1VirtualFunctionCallInterpreter(
-    implicit val ps:                     PropertyStore,
-    implicit val contextProvider:        ContextProvider,
-    implicit val project:                SomeProject,
-    override implicit val soundnessMode: SoundnessMode
-) extends L0VirtualFunctionCallInterpreter
-    with StringInterpreter
-    with L0SystemPropertiesInterpreter
-    with L1ArbitraryVirtualFunctionCallInterpreter {
+    implicit val soundnessMode: SoundnessMode
+) extends AssignmentLikeBasedStringInterpreter
+    with L1ArbitraryVirtualFunctionCallInterpreter
+    with L1AppendCallInterpreter
+    with L1SubstringCallInterpreter {
 
+    override type T = AssignmentLikeStmt[V]
     override type E = VirtualFunctionCall[V]
 
-    override protected def interpretArbitraryCall(target: PV, call: E)(
-        implicit state: InterpretationState
+    override def interpretExpr(instr: T, call: E)(implicit
+        state: InterpretationState
     ): ProperPropertyComputationResult = {
-        if (call.name == "getProperty" && call.declaringClass == ObjectType("java/util/Properties")) {
-            interpretGetSystemPropertiesCall(target)
-        } else {
-            interpretArbitraryCallWithCallees(target)
+        val at = Option.unless(!instr.isAssignment)(instr.asAssignment.targetVar.asVar.toPersistentForm(state.tac.stmts))
+        val pt = call.receiver.asVar.toPersistentForm(state.tac.stmts)
+
+        call.name match {
+            case "append"   => interpretAppendCall(at, pt, call)
+            case "toString" => interpretToStringCall(at, pt)
+            case "replace"  => interpretReplaceCall(pt)
+            case "substring" if call.descriptor.returnType == ObjectType.String =>
+                interpretSubstringCall(at, pt, call)
+            case _ =>
+                call.descriptor.returnType match {
+                    case _: IntLikeType if at.isDefined =>
+                        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                            state.pc,
+                            at.get,
+                            StringTreeDynamicInt
+                        ))
+                    case FloatType | DoubleType if at.isDefined =>
+                        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                            state.pc,
+                            at.get,
+                            StringTreeDynamicFloat
+                        ))
+                    case _ if at.isDefined =>
+                        interpretArbitraryCall(at.get, call)
+                    case _ =>
+                        computeFinalResult(StringFlowFunctionProperty.identity)
+                }
         }
+    }
+
+    private def interpretToStringCall(at: Option[PV], pt: PV)(implicit
+        state: InterpretationState
+    ): ProperPropertyComputationResult = {
+        if (at.isDefined) {
+            computeFinalResult(
+                Set(PDUWeb(state.pc, at.get), PDUWeb(state.pc, pt)),
+                (env: StringTreeEnvironment) => env.update(state.pc, at.get, env(state.pc, pt))
+            )
+        } else {
+            computeFinalResult(StringFlowFunctionProperty.identity)
+        }
+    }
+
+    /**
+     * Processes calls to [[StringBuilder#replace]] or [[StringBuffer#replace]].
+     */
+    private def interpretReplaceCall(target: PV)(implicit state: InterpretationState): ProperPropertyComputationResult = {
+        // Improve: Support fluent API by returning combined web for both assignment target and call target
+        computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
     }
 }
 
-private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends L0FunctionCallInterpreter {
+private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
-    implicit val ps: PropertyStore
-    implicit val contextProvider: ContextProvider
     implicit val soundnessMode: SoundnessMode
 
-    override type CallState = CalleeDepender
+    protected def interpretArbitraryCall(target: PV, call: E)(implicit
+        state: InterpretationState
+    ): ProperPropertyComputationResult = failure(target)
+}
 
-    protected[this] case class CalleeDepender(
-        override val target:     PV,
-        override val parameters: Seq[PV],
-        methodContext:           Context,
-        var calleeDependee:      EOptionP[DefinedMethod, Callees]
-    ) extends FunctionCallState(target, parameters) {
+/**
+ * Interprets calls to [[StringBuilder#append]] or [[StringBuffer#append]].
+ */
+private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
-        override def hasDependees: Boolean = calleeDependee.isRefinable || super.hasDependees
+    override type E = VirtualFunctionCall[V]
 
-        override def dependees: Iterable[SomeEOptionP] = super.dependees ++ Seq(calleeDependee).filter(_.isRefinable)
-    }
-
-    protected def interpretArbitraryCallWithCallees(target: PV)(implicit
+    def interpretAppendCall(at: Option[PV], pt: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
-        val depender = CalleeDepender(target, params, contextProvider.newContext(state.dm), ps(state.dm, Callees.key))
+        // .head because we want to evaluate only the first argument of append
+        val paramVar = call.params.head.asVar.toPersistentForm(state.tac.stmts)
 
-        if (depender.calleeDependee.isEPK) {
-            InterimResult.forUB(
-                InterpretationHandler.getEntity(state),
-                StringFlowFunctionProperty.ub,
-                Set(depender.calleeDependee),
-                continuation(state, depender)
-            )
-        } else {
-            continuation(state, depender)(depender.calleeDependee.asInstanceOf[SomeEPS])
-        }
-    }
+        val ptWeb = PDUWeb(state.pc, pt)
+        val combinedWeb = if (at.isDefined) ptWeb.combine(PDUWeb(state.pc, at.get)) else ptWeb
 
-    override protected[this] def continuation(
-        state:     InterpretationState,
-        callState: CallState
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
-            case UBP(c: Callees) =>
-                callState.calleeDependee = eps.asInstanceOf[EOptionP[DefinedMethod, Callees]]
-                val newMethods = getNewMethodsFromCallees(callState.methodContext, c)(state, callState)
-                if (newMethods.isEmpty && eps.isFinal) {
-                    // Improve add previous results back
-                    failure(callState.target)(state, soundnessMode)
-                } else {
-                    for {
-                        method <- newMethods
-                    } {
-                        callState.addCalledMethod(method, ps(method, TACAI.key))
-                    }
+        computeFinalResult(
+            Set(PDUWeb(state.pc, paramVar), combinedWeb),
+            (env: StringTreeEnvironment) => {
+                val valueState = env(state.pc, paramVar)
 
-                    interpretArbitraryCallToFunctions(state, callState)
+                val transformedValueState = paramVar.value.computationalType match {
+                    case ComputationalTypeInt =>
+                        if (call.descriptor.parameterType(0).isCharType && valueState.isInstanceOf[StringTreeConst]) {
+                            StringTreeConst(valueState.asInstanceOf[StringTreeConst].string.toInt.toChar.toString)
+                        } else {
+                            valueState
+                        }
+                    case ComputationalTypeFloat | ComputationalTypeDouble =>
+                        if (valueState.constancyLevel == StringConstancyLevel.CONSTANT) {
+                            valueState
+                        } else {
+                            StringTreeDynamicFloat
+                        }
+                    case _ =>
+                        valueState
                 }
 
-            case _ => super.continuation(state, callState)(eps)
-        }
+                env.update(combinedWeb, StringTreeConcat.fromNodes(env(state.pc, pt), transformedValueState))
+            }
+        )
     }
+}
 
-    private def getNewMethodsFromCallees(context: Context, callees: Callees)(implicit
-        state:     InterpretationState,
-        callState: CallState
-    ): Seq[Method] = {
-        // IMPROVE only process newest callees
-        callees.callees(context, state.pc)
-            // IMPROVE add some uncertainty element if methods with unknown body exist
-            .filter(_.method.hasSingleDefinedMethod)
-            .map(_.method.definedMethod)
-            .filterNot(callState.calleeMethods.contains)
-            .distinct.toList.sortBy(_.classFile.fqn)
+/**
+ * Interprets calls to [[String#substring]].
+ */
+private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStringInterpreter {
+
+    override type E <: VirtualFunctionCall[V]
+
+    def interpretSubstringCall(at: Option[PV], pt: PV, call: E)(implicit
+        state: InterpretationState
+    ): ProperPropertyComputationResult = {
+        if (at.isEmpty) {
+            return computeFinalResult(StringFlowFunctionProperty.identity);
+        }
+
+        val parameterCount = call.params.size
+        parameterCount match {
+            case 1 =>
+                call.params.head.asVar.value match {
+                    case TheIntegerValue(intVal) =>
+                        computeFinalResult(
+                            Set(PDUWeb(state.pc, pt), PDUWeb(state.pc, at.get)),
+                            (env: StringTreeEnvironment) => {
+                                env(state.pc, pt) match {
+                                    case StringTreeConst(string) if intVal <= string.length =>
+                                        env.update(state.pc, at.get, StringTreeConst(string.substring(intVal)))
+                                    case _ =>
+                                        env.update(state.pc, at.get, StringTreeNode.lb)
+                                }
+                            }
+                        )
+                    case _ =>
+                        computeFinalResult(StringFlowFunctionProperty.noFlow(state.pc, at.get))
+                }
+
+            case 2 =>
+                (call.params.head.asVar.value, call.params(1).asVar.value) match {
+                    case (TheIntegerValue(firstIntVal), TheIntegerValue(secondIntVal)) =>
+                        computeFinalResult(
+                            Set(PDUWeb(state.pc, pt), PDUWeb(state.pc, at.get)),
+                            (env: StringTreeEnvironment) => {
+                                env(state.pc, pt) match {
+                                    case StringTreeConst(string)
+                                        if firstIntVal <= string.length
+                                            && secondIntVal <= string.length
+                                            && firstIntVal <= secondIntVal =>
+                                        env.update(
+                                            state.pc,
+                                            at.get,
+                                            StringTreeConst(string.substring(firstIntVal, secondIntVal))
+                                        )
+                                    case _ =>
+                                        env.update(state.pc, at.get, StringTreeNode.lb)
+                                }
+                            }
+                        )
+                    case _ =>
+                        computeFinalResult(StringFlowFunctionProperty.noFlow(state.pc, at.get))
+                }
+
+            case _ => throw new IllegalStateException(
+                    s"Unexpected parameter count for ${call.descriptor.toJava}. Expected one or two, got $parameterCount"
+                )
+        }
     }
 }

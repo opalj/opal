@@ -361,7 +361,8 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     }
 
     def executeAnalyses(
-        analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
+        analysisRunners:      Iterable[ComputationSpecification[FPCFAnalysis]],
+        afterPhaseScheduling: (Project[URL], List[ComputationSpecification[FPCFAnalysis]]) => Unit = (_, _) => ()
     ): TestContext = {
         try {
             val p = FixtureProject.recreate { piKeyUnidueId => piKeyUnidueId != PropertyStoreKey.uniqueId } // to ensure that this project is not "polluted"
@@ -372,21 +373,12 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
             p.getOrCreateProjectInformationKeyInitializationData(
                 PropertyStoreKey,
-                (context: List[PropertyStoreContext[AnyRef]]) => {
-                    /*
-                val ps = PKEParallelTasksPropertyStore.create(
-                    new RecordAllPropertyStoreTracer,
-                    context.iterator.map(_.asTuple).toMap
-                )
-                     */
-                    val ps = PKESequentialPropertyStore(context: _*)
-                    ps
-                }
+                (context: List[PropertyStoreContext[AnyRef]]) => PKESequentialPropertyStore(context: _*)
             )
 
             val ps = p.get(PropertyStoreKey)
 
-            val (_, csas) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
+            val (_, csas) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners, afterPhaseScheduling(p, _))
             TestContext(p, ps, csas.collect { case (_, as) => as })
         } catch {
             case t: Throwable =>

@@ -48,7 +48,7 @@ import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
-import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -77,7 +77,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
 
         def analyses: Seq[FPCFLazyAnalysisScheduler] = {
             if (runL0Analysis) LazyL0StringAnalysis.allRequiredAnalyses
-            else LazyL1StringAnalysis.allRequiredAnalyses
+            else LazyL2StringAnalysis.allRequiredAnalyses
         }
     }
 
