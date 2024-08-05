@@ -12,7 +12,6 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.reader.Java8Framework
 import org.opalj.da.ClassFileReader.ClassFile
 import org.opalj.io.writeAndOpen
-import org.opalj.util.InMemoryClassLoader
 
 import java.io.ByteArrayInputStream
 import java.nio.file.{Files, Paths}
@@ -79,7 +78,9 @@ object TACtoBC {
   }
 
   def generateClassFiles(byteCodes: Map[Method, ArrayBuffer[(Int, Instruction)]], p: Project[_], inputDirPath: String, outputDirPath: String, classFileName: String): Unit = {
-    val TheType = ObjectType("jnt/scimark2/".concat(classFileName.replace(".class", "")))
+    //val helloWorldPath = "org/opalj/tactobc/testingtactobc/"
+    //val benchmarkPath = "jnt/scimark2/"
+    //val TheType = ObjectType(benchmarkPath.concat(classFileName.replace(".class", "")))
 
     // Debugging: Print the location of the class loader and resources
     val loader = this.getClass.getClassLoader
@@ -238,10 +239,10 @@ object TACtoBC {
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
     //todo: the map should have all class files
-    val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
-    val newClass = cl.findClass(TheType.toJava)
+    //val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
+    //val newClass = cl.findClass(TheType.toJava)
     //val instance = newClass.getDeclaredConstructor().newInstance()
-    newClass.getMethod("main", (Array[String]()).getClass).invoke(null, null)
+    //newClass.getMethod("main", (Array[String]()).getClass).invoke(null, null)
   }
 
   /**
@@ -312,7 +313,7 @@ object TACtoBC {
   def translateTACtoBC(tacs: Map[Method, AITACode[TACMethodParameter, ValueInformation]]): Map[Method, ArrayBuffer[(Int, Instruction)]] = {
     tacs.map { case (method, tacCode) =>
       // Convert the TAC representation back to bytecode for each method
-      val bytecodeInstructions = translateSingleTACtoBC(tacCode)
+      val bytecodeInstructions = translateSingleTACtoBC(method, tacCode)
       method -> bytecodeInstructions
     }
   }
@@ -327,10 +328,10 @@ object TACtoBC {
    * @param tac The TAC representation of a method to be converted into bytecode.
    * @return An array of bytecode instructions representing the method's functionality
    */
-  def translateSingleTACtoBC(tac: AITACode[TACMethodParameter, ValueInformation]): ArrayBuffer[(Int, Instruction)] = {
+  def translateSingleTACtoBC(method: Method, tac: AITACode[TACMethodParameter, ValueInformation]): ArrayBuffer[(Int, Instruction)] = {
     val tacStmts = tac.stmts.zipWithIndex
     //first pass -> prepare the LVIndexes to map the Variable to Indexes
-    FirstPass.prepareLVIndexes(tacStmts)
+    FirstPass.prepareLVIndexes(method, tacStmts)
     //second pass -> generate Bytecode Instructions from TAC Stmts
     val generatedByteCodeWithPC = ArrayBuffer[(Int, Instruction)]()
     val tacTargetToByteCodePcs = ArrayBuffer[(Int, Int)]()

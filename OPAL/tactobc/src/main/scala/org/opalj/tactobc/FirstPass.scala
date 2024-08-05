@@ -1,5 +1,6 @@
 package org.opalj.tactobc
 
+import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, DUVar, Expr, ExprStmt, If, NewArray, NonVirtualMethodCall, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, StaticFunctionCall, StaticMethodCall, Stmt, UVar, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tactobc.ExprProcessor.{nextLVIndex, uVarToLVIndex}
@@ -28,8 +29,9 @@ object FirstPass {
    *
    * @param tacStmts Array of tuples where each tuple contains a TAC statement and its index.
    */
-  def prepareLVIndexes(tacStmts: Array[(Stmt[DUVar[ValueInformation]], Int)]): Unit = {
+  def prepareLVIndexes(method: Method, tacStmts: Array[(Stmt[DUVar[ValueInformation]], Int)]): Unit = {
     // container for all DUVars in the method
+    val isStaticMethod = method.isStatic
     val duVars = mutable.ListBuffer[DUVar[_]]()
     tacStmts.foreach { case (stmt, _) => {
       stmt match {
@@ -71,7 +73,7 @@ object FirstPass {
       }
     }
     // give the first available indexes to parameters
-    val parameters = mapParametersAndPopulate(duVars)
+    val parameters = mapParametersAndPopulate(duVars, isStaticMethod)
     println(parameters)
     val lvIndexMap = collectAllUVarsAndPopulateUVarToLVIndexMap(duVars)
     println(lvIndexMap)
@@ -97,33 +99,21 @@ object FirstPass {
    * @param duVars ListBuffer containing all DUVars of the method.
    * @return A map where keys are def-sites of UVars and values are their corresponding LV indexes.
    */
-  def mapParametersAndPopulate(duVars: mutable.ListBuffer[DUVar[_]]): mutable.Map[IntTrieSet, Int] = {
+  def mapParametersAndPopulate(duVars: mutable.ListBuffer[DUVar[_]], isStaticMethod: Boolean): mutable.Map[IntTrieSet, Int] = {
+    nextLVIndex = if (isStaticMethod) 0 else 1 // Start at 1 for instance methods to reserve 0 for 'this'
     duVars.foreach {
       case uVar: UVar[_] if uVar.defSites.exists(origin => origin < 0) =>
         // Check if the defSites contain a parameter origin
         uVar.defSites.foreach { origin =>
-          if (origin == -1) {
-            // Assign LV index 0 for 'this' only for instance methods
+          if (origin == -1 && !isStaticMethod) {
+            // Assign LV index 0 for 'this' for instance methods
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
-          } else if (origin < -1) {
-            if (origin == -2) {
-              if(uVarToLVIndex.contains(IntTrieSet(-1,-1))){
-                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), {
-                  val lvIndex = nextLVIndex
-                  nextLVIndex += 1
-                  lvIndex
-                })
-              }else{
-                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
-              }
-            } else {
-              // Assign LV indexes for parameters
-              uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), {
-                val lvIndex = nextLVIndex
-                nextLVIndex += 1
-                lvIndex
-              })
-            }
+          } else if (origin == -2) {
+            uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
+            nextLVIndex += 1
+          } else if (origin < -2) {
+            uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
+            nextLVIndex += 1
           }
         }
       case _ =>
