@@ -18,6 +18,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.io.processSource
 import org.opalj.log.OPALLogger
 
 /**
@@ -164,108 +165,111 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         if (project.config.hasPath(configKey)) {
             val logName = project.config.getString(configKey)
             OPALLogger.info("analysis configuration", s"Using tamiflex log file: $logName")(project.logContext)
-            Source.fromFile(logName).getLines().foreach { line =>
-                val entries = line.split(";", -1)
-                entries match {
-                    case Array(
-                            "Array.newInstance" | "Array.get*" | "Array.set*",
-                            arrayType,
-                            sourceMethod,
-                            sourceLine,
-                            _,
-                            _
-                        ) =>
-                        addClassType(arrayType, sourceMethod, entries.head, sourceLine)
+            processSource(Source.fromFile(logName)) { s =>
+                s.getLines().foreach { line =>
+                    val entries = line.split(";", -1)
+                    entries match {
+                        case Array(
+                                "Array.newInstance" | "Array.get*" | "Array.set*",
+                                arrayType,
+                                sourceMethod,
+                                sourceLine,
+                                _,
+                                _
+                            ) =>
+                            addClassType(arrayType, sourceMethod, entries.head, sourceLine)
 
-                    case Array(
-                            "Class.forName" |
-                            "Class.getDeclaredConstructors" | "Class.getConstructors" |
-                            "Class.getDeclaredFields" | "Class.getFields" |
-                            "Class.getDeclaredMethods" | "Class.getMethods" |
-                            "Class.getModifiers",
-                            classType,
-                            sourceMethod,
-                            sourceLine,
-                            _,
-                            _
-                        ) =>
-                        addClassType(classType, sourceMethod, entries.head, sourceLine)
+                        case Array(
+                                "Class.forName" |
+                                "Class.getDeclaredConstructors" | "Class.getConstructors" |
+                                "Class.getDeclaredFields" | "Class.getFields" |
+                                "Class.getDeclaredMethods" | "Class.getMethods" |
+                                "Class.getModifiers",
+                                classType,
+                                sourceMethod,
+                                sourceLine,
+                                _,
+                                _
+                            ) =>
+                            addClassType(classType, sourceMethod, entries.head, sourceLine)
 
-                    case Array(
-                            "Class.getDeclaredField" | "Class.getField",
-                            fieldDesc,
-                            sourceMethod,
-                            sourceLine,
-                            _,
-                            _
-                        ) =>
-                        addField(fieldDesc, sourceMethod, entries.head, sourceLine)
+                        case Array(
+                                "Class.getDeclaredField" | "Class.getField",
+                                fieldDesc,
+                                sourceMethod,
+                                sourceLine,
+                                _,
+                                _
+                            ) =>
+                            addField(fieldDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array(
-                            "Class.getDeclaredConstructor" | "Class.getConstructor" |
-                            "Class.getDeclaredMethod" | "Class.getMethod",
-                            methodDesc,
-                            sourceMethod,
-                            sourceLine,
-                            _,
-                            _
-                        ) =>
-                        addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
+                        case Array(
+                                "Class.getDeclaredConstructor" | "Class.getConstructor" |
+                                "Class.getDeclaredMethod" | "Class.getMethod",
+                                methodDesc,
+                                sourceMethod,
+                                sourceLine,
+                                _,
+                                _
+                            ) =>
+                            addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Class.newInstance", instantiatedTypeDesc, sourceMethod, sourceLine, _, _) =>
-                        val line = if (sourceLine == "") -1 else sourceLine.toInt
-                        val instantiatedType = FieldType(toJVMType(instantiatedTypeDesc)).asObjectType
-                        val oldSet =
-                            classes.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
-                        oldSet.add(instantiatedType)
-                        val oldInvokes = methods.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
-                        val constructor = declaredMethods(
-                            instantiatedType,
-                            instantiatedType.packageName,
-                            instantiatedType,
-                            "<init>",
-                            MethodDescriptor.NoArgsAndReturnVoid
-                        )
-                        oldInvokes.add(constructor)
+                        case Array("Class.newInstance", instantiatedTypeDesc, sourceMethod, sourceLine, _, _) =>
+                            val line = if (sourceLine == "") -1 else sourceLine.toInt
+                            val instantiatedType = FieldType(toJVMType(instantiatedTypeDesc)).asObjectType
+                            val oldSet =
+                                classes.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
+                            oldSet.add(instantiatedType)
+                            val oldInvokes = methods
+                                .getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
+                            val constructor = declaredMethods(
+                                instantiatedType,
+                                instantiatedType.packageName,
+                                instantiatedType,
+                                "<init>",
+                                MethodDescriptor.NoArgsAndReturnVoid
+                            )
+                            oldInvokes.add(constructor)
 
-                    case Array("Constructor.getModifiers", constructorDesc, sourceMethod, sourceLine, _, _) =>
-                        addMethod(constructorDesc, sourceMethod, entries.head, sourceLine)
+                        case Array("Constructor.getModifiers", constructorDesc, sourceMethod, sourceLine, _, _) =>
+                            addMethod(constructorDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Constructor.newInstance", constructorDesc, sourceMethod, sourceLine, _, _) =>
-                        val line = if (sourceLine == "") -1 else sourceLine.toInt
-                        val constructor = toDeclaredMethod(constructorDesc)
-                        val oldSet = classes.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
-                        oldSet.add(constructor.declaringClassType)
-                        val oldInvokes = methods.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
-                        oldInvokes.add(constructor)
+                        case Array("Constructor.newInstance", constructorDesc, sourceMethod, sourceLine, _, _) =>
+                            val line = if (sourceLine == "") -1 else sourceLine.toInt
+                            val constructor = toDeclaredMethod(constructorDesc)
+                            val oldSet = classes.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
+                            oldSet.add(constructor.declaringClassType)
+                            val oldInvokes = methods
+                                .getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
+                            oldInvokes.add(constructor)
 
-                    case Array(
-                            "Field.getDeclaringClass" | "Field.getModifiers" | "Field.getName" |
-                            "Field.get*" | "Field.set*",
-                            fieldDesc,
-                            sourceMethod,
-                            sourceLine,
-                            _,
-                            _
-                        ) =>
-                        addField(fieldDesc, sourceMethod, entries.head, sourceLine)
+                        case Array(
+                                "Field.getDeclaringClass" | "Field.getModifiers" | "Field.getName" |
+                                "Field.get*" | "Field.set*",
+                                fieldDesc,
+                                sourceMethod,
+                                sourceLine,
+                                _,
+                                _
+                            ) =>
+                            addField(fieldDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array(
-                            "Method.getDeclaringClass" | "Method.getModifiers" |
-                            "Method.getName" | "Method.invoke",
-                            methodDesc,
-                            sourceMethod,
-                            sourceLine,
-                            _,
-                            _
-                        ) =>
-                        addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
+                        case Array(
+                                "Method.getDeclaringClass" | "Method.getModifiers" |
+                                "Method.getName" | "Method.invoke",
+                                methodDesc,
+                                sourceMethod,
+                                sourceLine,
+                                _,
+                                _
+                            ) =>
+                            addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
 
-                    case e => throw new RuntimeException(s"unexpected log entry ${e.mkString(",")}")
+                        case e => throw new RuntimeException(s"unexpected log entry ${e.mkString(",")}")
 
+                    }
                 }
             }
-
         }
 
         new TamiFlexLogData(classes, methods, fields)
