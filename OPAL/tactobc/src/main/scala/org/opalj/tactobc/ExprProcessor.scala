@@ -56,7 +56,12 @@ object ExprProcessor {
       currentAfterCountsPC = ExprProcessor.processExpression(count, instructionsWithPCs, currentAfterCountsPC)
     }
     if(newArrayExpr.counts.size > 1) {
-      val instruction = MULTIANEWARRAY(newArrayExpr.tpe.toString, newArrayExpr.counts.size)
+      // Construct the array type string for the multi-dimensional array
+      val arrayTypeString = newArrayExpr.tpe match {
+        case arrayType: ArrayType => constructArrayTypeString(arrayType)
+        case _ => throw new IllegalArgumentException("Expected an array type for MULTIANEWARRAY")
+      }
+      val instruction = MULTIANEWARRAY(arrayTypeString, newArrayExpr.counts.size)
       instructionsWithPCs += ((currentAfterCountsPC, instruction))
       return currentAfterCountsPC + instruction.length
     }
@@ -74,6 +79,18 @@ object ExprProcessor {
     }
     instructionsWithPCs += ((currentAfterCountsPC, instruction))
     currentAfterCountsPC + instruction.length
+  }
+
+  def constructArrayTypeString(arrayType: ArrayType): String = {
+    def loop(tpe: Type, depth: Int): (String, Int) = tpe match {
+      case ArrayType(componentType) =>
+        loop(componentType, depth + 1)
+      case baseType =>
+        (baseType.toString, depth)
+    }
+
+    val (baseTypeString, depth) = loop(arrayType, 0)
+    "[" * depth + baseTypeString
   }
 
   def handleArrayLoad(arrayLoadExpr: ArrayLoad[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
