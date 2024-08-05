@@ -76,7 +76,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
 
         ase match {
             case AliasUVar(uVar, _, _) =>
-                uVar.defSites.foreach(ds => {
+                uVar.defPCs.foreach(ds => {
                     handlePointsToEntity(ase, getPointsToOfDefSite(ds, context.contextOf(ase), tac.get))
                 })
 

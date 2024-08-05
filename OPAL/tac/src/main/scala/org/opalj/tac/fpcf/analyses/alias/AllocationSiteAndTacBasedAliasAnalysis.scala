@@ -38,8 +38,8 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
             // Both elements are uVars that point to the same allocation site and both are inside the method of the allocation site
             // -> they must alias if the allocation site is executed only once (i.e. no loop or recursion)
 
-            val defSite1 = context.element1.asAliasUVar.persistentUVar.defSites
-            val defSite2 = context.element2.asAliasUVar.persistentUVar.defSites
+            val defSite1 = context.element1.asAliasUVar.persistentUVar.defPCs
+            val defSite2 = context.element2.asAliasUVar.persistentUVar.defPCs
 
             if (defSite1.size != 1 || defSite1.size != 1 || defSite1.head != defSite2.head) return false // multiple or different def sites for one element -> might be different objects (e.g. due to recursion via parameter)
 

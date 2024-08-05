@@ -47,7 +47,6 @@ import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
 import org.opalj.tac.fpcf.analyses.alias.LazyIntraProceduralAliasAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.alias.persistentUVar
 import org.opalj.tac.fpcf.analyses.alias.pointsto.LazyAllocationSitePointsToBasedAliasAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.alias.pointsto.LazyTypePointsToBasedAliasAnalysisScheduler
 import org.opalj.tac.fpcf.properties.TACAI
@@ -281,7 +280,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
             val param: Expr[_] = if (parameterIndex == -1) c.receiverOption.get else c.params(parameterIndex)
 
             param match {
-                case uVar: UVar[ValueInformation] => AliasUVar(persistentUVar(uVar)(stmts), method, as.project)
+                case uVar: UVar[ValueInformation] => AliasUVar(uVar.toPersistentForm(stmts), method, as.project)
                 case _                            => throw new IllegalArgumentException("No UVar found")
             }
         }
@@ -289,7 +288,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
         def handleExpr(expr: Expr[DUVar[ValueInformation]]): AliasSourceElement = {
             expr match {
                 case c: Call[_]                   => handleCall(c)
-                case uVar: UVar[ValueInformation] => AliasUVar(persistentUVar(uVar)(stmts), method, as.project)
+                case uVar: UVar[ValueInformation] => AliasUVar(uVar.toPersistentForm(stmts), method, as.project)
                 case GetField(_, _, _, _, UVar(_, objRefDefSites)) => AliasField(FieldReference(
                         findField(a, useSecond),
                         simpleContexts(declaredMethods(method)),
@@ -309,7 +308,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
                     simpleContexts(declaredMethods(method)),
                     objRefDefSites
                 ))
-                else AliasUVar(persistentUVar(value)(stmts), method, as.project)
+                else AliasUVar(value.toPersistentForm(stmts), method, as.project)
             case returnValue: ReturnValue[DUVar[ValueInformation]] => handleExpr(returnValue.expr)
             case Assignment(_, _, expr)                            => handleExpr(expr)
             case _ => throw new IllegalArgumentException(

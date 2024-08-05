@@ -138,7 +138,7 @@ object AliasSourceElement {
                 if (f.isStatic) AliasStaticField(f)
                 else throw new IllegalArgumentException("Non-static fields must be represented by a FieldReference")
             case (uVar: PUVar[ValueInformation], m: Method) => AliasUVar(uVar, m, project)
-            case _                                 => throw new UnknownError("unhandled entity type")
+            case _                                          => throw new UnknownError("unhandled entity type")
         }
     }
 }
