@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br
+package org.opalj
+package br
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
