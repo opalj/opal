@@ -3,25 +3,11 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
-import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
-import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedArraycopyPointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedLibraryPointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedNewInstanceAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedSerializationAllocationsAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedUnsafePointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.ReflectionAllocationsAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
@@ -31,35 +17,11 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  *
  * @author Florian Kuebler
  */
-object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
+object AllocationSiteBasedPointsToCallGraphKey extends PointsToCallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
-        Seq(DefinitionSitesKey, VirtualFormalParametersKey, SimpleContextsKey) ++:
-            super.requirements(project)
-    }
+    override val pointsToType: String = "AllocationSiteBased"
+    override val contextKey: ProjectInformationKey[SimpleContexts, Nothing] = SimpleContextsKey
 
-    override protected[cg] def callGraphSchedulers(
-        project: SomeProject
-    ): Iterable[FPCFAnalysisScheduler] = {
-        val isLibrary =
-            project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
-                "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
-        List(
-            AllocationSiteBasedPointsToAnalysisScheduler,
-            AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler,
-            AllocationSiteBasedArraycopyPointsToAnalysisScheduler,
-            AllocationSiteBasedUnsafePointsToAnalysisScheduler,
-            ReflectionAllocationsAnalysisScheduler,
-            AllocationSiteBasedSerializationAllocationsAnalysisScheduler,
-            AllocationSiteBasedNewInstanceAnalysisScheduler,
-            EagerFieldAccessInformationAnalysis,
-            ReflectionRelatedFieldAccessesAnalysisScheduler
-        ) ::: (
-            if (isLibrary) List(AllocationSiteBasedLibraryPointsToAnalysisScheduler) else Nil
-        ) ::: (
-            if (TamiFlexKey.isConfigured(project)) List(AllocationSiteBasedTamiFlexPointsToAnalysisScheduler) else Nil
-        )
-    }
     override def getTypeIterator(project: SomeProject) =
         new AllocationSitesPointsToTypeIterator(project)
 }
