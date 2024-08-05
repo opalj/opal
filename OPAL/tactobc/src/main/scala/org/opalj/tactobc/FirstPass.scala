@@ -2,7 +2,7 @@ package org.opalj.tactobc
 
 import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, DUVar, Expr, ExprStmt, If, NewArray, NonVirtualMethodCall, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, StaticFunctionCall, StaticMethodCall, Stmt, UVar, VirtualFunctionCall, VirtualMethodCall}
+import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, DUVar, Expr, ExprStmt, If, InvokedynamicFunctionCall, NewArray, NonVirtualMethodCall, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, StaticFunctionCall, StaticMethodCall, Stmt, UVar, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tactobc.ExprProcessor.{nextLVIndex, uVarToLVIndex}
 import org.opalj.value.ValueInformation
 
@@ -161,7 +161,15 @@ object FirstPass {
       case arrayLengthExpr: ArrayLength[_] => collectDUVarFromArrayLengthExpr(arrayLengthExpr, duVars)
       case arrayLoadExpr: ArrayLoad[_] => collectDUVarFromArrayLoadExpr(arrayLoadExpr, duVars)
       case newArrayExpr: NewArray[_] => collectDUVarFromNewArrayExpr(newArrayExpr, duVars)
+      case invokedynamicFunctionCall: InvokedynamicFunctionCall[_] => collectDUVarFromInvokedynamicFunctionCall(invokedynamicFunctionCall, duVars)
       case _ =>
+    }
+  }
+
+  def collectDUVarFromInvokedynamicFunctionCall(invokedynamicFunctionCall: InvokedynamicFunctionCall[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    // Process each parameter and collect from each
+    for (param <- invokedynamicFunctionCall.params) {
+      collectDUVarFromExpr(param, duVars)
     }
   }
 
