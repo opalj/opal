@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l0
+package l1
 package interpretation
 
 import org.opalj.br.fpcf.properties.string.StringTreeEmptyConst
@@ -15,7 +15,7 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 /**
  * @author Maximilian Rüsch
  */
-object L0NonVirtualMethodCallInterpreter extends StringInterpreter {
+object L1NonVirtualMethodCallInterpreter extends StringInterpreter {
 
     override type T = NonVirtualMethodCall[V]
 

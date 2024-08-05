@@ -40,9 +40,8 @@ public class SimpleStringOps {
      */
     public void analyzeString(String s) {}
 
-    // read-only string variable, trivial case
-    @Constant(n = 0, value = "java.lang.String")
-    @Constant(n = 1, value = "java.lang.String")
+    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.String")
+    @Constant(n = 1, levels = Level.TRUTH, value = "java.lang.String")
     public void constantStringReads() {
         analyzeString("java.lang.String");
 
@@ -50,19 +49,22 @@ public class SimpleStringOps {
         analyzeString(className);
     }
 
-    @Constant(n = 0, value = "c")
-    @Constant(n = 1, value = "42.3")
+    @Constant(n = 0, levels = Level.TRUTH, value = "c")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "42.3")
+    @Failure(n = 1, levels = Level.L0)
     @Constant(n = 2, levels = Level.TRUTH, value = "java.lang.Runtime")
-    @Failure(n = 2, levels = Level.L0)
+    @Failure(n = 2, levels = { Level.L0, Level.L1 })
     public void valueOfTest() {
         analyzeString(String.valueOf('c'));
         analyzeString(String.valueOf((float) 42.3));
         analyzeString(String.valueOf(getRuntimeClassName()));
     }
 
-    // checks if a string value with append(s) is determined correctly
-    @Constant(n = 0, value = "java.lang.String")
-    @Constant(n = 1, value = "java.lang.Object")
+    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.String")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "java.lang.Object")
+    @Failure(n = 1, levels = Level.L0)
     public void simpleStringConcat() {
         String className1 = "java.lang.";
         System.out.println(className1);
@@ -77,16 +79,17 @@ public class SimpleStringOps {
         analyzeString(className2);
     }
 
-    // checks if the substring of a constant string value is determined correctly
-    @Constant(n = 0, value = "va.")
-    @Constant(n = 1, value = "va.lang.")
+    @Constant(n = 0, levels = Level.TRUTH, value = "va.")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "va.lang.")
+    @Failure(n = 1, levels = Level.L0)
     public void simpleSubstring() {
         String someString = "java.lang.";
         analyzeString(someString.substring(2, 5));
         analyzeString(someString.substring(2));
     }
 
-    @Constant(n = 0, value = "(java.lang.System|java.lang.Runtime)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.System|java.lang.Runtime)")
     public void multipleConstantDefSites(boolean cond) {
         String s;
         if (cond) {
@@ -97,7 +100,8 @@ public class SimpleStringOps {
         analyzeString(s);
     }
 
-    @Constant(n = 0, value = "It is (great|not great)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "It is (great|not great)")
+    @Failure(n = 0, levels = Level.L0)
     public void appendWithTwoDefSites(int i) {
         String s;
         if (i > 0) {
@@ -108,9 +112,12 @@ public class SimpleStringOps {
         analyzeString(new StringBuilder("It is ").append(s).toString());
     }
 
-    @Constant(n = 0, value = "(Some|SomeOther)")
-    @Dynamic(n = 1, value = "(.*|Some)")
-    @PartiallyConstant(n = 2, value = "(SomeOther|Some.*)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(Some|SomeOther)")
+    @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "Some")
+    @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(Some|.*)")
+    @Dynamic(n = 1, levels = Level.TRUTH, value = "(.*|Some)")
+    @PartiallyConstant(n = 2, levels = Level.TRUTH, value = "(SomeOther|Some.*)")
+    @Failure(n = 2, levels = Level.L0)
     public void ternaryOperators(boolean flag, String param) {
         String s1 = "Some";
         String s2 = s1 + "Other";
@@ -120,7 +127,8 @@ public class SimpleStringOps {
         analyzeString(flag ? s1 + param : s2);
     }
 
-    @Constant(n = 0, value = "(a|ab|ac)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
+    @Failure(n = 0, levels = Level.L0)
     public void switchRelevantAndIrrelevant(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -138,7 +146,8 @@ public class SimpleStringOps {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "(ab|ac|a|ad)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|a|ad)")
+    @Failure(n = 0, levels = Level.L0)
     public void switchRelevantAndIrrelevantWithRelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -159,7 +168,8 @@ public class SimpleStringOps {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "(a|ab|ac)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
+    @Failure(n = 0, levels = Level.L0)
     public void switchRelevantAndIrrelevantWithIrrelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -179,7 +189,8 @@ public class SimpleStringOps {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "(ab|ac|ad)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|ad)")
+    @Failure(n = 0, levels = Level.L0)
     public void switchRelevantWithRelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -196,7 +207,8 @@ public class SimpleStringOps {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "(ab|ac|a|ad|af)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|a|ad|af)")
+    @Failure(n = 0, levels = Level.L0)
     public void switchNestedNoNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -220,7 +232,8 @@ public class SimpleStringOps {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "(ab|ac|ad|ae|af)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|ad|ae|af)")
+    @Failure(n = 0, levels = Level.L0)
     public void switchNestedWithNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -253,9 +266,11 @@ public class SimpleStringOps {
      */
     @Dynamic(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.Runtime|java.lang.System|java.lang.StringBuilder)")
     @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "java.lang.System")
-    @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System|java.lang..*)")
-    @Constant(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "(java.lang.System|java.lang.StringBuilder|java.lang.StringBuilder)")
-    @Dynamic(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System|java.lang.StringBuilder|java.lang.StringBuilder)")
+    @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System)")
+    @Constant(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "java.lang.System")
+    @Dynamic(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System|java.lang..*)")
+    @Constant(n = 0, levels = Level.L2, soundness = SoundnessMode.LOW, value = "(java.lang.System|java.lang.StringBuilder|java.lang.StringBuilder)")
+    @Dynamic(n = 0, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System|java.lang.StringBuilder|java.lang.StringBuilder)")
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
 

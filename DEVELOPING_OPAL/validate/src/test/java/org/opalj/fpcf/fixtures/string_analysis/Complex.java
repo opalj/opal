@@ -19,7 +19,8 @@ public class Complex {
     /**
      * Extracted from com.oracle.webservices.internal.api.message.BasePropertySet, has two def-sites and one use-site
      */
-    @PartiallyConstant(n = 0, value = "(set.*|s.*)")
+    @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "(set.*|s.*)")
+    @Failure(n = 0, levels = Level.L0)
     public void twoDefinitionsOneUsage(String getName) throws ClassNotFoundException {
         String name = getName;
         String setName = name.startsWith("is") ?
@@ -40,8 +41,9 @@ public class Complex {
     /**
      * Taken from com.sun.javafx.property.PropertyReference#reflect.
      */
-    @PartiallyConstant(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(get.*|getHello, World.*)")
-    @PartiallyConstant(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(get.*|getHello, Worldjava.lang.Runtime)")
+    @Failure(n = 0, levels = Level.L0)
+    @PartiallyConstant(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(get.*|getHello, World.*)")
+    @PartiallyConstant(n = 0, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(get.*|getHello, Worldjava.lang.Runtime)")
     public void complexDependencyResolve(String s, Class clazz) {
         String properName = s.length() == 1 ? s.substring(0, 1).toUpperCase() :
                 getHelloWorld() + getRuntimeClassName();
@@ -59,8 +61,9 @@ public class Complex {
      * Taken from com.sun.prism.impl.ps.BaseShaderContext#getPaintShader and slightly adapted
      */
     @Constant(n = 0, levels = Level.TRUTH, value = "Hello, World_paintname(_PAD|_REFLECT|_REPEAT)?(_AlphaTest)?")
+    @Failure(n = 0, levels = Level.L0)
     // or-cases are currently not collapsed into simpler conditionals / or-cases using prefix checking
-    @Constant(n = 0, levels = { Level.L0, Level.L1 }, value = "(Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT|(Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT)_AlphaTest)")
+    @Constant(n = 0, levels = { Level.L1, Level.L2 }, value = "(Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT|(Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT)_AlphaTest)")
     public void getPaintShader(boolean getPaintType, int spreadMethod, boolean alphaTest) {
         String shaderName = getHelloWorld() + "_" + "paintname";
         if (getPaintType) {
@@ -91,8 +94,8 @@ public class Complex {
         analyzeString(sb.toString());
     }
 
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = Level.L1, value = "value")
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    @Constant(n = 0, levels = Level.L2, value = "value")
     public String cyclicDependencyTest(String s) {
         String value = getProperty(s);
         analyzeString(value);

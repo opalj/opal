@@ -14,23 +14,25 @@ public class FunctionCalls {
      */
     public void analyzeString(String s) {}
 
-    // checks if a string value with append(s) is determined correctly
-    @Constant(n = 0, value = "java.lang.String")
-    @Constant(n = 1, value = "java.lang.Object")
+    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.String")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "java.lang.Object")
+    @Failure(n = 1, levels = Level.L0)
     public void simpleStringConcatWithStaticFunctionCalls() {
         analyzeString(StringProvider.concat("java.lang.", "String"));
         analyzeString(StringProvider.concat("java.", StringProvider.concat("lang.", "Object")));
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
-    @Failure(n = 0, levels = Level.L0)
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void fromFunctionCall() {
         analyzeString(getStringBuilderClassName());
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
-    @Invalid(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW)
-    @PartiallyConstant(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "java.lang..*")
+    @Failure(n = 0, levels = Level.L0)
+    @Invalid(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW)
+    @PartiallyConstant(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "java.lang..*")
     public void fromConstantAndFunctionCall() {
         String className = "java.lang.";
         System.out.println(className);
@@ -38,7 +40,8 @@ public class FunctionCalls {
         analyzeString(className);
     }
 
-    @Constant(n = 0, value = "java.lang.Integer")
+    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.Integer")
+    @Failure(n = 0, levels = Level.L0)
     public void fromStaticMethodWithParamTest() {
         analyzeString(StringProvider.getFQClassNameWithStringBuilder("java.lang", "Integer"));
     }
@@ -53,17 +56,18 @@ public class FunctionCalls {
         throw new RuntimeException();
     }
 
-    @Constant(n = 0, value = "Hello, World!")
+    @Constant(n = 0, levels = Level.TRUTH, value = "Hello, World!")
+    @Failure(n = 0, levels = Level.L0)
     @Constant(n = 1, levels = Level.TRUTH, value = "Hello, World?")
-    @Failure(n = 1, levels = Level.L0)
+    @Failure(n = 1, levels = { Level.L0, Level.L1 })
     public void functionWithFunctionParameter() {
         analyzeString(addExclamationMark(getHelloWorld()));
         analyzeString(addQuestionMark(getHelloWorld()));
     }
 
-    @Constant(n = 0, value = "(java.lang.Object|java.lang.StringBuilder|ERROR)")
-    @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "ERROR")
-    @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.StringBuilder|ERROR)")
+    @Constant(n = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.LOW, value = "ERROR")
+    @Dynamic(n = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
     public void simpleNonVirtualFunctionCallTestWithIf(int i) {
         String s;
         if (i == 0) {
@@ -77,8 +81,9 @@ public class FunctionCalls {
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.StringBuilder|ERROR)")
-    @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "ERROR")
-    @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "ERROR")
+    @Dynamic(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
     public void initFromNonVirtualFunctionCallTest(int i) {
         String s;
         if (i == 0) {
@@ -92,7 +97,8 @@ public class FunctionCalls {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "It is (great|Hello, World)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "It is (great|Hello, World)")
+    @Failure(n = 0, levels = Level.L0)
     public void appendWithTwoDefSitesWithFuncCallTest(int i) {
         String s;
         if (i > 0) {
@@ -107,15 +113,15 @@ public class FunctionCalls {
      * A case where the single valid return value of the called function can be resolved without calling the function.
      */
     @Constant(n = 0, levels = Level.TRUTH, domains = DomainLevel.L1, value = "(java.lang.Object|One|val)")
-    @Failure(n = 0, levels = Level.L0, domains = DomainLevel.L1)
+    @Failure(n = 0, levels = { Level.L0, Level.L1 }, domains = DomainLevel.L1)
     // Since the virtual function return value is inlined in L2 and its actual runtime return
     // value is not used, the function call gets converted to a method call, which modifies the
     // TAC: The def PC from the `analyzeString` parameter is now different and points to the def
     // PC for the `resolvableReturnValueFunction` parameter. This results in no string flow being
     // detected since the def and use sites are now inconsistent.
     // The actual truth @Constant(n = 0, value = "val", domains = DomainLevel.L2)
-    @Invalid(n = 0, levels = Level.L0, domains = DomainLevel.L2)
     @Invalid(n = 0, levels = Level.L1, domains = DomainLevel.L2)
+    @Invalid(n = 0, levels = Level.L2, domains = DomainLevel.L2)
     public void resolvableReturnValue() {
         analyzeString(resolvableReturnValueFunction("val", 42));
     }
@@ -132,7 +138,7 @@ public class FunctionCalls {
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "(One|val|java.lang.Object)")
-    @Failure(n = 0, levels = Level.L0)
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void severalReturnValuesTest1() {
         analyzeString(severalReturnValuesWithSwitchFunction("val", 42));
     }
@@ -146,7 +152,8 @@ public class FunctionCalls {
         }
     }
 
-    @Constant(n = 0, value = "(that's odd|Hello, World)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(that's odd|Hello, World)")
+    @Failure(n = 0, levels = Level.L0)
     public void severalReturnValuesTest2() {
         analyzeString(severalReturnValuesWithIfElseFunction(42));
     }
@@ -161,14 +168,15 @@ public class FunctionCalls {
         }
     }
 
-    @Constant(n = 0, value = "(Hello, World|my.helper.Class)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello, World|my.helper.Class)")
+    @Failure(n = 0, levels = Level.L0)
     public String calleeWithFunctionParameter(String s, float i) {
         analyzeString(s);
         return s;
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "Hello, World")
-    @Failure(n = 0, levels = Level.L0)
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void firstCallerForCalleeWithFunctionParameter() {
         String s = calleeWithFunctionParameter(getHelloWorldProxy(), 900);
         analyzeString(s);
@@ -178,7 +186,8 @@ public class FunctionCalls {
         calleeWithFunctionParameter(getHelperClassProxy(), 900);
     }
 
-    @Constant(n = 0, value = "(Hello, World|my.helper.Class)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello, World|my.helper.Class)")
+    @Failure(n = 0, levels = Level.L0)
     public String calleeWithFunctionParameterMultipleCallsInSameMethodTest(String s, float i) {
         analyzeString(s);
         return s;
@@ -187,6 +196,17 @@ public class FunctionCalls {
     public void callerForCalleeWithFunctionParameterMultipleCallsInSameMethodTest() {
         calleeWithFunctionParameterMultipleCallsInSameMethodTest(getHelloWorldProxy(), 900);
         calleeWithFunctionParameterMultipleCallsInSameMethodTest(getHelperClassProxy(), 900);
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "(string.1|string.2)")
+    public String calleeWithStringParameterMultipleCallsInSameMethodTest(String s, float i) {
+        analyzeString(s);
+        return s;
+    }
+
+    public void callerForCalleeWithStringParameterMultipleCallsInSameMethodTest() {
+        calleeWithStringParameterMultipleCallsInSameMethodTest("string.1", 900);
+        calleeWithStringParameterMultipleCallsInSameMethodTest("string.2", 900);
     }
 
     public static String getHelloWorldProxy() {

@@ -50,6 +50,7 @@ import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis
 import org.opalj.tac.fpcf.analyses.systemproperties.EagerSystemPropertiesAnalysisScheduler
 
 sealed abstract class StringAnalysisTest extends PropertiesTest {
@@ -92,8 +93,8 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
 
     def initBeforeCallGraph(p: Project[URL]): Unit = {}
 
-    def runTests(): Unit = {
-        describe(s"the string analysis on level $level is started") {
+    describe(s"using level=$level, domainLevel=$domainLevel, soundness=$soundnessMode") {
+        describe(s"the string analysis is started") {
             var entities = Iterable.empty[(VariableContext, Method)]
             val as = executeAnalyses(
                 analyses,
@@ -251,34 +252,26 @@ sealed abstract class L0StringAnalysisTest extends StringAnalysisTest {
 
     override final def level = Level.L0
 
-    override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
-        LazyL0StringAnalysis.allRequiredAnalyses :+
-            EagerSystemPropertiesAnalysisScheduler
-    }
+    override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] =
+        LazyL0StringAnalysis.allRequiredAnalyses
 }
 
 class L0StringAnalysisWithL1DefaultDomainTest extends L0StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L1
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
-
-    describe("using the l1 default domain") { runTests() }
 }
 
 class L0StringAnalysisWithL2DefaultDomainTest extends L0StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
-
-    describe("using the l2 default domain") { runTests() }
 }
 
 class HighSoundnessL0StringAnalysisWithL2DefaultDomainTest extends L0StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.HIGH
-
-    describe("using the l2 default domain and the high soundness mode") { runTests() }
 }
 
 /**
@@ -289,10 +282,44 @@ class HighSoundnessL0StringAnalysisWithL2DefaultDomainTest extends L0StringAnaly
  */
 sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
 
-    override def level = Level.L1
+    override final def level = Level.L1
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
         LazyL1StringAnalysis.allRequiredAnalyses :+
+            EagerSystemPropertiesAnalysisScheduler
+    }
+}
+
+class L1StringAnalysisWithL1DefaultDomainTest extends L1StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L1
+    override def soundnessMode: SoundnessMode = SoundnessMode.LOW
+}
+
+class L1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L2
+    override def soundnessMode: SoundnessMode = SoundnessMode.LOW
+}
+
+class HighSoundnessL1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L2
+    override def soundnessMode: SoundnessMode = SoundnessMode.HIGH
+}
+
+/**
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis]] works correctly with
+ * respect to some well-defined tests.
+ *
+ * @author Maximilian Rüsch
+ */
+sealed abstract class L2StringAnalysisTest extends StringAnalysisTest {
+
+    override def level = Level.L2
+
+    override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
+        LazyL2StringAnalysis.allRequiredAnalyses :+
             EagerFieldAccessInformationAnalysis :+
             EagerSystemPropertiesAnalysisScheduler
     }
@@ -305,26 +332,20 @@ sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
     }
 }
 
-class L1StringAnalysisWithL1DefaultDomainTest extends L1StringAnalysisTest {
+class L2StringAnalysisWithL1DefaultDomainTest extends L1StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L1
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
-
-    describe("using the l1 default domain") { runTests() }
 }
 
-class L1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
+class L2StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
-
-    describe("using the l2 default domain") { runTests() }
 }
 
-class HighSoundnessL1StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
+class HighSoundnessL2StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.HIGH
-
-    describe("using the l2 default domain and the high soundness mode") { runTests() }
 }

@@ -18,16 +18,19 @@ public class SimpleStringBuilderOps {
     public void analyzeString(String s) {}
     public void analyzeString(StringBuilder sb) {}
 
-    @Constant(n = 0, value = "java.lang.String")
+    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.String")
+    @Failure(n = 0, levels = Level.L0)
     public void multipleDirectAppends() {
         StringBuilder sb = new StringBuilder("java");
         sb.append(".").append("lang").append(".").append("String");
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "SomeOther")
-    @Constant(n = 1, value = "SomeOther", levels = Level.TRUTH)
-    @Constant(n = 1, value = "(Some|SomeOther)", levels = { Level.L0, Level.L1 })
+    @Constant(n = 0, levels = Level.TRUTH, value = "SomeOther")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "SomeOther")
+    @Failure(n = 1, levels = Level.L0)
+    @Constant(n = 1, levels = { Level.L1, Level.L2 }, value = "(Some|SomeOther)")
     public void stringValueOfWithStringBuilder() {
         StringBuilder sb = new StringBuilder("Some");
         sb.append("Other");
@@ -36,8 +39,10 @@ public class SimpleStringBuilderOps {
         analyzeString(sb);
     }
 
-    @Constant(n = 0, value = "Some")
-    @Constant(n = 1, value = "Other")
+    @Constant(n = 0, levels = Level.TRUTH, value = "Some")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "Other")
+    @Failure(n = 1, levels = Level.L0)
     public void stringBuilderBufferInitArguments() {
         StringBuilder sb = new StringBuilder("Some");
         analyzeString(sb.toString());
@@ -46,8 +51,10 @@ public class SimpleStringBuilderOps {
         analyzeString(sb2.toString());
     }
 
-    @Constant(n = 0, value = "java.lang.StringBuilder")
-    @Constant(n = 1, value = "java.lang.StringBuilder")
+    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "java.lang.StringBuilder")
+    @Failure(n = 1, levels = Level.L0)
     public void simpleClearExamples() {
         StringBuilder sb1 = new StringBuilder("init_value:");
         sb1.setLength(0);
@@ -62,7 +69,8 @@ public class SimpleStringBuilderOps {
         analyzeString(sb2.toString());
     }
 
-    @Constant(n = 0, value = "(Goodbye|init_value:Hello, world!Goodbye)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(Goodbye|init_value:Hello, world!Goodbye)")
+    @Failure(n = 0, levels = Level.L0)
     public void advancedClearExampleWithSetLength(int value) {
         StringBuilder sb = new StringBuilder("init_value:");
         if (value < 10) {
@@ -74,8 +82,10 @@ public class SimpleStringBuilderOps {
         analyzeString(sb.toString());
     }
 
-    @Dynamic(n = 0, value = ".*")
-    @PartiallyConstant(n = 1, value = "(.*Goodbye|init_value:Hello, world!Goodbye)")
+    @Dynamic(n = 0, levels = Level.TRUTH, value = ".*")
+    @Failure(n = 0, levels = Level.L0)
+    @PartiallyConstant(n = 1, levels = Level.TRUTH, value = "(.*Goodbye|init_value:Hello, world!Goodbye)")
+    @Failure(n = 1, levels = Level.L0)
     public void replaceExamples(int value) {
         StringBuilder sb1 = new StringBuilder("init_value");
         sb1.replace(0, 5, "replaced_value");
@@ -91,8 +101,10 @@ public class SimpleStringBuilderOps {
         analyzeString(sb1.toString());
     }
 
-    @Constant(n = 0, value = "B.")
-    @Constant(n = 1, value = "java.langStringB.")
+    @Constant(n = 0, levels = Level.TRUTH, value = "B.")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "java.langStringB.")
+    @Failure(n = 1, levels = Level.L0)
     public void directAppendConcatsWith2ndStringBuilder() {
         StringBuilder sb = new StringBuilder("java");
         StringBuilder sb2 = new StringBuilder("B");
@@ -107,7 +119,8 @@ public class SimpleStringBuilderOps {
     /**
      * Checks if the value of a string builder that depends on the complex construction of a second one can be determined.
      */
-    @Constant(n = 0, value = "java.lang.(Object|Runtime)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.(Object|Runtime)")
+    @Failure(n = 0, levels = Level.L0)
     public void complexSecondStringBuilderRead(String className) {
         StringBuilder sbObj = new StringBuilder("Object");
         StringBuilder sbRun = new StringBuilder("Runtime");
@@ -124,7 +137,8 @@ public class SimpleStringBuilderOps {
         analyzeString(sb2.toString());
     }
 
-    @Constant(n = 0, value = "(java.lang.Object|java.lang.Runtime)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.Runtime)")
+    @Failure(n = 0, levels = Level.L0)
     public void simpleSecondStringBuilderRead(String className) {
         StringBuilder sbObj = new StringBuilder("Object");
         StringBuilder sbRun = new StringBuilder("Runtime");
@@ -139,8 +153,10 @@ public class SimpleStringBuilderOps {
         analyzeString(sb1.toString());
     }
 
-    @Constant(n = 0, value = "(Object|ObjectRuntime)")
-    @Constant(n = 1, value = "(RuntimeObject|Runtime)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(Object|ObjectRuntime)")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "(RuntimeObject|Runtime)")
+    @Failure(n = 1, levels = Level.L0)
     public void crissCrossExample(String className) {
         StringBuilder sbObj = new StringBuilder("Object");
         StringBuilder sbRun = new StringBuilder("Runtime");
@@ -155,7 +171,8 @@ public class SimpleStringBuilderOps {
         analyzeString(sbRun.toString());
     }
 
-    @PartiallyConstant(n = 0, value = "File Content:.*", soundness = SoundnessMode.HIGH)
+    @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "File Content:.*", soundness = SoundnessMode.HIGH)
+    @Failure(n = 0, levels = Level.L0)
     public void withUnknownAppendSource(String filename) throws IOException {
         StringBuilder sb = new StringBuilder("File Content:");
         String data = new String(Files.readAllBytes(Paths.get(filename)));

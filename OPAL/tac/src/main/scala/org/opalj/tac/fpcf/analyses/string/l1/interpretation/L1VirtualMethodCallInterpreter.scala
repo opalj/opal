@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l0
+package l1
 package interpretation
 
 import org.opalj.br.fpcf.properties.string.StringTreeConst
@@ -18,7 +18,7 @@ import org.opalj.value.TheIntegerValue
 /**
  * @author Maximilian Rüsch
  */
-object L0VirtualMethodCallInterpreter extends StringInterpreter {
+object L1VirtualMethodCallInterpreter extends StringInterpreter {
 
     override type T = VirtualMethodCall[V]
 

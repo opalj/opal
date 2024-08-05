@@ -35,22 +35,19 @@ public class External {
     public void analyzeString(String s) {}
 
     @Constant(n = 0, levels = Level.TRUTH, value = "Field Value:private l0 non-final string field")
-    @Invalid(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW)
-    @PartiallyConstant(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "Field Value:.*")
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void nonFinalFieldRead() {
-        StringBuilder sb = new StringBuilder("Field Value:");
-        System.out.println(sb);
-        sb.append(nonFinalNonStaticField);
-        analyzeString(sb.toString());
+        analyzeString(nonFinalNonStaticField);
     }
 
-    @Constant(n = 0, value = "will not be revealed here")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 0, levels = Level.TRUTH, value = "will not be revealed here")
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void nonFinalStaticFieldRead() {
         analyzeString(nonFinalStaticField);
     }
 
-    @Constant(n = 0, value = "Field Value:mine")
+    @Constant(n = 0, levels = Level.TRUTH, value = "Field Value:mine")
+    @Failure(n = 0, levels = Level.L0)
     public void publicFinalStaticFieldRead() {
         StringBuilder sb = new StringBuilder("Field Value:");
         System.out.println(sb);
@@ -58,28 +55,29 @@ public class External {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "init field value")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 0, levels = Level.TRUTH, value = "init field value")
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void fieldWithInitRead() {
         analyzeString(fieldWithSelfInit.toString());
     }
 
-    @PartiallyConstant(n = 0, soundness = SoundnessMode.HIGH, value = ".*Impl_Stub")
-    @Failure(n = 0, levels = Level.L0)
+    @PartiallyConstant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = ".*Impl_Stub")
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void fieldWithInitWithOutOfScopeRead() {
         analyzeString(fieldWithSelfInitWithOutOfScopeCall);
     }
 
-    @Constant(n = 0, value = "initialized by constructor")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 0, levels = Level.TRUTH, value = "initialized by constructor")
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void fieldInitByConstructorRead() {
         analyzeString(fieldWithConstructorInit.toString());
     }
 
     @Dynamic(n = 0, levels = Level.TRUTH, value = "^-?\\d*\\.{0,1}\\d+$")
-    @Failure(n = 0, levels = Level.L0, domains = DomainLevel.L1)
-    @Invalid(n = 0, levels = Level.L0, domains = DomainLevel.L2, soundness = SoundnessMode.LOW)
-    @Dynamic(n = 0, levels = Level.L0, domains = DomainLevel.L2, soundness = SoundnessMode.HIGH,
+    @Failure(n = 0, levels = Level.L0)
+    @Failure(n = 0, levels = Level.L1, domains = DomainLevel.L1)
+    @Invalid(n = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.LOW)
+    @Dynamic(n = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.HIGH,
         value = "^-?\\d*\\.{0,1}\\d+$", reason = "the field value is inlined using L2 domains")
     public void fieldInitByConstructorParameter() {
         analyzeString(new StringBuilder().append(fieldWithConstructorParameterInit).toString());
@@ -87,28 +85,31 @@ public class External {
 
     // Contains a field write in the same method which cannot be captured by flow functions
     @Constant(n = 0, levels = Level.TRUTH, value = "(some value|^null$)")
-    @Failure(n = 0, levels = Level.L0)
-    @Dynamic(n = 0, levels = Level.L1, value = ".*")
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    @Dynamic(n = 0, levels = Level.L2, value = ".*")
     public void fieldWriteInSameMethod() {
         writeInSameMethodField = "some value";
         analyzeString(writeInSameMethodField);
     }
 
     @Dynamic(n = 0, levels = Level.TRUTH, value = "(.*|^null$)")
-    @Failure(n = 0, levels = Level.L0)
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void fieldWithNoWriteTest() {
         analyzeString(noWriteField);
     }
 
-    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
     public void nonSupportedFieldTypeRead() {
         analyzeString(unsupportedTypeField.toString());
     }
 
-    @Dynamic(n = 0, value = ".*")
-    @Dynamic(n = 1, value = ".*")
-    @PartiallyConstant(n = 2, value = "value=.*")
-    @PartiallyConstant(n = 3, value = "value=.*.*")
+    @Dynamic(n = 0, levels = Level.TRUTH, value = ".*")
+    @Dynamic(n = 1, levels = Level.TRUTH, value = ".*")
+    @Failure(n = 1, levels = Level.L0)
+    @PartiallyConstant(n = 2, levels = Level.TRUTH, value = "value=.*")
+    @Failure(n = 2, levels = Level.L0)
+    @PartiallyConstant(n = 3, levels = Level.TRUTH, value = "value=.*.*")
+    @Failure(n = 3, levels = Level.L0)
     public void parameterRead(String stringValue, StringBuilder sbValue) {
         analyzeString(stringValue);
         analyzeString(sbValue.toString());
@@ -126,9 +127,10 @@ public class External {
      * Methods are called that return a string but are not within this project => cannot / will not interpret
      */
     @Dynamic(n = 0, levels = Level.TRUTH, value = "(.*)*")
-    @Dynamic(n = 0, levels = { Level.L0, Level.L1 }, value = ".*")
+    @Failure(n = 0, levels = Level.L0)
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, value = ".*")
     @Invalid(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
-    @Dynamic(n = 1, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.LOW, value = ".*")
+    @Dynamic(n = 1, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = ".*")
     @Dynamic(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = ".*")
     public void methodsOutOfScopeTest() throws FileNotFoundException {
         File file = new File("my-file.txt");

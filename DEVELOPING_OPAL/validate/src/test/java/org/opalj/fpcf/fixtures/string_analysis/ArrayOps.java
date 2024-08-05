@@ -16,8 +16,8 @@ public class ArrayOps {
      */
     public void analyzeString(String s) {}
 
-    @Constant(n = 0, value = "(java.lang.String|java.lang.StringBuilder|java.lang.System|java.lang.Runnable)", levels = Level.TRUTH)
-    @Failure(n = 0, levels = { Level.L0, Level.L1 }, reason = "array accesses cannot be interpreted yet")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.String|java.lang.StringBuilder|java.lang.System|java.lang.Runnable)")
+    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 }, reason = "array accesses cannot be interpreted yet")
     public void fromStringArray(int index) {
         String[] classes = {
                 "java.lang.String", "java.lang.StringBuilder",
@@ -29,7 +29,7 @@ public class ArrayOps {
     }
 
     @Dynamic(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.Runtime|java.lang.Integer|.*)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1 }, reason = "arrays are not supported")
+    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 }, reason = "arrays are not supported")
     public void arrayStaticAndVirtualFunctionCalls(int i) {
         String[] classes = {
                 "java.lang.Object",
@@ -41,7 +41,7 @@ public class ArrayOps {
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "(January|February|March|April)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1 }, reason = "arrays are not supported")
+    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 }, reason = "arrays are not supported")
     public void getStringArrayField(int i) {
         analyzeString(monthNames[i]);
     }

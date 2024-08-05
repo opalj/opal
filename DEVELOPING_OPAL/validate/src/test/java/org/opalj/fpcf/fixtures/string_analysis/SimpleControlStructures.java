@@ -15,8 +15,10 @@ public class SimpleControlStructures {
      */
     public void analyzeString(String s) {}
 
-    @Dynamic(n = 0, value = "(x|^-?\\d+$)")
-    @Constant(n = 1, value = "(42-42|x)")
+    @Dynamic(n = 0, levels = Level.TRUTH, value = "(x|^-?\\d+$)")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "(42-42|x)")
+    @Failure(n = 1, levels = Level.L0)
     public void ifElseWithStringBuilderWithIntExpr() {
         StringBuilder sb1 = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
@@ -33,7 +35,8 @@ public class SimpleControlStructures {
         analyzeString(sb2.toString());
     }
 
-    @PartiallyConstant(n = 0, value = "(3.142.71828|^-?\\d*\\.{0,1}\\d+$2.71828)")
+    @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "(3.142.71828|^-?\\d*\\.{0,1}\\d+$2.71828)")
+    @Failure(n = 0, levels = Level.L0)
     public void ifElseWithStringBuilderWithFloatExpr() {
         StringBuilder sb1 = new StringBuilder();
         int i = new Random().nextInt();
@@ -47,8 +50,10 @@ public class SimpleControlStructures {
         analyzeString(sb1.toString());
     }
 
-    @Constant(n = 0, value = "(a|b)")
-    @Constant(n = 1, value = "(ab|ac)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|b)")
+    @Failure(n = 0, levels = Level.L0)
+    @Constant(n = 1, levels = Level.TRUTH, value = "(ab|ac)")
+    @Failure(n = 1, levels = Level.L0)
     public void ifElseWithStringBuilder() {
         StringBuilder sb1;
         StringBuilder sb2 = new StringBuilder("a");
@@ -65,7 +70,8 @@ public class SimpleControlStructures {
         analyzeString(sb2.toString());
     }
 
-    @Constant(n = 0, value = "(abcd|axyz)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(abcd|axyz)")
+    @Failure(n = 0, levels = Level.L0)
     public void ifElseWithStringBuilderWithMultipleAppends() {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
@@ -81,7 +87,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "(abcd|a|axyz)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(abcd|a|axyz)")
+    @Failure(n = 0, levels = Level.L0)
     public void ifElseWithStringBuilderWithMultipleAppendsAndNonUsedElseIf() {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
@@ -99,7 +106,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "(a|ab)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab)")
+    @Failure(n = 0, levels = Level.L0)
     public void ifWithoutElse() {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
@@ -109,7 +117,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, value = "java.lang.Runtime")
+    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.Runtime")
+    @Failure(n = 0, levels = Level.L0)
     public void ifConditionAppendsToString(String className) {
         StringBuilder sb = new StringBuilder();
         if (sb.append("java.lang.Runtime").toString().equals(className)) {

@@ -10,6 +10,7 @@ import scala.collection.mutable
 
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.ControlTree
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis
@@ -60,14 +61,21 @@ case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: 
     def getWebs: Iterator[PDUWeb] = pcToDependeeMapping.values.flatMap { v =>
         if (v.hasUBP) v.ub.webs
         else StringFlowFunctionProperty.ub.webs
-    }.foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
-        val mappedWebs = reducedWebs.map(w => (w, w.identifiesSameVarAs(web)))
-        if (!mappedWebs.exists(_._2)) {
-            reducedWebs :+ web
-        } else {
-            mappedWebs.filterNot(_._2).map(_._1) :+ mappedWebs.filter(_._2).map(_._1).reduce(_.combine(_)).combine(web)
-        }
-    }.iterator
+    }
+        .toSeq.appendedAll(tac.params.parameters.zipWithIndex.map {
+            case (param, index) =>
+                PDUWeb(IntTrieSet(-index - 1), if (param != null) param.useSites else IntTrieSet.empty)
+        })
+        .foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
+            val mappedWebs = reducedWebs.map(w => (w, w.identifiesSameVarAs(web)))
+            if (!mappedWebs.exists(_._2)) {
+                reducedWebs :+ web
+            } else {
+                mappedWebs.filterNot(_._2).map(_._1) :+ mappedWebs.filter(_._2).map(_._1).reduce(_.combine(_)).combine(
+                    web
+                )
+            }
+        }.iterator
 }
 
 case class InterpretationState(pc: Int, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {

@@ -21,7 +21,7 @@ public @interface Dynamic {
      */
     String value();
 
-    Level[] levels() default { Level.TRUTH };
+    Level[] levels();
 
     DomainLevel[] domains() default { DomainLevel.L1, DomainLevel.L2 };
 

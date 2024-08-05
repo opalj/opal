@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l0
+package l1
 package interpretation
 
 import org.opalj.br.ObjectType
@@ -20,16 +20,16 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 /**
  * @author Maximilian Rüsch
  */
-case class L0StaticFunctionCallInterpreter()(
+case class L1StaticFunctionCallInterpreter()(
     implicit
     override val p:       SomeProject,
     override val ps:      PropertyStore,
     override val project: SomeProject,
     val soundnessMode:    SoundnessMode
 ) extends AssignmentBasedStringInterpreter
-    with L0ArbitraryStaticFunctionCallInterpreter
-    with L0StringValueOfFunctionCallInterpreter
-    with L0SystemPropertiesInterpreter {
+    with L1ArbitraryStaticFunctionCallInterpreter
+    with L1StringValueOfFunctionCallInterpreter
+    with L1SystemPropertiesInterpreter {
 
     override type E = StaticFunctionCall[V]
 
@@ -49,9 +49,9 @@ case class L0StaticFunctionCallInterpreter()(
     }
 }
 
-private[string] trait L0ArbitraryStaticFunctionCallInterpreter
+private[string] trait L1ArbitraryStaticFunctionCallInterpreter
     extends AssignmentBasedStringInterpreter
-    with L0FunctionCallInterpreter {
+    with L1FunctionCallInterpreter {
 
     implicit val p: SomeProject
     implicit val soundnessMode: SoundnessMode
@@ -75,7 +75,7 @@ private[string] trait L0ArbitraryStaticFunctionCallInterpreter
     }
 }
 
-private[string] trait L0StringValueOfFunctionCallInterpreter extends AssignmentBasedStringInterpreter {
+private[string] trait L1StringValueOfFunctionCallInterpreter extends AssignmentBasedStringInterpreter {
 
     override type E <: StaticFunctionCall[V]
 

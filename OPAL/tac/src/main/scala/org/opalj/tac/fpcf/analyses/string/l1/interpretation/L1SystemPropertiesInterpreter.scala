@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l0
+package l1
 package interpretation
 
 import org.opalj.br.analyses.SomeProject
@@ -20,7 +20,7 @@ import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
-private[string] trait L0SystemPropertiesInterpreter extends StringInterpreter {
+private[string] trait L1SystemPropertiesInterpreter extends StringInterpreter {
 
     implicit val ps: PropertyStore
     implicit val project: SomeProject

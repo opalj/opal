@@ -20,10 +20,10 @@ public class Loops {
     /**
      * Simple for loops with known and unknown bounds. Note that no analysis supports loops yet.
      */
-    @PartiallyConstant(n = 0, value = "a(b)*", levels = Level.TRUTH)
-    @Dynamic(n = 0, value = ".*", levels = { Level.L0, Level.L1 })
-    @PartiallyConstant(n = 1, value = "a(b)*", levels = Level.TRUTH)
-    @Dynamic(n = 1, value = ".*", levels = { Level.L0, Level.L1 })
+    @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "a(b)*")
+    @Dynamic(n = 0, levels = { Level.L0, Level.L1, Level.L2 }, value = ".*")
+    @PartiallyConstant(n = 1, levels = Level.TRUTH, value = "a(b)*")
+    @Dynamic(n = 1, levels = { Level.L0, Level.L1, Level.L2 }, value = ".*")
     public void simpleForLoopWithKnownBounds() {
         StringBuilder sb = new StringBuilder("a");
         for (int i = 0; i < 10; i++) {
@@ -39,8 +39,9 @@ public class Loops {
         analyzeString(sb.toString());
     }
 
-    @PartiallyConstant(n = 0, value = "((x|^-?\\d+$))*yz", levels = Level.TRUTH)
-    @Dynamic(n = 0, value = "(.*|.*yz)", levels = { Level.L0, Level.L1 })
+    @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "((x|^-?\\d+$))*yz")
+    @Dynamic(n = 0, levels = Level.L0, value = ".*")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, value = "(.*|.*yz)")
     public void ifElseInLoopWithAppendAfterwards() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 20; i++) {
@@ -55,8 +56,8 @@ public class Loops {
         analyzeString(sb.toString());
     }
 
-    @PartiallyConstant(n = 0, value = "a(b)*", levels = Level.TRUTH)
-    @Dynamic(n = 0, value = ".*", levels = { Level.L0, Level.L1 })
+    @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "a(b)*")
+    @Dynamic(n = 0, levels = { Level.L0, Level.L1, Level.L2 }, value = ".*")
     public void nestedLoops(int range) {
         for (int i = 0; i < range; i++) {
             StringBuilder sb = new StringBuilder("a");
@@ -68,7 +69,8 @@ public class Loops {
     }
 
     @PartiallyConstant(n = 0, value = "((x|^-?\\d+$))*yz", levels = Level.TRUTH)
-    @Dynamic(n = 0, value = "(.*|.*yz)", levels = { Level.L0, Level.L1 })
+    @Dynamic(n = 0, levels = Level.L0, value = ".*")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, value = "(.*|.*yz)")
     public void stringBufferExample() {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < 20; i++) {
@@ -84,7 +86,7 @@ public class Loops {
     }
 
     @PartiallyConstant(n = 0, value = "a(b)*", levels = Level.TRUTH)
-    @Dynamic(n = 0, value = ".*", levels = { Level.L0, Level.L1 })
+    @Dynamic(n = 0, value = ".*", levels = { Level.L0, Level.L1, Level.L2 })
     public void whileTrueWithBreak() {
         StringBuilder sb = new StringBuilder("a");
         while (true) {
@@ -97,7 +99,7 @@ public class Loops {
     }
 
     @PartiallyConstant(n = 0, value = "a(b)*", levels = Level.TRUTH)
-    @Dynamic(n = 0, value = ".*", levels = { Level.L0, Level.L1 })
+    @Dynamic(n = 0, value = ".*", levels = { Level.L0, Level.L1, Level.L2 })
     public void whileNonTrueWithBreak(int i) {
         StringBuilder sb = new StringBuilder("a");
         int j = 0;
@@ -112,16 +114,18 @@ public class Loops {
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "(iv1|iv2): ")
+    @Dynamic(n = 0, levels = Level.L0, value = ".*")
     // The real value is not fully resolved yet, since the string builder is used in a while loop,
     // which leads to the string builder potentially carrying any value. This can be refined by
     // recording pc specific states during data flow analysis.
-    @Dynamic(n = 0, levels = { Level.L0 , Level.L1 }, soundness = SoundnessMode.LOW, value = "((iv1|iv2): |.*)")
-    @Dynamic(n = 0, levels = { Level.L0 , Level.L1 }, soundness = SoundnessMode.HIGH, value = "((iv1|iv2): |.*)")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "((iv1|iv2): |.*)")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = "((iv1|iv2): |.*)")
     @PartiallyConstant(n = 1, levels = Level.TRUTH, value = "(iv1|iv2): ((great!)?)*(java.lang.Runtime)?")
-    @Dynamic(n = 1, levels = Level.L0, soundness = SoundnessMode.LOW, value = ".*")
-    @Dynamic(n = 1, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|.*.*)")
-    @Dynamic(n = 1, levels = Level.L1, soundness = SoundnessMode.LOW, value = "(.*|.*java.lang.Runtime)")
-    @Dynamic(n = 1, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|.*java.lang.Runtime)")
+    @Dynamic(n = 1, levels = Level.L0, value = ".*")
+    @Dynamic(n = 1, levels = Level.L1, soundness = SoundnessMode.LOW, value = ".*")
+    @Dynamic(n = 1, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|.*.*)")
+    @Dynamic(n = 1, levels = Level.L2, soundness = SoundnessMode.LOW, value = "(.*|.*java.lang.Runtime)")
+    @Dynamic(n = 1, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(.*|.*java.lang.Runtime)")
     public void extensiveWithManyControlStructures(boolean cond) {
         StringBuilder sb = new StringBuilder();
         if (cond) {
@@ -150,11 +154,12 @@ public class Loops {
 
     // The bytecode produces an "if" within an "if" inside the first loop => two conditions
     @Constant(n = 0, levels = Level.TRUTH, value = "abc((d)?)*")
-    @Dynamic(n = 0, levels = { Level.L0, Level.L1 }, value = ".*")
+    @Dynamic(n = 0, levels = { Level.L0, Level.L1, Level.L2 }, value = ".*")
     @Constant(n = 1, levels = Level.TRUTH, value = "")
-    @Dynamic(n = 1, levels = { Level.L0, Level.L1 }, value = "(.*|)")
+    @Dynamic(n = 1, levels = Level.L0, value = ".*")
+    @Dynamic(n = 1, levels = { Level.L1, Level.L2 }, value = "(.*|)")
     @Dynamic(n = 2, levels = Level.TRUTH, value = "((.*)?)*")
-    @Dynamic(n = 2, levels = { Level.L0, Level.L1 }, value = ".*")
+    @Dynamic(n = 2, levels = { Level.L0, Level.L1, Level.L2 }, value = ".*")
     public void breakContinueExamples(int value) {
         StringBuilder sb1 = new StringBuilder("abc");
         for (int i = 0; i < value; i++) {
@@ -195,7 +200,7 @@ public class Loops {
      * Some comprehensive example for experimental purposes taken from the JDK and slightly modified
      */
     @Constant(n = 0, value = "Hello: (java.lang.Runtime|java.lang.StringBuilder|StringBuilder)?", levels = Level.TRUTH)
-    @Dynamic(n = 0, value = ".*", levels = { Level.L0, Level.L1 })
+    @Dynamic(n = 0, value = ".*", levels = { Level.L0, Level.L1, Level.L2 })
     protected void setDebugFlags(String[] var1) {
         for(int var2 = 0; var2 < var1.length; ++var2) {
             String var3 = var1[var2];

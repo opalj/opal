@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l1
+package l2
 package interpretation
 
 import scala.collection.mutable.ListBuffer
@@ -32,7 +32,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
-import org.opalj.tac.fpcf.analyses.string.l1.L1StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.l2.L2StringAnalysis
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
@@ -41,7 +41,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  *
  * @author Maximilian Rüsch
  */
-class L1FieldReadInterpreter(
+class L2FieldReadInterpreter(
     implicit val ps:              PropertyStore,
     implicit val project:         SomeProject,
     implicit val declaredFields:  DeclaredFields,
@@ -67,12 +67,12 @@ class L1FieldReadInterpreter(
             } catch {
                 case t: Throwable =>
                     logOnce {
-                        Error(L1StringAnalysis.ConfigLogCategory, s"couldn't read: $FieldWriteThresholdConfigKey", t)
+                        Error(L2StringAnalysis.ConfigLogCategory, s"couldn't read: $FieldWriteThresholdConfigKey", t)
                     }
                     10
             }
 
-        logOnce(Info(L1StringAnalysis.ConfigLogCategory, "uses a field write threshold of " + threshold))
+        logOnce(Info(L2StringAnalysis.ConfigLogCategory, "uses a field write threshold of " + threshold))
         threshold
     }
 
@@ -107,7 +107,7 @@ class L1FieldReadInterpreter(
 
     /**
      * Currently, fields are approximated using the following approach: If a field of a type not supported by the
-     * [[L1StringAnalysis]] is passed, a flow function producing the LB will be produced. Otherwise, all write accesses
+     * [[L2StringAnalysis]] is passed, a flow function producing the LB will be produced. Otherwise, all write accesses
      * are considered and analyzed. If a field is not initialized within a constructor or the class itself, it will be
      * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
      * [[org.opalj.br.fpcf.properties.string.StringConstancyLevel.DYNAMIC]].

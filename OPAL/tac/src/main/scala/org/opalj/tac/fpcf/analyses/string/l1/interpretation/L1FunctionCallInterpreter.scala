@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l0
+package l1
 package interpretation
 
 import org.opalj.br.Method
@@ -27,7 +27,7 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 /**
  * @author Maximilian Rüsch
  */
-trait L0FunctionCallInterpreter
+trait L1FunctionCallInterpreter
     extends AssignmentLikeBasedStringInterpreter
     with ParameterEvaluatingStringInterpreter {
 

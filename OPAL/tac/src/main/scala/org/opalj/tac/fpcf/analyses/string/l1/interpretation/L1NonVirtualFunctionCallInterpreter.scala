@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l0
+package l1
 package interpretation
 
 import org.opalj.br.analyses.SomeProject
@@ -18,12 +18,12 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Maximilian Rüsch
  */
-case class L0NonVirtualFunctionCallInterpreter()(
+case class L1NonVirtualFunctionCallInterpreter()(
     implicit val p:             SomeProject,
     implicit val ps:            PropertyStore,
     implicit val soundnessMode: SoundnessMode
 ) extends AssignmentLikeBasedStringInterpreter
-    with L0FunctionCallInterpreter {
+    with L1FunctionCallInterpreter {
 
     override type T = AssignmentLikeStmt[V]
     override type E = NonVirtualFunctionCall[V]
