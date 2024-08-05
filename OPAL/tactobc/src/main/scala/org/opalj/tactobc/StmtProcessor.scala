@@ -3,10 +3,11 @@ package org.opalj.tactobc
 
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
-import org.opalj.br.{BootstrapMethod, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, FieldType, MethodDescriptor, ObjectType, PCs, ReferenceType}
-import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, TABLESWITCH}
+import org.opalj.br.{BootstrapMethod, ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FieldType, FloatType, IntegerType, LongType, MethodDescriptor, ObjectType, PCs, ReferenceType, ShortType}
+import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH}
 import org.opalj.collection.immutable.{IntIntPair, IntTrieSet}
 import org.opalj.tac.{Expr, UVar, Var}
+import org.opalj.tactobc.ExprProcessor.inferElementType
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
@@ -119,7 +120,7 @@ object StmtProcessor {
   }
 
   def processArrayStore(arrayRef: Expr[_], index: Expr[_], value: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: handle this correctly
+    // Load the arrayRef onto the stack
     val pcAfterArrayRefLoad = ExprProcessor.processExpression(arrayRef, instructionsWithPCs, currentPC)
 
     // Load the index onto the stack
@@ -128,19 +129,19 @@ object StmtProcessor {
     // Load the value to be stored onto the stack
     val pcAfterValueLoad = ExprProcessor.processExpression(value, instructionsWithPCs, pcAfterIndexLoad)
 
-    // Determine the type of the value to be stored and select the appropriate store instruction
-    val instruction = value.cTpe match {
-      case ComputationalTypeInt => IASTORE
-      case ComputationalTypeLong => LASTORE
-      case ComputationalTypeFloat => FASTORE
-      case ComputationalTypeDouble => DASTORE
-      //case UVar(_, _: Byte) => BASTORE
-      //case UVar(_, _: Char) => CASTORE
-      //case UVar(_, _: Short) => SASTORE
-      case ComputationalTypeReference => AASTORE
+    // Infer the element type from the array reference expression
+    val elementType = inferElementType(arrayRef)
+    val instruction = elementType match {
+      case IntegerType => IASTORE
+      case LongType => LASTORE
+      case FloatType => FASTORE
+      case DoubleType => DASTORE
+      case ByteType => BASTORE
+      case CharType => CASTORE
+      case ShortType => SASTORE
+      case _: ObjectType => AASTORE
       case _ => throw new IllegalArgumentException("Unsupported array store type")
     }
-
     // Add the store instruction
     instructionsWithPCs += ((pcAfterValueLoad, instruction))
     pcAfterValueLoad + instruction.length
