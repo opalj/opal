@@ -103,6 +103,8 @@ class TamiFlexLogData(
 object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
     val configKey = "org.opalj.tac.fpcf.analyses.pointsto.TamiFlex.logFile"
 
+    def isConfigured(project: SomeProject): Boolean = project.config.hasPath(configKey)
+
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def compute(project: SomeProject): TamiFlexLogData = {

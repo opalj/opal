@@ -5,6 +5,7 @@ package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
 
+import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 
 import org.opalj.ai.domain.RecordCFG
@@ -29,6 +30,9 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
+import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 
 /**
  * An abstract [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]].
@@ -97,7 +101,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         implicit val logContext: LogContext = project.logContext
         val config = project.config
 
-        // TODO use FPCFAnaylsesRegistry here
+        // TODO use FPCFAnalysesRegistry here
         config.getStringList(
             "org.opalj.tac.cg.CallGraphKey.modules"
         ).asScala.flatMap(resolveAnalysisRunner(_))
@@ -105,14 +109,19 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     def allCallGraphAnalyses(project: SomeProject): Iterable[FPCFAnalysisScheduler] = {
         // TODO make TACAI analysis configurable
-        var analyses: List[FPCFAnalysisScheduler] =
-            List(
+        val analyses: ArrayBuffer[FPCFAnalysisScheduler] =
+            ArrayBuffer(
                 LazyTACAIProvider
             )
 
-        analyses ::= CallGraphAnalysisScheduler
+        analyses += CallGraphAnalysisScheduler
         analyses ++= callGraphSchedulers(project)
         analyses ++= registeredAnalyses(project)
+
+        if (TamiFlexKey.isConfigured(project)) {
+            analyses -= ReflectionRelatedCallsAnalysisScheduler
+            analyses += TamiFlexCallGraphAnalysisScheduler
+        }
 
         analyses
     }
