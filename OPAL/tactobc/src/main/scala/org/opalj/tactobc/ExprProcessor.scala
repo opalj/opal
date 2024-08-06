@@ -66,7 +66,7 @@ object ExprProcessor {
       return currentAfterCountsPC + instruction.length
     }
     val instruction = newArrayExpr.tpe.componentType match {
-      case _: ReferenceType => ANEWARRAY(newArrayExpr.tpe)
+      case _: ReferenceType => ANEWARRAY(newArrayExpr.tpe.componentType.toJava.replace(".", "/"))
       case _: BooleanType => NEWARRAY(BooleanType.atype)
       case _: CharType => NEWARRAY(CharType.atype)
       case _: FloatType => NEWARRAY(FloatType.atype)
