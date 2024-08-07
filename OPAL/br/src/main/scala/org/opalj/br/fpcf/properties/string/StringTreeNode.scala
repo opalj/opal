@@ -6,7 +6,6 @@ package properties
 package string
 
 import scala.collection.immutable.Seq
-import scala.collection.mutable
 import scala.util.Try
 import scala.util.matching.Regex
 
@@ -163,8 +162,11 @@ object StringTreeConcat {
     }
 }
 
-case class StringTreeOr private (override val children: Seq[StringTreeNode]) extends CachedSimplifyNode
-    with CachedHashCode {
+trait StringTreeOr extends CachedSimplifyNode with CachedHashCode {
+
+    protected val _children: Iterable[StringTreeNode]
+
+    override final val children: Seq[StringTreeNode] = _children.toSeq
 
     override def _toRegex: String = {
         children.size match {
@@ -174,37 +176,66 @@ case class StringTreeOr private (override val children: Seq[StringTreeNode]) ext
         }
     }
 
-    override def sorted: StringTreeNode = StringTreeOr(children.sortBy(_.toRegex))
+    override def constancyLevel: StringConstancyLevel.Value =
+        _children.map(_.constancyLevel).reduceLeft(StringConstancyLevel.determineMoreGeneral)
 
-    override def _simplify: StringTreeNode = {
-        val validChildren = children.foldLeft(mutable.LinkedHashSet.empty[StringTreeNode]) { (set, child) =>
-            val simpleChild = child.simplify
-            if (!simpleChild.isInvalid)
-                set += simpleChild
-            else
-                set
+    override def collectParameterIndices: Set[Int] = _children.flatMap(_.collectParameterIndices).toSet
+}
+
+object StringTreeOr {
+
+    def apply(children: Seq[StringTreeNode]): StringTreeNode = apply(children.toSet)
+
+    def apply(children: Set[StringTreeNode]): StringTreeNode = {
+        if (children.isEmpty) {
+            StringTreeInvalidElement
+        } else if (children.size == 1) {
+            children.head
+        } else {
+            new SetBasedStringTreeOr(children)
         }
-        StringTreeOr._simplifySelf(validChildren)
     }
 
-    override def constancyLevel: StringConstancyLevel.Value =
-        children.map(_.constancyLevel).reduceLeft(StringConstancyLevel.determineMoreGeneral)
+    def fromNodes(children: StringTreeNode*): StringTreeNode = SetBasedStringTreeOr.createWithSimplify(children.toSet)
+}
+
+case class SeqBasedStringTreeOr(override val _children: Seq[StringTreeNode]) extends StringTreeOr {
+
+    override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.sortBy(_.sorted.toRegex))
+
+    override def _simplify: StringTreeNode = {
+        val validChildren = _children.map(_.simplify).filterNot(_.isInvalid)
+        validChildren.size match {
+            case 0 => StringTreeInvalidElement
+            case 1 => validChildren.head
+            case _ =>
+                val newChildren = validChildren.flatMap {
+                    case orChild: StringTreeOr => orChild.children
+                    case child                 => Set(child)
+                }
+                val distinctNewChildren = newChildren.distinct
+                distinctNewChildren.size match {
+                    case 1 => distinctNewChildren.head
+                    case _ => SeqBasedStringTreeOr(distinctNewChildren)
+                }
+        }
+    }
 
     def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
-        val childrenWithChange = children.map { c =>
+        val childrenWithChange = _children.map { c =>
             val nc = c.replaceParameters(parameters)
             (nc, c ne nc)
         }
 
         if (childrenWithChange.exists(_._2)) {
-            StringTreeOr(childrenWithChange.map(_._1))
+            SeqBasedStringTreeOr(childrenWithChange.map(_._1))
         } else {
             this
         }
     }
 }
 
-object StringTreeOr {
+object SeqBasedStringTreeOr {
 
     def apply(children: Seq[StringTreeNode]): StringTreeNode = {
         if (children.isEmpty) {
@@ -212,34 +243,60 @@ object StringTreeOr {
         } else if (children.size == 1) {
             children.head
         } else {
-            new StringTreeOr(children)
+            new SeqBasedStringTreeOr(children)
+        }
+    }
+}
+
+case class SetBasedStringTreeOr(override val _children: Set[StringTreeNode]) extends StringTreeOr {
+
+    override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.sortBy(_.sorted.toRegex))
+
+    override def _simplify: StringTreeNode = SetBasedStringTreeOr._simplifySelf {
+        _children.map(_.simplify).filterNot(_.isInvalid)
+    }
+
+    def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
+        val childrenWithChange = _children.map { c =>
+            val nc = c.replaceParameters(parameters)
+            (nc, c ne nc)
+        }
+
+        if (childrenWithChange.exists(_._2)) {
+            SetBasedStringTreeOr(childrenWithChange.map(_._1))
+        } else {
+            this
+        }
+    }
+}
+
+object SetBasedStringTreeOr {
+
+    def apply(children: Set[StringTreeNode]): StringTreeNode = {
+        if (children.isEmpty) {
+            StringTreeInvalidElement
+        } else if (children.size == 1) {
+            children.head
+        } else {
+            new SetBasedStringTreeOr(children)
         }
     }
 
-    def fromNodes(children: StringTreeNode*): StringTreeNode = {
-        val validDistinctChildren = children
-            .foldLeft(mutable.LinkedHashSet.empty[StringTreeNode]) { (set, child) =>
-                if (!child.isInvalid)
-                    set += child
-                else
-                    set
-            }
-        _simplifySelf(validDistinctChildren)
-    }
+    def createWithSimplify(children: Set[StringTreeNode]): StringTreeNode =
+        _simplifySelf(children.filterNot(_.isInvalid))
 
-    private def _simplifySelf(_children: Iterable[StringTreeNode]): StringTreeNode = {
+    private def _simplifySelf(_children: Set[StringTreeNode]): StringTreeNode = {
         _children.size match {
             case 0 => StringTreeInvalidElement
             case 1 => _children.head
             case _ =>
                 val newChildren = _children.flatMap {
                     case orChild: StringTreeOr => orChild.children
-                    case child                 => Iterable(child)
+                    case child                 => Set(child)
                 }
-                val distinctNewChildren = newChildren.foldLeft(mutable.LinkedHashSet.empty[StringTreeNode])(_ += _)
-                distinctNewChildren.size match {
-                    case 1 => distinctNewChildren.head
-                    case _ => StringTreeOr(distinctNewChildren.toSeq)
+                newChildren.size match {
+                    case 1 => newChildren.head
+                    case _ => SetBasedStringTreeOr(newChildren)
                 }
         }
     }
