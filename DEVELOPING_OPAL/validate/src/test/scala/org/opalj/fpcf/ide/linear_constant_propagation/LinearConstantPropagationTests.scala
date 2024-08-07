@@ -3,7 +3,6 @@ package org.opalj.fpcf.ide.linear_constant_propagation
 
 import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
-import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationAnalysis
 
 class LinearConstantPropagationTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
@@ -15,11 +14,10 @@ class LinearConstantPropagationTests extends IDEPropertiesTest {
             LinearConstantPropagationAnalysisScheduler
         ))
 
-        testContext.analyses.foreach {
-            case analysis: LinearConstantPropagationAnalysis =>
-                getEntryPointsByICFG(analysis.lcpProblem.icfg, testContext.project)
-                    .foreach { method => testContext.propertyStore.force(method, analysis.propertyMetaInformation.key) }
-        }
+        methodsWithAnnotations(testContext.project)
+            .foreach { case (method, _, _) =>
+                testContext.propertyStore.force(method, LinearConstantPropagationAnalysisScheduler.property.key)
+            }
 
         testContext.propertyStore.waitOnPhaseCompletion()
         testContext.propertyStore.shutdown()
