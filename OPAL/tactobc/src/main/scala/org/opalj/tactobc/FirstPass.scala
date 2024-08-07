@@ -110,10 +110,10 @@ object FirstPass {
           } else if (origin == -2) {
             nextLVIndex = if (isStaticMethod) 0 else 1 // Start at 1 for instance methods to reserve 0 for 'this'
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
-            nextLVIndex += 1
+            incrementLVIndex(uVar)
           } else if (origin < -2) {
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
-            nextLVIndex += 1
+            incrementLVIndex(uVar)
           }
         }
       case _ =>
@@ -139,10 +139,21 @@ object FirstPass {
         // No overlapping def-sites found, add a new entry
         uVarToLVIndex.getOrElseUpdate(uVar.defSites, {
           val lvIndex = nextLVIndex
-          nextLVIndex += 1
+          incrementLVIndex(uVar)
           lvIndex
         })
     }
+  }
+
+  /**
+   * Increments the LV index appropriately based on the type of the UVar.
+   *
+   * @param uVar The UVar for which the LV index is to be incremented.
+   */
+  def incrementLVIndex(uVar: UVar[_]): Unit = {
+    // Temporary type checking using toString method
+    val isDoubleOrLongType = uVar.value.toString.contains("long") || uVar.value.toString.contains("Double")
+    nextLVIndex += (if (isDoubleOrLongType) 2 else 1)
   }
 
   /**
