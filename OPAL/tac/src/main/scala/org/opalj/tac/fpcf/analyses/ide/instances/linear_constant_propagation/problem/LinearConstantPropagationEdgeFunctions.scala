@@ -118,7 +118,9 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
         secondEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
     ): EdgeFunction[LinearConstantPropagationValue] = {
         secondEdgeFunction match {
-            case LinearCombinationEdgeFunction(_, _, _) => secondEdgeFunction
+            case LinearCombinationEdgeFunction(0, _, _)             => secondEdgeFunction
+            case LinearCombinationEdgeFunction(_, _, VariableValue) => secondEdgeFunction
+            case LinearCombinationEdgeFunction(_, _, _)             => this
 
             case VariableValueEdgeFunction => secondEdgeFunction
             case UnknownValueEdgeFunction  => secondEdgeFunction
