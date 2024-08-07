@@ -87,7 +87,7 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
         if (depender.calleeDependee.isEPK) {
             InterimResult.forUB(
                 InterpretationHandler.getEntity(state),
-                StringFlowFunctionProperty.ub,
+                StringFlowFunctionProperty.ub(state.pc, target),
                 Set(depender.calleeDependee),
                 continuation(state, depender)
             )
