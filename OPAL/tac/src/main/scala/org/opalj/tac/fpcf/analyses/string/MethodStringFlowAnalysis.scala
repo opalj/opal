@@ -5,15 +5,11 @@ package fpcf
 package analyses
 package string
 
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
-import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
-import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.FinalEP
