@@ -11,12 +11,19 @@ import org.opalj.br.fpcf.properties.string.StringTreeOr
 /**
  * @author Maximilian Rüsch
  */
-case class StringTreeEnvironment(private val map: Map[PDUWeb, StringTreeNode]) {
+case class StringTreeEnvironment private (
+    private val map:      Map[PDUWeb, StringTreeNode],
+    private val pcToWebs: Map[Int, Iterable[PDUWeb]]
+) {
 
-    private def getWebsFor(pc: Int, pv: PV): Seq[PDUWeb] = map.keys
-        .filter(_.containsVarAt(pc, pv))
-        .toSeq
-        .sortBy(_.defPCs.toList.toSet.min)
+    private def getWebsFor(pc: Int, pv: PV): Seq[PDUWeb] = {
+        val webs = pv match {
+            case PDVar(_, _)         => pcToWebs(pc)
+            case PUVar(_, varDefPCs) => varDefPCs.map(pcToWebs).flatten
+        }
+
+        webs.toSeq.sortBy(_.defPCs.toList.toSet.min)
+    }
 
     private def getWebsFor(web: PDUWeb): Seq[PDUWeb] = map.keys
         .filter(_.identifiesSameVarAs(web))
@@ -48,22 +55,15 @@ case class StringTreeEnvironment(private val map: Map[PDUWeb, StringTreeNode]) {
     def apply(web: PDUWeb): StringTreeNode = map(getWebFor(web))
 
     def update(web: PDUWeb, value: StringTreeNode): StringTreeEnvironment =
-        StringTreeEnvironment(map.updated(getWebFor(web), value))
+        recreate(map.updated(getWebFor(web), value))
 
     def update(pc: Int, pv: PV, value: StringTreeNode): StringTreeEnvironment =
-        StringTreeEnvironment(map.updated(getWebFor(pc, pv), value))
+        recreate(map.updated(getWebFor(pc, pv), value))
 
-    def updateAll(value: StringTreeNode): StringTreeEnvironment = StringTreeEnvironment(map.map { kv => (kv._1, value) })
+    def updateAll(value: StringTreeNode): StringTreeEnvironment = recreate(map.transform((_, _) => value))
 
     def join(other: StringTreeEnvironment): StringTreeEnvironment = {
-        val (smallMap, bigMap) = if (map.size < other.map.size) (map, other.map) else (other.map, map)
-
-        StringTreeEnvironment {
-            bigMap.toList.concat(smallMap.toList).groupBy(_._1).map {
-                case (k, vs) if vs.take(2).size == 1 => (k, vs.head._2)
-                case (k, vs)                         => (k, StringTreeOr.fromNodes(vs.map(_._2): _*))
-            }
-        }
+        recreate(map.transform { (web, tree) => StringTreeOr.fromNodes(tree, other.map(web)) })
     }
 
     def joinMany(others: List[StringTreeEnvironment]): StringTreeEnvironment = {
@@ -71,13 +71,22 @@ case class StringTreeEnvironment(private val map: Map[PDUWeb, StringTreeNode]) {
             this
         } else {
             // This only works as long as environment maps are not sparse
-            StringTreeEnvironment(map.map { kv =>
-                val otherValues = kv._2 +: others.map(_.map(kv._1))
-                (
-                    kv._1,
-                    StringTreeOr.fromNodes(otherValues: _*)
-                )
+            recreate(map.transform { (web, tree) =>
+                val otherValues = tree +: others.map(_.map(web))
+                StringTreeOr.fromNodes(otherValues: _*)
             })
         }
+    }
+
+    def recreate(newMap: Map[PDUWeb, StringTreeNode]): StringTreeEnvironment = StringTreeEnvironment(newMap, pcToWebs)
+}
+
+object StringTreeEnvironment {
+
+    def apply(map: Map[PDUWeb, StringTreeNode]): StringTreeEnvironment = {
+        val pcToWebs =
+            map.keys.flatMap(web => web.defPCs.map((_, web))).groupMap(_._1)(_._2)
+                .withDefaultValue(Iterable.empty)
+        StringTreeEnvironment(map, pcToWebs)
     }
 }

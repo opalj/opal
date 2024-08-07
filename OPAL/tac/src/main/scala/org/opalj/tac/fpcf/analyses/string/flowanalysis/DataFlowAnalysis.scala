@@ -14,20 +14,19 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 import scalax.collection.GraphTraversal.BreadthFirst
 import scalax.collection.GraphTraversal.Parameters
-import scalax.collection.generic.Edge
-import scalax.collection.immutable.Graph
 
 class DataFlowAnalysis(
     private val controlTree:    ControlTree,
     private val superFlowGraph: SuperFlowGraph
 ) {
 
+    private val _nodeOrderings = mutable.Map.empty[FlowGraphNode, Seq[SuperFlowGraph#NodeT]]
     private val _removedBackEdgesGraphs = mutable.Map.empty[FlowGraphNode, (Boolean, SuperFlowGraph)]
 
     def compute(
         flowFunctionByPc: Map[Int, StringFlowFunction]
     )(startEnv: StringTreeEnvironment): StringTreeEnvironment = {
-        val startNodeCandidates = controlTree.nodes.filter(_.diPredecessors.isEmpty)
+        val startNodeCandidates = controlTree.nodes.filter(!_.hasPredecessors)
         if (startNodeCandidates.size != 1) {
             throw new IllegalStateException("Found more than one start node in the control tree!")
         }
@@ -61,9 +60,8 @@ class DataFlowAnalysis(
         }
 
         def processIfThenElse(entry: FlowGraphNode): StringTreeEnvironment = {
-            val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
-            val entryNode = limitedFlowGraph.get(entry)
-            val successors = entryNode.diSuccessors.map(_.outer).toList.sorted
+            val entryNode = superFlowGraph.get(entry)
+            val successors = entryNode.diSuccessors.intersect(innerChildNodes).map(_.outer).toList.sorted
             val branches = (successors.head, successors.tail.head)
 
             val envAfterEntry = pipe(entry, env)
@@ -90,28 +88,35 @@ class DataFlowAnalysis(
             envAfterBranches._1.join(envAfterBranches._2)
         }
 
-        def handleProperSubregion[A <: FlowGraphNode, G <: Graph[A, Edge[A]]](
+        def handleProperSubregion[A <: FlowGraphNode, G <: SuperFlowGraph](
             g:          G,
             innerNodes: Set[G#NodeT],
             entry:      A
         ): StringTreeEnvironment = {
             val entryNode = g.get(entry)
-            val ordering = g.NodeOrdering((in1, in2) => in1.compare(in2))
-            val traverser = entryNode.innerNodeTraverser(Parameters(BreadthFirst))
-                .withOrdering(ordering)
-                .withSubgraph(nodes = innerNodes.contains)
-            // We know that the graph is acyclic here, so we can be sure that the topological sort never fails
-            val sortedNodes = traverser.topologicalSort().toOption.get.toSeq
+            val sortedNodes = _nodeOrderings.getOrElseUpdate(
+                node, {
+                    val ordering = g.NodeOrdering((in1, in2) => in1.compare(in2))
+                    val traverser = entryNode.innerNodeTraverser(Parameters(BreadthFirst))
+                        .withOrdering(ordering)
+                        .withSubgraph(nodes = innerNodes.contains)
+                    // We know that the graph is acyclic here, so we can be sure that the topological sort never fails
+                    traverser.topologicalSort().toOption.get.toSeq
+                }
+            )
 
             val currentNodeEnvs = mutable.Map((entryNode, pipe(entry, env)))
-            for { currentNode <- sortedNodes.filter(_ != entryNode) } {
+            for {
+                _currentNode <- sortedNodes.filter(_ != entryNode)
+                currentNode = _currentNode.asInstanceOf[g.NodeT]
+            } {
                 val previousEnvs = currentNode.diPredecessors.toList.sortBy(_.outer).map { dp =>
                     pipe(currentNode.outer, currentNodeEnvs(dp))
                 }
                 currentNodeEnvs.update(currentNode, previousEnvs.head.joinMany(previousEnvs.tail))
             }
 
-            currentNodeEnvs(sortedNodes.last)
+            currentNodeEnvs(sortedNodes.last.asInstanceOf[g.NodeT])
         }
 
         def processProper(entry: FlowGraphNode): StringTreeEnvironment = {
@@ -126,15 +131,18 @@ class DataFlowAnalysis(
         }
 
         def processWhileLoop(entry: FlowGraphNode): StringTreeEnvironment = {
-            val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
-            val entryNode = limitedFlowGraph.get(entry)
+            val entryNode = superFlowGraph.get(entry)
             val envAfterEntry = pipe(entry, env)
 
-            var resultEnv = envAfterEntry
-            var currentNode = entryNode.diSuccessors.head
-            while (currentNode != entryNode) {
+            superFlowGraph.innerNodeTraverser(entryNode, subgraphNodes = innerChildNodes)
+
+            var resultEnv = env
+            for {
+                currentNode <- superFlowGraph
+                    .innerNodeTraverser(entryNode)
+                    .withSubgraph(n => n != entryNode && innerChildNodes.contains(n))
+            } {
                 resultEnv = pipe(currentNode.outer, resultEnv)
-                currentNode = currentNode.diSuccessors.head
             }
 
             // Looped operations that modify environment contents are not supported here
