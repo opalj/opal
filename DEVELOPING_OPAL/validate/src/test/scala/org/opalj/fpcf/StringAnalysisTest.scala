@@ -332,19 +332,19 @@ sealed abstract class L2StringAnalysisTest extends StringAnalysisTest {
     }
 }
 
-class L2StringAnalysisWithL1DefaultDomainTest extends L1StringAnalysisTest {
+class L2StringAnalysisWithL1DefaultDomainTest extends L2StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L1
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 }
 
-class L2StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
+class L2StringAnalysisWithL2DefaultDomainTest extends L2StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.LOW
 }
 
-class HighSoundnessL2StringAnalysisWithL2DefaultDomainTest extends L1StringAnalysisTest {
+class HighSoundnessL2StringAnalysisWithL2DefaultDomainTest extends L2StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.HIGH

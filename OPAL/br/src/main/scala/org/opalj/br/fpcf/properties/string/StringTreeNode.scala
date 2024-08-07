@@ -17,7 +17,17 @@ sealed trait StringTreeNode {
 
     val children: Seq[StringTreeNode]
 
-    def toRegex: String
+    def sorted: StringTreeNode
+
+    private var _regex: Option[String] = None
+    final def toRegex: String = {
+        if (_regex.isEmpty) {
+            _regex = Some(_toRegex)
+        }
+
+        _regex.get
+    }
+    def _toRegex: String
 
     def simplify: StringTreeNode
 
@@ -71,7 +81,9 @@ case class StringTreeRepetition(child: StringTreeNode) extends CachedSimplifyNod
 
     override val children: Seq[StringTreeNode] = Seq(child)
 
-    override def toRegex: String = s"(${child.toRegex})*"
+    override def _toRegex: String = s"(${child.toRegex})*"
+
+    override def sorted: StringTreeNode = this
 
     override def _simplify: StringTreeNode = {
         val simplifiedChild = child.simplify
@@ -93,13 +105,15 @@ case class StringTreeRepetition(child: StringTreeNode) extends CachedSimplifyNod
 
 case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends CachedSimplifyNode with CachedHashCode {
 
-    override def toRegex: String = {
+    override def _toRegex: String = {
         children.size match {
             case 0 => throw new IllegalStateException("Tried to convert StringTreeConcat with no children to a regex!")
             case 1 => children.head.toRegex
             case _ => s"${children.map(_.toRegex).reduceLeft((o, n) => s"$o$n")}"
         }
     }
+
+    override def sorted: StringTreeNode = this
 
     override def _simplify: StringTreeNode = {
         val nonEmptyChildren = children.map(_.simplify).filterNot(_.isEmpty)
@@ -152,13 +166,15 @@ object StringTreeConcat {
 case class StringTreeOr private (override val children: Seq[StringTreeNode]) extends CachedSimplifyNode
     with CachedHashCode {
 
-    override def toRegex: String = {
+    override def _toRegex: String = {
         children.size match {
             case 0 => throw new IllegalStateException("Tried to convert StringTreeOr with no children to a regex!")
             case 1 => children.head.toRegex
             case _ => s"(${children.map(_.toRegex).reduceLeft((o, n) => s"$o|$n")})"
         }
     }
+
+    override def sorted: StringTreeNode = StringTreeOr(children.sortBy(_.toRegex))
 
     override def _simplify: StringTreeNode = {
         val validChildren = children.foldLeft(mutable.LinkedHashSet.empty[StringTreeNode]) { (set, child) =>
@@ -233,13 +249,14 @@ sealed trait SimpleStringTreeNode extends StringTreeNode {
 
     override final val children: Seq[StringTreeNode] = Seq.empty
 
+    override final def sorted: StringTreeNode = this
     override final def simplify: StringTreeNode = this
 
     override def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = this
 }
 
 case class StringTreeConst(string: String) extends SimpleStringTreeNode {
-    override def toRegex: String = Regex.quoteReplacement(string)
+    override def _toRegex: String = Regex.quoteReplacement(string)
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
 
@@ -254,7 +271,7 @@ object StringTreeEmptyConst extends StringTreeConst("") {
 }
 
 case class StringTreeParameter(index: Int) extends SimpleStringTreeNode {
-    override def toRegex: String = ".*"
+    override def _toRegex: String = ".*"
 
     override def collectParameterIndices: Set[Int] = Set(index)
 
@@ -276,7 +293,7 @@ object StringTreeParameter {
 }
 
 object StringTreeInvalidElement extends SimpleStringTreeNode {
-    override def toRegex: String = throw new UnsupportedOperationException()
+    override def _toRegex: String = throw new UnsupportedOperationException()
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
 
@@ -285,25 +302,25 @@ object StringTreeInvalidElement extends SimpleStringTreeNode {
 
 object StringTreeNull extends SimpleStringTreeNode {
     // Using this element nested in some other element might lead to unexpected results...
-    override def toRegex: String = "^null$"
+    override def _toRegex: String = "^null$"
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
 }
 
 object StringTreeDynamicString extends SimpleStringTreeNode {
-    override def toRegex: String = ".*"
+    override def _toRegex: String = ".*"
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
 }
 
 object StringTreeDynamicInt extends SimpleStringTreeNode {
-    override def toRegex: String = "^-?\\d+$"
+    override def _toRegex: String = "^-?\\d+$"
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
 }
 
 object StringTreeDynamicFloat extends SimpleStringTreeNode {
-    override def toRegex: String = "^-?\\d*\\.{0,1}\\d+$"
+    override def _toRegex: String = "^-?\\d*\\.{0,1}\\d+$"
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
 }

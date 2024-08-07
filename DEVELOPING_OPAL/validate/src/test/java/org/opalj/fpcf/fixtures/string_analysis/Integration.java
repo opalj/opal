@@ -36,7 +36,7 @@ public class Integration {
         analyzeString(gs.getGreeting("World"));
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello World|Hello)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello|Hello World)")
     @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void unknownHierarchyInstanceTest(GreetingService greetingService) {
         analyzeString(greetingService.getGreeting("World"));

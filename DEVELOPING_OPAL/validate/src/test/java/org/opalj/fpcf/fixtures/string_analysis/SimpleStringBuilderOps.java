@@ -155,7 +155,7 @@ public class SimpleStringBuilderOps {
 
     @Constant(n = 0, levels = Level.TRUTH, value = "(Object|ObjectRuntime)")
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 1, levels = Level.TRUTH, value = "(RuntimeObject|Runtime)")
+    @Constant(n = 1, levels = Level.TRUTH, value = "(Runtime|RuntimeObject)")
     @Failure(n = 1, levels = Level.L0)
     public void crissCrossExample(String className) {
         StringBuilder sbObj = new StringBuilder("Object");
