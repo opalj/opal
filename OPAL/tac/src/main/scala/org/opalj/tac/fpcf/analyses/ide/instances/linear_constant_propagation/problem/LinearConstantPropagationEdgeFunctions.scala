@@ -45,7 +45,7 @@ case class LinearCombinationEdgeFunction(
                 )
 
             case VariableValueEdgeFunction => secondEdgeFunction
-            case UnknownValueEdgeFunction => secondEdgeFunction
+            case UnknownValueEdgeFunction  => secondEdgeFunction
 
             case IdentityEdgeFunction() => this
             case AllTopEdgeFunction(_)  => secondEdgeFunction
@@ -74,7 +74,7 @@ case class LinearCombinationEdgeFunction(
                 VariableValueEdgeFunction
 
             case VariableValueEdgeFunction => otherEdgeFunction
-            case UnknownValueEdgeFunction => this
+            case UnknownValueEdgeFunction  => this
 
             case IdentityEdgeFunction() => this
             case AllTopEdgeFunction(_)  => this
@@ -106,6 +106,8 @@ object VariableValueEdgeFunction extends AllBottomEdgeFunction[LinearConstantPro
             case _                                      => this
         }
     }
+
+    override def toString: String = "VariableValueEdgeFunction()"
 }
 
 /**
@@ -119,7 +121,7 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
             case LinearCombinationEdgeFunction(_, _, _) => secondEdgeFunction
 
             case VariableValueEdgeFunction => secondEdgeFunction
-            case UnknownValueEdgeFunction => secondEdgeFunction
+            case UnknownValueEdgeFunction  => secondEdgeFunction
 
             case IdentityEdgeFunction() => this
             case AllTopEdgeFunction(_)  => secondEdgeFunction
@@ -128,4 +130,13 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
     }
+
+    override def meetWith(
+        otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
+    ): EdgeFunction[LinearConstantPropagationValue] = this
+
+    override def equalTo(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean =
+        otherEdgeFunction eq this
+
+    override def toString: String = "UnknownValueEdgeFunction()"
 }

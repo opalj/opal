@@ -65,6 +65,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
              * It will never be called on this instance anyway. However, we throw an exception here to be safe. */
             throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
+
+        override def equalTo(otherEdgeFunction: EdgeFunction[Value]): Boolean =
+            otherEdgeFunction eq this
     }
 
     /**
@@ -531,9 +534,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
                                     if (!fPrime.equalTo(oldSummaryFunction)) {
                                         s.setSummaryFunction(callToReturnPath, fPrime)
-
-                                        propagate(((sp, d1), (r, d5)), f.composeWith(fPrime))
                                     }
+
+                                    propagate(((sp, d1), (r, d5)), f.composeWith(fPrime))
                                 }
                             }
                         }
