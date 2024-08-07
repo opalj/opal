@@ -23,7 +23,6 @@ import org.opalj.tac.GetStatic
 import org.opalj.tac.IntConst
 import org.opalj.tac.Var
 import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
-import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
 
@@ -31,7 +30,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
  * Definition of the linear constant propagation problem
  */
 class LinearConstantPropagationProblem(project: SomeProject)
-    extends JavaIDEProblem[LinearConstantPropagationFact, LinearConstantPropagationValue](new JavaICFG(project)) {
+    extends JavaIDEProblem[LinearConstantPropagationFact, LinearConstantPropagationValue](project) {
     override val nullFact: LinearConstantPropagationFact =
         NullFact
 

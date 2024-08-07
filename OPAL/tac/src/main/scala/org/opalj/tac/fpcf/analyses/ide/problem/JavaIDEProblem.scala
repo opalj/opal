@@ -2,6 +2,7 @@
 package org.opalj.tac.fpcf.analyses.ide.problem
 
 import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.IDEValue
@@ -13,4 +14,8 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
  */
 abstract class JavaIDEProblem[Fact <: IDEFact, Value <: IDEValue](
         override val icfg: JavaICFG
-) extends IDEProblem[Fact, Value, JavaStatement, Method](icfg)
+) extends IDEProblem[Fact, Value, JavaStatement, Method](icfg) {
+    def this(project: SomeProject) = {
+        this(new JavaICFG(project))
+    }
+}
