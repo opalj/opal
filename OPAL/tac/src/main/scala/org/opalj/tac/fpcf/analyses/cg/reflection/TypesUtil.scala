@@ -74,7 +74,7 @@ object TypesUtil {
         allowDynamic:        Boolean
     ): Set[ObjectType] = {
         if (classNameStringTree.isInvalid || (
-                classNameStringTree.constancyLevel == StringConstancyLevel.DYNAMIC
+                classNameStringTree.constancyLevel != StringConstancyLevel.CONSTANT
                 && !allowDynamic
             )
         ) {
