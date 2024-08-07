@@ -358,6 +358,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
     override def getCallToReturnEdgeFunction(
         callSite:       JavaStatement,
         callSiteFact:   LinearConstantPropagationFact,
+        callee:         Method,
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = identityEdgeFunction

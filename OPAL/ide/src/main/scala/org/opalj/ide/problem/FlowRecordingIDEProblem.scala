@@ -161,11 +161,12 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
     override def getCallToReturnEdgeFunction(
         callSite:       Statement,
         callSiteFact:   Fact,
+        callee:         Callable,
         returnSite:     Statement,
         returnSiteFact: Fact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
         val edgeFunctionResult =
-            baseProblem.getCallToReturnEdgeFunction(callSite, callSiteFact, returnSite, returnSiteFact)
+            baseProblem.getCallToReturnEdgeFunction(callSite, callSiteFact, callee, returnSite, returnSiteFact)
         collectedEdgeFunctions.put(
             createDotEdge(callSite, callSiteFact, returnSite, returnSiteFact, "call-to-return flow"),
             getEdgeFunctionFromEdgeFunctionResult(edgeFunctionResult)

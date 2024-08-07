@@ -556,7 +556,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 d3s.foreach { d3 =>
                     propagate(
                         ((sp, d1), (r, d3)),
-                        f.composeWith(handleEdgeFunctionResult(problem.getCallToReturnEdgeFunction(n, d2, r, d3), path))
+                        f.composeWith(handleEdgeFunctionResult(
+                            problem.getCallToReturnEdgeFunction(n, d2, q, r, d3),
+                            path
+                        ))
                     )
                 }
 

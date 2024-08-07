@@ -144,12 +144,14 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * Generate an edge function for a call-to-return flow
      * @param callSite where the call-to-return flow starts (always a call statement)
      * @param callSiteFact the fact the flow starts with
+     * @param callee the callable this flow is about
      * @param returnSite where the call-to-return flow ends (e.g. the next statement after the call)
      * @param returnSiteFact the fact the flow ends with
      */
     def getCallToReturnEdgeFunction(
         callSite:       Statement,
         callSiteFact:   Fact,
+        callee:         Callable,
         returnSite:     Statement,
         returnSiteFact: Fact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value]
