@@ -90,3 +90,43 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
         }
     }
 }
+
+/**
+ * Matcher for [[UnknownValue]] and [[UnknownValues]] annotations
+ */
+class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher {
+    override val singleAnnotationType: ObjectType =
+        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/UnknownValue")
+    override val containerAnnotationType: ObjectType =
+        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/UnknownValues")
+
+    override def validateSingleProperty(
+        p:          Project[?],
+        as:         Set[ObjectType],
+        entity:     Any,
+        a:          AnnotationLike,
+        properties: Iterable[Property]
+    ): Option[String] = {
+        val expectedVariableName =
+            getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
+
+        if (properties.exists {
+                case property: BasicIDEProperty[?, ?] =>
+                    property.results.exists {
+                        case (LCPProblem.VariableFact(name, _), LCPProblem.UnknownValue) =>
+                            expectedVariableName == name
+
+                        case _ => false
+                    }
+
+                case _ => false
+            }
+        ) {
+            None
+        } else {
+            Some(
+                s"Result should contain (${LCPProblem.VariableFact(expectedVariableName, 0)}, ${LCPProblem.UnknownValue})!"
+            )
+        }
+    }
+}
