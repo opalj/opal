@@ -65,7 +65,7 @@ public class FunctionCalls {
         analyzeString(addQuestionMark(getHelloWorld()));
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.StringBuilder|ERROR)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(ERROR|java.lang.Object|java.lang.StringBuilder)")
     @Constant(n = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.LOW, value = "ERROR")
     @Dynamic(n = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
     public void simpleNonVirtualFunctionCallTestWithIf(int i) {
@@ -80,7 +80,7 @@ public class FunctionCalls {
         analyzeString(s);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.StringBuilder|ERROR)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(ERROR|java.lang.Object|java.lang.StringBuilder)")
     @Failure(n = 0, levels = Level.L0)
     @Constant(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "ERROR")
     @Dynamic(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
@@ -112,7 +112,7 @@ public class FunctionCalls {
     /**
      * A case where the single valid return value of the called function can be resolved without calling the function.
      */
-    @Constant(n = 0, levels = Level.TRUTH, domains = DomainLevel.L1, value = "(java.lang.Object|One|val)")
+    @Constant(n = 0, levels = Level.TRUTH, domains = DomainLevel.L1, value = "(One|java.lang.Object|val)")
     @Failure(n = 0, levels = { Level.L0, Level.L1 }, domains = DomainLevel.L1)
     // Since the virtual function return value is inlined in L2 and its actual runtime return
     // value is not used, the function call gets converted to a method call, which modifies the
@@ -137,7 +137,7 @@ public class FunctionCalls {
         }
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(One|val|java.lang.Object)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(One|java.lang.Object|val)")
     @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void severalReturnValuesTest1() {
         analyzeString(severalReturnValuesWithSwitchFunction("val", 42));
@@ -152,7 +152,7 @@ public class FunctionCalls {
         }
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(that's odd|Hello, World)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello, World|that's odd)")
     @Failure(n = 0, levels = Level.L0)
     public void severalReturnValuesTest2() {
         analyzeString(severalReturnValuesWithIfElseFunction(42));

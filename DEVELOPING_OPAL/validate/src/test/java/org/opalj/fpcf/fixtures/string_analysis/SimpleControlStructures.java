@@ -15,7 +15,7 @@ public class SimpleControlStructures {
      */
     public void analyzeString(String s) {}
 
-    @Dynamic(n = 0, levels = Level.TRUTH, value = "(x|^-?\\d+$)")
+    @Dynamic(n = 0, levels = Level.TRUTH, value = "(^-?\\d+$|x)")
     @Failure(n = 0, levels = Level.L0)
     @Constant(n = 1, levels = Level.TRUTH, value = "(42-42|x)")
     @Failure(n = 1, levels = Level.L0)
@@ -87,7 +87,7 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(abcd|a|axyz)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|abcd|axyz)")
     @Failure(n = 0, levels = Level.L0)
     public void ifElseWithStringBuilderWithMultipleAppendsAndNonUsedElseIf() {
         StringBuilder sb = new StringBuilder("a");

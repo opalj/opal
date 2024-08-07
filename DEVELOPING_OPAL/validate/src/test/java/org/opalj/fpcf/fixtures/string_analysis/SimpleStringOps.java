@@ -89,7 +89,7 @@ public class SimpleStringOps {
         analyzeString(someString.substring(2));
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.System|java.lang.Runtime)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.Runtime|java.lang.System)")
     public void multipleConstantDefSites(boolean cond) {
         String s;
         if (cond) {
@@ -114,9 +114,9 @@ public class SimpleStringOps {
 
     @Constant(n = 0, levels = Level.TRUTH, value = "(Some|SomeOther)")
     @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "Some")
-    @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(Some|.*)")
+    @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|Some)")
     @Dynamic(n = 1, levels = Level.TRUTH, value = "(.*|Some)")
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, value = "(SomeOther|Some.*)")
+    @PartiallyConstant(n = 2, levels = Level.TRUTH, value = "(Some.*|SomeOther)")
     @Failure(n = 2, levels = Level.L0)
     public void ternaryOperators(boolean flag, String param) {
         String s1 = "Some";
@@ -146,7 +146,7 @@ public class SimpleStringOps {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|a|ad)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad)")
     @Failure(n = 0, levels = Level.L0)
     public void switchRelevantAndIrrelevantWithRelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
@@ -207,7 +207,7 @@ public class SimpleStringOps {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|a|ad|af)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad|af)")
     @Failure(n = 0, levels = Level.L0)
     public void switchNestedNoNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
@@ -268,9 +268,9 @@ public class SimpleStringOps {
     @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "java.lang.System")
     @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System)")
     @Constant(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "java.lang.System")
-    @Dynamic(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System|java.lang..*)")
-    @Constant(n = 0, levels = Level.L2, soundness = SoundnessMode.LOW, value = "(java.lang.System|java.lang.StringBuilder|java.lang.StringBuilder)")
-    @Dynamic(n = 0, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System|java.lang.StringBuilder|java.lang.StringBuilder)")
+    @Dynamic(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|java.lang..*|java.lang.System)")
+    @Constant(n = 0, levels = Level.L2, soundness = SoundnessMode.LOW, value = "(java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
+    @Dynamic(n = 0, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
 

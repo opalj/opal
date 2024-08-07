@@ -181,7 +181,7 @@ private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStri
                             }
                         )
                     case _ =>
-                        computeFinalResult(StringFlowFunctionProperty.noFlow(state.pc, at.get))
+                        computeFinalResult(StringFlowFunctionProperty.ub(state.pc, at.get))
                 }
 
             case 2 =>
@@ -206,7 +206,7 @@ private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStri
                             }
                         )
                     case _ =>
-                        computeFinalResult(StringFlowFunctionProperty.noFlow(state.pc, at.get))
+                        computeFinalResult(StringFlowFunctionProperty.ub(state.pc, at.get))
                 }
 
             case _ => throw new IllegalStateException(

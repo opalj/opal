@@ -49,7 +49,7 @@ object StringInterpreter {
         if (soundnessMode.isHigh) {
             computeFinalResult(StringFlowFunctionProperty.lb(state.pc, pv))
         } else {
-            computeFinalResult(StringFlowFunctionProperty.noFlow(state.pc, pv))
+            computeFinalResult(StringFlowFunctionProperty.ub(state.pc, pv))
         }
     }
 

@@ -54,7 +54,7 @@ object L1VirtualMethodCallInterpreter extends StringInterpreter {
                             }
                         )
                     case _ =>
-                        computeFinalResult(StringFlowFunctionProperty.noFlow(state.pc, pReceiver))
+                        computeFinalResult(StringFlowFunctionProperty.ub(state.pc, pReceiver))
                 }
 
             case _ =>

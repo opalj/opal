@@ -34,7 +34,7 @@ public class External {
      */
     public void analyzeString(String s) {}
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "Field Value:private l0 non-final string field")
+    @Constant(n = 0, levels = Level.TRUTH, value = "private l0 non-final string field")
     @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void nonFinalFieldRead() {
         analyzeString(nonFinalNonStaticField);

@@ -5,15 +5,11 @@ package fpcf
 package analyses
 package string
 
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
-import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
-import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.FinalEP
@@ -114,20 +110,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
     }
 
     private def computeNewUpperBound(state: ComputationState): MethodStringFlow = {
-        val startEnv = StringTreeEnvironment(state.getWebs.map { web: PDUWeb =>
-            val defPCs = web.defPCs.toList.sorted
-            if (defPCs.head >= 0) {
-                (web, StringTreeInvalidElement)
-            } else {
-                val pc = defPCs.head
-                if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
-                    (web, StringTreeDynamicString)
-                } else {
-                    (web, StringTreeParameter.forParameterPC(pc))
-                }
-            }
-        }.toMap)
-
+        val startEnv = StringTreeEnvironment(state.getWebMapAndReset)
         MethodStringFlow(state.flowAnalysis.compute(state.getFlowFunctionsByPC)(startEnv))
     }
 }

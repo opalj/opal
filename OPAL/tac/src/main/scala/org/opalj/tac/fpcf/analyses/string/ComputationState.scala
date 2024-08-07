@@ -8,8 +8,13 @@ package string
 
 import scala.collection.mutable
 
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
+import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
+import org.opalj.br.fpcf.properties.string.StringTreeNode
+import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.ControlTree
@@ -41,41 +46,83 @@ case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: 
 
     private val pcToDependeeMapping: mutable.Map[Int, EOptionP[MethodPC, StringFlowFunctionProperty]] =
         mutable.Map.empty
+    private val pcToWebChangeMapping: mutable.Map[Int, Boolean] = mutable.Map.empty
 
-    def updateDependee(pc: Int, dependee: EOptionP[MethodPC, StringFlowFunctionProperty]): Unit =
+    def updateDependee(pc: Int, dependee: EOptionP[MethodPC, StringFlowFunctionProperty]): Unit = {
+        val prevOpt = pcToDependeeMapping.get(pc)
+        if (prevOpt.isEmpty || prevOpt.get.hasNoUBP || (dependee.hasUBP && prevOpt.get.ub.webs != dependee.ub.webs)) {
+            pcToWebChangeMapping.update(pc, true)
+        }
         pcToDependeeMapping.update(pc, dependee)
+    }
 
     def dependees: Set[EOptionP[MethodPC, StringFlowFunctionProperty]] =
         pcToDependeeMapping.values.filter(_.isRefinable).toSet
 
     def hasDependees: Boolean = pcToDependeeMapping.valuesIterator.exists(_.isRefinable)
 
-    def getFlowFunctionsByPC: Map[Int, StringFlowFunction] = pcToDependeeMapping.map { kv =>
-        (
-            kv._1,
-            if (kv._2.hasUBP) kv._2.ub.flow
-            else StringFlowFunctionProperty.ub.flow
-        )
-    }.toMap
-
-    def getWebs: Iterator[PDUWeb] = pcToDependeeMapping.values.flatMap { v =>
-        if (v.hasUBP) v.ub.webs
-        else StringFlowFunctionProperty.ub.webs
+    def getFlowFunctionsByPC: Map[Int, StringFlowFunction] = pcToDependeeMapping.toMap.transform { (_, eOptP) =>
+        if (eOptP.hasUBP) eOptP.ub.flow
+        else StringFlowFunctionProperty.ub.flow
     }
-        .toSeq.appendedAll(tac.params.parameters.zipWithIndex.map {
+
+    private def getWebs: IndexedSeq[PDUWeb] = {
+        pcToDependeeMapping.values.flatMap { v =>
+            if (v.hasUBP) v.ub.webs
+            else StringFlowFunctionProperty.ub.webs
+        }.toIndexedSeq.appendedAll(tac.params.parameters.zipWithIndex.map {
             case (param, index) =>
                 PDUWeb(IntTrieSet(-index - 1), if (param != null) param.useSites else IntTrieSet.empty)
         })
-        .foldLeft(Seq.empty[PDUWeb]) { (reducedWebs, web) =>
-            val mappedWebs = reducedWebs.map(w => (w, w.identifiesSameVarAs(web)))
-            if (!mappedWebs.exists(_._2)) {
-                reducedWebs :+ web
-            } else {
-                mappedWebs.filterNot(_._2).map(_._1) :+ mappedWebs.filter(_._2).map(_._1).reduce(_.combine(_)).combine(
-                    web
-                )
+    }
+
+    private var _webMap: Map[PDUWeb, StringTreeNode] = Map.empty
+    def getWebMapAndReset: Map[PDUWeb, StringTreeNode] = {
+        if (pcToWebChangeMapping.exists(_._2)) {
+            val webs = getWebs
+            val indexedWebs = mutable.ArrayBuffer.empty[PDUWeb]
+            val defPCToWebIndex = mutable.Map.empty[Int, Int]
+            webs.foreach { web =>
+                val existingDefPCs = web.defPCs.filter(defPCToWebIndex.contains)
+                if (existingDefPCs.nonEmpty) {
+                    val indices = existingDefPCs.toList.map(defPCToWebIndex).distinct
+                    if (indices.size == 1) {
+                        val index = indices.head
+                        indexedWebs.update(index, indexedWebs(index).combine(web))
+                        web.defPCs.foreach(defPCToWebIndex.update(_, index))
+                    } else {
+                        val newIndex = indices.head
+                        val originalWebs = indices.map(indexedWebs)
+                        indexedWebs.update(newIndex, originalWebs.reduce(_.combine(_)).combine(web))
+                        indices.tail.foreach(indexedWebs.update(_, null))
+                        originalWebs.foreach(_.defPCs.foreach(defPCToWebIndex.update(_, newIndex)))
+                        web.defPCs.foreach(defPCToWebIndex.update(_, newIndex))
+                    }
+                } else {
+                    val newIndex = indexedWebs.length
+                    indexedWebs.append(web)
+                    web.defPCs.foreach(defPCToWebIndex.update(_, newIndex))
+                }
             }
-        }.iterator
+
+            _webMap = indexedWebs.filter(_ != null)
+                .map { web: PDUWeb =>
+                    val defPCs = web.defPCs.toList.sorted
+                    if (defPCs.head >= 0) {
+                        (web, StringTreeInvalidElement)
+                    } else {
+                        val pc = defPCs.head
+                        if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
+                            (web, StringTreeDynamicString)
+                        } else {
+                            (web, StringTreeParameter.forParameterPC(pc))
+                        }
+                    }
+                }.toMap
+            pcToWebChangeMapping.mapValuesInPlace((_, _) => false)
+        }
+        _webMap
+    }
 }
 
 case class InterpretationState(pc: Int, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {

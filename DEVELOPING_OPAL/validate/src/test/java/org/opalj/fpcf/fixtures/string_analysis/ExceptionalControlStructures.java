@@ -39,13 +39,13 @@ public class ExceptionalControlStructures {
     @Failure(n = 2, levels = Level.L0)
     @PartiallyConstant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "=====.*")
     // Exception case without own thrown exception
-    @PartiallyConstant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(==========|=====.*=====)")
+    @PartiallyConstant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(=====.*=====|==========)")
     // The following cases are detected:
-    // 1. Code around Files.readAllBytes failing, throwing a non-exception Throwable -> no append (Pos 3)
-    // 2. Code around Files.readAllBytes failing, throwing an exception Throwable -> exception case append (Pos 1)
-    // 3. First append succeeds, throws no exception -> only first append (Pos 4)
-    // 4. First append is executed but throws an exception Throwable -> both appends (Pos 2)
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(==========|=====.*=====|=====|=====.*)")
+    // 1. Code around Files.readAllBytes failing, throwing a non-exception Throwable -> no append (Pos 1)
+    // 2. Code around Files.readAllBytes failing, throwing an exception Throwable -> exception case append (Pos 4)
+    // 3. First append succeeds, throws no exception -> only first append (Pos 2)
+    // 4. First append is executed but throws an exception Throwable -> both appends (Pos 3)
+    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(=====|=====.*|=====.*=====|==========)")
     public void tryCatchFinally(String filename) {
         StringBuilder sb = new StringBuilder("=====");
         try {
@@ -62,8 +62,8 @@ public class ExceptionalControlStructures {
     @Failure(n = 1, levels = Level.L0)
     @Failure(n = 2, levels = Level.L0)
     @PartiallyConstant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "BOS:.*")
-    @PartiallyConstant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(BOS::EOS|BOS:.*:EOS)")
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(BOS::EOS|BOS:.*:EOS)")
+    @PartiallyConstant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(BOS:.*:EOS|BOS::EOS)")
+    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(BOS:.*:EOS|BOS::EOS)")
     public void tryCatchFinallyWithThrowable(String filename) {
         StringBuilder sb = new StringBuilder("BOS:");
         try {

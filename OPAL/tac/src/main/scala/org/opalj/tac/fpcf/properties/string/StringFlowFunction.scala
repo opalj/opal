@@ -43,28 +43,28 @@ object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformat
     def ub: StringFlowFunctionProperty = constForAll(StringTreeInvalidElement)
 
     def identity: StringFlowFunctionProperty =
-        StringFlowFunctionProperty(Set.empty[PDUWeb], IdentityFlow)
+        StringFlowFunctionProperty(Set.empty[PDUWeb], (env: StringTreeEnvironment) => env)
 
     // Helps to register notable variable usage / definition which does not modify the current state
     def identityForVariableAt(pc: Int, v: PV): StringFlowFunctionProperty =
-        StringFlowFunctionProperty(pc, v, IdentityFlow)
+        StringFlowFunctionProperty(pc, v, (env: StringTreeEnvironment) => env)
 
     def lb(pc: Int, v: PV): StringFlowFunctionProperty =
         constForVariableAt(pc, v, StringTreeNode.lb)
 
-    def noFlow(pc: Int, v: PV): StringFlowFunctionProperty =
+    def ub(pc: Int, v: PV): StringFlowFunctionProperty =
         constForVariableAt(pc, v, StringTreeInvalidElement)
 
     def constForVariableAt(pc: Int, v: PV, result: StringTreeNode): StringFlowFunctionProperty =
         StringFlowFunctionProperty(pc, v, (env: StringTreeEnvironment) => env.update(pc, v, result))
 
     def constForAll(result: StringTreeNode): StringFlowFunctionProperty =
-        StringFlowFunctionProperty(Set.empty[PDUWeb], (env: StringTreeEnvironment) => env.updateAll(result))
+        StringFlowFunctionProperty(Set.empty[PDUWeb], ConstForAllFlow(result))
 }
 
 trait StringFlowFunction extends (StringTreeEnvironment => StringTreeEnvironment)
 
-object IdentityFlow extends StringFlowFunction {
+case class ConstForAllFlow(result: StringTreeNode) extends StringFlowFunction {
 
-    override def apply(env: StringTreeEnvironment): StringTreeEnvironment = env
+    def apply(env: StringTreeEnvironment): StringTreeEnvironment = env.updateAll(result)
 }

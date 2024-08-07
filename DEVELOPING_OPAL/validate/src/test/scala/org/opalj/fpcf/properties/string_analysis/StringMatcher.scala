@@ -17,7 +17,7 @@ sealed trait StringMatcher extends AbstractPropertyMatcher {
 
     protected def getActualValues: Property => Option[(String, String)] = {
         case prop: StringConstancyProperty =>
-            val tree = prop.sci.tree.simplify
+            val tree = prop.sci.tree.simplify.sorted
             if (tree.isInvalid) {
                 None
             } else {

@@ -157,7 +157,7 @@ public class Loops {
     @Dynamic(n = 0, levels = { Level.L0, Level.L1, Level.L2 }, value = ".*")
     @Constant(n = 1, levels = Level.TRUTH, value = "")
     @Dynamic(n = 1, levels = Level.L0, value = ".*")
-    @Dynamic(n = 1, levels = { Level.L1, Level.L2 }, value = "(.*|)")
+    @Dynamic(n = 1, levels = { Level.L1, Level.L2 }, value = "(|.*)")
     @Dynamic(n = 2, levels = Level.TRUTH, value = "((.*)?)*")
     @Dynamic(n = 2, levels = { Level.L0, Level.L1, Level.L2 }, value = ".*")
     public void breakContinueExamples(int value) {

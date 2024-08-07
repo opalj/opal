@@ -131,7 +131,7 @@ class L2FieldReadInterpreter(
             accessState.previousResults.prepend(StringTreeNode.ub)
             InterimResult.forUB(
                 InterpretationHandler.getEntity,
-                StringFlowFunctionProperty.ub,
+                StringFlowFunctionProperty.ub(state.pc, target),
                 accessState.dependees.toSet,
                 continuation(accessState, state)
             )
