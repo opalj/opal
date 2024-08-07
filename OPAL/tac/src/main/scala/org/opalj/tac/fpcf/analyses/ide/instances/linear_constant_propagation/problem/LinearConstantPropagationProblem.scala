@@ -31,9 +31,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
  * Definition of the linear constant propagation problem
  */
 class LinearConstantPropagationProblem(project: SomeProject)
-    extends JavaIDEProblem[LinearConstantPropagationFact, LinearConstantPropagationValue](
-        new JavaICFG(project)
-    ) {
+    extends JavaIDEProblem[LinearConstantPropagationFact, LinearConstantPropagationValue](new JavaICFG(project)) {
     override val nullFact: LinearConstantPropagationFact =
         NullFact
 

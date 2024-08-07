@@ -216,7 +216,8 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
                 fromNode = s"${icfg.stringifyStatement(source, short = true)}"
                 toNode = s"${icfg.stringifyStatement(target, short = true)}"
                 if (recordEdgeFunctions) {
-                    label = s"$targetFact\\n($flowType),\\n${collectedEdgeFunctions(dotEdge)}"
+                    label =
+                        s"$targetFact\\n($flowType),\\n${collectedEdgeFunctions.get(dotEdge).map(_.toString).getOrElse("edge function missing")}"
                 } else {
                     label = s"$targetFact\\n($flowType)"
                 }
@@ -224,7 +225,8 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
                 fromNode = s"(${icfg.stringifyStatement(source, short = true)}, $sourceFact)"
                 toNode = s"(${icfg.stringifyStatement(target, short = true)}, $targetFact)"
                 if (recordEdgeFunctions) {
-                    label = s"$flowType,\\n${collectedEdgeFunctions(dotEdge)}"
+                    label =
+                        s"$flowType,\\n${collectedEdgeFunctions.get(dotEdge).map(_.toString).getOrElse("edge function missing")}"
                 } else {
                     label = flowType
                 }
