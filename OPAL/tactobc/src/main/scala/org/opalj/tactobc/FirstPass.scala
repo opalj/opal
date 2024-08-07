@@ -2,7 +2,7 @@ package org.opalj.tactobc
 
 import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, DUVar, Expr, ExprStmt, If, InvokedynamicFunctionCall, NewArray, NonVirtualMethodCall, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, StaticFunctionCall, StaticMethodCall, Stmt, UVar, VirtualFunctionCall, VirtualMethodCall}
+import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, Compare, DUVar, Expr, ExprStmt, GetField, If, InvokedynamicFunctionCall, NewArray, NonVirtualMethodCall, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, StaticFunctionCall, StaticMethodCall, Stmt, Throw, UVar, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tactobc.ExprProcessor.{nextLVIndex, uVarToLVIndex}
 import org.opalj.value.ValueInformation
 
@@ -68,6 +68,8 @@ object FirstPass {
           collectDUVarFromExpr(value, duVars)
         case ExprStmt(_, expr) =>
           collectDUVarFromExpr(expr, duVars)
+        case Throw(_, exception) =>
+          collectDUVarFromExpr(exception, duVars)
         case _ =>
       }
       }
@@ -173,8 +175,19 @@ object FirstPass {
       case arrayLoadExpr: ArrayLoad[_] => collectDUVarFromArrayLoadExpr(arrayLoadExpr, duVars)
       case newArrayExpr: NewArray[_] => collectDUVarFromNewArrayExpr(newArrayExpr, duVars)
       case invokedynamicFunctionCall: InvokedynamicFunctionCall[_] => collectDUVarFromInvokedynamicFunctionCall(invokedynamicFunctionCall, duVars)
+      case getField: GetField[_] =>  collectDUVarFromGetField(getField, duVars)
+      case compare: Compare[_] => collectDUVarFromCompare(compare, duVars)
       case _ =>
     }
+  }
+
+  def collectDUVarFromCompare(compare: Compare[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    collectDUVarFromExpr(compare.left, duVars)
+    collectDUVarFromExpr(compare.right, duVars)
+  }
+
+  def collectDUVarFromGetField(getField: GetField[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    collectDUVarFromExpr(getField.objRef, duVars)
   }
 
   def collectDUVarFromInvokedynamicFunctionCall(invokedynamicFunctionCall: InvokedynamicFunctionCall[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {

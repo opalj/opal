@@ -100,6 +100,7 @@ object StmtProcessor {
   def processVirtualMethodCall(declaringClass: ReferenceType, isInterface: Boolean, methodName: String, methodDescriptor: MethodDescriptor, receiver: Expr[_], params: Seq[Expr[_]], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     // Process the receiver object (e.g., aload_0 for `this`)
     val afterReceiverPC = ExprProcessor.processExpression(receiver, instructionsWithPCs, currentPC)
+    println(s"Receiver loaded at PC: $afterReceiverPC, Receiver: $receiver")
 
     // Initialize the PC after processing the receiver
     var currentAfterParamsPC = afterReceiverPC
@@ -107,6 +108,7 @@ object StmtProcessor {
     // Process each parameter and update the PC accordingly
     for (param <- params) {
       currentAfterParamsPC = ExprProcessor.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
+      println(s"Parameter loaded at PC: $currentAfterParamsPC, Parameter: $param")
     }
 
     val instruction = { /*if (isInterface) {
@@ -114,6 +116,7 @@ object StmtProcessor {
     }else*/
     INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
     }
+    println(s"Generated method call instruction: $instruction at PC: $currentAfterParamsPC")
     //val finalPC = currentPC + pcAfterLoadVariable
     instructionsWithPCs += ((currentAfterParamsPC, instruction))
     currentAfterParamsPC + instruction.length
@@ -122,15 +125,20 @@ object StmtProcessor {
   def processArrayStore(arrayRef: Expr[_], index: Expr[_], value: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     // Load the arrayRef onto the stack
     val pcAfterArrayRefLoad = ExprProcessor.processExpression(arrayRef, instructionsWithPCs, currentPC)
+    println(s"ArrayRef: $arrayRef, Type: ${arrayRef.cTpe}, PC after load: $pcAfterArrayRefLoad")
 
     // Load the index onto the stack
     val pcAfterIndexLoad = ExprProcessor.processExpression(index, instructionsWithPCs, pcAfterArrayRefLoad)
+    println(s"Index: $index, Type: ${index.cTpe}, PC after load: $pcAfterIndexLoad")
 
     // Load the value to be stored onto the stack
     val pcAfterValueLoad = ExprProcessor.processExpression(value, instructionsWithPCs, pcAfterIndexLoad)
+    println(s"Value: $value, Type: ${value.cTpe}, PC after load: $pcAfterValueLoad")
 
     // Infer the element type from the array reference expression
     val elementType = inferElementType(arrayRef)
+    println(s"Inferred Element Type: $elementType")
+
     val instruction = elementType match {
       case IntegerType => IASTORE
       case LongType => LASTORE
@@ -142,6 +150,7 @@ object StmtProcessor {
       case _: ObjectType => AASTORE
       case _ => throw new IllegalArgumentException("Unsupported array store type")
     }
+    println(s"Generated Instruction: $instruction at PC $pcAfterValueLoad")
     // Add the store instruction
     instructionsWithPCs += ((pcAfterValueLoad, instruction))
     pcAfterValueLoad + instruction.length
@@ -176,10 +185,10 @@ object StmtProcessor {
   }
 
   def processThrow(exception: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: handle this correctly
+    val pcAfterException = ExprProcessor.processExpression(exception, instructionsWithPCs, currentPC)
     val instruction = ATHROW
-    instructionsWithPCs += ((currentPC, instruction))
-    currentPC + 1
+    instructionsWithPCs += ((pcAfterException, instruction))
+    pcAfterException + 1
   }
 
   def processPutStatic(declaringClass: ObjectType, name: String, declaredFieldType: FieldType, value: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
