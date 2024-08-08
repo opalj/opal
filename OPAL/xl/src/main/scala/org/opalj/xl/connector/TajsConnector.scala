@@ -154,12 +154,13 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                     state.connectorDependees += eps
                     createResult(javaScriptInteraction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]], analyses, null)
 
-                case UBP(_: PointsToSet @unchecked) =>
+                case ubp@UBP(_: PointsToSet @unchecked) =>
                     println("Resume:")
                     val analyses = state.files.map(file => {
                         start(tajsAdapter = tajsAdapter, file.getPath)._1.get
                     })
-                    state.connectorDependees += eps
+                    if(ubp.isRefinable)
+                        state.connectorDependees += ubp
                     createResult(oldScriptEngineInteraction, analyses, blockAndContext)
 
                 case ep =>
