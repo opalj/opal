@@ -105,18 +105,23 @@ object FirstPass {
     duVars.foreach {
       case uVar: UVar[_] if uVar.defSites.exists(origin => origin < 0) =>
         // Check if the defSites contain a parameter origin
-        uVar.defSites.foreach { origin =>
-          if (origin == -1 && !isStaticMethod) {
-            // Assign LV index 0 for 'this' for instance methods
-            uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
-          } else if (origin == -2) {
-            nextLVIndex = if (isStaticMethod) 0 else 1 // Start at 1 for instance methods to reserve 0 for 'this'
-            uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
-            incrementLVIndex(uVar)
-          } else if (origin < -2) {
-            uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
-            incrementLVIndex(uVar)
-          }
+        val existingEntry = uVarToLVIndex.find { case (key, _) => key.intersect(uVar.defSites).nonEmpty }
+        existingEntry match {
+          case Some((existingDefSites, _)) => // Do nothing if already processed
+          case None =>
+            uVar.defSites.foreach { origin =>
+              if (origin == -1 && !isStaticMethod) {
+                // Assign LV index 0 for 'this' for instance methods
+                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
+              } else if (origin == -2) {
+                nextLVIndex = if (isStaticMethod) 0 else 1 // Start at 1 for instance methods to reserve 0 for 'this'
+                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
+                incrementLVIndex(uVar)
+              } else if (origin < -2) {
+                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
+                incrementLVIndex(uVar)
+              }
+            }
         }
       case _ =>
     }
