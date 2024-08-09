@@ -21,6 +21,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedSerializationAllo
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedUnsafePointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.ReflectionAllocationsAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
@@ -46,7 +47,6 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
         List(
             AllocationSiteBasedPointsToAnalysisScheduler,
             AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler,
-            AllocationSiteBasedTamiFlexPointsToAnalysisScheduler,
             AllocationSiteBasedArraycopyPointsToAnalysisScheduler,
             AllocationSiteBasedUnsafePointsToAnalysisScheduler,
             ReflectionAllocationsAnalysisScheduler,
@@ -54,7 +54,11 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
             AllocationSiteBasedNewInstanceAnalysisScheduler,
             EagerFieldAccessInformationAnalysis,
             ReflectionRelatedFieldAccessesAnalysisScheduler
-        ) ::: (if (isLibrary) List(AllocationSiteBasedLibraryPointsToAnalysisScheduler) else Nil)
+        ) ::: (
+            if (isLibrary) List(AllocationSiteBasedLibraryPointsToAnalysisScheduler) else Nil
+        ) ::: (
+            if (TamiFlexKey.isConfigured(project)) List(AllocationSiteBasedTamiFlexPointsToAnalysisScheduler) else Nil
+        )
     }
     override def getTypeIterator(project: SomeProject) =
         new AllocationSitesPointsToTypeIterator(project)
