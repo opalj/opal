@@ -216,7 +216,11 @@ trait TacBasedAliasAnalysisState extends AliasAnalysisState {
      * Returns the [[PostDominatorTree]] for the given method. It caches its results for future invocations to avoid
      * multiple calculations of the same post dominator tree.
      */
-    def postDominatorTree(m: Method)(implicit context: AliasAnalysisContext, logContext: LogContext): PostDominatorTree = {
+    def postDominatorTree(m: Method)(
+        implicit
+        context: AliasAnalysisContext,
+        logContext: LogContext
+    ): PostDominatorTree = {
 
         if (m.equals(context.element1.method)) {
             _postDominatorTree1.getOrElse({
