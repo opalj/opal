@@ -16,7 +16,8 @@ import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.graphs.{DominatorTree, PostDominatorTree}
+import org.opalj.graphs.DominatorTree
+import org.opalj.graphs.PostDominatorTree
 import org.opalj.log.LogContext
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -202,13 +203,13 @@ trait TacBasedAliasAnalysisState extends AliasAnalysisState {
                 _dominatorTree1 = Some(dominatorTree)
                 dominatorTree
             })
-        } else {
-          _dominatorTree2.getOrElse({
-              val dominatorTree = _tacai2.get.cfg.dominatorTree
-              _dominatorTree2 = Some(dominatorTree)
-              dominatorTree
-          })
-        }
+        } else if (m.equals(context.element2.method)) {
+            _dominatorTree2.getOrElse({
+                val dominatorTree = _tacai2.get.cfg.dominatorTree
+                _dominatorTree2 = Some(dominatorTree)
+                dominatorTree
+            })
+        } else throw new IllegalArgumentException("Method not found")
     }
 
     /**
@@ -220,20 +221,20 @@ trait TacBasedAliasAnalysisState extends AliasAnalysisState {
         if (m.equals(context.element1.method)) {
             _postDominatorTree1.getOrElse({
                 val aiResult =
-                  L0BaseAIResultAnalysis.performAI(m)(context.project.get(AIDomainFactoryKey), logContext)
+                    L0BaseAIResultAnalysis.performAI(m)(context.project.get(AIDomainFactoryKey), logContext)
                 val postDomTree = aiResult.domain.asInstanceOf[DefaultDomainWithCFGAndDefUse[_]].postDominatorTree
                 _postDominatorTree1 = Some(postDomTree)
                 postDomTree
             })
-        } else {
+        } else if (m.equals(context.element2.method)) {
             _postDominatorTree2.getOrElse({
                 val aiResult =
-                  L0BaseAIResultAnalysis.performAI(m)(context.project.get(AIDomainFactoryKey), logContext)
+                    L0BaseAIResultAnalysis.performAI(m)(context.project.get(AIDomainFactoryKey), logContext)
                 val postDomTree = aiResult.domain.asInstanceOf[DefaultDomainWithCFGAndDefUse[_]].postDominatorTree
                 _postDominatorTree2 = Some(postDomTree)
                 postDomTree
             })
-        }
+        } else throw new IllegalArgumentException("Method not found")
 
     }
 

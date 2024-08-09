@@ -2,7 +2,8 @@
 package org.opalj.tac.fpcf.analyses.alias
 
 import org.opalj.br.PC
-import org.opalj.br.fpcf.properties.{Context, NoContext}
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.NoContext
 
 trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAnalysis with TacBasedAliasAnalysis {
 
