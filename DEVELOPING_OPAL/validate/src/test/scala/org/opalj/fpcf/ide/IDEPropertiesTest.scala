@@ -2,8 +2,10 @@
 package org.opalj.fpcf.ide
 
 import java.net.URL
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.Method

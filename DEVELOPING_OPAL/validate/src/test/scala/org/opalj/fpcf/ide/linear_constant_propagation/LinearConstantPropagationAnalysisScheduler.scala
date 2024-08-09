@@ -2,6 +2,7 @@
 package org.opalj.fpcf.ide.linear_constant_propagation
 
 import scala.collection.immutable
+
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
