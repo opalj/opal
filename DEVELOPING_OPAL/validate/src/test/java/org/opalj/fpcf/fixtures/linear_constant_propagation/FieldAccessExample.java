@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation;
 
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;

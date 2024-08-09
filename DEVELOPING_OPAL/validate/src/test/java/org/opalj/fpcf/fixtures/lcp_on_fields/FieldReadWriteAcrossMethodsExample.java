@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.lcp_on_fields;
 
 import org.opalj.fpcf.properties.lcp_on_fields.ObjectValue;
