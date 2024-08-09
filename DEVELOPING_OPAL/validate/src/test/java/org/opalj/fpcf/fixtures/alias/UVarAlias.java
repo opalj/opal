@@ -20,7 +20,7 @@ public class UVarAlias {
 
     @MayAlias(reason = "same local variable with single defSite with loop used",
             lineNumber = 27,
-            secondLineNumber = 27, analyses = {AllocationSitePointsToBasedAliasAnalysis.class, IntraProceduralAliasAnalysis.class})
+            secondLineNumber = 27)
     public static void mayAliasLoop() {
         for (int i = 0; i < 10; i++) {
             Object o1 = new Object();
@@ -130,5 +130,43 @@ public class UVarAlias {
 
         o1.hashCode();
         o2.hashCode();
+    }
+
+    @MayAlias(reason = "same local variable with single defSite inside inner nested loop",
+            lineNumber = 142,
+            secondLineNumber = 142)
+    public static void mayAliasInnerNestedLoop() {
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                Object o1 = new Object();
+                o1.hashCode();
+            }
+        }
+    }
+
+    @MayAlias(reason = "same local variable with single defSite inside outer nested loop",
+            lineNumber = 156,
+            secondLineNumber = 156)
+    public static void mayAliasOuterNestedLoop1() {
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                Object o2 = new Object();
+            }
+            Object o1 = new Object();
+            o1.hashCode();
+        }
+    }
+
+    @MayAlias(reason = "same local variable with single defSite inside outer nested loop",
+            lineNumber = 166,
+            secondLineNumber = 166)
+    public static void mayAliasOuterNestedLoop2() {
+        for (int i = 0; i < 10; i++) {
+            Object o1 = new Object();
+            o1.hashCode();
+            for (int j = 0; j < 10; j++) {
+                Object o2 = new Object();
+            }
+        }
     }
 }
