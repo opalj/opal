@@ -218,7 +218,7 @@ trait TacBasedAliasAnalysisState extends AliasAnalysisState {
      */
     def postDominatorTree(m: Method)(
         implicit
-        context: AliasAnalysisContext,
+        context:    AliasAnalysisContext,
         logContext: LogContext
     ): PostDominatorTree = {
 
