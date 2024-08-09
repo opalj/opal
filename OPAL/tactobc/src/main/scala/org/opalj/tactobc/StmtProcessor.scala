@@ -3,7 +3,7 @@ package org.opalj.tactobc
 
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
-import org.opalj.br.{BootstrapMethod, ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FieldType, FloatType, IntegerType, LongType, MethodDescriptor, ObjectType, PCs, ReferenceType, ShortType}
+import org.opalj.br.{ArrayType, BootstrapMethod, ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FieldType, FloatType, IntegerType, LongType, MethodDescriptor, ObjectType, PCs, ReferenceType, ShortType}
 import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH}
 import org.opalj.collection.immutable.{IntIntPair, IntTrieSet}
 import org.opalj.tac.{Expr, UVar, Var}
@@ -139,6 +139,7 @@ object StmtProcessor {
     val elementType = inferElementType(arrayRef)
     println(s"Inferred Element Type: $elementType")
 
+
     val instruction = elementType match {
       case IntegerType => IASTORE
       case LongType => LASTORE
@@ -148,7 +149,18 @@ object StmtProcessor {
       case CharType => CASTORE
       case ShortType => SASTORE
       case _: ObjectType => AASTORE
-      case _ => throw new IllegalArgumentException("Unsupported array store type")
+      case ArrayType(componentType) => componentType match {
+        case _: ReferenceType => AASTORE
+        case _: CharType => CASTORE
+        case _: FloatType => FASTORE
+        case _: DoubleType => DASTORE
+        case _: ByteType => BASTORE
+        case _: ShortType => SASTORE
+        case _: IntegerType => IASTORE
+        case _: LongType => LASTORE
+        case _ => throw new IllegalArgumentException(s"Unsupported array store type $componentType")
+      }
+      case _ => throw new IllegalArgumentException(s"Unsupported array store type $elementType")
     }
     println(s"Generated Instruction: $instruction at PC $pcAfterValueLoad")
     // Add the store instruction
