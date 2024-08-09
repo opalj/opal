@@ -3,7 +3,13 @@ package org.opalj
 package fpcf
 package xltest
 
-import com.typesafe.config.{Config, ConfigFactory}
+import java.net.URL
+
+import scala.util.matching.Regex
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.SimpleContext
@@ -17,11 +23,13 @@ import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeIterator
 import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
 import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 import org.scalatest.Reporter
-import org.scalatest.events.{Event, SuiteCompleted, TestFailed, TestSucceeded}
+import org.scalatest.events.Event
+import org.scalatest.events.SuiteCompleted
+import org.scalatest.events.TestFailed
+import org.scalatest.events.TestSucceeded
 import org.scalatest.tools.Runner
-
-import java.net.URL
-import scala.util.matching.Regex
+import org.opalj.log.LogContext
+import org.opalj.br.fpcf.PropertyStoreKey
 
 object RunXLTests {
     def main(args: Array[String]): Unit = {
@@ -121,6 +129,17 @@ class XLJavaScriptTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(ContextProviderKey)(_ => new AllocationSitesPointsToTypeIterator(p))
+
+        implicit val logContext: LogContext = p.logContext
+        p.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context: List[PropertyStoreContext[AnyRef]]) => {
+                // Some integrated analyses cannot cope with multiple threads
+                org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = 1
+                org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+            }
+
+        )
     }
     def addAnalyses(): Iterable[FPCFAnalysisScheduler] = {
         Iterable(
