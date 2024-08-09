@@ -102,28 +102,49 @@ object FirstPass {
    * @return A map where keys are def-sites of UVars and values are their corresponding LV indexes.
    */
   def mapParametersAndPopulate(duVars: mutable.ListBuffer[DUVar[_]], isStaticMethod: Boolean): mutable.Map[IntTrieSet, Int] = {
-    duVars.foreach {
-      case uVar: UVar[_] if uVar.defSites.exists(origin => origin < 0) =>
-        // Check if the defSites contain a parameter origin
-        val existingEntry = uVarToLVIndex.find { case (key, _) => key.intersect(uVar.defSites).nonEmpty }
-        existingEntry match {
-          case Some((existingDefSites, _)) => // Do nothing if already processed
-          case None =>
-            uVar.defSites.foreach { origin =>
-              if (origin == -1 && !isStaticMethod) {
-                // Assign LV index 0 for 'this' for instance methods
-                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
-              } else if (origin == -2) {
-                nextLVIndex = if (isStaticMethod) 0 else 1 // Start at 1 for instance methods to reserve 0 for 'this'
-                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
-                incrementLVIndex(uVar)
-              } else if (origin < -2) {
-                uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
-                incrementLVIndex(uVar)
-              }
+    // Step 2: Filter and Sort DUVar instances with negative origins
+    val parameterVars = duVars.collect {
+      case uVar: UVar[_] if uVar.defSites.exists(_ < 0) => uVar
+    }
+    val seenDefSites = mutable.Set[Int]()
+    val uniqueParameterVars = parameterVars.filter { uVar =>
+      // Extract the minimum defSite from the IntTrieSet
+      val minDefSite = uVar.defSites.head
+
+      // Check if we've already seen this defSite
+      if (seenDefSites.contains(minDefSite)) {
+        false // Skip this UVar, as it's already been added
+      } else {
+        seenDefSites += minDefSite // Mark this defSite as seen
+        true // Keep this UVar
+      }
+    }
+    val sortedParameterVars = uniqueParameterVars.sortBy { uVar =>
+      // Sort by the minimum value in defSites, since we want the most negative number first
+      uVar.defSites.head
+    }(Ordering[Int].reverse)
+    println(sortedParameterVars)
+    // Iterate over the sorted list of unique parameters
+    sortedParameterVars.foreach { uVar =>
+      // Check if the defSites contain a parameter origin
+      val existingEntry = uVarToLVIndex.find { case (key, _) => key.intersect(uVar.defSites).nonEmpty }
+      existingEntry match {
+        case Some((existingDefSites, _)) => // Do nothing if already processed
+        case None =>
+          uVar.defSites.foreach { origin =>
+            if (origin == -1 && !isStaticMethod) {
+              // Assign LV index 0 for 'this' for instance methods
+              uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), 0)
+            } else if (origin == -2) {
+              nextLVIndex = if (isStaticMethod) 0 else 1 // Start at 1 for instance methods to reserve 0 for 'this'
+              uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
+              incrementLVIndex(uVar)
+            } else if (origin < -2) {
+              uVarToLVIndex.getOrElseUpdate(IntTrieSet(origin), nextLVIndex)
+              incrementLVIndex(uVar)
             }
-        }
-      case _ =>
+          }
+      }
     }
     uVarToLVIndex
   }
