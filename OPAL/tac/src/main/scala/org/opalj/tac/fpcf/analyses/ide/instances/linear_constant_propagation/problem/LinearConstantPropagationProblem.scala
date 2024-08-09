@@ -86,13 +86,13 @@ class LinearConstantPropagationProblem(project: SomeProject)
                 if (sourceFact == nullFact) {
                     /* Only generate fact by null fact for binary expressions if both subexpressions are influenced.
                      * This is needed for binary expressions with one constant and one variable. */
-                    isExpressionInfluencedByFact(leftExpr, sourceFact)
-                    && isExpressionInfluencedByFact (rightExpr, sourceFact)
+                    isExpressionInfluencedByFact(leftExpr, sourceFact) &&
+                    isExpressionInfluencedByFact(rightExpr, sourceFact)
                 } else {
                     /* If source fact is not null fact, generate new fact if one subexpression is influenced by the
                      * source fact */
-                    isExpressionInfluencedByFact(leftExpr, sourceFact)
-                    || isExpressionInfluencedByFact (rightExpr, sourceFact)
+                    isExpressionInfluencedByFact(leftExpr, sourceFact) ||
+                    isExpressionInfluencedByFact(rightExpr, sourceFact)
                 }
 
             case Var.ASTID =>
