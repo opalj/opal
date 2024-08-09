@@ -1,12 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.alias
 
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.PC
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.NoContext
+import org.opalj.br.fpcf.properties.{Context, NoContext}
 
 trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAnalysis with TacBasedAliasAnalysis {
 
@@ -51,11 +47,8 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
 
             val tac = state.tacai1.get
             val cfg = tac.cfg
-            val domTree = cfg.dominatorTree
-            val aiResult =
-                L0BaseAIResultAnalysis.performAI(method.definedMethod)(project.get(AIDomainFactoryKey), logContext)
-            val postDomTree = aiResult.domain.asInstanceOf[DefaultDomainWithCFGAndDefUse[_]].postDominatorTree
-
+            val domTree = state.dominatorTree(method.definedMethod)
+            val postDomTree = state.postDominatorTree(method.definedMethod)
             val allocBB = cfg.bb(tac.properStmtIndexForPC(pc)).nodeId
 
             // check if the allocation site is dominated by a loop header, i.e., is executed multiple times
