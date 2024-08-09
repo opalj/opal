@@ -45,7 +45,7 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
             val defSite2 = context.element2.asAliasUVar.persistentUVar.defPCs
 
             // multiple or different def sites for one element -> might be different objects (e.g. due to recursion via parameter)
-            if (defSite1.size != 1 || defSite1.size != 1 || defSite1.head != defSite2.head) return false
+            if (defSite1.size != 1 || defSite2.size != 1 || defSite1.head != defSite2.head) return false
 
             // the definition site is not the allocation site -> it is a method call or something similar
             if (pc != defSite1.head) return false
