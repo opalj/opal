@@ -1,10 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.alias
 
+import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.NoContext
-import org.opalj.tac.Goto
 
 trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAnalysis with TacBasedAliasAnalysis {
 
@@ -41,21 +43,40 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
             val defSite1 = context.element1.asAliasUVar.persistentUVar.defPCs
             val defSite2 = context.element2.asAliasUVar.persistentUVar.defPCs
 
-            if (defSite1.size != 1 || defSite1.size != 1 || defSite1.head != defSite2.head) return false // multiple or different def sites for one element -> might be different objects (e.g. due to recursion via parameter)
-
-            val tac = state.tacai1.get
+            // multiple or different def sites for one element -> might be different objects (e.g. due to recursion via parameter)
+            if (defSite1.size != 1 || defSite1.size != 1 || defSite1.head != defSite2.head) return false
 
             // the definition site is not the allocation site -> it is a method call or something similar
             if (pc != defSite1.head) return false
 
-            for (stmt <- state.tacai1.get.stmts) {
-                stmt match {
-                    case goto: Goto =>
-                        val targetPC = tac.stmts(goto.targetStmt).pc
-                        if (targetPC <= pc && goto.pc >= pc) return false // jumping from behind the allocation site in front of it -> might break aliasing because allocation site is executed multiple times
-                    case _ =>
-                }
-            }
+            val tac = state.tacai1.get
+            val cfg = tac.cfg
+            val domTree = cfg.dominatorTree
+            val aiResult =
+                L0BaseAIResultAnalysis.performAI(method.definedMethod)(project.get(AIDomainFactoryKey), logContext)
+            val postDomTree = aiResult.domain.asInstanceOf[DefaultDomainWithCFGAndDefUse[_]].postDominatorTree
+
+            val allocBB = cfg.bb(tac.properStmtIndexForPC(pc)).nodeId
+
+            // check if the allocation site is dominated by a loop header, i.e., is executed multiple times
+            domTree.foreachDom(allocBB)(dom => {
+
+                // check if the dominator is a loop header
+                cfg.foreachPredecessor(cfg.bb(dom).startPC)(pred => {
+
+                    // if the dominator itself dominates one of its predecessors, it is a loop header
+                    if (domTree.strictlyDominates(dom, pred)) {
+
+                        // only report a negative result if the allocation site is inside the loop (loop head post
+                        // dominates the allocation site). Otherwise, we report allocation sites in front of the loop as
+                        // being inside a loop.
+                        if (!postDomTree.strictlyDominates(dom, allocBB)) {
+                            return false
+                        }
+                    }
+                })
+
+            })
 
             return true
         }
