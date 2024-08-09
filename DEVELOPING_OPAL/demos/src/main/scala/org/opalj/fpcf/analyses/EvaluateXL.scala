@@ -3,27 +3,37 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.{ArrayType, DefinedMethod, ObjectType}
-import org.opalj.br.analyses.{BasicReport, Project, ProjectAnalysisApplication, VirtualFormalParameter}
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.{FPCFAnalysesManagerKey, FPCFAnalysisScheduler, PropertyStoreKey}
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.fpcf.{PropertyStore, PropertyStoreContext, SomeEPS}
-import org.opalj.log.LogContext
-import org.opalj.tac.cg.{AllocationSiteBasedPointsToCallGraphKey, TypeIteratorKey}
-import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
-import org.opalj.tac.fpcf.analyses.cg.xta.{TypePropagationAnalysisScheduler, XTASetEntitySelector}
-import org.opalj.tac.fpcf.analyses.pointsto.longToAllocationSite
-import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
-import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
-import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
-
 import java.net.URL
 import scala.collection.mutable
 import scala.io.Source
 import scala.util.matching.Regex
+
+import org.opalj.br.ArrayType
+import org.opalj.br.DefinedMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.log.LogContext
+import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
+import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
+import org.opalj.tac.fpcf.analyses.cg.TypeIterator
+import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
+import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
+import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
+import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
 
 class Method(val methodId: Int, val signature: String) {
   val pcToInstances: mutable.Map[Int, Set[Instance]] = mutable.Map.empty[Int, Set[Instance]].withDefaultValue(Set.empty[Instance])
