@@ -16,6 +16,7 @@ import org.opalj.io.writeAndOpen
 import java.io.ByteArrayInputStream
 import java.nio.file.{Files, Paths}
 import org.opalj.tac._
+import org.opalj.util.InMemoryClassLoader
 import org.opalj.value.ValueInformation
 
 import java.io.File
@@ -79,8 +80,8 @@ object TACtoBC {
 
   def generateClassFiles(byteCodes: Map[Method, ArrayBuffer[(Int, Instruction)]], p: Project[_], inputDirPath: String, outputDirPath: String, classFileName: String): Unit = {
     //val helloWorldPath = "org/opalj/tactobc/testingtactobc/"
-    //val benchmarkPath = "jnt/scimark2/"
-    //val TheType = ObjectType(benchmarkPath.concat(classFileName.replace(".class", "")))
+    val benchmarkPath = "jnt/scimark2/"
+    val TheType = ObjectType(benchmarkPath.concat(classFileName.replace(".class", "")))
 
     // Debugging: Print the location of the class loader and resources
     val loader = this.getClass.getClassLoader
@@ -104,8 +105,12 @@ object TACtoBC {
           case None =>
             m.copy() // methods which are native and abstract ...
           case Some(originalBody) =>
-            //Using find because of the extra methods that do contain the name of the method but are not part of the original file
-            byteCodes.find(bc => bc._1.name.contains(m.name)) match {
+            val methodSignature = m.descriptor.toJava(m.name)
+            byteCodes.find {
+              case (method, _) =>
+                method.name == m.name &&
+                  method.descriptor.toJava(method.name) == methodSignature
+            } match {
               case Some((_, instructions)) =>
                 // Prepare new instructions array with null values where necessary
                 val maxPc = instructions.map(_._1).max
@@ -154,8 +159,8 @@ object TACtoBC {
 
                 val newBody = Code(
                   //todo: use the size of the local variables map
-                  100,
-                  100,
+                  10000,
+                  10000,
                   newInstructionsWithNulls,
                   originalBody.exceptionHandlers,
                   finalAttributes)
@@ -195,8 +200,8 @@ object TACtoBC {
                 }
                 val newBody1 = Code(
                   //todo: use the size of the local variables map
-                  100,
-                  100,
+                  10000,
+                  10000,
                   originalBody.instructions,
                   originalBody.exceptionHandlers,
                   newAttributes1)
@@ -239,10 +244,10 @@ object TACtoBC {
     // Let's test that the new class does what it is expected to do... (we execute the
     // instrumented method)
     //todo: the map should have all class files
-    //val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
-    //val newClass = cl.findClass(TheType.toJava)
+    val cl = new InMemoryClassLoader(Map((TheType.toJava, newRawCF)))
+    val newClass = cl.findClass(TheType.toJava)
     //val instance = newClass.getDeclaredConstructor().newInstance()
-    //newClass.getMethod("main", (Array[String]()).getClass).invoke(null, null)
+    newClass.getMethod("main", (Array[String]()).getClass).invoke(null, Array[String]())
   }
 
   /**
