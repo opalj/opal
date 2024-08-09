@@ -4,8 +4,6 @@ package xl
 package connector
 package svf
 
-import java.util.Calendar
-
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.xl.logger.PointsToInteractionLogger
@@ -403,8 +401,6 @@ abstract class NativeAnalysis(
 
     val parameterPointsToSets = outerResultListBuffer.toArray
 
-    println(s"result:::: $parameterPointsToSets")
-
     val javaFunctionFullName = ("Java/"+javaDeclaredMethod.declaringClassType.fqn.replace("_", "_1")+"/"+javaDeclaredMethod.name).replace("/", "_")
 
     var functionSelection = functions.filter(_.equals(javaFunctionFullName))
@@ -427,7 +423,6 @@ abstract class NativeAnalysis(
         })
       }
     }
-      println("i6")
     Results(createResults ++ svfConnectorState.connectorResults, InterimPartialResult(svfConnectorState.connectorDependees, svfConnectorContinuation))
   }
 
@@ -441,30 +436,21 @@ abstract class NativeAnalysis(
       GlobalJNIMapping.mapping = Map[Long, PointsToSet]()
     }
     implicit val svfConnectorState = SVFConnectorState(calleeContext, pc, project)
-      println(Calendar.getInstance().getTime())
-      println(s"caller Context: $callerContext")
-      println(s"callee Context: $calleeContext")
-      println("call svf init")
     svfjava.SVFJava.init()
-        println(s"call create svf module: ${svfConnectorState.svfModuleName}")
     svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName)
-      println("call run svf")
     runSVF(svfConnectorState)
   }
 
   def svfConnectorContinuation(eps: SomeEPS)(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized{
-      println("entered native analysis continuation.")
     svfConnectorState.connectorDependees = svfConnectorState.connectorDependees.filter(dependee => dependee.e != eps.e)
     eps match {
       case UBP(_: PointsToSet @unchecked) =>
         svfConnectorState.connectorDependees += eps
        // svfConnectorState.oldEPS = eps
-          println("i8_2")
           svfjava.SVFJava.init()
         runSVF(svfConnectorState)
 
       case _ =>
-          println("returns empty result")
           Results()
     }
   }

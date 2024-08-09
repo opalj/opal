@@ -75,7 +75,6 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisState
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
-import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -120,34 +119,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             eps match {
 
                 case UBP(javaScriptInteraction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
-                    println(oldScriptEngineInteraction == javaScriptInteraction)
-                    println("---")
-                    println(oldScriptEngineInteraction.puts.map(_._2._1).mkString("\n"))
-                    println("- - - - - - - -")
-                    println(puts.map(_._2._1).mkString("\n"))
-                    puts.map(_._2._1).foreach(
-                        put => {
-                            val pts = put.asInstanceOf[AllocationSitePointsToSet]
-                            if (pts.numElements > 5) {
-                                pts.forNewestNElements(pts.numElements) {
-                                    x =>
-                                        println(longToAllocationSite(x))
-                                }
-                                throw new Exception(
-                                    s"""
-                                       | code: ${state.code}
-                                       | puts: ${state.puts}
-                                       |""".stripMargin
-                                )
-                            }
-                        }
-                    )
-                    println("***")
-                    println("code: ")
-                    state.code.foreach(println(_))
                     prepareAnalysis(possibleEmptyCode, puts)
-                    println("code: ")
-                    state.code.foreach(println(_))
                     val analyses = state.files.map(file => {
                         start(tajsAdapter = tajsAdapter, file.getPath)._1.get
                     })
@@ -155,7 +127,6 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                     createResult(javaScriptInteraction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]], analyses, null)
 
                 case ubp@UBP(_: PointsToSet @unchecked) =>
-                    println("Resume:")
                     val analyses = state.files.map(file => {
                         start(tajsAdapter = tajsAdapter, file.getPath)._1.get
                     })
@@ -170,8 +141,6 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
         }
 
         def start(tajsAdapter: TajsAdapter, javaScriptFilePath: String)(implicit state: TajsConnectorState): (Option[Analysis], Option[BlockAndContext[Context]]) = {
-            println("start tajs")
-            println(state.puts)
             LocalTAJSAdapter.setLocalTAJSAdapter(tajsAdapter)
 
             //val javaScriptFilePaths = state.files.map(_.getPath).toArray
@@ -318,7 +287,6 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                     v.getObjectLabels.forEach(ol => {
                         val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
                         val javaName = ol.getJavaName
-                        println(s"JavaName: $javaName")
                         val objectType = ObjectType(javaName.replace(".", "/"))
                         val classFile = project.classFile(objectType)
                         var possibleFields = List.empty[Field]
@@ -531,15 +499,11 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
         }
 
         def prepareAnalysis(possibleEmptyCode: List[String], puts: Map[(String, Any, TheTACAI), (Any, Coordinator.V, Option[ObjectType])]): Unit = {
-            println("prepare analysis")
-            println("old:")
-            println(puts.mkString("\n"))
             state.code = fillEmptyCode(possibleEmptyCode)
             state.puts = puts.map(put => {
                 val variableName = put._1._1
                 val context = put._1._2.asInstanceOf[ContextType]
                 val pointsToSet = put._2._1.asInstanceOf[PointsToSet]
-                println(s"num elements: ${pointsToSet.numElements}")
                 val tacai: TheTACAI = put._1._3
                 // val v = put._2._2
                 val optionType = put._2._3
@@ -547,12 +511,6 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 val jsValue = java2js(variableName, context, pointsToSet, tacai, optionType)
                 jsValue
             })
-            println(
-                s"""
-                   | new:
-                   | ${state.puts.mkString("\n")}
-                   |""".stripMargin
-            )
             if (state.code.size <= 4) {
                 var i = 0
                 state.code.toSet.subsets().foreach(subset => {
@@ -567,15 +525,11 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             }
         }
 
-        println("start analysis................................CONNECTOR--------------------------------------------------------------------------")
-
         //start of analysis
         propertyStore(scriptEngineInstance, CrossLanguageInteraction.key) match {
 
             case ubp @ UBP(interaction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
                 prepareAnalysis(possibleEmptyCode, puts)
-                println("code: ")
-                state.code.foreach(println(_))
                 val analyses = state.files.map(file => {
                     start(tajsAdapter = tajsAdapter, file.getPath)._1.get
                 })
