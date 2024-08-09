@@ -1,5 +1,3 @@
-package org.opalj.tactobc.testingtactobc;
-
 public class HelloWorld {
     public static void main(String[] args) {
         //todo: separate cases in methods to have testscenarios
