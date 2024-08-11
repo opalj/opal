@@ -9,8 +9,6 @@ object SingleClassFileTestCaseEnum extends Enumeration {
 
   // Test cases with Java and Class file names
   val testCases: Seq[TestCase] = Seq(
-    TestCase("HelloWorld.java", "HelloWorld.class"),
-    TestCase("HelloSofi.java", "HelloSofi.class"),
     TestCase("Assignment.java", "Assignment.class"),
     TestCase("ArithmeticOperations.java", "ArithmeticOperations.class"),
     TestCase("PrimitiveTypeCast.java", "PrimitiveTypeCast.class"),
@@ -20,7 +18,8 @@ object SingleClassFileTestCaseEnum extends Enumeration {
     TestCase("Parameters.java", "Parameters.class"),
     TestCase("StaticField.java", "StaticField.class"),
     TestCase("InstanceField.java", "InstanceField.class"),
-    TestCase("If.java", "If.class")
+    TestCase("If.java", "If.class"),
+    TestCase("WhileLoop.java", "WhileLoop.class")
   )
 
   // Case class to represent each test case
