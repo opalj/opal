@@ -444,7 +444,9 @@ object ExprProcessor {
     offsetPC + instructionLength
   }
   def handlePrimitiveTypeCastExpr(primitiveTypecastExpr: PrimitiveTypecastExpr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: handle loading of operand Expr
+    // First, process the operand expression and add its instructions to the buffer
+    val operandPC = processExpression(primitiveTypecastExpr.operand, instructionsWithPCs, currentPC)
+
     val instruction = (primitiveTypecastExpr.operand.cTpe, primitiveTypecastExpr.targetTpe) match {
       // -> to Float
       case (ComputationalTypeDouble, FloatType) => D2F
@@ -471,10 +473,7 @@ object ExprProcessor {
       // -> other cases are not supported
       case _ => throw new UnsupportedOperationException("Unsupported operation or computational type in PrimitiveTypecastExpr" + primitiveTypecastExpr)
     }
-    instructionsWithPCs += ((currentPC, instruction))
-    currentPC + instruction.length
-    // process the left expr and save the pc to give in the right expr processing
-    val finalPC = processExpression(primitiveTypecastExpr.operand, instructionsWithPCs, currentPC)
-    finalPC
+    instructionsWithPCs += ((operandPC, instruction))
+    operandPC + instruction.length
   }
 }
