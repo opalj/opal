@@ -13,7 +13,8 @@ object SingleClassFileTestCaseEnum extends Enumeration {
     TestCase("HelloSofi.java", "HelloSofi.class"),
     TestCase("Assignment.java", "Assignment.class"),
     TestCase("ArithmeticOperations.java", "ArithmeticOperations.class"),
-    TestCase("PrimitiveTypeCast.java", "PrimitiveTypeCast.class")
+    TestCase("PrimitiveTypeCast.java", "PrimitiveTypeCast.class"),
+    TestCase("ForLoop.java", "ForLoop.class")
   )
 
   // Case class to represent each test case
