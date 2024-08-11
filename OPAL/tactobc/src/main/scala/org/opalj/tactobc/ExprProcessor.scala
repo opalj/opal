@@ -259,11 +259,7 @@ object ExprProcessor {
         val instruction = LoadDynamic(-1, bootstrapMethod, name, descriptor)
         instructionsWithPCs += ((currentPC, instruction))
         currentPC += instruction.length*/
-      case _ =>
-        //todo: check that this is the right exception to throw
-        throw BytecodeProcessingFailedException(
-          "unsupported constant value: " + constExpr
-        )
+      case _ => throw BytecodeProcessingFailedException("unsupported constant value: " + constExpr)
     }
     }
     instructionsWithPCs += ((currentPC, instruction))
