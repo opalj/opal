@@ -4,7 +4,7 @@ package org.opalj.tactobc
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
 import org.opalj.br.{ArrayType, BootstrapMethod, ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FieldType, FloatType, IntegerType, LongType, MethodDescriptor, ObjectType, PCs, ReferenceType, ShortType}
-import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH, CHECKCAST}
+import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH, CHECKCAST, JSR}
 import org.opalj.collection.immutable.{IntIntPair, IntTrieSet}
 import org.opalj.tac.{Expr, UVar, Var}
 import org.opalj.tactobc.ExprProcessor.inferElementType
@@ -178,10 +178,20 @@ object StmtProcessor {
     nextPC + instruction.length
   }
 
-  def processRet(returnAdresses: PCs, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: handle returnAdresses this correctly
-    val instruction = RET(returnAdresses.size)
+  def processRet(returnAddresses: PCs, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    // Ensure there is only one return address, as RET can only work with one local variable index
+    if (returnAddresses.size != 1) {
+      throw new IllegalArgumentException(s"RET instruction expects exactly one return address, but got: ${returnAddresses.size}")
+    }
+
+    // The RET instruction requires the index of the local variable that holds the return address
+    val localVarIndex = returnAddresses.head
+
+    // Create the RET instruction with the correct local variable index
+    val instruction = RET(localVarIndex)
     instructionsWithPCs += ((currentPC, instruction))
+
+    // Return the next program counter
     currentPC + instruction.length
   }
 
@@ -229,10 +239,9 @@ object StmtProcessor {
     pcAfterObjRefLoad + instruction.length
   }
 
-  def processJSR(target: Int, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: look what to do with the target, how to get the length and if it is a jump instruction
-    //val instruction = JSR
-    //instructionsWithPCs += ((currentPC, instruction))
+  def processJSR(instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    val instruction = JSR(-1)
+    instructionsWithPCs += ((currentPC, instruction))
     currentPC + 1
   }
 

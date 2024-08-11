@@ -61,8 +61,8 @@ object SecondPass {
           tacTargetToByteCodePcs += ((defaultTarget, currentPC))
           currentPC = StmtProcessor.processSwitch(defaultTarget, index, npairs, generatedByteCodeWithPC, currentPC)
         case JSR(_, target) =>
-          tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processJSR(target, generatedByteCodeWithPC, currentPC)
+          tacTargetToByteCodePcs += ((target, currentPC))
+          currentPC = StmtProcessor.processJSR(generatedByteCodeWithPC, currentPC)
         case VirtualMethodCall(_, declaringClass, isInterface, name, descriptor, receiver, params) =>
           tacTargetToByteCodePcs += ((-1, currentPC))
           currentPC = StmtProcessor.processVirtualMethodCall(declaringClass, isInterface, name, descriptor, receiver, params, generatedByteCodeWithPC, currentPC)

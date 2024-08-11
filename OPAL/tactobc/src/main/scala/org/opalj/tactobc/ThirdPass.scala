@@ -1,6 +1,6 @@
 package org.opalj.tactobc
 
-import org.opalj.br.instructions.{GOTO, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, Instruction, LOOKUPSWITCH, TABLESWITCH}
+import org.opalj.br.instructions.{GOTO, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, Instruction, LOOKUPSWITCH, TABLESWITCH, JSR}
 import org.opalj.collection.immutable.{IntIntPair, IntTrieSet}
 import org.opalj.tac.{DUVar, Stmt}
 import org.opalj.value.ValueInformation
@@ -52,6 +52,8 @@ object ThirdPass {
             instruction
           case GOTO(-1) =>
             GOTO(updateBranchTargets(tacTargetToByteCodePcs, tacTargetToByteCodePcsIndex, pc))
+          case JSR(-1) =>
+            JSR(updateBranchTargets(tacTargetToByteCodePcs, tacTargetToByteCodePcsIndex, pc))
           case LOOKUPSWITCH(defaultOffset, matchOffsets) =>
             val updatedMatchOffsets = matchOffsets.map { case IntIntPair(caseValue, _) =>
               val tacTarget = findTacTarget(switchCases, caseValue)
