@@ -18,7 +18,8 @@ object SingleClassFileTestCaseEnum extends Enumeration {
     TestCase("MethodCall.java", "MethodCall.class"),
     TestCase("Array.java", "Array.class"),
     TestCase("Parameters.java", "Parameters.class"),
-    TestCase("StaticField.java", "StaticField.class")
+    TestCase("StaticField.java", "StaticField.class"),
+    TestCase("InstanceField.java", "InstanceField.class")
   )
 
   // Case class to represent each test case
