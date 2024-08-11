@@ -43,11 +43,31 @@ public class ArithmeticOperations {
         long longSubtractionResult = p - q;
         long longMultiplicationResult = p * q;
         long longDivisionResult = p / q;
+        long longModulusResult = p % q;
 
         System.out.println("Long Addition: " + longAdditionResult);
         System.out.println("Long Subtraction: " + longSubtractionResult);
         System.out.println("Long Multiplication: " + longMultiplicationResult);
         System.out.println("Long Division: " + longDivisionResult);
+        System.out.println("Long Modulus: " + longModulusResult);
+
+        // Bitwise Operations with Longs
+        long longAndResult = p & q;
+        long longOrResult = p | q;
+        long longXorResult = p ^ q;
+
+        System.out.println("Long AND: " + longAndResult);
+        System.out.println("Long OR: " + longOrResult);
+        System.out.println("Long XOR: " + longXorResult);
+
+        // Shift Operations with Longs
+        long longShiftLeftResult = p << 2;
+        long longShiftRightResult = p >> 2;
+        long longUnsignedShiftRightResult = p >>> 2;
+
+        System.out.println("Long Shift Left: " + longShiftLeftResult);
+        System.out.println("Long Shift Right: " + longShiftRightResult);
+        System.out.println("Long Unsigned Shift Right: " + longUnsignedShiftRightResult);
 
         // Short and Byte Operations
         short s1 = 10;
