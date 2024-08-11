@@ -180,7 +180,7 @@ object FirstPass {
    */
   def incrementLVIndex(uVar: UVar[_]): Unit = {
     // Temporary type checking using toString method
-    val isDoubleOrLongType = uVar.value.toString.contains("long") || uVar.value.toString.contains("Double")
+    val isDoubleOrLongType = uVar.value.toString.contains("long") || uVar.value.toString.contains("Long")|| uVar.value.toString.contains("Double")
     nextLVIndex += (if (isDoubleOrLongType) 2 else 1)
   }
 
