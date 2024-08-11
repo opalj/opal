@@ -2,7 +2,7 @@ package org.opalj.tactobc
 
 import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, Compare, DUVar, Expr, ExprStmt, GetField, If, InvokedynamicFunctionCall, NewArray, NonVirtualMethodCall, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, StaticFunctionCall, StaticMethodCall, Stmt, Throw, UVar, VirtualFunctionCall, VirtualMethodCall}
+import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, Compare, DUVar, Expr, ExprStmt, GetField, If, InvokedynamicFunctionCall, NewArray, NonVirtualMethodCall, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, StaticFunctionCall, StaticMethodCall, Stmt, Switch, Throw, UVar, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tactobc.ExprProcessor.{nextLVIndex, uVarToLVIndex}
 import org.opalj.value.ValueInformation
 
@@ -70,6 +70,8 @@ object FirstPass {
           collectDUVarFromExpr(expr, duVars)
         case Throw(_, exception) =>
           collectDUVarFromExpr(exception, duVars)
+        case Switch(_, _, index, _) =>
+          collectDUVarFromExpr(index, duVars)
         case _ =>
       }
       }
