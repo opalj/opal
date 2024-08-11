@@ -4,7 +4,7 @@ package org.opalj.tactobc
 import org.opalj.BinaryArithmeticOperators.{Add, And, Divide, Modulo, Multiply, Or, ShiftLeft, ShiftRight, Subtract, UnsignedShiftRight, XOr}
 import org.opalj.RelationalOperators.{CMPG, CMPL}
 import org.opalj.br.{ArrayType, BooleanType, ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FloatType, IntegerType, LongType, ObjectType, ReferenceType, ShortType, Type}
-import org.opalj.br.instructions.{AALOAD, ALOAD, ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3, ANEWARRAY, ARRAYLENGTH, ASTORE, ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3, BALOAD, BIPUSH, CALOAD, D2F, D2I, D2L, DADD, DALOAD, DCMPG, DCMPL, DCONST_0, DCONST_1, DDIV, DEFAULT_INVOKEDYNAMIC, DLOAD, DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3, DMUL, DREM, DSTORE, DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3, DSUB, F2D, F2I, F2L, FADD, FALOAD, FCMPG, FCMPL, FCONST_0, FCONST_1, FCONST_2, FDIV, FLOAD, FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3, FMUL, FREM, FSTORE, FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3, FSUB, GETFIELD, GETSTATIC, I2B, I2C, I2D, I2F, I2L, I2S, IADD, IALOAD, IAND, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, ICONST_M1, IDIV, ILOAD, ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3, IMUL, INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, IOR, IREM, ISHL, ISHR, ISTORE, ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3, ISUB, IUSHR, IXOR, Instruction, L2D, L2F, L2I, LADD, LALOAD, LAND, LCMP, LCONST_0, LCONST_1, LDIV, LLOAD, LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3, LMUL, LOR, LREM, LSHL, LSHR, LSTORE, LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3, LSUB, LUSHR, LXOR, LoadClass, LoadDouble, LoadFloat, LoadInt, LoadLong, LoadMethodHandle, LoadMethodType, LoadString, MULTIANEWARRAY, NEW, NEWARRAY, SALOAD, SIPUSH}
+import org.opalj.br.instructions.{AALOAD, ACONST_NULL, ALOAD, ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3, ANEWARRAY, ARRAYLENGTH, ASTORE, ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3, BALOAD, BIPUSH, CALOAD, D2F, D2I, D2L, DADD, DALOAD, DCMPG, DCMPL, DCONST_0, DCONST_1, DDIV, DEFAULT_INVOKEDYNAMIC, DLOAD, DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3, DMUL, DREM, DSTORE, DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3, DSUB, F2D, F2I, F2L, FADD, FALOAD, FCMPG, FCMPL, FCONST_0, FCONST_1, FCONST_2, FDIV, FLOAD, FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3, FMUL, FREM, FSTORE, FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3, FSUB, GETFIELD, GETSTATIC, I2B, I2C, I2D, I2F, I2L, I2S, IADD, IALOAD, IAND, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, ICONST_M1, IDIV, ILOAD, ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3, IMUL, INVOKEINTERFACE, INVOKESTATIC, INVOKEVIRTUAL, IOR, IREM, ISHL, ISHR, ISTORE, ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3, ISUB, IUSHR, IXOR, Instruction, L2D, L2F, L2I, LADD, LALOAD, LAND, LCMP, LCONST_0, LCONST_1, LDIV, LLOAD, LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3, LMUL, LOR, LREM, LSHL, LSHR, LSTORE, LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3, LSUB, LUSHR, LXOR, LoadClass, LoadDouble, LoadFloat, LoadInt, LoadLong, LoadMethodHandle, LoadMethodType, LoadString, MULTIANEWARRAY, NEW, NEWARRAY, SALOAD, SIPUSH}
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.{ArrayLength, ArrayLoad, BinaryExpr, ClassConst, Compare, Const, DVar, DoubleConst, Expr, FloatConst, GetField, GetStatic, IntConst, InvokedynamicFunctionCall, LongConst, MethodHandleConst, MethodTypeConst, New, NewArray, PrimitiveTypecastExpr, StaticFunctionCall, StringConst, UVar, Var, VirtualFunctionCall}
@@ -216,7 +216,11 @@ object ExprProcessor {
   }
 
   private def loadConstant(constExpr: Const, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    val instruction = constExpr match {
+    val instruction = {
+      if(constExpr.isNullExpr){
+        ACONST_NULL
+      }else
+      constExpr match {
       case IntConst(_, value) => value match {
         case -1 => ICONST_M1
         case 0 => ICONST_0
@@ -260,6 +264,7 @@ object ExprProcessor {
         throw BytecodeProcessingFailedException(
           "unsupported constant value: " + constExpr
         )
+    }
     }
     instructionsWithPCs += ((currentPC, instruction))
     currentPC + instruction.length // Update and return the new program counter

@@ -4,7 +4,7 @@ package org.opalj.tactobc
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
 import org.opalj.br.{ArrayType, BootstrapMethod, ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FieldType, FloatType, IntegerType, LongType, MethodDescriptor, ObjectType, PCs, ReferenceType, ShortType}
-import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH}
+import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH, CHECKCAST}
 import org.opalj.collection.immutable.{IntIntPair, IntTrieSet}
 import org.opalj.tac.{Expr, UVar, Var}
 import org.opalj.tactobc.ExprProcessor.inferElementType
@@ -180,8 +180,10 @@ object StmtProcessor {
   }
 
   def processCheckCast(value: Expr[_], cmpTpe: ReferenceType, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
-    //todo: handle this correctly
-    1
+    val nextPC = ExprProcessor.processExpression(value, instructionsWithPCs, currentPC)
+    val instruction = CHECKCAST(cmpTpe)
+    instructionsWithPCs += ((nextPC, instruction))
+    nextPC + instruction.length
   }
 
   def processRet(returnAdresses: PCs, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {

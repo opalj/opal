@@ -19,7 +19,8 @@ object SingleClassFileTestCaseEnum extends Enumeration {
     TestCase("StaticField.java", "StaticField.class"),
     TestCase("InstanceField.java", "InstanceField.class"),
     TestCase("If.java", "If.class"),
-    TestCase("WhileLoop.java", "WhileLoop.class")
+    TestCase("WhileLoop.java", "WhileLoop.class"),
+    TestCase("CheckCast.java", "CheckCast.class")
   )
 
   // Case class to represent each test case
