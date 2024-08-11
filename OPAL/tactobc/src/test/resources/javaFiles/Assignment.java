@@ -46,9 +46,6 @@ public class Assignment {
         int firstNumber = numbers[0];
         numbers[0] = firstNumber + 10;
 
-        // Test object assignment
-        Person person = new Person("Jane", "Doe");
-        String personFullName = person.getFullName();
 
         // Print the results
         System.out.println("Sum of integers: " + sum); // 30
@@ -61,20 +58,5 @@ public class Assignment {
         System.out.println("Smaller short number: " + smallerNumber); // 90
         System.out.println("Incremented byte value: " + incrementedByte); // 11
         System.out.println("First number in array after update: " + numbers[0]); // 11
-        System.out.println("Person's full name: " + personFullName); // Jane Doe
-    }
-
-    static class Person {
-        String firstName;
-        String lastName;
-
-        Person(String firstName, String lastName) {
-            this.firstName = firstName;
-            this.lastName = lastName;
-        }
-
-        String getFullName() {
-            return this.firstName + " " + this.lastName;
-        }
     }
 }
