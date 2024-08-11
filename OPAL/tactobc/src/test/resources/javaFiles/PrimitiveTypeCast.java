@@ -21,12 +21,12 @@ public class PrimitiveTypeCast {
 
         // double to int, long, float
         int intFromDouble = (int) doubleValue;
-//        long longFromDouble = (long) doubleValue;
+        long longFromDouble = (long) doubleValue;
         float floatFromDouble = (float) doubleValue;
 
         // float to int, long, double
         int intFromFloat = (int) floatValue;
-//        long longFromFloat = (long) floatValue;
+        long longFromFloat = (long) floatValue;
         double doubleFromFloat = (double) floatValue;
 
         // Output the results
@@ -37,10 +37,10 @@ public class PrimitiveTypeCast {
         System.out.println("long to float: " + floatFromLong);
         System.out.println("long to double: " + doubleFromLong);
         System.out.println("double to int: " + intFromDouble);
-//        System.out.println("double to long: " + longFromDouble);
+        System.out.println("double to long: " + longFromDouble);
         System.out.println("double to float: " + floatFromDouble);
         System.out.println("float to int: " + intFromFloat);
-//        System.out.println("float to long: " + longFromFloat);
+        System.out.println("float to long: " + longFromFloat);
         System.out.println("float to double: " + doubleFromFloat);
     }
 }
