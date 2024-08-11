@@ -87,7 +87,7 @@ object ExprProcessor {
     // Initialize the PC after processing the counts
     var currentAfterCountsPC = currentPC
     // Process each parameter and update the PC accordingly
-    for (count <- newArrayExpr.counts) {
+    for (count <- newArrayExpr.counts.reverse) {
       currentAfterCountsPC = ExprProcessor.processExpression(count, instructionsWithPCs, currentAfterCountsPC)
     }
     if(newArrayExpr.counts.size > 1) {
