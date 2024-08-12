@@ -4,10 +4,13 @@ package org.opalj.ide.solver
 import scala.annotation.tailrec
 
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileWriter
+import java.io.Writer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import scala.collection.mutable
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.Entity
@@ -47,6 +50,11 @@ class FlowRecordingIDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Ca
      */
     val flowRecordingProblem: FlowRecordingIDEProblem[Fact, Value, Statement, Callable] =
         problem.asInstanceOf[FlowRecordingIDEProblem[Fact, Value, Statement, Callable]]
+
+    /**
+     * Associate used writers with the file they write to
+     */
+    private val fileByWriter = mutable.Map.empty[Writer, File]
 
     /**
      * Get the file to write the graph to. If [[path]] references a file then this method will return [[path]]. If
@@ -90,7 +98,22 @@ class FlowRecordingIDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Ca
     def startRecording(): Unit = {
         logDebug("starting recording")
 
-        val writer = new FileWriter(getFile)
+        val file = getFile
+        val directoryAsFile = file.getParentFile
+        val directoryAsPath = directoryAsFile.toPath.toAbsolutePath.normalize()
+        if (!directoryAsFile.exists()) {
+            if (directoryAsPath.startsWith(Paths.get(".").toAbsolutePath.normalize())) {
+                logWarn(s"creating directory '$directoryAsPath' as it didn't exist!")
+                directoryAsFile.mkdirs()
+            } else {
+                throw new FileNotFoundException(
+                    s"Directory '$directoryAsPath' does not exist! Directories outside of the project directory are not created automatically!"
+                )
+            }
+        }
+
+        val writer = new FileWriter(file)
+        fileByWriter.put(writer, file)
 
         flowRecordingProblem.startRecording(writer)
     }
@@ -101,5 +124,7 @@ class FlowRecordingIDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Ca
         val writer = flowRecordingProblem.stopRecording()
 
         writer.close()
+
+        logInfo(s"wrote flow recording to '${fileByWriter(writer)}'")
     }
 }

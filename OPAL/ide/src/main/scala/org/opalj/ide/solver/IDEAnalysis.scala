@@ -1,8 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ide.solver
 
-import scala.annotation.unused
-
 import scala.collection.immutable
 import scala.collection.mutable
 
@@ -300,7 +298,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         s"Path(\n$indent\t${nodeToString(path._1, s"$indent\t")} ->\n$indent\t${nodeToString(path._2, s"$indent\t")}\n$indent)"
     }
 
-    @unused
+    protected def logInfo(message: => String): Unit = {
+        OPALLogger.info(FrameworkName, message)
+    }
+
     protected def logWarn(message: => String): Unit = {
         OPALLogger.warn(FrameworkName, message)
     }
