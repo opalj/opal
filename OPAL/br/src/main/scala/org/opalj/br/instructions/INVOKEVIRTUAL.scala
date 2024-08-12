@@ -9,9 +9,9 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEVIRTUAL(
-        declaringClass:   ReferenceType, // an class or array type to be precise
-        name:             String,
-        methodDescriptor: MethodDescriptor
+    declaringClass:   ReferenceType, // an class or array type to be precise
+    name:             String,
+    methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {
 
     final def isInterfaceCall: Boolean = false

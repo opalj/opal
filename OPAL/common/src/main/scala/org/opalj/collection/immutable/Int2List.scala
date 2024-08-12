@@ -99,9 +99,9 @@ case object Int2ListEnd extends Int2List {
  * @author Michael Eichberg
  */
 final case class Int2ListNode(
-        private[immutable] var h:    Int,
-        private[immutable] var t:    Int,
-        private[immutable] var rest: Int2List = Int2ListEnd
+    private[immutable] var h:    Int,
+    private[immutable] var t:    Int,
+    private[immutable] var rest: Int2List = Int2ListEnd
 ) extends Int2List { list =>
 
     override def isEmpty: Boolean = false

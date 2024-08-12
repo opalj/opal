@@ -34,7 +34,7 @@ import org.opalj.fpcf.SomeInterimEP
  * @author Dominik Helm
  */
 class L0AllocationFreenessAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     import project.nonVirtualCall

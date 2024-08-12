@@ -11,8 +11,8 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class LineNumberTableEntry(
-        start_pc:    Int,
-        line_number: Int
+    start_pc:    Int,
+    line_number: Int
 ) {
 
     def toXHTML(): Node = {

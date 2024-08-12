@@ -13,7 +13,7 @@ import org.opalj.bi.reader.CodeReader
  * @author Michael Eichberg
  */
 class Java8FrameworkWithCaching(
-        val cache: BytecodeInstructionsCache
+    val cache: BytecodeInstructionsCache
 ) extends Java8LibraryFramework
     with CodeAttributeBinding
     with SourceDebugExtension_attributeBinding

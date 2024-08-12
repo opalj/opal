@@ -10,10 +10,10 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESPECIAL(
-        declaringClass:   ObjectType, // an interface or class type to be precise
-        isInterface:      Boolean,
-        name:             String, // an interface or class type to be precise
-        methodDescriptor: MethodDescriptor
+    declaringClass:   ObjectType, // an interface or class type to be precise
+    isInterface:      Boolean,
+    name:             String, // an interface or class type to be precise
+    methodDescriptor: MethodDescriptor
 ) extends NonVirtualMethodInvocationInstruction {
 
     final def isInterfaceCall: Boolean = isInterface

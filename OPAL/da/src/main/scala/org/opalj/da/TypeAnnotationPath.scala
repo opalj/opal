@@ -36,7 +36,7 @@ trait TypeAnnotationPathElement {
 }
 
 case class TypeAnnotationPathElements(
-        path: TypeAnnotationPathElementsTable
+    path: TypeAnnotationPathElementsTable
 ) extends TypeAnnotationPath {
 
     override final def attribute_length: Int = 1 + path.length * 2

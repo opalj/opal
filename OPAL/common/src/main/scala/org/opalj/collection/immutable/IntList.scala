@@ -92,8 +92,8 @@ case object EmptyIntList extends IntList {
  * @author Michael Eichberg
  */
 final case class IntListNode(
-        head:                        Int,
-        private[immutable] var rest: IntList = EmptyIntList
+    head:                        Int,
+    private[immutable] var rest: IntList = EmptyIntList
 ) extends IntList { list =>
 
     override def tail: IntList = rest

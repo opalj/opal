@@ -16,8 +16,8 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
 
 class MethodReturnValues(
-        val method: Method,
-        val result: AIResult
+    val method: Method,
+    val result: AIResult
 ) extends IssueDetails with MethodComprehension {
 
     final def classFile: ClassFile = method.classFile

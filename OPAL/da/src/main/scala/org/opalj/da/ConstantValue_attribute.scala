@@ -11,8 +11,8 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class ConstantValue_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        constantValue_index:  Constant_Pool_Index
+    attribute_name_index: Constant_Pool_Index,
+    constantValue_index:  Constant_Pool_Index
 ) extends Attribute {
 
     override final def attribute_length = 2

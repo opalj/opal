@@ -72,8 +72,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         this(project, useAnsiColors = false)
 
     def this(
-            classFiles:    Iterable[(ClassFile, URL)],
-            useAnsiColors: Boolean = false
+        classFiles:    Iterable[(ClassFile, URL)],
+        useAnsiColors: Boolean = false
     ) =
         this(
             run {
@@ -198,7 +198,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * to specify that a (set of) specific source element(s) is not allowed to depend
      * on any other source elements (belonging to the project).
      */
-    val empty = {
+    val empty: Symbol = {
         ensemble(Symbol("Empty"))(NoSourceElementsMatcher)
         Symbol("Empty")
     }
@@ -210,11 +210,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     @throws(classOf[SpecificationError])
     implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
         if (matcher endsWith ".*")
-            PackageMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
+            PackageMatcher(matcher.substring(0, matcher.length() - 2))
         else if (matcher endsWith ".**")
-            PackageMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
+            PackageMatcher(matcher.substring(0, matcher.length() - 3), true)
         else if (matcher endsWith "*")
-            ClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
+            ClassMatcher(matcher.substring(0, matcher.length() - 1), matchPrefix = true)
         else if (matcher.indexOf('*') == -1)
             ClassMatcher(matcher.replace('.', '/'))
         else
@@ -233,8 +233,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     var architectureCheckers: List[ArchitectureChecker] = Nil
 
     case class GlobalIncomingConstraint(
-            targetEnsemble:  Symbol,
-            sourceEnsembles: Seq[Symbol]
+        targetEnsemble:  Symbol,
+        sourceEnsembles: Seq[Symbol]
     ) extends DependencyChecker {
 
         override def targetEnsembles: Seq[Symbol] = Seq(targetEnsemble)
@@ -278,9 +278,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * belonging to `ey` then a [[SpecificationViolation]] is generated.
      */
     case class LocalOutgoingNotAllowedConstraint(
-            dependencyTypes: Set[DependencyType],
-            sourceEnsemble:  Symbol,
-            targetEnsembles: Seq[Symbol]
+        dependencyTypes: Set[DependencyType],
+        sourceEnsemble:  Symbol,
+        targetEnsembles: Seq[Symbol]
     ) extends DependencyChecker {
 
         if (targetEnsembles.isEmpty)
@@ -345,9 +345,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * to `ey` then a [[SpecificationViolation]] is generated.
      */
     case class LocalOutgoingOnlyAllowedConstraint(
-            dependencyTypes: Set[DependencyType],
-            sourceEnsemble:  Symbol,
-            targetEnsembles: Seq[Symbol]
+        dependencyTypes: Set[DependencyType],
+        sourceEnsemble:  Symbol,
+        targetEnsembles: Seq[Symbol]
     ) extends DependencyChecker {
 
         if (targetEnsembles.isEmpty)
@@ -421,16 +421,16 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *  @param matchAny true if only one match is needed, false if all annotations should match
      */
     case class LocalOutgoingAnnotatedWithConstraint(
-            sourceEnsemble:       Symbol,
-            annotationPredicates: Seq[AnnotationPredicate],
-            property:             String,
-            matchAny:             Boolean
+        sourceEnsemble:       Symbol,
+        annotationPredicates: Seq[AnnotationPredicate],
+        property:             String,
+        matchAny:             Boolean
     ) extends PropertyChecker {
 
         def this(
-                sourceEnsemble:       Symbol,
-                annotationPredicates: Seq[AnnotationPredicate],
-                matchAny:             Boolean = false
+            sourceEnsemble:       Symbol,
+            annotationPredicates: Seq[AnnotationPredicate],
+            matchAny:             Boolean = false
         ) =
             this(
                 sourceEnsemble,
@@ -513,8 +513,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *  @param methodPredicate The method to match.
      */
     case class LocalOutgoingShouldImplementMethodConstraint(
-            sourceEnsemble:  Symbol,
-            methodPredicate: SourceElementPredicate[Method]
+        sourceEnsemble:  Symbol,
+        methodPredicate: SourceElementPredicate[Method]
     ) extends PropertyChecker {
 
         override def property: String = methodPredicate.toDescription()
@@ -556,8 +556,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *  @param targetEnsembles Ensembles containing elements, that should be extended by the given classes.
      */
     case class LocalOutgoingShouldExtendConstraint(
-            sourceEnsemble:  Symbol,
-            targetEnsembles: Seq[Symbol]
+        sourceEnsemble:  Symbol,
+        targetEnsembles: Seq[Symbol]
     ) extends PropertyChecker {
 
         override def property: String = targetEnsembles.mkString(", ")
@@ -577,11 +577,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     case s: VirtualClass => project.classFile(s.classType.asObjectType).get
                     case _               => throw SpecificationError(sourceElement.toJava + " is not a class")
                 }
-                if sourceClassFile.superclassType.map(s =>
+                if sourceClassFile.superclassType.exists(s =>
                     !allLocalTargetSourceElements.exists(v =>
                         v.classType.asObjectType.equals(s)
                     )
-                ).getOrElse(false)
+                )
             } yield {
                 PropertyViolation(
                     project,
@@ -843,7 +843,7 @@ object Specification {
      * Load all jar files.
      */
     def ProjectJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
-        jarNames.map(ProjectJAR(_)).flatten
+        jarNames.flatMap(ProjectJAR)
     }
 
     /**
@@ -870,7 +870,7 @@ object Specification {
      * Load all jar files using the library class loader.
      */
     def LibraryJARs(jarNames: Seq[String]): Seq[(ClassFile, URL)] = {
-        jarNames.map(LibraryJAR(_)).flatten
+        jarNames.flatMap(LibraryJAR)
     }
 
     /**
@@ -889,7 +889,7 @@ object Specification {
         pathSeparatorChar: Char = java.io.File.pathSeparatorChar
     ): Iterable[String] = {
         processSource(Source.fromFile(new java.io.File(fileName))) { s =>
-            s.getLines().map(_.split(pathSeparatorChar)).flatten.toSet
+            s.getLines().flatMap(_.split(pathSeparatorChar)).toSet
         }
     }
 

@@ -24,9 +24,9 @@ import scala.collection.mutable
  * @author Michael Eichberg
  */
 private[analyses] class IsOverridableMethodAnalysis(
-        project:           SomeProject,
-        isClassExtensible: ObjectType => Answer,
-        isTypeExtensible:  ObjectType => Answer
+    project:           SomeProject,
+    isClassExtensible: ObjectType => Answer,
+    isTypeExtensible:  ObjectType => Answer
 ) extends (Method => Answer) {
 
     // private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()

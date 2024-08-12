@@ -27,9 +27,9 @@ import scala.collection.immutable.ArraySeq
  * @author Michael Eichberg
  */
 class FixedSizedHashIDMap[K <: AnyRef, V] private (
-        private var theKeys:        Array[K],
-        private var theValues:      Array[V],
-        private var hashCodeOffset: Int // basically -minValue
+    private var theKeys:        Array[K],
+    private var theValues:      Array[V],
+    private var hashCodeOffset: Int // basically -minValue
 ) { self =>
 
     /**

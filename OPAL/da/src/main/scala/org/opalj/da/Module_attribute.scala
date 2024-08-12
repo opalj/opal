@@ -15,15 +15,15 @@ import org.opalj.bi.AccessFlagsContexts.MODULE
  * @author Michael Eichberg
  */
 case class Module_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        module_name_index:    Constant_Pool_Index,
-        module_flags:         Int,
-        module_version_index: Constant_Pool_Index, // can be "0"!
-        requires:             Requires,
-        exports:              Exports,
-        opens:                Opens,
-        uses:                 Uses,
-        provides:             Provides
+    attribute_name_index: Constant_Pool_Index,
+    module_name_index:    Constant_Pool_Index,
+    module_flags:         Int,
+    module_version_index: Constant_Pool_Index, // can be "0"!
+    requires:             Requires,
+    exports:              Exports,
+    opens:                Opens,
+    uses:                 Uses,
+    provides:             Provides
 ) extends Attribute {
 
     def attribute_length: Int = {
@@ -79,9 +79,9 @@ case class Module_attribute(
 }
 
 case class RequiresEntry(
-        requires_index:         Constant_Pool_Index,
-        requires_flags:         Int,
-        requires_version_index: Constant_Pool_Index // can be "0" (<=> no version...)
+    requires_index:         Constant_Pool_Index,
+    requires_flags:         Int,
+    requires_version_index: Constant_Pool_Index // can be "0" (<=> no version...)
 ) {
 
     def toString(implicit cp: Constant_Pool): String = {
@@ -99,9 +99,9 @@ case class RequiresEntry(
 }
 
 case class ExportsEntry(
-        exports_index:          Constant_Pool_Index,
-        exports_flags:          Int,
-        exports_to_index_table: ExportsToIndexTable
+    exports_index:          Constant_Pool_Index,
+    exports_flags:          Int,
+    exports_to_index_table: ExportsToIndexTable
 ) {
 
     def attribute_length: Int = 6 + exports_to_index_table.size * 2
@@ -124,9 +124,9 @@ case class ExportsEntry(
 }
 
 case class OpensEntry(
-        opens_index:          Constant_Pool_Index,
-        opens_flags:          Int,
-        opens_to_index_table: OpensToIndexTable
+    opens_index:          Constant_Pool_Index,
+    opens_flags:          Int,
+    opens_to_index_table: OpensToIndexTable
 ) {
 
     def attribute_length: Int = 6 + opens_to_index_table.size * 2
@@ -145,8 +145,8 @@ case class OpensEntry(
 }
 
 case class ProvidesEntry(
-        provides_index:            Constant_Pool_Index,
-        provides_with_index_table: ProvidesWithIndexTable
+    provides_index:            Constant_Pool_Index,
+    provides_with_index_table: ProvidesWithIndexTable
 ) {
 
     def attribute_length: Int = 4 + provides_with_index_table.size * 2

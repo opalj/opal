@@ -8,8 +8,8 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class BootstrapMethods_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        bootstrap_methods:    Seq[BootstrapMethod]
+    attribute_name_index: Constant_Pool_Index,
+    bootstrap_methods:    Seq[BootstrapMethod]
 ) extends Attribute {
 
     override def attribute_length: Int = {

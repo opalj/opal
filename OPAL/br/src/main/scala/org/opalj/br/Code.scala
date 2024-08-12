@@ -48,11 +48,11 @@ import org.opalj.util.AnyToAnyThis
  * @author Michael Eichberg
  */
 final class Code private (
-        val maxStack:          Int,
-        val maxLocals:         Int,
-        val instructions:      Array[Instruction],
-        val exceptionHandlers: ExceptionHandlers,
-        val attributes:        Attributes
+    val maxStack:          Int,
+    val maxLocals:         Int,
+    val instructions:      Array[Instruction],
+    val exceptionHandlers: ExceptionHandlers,
+    val attributes:        Attributes
 ) extends Attribute
     with CommonAttributes
     with InstructionsContainer

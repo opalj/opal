@@ -300,8 +300,8 @@ sealed trait CallersImplementation extends Callers {
 }
 
 class CallersOnlyWithConcreteCallers(
-        val encodedCallers: IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */,
-        val size:           Int
+    val encodedCallers: IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */,
+    val size:           Int
 ) extends CallersImplementation with CallersWithoutVMLevelCall with CallersWithoutUnknownContext {
 
     override def updated(
@@ -346,9 +346,9 @@ class CallersOnlyWithConcreteCallers(
 }
 
 class CallersImplWithOtherCalls(
-        val encodedCallers:                IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */,
-        val size:                          Int,
-        private val specialCallSitesFlags: Byte // last bit vm lvl, second last bit unknown context
+    val encodedCallers:                IntMap[LongLinkedSet] /* Callee Context => Caller Context + PC + isDirect */,
+    val size:                          Int,
+    private val specialCallSitesFlags: Byte // last bit vm lvl, second last bit unknown context
 ) extends CallersImplementation {
     assert(encodedCallers.nonEmpty)
     assert(specialCallSitesFlags >= 0 && specialCallSitesFlags <= 3)

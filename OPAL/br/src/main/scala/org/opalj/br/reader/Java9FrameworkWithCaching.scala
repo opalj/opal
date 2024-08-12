@@ -11,6 +11,6 @@ package reader
  * @author Michael Eichberg
  */
 class Java9FrameworkWithCaching(
-        cache: BytecodeInstructionsCache
+    cache: BytecodeInstructionsCache
 ) extends Java8FrameworkWithCaching(cache)
     with Java9LibraryFramework

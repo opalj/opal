@@ -428,7 +428,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 }
 
 case class TestContext(
-        project:       Project[URL],
-        propertyStore: PropertyStore,
-        analyses:      List[FPCFAnalysis]
+    project:       Project[URL],
+    propertyStore: PropertyStore,
+    analyses:      List[FPCFAnalysis]
 )

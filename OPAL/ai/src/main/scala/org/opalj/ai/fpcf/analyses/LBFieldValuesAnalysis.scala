@@ -103,7 +103,7 @@ import org.opalj.log.OPALLogger
  * @author Michael Eichberg
  */
 class LBFieldValuesAnalysis private[analyses] (
-        val project: SomeProject
+    val project: SomeProject
 ) extends FPCFAnalysis { analysis =>
 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
@@ -148,8 +148,8 @@ class LBFieldValuesAnalysis private[analyses] (
      * @author Michael Eichberg
      */
     class FieldValuesAnalysisDomain private (
-            val classFile: ClassFile,
-            val dependees: EOptionPSet[Entity, Property]
+        val classFile: ClassFile,
+        val dependees: EOptionPSet[Entity, Property]
     ) extends CorrelationalDomain
         with domain.TheProject
         with domain.TheCode
@@ -183,9 +183,9 @@ class LBFieldValuesAnalysis private[analyses] (
         val calledMethods: mutable.Map[Method, mutable.Set[Method]] = mutable.Map.empty
 
         def this(
-                classFile:      ClassFile,
-                relevantFields: IterableOnce[Field],
-                dependees:      EOptionPSet[Entity, Property] = EOptionPSet.empty
+            classFile:      ClassFile,
+            relevantFields: IterableOnce[Field],
+            dependees:      EOptionPSet[Entity, Property] = EOptionPSet.empty
         ) = {
             this(classFile, dependees)
             fieldInformation = relevantFields.iterator.map[(Field, Option[DomainValue])](_ -> None).toMap

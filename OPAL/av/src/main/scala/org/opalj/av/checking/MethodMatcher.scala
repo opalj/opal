@@ -16,9 +16,9 @@ import org.opalj.br.analyses.SomeProject
  * @author Marco Torsello
  */
 case class MethodMatcher(
-        classLevelMatcher:    ClassLevelMatcher              = AllClasses,
-        annotationsPredicate: AnnotationsPredicate           = AnyAnnotations,
-        methodPredicate:      SourceElementPredicate[Method] = AnyMethod
+    classLevelMatcher:    ClassLevelMatcher              = AllClasses,
+    annotationsPredicate: AnnotationsPredicate           = AnyAnnotations,
+    methodPredicate:      SourceElementPredicate[Method] = AnyMethod
 ) extends SourceElementsMatcher {
 
     def doesClassFileMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {

@@ -31,7 +31,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
 class SystemPropertiesAnalysisScheduler private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends ReachableMethodAnalysis {
 
     def processMethod(

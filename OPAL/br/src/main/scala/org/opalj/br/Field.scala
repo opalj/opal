@@ -170,10 +170,10 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
 }
 
 final class FieldTemplate private[br] (
-        val accessFlags: Int,
-        val name:        String, // the name is interned to enable reference comparisons!
-        val fieldType:   FieldType,
-        val attributes:  Attributes
+    val accessFlags: Int,
+    val name:        String, // the name is interned to enable reference comparisons!
+    val fieldType:   FieldType,
+    val attributes:  Attributes
 ) extends JVMField {
 
     override final def isField: Boolean = false
@@ -181,11 +181,11 @@ final class FieldTemplate private[br] (
 }
 
 final class Field private[br] (
-        private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
-        val accessFlags:                    Int,
-        val name:                           String, // the name is interned to enable reference comparisons!
-        val fieldType:                      FieldType,
-        val attributes:                     Attributes
+    private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
+    val accessFlags:                    Int,
+    val name:                           String, // the name is interned to enable reference comparisons!
+    val fieldType:                      FieldType,
+    val attributes:                     Attributes
 ) extends JVMField {
 
     // see ClassFile.unsafeReplaceMethod for THE usage!

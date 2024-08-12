@@ -48,8 +48,8 @@ class PointsToAnalysisState[
     PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet],
     ContextType <: Context
 ](
-        override val callContext:                  ContextType,
-        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+    override val callContext:                  ContextType,
+    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     private[this] val getFields: ArrayBuffer[(Entity, Option[DeclaredField], ReferenceType => Boolean)] =

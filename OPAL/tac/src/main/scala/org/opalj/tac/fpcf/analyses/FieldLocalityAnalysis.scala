@@ -78,7 +78,7 @@ import org.opalj.value.ValueInformation
  * @author Dominik Helm
  */
 class FieldLocalityAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     type V = DUVar[ValueInformation]
@@ -912,9 +912,9 @@ object DefinitionSitesWithoutPutField {
  * @author Florian Kuebler
  */
 final case class DefinitionSiteWithoutPutField(
-        method:     Method,
-        pc:         Int,
-        putFieldPC: Int
+    method:     Method,
+    pc:         Int,
+    putFieldPC: Int
 ) extends DefinitionSiteLike {
     override def usedBy[V <: ValueInformation](
         tacode: TACode[TACMethodParameter, DUVar[V]]

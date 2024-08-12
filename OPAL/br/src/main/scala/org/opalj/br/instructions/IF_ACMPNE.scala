@@ -50,7 +50,7 @@ object IF_ACMPNE extends InstructionMetaInformation {
 }
 
 case class LabeledIF_ACMPNE(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IF_ACMPNELike {
 

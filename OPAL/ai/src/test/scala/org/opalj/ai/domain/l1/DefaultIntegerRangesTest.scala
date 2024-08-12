@@ -3636,7 +3636,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 }
 
 class DefaultIntegerRangesTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 ) extends CorrelationalDomain
     with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration
@@ -3656,7 +3656,7 @@ class DefaultIntegerRangesTestDomain(
     with RecordLastReturnedValues
 
 class JoinResultsIntegerRangesTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 ) extends CorrelationalDomain
     with DefaultSpecialDomainValuesBinding
     with ThrowAllPotentialExceptionsConfiguration

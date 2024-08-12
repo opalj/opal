@@ -38,7 +38,7 @@ import org.opalj.fpcf.UBP
  * @author Michael Eichberg
  */
 class VirtualMethodThrownExceptionsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[analyses] def lazilyAggregateExceptionsThrownByOverridingMethods(

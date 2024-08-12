@@ -3,10 +3,10 @@ package org.opalj
 package log
 
 case class ExceptionLogMessage(
-        level:       Level          = Info,
-        category:    Option[String] = None,
-        baseMessage: String,
-        t:           Throwable
+    level:       Level          = Info,
+    category:    Option[String] = None,
+    baseMessage: String,
+    t:           Throwable
 ) extends LogMessage {
 
     def message: String = {

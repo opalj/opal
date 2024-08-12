@@ -47,7 +47,7 @@ sealed trait ThrownExceptionsPropertyMetaInformation extends PropertyMetaInforma
  * @author Michael Eichberg
  */
 case class ThrownExceptions(
-        types: BRTypesSet
+    types: BRTypesSet
 ) extends Property
     with ThrownExceptionsPropertyMetaInformation {
 

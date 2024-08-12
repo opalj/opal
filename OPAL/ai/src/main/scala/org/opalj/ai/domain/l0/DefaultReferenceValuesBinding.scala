@@ -44,7 +44,7 @@ trait DefaultReferenceValuesBinding
     }
 
     protected case class DefaultMObjectValue(
-            upperTypeBound: UIDSet[ObjectType]
+        upperTypeBound: UIDSet[ObjectType]
     ) extends MObjectValueLike {
         override def isNull: Answer = Unknown
     }

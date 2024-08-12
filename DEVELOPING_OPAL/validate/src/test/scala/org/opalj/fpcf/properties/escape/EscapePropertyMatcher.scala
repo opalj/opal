@@ -23,7 +23,7 @@ import org.opalj.tac.common.DefinitionSite
  * @author Florian Kuebler
  */
 abstract class EscapePropertyMatcher(
-        val property: EscapeProperty
+    val property: EscapeProperty
 ) extends AbstractPropertyMatcher {
 
     override def isRelevant(

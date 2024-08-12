@@ -45,11 +45,11 @@ import org.opalj.log.OPALLogger.info
  * @author Michael Eichberg
  */
 case class CFG[I <: AnyRef, C <: CodeSequence[I]](
-        code:                    C,
-        normalReturnNode:        ExitNode,
-        abnormalReturnNode:      ExitNode,
-        catchNodes:              Seq[CatchNode],
-        private val basicBlocks: Array[BasicBlock]
+    code:                    C,
+    normalReturnNode:        ExitNode,
+    abnormalReturnNode:      ExitNode,
+    catchNodes:              Seq[CatchNode],
+    private val basicBlocks: Array[BasicBlock]
 ) { cfg =>
 
     if (CFG.Validate) {

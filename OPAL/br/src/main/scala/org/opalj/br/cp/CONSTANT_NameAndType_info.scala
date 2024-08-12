@@ -13,8 +13,8 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_NameAndType_info(
-        name_index:       Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index
+    name_index:       Constant_Pool_Index,
+    descriptor_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
     override def asNameAndType: this.type = this

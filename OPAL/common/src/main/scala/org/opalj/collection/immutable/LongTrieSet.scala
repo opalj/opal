@@ -170,8 +170,8 @@ private[immutable] final class LongTrieSet1(val i1: Long) extends LongTrieSetLea
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
 private[immutable] final class LongTrieSet2(
-        val i1: Long,
-        val i2: Long
+    val i1: Long,
+    val i2: Long
 ) extends LongTrieSetLeaf {
 
     override def isEmpty: Boolean = false
@@ -223,9 +223,9 @@ private[immutable] final class LongTrieSet2(
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
 private[immutable] final class LongTrieSet3(
-        val i1: Long,
-        val i2: Long,
-        val i3: Long
+    val i1: Long,
+    val i2: Long,
+    val i3: Long
 ) extends LongTrieSetLeaf {
 
     override def size: Int = 3
@@ -446,8 +446,8 @@ private[immutable] final class LongTrieSet3(
 }
 
 private[immutable] final class LongTrieSetN(
-        final val size: Int,
-        final val root: LongTrieSetNode
+    final val size: Int,
+    final val root: LongTrieSetNode
 ) extends LongTrieSet {
 
     // assert(size >= 4)
@@ -579,8 +579,8 @@ private[immutable] final class LongTrieSetN(
 }
 
 private[immutable] final class LongTrieSetNode1(
-        final val n1Bits: Int,
-        final val n1:     LongTrieSetNode
+    final val n1Bits: Int,
+    final val n1:     LongTrieSetNode
 ) extends LongTrieSetNode {
 
     override def foreach[U](f:  Long => U): Unit = n1.foreach(f)
@@ -698,9 +698,9 @@ sealed abstract private[immutable] class LongTrieSetNode2_7 extends LongTrieSetN
 }
 
 private[immutable] final class LongTrieSetNode2(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def node(index: Int): LongTrieSetNode = {
@@ -754,10 +754,10 @@ private[immutable] final class LongTrieSetNode2(
 }
 
 private[immutable] final class LongTrieSetNode3(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -819,11 +819,11 @@ private[immutable] final class LongTrieSetNode3(
 }
 
 private[immutable] final class LongTrieSetNode4(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode,
-        final val n4:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode,
+    final val n4:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -896,12 +896,12 @@ private[immutable] final class LongTrieSetNode4(
 }
 
 private[immutable] final class LongTrieSetNode5(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode,
-        final val n4:          LongTrieSetNode,
-        final val n5:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode,
+    final val n4:          LongTrieSetNode,
+    final val n5:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -983,13 +983,13 @@ private[immutable] final class LongTrieSetNode5(
 }
 
 private[immutable] final class LongTrieSetNode6(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode,
-        final val n4:          LongTrieSetNode,
-        final val n5:          LongTrieSetNode,
-        final val n6:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode,
+    final val n4:          LongTrieSetNode,
+    final val n5:          LongTrieSetNode,
+    final val n6:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -1086,14 +1086,14 @@ private[immutable] final class LongTrieSetNode6(
 }
 
 private[immutable] final class LongTrieSetNode7(
-        final val lookupTable: Int,
-        final val n1:          LongTrieSetNode,
-        final val n2:          LongTrieSetNode,
-        final val n3:          LongTrieSetNode,
-        final val n4:          LongTrieSetNode,
-        final val n5:          LongTrieSetNode,
-        final val n6:          LongTrieSetNode,
-        final val n7:          LongTrieSetNode
+    final val lookupTable: Int,
+    final val n1:          LongTrieSetNode,
+    final val n2:          LongTrieSetNode,
+    final val n3:          LongTrieSetNode,
+    final val n4:          LongTrieSetNode,
+    final val n5:          LongTrieSetNode,
+    final val n6:          LongTrieSetNode,
+    final val n7:          LongTrieSetNode
 ) extends LongTrieSetNode2_7 {
 
     override def foreach[U](f: Long => U): Unit = {
@@ -1210,14 +1210,14 @@ private[immutable] final class LongTrieSetNode7(
 }
 
 private[immutable] final class LongTrieSetNode8(
-        final val n1: LongTrieSetNode,
-        final val n2: LongTrieSetNode,
-        final val n3: LongTrieSetNode,
-        final val n4: LongTrieSetNode,
-        final val n5: LongTrieSetNode,
-        final val n6: LongTrieSetNode,
-        final val n7: LongTrieSetNode,
-        final val n8: LongTrieSetNode
+    final val n1: LongTrieSetNode,
+    final val n2: LongTrieSetNode,
+    final val n3: LongTrieSetNode,
+    final val n4: LongTrieSetNode,
+    final val n5: LongTrieSetNode,
+    final val n6: LongTrieSetNode,
+    final val n7: LongTrieSetNode,
+    final val n8: LongTrieSetNode
 ) extends LongTrieSetNode {
 
     override def foreach[U](f: Long => U): Unit = {

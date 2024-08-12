@@ -25,8 +25,8 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class InnerClasses_attribute(
-        attribute_name_index: Int,
-        classes:              Seq[InnerClassesEntry]
+    attribute_name_index: Int,
+    classes:              Seq[InnerClassesEntry]
 ) extends Attribute {
 
     override final def attribute_length = 2 + (classes.size * 8)

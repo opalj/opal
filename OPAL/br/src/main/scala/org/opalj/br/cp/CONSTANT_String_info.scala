@@ -12,7 +12,7 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_String_info(
-        string_index: Constant_Pool_Index
+    string_index: Constant_Pool_Index
 ) extends CONSTANT_FieldValue_info {
 
     override def tag: Int = ConstantPoolTags.CONSTANT_String_ID

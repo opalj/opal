@@ -33,12 +33,12 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 class SimpleEscapeAnalysisContext(
-        val entity:                  (Context, Entity),
-        val targetMethod:            Method,
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val project:                 SomeProject,
-        val propertyStore:           PropertyStore
+    val entity:                  (Context, Entity),
+    val targetMethod:            Method,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val project:                 SomeProject,
+    val propertyStore:           PropertyStore
 ) extends AbstractEscapeAnalysisContext
     with PropertyStoreContainer
     with VirtualFormalParametersContainer

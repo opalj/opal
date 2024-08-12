@@ -25,22 +25,22 @@ import org.opalj.util.Nanoseconds
  * @author Michael Eichberg
  */
 class BoundedInterruptableAI[D <: Domain](
-        maxEvaluationCount:    Int,
-        val maxEvaluationTime: Nanoseconds,
-        val doInterrupt:       () => Boolean,
-        IdentifyDeadVariables: Boolean
+    maxEvaluationCount:    Int,
+    val maxEvaluationTime: Nanoseconds,
+    val doInterrupt:       () => Boolean,
+    IdentifyDeadVariables: Boolean
 ) extends InstructionCountBoundedAI[D](maxEvaluationCount, IdentifyDeadVariables) {
 
     private[this] var startTime: Long = -1L;
 
     def this(
-            code:                  Code,
-            maxEvaluationFactor:   Double,
-            maxEvaluationTime:     Milliseconds,
-            doInterrupt:           () => Boolean,
-            identifyDeadVariables: Boolean = true
+        code:                  Code,
+        maxEvaluationFactor:   Double,
+        maxEvaluationTime:     Milliseconds,
+        doInterrupt:           () => Boolean,
+        identifyDeadVariables: Boolean = true
     )(
-            implicit logContext: LogContext
+        implicit logContext: LogContext
     ) = {
         this(
             InstructionCountBoundedAI.calculateMaxEvaluationCount(code, maxEvaluationFactor),

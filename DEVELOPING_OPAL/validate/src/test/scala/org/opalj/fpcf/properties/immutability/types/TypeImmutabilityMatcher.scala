@@ -16,7 +16,7 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 class TypeImmutabilityMatcher(
-        val property: TypeImmutability
+    val property: TypeImmutability
 ) extends AbstractPropertyMatcher {
 
     import org.opalj.br.analyses.SomeProject

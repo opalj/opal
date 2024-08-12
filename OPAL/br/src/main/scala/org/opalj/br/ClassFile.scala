@@ -73,14 +73,14 @@ import org.opalj.log.OPALLogger
  * @author  Michael Eichberg
  */
 final class ClassFile private (
-        val version:        UShortPair,
-        val accessFlags:    Int,
-        val thisType:       ObjectType,
-        val superclassType: Option[ObjectType],
-        val interfaceTypes: ObjectTypes,
-        val fields:         Fields,
-        val methods:        Methods,
-        val attributes:     Attributes
+    val version:        UShortPair,
+    val accessFlags:    Int,
+    val thisType:       ObjectType,
+    val superclassType: Option[ObjectType],
+    val interfaceTypes: ObjectTypes,
+    val fields:         Fields,
+    val methods:        Methods,
+    val attributes:     Attributes
 ) extends ConcreteSourceElement {
 
     methods.foreach { m => assert(m.declaringClassFile == null); m.declaringClassFile = this }

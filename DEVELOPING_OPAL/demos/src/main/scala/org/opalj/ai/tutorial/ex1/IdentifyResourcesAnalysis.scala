@@ -24,8 +24,8 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
 
     class AnalysisDomain(
-            override val project: Project[URL],
-            val method:           Method
+        override val project: Project[URL],
+        val method:           Method
     ) extends CorrelationalDomain
         with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration

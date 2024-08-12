@@ -14,9 +14,9 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.SinglePropertiesBoundType
 
 class L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement[Source](
-        project:       Project[Source],
-        method:        Method,
-        val dependees: EOptionPSet[Entity, Property] = EOptionPSet.empty
+    project:       Project[Source],
+    method:        Method,
+    val dependees: EOptionPSet[Entity, Property] = EOptionPSet.empty
 ) extends DefaultDomainWithCFGAndDefUse[Source](project, method)
     with RefinedTypeLevelFieldAccessInstructions
     with RefinedTypeLevelInvokeInstructions {

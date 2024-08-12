@@ -36,10 +36,10 @@ object InnerClassTable {
 }
 
 case class InnerClass(
-        innerClassType:        ObjectType,
-        outerClassType:        Option[ObjectType],
-        innerName:             Option[String],
-        innerClassAccessFlags: Int
+    innerClassType:        ObjectType,
+    outerClassType:        Option[ObjectType],
+    innerName:             Option[String],
+    innerClassAccessFlags: Int
 ) {
 
     override def toString(): String = {

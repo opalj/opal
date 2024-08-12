@@ -13,8 +13,8 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultDomain[Source](
-        val project: Project[Source],
-        val method:  Method
+    val project: Project[Source],
+    val method:  Method
 ) extends CorrelationalDomain
     with TheProject
     with TheMethod
@@ -45,8 +45,8 @@ class DefaultDomain[Source](
  * which also records the abstract-interpretation time control flow graph.
  */
 class DefaultDomainWithCFG[Source](
-        project: Project[Source],
-        method:  Method
+    project: Project[Source],
+    method:  Method
 ) extends DefaultDomain[Source](project, method) with RecordCFG
 
 /**
@@ -55,7 +55,7 @@ class DefaultDomainWithCFG[Source](
  * information.
  */
 class DefaultDomainWithCFGAndDefUse[Source](
-        project: Project[Source],
-        method:  Method
+    project: Project[Source],
+    method:  Method
 ) extends DefaultDomainWithCFG[Source](project, method)
     with RefineDefUseUsingOrigins

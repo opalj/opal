@@ -25,8 +25,8 @@ import org.opalj.collection.immutable.UIDSet
  * invalid usage of an uninitialized object reference.)
  */
 final class TypeCheckingDomain(
-        val classHierarchy: ClassHierarchy,
-        val method:         Method
+    val classHierarchy: ClassHierarchy,
+    val method:         Method
 ) extends Domain
     with DefaultSpecialDomainValuesBinding
     with DefaultTypeLevelIntegerValues
@@ -67,7 +67,7 @@ final class TypeCheckingDomain(
     // -----------------------------------------------------------------------------------
 
     protected case class InitializedObjectValue(
-            override val theUpperTypeBound: ObjectType
+        override val theUpperTypeBound: ObjectType
     ) extends SObjectValueLike with Value {
         this: DomainObjectValue =>
 
@@ -86,8 +86,8 @@ final class TypeCheckingDomain(
      * @param origin The origin of the `new` instruction or -1 in case of "uninitialized this".
      */
     protected case class UninitializedObjectValue(
-            override val theUpperTypeBound: ObjectType,
-            origin:                         ValueOrigin
+        override val theUpperTypeBound: ObjectType,
+        origin:                         ValueOrigin
     ) extends SObjectValueLike {
         this: DomainObjectValue =>
 
@@ -161,13 +161,13 @@ final class TypeCheckingDomain(
     // --------------------------------------------------------------------------------------------
 
     protected case class DefaultMObjectValue(
-            upperTypeBound: UIDSet[ObjectType]
+        upperTypeBound: UIDSet[ObjectType]
     ) extends MObjectValueLike {
         override def isNull: Answer = Unknown
     }
 
     protected case class DefaultArrayValue(
-            theUpperTypeBound: ArrayType
+        theUpperTypeBound: ArrayType
     ) extends AnArrayValue {
         override def isNull: Answer = Unknown
     }

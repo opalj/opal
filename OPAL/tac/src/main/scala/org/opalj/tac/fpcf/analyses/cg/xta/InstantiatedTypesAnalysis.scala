@@ -65,8 +65,8 @@ import org.opalj.fpcf.UBP
  * @author Andreas Bauer
  */
 class InstantiatedTypesAnalysis private[analyses] (
-        final val project:     SomeProject,
-        val setEntitySelector: TypeSetEntitySelector
+    final val project:     SomeProject,
+    val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
 
     private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
@@ -264,7 +264,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 }
 
 class InstantiatedTypesAnalysisScheduler(
-        val selectSetEntity: TypeSetEntitySelector
+    val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(

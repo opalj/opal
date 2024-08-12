@@ -22,13 +22,13 @@ import org.opalj.log.OPALLogger.info
  * @author Dominik Helm
  */
 class DeclaredMethods(
-        private[this] val p: SomeProject,
-        // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
-        // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
-        // methods on type Object when not analyzing the JDK.
-        private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
-        private[this] var id2method: Array[DeclaredMethod],
-        private[this] var idCounter: Int
+    private[this] val p: SomeProject,
+    // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
+    // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
+    // methods on type Object when not analyzing the JDK.
+    private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
+    private[this] var id2method: Array[DeclaredMethod],
+    private[this] var idCounter: Int
 ) {
 
     private[this] final val lock = new ReentrantReadWriteLock()
@@ -97,7 +97,7 @@ class DeclaredMethods(
         // In case of an unseen method, compute id
         lock.writeLock().lock()
         try {
-            if (!dmSet.contains(context)) {
+            if (!dmSet.containsKey(context)) {
                 val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter)
                 idCounter += 1
                 dmSet.put(MethodContext(p, runtimeType, "", name, descriptor, false), vm)

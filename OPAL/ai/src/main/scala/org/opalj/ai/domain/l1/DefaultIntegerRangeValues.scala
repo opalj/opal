@@ -178,13 +178,6 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
 
         override def newInstance: IntegerRange = IntegerRange(lowerBound, upperBound)
 
-        override def constantValue: Option[ValueOrigin] = {
-            if (lowerBound == upperBound)
-                Some(lowerBound)
-            else
-                None
-        }
-
         override def hashCode: Int = this.lowerBound * 13 + this.upperBound
 
         override def equals(other: Any): Boolean = {
