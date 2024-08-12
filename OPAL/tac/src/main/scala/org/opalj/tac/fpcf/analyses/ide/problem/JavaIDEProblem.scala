@@ -13,7 +13,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
  * Specialized IDE problem for Java programs
  */
 abstract class JavaIDEProblem[Fact <: IDEFact, Value <: IDEValue](
-        override val icfg: JavaICFG
+    override val icfg: JavaICFG
 ) extends IDEProblem[Fact, Value, JavaStatement, Method](icfg) {
     def this(project: SomeProject) = {
         this(new JavaICFG(project))

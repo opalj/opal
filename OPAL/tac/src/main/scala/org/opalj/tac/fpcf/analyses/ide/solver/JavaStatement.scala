@@ -18,11 +18,11 @@ import org.opalj.value.ValueInformation
  * @param isReturnNode whether the statement models the return node of a call
  */
 case class JavaStatement(
-        method:       Method,
-        index:        Int,
-        isReturnNode: Boolean = false,
-        code:         Array[Stmt[JavaStatement.V]],
-        cfg:          CFG[Stmt[JavaStatement.V], TACStmts[JavaStatement.V]]
+    method:       Method,
+    index:        Int,
+    isReturnNode: Boolean = false,
+    code:         Array[Stmt[JavaStatement.V]],
+    cfg:          CFG[Stmt[JavaStatement.V], TACStmts[JavaStatement.V]]
 ) {
     // TODO (IDE) DOES THIS GET REEVALUATED EACH CALL? DO WE ALWAYS CALL IT AT LEAST ONCE? MAYBE MAKE IT A (LAZY)
     //  PROPERTY

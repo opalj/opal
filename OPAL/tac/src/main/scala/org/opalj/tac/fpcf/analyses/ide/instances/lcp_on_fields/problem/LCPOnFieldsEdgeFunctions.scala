@@ -13,7 +13,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
  * Edge function holding the current object state (in form of its field-value mapping)
  */
 case class ObjectEdgeFunction(
-        values: immutable.Map[String, LinearConstantPropagationValue]
+    values: immutable.Map[String, LinearConstantPropagationValue]
 ) extends EdgeFunction[LCPOnFieldsValue] {
     override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue =
         sourceValue match {
@@ -79,8 +79,8 @@ object NewObjectEdgeFunction extends ObjectEdgeFunction(immutable.Map.empty) {
  * Edge function modeling the effect of writing the field of an object
  */
 case class PutFieldEdgeFunction(
-        fieldName: String,
-        value:     LinearConstantPropagationValue
+    fieldName: String,
+    value:     LinearConstantPropagationValue
 ) extends EdgeFunction[LCPOnFieldsValue] {
     override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue = {
         sourceValue match {

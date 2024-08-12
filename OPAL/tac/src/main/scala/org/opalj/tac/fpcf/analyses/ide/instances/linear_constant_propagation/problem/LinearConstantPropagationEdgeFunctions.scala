@@ -10,9 +10,9 @@ import org.opalj.ide.problem.IdentityEdgeFunction
  * Edge function to calculate the value of a variable `i` for a statement `val i = a * x + b`
  */
 case class LinearCombinationEdgeFunction(
-        a: Int,
-        b: Int,
-        c: LinearConstantPropagationValue = LinearConstantPropagationLattice.top
+    a: Int,
+    b: Int,
+    c: LinearConstantPropagationValue = LinearConstantPropagationLattice.top
 ) extends EdgeFunction[LinearConstantPropagationValue] {
     override def compute(sourceValue: LinearConstantPropagationValue): LinearConstantPropagationValue = {
         LinearConstantPropagationLattice.meet(
