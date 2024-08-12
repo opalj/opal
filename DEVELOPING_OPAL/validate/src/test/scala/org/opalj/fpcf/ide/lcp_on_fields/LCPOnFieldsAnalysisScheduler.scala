@@ -43,9 +43,4 @@ object LCPOnFieldsAnalysisScheduler
             PropertyBounds.finalP(Callers),
             PropertyBounds.ub(LinearConstantPropagationPropertyMetaInformation)
         )
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {
-        // TODO (IDE) TO PREVENT EXCEPTION ABOUT InterimResult WITH EMPTY DEPENDEES TO BE THROWN
-        PropertyStore.updateDebug(false)
-    }
 }

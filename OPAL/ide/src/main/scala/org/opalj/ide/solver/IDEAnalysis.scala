@@ -9,17 +9,20 @@ import scala.collection.mutable
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomePartialResult
 import org.opalj.ide.ConfigKeyDebugLog
 import org.opalj.ide.ConfigKeyTraceLog
 import org.opalj.ide.FrameworkName
+import org.opalj.ide.integration.IDEProperty
 import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.ide.problem.AllTopEdgeFunction
 import org.opalj.ide.problem.EdgeFunction
@@ -414,19 +417,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                         s.getDependees.toSet,
                         onDependeeUpdateContinuation(callable)
                     ),
-                    InterimResult.forUB(
-                        callable,
-                        propertyForExit,
-                        immutable.Set.empty,
-                        _ => { throw new IllegalStateException() }
-                    )
+                    createPartialResult(callable, propertyForExit)
                 ) ++ propertiesByStatement.map { case (stmt, property) =>
-                    InterimResult.forUB(
-                        (callable, stmt),
-                        property,
-                        immutable.Set.empty,
-                        _ => { throw new IllegalStateException() }
-                    )
+                    createPartialResult((callable, stmt), property)
                 }
             )
         }
@@ -446,6 +439,20 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         performPhase2(callable)
 
         createResult(callable)
+    }
+
+    private def createPartialResult(entity: Entity, property: IDEProperty[Fact, Value]): SomePartialResult = {
+        PartialResult(
+            entity,
+            propertyMetaInformation.key,
+            { (eOptionP: SomeEOptionP) =>
+                if (eOptionP.hasUBP && eOptionP.ub == property) {
+                    None
+                } else {
+                    Some(InterimEUBP(entity, property))
+                }
+            }
+        )
     }
 
     private def seedPhase1(callable: Callable)(implicit s: State): Unit = {
