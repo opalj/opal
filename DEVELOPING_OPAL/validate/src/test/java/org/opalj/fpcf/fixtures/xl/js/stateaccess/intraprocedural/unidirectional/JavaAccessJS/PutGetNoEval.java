@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JavaAccessJS;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
@@ -9,13 +10,13 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 public class PutGetNoEval {
-    @PointsToSet(variableDefinition = 27,
+    @PointsToSet(variableDefinition = 28,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = PutGetNoEval.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 25,
+                            allocSiteLinenumber = 26,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )

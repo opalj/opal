@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.llvm.controlflow.interprocedural.interleaved;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
@@ -26,7 +27,7 @@ public class CallJavaFunctionFromNative {
                             cf = CallJavaFunctionFromNative.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 14,
+                            allocSiteLinenumber = 15,
                             allocatedType = "java.lang.Object")
             }
     )

@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
@@ -26,13 +27,13 @@ public class EngineWrapper {
         engine.eval("var n = w;");
         return engine.get("n");
     }
-    @PointsToSet(variableDefinition = 44,
+    @PointsToSet(variableDefinition = 45,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = EngineWrapper.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 42,
+                            allocSiteLinenumber = 43,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )

@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.unidirectional.arithmetic;
 
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
@@ -9,7 +10,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 public class Min {
-    @PointsToSet(variableDefinition = 27,
+    @PointsToSet(variableDefinition = 28,
             expectedJavaScriptAllocSites = {@JavaScriptContextAllocSite(
                     cf = Min.class,
                     nodeIdTAJS = -50,

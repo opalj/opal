@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.bidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
@@ -12,13 +13,13 @@ import javax.script.ScriptException;
  * then, javascript field stored in java field (from javascript).
 */
 public class JavaJSJSJavaSimple2Evals {
-    @PointsToSet(variableDefinition = 39,
+    @PointsToSet(variableDefinition = 40,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JavaJSJSJavaSimple2Evals.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 31,
+                            allocSiteLinenumber = 32,
                             allocatedType = "java.lang.Object")
             }
     )

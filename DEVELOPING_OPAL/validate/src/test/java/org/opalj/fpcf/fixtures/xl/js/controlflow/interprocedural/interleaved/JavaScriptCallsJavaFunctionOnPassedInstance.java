@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.interleaved;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
@@ -27,13 +28,13 @@ public class JavaScriptCallsJavaFunctionOnPassedInstance {
         se.eval("var n = w; var javainstance = inst; javainstance.javaFunctionCalledFromJS(n);");
     }
 
-    @PointsToSet(variableDefinition = 41,
+    @PointsToSet(variableDefinition = 42,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JavaScriptCallsJavaFunctionOnPassedInstance.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 22,
+                            allocSiteLinenumber = 23,
                             allocatedType = "java.lang.String")
             }
     )

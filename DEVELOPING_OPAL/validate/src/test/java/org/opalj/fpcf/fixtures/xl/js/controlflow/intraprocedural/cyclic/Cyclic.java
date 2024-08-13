@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.cyclic;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
@@ -28,7 +29,7 @@ public class Cyclic {
                             cf = Cyclic.class,
                             methodName = "decrement",
                             methodDescriptor = "(org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass): org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass",
-                            allocSiteLinenumber = 38,
+                            allocSiteLinenumber = 39,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )

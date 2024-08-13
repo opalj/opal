@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.bidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
@@ -13,13 +14,13 @@ import javax.script.ScriptException;
  *
  */
 public class JSAllocationWriteFieldFromJS {
-    @PointsToSet(variableDefinition = 35,
+    @PointsToSet(variableDefinition = 36,
             expectedJavaAllocSites = {
             @JavaMethodContextAllocSite(
                 cf = JSAllocationWriteFieldFromJS.class,
                     methodName = "main",
                     methodDescriptor = "(java.lang.String[]): void",
-                    allocSiteLinenumber = 30,
+                    allocSiteLinenumber = 31,
                     allocatedType = "java.lang.Object")
 
             }

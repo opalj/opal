@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.unidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
@@ -8,7 +9,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 public class JavaScriptAllocationNoPut {
-    @PointsToSet(variableDefinition = 23,
+    @PointsToSet(variableDefinition = 24,
             expectedJavaScriptAllocSites = {
             @JavaScriptContextAllocSite(
                     cf = JavaScriptAllocationNoPut.class,

@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
@@ -11,7 +12,7 @@ import javax.script.ScriptException;
  * A function evaluateScript() evaluates a script that instantiates a JS object, which is returned.
  */
 public class JavaScriptAllocationReturn {
-    @PointsToSet(variableDefinition = 22,
+    @PointsToSet(variableDefinition = 23,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
                     cf = JavaScriptAllocationReturn.class,
                     nodeIdTAJS = 11,

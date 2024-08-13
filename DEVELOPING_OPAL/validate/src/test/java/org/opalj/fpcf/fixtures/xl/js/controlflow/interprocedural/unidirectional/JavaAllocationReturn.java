@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
@@ -12,13 +13,13 @@ import javax.script.ScriptException;
  * evaluates a script returns instance.
  */
 public class JavaAllocationReturn {
-    @PointsToSet(variableDefinition = 27,
+    @PointsToSet(variableDefinition = 28,
             expectedJavaAllocSites = {
             @JavaMethodContextAllocSite(
                 cf = JavaAllocationReturn.class,
                     methodName = "getObject",
                     methodDescriptor = "(): java.lang.Object",
-                    allocSiteLinenumber = 42,
+                    allocSiteLinenumber = 43,
                     allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
 
             }

@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
@@ -12,13 +13,13 @@ import javax.script.ScriptException;
  * two functions defined in separate eval calls. https://github.com/nateusse/java/blob/main/java_impatient/src/main/java/ch14/sec02/ScriptEngineDemo.java
  */
 public class TwoEvals {
-    @PointsToSet(variableDefinition = 32,
+    @PointsToSet(variableDefinition = 33,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = TwoEvals.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 28,
+                            allocSiteLinenumber = 29,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )

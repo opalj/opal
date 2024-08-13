@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JSAccessJava;
 
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
@@ -13,7 +14,7 @@ import javax.script.ScriptException;
  *
  */
 public class JSAllocationWriteStaticFieldFromJS {
-    @PointsToSet(variableDefinition = 28,
+    @PointsToSet(variableDefinition = 29,
             expectedJavaScriptAllocSites = @JavaScriptContextAllocSite(
                     cf = JSAllocationWriteStaticFieldFromJS.class,
                     nodeIdTAJS = 16,

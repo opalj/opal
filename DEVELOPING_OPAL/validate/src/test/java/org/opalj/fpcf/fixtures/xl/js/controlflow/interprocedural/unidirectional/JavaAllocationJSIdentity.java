@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.unidirectional;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
@@ -12,13 +13,13 @@ import javax.script.ScriptException;
  * java instance passed through JavaScript identity function. java.lang.Integer instance is preserved.
  */
 public class JavaAllocationJSIdentity {
-    @PointsToSet(variableDefinition = 34,
+    @PointsToSet(variableDefinition = 35,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JavaAllocationJSIdentity.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 31,
+                            allocSiteLinenumber = 32,
                             allocatedType = "org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass")
             }
     )

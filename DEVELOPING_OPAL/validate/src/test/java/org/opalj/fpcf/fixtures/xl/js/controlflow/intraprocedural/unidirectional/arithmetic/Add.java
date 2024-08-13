@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.intraprocedural.unidirectional.arithmetic;
 
 import org.opalj.fpcf.properties.pts.JavaScriptContextAllocSite;
@@ -9,7 +10,7 @@ import javax.script.ScriptException;
 
 public class Add {
 
-    @PointsToSet(variableDefinition = 25, expectedJavaScriptAllocSites = {@JavaScriptContextAllocSite(
+    @PointsToSet(variableDefinition = 26, expectedJavaScriptAllocSites = {@JavaScriptContextAllocSite(
             cf = Add.class,
             nodeIdTAJS = -50,
             allocatedType = "java.lang.Double"

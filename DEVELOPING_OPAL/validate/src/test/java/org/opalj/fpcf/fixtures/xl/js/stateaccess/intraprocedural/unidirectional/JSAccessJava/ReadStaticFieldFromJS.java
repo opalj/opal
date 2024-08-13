@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.stateaccess.intraprocedural.unidirectional.JSAccessJava;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
@@ -13,13 +14,13 @@ import javax.script.ScriptException;
  *
  */
 public class ReadStaticFieldFromJS {
-    @PointsToSet(variableDefinition = 34,
+    @PointsToSet(variableDefinition = 35,
             expectedJavaAllocSites = {
             @JavaMethodContextAllocSite(
                 cf = ReadStaticFieldFromJS.class,
                     methodName = "main",
                     methodDescriptor = "(java.lang.String[]): void",
-                    allocSiteLinenumber = 30,
+                    allocSiteLinenumber = 31,
                     allocatedType = "java.lang.Object")
 
             }

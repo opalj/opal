@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.js.controlflow.interprocedural.interleaved;
 
 import org.opalj.fpcf.fixtures.xl.js.testpts.SimpleContainerClass;
@@ -12,13 +13,13 @@ import javax.script.ScriptException;
  * two java functions are called in sequence.
  */
 public class JavaScriptCallsJavaFunctionTwice {
-    @PointsToSet(variableDefinition = 35,
+    @PointsToSet(variableDefinition = 36,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = JavaScriptCallsJavaFunctionTwice.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 29,
+                            allocSiteLinenumber = 30,
                             allocatedType = "java.lang.Object")
             }
     )

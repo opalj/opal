@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.llvm.stateaccess.interprocedural.bidirectional;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
@@ -10,13 +11,13 @@ import javax.script.ScriptException;
  */
 public class WriteNativeGlobalVariable {
     Object myfield;
-    @PointsToSet(variableDefinition = 27,
+    @PointsToSet(variableDefinition = 28,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = WriteNativeGlobalVariable.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 24,
+                            allocSiteLinenumber = 25,
                             allocatedType = "java.lang.Object")
             }
     )

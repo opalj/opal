@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.llvm.controlflow.intraprocedural.interleaved;
 
 import org.opalj.fpcf.fixtures.xl.llvm.stateaccess.interprocedural.unidirectional.CAccessJava.ReadJavaFieldFromNative;
@@ -10,13 +11,13 @@ import javax.script.ScriptException;
  * Java function called from native, String passed, return value should be string.
  */
 public class CallJavaFunctionFromNativeAndReturn {
-    @PointsToSet(variableDefinition = 26,
+    @PointsToSet(variableDefinition = 27,
             expectedJavaAllocSites = {
                     @JavaMethodContextAllocSite(
                             cf = CallJavaFunctionFromNativeAndReturn.class,
                             methodName = "main",
                             methodDescriptor = "(java.lang.String[]): void",
-                            allocSiteLinenumber = 24,
+                            allocSiteLinenumber = 25,
                             allocatedType = "java.lang.Object")
             }
     )
