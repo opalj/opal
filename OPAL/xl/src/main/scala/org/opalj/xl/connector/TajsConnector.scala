@@ -20,7 +20,6 @@ import dk.brics.tajs.lattice.ObjectLabel
 import dk.brics.tajs.solver.BlockAndContext
 import org.opalj.xl.utility
 import org.opalj.xl.Coordinator
-
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.InterimResult
@@ -49,7 +48,6 @@ import org.opalj.xl.translator.translator.globalObject
 import org.opalj.xl.utility.Language
 import org.opalj.xl.Coordinator.ScriptEngineInstance
 import org.opalj.xl.utility.Bottom
-
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EPK
@@ -86,6 +84,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
     case class TajsConnectorState(
             scriptEngineInstance:        ScriptEngineInstance[ElementType],
             project:                     SomeProject,
+            var tajsAdapter:                TajsAdapter                                 = null,
             var code:                    List[String]                                      = List.empty, //for debugging purposes
             var files:                   List[File]                                        = List.empty,
             var scriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet] = null,
@@ -109,43 +108,39 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             else
                 possibleEmptyCode
 
-        def c(
-            oldScriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet],
-            oldTAJSanalyses:            List[Analysis],
-            blockAndContext:            Option[BlockAndContext[Context]]
-        )(eps: SomeEPS)(implicit state: TajsConnectorState): ProperPropertyComputationResult = {
+
+        def c(oldTAJSanalyses:            List[Analysis])
+             (eps: SomeEPS)(implicit state: TajsConnectorState): ProperPropertyComputationResult = {
+
             state.connectorDependees = state.connectorDependees.filter(dependee => dependee.e != eps.e)
 
             eps match {
-
-                case UBP(javaScriptInteraction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
+                case UBP(ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
                     prepareAnalysis(possibleEmptyCode, puts)
                     val analyses = state.files.map(file => {
-                        start(tajsAdapter = tajsAdapter, file.getPath)._1.get
+                      runAnalysis(file.getPath)._1.get
                     })
                     state.connectorDependees += eps
-                    createResult(javaScriptInteraction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]], analyses, null)
+                    createResult(analyses)
 
                 case ubp@UBP(_: PointsToSet @unchecked) =>
                     val analyses = state.files.map(file => {
-                        start(tajsAdapter = tajsAdapter, file.getPath)._1.get
+                        runAnalysis(file.getPath)._1.get
                     })
                     if(ubp.isRefinable)
                         state.connectorDependees += ubp
-                    createResult(oldScriptEngineInteraction, analyses, blockAndContext)
+                    createResult(analyses)
 
                 case ep =>
                     state.connectorDependees += ep
-                    createResult(ScriptEngineInteraction[ContextType, PointsToSet](), oldTAJSanalyses, None)
+                    createResult(oldTAJSanalyses)
             }
         }
 
-        def start(tajsAdapter: TajsAdapter, javaScriptFilePath: String)(implicit state: TajsConnectorState): (Option[Analysis], Option[BlockAndContext[Context]]) = {
-            LocalTAJSAdapter.setLocalTAJSAdapter(tajsAdapter)
+        def runAnalysis(javaScriptFilePath: String)(implicit state: TajsConnectorState): (Option[Analysis], Option[BlockAndContext[Context]]) = {
+            LocalTAJSAdapter.setLocalTAJSAdapter(state.tajsAdapter)
 
-            //val javaScriptFilePaths = state.files.map(_.getPath).toArray
             val analysis = Main.init(List(javaScriptFilePath).toArray, null)
-
             val flowGraph = analysis.getSolver.getFlowGraph
             val mainFunction = flowGraph.getMain
             val analysisLatticeElement = analysis.getSolver.getAnalysisLatticeElement
@@ -159,18 +154,25 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             (Some(analysis), None)
         }
 
-        /*  def resume(analysis: Analysis): (Option[Analysis], Option[BlockAndContext[Context]]) = {
-            println("resume")
-            run(analysis)
-            (Some(analysis), None)
-        } */
-
         def newObjectImplementation(index: Integer, javaName: String): Value = {
             val referenceType = ObjectType(javaName.replace(".", "/"))
 
             val newPointsToSet = createPointsToSet(-100 - index, NoContext.asInstanceOf[ContextType], referenceType, false, false)
             val value = java2js("newObject", NoContext.asInstanceOf[ContextType], newPointsToSet, null, None)._2
             value
+        }
+
+        def getPossibleDeclaredFields(propertyName: String, ol: ObjectLabel[_], v: Value): List[DeclaredField] = {
+            val javaName = ol.getJavaName
+            val objectType = ObjectType(javaName.replace(".", "/"))
+            val classFile = project.classFile(objectType)
+            val possibleDeclaredFields = {
+                if (classFile.isDefined)
+                    classFile.get.fields.filter(field => field.name == propertyName && (!v.isJSJavaTYPE || field.isStatic)).map(declaredFields(_)).toList
+                else
+                    List.empty[DeclaredField]
+            }
+            possibleDeclaredFields
         }
 
         def setPropertyImplementation(v: Value, propertyName: String, rhsFieldValue: Value): Unit = {
@@ -239,7 +241,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
                 new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
 
-            var jsValue = Value.makeUndef() //Value.makeAbsent()
+            var jsValue = Value.makeUndef()
             if (v.isJavaObject || v.isJSJavaTYPE) {
                 v.getObjectLabels.forEach(ol => {
 
@@ -298,7 +300,6 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
 
             if (v.isJavaObject || v.isJSJavaTYPE) {
                 v.getObjectLabels.forEach(ol => {
-                    // val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
                     val javaName = ol.getJavaName
                     val objectType = ObjectType(javaName.replace(".", "/"))
                     val classFile = project.classFile(objectType)
@@ -355,8 +356,8 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
 
                             val pointsToSet = currentPointsTo("callFunction", context, PointsToSetLike.noFilter)
 
-                            val v = java2js("returnValue", context, pointsToSet, null, None)
-                            result = v._2.join(result)
+                            val returnValue = java2js("returnValue", context, pointsToSet, null, None)
+                            result = returnValue._2.join(result)
                         }
                     })
 
@@ -372,7 +373,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             result
         }
 
-        object tajsAdapter extends TajsAdapter {
+        object TajsAdapterImplementation extends TajsAdapter {
 
             override def newObject(index: Integer, javaName: String): Value =
                 newObjectImplementation(index, javaName)
@@ -388,11 +389,8 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 callFunctionImplementation(v, methodName, parameters)
         }
 
-        def createResult(
-            scriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet],
-            analyses:                List[Analysis],
-            blockAndContext:         Option[BlockAndContext[Context]]
-        )(implicit state: TajsConnectorState): ProperPropertyComputationResult = {
+        def createResult(analyses:                List[Analysis])
+                        (implicit state: TajsConnectorState): ProperPropertyComputationResult = {
             var store: Map[PKey, Value] = Map.empty[PKey, Value]
             for (analysis <- analyses) {
                 val mainFunction = analysis.getSolver.getFlowGraph.getMain
@@ -431,7 +429,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                     Bottom,
                     InterimAnalysisResult[PKey, Value](store),
                     state.connectorDependees,
-                    c(scriptEngineInteraction, analyses, blockAndContext)
+                    c(analyses)
                 )
             )
         }
@@ -443,7 +441,6 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 val context = put._1._2.asInstanceOf[ContextType]
                 val pointsToSet = put._2._1.asInstanceOf[PointsToSet]
                 val tacai: TheTACAI = put._1._3
-                // val v = put._2._2
                 val optionType = put._2._3
 
                 val jsValue = java2js(variableName, context, pointsToSet, tacai, optionType)
@@ -463,39 +460,23 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             }
         }
 
+        state.tajsAdapter = TajsAdapterImplementation
         //start of analysis
         propertyStore(scriptEngineInstance, CrossLanguageInteraction.key) match {
 
             case ubp @ UBP(interaction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
                 prepareAnalysis(possibleEmptyCode, puts)
                 val analyses = state.files.map(file => {
-                    start(tajsAdapter = tajsAdapter, file.getPath)._1.get
+                    runAnalysis(file.getPath)._1.get
                 })
 
                 state.connectorDependees += ubp
-                createResult(
-                    interaction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]],
-                    analyses,
-                    null
-                )
+                createResult(analyses)
 
             case ep =>
                 state.connectorDependees += ep
-                createResult(ScriptEngineInteraction[ContextType, PointsToSet](), Nil, None)
+                createResult(Nil)
         }
-    }
-
-    private def getPossibleDeclaredFields(propertyName: String, ol: ObjectLabel[_], v: Value): List[DeclaredField] = {
-        val javaName = ol.getJavaName
-        val objectType = ObjectType(javaName.replace(".", "/"))
-        val classFile = project.classFile(objectType)
-        val possibleDeclaredFields = {
-            if (classFile.isDefined)
-                classFile.get.fields.filter(field => field.name == propertyName && (!v.isJSJavaTYPE || field.isStatic)).map(declaredFields(_)).toList
-            else
-                List.empty[DeclaredField]
-        }
-        possibleDeclaredFields
     }
 }
 
