@@ -65,9 +65,9 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
                     // if the dominator itself dominates one of its predecessors, it is a loop header
                     if (domTree.strictlyDominates(dom, pred)) {
 
-                        // only report a negative result if the allocation site is inside the loop (loop head post
-                        // dominates the allocation site). Otherwise, we report allocation sites in front of the loop as
-                        // being inside a loop.
+                        // Only report a negative result if the allocation site is inside the loop.
+                        // If the loop head post dominates the allocation site we know that the allocation is behind
+                        // the loop.
                         if (!postDomTree.strictlyDominates(dom, allocBB)) {
                             return false
                         }
