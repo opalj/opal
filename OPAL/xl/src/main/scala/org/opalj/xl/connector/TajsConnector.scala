@@ -60,11 +60,8 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.Field
-import org.opalj.br.Fields
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.cg.TypeIteratorKey
@@ -79,6 +76,8 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.TheTACAI
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.br.fpcf.properties.NoContext
+import org.opalj.br.DeclaredField
 
 abstract class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with PointsToAnalysisBase {
     self =>
@@ -165,289 +164,304 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             (Some(analysis), None)
         } */
 
-        object tajsAdapter extends TajsAdapter {
+        def newObjectImplementation(index: Integer, javaName: String): Value = {
+            val referenceType = ObjectType(javaName.replace(".", "/"))
 
-            override def newObject(index: Integer, javaName: String): Value = {
-                val referenceType = ObjectType(javaName.replace(".", "/"))
+            val newPointsToSet = createPointsToSet(-100 - index, NoContext.asInstanceOf[ContextType], referenceType, false, false)
+            val value = java2js("newObject", NoContext.asInstanceOf[ContextType], newPointsToSet, null, None)._2
+            value
+        }
 
-                val newPointsToSet = createPointsToSet(-100 - index, NoContext.asInstanceOf[ContextType], referenceType, false, false)
-                val value = java2js("newObject", NoContext.asInstanceOf[ContextType], newPointsToSet, null, None)._2
-                value
-            }
+        def setPropertyImplementation(v: Value, propertyName: String, rhsFieldValue: Value): Unit = {
 
-            override def setProperty(v: Value, propertyName: String, rhsFieldValue: Value): Unit = {
+            if (v.isJavaObject) {
+                v.getObjectLabels.forEach(ol => {
+                    val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
 
-                if (v.isJavaObject) {
-                    v.getObjectLabels.forEach(ol => {
-                        val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
-
-                        val javaName = ol.getJavaName
-                        val objectType = ObjectType(javaName.replace(".", "/"))
-                        val classFile = project.classFile(objectType)
-                        val possibleFields = {
-                            if (classFile.isDefined)
-                                classFile.get.fields.find(_.name == propertyName).toList
-                            else
-                                List.empty[Fields]
-                        } //TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        //val context = jNode.getContext
-                        val pointsToSet = if (jNode != null)
-                            jNode.getPointsToSet.asInstanceOf[PointsToSet]
+                    val javaName = ol.getJavaName
+                    val objectType = ObjectType(javaName.replace(".", "/"))
+                    val classFile = project.classFile(objectType)
+                    val possibleDeclaredFields = {
+                        if (classFile.isDefined)
+                            classFile.get.fields.find(_.name == propertyName).map(declaredFields(_)).toList
                         else
-                            null
+                            List.empty[DeclaredField]
+                    } //TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
-                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
-                        rhsFieldValue.getObjectLabels.forEach(ol => {
-                            val node = ol.getNode
-                            val rhsPointsToSet =
-                                if (ol.getNode.isInstanceOf[JNode[_, _, _, _]]) {
-                                    val jnode = ol.getNode.asInstanceOf[JNode[_, _, _, _]]
-                                    val pointsToSet = jnode.getPointsToSet.asInstanceOf[PointsToSet]
-                                    pointsToSet
-                                } else {
-                                    val index = -100 - node.getIndex
-                                    createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
-                                }
+                    //val context = jNode.getContext
+                    val pointsToSet = if (jNode != null)
+                        jNode.getPointsToSet.asInstanceOf[PointsToSet]
+                    else
+                        null
 
-                            possibleFields.foreach(field => {
-                                pointsToSet.forNewestNElements(pointsToSet.numElements) { as =>
-                                    val tpe = getTypeOf(as)
-                                    if (tpe.isObjectType) {
-                                        Iterator((as, field)).foreach(fieldEntity => {
-                                            pointsToAnalysisState.includeSharedPointsToSet(
-                                                fieldEntity,
-                                                rhsPointsToSet,
-                                                PointsToSetLike.noFilter
-                                            )
-                                        })
-                                    }
+                    implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                        new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
+
+                    rhsFieldValue.getObjectLabels.forEach(ol => {
+                        val node = ol.getNode
+                        val rhsPointsToSet =
+                            if (ol.getNode.isInstanceOf[JNode[_, _, _, _]]) {
+                                val jnode = ol.getNode.asInstanceOf[JNode[_, _, _, _]]
+                                val pointsToSet = jnode.getPointsToSet.asInstanceOf[PointsToSet]
+                                pointsToSet
+                            } else {
+                                val index = -100 - node.getIndex
+                                createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
+                            }
+
+                        possibleDeclaredFields.foreach(declaredField => {
+                            pointsToSet.forNewestNElements(pointsToSet.numElements) { as =>
+                                val tpe = getTypeOf(as)
+                                if (tpe.isObjectType) {
+                                    Iterator((as, declaredField)).foreach(fieldEntity => {
+                                        pointsToAnalysisState.includeSharedPointsToSet(
+                                            fieldEntity,
+                                            rhsPointsToSet,
+                                            PointsToSetLike.noFilter
+                                        )
+                                    })
                                 }
-                            })
+                            }
                         })
-
-                        val setPropertyDependeesMap =
-                            if (pointsToAnalysisState.hasDependees("setProperty"))
-                                pointsToAnalysisState.dependeesOf("setProperty")
-                            else
-                                Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
-
-                        state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-                        state.connectorResults ++= createResults
                     })
-                } else if (v.isJSJavaTYPE) {
-                    v.getObjectLabels.forEach(ol => {
-                        val javaName = ol.getJavaName
-                        val objectType = ObjectType(javaName.replace(".", "/"))
-                        val classFile = project.classFile(objectType)
-                        val possibleFields = {
-                            if (classFile.isDefined)
-                                classFile.get.fields.filter(field => field.name == propertyName && field.isStatic)
-                            else
-                                List.empty[Fields]
-                        }
 
-                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
-                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null) //FinalEP(context.method.definedMethod, jNode.getTacai))
-                        rhsFieldValue.getObjectLabels.forEach(ol => {
-                            val node = ol.getNode
-                            val rhsPointsToSet =
-                                if (ol.getNode.isInstanceOf[JNode[_, _, _, _]]) {
-                                    val jnode = ol.getNode.asInstanceOf[JNode[_, _, _, _]]
-                                    jnode.getPointsToSet.asInstanceOf[PointsToSet]
-                                } else {
-                                    val index = -100 - node.getIndex
-                                    createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
-                                }
-
-                            possibleFields.foreach(field => {
-                                pointsToAnalysisState.includeSharedPointsToSet(
-                                    field,
-                                    rhsPointsToSet,
-                                    PointsToSetLike.noFilter
-                                )
-                            })
-
-                        })
-                        val setPropertyDependeesMap =
-                            if (pointsToAnalysisState.hasDependees("setProperty"))
-                                pointsToAnalysisState.dependeesOf("setProperty")
-                            else
-                                Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
-
-                        state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-                        state.connectorResults ++= createResults
-                    })
-                }
-            }
-
-            override def readProperty(v: Value, propertyName: String): Value = {
-                var jsValue = Value.makeUndef() //Value.makeAbsent()
-                if (v.isJavaObject) {
-                    v.getObjectLabels.forEach(ol => {
-                        val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
-                        val javaName = ol.getJavaName
-                        val objectType = ObjectType(javaName.replace(".", "/"))
-                        val classFile = project.classFile(objectType)
-                        var possibleFields = List.empty[Field]
-                        try {
-                            possibleFields = classFile.get.fields.filter(_.name == propertyName).toList
-                        } catch {
-                            case _: Throwable => println(s"Error:::: JavaName: $javaName")
-                        }
-                        //val context = jNode.getContext
-                        val tacai = jNode.getTacai
-                        val baseValuePointsToSet = jNode.getPointsToSet.asInstanceOf[PointsToSet]
-
-                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
-                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
-
-                        baseValuePointsToSet.forNewestNElements(baseValuePointsToSet.numElements) { as =>
-                            possibleFields.foreach(field => {
-                                val fieldEntities = Iterator((as, field))
-                                for (fieldEntity <- fieldEntities) {
-                                    val propertyPointsToSet =
-                                        currentPointsTo("readProperty", fieldEntity, PointsToSetLike.noFilter)
-                                    val fieldType = field.fieldType
-                                    val t = if (fieldType.isObjectType) {
-                                        Some(fieldType.asObjectType)
-                                    } else None
-                                    jsValue = jsValue.join(java2js(propertyName, NoContext.asInstanceOf[ContextType], propertyPointsToSet, tacai, t)._2)
-                                }
-                            })
-                        }
-
-                        val readPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("readProperty"))
-                            pointsToAnalysisState.dependeesOf("readProperty")
+                    val setPropertyDependeesMap =
+                        if (pointsToAnalysisState.hasDependees("setProperty"))
+                            pointsToAnalysisState.dependeesOf("setProperty")
                         else
                             Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
-                        state.connectorDependees = state.connectorDependees ++
-                            readPropertyDependeesMap.valuesIterator.map(_._1)
-                        state.connectorResults ++= createResults
+                    state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
+                    state.connectorResults ++= createResults
+                })
+            } else if (v.isJSJavaTYPE) {
+                v.getObjectLabels.forEach(ol => {
+                    val javaName = ol.getJavaName
+                    val objectType = ObjectType(javaName.replace(".", "/"))
+                    val classFile = project.classFile(objectType)
+                    val possibleDeclaredFields = {
+                        if (classFile.isDefined)
+                            classFile.get.fields.filter(field => field.name == propertyName && field.isStatic).map(declaredFields(_)).toList
+                        else
+                            List.empty[DeclaredField]
+                    }
+
+                    implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                        new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+
+                    rhsFieldValue.getObjectLabels.forEach(ol => {
+                        val node = ol.getNode
+                        val rhsPointsToSet =
+                            if (ol.getNode.isInstanceOf[JNode[_, _, _, _]]) {
+                                val jnode = ol.getNode.asInstanceOf[JNode[_, _, _, _]]
+                                jnode.getPointsToSet.asInstanceOf[PointsToSet]
+                            } else {
+                                val index = -100 - node.getIndex
+                                createPointsToSet(index, NoContext.asInstanceOf[ContextType], ObjectType.Object, false, false)
+                            }
+
+                        possibleDeclaredFields.foreach(field => {
+                            pointsToAnalysisState.includeSharedPointsToSet(
+                                field,
+                                rhsPointsToSet,
+                                PointsToSetLike.noFilter
+                            )
+                        })
+
                     })
-                } else if (v.isJSJavaTYPE) {
-                    v.getObjectLabels.forEach(ol => {
-                        val javaName = ol.getJavaName
-                        val objectType = ObjectType(javaName.replace(".", "/"))
-                        val classFile = project.classFile(objectType)
-                        val possibleField: Option[Field] = {
-                            if (classFile.isDefined)
-                                classFile.get.fields.find(field => field.name == propertyName && field.isStatic)
-                            else
-                                Option.empty
-                        }
+                    val setPropertyDependeesMap =
+                        if (pointsToAnalysisState.hasDependees("setProperty"))
+                            pointsToAnalysisState.dependeesOf("setProperty")
+                        else
+                            Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
-                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] = {
-                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+                    state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
+                    state.connectorResults ++= createResults
+                })
+            }
+        }
 
-                        }
-                        possibleField match {
-                            case Some(field) =>
+        def readPropertyImplementation(v: Value, propertyName: String): Value = {
+            var jsValue = Value.makeUndef() //Value.makeAbsent()
+            if (v.isJavaObject) {
+                v.getObjectLabels.forEach(ol => {
+                    val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
+                    val javaName = ol.getJavaName
+                    val objectType = ObjectType(javaName.replace(".", "/"))
+                    val classFile = project.classFile(objectType)
+                    var possibleDeclaredFields = List.empty[DeclaredField]
+                    try {
+                        possibleDeclaredFields = classFile.get.fields.filter(_.name == propertyName).map(declaredFields(_)).toList
+                    } catch {
+                        case _: Throwable => println(s"Error:::: JavaName: $javaName")
+                    }
+                    //val context = jNode.getContext
+                    val tacai = jNode.getTacai
+                    val baseValuePointsToSet = jNode.getPointsToSet.asInstanceOf[PointsToSet]
+
+                    implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                        new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+
+                    baseValuePointsToSet.forNewestNElements(baseValuePointsToSet.numElements) { as =>
+                        possibleDeclaredFields.foreach(field => {
+                            val fieldEntities = Iterator((as, field))
+                            for (fieldEntity <- fieldEntities) {
                                 val propertyPointsToSet =
-                                    currentPointsTo("readProperty", field, PointsToSetLike.noFilter)
+                                    currentPointsTo("readProperty", fieldEntity, PointsToSetLike.noFilter)
                                 val fieldType = field.fieldType
                                 val t = if (fieldType.isObjectType) {
                                     Some(fieldType.asObjectType)
                                 } else None
-                                jsValue = jsValue.join(java2js(propertyName, NoContext.asInstanceOf[ContextType], propertyPointsToSet, null, t)._2)
-                            case _ =>
-                        }
-
-                        val readPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("readProperty"))
-                            pointsToAnalysisState.dependeesOf("readProperty")
-                        else
-                            Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
-
-                        state.connectorDependees = state.connectorDependees ++
-                            readPropertyDependeesMap.valuesIterator.map(_._1)
-                        state.connectorResults ++= createResults
-                    })
-                }
-                jsValue
-            }
-
-            override def callFunction(v: Value, methodName: String, parameters: java.util.List[Value]): Value = {
-                var result = Value.makeAbsent()
-
-                if (v.isJavaObject || v.isJSJavaTYPE) {
-                    v.getObjectLabels.forEach(ol => {
-                        // val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
-                        val javaName = ol.getJavaName
-                        val objectType = ObjectType(javaName.replace(".", "/"))
-                        val classFile = project.classFile(objectType)
-
-                        var possibleMethods = Iterable.empty[Method]
-                        if (v.isJavaObject) {
-                            possibleMethods = project.instanceMethods(objectType)
-                                .filter(_.name == methodName).map(_.method)
-                        } else if (v.isJSJavaTYPE) {
-                            possibleMethods = project.allMethods.filter(_.classFile == classFile.orNull).
-                                filter(_.isStatic).filter(_.name == methodName)
-                        }
-
-                        implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
-                            new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
-
-                        possibleMethods.foreach(method => {
-
-                            val declaredMethod = declaredMethods(method)
-                            val context = typeIterator.newContext(declaredMethod)
-
-                            //Call Graph
-                            state.connectorResults += PartialResult[DeclaredMethod, Callers](declaredMethod, Callers.key, {
-                                case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
-                                    Some(InterimEUBP(declaredMethod, ub.updatedWithUnknownContext()))
-
-                                case _: InterimEP[_, _] => None
-
-                                case _: EPK[_, _] =>
-                                    Some(InterimEUBP(declaredMethod, OnlyCallersWithUnknownContext))
-
-                                case r =>
-                                    throw new IllegalStateException(s"unexpected previous result $r")
-                            })
-
-                            // function parameters
-                            val fps = formalParameters(declaredMethod)
-                            var paramIndex = 0
-                            parameters.forEach(parameter => {
-                                var parameterPointsToSet = emptyPointsToSet
-                                if (parameter.isJavaObject) {
-                                    parameter.getObjectLabels.forEach(ol =>
-                                        parameterPointsToSet = ol.getNode.asInstanceOf[JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI]].getPointsToSet)
-                                } //TODO merge pointsto sets
-                                val paramType = declaredMethod.descriptor.parameterType(paramIndex)
-                                val fp = getFormalParameter(paramIndex + 1, fps, context)
-                                val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
-                                pointsToAnalysisState.includeSharedPointsToSet(
-                                    fp,
-                                    parameterPointsToSet,
-                                    filter
-                                )
-                                paramIndex = paramIndex + 1
-                            })
-
-                            if (context.method.descriptor.returnType.isReferenceType) {
-
-                                val pointsToSet = currentPointsTo("callFunction", context, PointsToSetLike.noFilter)
-
-                                val v = java2js("returnValue", context, pointsToSet, null, None)
-                                result = v._2.join(result)
+                                jsValue = jsValue.join(java2js(propertyName, NoContext.asInstanceOf[ContextType], propertyPointsToSet, tacai, t)._2)
                             }
                         })
+                    }
 
-                        val callFunctionDependeesMap =
-                            if (pointsToAnalysisState.hasDependees("callFunction"))
-                                pointsToAnalysisState.dependeesOf("callFunction")
-                            else
-                                Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
-                        state.connectorDependees = state.connectorDependees ++ callFunctionDependeesMap.valuesIterator.map(_._1)
-                        state.connectorResults ++= createResults
+                    val readPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("readProperty"))
+                        pointsToAnalysisState.dependeesOf("readProperty")
+                    else
+                        Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+                    state.connectorDependees = state.connectorDependees ++
+                        readPropertyDependeesMap.valuesIterator.map(_._1)
+                    state.connectorResults ++= createResults
+                })
+            } else if (v.isJSJavaTYPE) {
+                v.getObjectLabels.forEach(ol => {
+                    val javaName = ol.getJavaName
+                    val objectType = ObjectType(javaName.replace(".", "/"))
+                    val classFile = project.classFile(objectType)
+                    val possibleDeclaredFields: List[DeclaredField] = {
+                        if (classFile.isDefined)
+                            classFile.get.fields.filter(field => field.name == propertyName && field.isStatic).map(declaredFields(_)).toList
+                        else
+                            List.empty[DeclaredField]
+                    }
+
+                    implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] = {
+                        new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+                    }
+
+                    possibleDeclaredFields.foreach (declaredField => {
+                        val propertyPointsToSet =
+                            currentPointsTo("readProperty", declaredField, PointsToSetLike.noFilter)
+                        val fieldType = declaredField.fieldType
+                        val t = if (fieldType.isObjectType) {
+                            Some(fieldType.asObjectType)
+                        } else None
+                        jsValue = jsValue.join(java2js(propertyName, NoContext.asInstanceOf[ContextType], propertyPointsToSet, null, t)._2)
                     })
-                }
-                result
+
+                    val readPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("readProperty"))
+                        pointsToAnalysisState.dependeesOf("readProperty")
+                    else
+                        Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+                    state.connectorDependees = state.connectorDependees ++
+                        readPropertyDependeesMap.valuesIterator.map(_._1)
+                    state.connectorResults ++= createResults
+                })
             }
+            jsValue
+        }
+
+        def callFunctionImplementation(v: Value, methodName: String, parameters: java.util.List[Value]): Value = {
+            var result = Value.makeAbsent()
+
+            if (v.isJavaObject || v.isJSJavaTYPE) {
+                v.getObjectLabels.forEach(ol => {
+                    // val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
+                    val javaName = ol.getJavaName
+                    val objectType = ObjectType(javaName.replace(".", "/"))
+                    val classFile = project.classFile(objectType)
+
+                    var possibleMethods = Iterable.empty[Method]
+                    if (v.isJavaObject) {
+                        possibleMethods = project.instanceMethods(objectType)
+                            .filter(_.name == methodName).map(_.method)
+                    } else if (v.isJSJavaTYPE) {
+                        possibleMethods = project.allMethods.filter(_.classFile == classFile.orNull).
+                            filter(_.isStatic).filter(_.name == methodName)
+                    }
+
+                    implicit
+                    val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
+                        new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+
+                    possibleMethods.foreach(method => {
+
+                        val declaredMethod = declaredMethods(method)
+                        val context = typeIterator.newContext(declaredMethod)
+
+                        //Call Graph
+                        state.connectorResults += PartialResult[DeclaredMethod, Callers](declaredMethod, Callers.key, {
+                            case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
+                                Some(InterimEUBP(declaredMethod, ub.updatedWithUnknownContext()))
+
+                            case _: InterimEP[_, _] => None
+
+                            case _: EPK[_, _] =>
+                                Some(InterimEUBP(declaredMethod, OnlyCallersWithUnknownContext))
+
+                            case r =>
+                                throw new IllegalStateException(s"unexpected previous result $r")
+                        })
+
+                        // function parameters
+                        val fps = formalParameters(declaredMethod)
+                        var paramIndex = 0
+                        parameters.forEach(parameter => {
+                            var parameterPointsToSet = emptyPointsToSet
+                            if (parameter.isJavaObject) {
+                                parameter.getObjectLabels.forEach(ol =>
+                                    parameterPointsToSet = ol.getNode.asInstanceOf[JNode[PointsToSet, ContextType, IntTrieSet, TheTACAI]].getPointsToSet)
+                            } //TODO merge pointsto sets
+                            val paramType = declaredMethod.descriptor.parameterType(paramIndex)
+                            val fp = getFormalParameter(paramIndex + 1, fps, context)
+                            val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
+                            pointsToAnalysisState.includeSharedPointsToSet(
+                                fp,
+                                parameterPointsToSet,
+                                filter
+                            )
+                            paramIndex = paramIndex + 1
+                        })
+
+                        if (context.method.descriptor.returnType.isReferenceType) {
+
+                            val pointsToSet = currentPointsTo("callFunction", context, PointsToSetLike.noFilter)
+
+                            val v = java2js("returnValue", context, pointsToSet, null, None)
+                            result = v._2.join(result)
+                        }
+                    })
+
+                    val callFunctionDependeesMap =
+                        if (pointsToAnalysisState.hasDependees("callFunction"))
+                            pointsToAnalysisState.dependeesOf("callFunction")
+                        else
+                            Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+                    state.connectorDependees = state.connectorDependees ++ callFunctionDependeesMap.valuesIterator.map(_._1)
+                    state.connectorResults ++= createResults
+                })
+            }
+            result
+        }
+
+        object tajsAdapter extends TajsAdapter {
+
+            override def newObject(index: Integer, javaName: String): Value =
+                newObjectImplementation(index, javaName)
+
+
+            override def setProperty(v: Value, propertyName: String, rhsFieldValue: Value): Unit =
+                setPropertyImplementation(v, propertyName, rhsFieldValue)
+
+            override def readProperty(v: Value, propertyName: String): Value =
+                readPropertyImplementation(v,propertyName)
+
+            override def callFunction(v: Value, methodName: String, parameters: java.util.List[Value]): Value =
+                callFunctionImplementation(v, methodName, parameters)
         }
 
         def createResult(
