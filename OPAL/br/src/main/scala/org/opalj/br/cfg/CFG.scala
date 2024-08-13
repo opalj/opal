@@ -16,6 +16,7 @@ import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.Node
+import org.opalj.graphs.PostDominatorTree
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
@@ -553,6 +554,27 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         DominatorTree(
             0,
             basicBlocks.head.predecessors.nonEmpty,
+            foreachSuccessor,
+            foreachPredecessor,
+            basicBlocks.last.endPC
+        )
+    }
+
+    /**
+     * @return Returns the post dominator tree of this CFG.
+     *
+     * @see [[PostDominatorTree.apply]]
+     */
+    def postDominatorTree: PostDominatorTree = {
+        val exitNodes = Set.empty[Int] ++
+          normalReturnNode.predecessors.map(_.nodeId) ++
+          abnormalReturnNode.predecessors.map(_.nodeId)
+
+        PostDominatorTree(
+            if (exitNodes.size == 1) exitNodes.headOption else None,
+            exitNodes.contains,
+            IntTrieSet.empty,
+            exitNodes.foreach,
             foreachSuccessor,
             foreachPredecessor,
             basicBlocks.last.endPC
