@@ -550,7 +550,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *
      * @see [[DominatorTree.apply]]
      */
-    def dominatorTree: DominatorTree = {
+    lazy val dominatorTree: DominatorTree = {
         DominatorTree(
             0,
             basicBlocks.head.predecessors.nonEmpty,
@@ -565,7 +565,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *
      * @see [[PostDominatorTree.apply]]
      */
-    def postDominatorTree: PostDominatorTree = {
+    lazy val postDominatorTree: PostDominatorTree = {
         val exitNodes = Set.empty[Int] ++
           normalReturnNode.predecessors.map(_.nodeId) ++
           abnormalReturnNode.predecessors.map(_.nodeId)
