@@ -5,9 +5,6 @@ package fpcf
 package analyses
 package alias
 
-import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.analyses.L0BaseAIResultAnalysis
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.alias.MayAlias
 import org.opalj.br.fpcf.properties.alias.NoAlias
@@ -16,9 +13,6 @@ import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.graphs.DominatorTree
-import org.opalj.graphs.PostDominatorTree
-import org.opalj.log.LogContext
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -128,12 +122,6 @@ trait TacBasedAliasAnalysisState extends AliasAnalysisState {
     private[this] var _tacai1: Option[TACode[TACMethodParameter, V]] = None
     private[this] var _tacai2: Option[TACode[TACMethodParameter, V]] = None
 
-    private[this] var _dominatorTree1: Option[DominatorTree] = None
-    private[this] var _dominatorTree2: Option[DominatorTree] = None
-
-    private[this] var _postDominatorTree1: Option[PostDominatorTree] = None
-    private[this] var _postDominatorTree2: Option[PostDominatorTree] = None
-
     private[this] var _tacEPSToMethod: Map[SomeEPS, Method] = Map()
 
     /**
@@ -189,57 +177,6 @@ trait TacBasedAliasAnalysisState extends AliasAnalysisState {
      */
     def getMethodForTacEPS(eps: SomeEPS): Method = {
         _tacEPSToMethod(eps)
-    }
-
-    /**
-     * Returns the [[DominatorTree]] for the given method. It caches its results for future invocations to avoid
-     * multiple calculations of the same dominator tree.
-     */
-    def dominatorTree(m: Method)(implicit context: AliasAnalysisContext): DominatorTree = {
-
-        if (m.equals(context.element1.method)) {
-            _dominatorTree1.getOrElse({
-                val dominatorTree = _tacai1.get.cfg.dominatorTree
-                _dominatorTree1 = Some(dominatorTree)
-                dominatorTree
-            })
-        } else if (m.equals(context.element2.method)) {
-            _dominatorTree2.getOrElse({
-                val dominatorTree = _tacai2.get.cfg.dominatorTree
-                _dominatorTree2 = Some(dominatorTree)
-                dominatorTree
-            })
-        } else throw new IllegalArgumentException("Method not found")
-    }
-
-    /**
-     * Returns the [[PostDominatorTree]] for the given method. It caches its results for future invocations to avoid
-     * multiple calculations of the same post dominator tree.
-     */
-    def postDominatorTree(m: Method)(
-        implicit
-        context:    AliasAnalysisContext,
-        logContext: LogContext
-    ): PostDominatorTree = {
-
-        if (m.equals(context.element1.method)) {
-            _postDominatorTree1.getOrElse({
-                val aiResult =
-                    L0BaseAIResultAnalysis.performAI(m)(context.project.get(AIDomainFactoryKey), logContext)
-                val postDomTree = aiResult.domain.asInstanceOf[DefaultDomainWithCFGAndDefUse[_]].postDominatorTree
-                _postDominatorTree1 = Some(postDomTree)
-                postDomTree
-            })
-        } else if (m.equals(context.element2.method)) {
-            _postDominatorTree2.getOrElse({
-                val aiResult =
-                    L0BaseAIResultAnalysis.performAI(m)(context.project.get(AIDomainFactoryKey), logContext)
-                val postDomTree = aiResult.domain.asInstanceOf[DefaultDomainWithCFGAndDefUse[_]].postDominatorTree
-                _postDominatorTree2 = Some(postDomTree)
-                postDomTree
-            })
-        } else throw new IllegalArgumentException("Method not found")
-
     }
 
 }
