@@ -16,6 +16,7 @@ import dk.brics.tajs.Main
 import dk.brics.tajs.Main.run
 import dk.brics.tajs.flowgraph.jsnodes.JNode
 import dk.brics.tajs.lattice.Context
+import dk.brics.tajs.lattice.ObjectLabel
 import dk.brics.tajs.solver.BlockAndContext
 import org.opalj.xl.utility
 import org.opalj.xl.Coordinator
@@ -178,15 +179,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 v.getObjectLabels.forEach(ol => {
                     val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
 
-                    val javaName = ol.getJavaName
-                    val objectType = ObjectType(javaName.replace(".", "/"))
-                    val classFile = project.classFile(objectType)
-                    val possibleDeclaredFields = {
-                        if (classFile.isDefined)
-                            classFile.get.fields.find(_.name == propertyName).map(declaredFields(_)).toList
-                        else
-                            List.empty[DeclaredField]
-                    } //TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    val possibleDeclaredFields = getPossibleDeclaredFields(propertyName, ol, v)
 
                     //val context = jNode.getContext
                     val pointsToSet = if (jNode != null)
@@ -239,7 +232,9 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                     val javaName = ol.getJavaName
                     val objectType = ObjectType(javaName.replace(".", "/"))
                     val classFile = project.classFile(objectType)
-                    val possibleDeclaredFields = {
+                    val possibleDeclaredFields = getPossibleDeclaredFields(propertyName, ol, v)
+
+                    {
                         if (classFile.isDefined)
                             classFile.get.fields.filter(field => field.name == propertyName && field.isStatic).map(declaredFields(_)).toList
                         else
@@ -286,15 +281,8 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             if (v.isJavaObject) {
                 v.getObjectLabels.forEach(ol => {
                     val jNode = ol.getNode.asInstanceOf[JNode[ElementType, ContextType, IntTrieSet, TheTACAI]]
-                    val javaName = ol.getJavaName
-                    val objectType = ObjectType(javaName.replace(".", "/"))
-                    val classFile = project.classFile(objectType)
-                    var possibleDeclaredFields = List.empty[DeclaredField]
-                    try {
-                        possibleDeclaredFields = classFile.get.fields.filter(_.name == propertyName).map(declaredFields(_)).toList
-                    } catch {
-                        case _: Throwable => println(s"Error:::: JavaName: $javaName")
-                    }
+                    val possibleDeclaredFields = getPossibleDeclaredFields(propertyName, ol, v)
+
                     //val context = jNode.getContext
                     val tacai = jNode.getTacai
                     val baseValuePointsToSet = jNode.getPointsToSet.asInstanceOf[PointsToSet]
@@ -328,15 +316,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 })
             } else if (v.isJSJavaTYPE) {
                 v.getObjectLabels.forEach(ol => {
-                    val javaName = ol.getJavaName
-                    val objectType = ObjectType(javaName.replace(".", "/"))
-                    val classFile = project.classFile(objectType)
-                    val possibleDeclaredFields: List[DeclaredField] = {
-                        if (classFile.isDefined)
-                            classFile.get.fields.filter(field => field.name == propertyName && field.isStatic).map(declaredFields(_)).toList
-                        else
-                            List.empty[DeclaredField]
-                    }
+                    val possibleDeclaredFields = getPossibleDeclaredFields(propertyName, ol, v)
 
                     implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] = {
                         new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
@@ -559,6 +539,19 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 state.connectorDependees += ep
                 createResult(ScriptEngineInteraction[ContextType, PointsToSet](), Nil, None)
         }
+    }
+
+    private def getPossibleDeclaredFields(propertyName: String, ol: ObjectLabel[_], v: Value): List[DeclaredField] = {
+        val javaName = ol.getJavaName
+        val objectType = ObjectType(javaName.replace(".", "/"))
+        val classFile = project.classFile(objectType)
+        val possibleDeclaredFields = {
+            if (classFile.isDefined)
+                classFile.get.fields.filter(field => field.name == propertyName && (!v.isJSJavaTYPE || field.isStatic)).map(declaredFields(_)).toList
+            else
+                List.empty[DeclaredField]
+        }
+        possibleDeclaredFields
     }
 }
 
