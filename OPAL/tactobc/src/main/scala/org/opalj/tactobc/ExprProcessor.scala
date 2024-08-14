@@ -211,7 +211,6 @@ object ExprProcessor {
     }
     val instruction = if (expr.isInterface) {
       INVOKEINTERFACE(expr.declaringClass, expr.name, expr.descriptor)
-      throw new UnsupportedOperationException("Unsupported expression type" + expr)
     } else {
       INVOKESTATIC(expr.declaringClass, expr.isInterface, expr.name, expr.descriptor)
     }
@@ -232,8 +231,7 @@ object ExprProcessor {
       currentAfterParamsPC = ExprProcessor.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
     }
     val instruction = if (expr.isInterface) {
-      //INVOKEINTERFACE(expr.declaringClass, expr.name, expr.descriptor)
-      throw new UnsupportedOperationException("Unsupported expression type" + expr)
+      INVOKEINTERFACE(expr.declaringClass.asObjectType, expr.name, expr.descriptor)
     } else {
       INVOKEVIRTUAL(expr.declaringClass, expr.name, expr.descriptor)
     }
