@@ -4,7 +4,7 @@ package org.opalj.tactobc
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
 import org.opalj.br.{ArrayType, BootstrapMethod, ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FieldType, FloatType, IntegerType, LongType, MethodDescriptor, ObjectType, PCs, ReferenceType, ShortType}
-import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH, CHECKCAST, JSR}
+import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, CHECKCAST, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ACMPEQ, IF_ACMPNE, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, JSR, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH}
 import org.opalj.collection.immutable.{IntIntPair, IntTrieSet}
 import org.opalj.tac.{Expr, UVar, Var}
 import org.opalj.tactobc.ExprProcessor.inferElementType
@@ -289,14 +289,25 @@ object StmtProcessor {
   }
 
   def generateIfInstruction(left: Expr[_], condition: RelationalOperator, right: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int, rightPC: Int): Int = {
-    val instruction = (left, right) match {
-      case _ if right.isNullExpr || left.isNullExpr =>
+    val instruction = (left.cTpe, right.cTpe) match {
+      // Handle null comparisons
+      case (_, _) if right.isNullExpr || left.isNullExpr =>
         condition match {
           case EQ  => IFNULL(-1)
           case NE  => IFNONNULL(-1)
           case _ => throw new UnsupportedOperationException(s"Unsupported condition: $condition")
         }
-      case _ =>
+
+      // Handle reference comparisons (object references)
+      case (ComputationalTypeReference, ComputationalTypeReference) =>
+        condition match {
+          case EQ => IF_ACMPEQ(-1)
+          case NE => IF_ACMPNE(-1)
+          case _ => throw new UnsupportedOperationException(s"Unsupported condition: $condition")
+        }
+
+      // Handle integer comparisons
+      case (ComputationalTypeInt, ComputationalTypeInt) =>
         condition match {
           case EQ  => IF_ICMPEQ(-1)
           case NE  => IF_ICMPNE(-1)
@@ -306,19 +317,12 @@ object StmtProcessor {
           case GE  => IF_ICMPGE(-1)
           case _ => throw new UnsupportedOperationException(s"Unsupported condition: $condition")
         }
-          /*case EQ => IF_ACMPEQ(-1)
-          case NE  => IF_ACMPNE(-1)
-          //Unsupported
-          case _ => IFNE(-1)//throw new UnsupportedOperationException(s"Unsupported condition: $condition")*/
+
+      // Handle unsupported types
+      case _ => throw new UnsupportedOperationException(s"Unsupported types: left = ${left.cTpe}, right = ${right.cTpe}")
     }
-    val offsetPC = {
-      if(rightPC > 0 && rightPC > currentPC){
-        currentPC + (rightPC - currentPC)
-      } else {
-        currentPC
-      }
-    }
-    instructionsWithPCs += ((offsetPC, instruction))
-    offsetPC + instruction.length
+
+    instructionsWithPCs += ((rightPC, instruction))
+    rightPC + instruction.length
   }
 }

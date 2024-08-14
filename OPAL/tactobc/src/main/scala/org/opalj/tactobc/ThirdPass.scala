@@ -1,6 +1,6 @@
 package org.opalj.tactobc
 
-import org.opalj.br.instructions.{GOTO, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, Instruction, LOOKUPSWITCH, TABLESWITCH, JSR}
+import org.opalj.br.instructions.{GOTO, IF_ACMPEQ, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, IF_ACMPNE, Instruction, JSR, LOOKUPSWITCH, TABLESWITCH}
 import org.opalj.collection.immutable.{IntIntPair, IntTrieSet}
 import org.opalj.tac.{DUVar, Stmt}
 import org.opalj.value.ValueInformation
@@ -48,6 +48,16 @@ object ThirdPass {
           case IF_ICMPGE(-1) =>
             tacTargetToByteCodePcsIndex -= 1
             val instruction = IF_ICMPGE(updateBranchTargets(tacTargetToByteCodePcs, tacTargetToByteCodePcsIndex, pc))
+            tacTargetToByteCodePcsIndex += 1
+            instruction
+          case IF_ACMPEQ(-1) =>
+            tacTargetToByteCodePcsIndex -= 1
+            val instruction = IF_ACMPEQ(updateBranchTargets(tacTargetToByteCodePcs, tacTargetToByteCodePcsIndex, pc))
+            tacTargetToByteCodePcsIndex += 1
+            instruction
+          case IF_ACMPNE(-1) =>
+            tacTargetToByteCodePcsIndex -= 1
+            val instruction = IF_ACMPNE(updateBranchTargets(tacTargetToByteCodePcs, tacTargetToByteCodePcsIndex, pc))
             tacTargetToByteCodePcsIndex += 1
             instruction
           case GOTO(-1) =>
