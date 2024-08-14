@@ -218,16 +218,16 @@ lazy val `StaticAnalysisInfrastructure` = (project in file("OPAL/si"))
 
 lazy val bi = `BytecodeInfrastructure`
 lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
-  .settings(buildSettings: _*)
-  .settings(
-    name := "Bytecode Infrastructure",
-    libraryDependencies ++= Dependencies.bi,
-    Compile / doc / scalacOptions := Opts.doc.title("OPAL - Bytecode Infrastructure"),
-    // Test / publishArtifact := true, // Needed to get access to class TestResources
-    /*
-      The following settings relate to the java-fixture-compiler plugin, which
-      compiles the java fixture projects in the BytecodeInfrastructure project for testing.
-      For information about the java fixtures, see: OPAL/bi/src/test/fixtures-java/Readme.md
+    .settings(buildSettings: _*)
+    .settings(
+        name := "Bytecode Infrastructure",
+        libraryDependencies ++= Dependencies.bi,
+        Compile / doc / scalacOptions := Opts.doc.title("OPAL - Bytecode Infrastructure"),
+        // Test / publishArtifact := true, // Needed to get access to class TestResources
+        /*
+          The following settings relate to the java-fixture-compiler plugin, which
+          compiles the java fixture projects in the BytecodeInfrastructure project for testing.
+          For information about the java fixtures, see: OPAL/bi/src/test/fixtures-java/Readme.md
 
       The default settings for the fixture compilations are used.
       For details on the plugin and how to change its settings, see:
