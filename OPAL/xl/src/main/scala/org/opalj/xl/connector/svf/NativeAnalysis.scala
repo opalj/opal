@@ -8,8 +8,8 @@ import scala.collection.mutable.ListBuffer
 
 import svfjava.SVFAnalysisListener
 import svfjava.SVFModule
-
 import org.opalj.xl.logger.PointsToInteractionLogger
+
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -29,7 +29,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.NoContext
-import org.opalj.br.Fields
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -39,6 +38,7 @@ import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.br.DeclaredField
 
 abstract class NativeAnalysis(
                                final val project:            SomeProject,
@@ -74,25 +74,27 @@ abstract class NativeAnalysis(
           parameterPointsToSet.forNewestNTypes(parameterPointsToSet.numElements) {
             tpe =>
               if (tpe.isObjectType) {
-                val ot = tpe.asObjectType
-                  objectTypeOptional = Some(ot)
-                if (project.instanceMethods.contains(ot)) {
-                  possibleMethods ++= project.instanceMethods(ot).filter(_.name == methodName).map(_.method)
+                val objectType = tpe.asObjectType
+                  objectTypeOptional = Some(objectType)
+                if (project.instanceMethods.contains(objectType)) {
+                  possibleMethods ++= project.instanceMethods(objectType).
+                      filter(_.name == methodName).map(_.method)
                 }
               }
           }
         }
           val resultListBuffer: ListBuffer[Long] = new ListBuffer[Long]
-        objectTypeOptional.foreach(objectType =>
-        {
+        objectTypeOptional.foreach(objectType => {
         if (possibleMethods.isEmpty) {
-          possibleMethods ++= project.allMethods.filter(method => method.name.equals(methodName) && method.signature.descriptor.toJVMDescriptor.equals(methodSignature))
+          possibleMethods ++= project.allMethods.filter(
+              method => method.name.equals(methodName) &&
+                  method.signature.descriptor.toJVMDescriptor.equals(methodSignature)
+          )
         }
 
-        if (!project.instanceMethods.contains(objectType)) {
-          //throw new RuntimeException("unknown method; "+className)
+        if (!project.instanceMethods.contains(objectType))
           return Array()
-        }
+
         possibleMethods = project.instanceMethods(objectType).filter(_.name == methodName).map(_.method)
 
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
@@ -100,7 +102,6 @@ abstract class NativeAnalysis(
 
 
         possibleMethods.foreach(method => {
-            println(s"method: $method")
           val declaredMethod = declaredMethods(method)
           val context = typeIterator.newContext(declaredMethod)
 
@@ -131,14 +132,15 @@ abstract class NativeAnalysis(
             )
           }
 
-          for (argPTS <- argsPTSs) {
+          for (argumentPointsToSet <- argsPTSs) {
             val paramType = declaredMethod.descriptor.parameterType(paramIndex)
-            val fp = getFormalParameter(paramIndex + 1, fps, context)
+            val formalParameter = getFormalParameter(paramIndex + 1, fps, context)
             val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
-            for (ptElement <- argPTS) {
-              val parameterPointsToSet = svfConnectorState.javaJNITranslator.getPTS(ptElement)
+
+            for (pointsToElement <- argumentPointsToSet) {
+              val parameterPointsToSet = svfConnectorState.javaJNITranslator.getPTS(pointsToElement)
               pointsToAnalysisState.includeSharedPointsToSet(
-                fp,
+                  formalParameter,
                 parameterPointsToSet,
                 filter
               )
@@ -172,7 +174,12 @@ abstract class NativeAnalysis(
 
       override def jniNewObject(className: String, context: String): Long = {
 
-        val referenceType = ObjectType(if (className.startsWith("L") && className.endsWith(";")) className.replace(";", "").substring(1) else className)
+        val referenceType = ObjectType(
+            if (className.startsWith("L") && className.endsWith(";"))
+                className.replace(";", "").substring(1)
+            else
+                className
+        )
 
         val newPointsToSet = createPointsToSet(
           svfConnectorState.n,
@@ -198,9 +205,7 @@ abstract class NativeAnalysis(
 
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
           new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
-        //val filter = getFilter(pc, checkForCast)
-        //val defSiteObject = getDefSite(svfConnectorState.pc)
-        //pointsToAnalysisState.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
+
         var result: List[Long] = List.empty
 
         for (l <- baseLongArray) {
@@ -219,9 +224,9 @@ abstract class NativeAnalysis(
             val classFile = project.classFile(objectType)
             val possibleFields = {
               if (classFile.isDefined)
-                classFile.get.fields.filter(_.name == fieldName).toList
+                classFile.get.fields.filter(_.name == fieldName).map(declaredFields(_)).toList
               else
-                List.empty[Fields]
+                List.empty[DeclaredField]
             }
 
             possibleFields.foreach(field => {
@@ -282,17 +287,17 @@ abstract class NativeAnalysis(
           if (tpe.isDefined) {
             val objectType = tpe.get
             val classFile = project.classFile(objectType)
-            val possibleFields = {
+            val possibleDeclardFields = {
               if (classFile.isDefined)
-                classFile.get.fields.filter(_.name == fieldName).toList
+                classFile.get.fields.filter(_.name == fieldName).map(declaredFields(_)).toList
               else
-                List.empty[Fields]
+                List.empty[DeclaredField]
             }
-            possibleFields.foreach(field => {
+              possibleDeclardFields.foreach(declaredField => {
               baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
                 val tpe = getTypeOf(as)
                 if (tpe.isObjectType) {
-                  Iterator((as, field)).foreach(fieldEntity => {
+                  Iterator((as, declaredField)).foreach(fieldEntity => {
                     pointsToAnalysisState.includeSharedPointsToSet(
                       fieldEntity,
                       rhsPointsToSet,
@@ -304,6 +309,7 @@ abstract class NativeAnalysis(
             })
           }
         }
+
         val setPropertyDependeesMap = if (pointsToAnalysisState.hasDependees("writeField"))
           pointsToAnalysisState.dependeesOf("writeField")
         else
@@ -316,9 +322,7 @@ abstract class NativeAnalysis(
       override def getArrayElement(baseLongArray: Array[Long]): Array[Long] = {
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
           new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
-        //val filter = getFilter(pc, checkForCast)
-        //val defSiteObject = getDefSite(svfConnectorState.pc)
-        //pointsToAnalysisState.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
+
         var result: List[Long] = List.empty
 
         for (l <- baseLongArray) {
@@ -337,15 +341,15 @@ abstract class NativeAnalysis(
                 result = element.asInstanceOf[Long] :: result
               }
             }
-            val readFieldDependeesMap = if (pointsToAnalysisState.hasDependees("getArrayElement"))
-              pointsToAnalysisState.dependeesOf("getArrayElement")
-            else
-              Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+            val readFieldDependeesMap =
+                if (pointsToAnalysisState.hasDependees("getArrayElement"))
+                    pointsToAnalysisState.dependeesOf("getArrayElement")
+                else
+                    Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
             svfConnectorState.connectorDependees = svfConnectorState.connectorDependees ++
               readFieldDependeesMap.valuesIterator.map(_._1)
           }
-
           }
 
           svfConnectorState.connectorResults ++= createResults
@@ -387,15 +391,18 @@ abstract class NativeAnalysis(
           pointsToAnalysisState.dependeesOf(formalParameter)
         else
           Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
       svfConnectorState.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-      if (formalParameter.origin != -1) {
+
+      if (formalParameter.origin != -1)
         outerResultListBuffer.addOne(innerResultListBuffer.toArray)
-      }
     }
 
     val parameterPointsToSets = outerResultListBuffer.toArray
 
-    val javaFunctionFullName = ("Java/"+javaDeclaredMethod.declaringClassType.fqn.replace("_", "_1")+"/"+javaDeclaredMethod.name).replace("/", "_")
+    val javaFunctionFullName =
+        ("Java/"+javaDeclaredMethod.declaringClassType.fqn.replace("_", "_1")+
+            "/"+javaDeclaredMethod.name).replace("/", "_")
 
     var functionSelection = functions.filter(_.equals(javaFunctionFullName))
     if (functionSelection.isEmpty) {
