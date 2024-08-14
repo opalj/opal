@@ -62,5 +62,22 @@ public class If {
         if (d == 12) {
             System.out.println("After the loop, d is now 12");
         }
+
+        // Object comparison using == (reference comparison)
+        String str1 = "Hello";
+        String str2 = "Hello";
+
+        if (str1 == str2) {
+            System.out.println("str1 == str2: Both references are the same");
+        }
+
+        String s1 = new String("test");
+        String s2 = new String("test");
+
+        if (s1.equals(s2)) {
+            System.out.println("Equal strings");
+        } else {
+            System.out.println("Not equal strings");
+        }
     }
 }
