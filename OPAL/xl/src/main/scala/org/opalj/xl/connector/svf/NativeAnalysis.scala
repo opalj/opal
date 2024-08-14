@@ -6,10 +6,10 @@ package svf
 
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.xl.logger.PointsToInteractionLogger
 import svfjava.SVFAnalysisListener
 import svfjava.SVFModule
 
+import org.opalj.xl.logger.PointsToInteractionLogger
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -55,29 +55,25 @@ abstract class NativeAnalysis(
                                 var connectorDependees: Set[EOptionP[Entity, Property]]      = Set.empty,
                                 var connectorResults:   Set[ProperPropertyComputationResult] = Set.empty[ProperPropertyComputationResult],
                                 var javaJNITranslator:  SVFTranslator[PointsToSet]           = new SVFTranslator[PointsToSet]()
-                            //    var oldEPS:             SomeEPS                              = null
                               ) extends BaseAnalysisState with TypeIteratorState
 
 
   def runSVF(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized{
-    println("run SVF")
+
     implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
       new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
-
-    println("run SVF")
 
     val listener = new SVFAnalysisListener() {
 
       override def nativeToJavaCallDetected(basePTS: Array[Long], className: String, methodName: String, methodSignature: String, argsPTSs: Array[Array[Long]]): Array[Long] = {
-
-        var possibleMethods = Iterable.empty[Method]
+          var possibleMethods = Iterable.empty[Method]
           var objectTypeOptional: Option[ObjectType] = None
-        for (ptElement <- basePTS) {
+
+          for (ptElement <- basePTS) {
           val parameterPointsToSet = svfConnectorState.javaJNITranslator.getPTS(ptElement)
           parameterPointsToSet.forNewestNTypes(parameterPointsToSet.numElements) {
             tpe =>
               if (tpe.isObjectType) {
-
                 val ot = tpe.asObjectType
                   objectTypeOptional = Some(ot)
                 if (project.instanceMethods.contains(ot)) {
@@ -223,7 +219,7 @@ abstract class NativeAnalysis(
             val classFile = project.classFile(objectType)
             val possibleFields = {
               if (classFile.isDefined)
-                classFile.get.fields.find(_.name == fieldName).toList
+                classFile.get.fields.filter(_.name == fieldName).toList
               else
                 List.empty[Fields]
             }
@@ -288,7 +284,7 @@ abstract class NativeAnalysis(
             val classFile = project.classFile(objectType)
             val possibleFields = {
               if (classFile.isDefined)
-                classFile.get.fields.find(_.name == fieldName).toList
+                classFile.get.fields.filter(_.name == fieldName).toList
               else
                 List.empty[Fields]
             }
@@ -358,7 +354,7 @@ abstract class NativeAnalysis(
       }
 
       override def setArrayElement(longs: Array[Long], longs1: Array[Long]): Unit = {
-
+          //TODO
       }
     }
 
@@ -366,22 +362,20 @@ abstract class NativeAnalysis(
 
     val javaDeclaredMethod = svfConnectorState.calleeContext.method
 
-    val fps = formalParameters(javaDeclaredMethod)
-
     val outerResultListBuffer = new ListBuffer[Array[Long]]
 
     var basePTS = Set.empty[Long]
     for {
-      fp <- fps
-      if fp != null
+        formalParameter <- formalParameters(javaDeclaredMethod)
+        if formalParameter != null
     } {
       val innerResultListBuffer: ListBuffer[Long] = new ListBuffer[Long]
 
-      val pointsToSet = currentPointsTo(fp, fp, PointsToSetLike.noFilter)
+      val pointsToSet = currentPointsTo(formalParameter, formalParameter, PointsToSetLike.noFilter)
 
       pointsToSet.forNewestNElements(pointsToSet.numElements) { allocation =>
         svfConnectorState.javaJNITranslator.addPTS(allocation.asInstanceOf[Long], pointsToSet)
-        if (fp.origin == -1) {
+        if (formalParameter.origin == -1) {
           basePTS += allocation.asInstanceOf[Long]
         } else {
           innerResultListBuffer.addOne(allocation.asInstanceOf[Long])
@@ -389,12 +383,12 @@ abstract class NativeAnalysis(
       }
 
       val setPropertyDependeesMap =
-        if (pointsToAnalysisState.hasDependees(fp))
-          pointsToAnalysisState.dependeesOf(fp)
+        if (pointsToAnalysisState.hasDependees(formalParameter))
+          pointsToAnalysisState.dependeesOf(formalParameter)
         else
           Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
       svfConnectorState.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-      if (fp.origin != -1) {
+      if (formalParameter.origin != -1) {
         outerResultListBuffer.addOne(innerResultListBuffer.toArray)
       }
     }
@@ -446,7 +440,6 @@ abstract class NativeAnalysis(
     eps match {
       case UBP(_: PointsToSet @unchecked) =>
         svfConnectorState.connectorDependees += eps
-       // svfConnectorState.oldEPS = eps
           svfjava.SVFJava.init()
         runSVF(svfConnectorState)
 
