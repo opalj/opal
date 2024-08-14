@@ -2,7 +2,7 @@ package org.opalj.tactobc
 
 import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, Checkcast, Compare, DUVar, Expr, ExprStmt, GetField, If, InvokedynamicFunctionCall, NewArray, NonVirtualMethodCall, PrefixExpr, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, StaticFunctionCall, StaticMethodCall, Stmt, Switch, Throw, UVar, VirtualFunctionCall, VirtualMethodCall}
+import org.opalj.tac.{ArrayLength, ArrayLoad, ArrayStore, Assignment, BinaryExpr, Checkcast, Compare, DUVar, Expr, ExprStmt, GetField, If, InstanceOf, InvokedynamicFunctionCall, NewArray, NonVirtualMethodCall, PrefixExpr, PrimitiveTypecastExpr, PutField, PutStatic, ReturnValue, StaticFunctionCall, StaticMethodCall, Stmt, Switch, Throw, UVar, VirtualFunctionCall, VirtualMethodCall}
 import org.opalj.tactobc.ExprProcessor.{nextLVIndex, uVarToLVIndex}
 import org.opalj.value.ValueInformation
 
@@ -208,8 +208,13 @@ object FirstPass {
       case getField: GetField[_] =>  collectDUVarFromGetField(getField, duVars)
       case compare: Compare[_] => collectDUVarFromCompare(compare, duVars)
       case prefixExpr: PrefixExpr[_] => collectDUVarFromPrefixExpr(prefixExpr, duVars)
+      case instanceOf: InstanceOf[_] => collectDUVarFromInstanceOf(instanceOf, duVars)
       case _ =>
     }
+  }
+
+  def collectDUVarFromInstanceOf(instanceOf: InstanceOf[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    collectDUVarFromExpr(instanceOf.value, duVars)
   }
 
   def collectDUVarFromPrefixExpr(prefixExpr: PrefixExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
