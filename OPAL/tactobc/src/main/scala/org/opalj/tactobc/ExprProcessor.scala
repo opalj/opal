@@ -431,7 +431,6 @@ object ExprProcessor {
       case (ComputationalTypeDouble, Multiply) => (DMUL, DMUL.length)
       case (ComputationalTypeDouble, Divide) => (DDIV, DDIV.length)
       case (ComputationalTypeDouble, Modulo) => (DREM, DREM.length)
-      //Todo figure out where and how to do with Negate
       //Float
       case (ComputationalTypeFloat, Add) => (FADD, FADD.length)
       case (ComputationalTypeFloat, Subtract) => (FSUB, FSUB.length)
