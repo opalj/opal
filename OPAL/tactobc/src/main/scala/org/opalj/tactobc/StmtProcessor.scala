@@ -4,7 +4,7 @@ package org.opalj.tactobc
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
 import org.opalj.br.{ArrayType, BootstrapMethod, ByteType, CharType, ComputationalTypeDouble, ComputationalTypeFloat, ComputationalTypeInt, ComputationalTypeLong, ComputationalTypeReference, DoubleType, FieldType, FloatType, IntegerType, LongType, MethodDescriptor, ObjectType, PCs, ReferenceType, ShortType}
-import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, CHECKCAST, DASTORE, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ACMPEQ, IF_ACMPNE, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, JSR, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH}
+import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, CHECKCAST, DASTORE, DEFAULT_INVOKEDYNAMIC, DRETURN, FASTORE, FRETURN, GOTO, IASTORE, IFNONNULL, IFNULL, IF_ACMPEQ, IF_ACMPNE, IF_ICMPEQ, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ICMPLT, IF_ICMPNE, INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, Instruction, JSR, LASTORE, LOOKUPSWITCH, LRETURN, MONITORENTER, MONITOREXIT, NOP, PUTFIELD, PUTSTATIC, RET, RETURN, SASTORE, TABLESWITCH}
 import org.opalj.collection.immutable.{IntIntPair, IntTrieSet}
 import org.opalj.tac.{Expr, UVar, Var}
 import org.opalj.tactobc.ExprProcessor.inferElementType
@@ -165,9 +165,14 @@ object StmtProcessor {
     currentPC + instruction.length
   }
 
-  def processInvokeDynamicMethodCall(bootstrapMethod: BootstrapMethod, name: String, descriptor: MethodDescriptor, params: Seq[Expr[_]]): Int = {
-    //todo: handle this correctly
-    1
+  def processInvokeDynamicMethodCall(bootstrapMethod: BootstrapMethod, name: String, descriptor: MethodDescriptor, params: Seq[Expr[_]], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
+    var currentAfterParamsPC = currentPC
+    for (param <- params) {
+      currentAfterParamsPC = ExprProcessor.processExpression(param, instructionsWithPCs, currentAfterParamsPC)
+    }
+    val invokeDynamicInstruction = DEFAULT_INVOKEDYNAMIC(bootstrapMethod, name, descriptor)
+    instructionsWithPCs += ((currentAfterParamsPC, invokeDynamicInstruction))
+    currentAfterParamsPC + invokeDynamicInstruction.length
   }
 
   def processCheckCast(value: Expr[_], cmpTpe: ReferenceType, instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
@@ -230,6 +235,7 @@ object StmtProcessor {
     instructionsWithPCs += ((pcAfterObjRefLoad, instruction))
     pcAfterObjRefLoad + instruction.length
   }
+
   def processMonitorExit(objRef: Expr[_], instructionsWithPCs: ArrayBuffer[(Int, Instruction)], currentPC: Int): Int = {
     // Load the object reference onto the stack
     val pcAfterObjRefLoad = ExprProcessor.processExpression(objRef, instructionsWithPCs, currentPC)

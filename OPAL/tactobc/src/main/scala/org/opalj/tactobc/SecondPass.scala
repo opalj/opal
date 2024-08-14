@@ -74,7 +74,7 @@ object SecondPass {
           currentPC = StmtProcessor.processStaticMethodCall(declaringClass, isInterface, name, descriptor, params, generatedByteCodeWithPC, currentPC)
         case InvokedynamicMethodCall(_, bootstrapMethod, name, descriptor, params) =>
           tacTargetToByteCodePcs += ((-1, currentPC))
-          currentPC = StmtProcessor.processInvokeDynamicMethodCall(bootstrapMethod, name, descriptor, params)
+          currentPC = StmtProcessor.processInvokeDynamicMethodCall(bootstrapMethod, name, descriptor, params, generatedByteCodeWithPC, currentPC)
         case MonitorEnter(_, objRef) =>
           tacTargetToByteCodePcs += ((-1, currentPC))
           currentPC = StmtProcessor.processMonitorEnter(objRef, generatedByteCodeWithPC, currentPC)
