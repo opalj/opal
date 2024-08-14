@@ -22,7 +22,8 @@ object SingleClassFileTestCaseEnum extends Enumeration {
     TestCase("WhileLoop.java", "WhileLoop.class"),
     TestCase("CheckCast.java", "CheckCast.class"),
     TestCase("Compare.java", "Compare.class"),
-    TestCase("Jsr.java", "Jsr.class")
+    TestCase("Jsr.java", "Jsr.class"),
+    TestCase("Constants.java", "Constants.class")
   )
 
   // Case class to represent each test case

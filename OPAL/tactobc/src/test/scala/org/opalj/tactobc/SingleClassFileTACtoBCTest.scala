@@ -1,6 +1,7 @@
 package org.opalj.tactobc
 
 import org.opalj.br.analyses.Project
+import org.opalj.tactobc.TACtoBC.compileByteCode
 import org.opalj.util.InMemoryClassLoader
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -31,6 +32,9 @@ class SingleClassFileTACtoBCTest extends AnyFunSpec with Matchers {
 
         // Create the OPAL project from the original class file
         val project = Project(originalClassFile)
+
+        //(1) compile bytecode
+        compileByteCode(originalClassFile)
 
         // Compile the TAC from the original class file
         val tacs = TACtoBC.compileTAC(originalClassFile)
