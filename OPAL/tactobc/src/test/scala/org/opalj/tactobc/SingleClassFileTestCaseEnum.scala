@@ -23,7 +23,8 @@ object SingleClassFileTestCaseEnum extends Enumeration {
     TestCase("CheckCast.java", "CheckCast.class"),
     TestCase("Compare.java", "Compare.class"),
     TestCase("Jsr.java", "Jsr.class"),
-    TestCase("Constants.java", "Constants.class")
+    TestCase("Constants.java", "Constants.class"),
+    TestCase("Negation.java", "Negation.class")
   )
 
   // Case class to represent each test case
