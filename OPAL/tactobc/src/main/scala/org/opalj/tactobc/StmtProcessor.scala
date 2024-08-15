@@ -35,7 +35,7 @@ object StmtProcessor {
       // Add LOOKUPSWITCH instruction with placeholders for targets
       val lookupswitchInstruction = LOOKUPSWITCH(defaultOffset, bCnpairs)
       instructionsWithPCs += ((afterExprPC, lookupswitchInstruction))
-      afterExprPC + lookupSwitchLength(bCnpairs.size, afterExprPC)
+      afterExprPC + lookupSwitchLength(bCnpairs.size, afterExprPC) - 1
     } else {
       // Add TABLESWITCH instruction with placeholders for targets
       val minValue = bCnpairs.minBy(_._1)._1
@@ -49,7 +49,7 @@ object StmtProcessor {
 
       val tableswitchInstruction = TABLESWITCH(defaultOffset, minValue, maxValue, jumpTable.to(ArraySeq))
       instructionsWithPCs += ((afterExprPC, tableswitchInstruction))
-      afterExprPC + tableSwitchLength(minValue, maxValue, afterExprPC)
+      afterExprPC + tableSwitchLength(minValue, maxValue, afterExprPC) - 1
     }
   }
 

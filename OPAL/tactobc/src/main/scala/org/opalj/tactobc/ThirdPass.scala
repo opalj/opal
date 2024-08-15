@@ -67,16 +67,16 @@ object ThirdPass {
           case LOOKUPSWITCH(defaultOffset, matchOffsets) =>
             val updatedMatchOffsets = matchOffsets.map { case IntIntPair(caseValue, _) =>
               val tacTarget = findTacTarget(switchCases, caseValue)
-              IntIntPair(caseValue, updateSwitchTargets(tacTargetToByteCodePcs, tacTarget))
+              IntIntPair(caseValue, updateSwitchTargets(tacTargetToByteCodePcs, tacTarget, pc))
             }
-            val updatedDefaultOffset = updateSwitchTargets(tacTargetToByteCodePcs, defaultOffset)
+            val updatedDefaultOffset = updateSwitchTargets(tacTargetToByteCodePcs, defaultOffset, pc)
             LOOKUPSWITCH(updatedDefaultOffset, updatedMatchOffsets)
           case TABLESWITCH(defaultOffset, low, high, jumpOffsets) =>
             val updatedJumpOffsets = jumpOffsets.zipWithIndex.map { case (_, index) =>
               val tacTarget = findTacTarget(switchCases, index)
-              updateSwitchTargets(tacTargetToByteCodePcs, tacTarget)
+              updateSwitchTargets(tacTargetToByteCodePcs, tacTarget, pc)
             }
-            val updatedDefaultOffset = updateSwitchTargets(tacTargetToByteCodePcs, defaultOffset)
+            val updatedDefaultOffset = updateSwitchTargets(tacTargetToByteCodePcs, defaultOffset, pc)
             TABLESWITCH(updatedDefaultOffset, low, high, updatedJumpOffsets.to(ArraySeq))
           case _ =>
             instruction
@@ -104,8 +104,8 @@ object ThirdPass {
     byteCodeTarget
   }
 
-  def updateSwitchTargets(tacTargetToByteCodePcs: ArrayBuffer[(Int, Int)], tacTarget: Int): Int = {
-    val byteCodeTarget = tacTargetToByteCodePcs(tacTarget)._2
+  def updateSwitchTargets(tacTargetToByteCodePcs: ArrayBuffer[(Int, Int)], tacTarget: Int, currentPC: Int): Int = {
+    val byteCodeTarget = tacTargetToByteCodePcs(tacTarget)._2 - currentPC
     byteCodeTarget
   }
 
