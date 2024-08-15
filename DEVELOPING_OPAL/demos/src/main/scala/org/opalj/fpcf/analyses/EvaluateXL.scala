@@ -34,6 +34,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
 import org.opalj.xl.connector.AllocationSiteBasedTriggeredTajsConnectorScheduler
 import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
+import org.opalj.xl.javaanalyses.detector.scriptengine.AllocationSiteBasedScriptEngineDetectorScheduler
 
 class Method(val methodId: Int, val signature: String) {
   val pcToInstances: mutable.Map[Int, Set[Instance]] = mutable.Map.empty[Int, Set[Instance]].withDefaultValue(Set.empty[Instance])
