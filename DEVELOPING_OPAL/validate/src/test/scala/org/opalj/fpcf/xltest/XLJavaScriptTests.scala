@@ -107,14 +107,13 @@ class MyCustomReporter extends Reporter {
         println(s"\\newcommand{\\overalltests}{\\tnum{$totalsucceeded}}")
         println(s"\\newcommand{\\testcasecount}{\\tnum{$total}}")
 
-
         val tableData = List(
-            List("Category", "Failed", "Succeeded", "Total"),
-            List("Overall", (total - totalsucceeded).toString, totalsucceeded.toString, total.toString)
+            List("Category", "Passed / Test"),
+            List("Overall", s"$totalsucceeded / $total")
         ) ++ sucdfaild.map { case (category, (succeededTests, failedTests)) =>
-            val failedCount = failedTests.size
             val succeededCount = succeededTests.size
-            List(category, failedCount.toString, succeededCount.toString, (failedCount + succeededCount).toString)
+            val totalCount = succeededCount + failedTests.size
+            List(category, s"$succeededCount / $totalCount")
         }
 
         printAsciiTable(tableData)
