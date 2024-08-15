@@ -107,14 +107,21 @@ class MyCustomReporter extends Reporter {
         println(s"\\newcommand{\\overalltests}{\\tnum{$totalsucceeded}}")
         println(s"\\newcommand{\\testcasecount}{\\tnum{$total}}")
 
-        val tableData = List(
-            List("Category", "Passed / Test"),
-            List("Overall", s"$totalsucceeded / $total")
-        ) ++ sucdfaild.map { case (category, (succeededTests, failedTests)) =>
+
+        // Prepare table data
+        val categoryData = sucdfaild.map { case (category, (succeededTests, failedTests)) =>
             val succeededCount = succeededTests.size
             val totalCount = succeededCount + failedTests.size
             List(category, s"$succeededCount / $totalCount")
         }
+
+        val tableData = List(
+            List("Category", "Passed / Total"),
+            List.empty[String]  // Empty line for special header separator
+        ) ++ categoryData ++ List(
+            List.empty[String],  // Empty line for special overall separator
+            List("Overall", s"$totalsucceeded / $total")
+        )
 
         printAsciiTable(tableData)
     }
@@ -122,24 +129,23 @@ class MyCustomReporter extends Reporter {
     def printAsciiTable(data: List[List[String]]): Unit = {
         if (data.isEmpty || data.head.isEmpty) return
 
-        // Find the maximum width for each column
-        val colWidths = data.transpose.map(col => col.map(_.length).max)
+        val colWidths = data.filter(_.nonEmpty).transpose.map(col => col.map(_.length).max)
 
-        // Create the horizontal line
-        val horizontalLine = "+" + colWidths.map(w => "-" * (w + 2)).mkString("+") + "+"
+        def horizontalLine(char: Char) =
+            "+" + colWidths.map(w => char.toString * (w + 2)).mkString("+") + "+"
 
-        // Function to create a row
         def createRow(row: List[String]): String =
-            "|" + row.zip(colWidths).map { case (cell, width) =>
+            if (row.isEmpty) horizontalLine('=')
+            else "|" + row.zip(colWidths).map { case (cell, width) =>
                 s" ${cell.padTo(width, ' ')} "
             }.mkString("|") + "|"
 
-        // Print the table
-        println(horizontalLine)
-        println(createRow(data.head))
-        println(horizontalLine)
-        data.tail.foreach(row => println(createRow(row)))
-        println(horizontalLine)
+        println(horizontalLine('-'))
+        data.zipWithIndex.foreach { case (row, index) =>
+            println(createRow(row))
+            if (index == 0 || index == data.length - 2) println(horizontalLine('='))
+            else if (row.nonEmpty) println(horizontalLine('-'))
+        }
     }
 
 }
