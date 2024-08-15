@@ -135,17 +135,14 @@ class MyCustomReporter extends Reporter {
             "+" + colWidths.map(w => char.toString * (w + 2)).mkString("+") + "+"
 
         def createRow(row: List[String]): String =
-            if (row.isEmpty) horizontalLine('=')
+            if (row.isEmpty) horizontalLine('-')
             else "|" + row.zip(colWidths).map { case (cell, width) =>
                 s" ${cell.padTo(width, ' ')} "
             }.mkString("|") + "|"
 
         println(horizontalLine('-'))
-        data.zipWithIndex.foreach { case (row, index) =>
-            println(createRow(row))
-            if (index == 0 || index == data.length - 2) println(horizontalLine('='))
-            else if (row.nonEmpty) println(horizontalLine('-'))
-        }
+        data.foreach(row => println(createRow(row)))
+        println(horizontalLine('-'))
     }
 
 }
