@@ -107,6 +107,39 @@ class MyCustomReporter extends Reporter {
         println(s"\\newcommand{\\overalltests}{\\tnum{$totalsucceeded}}")
         println(s"\\newcommand{\\testcasecount}{\\tnum{$total}}")
 
+        val tableData = List(
+            List("Category", "Passed / Test"),
+            List("Overall", s"$totalsucceeded / $total")
+        ) ++ sucdfaild.map { case (category, (succeededTests, failedTests)) =>
+            val succeededCount = succeededTests.size
+            val totalCount = succeededCount + failedTests.size
+            List(category, s"$succeededCount / $totalCount")
+        }
+
+        printAsciiTable(tableData)
+    }
+
+    def printAsciiTable(data: List[List[String]]): Unit = {
+        if (data.isEmpty || data.head.isEmpty) return
+
+        // Find the maximum width for each column
+        val colWidths = data.transpose.map(col => col.map(_.length).max)
+
+        // Create the horizontal line
+        val horizontalLine = "+" + colWidths.map(w => "-" * (w + 2)).mkString("+") + "+"
+
+        // Function to create a row
+        def createRow(row: List[String]): String =
+            "|" + row.zip(colWidths).map { case (cell, width) =>
+                s" ${cell.padTo(width, ' ')} "
+            }.mkString("|") + "|"
+
+        // Print the table
+        println(horizontalLine)
+        println(createRow(data.head))
+        println(horizontalLine)
+        data.tail.foreach(row => println(createRow(row)))
+        println(horizontalLine)
     }
 
 }
