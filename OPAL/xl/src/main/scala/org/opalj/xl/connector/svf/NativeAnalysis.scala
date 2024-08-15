@@ -59,7 +59,9 @@ abstract class NativeAnalysis(
 
 
   def runSVF(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized{
-
+    if (svfConnectorState.svfModuleName == null || svfConnectorState.svfModuleName.isEmpty) {
+      throw new RuntimeException("LLVM_LIB_PATH not set. Please specify the .bc module to analyze. ")
+    }
     implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
       new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
 
