@@ -106,13 +106,33 @@ class MyCustomReporter extends Reporter {
         }
         println(s"\\newcommand{\\overalltests}{\\tnum{$totalsucceeded}}")
         println(s"\\newcommand{\\testcasecount}{\\tnum{$total}}")
+        // Mapping of original labels to new labels
+        val labelMap = Map(
+            "controlflowunidirectional" -> "Unidirectional Execution",
+            "controlflowinterleaved" -> "Interleaved Execution",
+            "controlflowcyclic" -> "Mutual Recursion",
+            "stateaccessunidirectional" -> "Unidirectional State Access",
+            "stateaccessbidirectional" -> "Bidirectional State Access"
+        )
 
+        // Desired order using original labels
+        val desiredOrder = List(
+            "controlflowunidirectional",
+            "controlflowinterleaved",
+            "controlflowcyclic",
+            "stateaccessunidirectional",
+            "stateaccessbidirectional"
+        )
 
-        // Prepare table data
-        val categoryData = sucdfaild.map { case (category, (succeededTests, failedTests)) =>
-            val succeededCount = succeededTests.size
-            val totalCount = succeededCount + failedTests.size
-            List(category, s"$succeededCount / $totalCount")
+        // Prepare table data with new labels and order
+        val categoryData = desiredOrder.flatMap { originalLabel =>
+            sucdfaild.find(_._1 == originalLabel).map {
+                case (_, (succeededTests, failedTests)) =>
+                    val succeededCount = succeededTests.size
+                    val totalCount = succeededCount + failedTests.size
+                    val newLabel = labelMap.getOrElse(originalLabel, originalLabel)
+                    List(newLabel, s"$succeededCount / $totalCount")
+            }
         }
 
         val tableData = List(
