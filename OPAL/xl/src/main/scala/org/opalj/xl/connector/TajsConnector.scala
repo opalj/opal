@@ -109,7 +109,7 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                 possibleEmptyCode
 
 
-        def c(oldTAJSanalyses:            List[Analysis])
+        def c(oldTAJSanalyses: List[Analysis])
              (eps: SomeEPS)(implicit state: TajsConnectorState): ProperPropertyComputationResult = {
 
             state.connectorDependees = state.connectorDependees.filter(dependee => dependee.e != eps.e)
