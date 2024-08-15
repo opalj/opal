@@ -34,6 +34,7 @@ object PTSTracerInstrumentation {
             println("\t3: classes to instrument prefix e.g org/opalj/fpcf/fixtures/xl/js")
             return ;
         }
+        println("Looking for native library " + System.mapLibraryName("native") + " in library search path " + System.getenv("java.library.path"))
         val inputClassPath = args(0)
         val outputClassPath = args(1)
         val prefix = args(2)
