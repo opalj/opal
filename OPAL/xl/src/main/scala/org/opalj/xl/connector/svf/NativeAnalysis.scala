@@ -4,12 +4,13 @@ package xl
 package connector
 package svf
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import svfjava.SVFAnalysisListener
 import svfjava.SVFModule
-import org.opalj.xl.logger.PointsToInteractionLogger
 
+import org.opalj.xl.logger.PointsToInteractionLogger
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -54,7 +55,7 @@ abstract class NativeAnalysis(
                                 var svfModuleName:      String                               = System.getenv("LLVM_LIB_PATH"),
                                 var connectorDependees: Set[EOptionP[Entity, Property]]      = Set.empty,
                                 var connectorResults:   Set[ProperPropertyComputationResult] = Set.empty[ProperPropertyComputationResult],
-                                var javaJNITranslator:  SVFTranslator[PointsToSet]           = new SVFTranslator[PointsToSet]()
+                                var mapping: mutable.Map[Long, PointsToSet] = mutable.Map.empty[Long, PointsToSet]
                               ) extends BaseAnalysisState with TypeIteratorState
 
 
@@ -63,14 +64,41 @@ abstract class NativeAnalysis(
     implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
       new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
 
+      val javaJNITranslator = new SVFTranslator[PointsToSet](svfConnectorState.mapping, emptyPointsToSet)
+
     val listener = new SVFAnalysisListener() {
+
+        override def getNativeFunctionArgument(methodName: String, argumentIndex: Int) : Array[Long] = {
+            val result = new ListBuffer[Long]
+            val allNativeMethods = project.allProjectClassFiles.
+                flatMap(_.methods).filter(_.isNative).map(method=>
+                    ("Java/" + method.classFile.thisType.fqn + "/" + method.name) -> method).toMap
+            val method = allNativeMethods(methodName.replace("_", "/"))
+            val formalparamater = formalParameters(declaredMethods(method))(argumentIndex+1)
+            val pointsToSet = currentPointsTo("formalParameter", formalparamater,  PointsToSetLike.noFilter)
+
+            pointsToSet.forNewestNElements(pointsToSet.numElements) { allocation =>
+                javaJNITranslator.storePointsToSet(allocation.asInstanceOf[Long], pointsToSet)
+                result.addOne(allocation.asInstanceOf[Long])
+            }
+
+           val formalParameterDependeesMap =
+                if (pointsToAnalysisState.hasDependees("formalParameter"))
+                    pointsToAnalysisState.dependeesOf("formalParameter")
+                else
+                    Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+            svfConnectorState.connectorDependees = svfConnectorState.connectorDependees ++
+                formalParameterDependeesMap.valuesIterator.map(_._1)
+
+            result.toArray
+        }
 
       override def nativeToJavaCallDetected(basePTS: Array[Long], className: String, methodName: String, methodSignature: String, argsPTSs: Array[Array[Long]]): Array[Long] = {
           var possibleMethods = Iterable.empty[Method]
           var objectTypeOptional: Option[ObjectType] = None
 
           for (ptElement <- basePTS) {
-          val parameterPointsToSet = svfConnectorState.javaJNITranslator.getPTS(ptElement)
+          val parameterPointsToSet = javaJNITranslator.getPTS(ptElement)
           parameterPointsToSet.forNewestNTypes(parameterPointsToSet.numElements) {
             tpe =>
               if (tpe.isObjectType) {
@@ -123,8 +151,8 @@ abstract class NativeAnalysis(
           var paramIndex = 0
           val baseFP = getFormalParameter(0, fps, context)
           val baseFilter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, objectType.asReferenceType)
-          for (ptElement <- basePTS) {
-            val parameterPointsToSet = svfConnectorState.javaJNITranslator.getPTS(ptElement)
+          for (pointsToElement <- basePTS) {
+            val parameterPointsToSet = javaJNITranslator.getPTS(pointsToElement)
             pointsToAnalysisState.includeSharedPointsToSet(
               baseFP,
               parameterPointsToSet,
@@ -135,10 +163,11 @@ abstract class NativeAnalysis(
           for (argumentPointsToSet <- argsPTSs) {
             val paramType = declaredMethod.descriptor.parameterType(paramIndex)
             val formalParameter = getFormalParameter(paramIndex + 1, fps, context)
-            val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
+            val filter =
+                (t: ReferenceType) => classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
 
             for (pointsToElement <- argumentPointsToSet) {
-              val parameterPointsToSet = svfConnectorState.javaJNITranslator.getPTS(pointsToElement)
+              val parameterPointsToSet = javaJNITranslator.getPTS(pointsToElement)
               pointsToAnalysisState.includeSharedPointsToSet(
                   formalParameter,
                 parameterPointsToSet,
@@ -155,7 +184,7 @@ abstract class NativeAnalysis(
               element =>
               {
                 resultListBuffer.addOne(element.asInstanceOf[Long])
-                svfConnectorState.javaJNITranslator.addPTS(element.asInstanceOf[Long], pointsToSet)
+                javaJNITranslator.storePointsToSet(element.asInstanceOf[Long], pointsToSet)
               }
             }
 
@@ -196,7 +225,7 @@ abstract class NativeAnalysis(
             result = element.asInstanceOf[Long]
           }
         }
-        svfConnectorState.javaJNITranslator.addPTS(result, newPointsToSet)
+        javaJNITranslator.storePointsToSet(result, newPointsToSet)
           assert(result>0)
         result
       }
@@ -209,7 +238,7 @@ abstract class NativeAnalysis(
         var result: List[Long] = List.empty
 
         for (l <- baseLongArray) {
-          val baseObjectPointsToSet = svfConnectorState.javaJNITranslator.getPTS(l)
+          val baseObjectPointsToSet = javaJNITranslator.getPTS(l)
 
           var tpe: Option[ObjectType] = None
 
@@ -240,7 +269,7 @@ abstract class NativeAnalysis(
                 fieldPointsToSet.forNewestNElements(fieldPointsToSet.numElements) {
                   element =>
                   {
-                    svfConnectorState.javaJNITranslator.addPTS(element.asInstanceOf[Long], fieldPointsToSet)
+                    javaJNITranslator.storePointsToSet(element.asInstanceOf[Long], fieldPointsToSet)
                     result = element.asInstanceOf[Long] :: result
                   }
                 }
@@ -270,11 +299,11 @@ abstract class NativeAnalysis(
 
         var rhsPointsToSet = emptyPointsToSet
         for (l <- rhs) {
-          rhsPointsToSet = rhsPointsToSet.included(svfConnectorState.javaJNITranslator.getPTS(l))
+          rhsPointsToSet = rhsPointsToSet.included(javaJNITranslator.getPTS(l))
         }
 
         for (l <- baseLongArray) {
-          val baseObjectPointsToSet = svfConnectorState.javaJNITranslator.getPTS(l)
+          val baseObjectPointsToSet = javaJNITranslator.getPTS(l)
 
           var tpe: Option[ObjectType] = None
 
@@ -326,7 +355,7 @@ abstract class NativeAnalysis(
         var result: List[Long] = List.empty
 
         for (l <- baseLongArray) {
-          val baseObjectPointsToSet = svfConnectorState.javaJNITranslator.getPTS(l)
+          val baseObjectPointsToSet = javaJNITranslator.getPTS(l)
 
           baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
           {
@@ -337,7 +366,7 @@ abstract class NativeAnalysis(
             arrayPTS.forNewestNElements(arrayPTS.numElements) {
               element =>
               {
-                svfConnectorState.javaJNITranslator.addPTS(element.asInstanceOf[Long], arrayPTS)
+                javaJNITranslator.storePointsToSet(element.asInstanceOf[Long], arrayPTS)
                 result = element.asInstanceOf[Long] :: result
               }
             }
@@ -362,6 +391,8 @@ abstract class NativeAnalysis(
       }
     }
 
+
+
     val functions = svfConnectorState.svfModule.getFunctions
 
     val javaDeclaredMethod = svfConnectorState.calleeContext.method
@@ -375,10 +406,18 @@ abstract class NativeAnalysis(
     } {
       val innerResultListBuffer: ListBuffer[Long] = new ListBuffer[Long]
 
-      val pointsToSet = currentPointsTo(formalParameter, formalParameter, PointsToSetLike.noFilter)
+      val pointsToSet = currentPointsTo("formalParameter", formalParameter,  PointsToSetLike.noFilter)
+        val formalParameterDependeesMap =
+            if (pointsToAnalysisState.hasDependees("formalParameter"))
+                pointsToAnalysisState.dependeesOf("formalParameter")
+            else
+                Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
+
+        svfConnectorState.connectorDependees = svfConnectorState.connectorDependees ++
+            formalParameterDependeesMap.valuesIterator.map(_._1)
 
       pointsToSet.forNewestNElements(pointsToSet.numElements) { allocation =>
-        svfConnectorState.javaJNITranslator.addPTS(allocation.asInstanceOf[Long], pointsToSet)
+        javaJNITranslator.storePointsToSet(allocation.asInstanceOf[Long], pointsToSet)
         if (formalParameter.origin == -1) {
           basePTS += allocation.asInstanceOf[Long]
         } else {
@@ -400,17 +439,17 @@ abstract class NativeAnalysis(
 
     val parameterPointsToSets = outerResultListBuffer.toArray
 
-    val javaFunctionFullName =
+    val javaMethodFullName =
         ("Java/"+javaDeclaredMethod.declaringClassType.fqn.replace("_", "_1")+
             "/"+javaDeclaredMethod.name).replace("/", "_")
 
-    var functionSelection = functions.filter(_.equals(javaFunctionFullName))
+    var functionSelection = functions.filter(_.equals(javaMethodFullName))
     if (functionSelection.isEmpty) {
       // collect overloaded functions
-      functionSelection = functions.filter(_.startsWith(javaFunctionFullName+"__"))
+      functionSelection = functions.filter(_.startsWith(javaMethodFullName+"__"))
     }
     if (functionSelection.isEmpty) {
-      throw new RuntimeException("native function not found :"+javaFunctionFullName)
+      throw new RuntimeException("native method not found :"+javaMethodFullName)
     }
     for (f <- functionSelection) {
       val resultPTS = svfConnectorState.svfModule.processFunction(f, basePTS.toArray, parameterPointsToSets, listener)
@@ -419,7 +458,7 @@ abstract class NativeAnalysis(
         pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, emptyPointsToSet, PointsToSetLike.noFilter)
       } else {
         resultPTS.foreach(l => {
-          val pointsToSet = svfConnectorState.javaJNITranslator.getPTS(l)
+          val pointsToSet = javaJNITranslator.getPTS(l)
           pointsToAnalysisState.includeSharedPointsToSet(svfConnectorState.calleeContext, pointsToSet, PointsToSetLike.noFilter)
         })
       }
@@ -433,9 +472,6 @@ abstract class NativeAnalysis(
                        pc:            Int,
                        isDirect:      Boolean
                      ): ProperPropertyComputationResult = this.synchronized{
-    if (GlobalJNIMapping.mapping == null) {
-      GlobalJNIMapping.mapping = Map[Long, PointsToSet]()
-    }
     implicit val svfConnectorState = SVFConnectorState(calleeContext, pc, project)
     svfjava.SVFJava.init()
     svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName)
@@ -448,10 +484,10 @@ abstract class NativeAnalysis(
       case UBP(_: PointsToSet @unchecked) =>
         svfConnectorState.connectorDependees += eps
           svfjava.SVFJava.init()
+          svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName)
         runSVF(svfConnectorState)
 
-      case _ =>
-          Results()
+      case _ => throw new Exception(s"message: ${eps.toString}")
     }
   }
 }
