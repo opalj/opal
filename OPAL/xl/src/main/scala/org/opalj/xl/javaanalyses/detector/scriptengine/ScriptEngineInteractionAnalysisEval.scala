@@ -138,9 +138,11 @@ abstract class ScriptEngineInteractionAnalysisEval(
         val param = params.head.get.asVar
         val possibleStrings =
             StringUtil.getPossibleStrings(param, callerContext, None, tac.stmts, () => {
-                throw new Exception("TODO: What to do if param is unknown?")
+                print("Unknown parameter to ScriptEngine.eval " + callerContext + " callee " + calleeContext)
             })
-
+        if (possibleStrings.isEmpty) {
+            Results()
+        }
         var dependees: Set[SomeEOptionP] = Set.empty
 
         val scriptEngineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](code = possibleStrings.toList)
