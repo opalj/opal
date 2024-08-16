@@ -35,6 +35,9 @@ object PTSTracerInstrumentation {
             return ;
         }
         println("Looking for native library " + System.mapLibraryName("native") + " in library search path " + System.getenv("java.library.path"))
+        if (System.getenv("java.library.path") == null) {
+          throw new RuntimeException("Library Search Path not set!")
+        }
         val inputClassPath = args(0)
         val outputClassPath = args(1)
         val prefix = args(2)
