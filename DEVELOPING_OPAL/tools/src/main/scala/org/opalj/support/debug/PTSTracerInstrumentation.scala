@@ -27,15 +27,16 @@ object PTSTracerInstrumentation {
     def main(args: Array[String]): Unit = {
         import Console.RED
         import Console.RESET
-        if (args.length != 3) {
+        if (args.length != 4) {
             println("You have to specify the code that should be analyzed.")
             println("\t1: directory containing class files      e.g.  /home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validate/target/scala-2.13/test-classes")
             println("\t2: destination of instrumented class files e.g /home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validate/target/scala-2.13/instrumented")
             println("\t3: classes to instrument prefix e.g org/opalj/fpcf/fixtures/xl/js")
+            println("\t3: : separated additional classpath e.g. /asm-all-5.2.jar:/nashorn-core-15.4.jar")
+
             return ;
         }
-        // this library contains native code for the Java-Native benchmark
-        System.loadLibrary("native")
+
         val inputClassPath = args(0)
         val outputClassPath = args(1)
         val prefix = args(2)
@@ -53,16 +54,9 @@ object PTSTracerInstrumentation {
         // clear trace.xml file
       val fw = new PrintWriter(new FileOutputStream("trace.xml", false));
       fw.write("<trace>\n<methods>\n")
-      //implicit val ps: PropertyStore = project.get(PropertyStoreKey)
-        //val tacai = (m: Method) => { val FinalP(taCode) = ps(m, TACAI.key); taCode.tac }
-      //System.load("/home/julius/IdeaProjects/opal/DEVELOPING_OPAL/validateCross/src/test/resources/xl_llvm/libnative.so")
-      //System newSystem = (System) Class.forName("my.system.System", true, myClassLoader).newInstance();
 
       val classloaderScriptEngineJars = new URLClassLoader(
-          Array(
-            new URL("file:///home/julius/Downloads/asm-all-5.2.jar"),
-            new URL("file:///home/julius/Downloads/nashorn-core-15.4.jar")
-          ),
+          args(3).split(":").map(path => new URL("file://" + path)),
           ClassLoader.getSystemClassLoader)
         val PTSLoggerType = ObjectType("org/opalj/fpcf/fixtures/PTSLogger")
         val ptsClassFile = PTSTracerInstrumentation.readFile(inputClassPath+"/org/opalj/fpcf/fixtures/PTSLogger.class")
