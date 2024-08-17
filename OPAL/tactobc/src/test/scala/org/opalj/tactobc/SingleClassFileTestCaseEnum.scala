@@ -30,7 +30,8 @@ object SingleClassFileTestCaseEnum extends Enumeration {
     TestCase("InvokeDynamic.java", "InvokeDynamic.class"),
     TestCase("Switch.java", "Switch.class"),
     TestCase("Reassignment.java", "Reassignment.class"),
-    TestCase("IfZero.java", "IfZero.class")
+    TestCase("IfZero.java", "IfZero.class"),
+    TestCase("BigNumbers.java", "BigNumbers.class")
   )
 
   // Case class to represent each test case
