@@ -29,7 +29,8 @@ object SingleClassFileTestCaseEnum extends Enumeration {
     TestCase("InvokeInterface.java", "InvokeInterface.class"),
     TestCase("InvokeDynamic.java", "InvokeDynamic.class"),
     TestCase("Switch.java", "Switch.class"),
-    TestCase("Reassignment.java", "Reassignment.class")
+    TestCase("Reassignment.java", "Reassignment.class"),
+    TestCase("IfZero.java", "IfZero.class")
   )
 
   // Case class to represent each test case
