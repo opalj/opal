@@ -471,6 +471,42 @@ object ComparePTS {
       \label{tab:precisionRecall}
       \end{table}
       """.stripMargin)
+    println()
+    println("Results of Points-To Analysis")
+    println()
+    printAsciiTable(
+      List(
+        List("Points-To Analysis", "Only Java", "Java + XL"),
+        List(),
+        List("True Positives", f"${evalWithout._1}", f"${evalWith._1}" ),
+        List("False Positives", f"${evalWithout._2}", f"${evalWith._2}" ),
+        List("False Negatives", f"${evalWithout._3}", f"${evalWith._3}" ),
+        List(),
+        List("Precision", f"${evalWithout._4}%.2f", f"${evalWith._4}%.2f" ),
+        List("Recall", f"${evalWithout._5}%.2f", f"${evalWith._5}%.2f" ),
+      )
+
+    )
+
+  }
+
+  def printAsciiTable(data: List[List[String]]): Unit = {
+    if (data.isEmpty || data.head.isEmpty) return
+
+    val colWidths = data.filter(_.nonEmpty).transpose.map(col => col.map(_.length).max)
+
+    def horizontalLine(char: Char) =
+      "+" + colWidths.map(w => char.toString * (w + 2)).mkString("+") + "+"
+
+    def createRow(row: List[String]): String =
+      if (row.isEmpty) horizontalLine('-')
+      else "|" + row.zip(colWidths).map { case (cell, width) =>
+        s" ${cell.padTo(width, ' ')} "
+      }.mkString("|") + "|"
+
+    println(horizontalLine('-'))
+    data.foreach(row => println(createRow(row)))
+    println(horizontalLine('-'))
   }
 }
 
