@@ -383,7 +383,7 @@ object GroundTruthParser {
         ))
       }
     }
-    results.filter(result => !result._2.method.contains("<init>")).toMap
+    results.filter(result => !result._2.method.contains("<init>")).filter(testMethod => project.allMethods.exists(m => m.fullyQualifiedSignature.equals(testMethod._2.method))).toMap
   }
 
 
