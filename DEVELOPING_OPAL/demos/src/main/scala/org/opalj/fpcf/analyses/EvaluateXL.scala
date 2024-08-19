@@ -293,7 +293,8 @@ object GroundTruthParser {
             val groundTruthInstancesForDefSite = groundTruthInstancesAtPC.filter(instance => groundTruthInstanceIds.contains(instance.instanceId))
 
             if (Set(normalizeType(defsite.objClass)) equals groundTruthInstancesForDefSite.map(inst => normalizeType(inst.objClass))) {
-              testAllocationsAtPC += (defsite.defsitePC -> groundTruthInstanceIds.map(groundTruth.instanceIdToAllocation))
+              val existing = testAllocationsAtPC.getOrElse(defsite.defsitePC, Set.empty)
+              testAllocationsAtPC += (defsite.defsitePC ->  groundTruthInstanceIds.map(groundTruth.instanceIdToAllocation).union(existing))
               truePositiveData += TruePositive(method, defsite.defsitePC, groundTruthInstancesForDefSite, defsite.allocSiteId, defsite.allocSitePC, defsite.objClass)
             } else {
               falsePositiveData += FalsePositive(method, defsite.defsitePC, defsite.objClass, defsite.allocSiteId, defsite.allocSitePC)
