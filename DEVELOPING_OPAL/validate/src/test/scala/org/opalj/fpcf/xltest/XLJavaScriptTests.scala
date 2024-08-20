@@ -100,6 +100,9 @@ class MyCustomReporter extends Reporter {
                 total += succeededCount + failedCount
                 totalsucceeded += succeededCount
                 println(s"\\newcommand{\\$category}{\\tnum{$succeededCount / ${succeededCount + failedCount}}}")
+                for (succeeded <- succeededTests) {
+                    println(s"%succeeded: $succeeded")
+                }
                 for (failed <- failedTests) {
                     println(s"%failed: $failed")
                 }

@@ -447,6 +447,14 @@ object ComparePTS {
 
       }
     }
+    println("with XL false negatives: ")
+
+    for (res <- evalWithTAJS.values) {
+      if (res.falseNegativeData.nonEmpty) {
+        println(res.method)
+        res.falseNegativeData.foreach(println)
+      }
+    }
 
     println("without TAJS")
     val evalWithout = GroundTruthParser.printTotalPrecisionRecall(evalWithoutTAJS)
