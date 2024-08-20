@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.unidirectional.JavaAccessJS;
+package org.opalj.fpcf.fixtures.xl.js.stateaccess.interprocedural.bidirectional.JavaAccessJS;
 
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
