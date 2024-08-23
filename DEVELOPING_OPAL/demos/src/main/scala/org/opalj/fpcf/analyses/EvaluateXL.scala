@@ -461,33 +461,12 @@ object ComparePTS {
     println("with TAJS")
     val evalWith = GroundTruthParser.printTotalPrecisionRecall(evalWithTAJS)
 
-    println("""
-      \begin{table}
-      \center
-      \begin{tabular}{lcc}
-      	\toprule
-      \textbf{Points-To Analysis } & \textbf{Only Java} & \textbf{Java + JS}  \\
-      	\midrule""" + f"""
-        True Positives  & \\tnum{${evalWithout._1}} & \\tnum{${evalWith._1}} \\\\
-        False Positives & \\tnum{${evalWithout._2}} & \\tnum{${evalWith._2}} \\\\
-        False Negatives & \\tnum{${evalWithout._3}} & \\tnum{${evalWith._3}} \\\\
-        \\midrule
-        Precision & \\tnum{${evalWithout._4}%.2f\\%%} & \\tnum{${evalWith._4}%.2f\\%%} \\\\
-        Recall    & \\tnum{${evalWithout._5}%.2f\\%%} & \\tnum{${evalWith._5}%.2f\\%%} \\\\""" + """
-      	\bottomrule
-      \end{tabular}
-      \caption{Precision And Recall of Points-To-Sets}
-      \label{tab:precisionRecall}
-      \end{table}
-      """.stripMargin)
-    println()
     println("Results of Points-To Analysis")
     println()
     printAsciiTable(
       List(
         List("Points-To Analysis", "Only Java", "Java + XL"),
         List(),
-        List("True Positives", f"${evalWithout._1}", f"${evalWith._1}" ),
         List("False Positives", f"${evalWithout._2}", f"${evalWith._2}" ),
         List("False Negatives", f"${evalWithout._3}", f"${evalWith._3}" ),
         List(),
