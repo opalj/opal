@@ -7,11 +7,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.util.Calendar
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
@@ -80,6 +78,20 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
+import org.rogach.scallop.ScallopOption
+
+import scala.collection.immutable.ArraySeq
+
+class PurityConf(opalConfBase: OpalConfBase) {
+
+
+    private val classPath: ScallopOption[String] = opalConfBase.getClassPath("JAR file/Folder containing class files OR -JDK")
+    private val projectDir: ScallopOption[String] = opalConfBase.getProjectDir("directory with project class files relative to cp")
+    private val libClassPath: ScallopOption[String] = opalConfBase.getLibClassPath("directory with library class files relative to cp")
+    private val analysis: ScallopOption[String] = opalConfBase.getAnalysis(Seq("L0", "L1", "L2"), Some("L2"), "Default: L2, the most precise analysis configuration")
+    private val fieldAssignability: ScallopOption[String] = opalConfBase.getFieldAssignability(Seq("none", "L0", "L1", "L2"), null, "Default: Depends on analysis level")
+
+}
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -479,8 +491,12 @@ object Purity {
 
     def main(args: Array[String]): Unit = {
 
+        val opalConfBase = new OpalConfBase(ArraySeq.unsafeWrapArray(args))
+        val purityConf = new PurityConf(opalConfBase)
+
+
         // Parameters:
-        var cp: File = null
+        var cp: File = purityConf.parseClassPath()
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var analysisName: Option[String] = None
@@ -491,7 +507,7 @@ object Purity {
         var callGraphName: Option[String] = None
         var configurationName: Option[String] = None
         var schedulingStrategy: Option[String] = None
-        var withoutJDK = false
+        var withoutJDK = purityConf.parseWithoutJDK()
         var individual = false
         var isLibrary = false
         var cwa = false

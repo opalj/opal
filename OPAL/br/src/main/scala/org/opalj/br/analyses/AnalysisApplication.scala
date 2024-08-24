@@ -134,7 +134,7 @@ trait AnalysisApplication {
             } else if (arg == "-renderConfig") {
                 renderConfig = true
             } else {
-                unknownArgs ::= arg
+                    unknownArgs ::= arg
             }
 
         }

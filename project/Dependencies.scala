@@ -59,6 +59,8 @@ object Dependencies {
 
     val javacpp = "org.bytedeco" % "javacpp" % version.javacpp
     val javacpp_llvm =  "org.bytedeco" % "llvm-platform" % (version.javacpp_llvm + "-" + version.javacpp)
+    val scallop = "org.rogach" %% "scallop" % "5.1.0"
+
     // --- test related dependencies
 
     val junit =          "junit"              % "junit"           % version.junit          % "test,it"
@@ -77,7 +79,7 @@ object Dependencies {
   val bi = Seq(commonstext)
   val br = Seq(scalaparsercombinators, scalaxml)
   val ifds = Seq()
-  val tools = Seq(txtmark, jacksonDF)
+  val tools = Seq(txtmark, jacksonDF, scallop)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
   val apk = Seq(apkparser, scalaxml)
 
