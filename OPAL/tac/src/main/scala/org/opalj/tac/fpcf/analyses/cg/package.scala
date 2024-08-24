@@ -4,19 +4,9 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.ai.ImmediateVMExceptionsOriginOffset
-import org.opalj.ai.MethodExternalExceptionsOriginOffset
-import org.opalj.ai.ValueOrigin
-import org.opalj.ai.ValueOriginForImmediateVMException
-import org.opalj.ai.ValueOriginForMethodExternalException
-import org.opalj.ai.isImmediateVMException
-import org.opalj.ai.isMethodExternalExceptionOrigin
-import org.opalj.ai.pcOfImmediateVMException
-import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
-import org.opalj.br.PCs
 import org.opalj.br.ReferenceType
 import org.opalj.br.instructions.ACONST_NULL
 import org.opalj.br.instructions.LoadClass
@@ -30,7 +20,6 @@ import org.opalj.br.instructions.LoadMethodType
 import org.opalj.br.instructions.LoadMethodType_W
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.LoadString_W
-import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.LogContext
@@ -42,6 +31,8 @@ package object cg {
 
     /**
      * A persistent representation (using pcs instead of TAC value origins) for a UVar.
+     *
+     * @deprecated Use [[UVar.toPersistentForm]] (available through the type [[V]]) instead.
      */
     final def persistentUVar(
         value: V
@@ -51,34 +42,11 @@ package object cg {
         Some((value.value, value.definedBy.map(pcOfDefSite _)))
     }
 
-    final def pcOfDefSite(valueOrigin: ValueOrigin)(implicit stmts: Array[Stmt[V]]): Int = {
-        if (valueOrigin >= 0)
-            stmts(valueOrigin).pc
-        else if (valueOrigin > ImmediateVMExceptionsOriginOffset)
-            valueOrigin // <- it is a parameter!
-        else if (valueOrigin > MethodExternalExceptionsOriginOffset)
-            ValueOriginForImmediateVMException(stmts(pcOfImmediateVMException(valueOrigin)).pc)
-        else
-            ValueOriginForMethodExternalException(
-                stmts(pcOfMethodExternalException(valueOrigin)).pc
-            )
-    }
-
-    final def valueOriginsOfPCs(pcs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
-        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) =>
-            if (ai.underlyingPC(pc) < 0)
-                origins + pc // parameter
-            else if (pc >= 0 && pcToIndex(pc) >= 0)
-                origins + pcToIndex(pc) // local
-            else if (isImmediateVMException(pc) && pcToIndex(pcOfImmediateVMException(pc)) >= 0)
-                origins + ValueOriginForImmediateVMException(pcToIndex(pcOfImmediateVMException(pc)))
-            else if (isMethodExternalExceptionOrigin(pc) && pcToIndex(pcOfMethodExternalException(pc)) >= 0)
-                origins + ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc)))
-            else
-                origins // as is
-        }
-    }
-
+    /**
+     * Regaining a non-persistent (using TAC value origins) form of the UVar.
+     *
+     * @deprecated Use [[PUVar.toValueOriginForm]] instead.
+     */
     final def uVarForDefSites(
         defSites:  (ValueInformation, IntTrieSet),
         pcToIndex: Array[Int]

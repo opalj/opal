@@ -14,6 +14,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedLibraryPointsToAnalysisScheduler
@@ -48,14 +49,17 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
         List(
             TypeBasedPointsToAnalysisScheduler,
             TypeBasedConfiguredMethodsPointsToAnalysisScheduler,
-            TypeBasedTamiFlexPointsToAnalysisScheduler,
             TypeBasedArraycopyPointsToAnalysisScheduler,
             TypeBasedUnsafePointsToAnalysisScheduler,
             TypeBasedNewInstanceAnalysisScheduler,
             EagerFieldAccessInformationAnalysis,
             TypeBasedSerializationAllocationsAnalysisScheduler,
             ReflectionRelatedFieldAccessesAnalysisScheduler
-        ) ::: (if (isLibrary) List(TypeBasedLibraryPointsToAnalysisScheduler) else Nil)
+        ) ::: (
+            if (isLibrary) List(TypeBasedLibraryPointsToAnalysisScheduler) else Nil
+        ) ::: (
+            if (TamiFlexKey.isConfigured(project)) List(TypeBasedTamiFlexPointsToAnalysisScheduler) else Nil
+        )
     }
 
     override def getTypeIterator(project: SomeProject): TypeIterator =
