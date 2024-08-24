@@ -76,10 +76,6 @@ class CommentParser() {
         // The comment for the next object may be parsed before the type of the next object is clear. Thus, the comment needs to be buffered in this method already
         var nextComment = new Comment()
 
-        // If there is no further List that opens in the line, it can be assured that the next "]" is the closure of the list
-        if(lastLine.contains("]") && !lastLine.contains("[")){
-
-        }
         while(iterator.hasNext){
             if(line.trim.startsWith("{")){
                 val (configobject,newline) = parseObject(iterator, line.trim.stripPrefix("{"), nextComment)
@@ -92,6 +88,13 @@ class CommentParser() {
             } else if(line.trim.startsWith("//") || line.trim.startsWith("#")){
                 nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
                 line = ""
+            } else if(line.trim.startsWith("]")){
+                line = line.trim.stripPrefix("]")
+                if(line.trim.startsWith("//") || line.trim.startsWith("#")){
+                    nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+                    line = ""
+                }
+                break
             } else {
                 val (configEntry,newline) = parseEntry(iterator, line.trim.stripPrefix(","), nextComment)
                 value += configEntry
