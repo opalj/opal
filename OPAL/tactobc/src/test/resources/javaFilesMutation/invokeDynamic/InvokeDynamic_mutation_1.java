@@ -11,7 +11,7 @@ public class InvokeDynamic_mutation_1 {
         System.out.println(greeting + ", World" + punctuation);
 
         // Method Reference
-        InvokeDynamic instance = new InvokeDynamic();
+        InvokeDynamic_mutation_1 instance = new InvokeDynamic_mutation_1();
         instance.runMethodReference();
     }
 

@@ -10,7 +10,7 @@ public class InvokeDynamic_mutation_2 {
         System.out.println(message);
 
         // Method Reference
-        new InvokeDynamic().methodReference();
+        new InvokeDynamic_mutation_2().methodReference();
     }
 
     private static void printLambdaMessage() {
