@@ -20,10 +20,27 @@ class CommentParser() {
         val entries = mutable.Map[String, ConfigNode]()
         var line : String = lastLine
         val nextComment = new Comment
+        var currentKey = ""
 
         while(iterator.hasNext){
+            if(line.trim.startsWith("#") || line.trim.startsWith("//")){
+                nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+                line = ""
+            } else if (line.trim.startsWith("}")) {
+                line = line.trim.stripPrefix("}")
+                break
+            } else {
 
+            }
 
+            if(line.trim == ""){
+                line = iterator.next()
+            }
+        }
+
+        if(line.trim.startsWith("#") || line.trim.startsWith("//")){
+            currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+            line = ""
         }
 
         currentComment.commitComments()
@@ -91,10 +108,6 @@ class CommentParser() {
                 line = ""
             } else if(line.trim.startsWith("]")){
                 line = line.trim.stripPrefix("]")
-                if(line.trim.startsWith("//") || line.trim.startsWith("#")){
-                    currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
-                    line = ""
-                }
                 break
             } else {
                 val (configEntry,newline) = parseEntry(iterator, line.trim.stripPrefix(","), nextComment)
