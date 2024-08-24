@@ -12,7 +12,7 @@ class CommentParser() {
     def parseComments(filePath: Path): ConfigNode = {
         val lines = Source.fromFile(filePath.toString()).getLines().toList
         val iterator = lines.iterator
-        val (node,remains) = parseObject(iterator, "")
+        val (node,remains) = parseObject(iterator, "", new Comment)
         node
     }
 
