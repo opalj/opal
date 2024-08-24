@@ -18,7 +18,8 @@ class CommentParser() {
 
     def parseObject(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigObject,String) = {
         val entries = mutable.Map[String, ConfigNode]()
-        var line: String = lastLine
+        var line : String = lastLine
+        val nextComment = new Comment
 
         while(iterator.hasNext){
 
@@ -72,26 +73,26 @@ class CommentParser() {
     def parseList(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigList,String) = {
         var line = lastLine
         val value = new ListBuffer[ConfigNode]
-
-        // The comment for the next object may be parsed before the type of the next object is clear. Thus, the comment needs to be buffered in this method already
-        var nextComment = new Comment()
+        var nextComment = new Comment
 
         while(iterator.hasNext){
             if(line.trim.startsWith("{")){
                 val (configobject,newline) = parseObject(iterator, line.trim.stripPrefix("{"), nextComment)
                 value += configobject
                 line = newline
+                nextComment = new Comment
             } else if (line.trim.startsWith("[")){
                 val (configlist,newline) = parseList(iterator, line.trim.stripPrefix("["), nextComment)
                 value += configlist
                 line = newline
+                nextComment = new Comment
             } else if(line.trim.startsWith("//") || line.trim.startsWith("#")){
                 nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
                 line = ""
             } else if(line.trim.startsWith("]")){
                 line = line.trim.stripPrefix("]")
                 if(line.trim.startsWith("//") || line.trim.startsWith("#")){
-                    nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+                    currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
                     line = ""
                 }
                 break
