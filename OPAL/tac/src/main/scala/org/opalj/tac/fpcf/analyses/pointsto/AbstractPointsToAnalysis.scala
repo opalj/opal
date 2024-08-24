@@ -52,7 +52,6 @@ import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
-import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.value.IsReferenceValue
