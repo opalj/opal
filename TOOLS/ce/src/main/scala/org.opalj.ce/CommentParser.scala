@@ -35,6 +35,7 @@ class CommentParser() {
 
         if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
             currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+            line = iterator.next()
         } else if (line.trim.startsWith("\"")) {
             val openedvalue = line.trim.stripPrefix("\"") // Located the opening Bracket of the value, but the closing bracket has not been found yet
             val (newline,newvalue) = this.extractValue(iterator,openedvalue,'\"')
