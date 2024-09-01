@@ -30,11 +30,13 @@ sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(MethodStringFlow))
 
-    override final type InitializationData = (ContextFreeStringAnalysis, ContextStringAnalysis)
+    override final type InitializationData =
+        (ContextFreeStringAnalysis, ContextStringAnalysis, MethodParameterContextStringAnalysis)
 
     override def init(p: SomeProject, ps: PropertyStore): InitializationData = (
         new ContextFreeStringAnalysis(p),
-        new ContextStringAnalysis(p)
+        new ContextStringAnalysis(p),
+        new MethodParameterContextStringAnalysis(p)
     )
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
@@ -52,9 +54,10 @@ object LazyStringAnalysis
             StringConstancyProperty.key,
             (entity: Entity) => {
                 entity match {
-                    case vd: VariableDefinition => data._1.analyze(vd)
-                    case vc: VariableContext    => data._2.analyze(vc)
-                    case e                      => throw new IllegalArgumentException(s"Cannot process entity $e")
+                    case vd: VariableDefinition     => data._1.analyze(vd)
+                    case vc: VariableContext        => data._2.analyze(vc)
+                    case vc: MethodParameterContext => data._3.analyze(vc)
+                    case e                          => throw new IllegalArgumentException(s"Cannot process entity $e")
                 }
             }
         )

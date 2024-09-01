@@ -51,15 +51,77 @@ private[string] class ContextStringAnalysisState private (
     private def stringTree: StringTreeNode = _stringDependee.ub.sci.tree
     def parameterIndices: Set[Int] = _parameterIndices
 
+    // Parameter StringConstancy
+    private val _paramDependees: mutable.Map[MethodParameterContext, EOptionP[
+        MethodParameterContext,
+        StringConstancyProperty
+    ]] =
+        mutable.Map.empty
+
+    def registerParameterDependee(dependee: EOptionP[MethodParameterContext, StringConstancyProperty]): Unit = {
+        if (_paramDependees.contains(dependee.e)) {
+            throw new IllegalArgumentException(s"Tried to register the same parameter dependee twice: $dependee")
+        }
+
+        updateParamDependee(dependee)
+    }
+    def updateParamDependee(dependee: EOptionP[MethodParameterContext, StringConstancyProperty]): Unit =
+        _paramDependees(dependee.e) = dependee
+
+    def currentSciUB: StringConstancyInformation = {
+        if (_stringDependee.hasUBP) {
+            val paramTrees = _paramDependees.map { kv =>
+                (
+                    kv._1.index,
+                    if (kv._2.hasUBP) kv._2.ub.sci.tree
+                    else StringTreeNode.ub
+                )
+            }.toMap
+
+            StringConstancyInformation(stringTree.replaceParameters(paramTrees).simplify)
+        } else {
+            StringConstancyInformation.ub
+        }
+    }
+
+    def hasDependees: Boolean = _stringDependee.isRefinable || _paramDependees.valuesIterator.exists(_.isRefinable)
+
+    def dependees: Set[EOptionP[Entity, Property]] = {
+        val preliminaryDependees =
+            _paramDependees.valuesIterator.filter(_.isRefinable) ++
+                Some(_stringDependee).filter(_.isRefinable)
+
+        preliminaryDependees.toSet
+    }
+}
+
+object ContextStringAnalysisState {
+
+    def apply(
+        entity:         VariableContext,
+        stringDependee: EOptionP[VariableDefinition, StringConstancyProperty]
+    ): ContextStringAnalysisState = {
+        val parameterIndices = if (stringDependee.hasUBP) stringDependee.ub.sci.tree.collectParameterIndices
+        else Set.empty[Int]
+        new ContextStringAnalysisState(entity, stringDependee, parameterIndices)
+    }
+}
+
+private[string] case class MethodParameterContextStringAnalysisState(
+    private val _entity: MethodParameterContext
+) {
+
+    def entity: MethodParameterContext = _entity
+    def dm: DeclaredMethod = _entity.context.method
+    def index: Int = _entity.index
+
     // Callers
     private[string] type CallerContext = (Context, Int)
     var _callersDependee: Option[EOptionP[DeclaredMethod, Callers]] = None
-    val _callerContexts: mutable.Map[CallerContext, Option[Call[V]]] = mutable.Map.empty
+    private val _callerContexts: mutable.Map[CallerContext, Option[Call[V]]] = mutable.Map.empty
     private val _callerContextsByMethod: mutable.Map[Method, Seq[CallerContext]] = mutable.Map.empty
 
-    def updateCallers(newCallers: EOptionP[DeclaredMethod, Callers]): Unit = {
-        _callersDependee = Some(newCallers)
-    }
+    def updateCallers(newCallers: EOptionP[DeclaredMethod, Callers]): Unit = _callersDependee = Some(newCallers)
 
     def addCallerContext(callerContext: CallerContext): Unit = {
         _callerContexts.update(callerContext, None)
@@ -92,27 +154,20 @@ private[string] class ContextStringAnalysisState private (
         getTacaiForContext(callerContext).ub.tac.get
 
     // Parameter StringConstancy
-    private val _entityToParamIndexMapping: mutable.Map[VariableContext, (Int, DefinedMethod)] = mutable.Map.empty
-    private val _paramIndexToEntityMapping: mutable.Map[Int, mutable.Map[DefinedMethod, Seq[VariableContext]]] =
-        mutable.Map.empty.withDefaultValue(mutable.Map.empty)
+    private val _methodToEntityMapping: mutable.Map[DefinedMethod, Seq[VariableContext]] = mutable.Map.empty
     private val _paramDependees: mutable.Map[VariableContext, EOptionP[VariableContext, StringConstancyProperty]] =
         mutable.Map.empty
-    private val _invalidParamReferences: mutable.Map[Int, Set[Int]] = mutable.Map.empty
+    private var _methodsWithInvalidParamReferences: Set[Int] = Set.empty[Int]
 
     def registerParameterDependee(
-        index:    Int,
         dm:       DefinedMethod,
         dependee: EOptionP[VariableContext, StringConstancyProperty]
     ): Unit = {
-        if (_entityToParamIndexMapping.contains(dependee.e)) {
+        if (_paramDependees.contains(dependee.e)) {
             throw new IllegalArgumentException(s"Tried to register the same parameter dependee twice: $dependee")
         }
 
-        _entityToParamIndexMapping(dependee.e) = (index, dm)
-        if (!_paramIndexToEntityMapping.contains(index)) {
-            _paramIndexToEntityMapping(index) = mutable.Map.empty
-        }
-        _paramIndexToEntityMapping(index).updateWith(dm) {
+        _methodToEntityMapping.updateWith(dm) {
             case None           => Some(Seq(dependee.e))
             case Some(previous) => Some((previous :+ dependee.e).sortBy(_.pc))
         }
@@ -121,49 +176,39 @@ private[string] class ContextStringAnalysisState private (
     }
     def updateParamDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit =
         _paramDependees(dependee.e) = dependee
-    def registerInvalidParamReference(index: Int, dmId: Int): Unit =
-        _invalidParamReferences.updateWith(dmId) { ov => Some(ov.getOrElse(Set.empty) + index) }
+    def registerInvalidParamReference(dmId: Int): Unit =
+        _methodsWithInvalidParamReferences += dmId
 
     def currentSciUB: StringConstancyInformation = {
-        if (_stringDependee.hasUBP) {
-            val paramTrees = if (_discoveredUnknownTAC) {
-                parameterIndices.map((_, StringTreeNode.lb)).toMap
-            } else {
-                parameterIndices.map { index =>
-                    val paramOptions = _paramIndexToEntityMapping(index).keys.toSeq
-                        .sortBy(_.id)
-                        .flatMap { dm =>
-                            if (_invalidParamReferences.contains(dm.id)) {
-                                Some(StringTreeNode.ub)
-                            } else {
-                                _paramIndexToEntityMapping(index)(dm)
-                                    .map(_paramDependees)
-                                    .filter(_.hasUBP)
-                                    .map(_.ub.sci.tree)
-                            }
-                        }
-
-                    (index, StringTreeOr(paramOptions).simplify)
-                }.toMap
-            }
-
-            StringConstancyInformation(stringTree.replaceParameters(paramTrees).simplify)
+        if (_discoveredUnknownTAC) {
+            StringConstancyInformation(StringTreeNode.lb)
         } else {
-            StringConstancyInformation.ub
+            val paramOptions = _methodToEntityMapping.keys.toSeq
+                .sortBy(_.id)
+                .flatMap { dm =>
+                    if (_methodsWithInvalidParamReferences.contains(dm.id)) {
+                        Some(StringTreeNode.ub)
+                    } else {
+                        _methodToEntityMapping(dm)
+                            .map(_paramDependees)
+                            .filter(_.hasUBP)
+                            .map(_.ub.sci.tree)
+                    }
+                }
+
+            StringConstancyInformation(StringTreeOr(paramOptions).simplify)
         }
     }
 
     def finalSci: StringConstancyInformation = {
-        if (_paramIndexToEntityMapping.valuesIterator.map(_.size).sum == 0) {
-            val paramTrees = _parameterIndices.map((_, StringTreeNode.lb)).toMap
-            StringConstancyInformation(stringTree.replaceParameters(paramTrees).simplify)
+        if (_methodToEntityMapping.isEmpty) {
+            StringConstancyInformation(StringTreeNode.lb)
         } else {
             currentSciUB
         }
     }
 
-    def hasDependees: Boolean = _stringDependee.isRefinable ||
-        _callersDependee.exists(_.isRefinable) ||
+    def hasDependees: Boolean = _callersDependee.exists(_.isRefinable) ||
         _tacaiDependees.valuesIterator.exists(_.isRefinable) ||
         _paramDependees.valuesIterator.exists(_.isRefinable)
 
@@ -171,21 +216,8 @@ private[string] class ContextStringAnalysisState private (
         val preliminaryDependees =
             _tacaiDependees.valuesIterator.filter(_.isRefinable) ++
                 _paramDependees.valuesIterator.filter(_.isRefinable) ++
-                _callersDependee.filter(_.isRefinable) ++
-                Some(_stringDependee).filter(_.isRefinable)
+                _callersDependee.filter(_.isRefinable)
 
         preliminaryDependees.toSet
-    }
-}
-
-object ContextStringAnalysisState {
-
-    def apply(
-        entity:         VariableContext,
-        stringDependee: EOptionP[VariableDefinition, StringConstancyProperty]
-    ): ContextStringAnalysisState = {
-        val parameterIndices = if (stringDependee.hasUBP) stringDependee.ub.sci.tree.collectParameterIndices
-        else Set.empty[Int]
-        new ContextStringAnalysisState(entity, stringDependee, parameterIndices)
     }
 }
