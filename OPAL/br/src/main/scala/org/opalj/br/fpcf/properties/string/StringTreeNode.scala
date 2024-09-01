@@ -112,7 +112,7 @@ case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends 
         }
     }
 
-    override def sorted: StringTreeNode = this
+    override def sorted: StringTreeNode = StringTreeConcat(children.map(_.sorted))
 
     override def _simplify: StringTreeNode = {
         val nonEmptyChildren = children.map(_.simplify).filterNot(_.isEmpty)
@@ -201,7 +201,7 @@ object StringTreeOr {
 
 case class SeqBasedStringTreeOr(override val _children: Seq[StringTreeNode]) extends StringTreeOr {
 
-    override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.sortBy(_.sorted.toRegex))
+    override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.map(_.sorted).sortBy(_.toRegex))
 
     override def _simplify: StringTreeNode = {
         val validChildren = _children.map(_.simplify).filterNot(_.isInvalid)
@@ -250,7 +250,7 @@ object SeqBasedStringTreeOr {
 
 case class SetBasedStringTreeOr(override val _children: Set[StringTreeNode]) extends StringTreeOr {
 
-    override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.sortBy(_.sorted.toRegex))
+    override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.map(_.sorted).sortBy(_.toRegex))
 
     override def _simplify: StringTreeNode = SetBasedStringTreeOr._simplifySelf {
         _children.map(_.simplify).filterNot(_.isInvalid)
