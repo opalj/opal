@@ -20,6 +20,7 @@ import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -84,12 +85,17 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
         val vdScp = ps(VariableDefinition(vc.pc, vc.pv, vc.m), StringConstancyProperty.key)
 
         implicit val state: ContextStringAnalysisState = ContextStringAnalysisState(vc, vdScp)
-        if (vdScp.isEPK) {
-            state._stringDependee = vdScp
-            computeResults
-        } else {
-            continuation(state)(vdScp.asInstanceOf[SomeEPS])
+        if (state.parameterIndices.nonEmpty) {
+            // We have some parameters that need to be resolved for all callers of this method
+            val callersEOptP = ps(state.dm, Callers.key)
+            state.updateCallers(callersEOptP)
+
+            if (callersEOptP.hasUBP) {
+                handleNewCallers(NoCallers, callersEOptP.ub)
+            }
         }
+
+        computeResults
     }
 
     private def continuation(state: ContextStringAnalysisState)(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -97,31 +103,21 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
         eps match {
             // "Downwards" dependency
             case EUBP(_: VariableDefinition, _: StringConstancyProperty) =>
-                state._stringDependee = eps.asInstanceOf[EOptionP[VariableDefinition, StringConstancyProperty]]
-
-                val parameterIndices = state.stringTree.collectParameterIndices
-                if (parameterIndices.isEmpty) {
-                    computeResults
-                } else {
-                    // We have some parameters that need to be resolved for all callers of this method
-                    val callersEOptP = ps(state.entity.context.method, Callers.key)
-                    state._callersDependee = Some(callersEOptP)
-
-                    if (callersEOptP.hasUBP) {
-                        handleNewCallers(NoCallers, callersEOptP.ub)
-                    }
-
-                    computeResults
-                }
+                handleStringDefinitionUpdate(eps.asInstanceOf[EPS[VariableDefinition, StringConstancyProperty]])
+                computeResults
 
             case UBP(callers: Callers) =>
                 val oldCallers = state._callersDependee.get.ub
-                state._callersDependee = Some(eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]])
+                state.updateCallers(eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]])
                 handleNewCallers(oldCallers, callers)
                 computeResults
 
             case EUBP(m: Method, tacai: TACAI) =>
-                handleTACAI(m, tacai)
+                if (tacai.tac.isEmpty) {
+                    state._discoveredUnknownTAC = true
+                } else {
+                    state.getCallerContexts(m).foreach(handleTACForContext(tacai.tac.get, _))
+                }
                 computeResults
 
             // "Upwards" dependency
@@ -131,6 +127,33 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
 
             case _ =>
                 computeResults
+        }
+    }
+
+    private def handleStringDefinitionUpdate(
+        newDefinitionEPS: EPS[VariableDefinition, StringConstancyProperty]
+    )(implicit state: ContextStringAnalysisState): Unit = {
+        val previousIndices = state.parameterIndices
+        state.updateStringDependee(newDefinitionEPS)
+        val newIndices = state.parameterIndices
+
+        if (newIndices.nonEmpty && newIndices != previousIndices) {
+            if (previousIndices.isEmpty) {
+                // We have some parameters that need to be resolved for all callers of this method
+                val callersEOptP = ps(state.dm, Callers.key)
+                state.updateCallers(callersEOptP)
+                if (callersEOptP.hasUBP) {
+                    handleNewCallers(NoCallers, callersEOptP.ub)
+                }
+            } else {
+                for {
+                    (context, callExprOpt) <- state._callerContexts
+                    if callExprOpt.isDefined
+                    index <- newIndices.diff(previousIndices)
+                } {
+                    handleIndexForCallExpr(context, callExprOpt.get)(index)
+                }
+            }
         }
     }
 
@@ -145,62 +168,62 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
             }
         }
 
-        for { (context, pc) <- relevantCallerContexts } {
-            val callerMethod = context.method.definedMethod
-
-            val tacEOptP = ps(callerMethod, TACAI.key)
-            state.registerTacaiDepender(tacEOptP, (context, pc))
-
+        for { callerContext <- relevantCallerContexts } {
+            state.addCallerContext(callerContext)
+            val tacEOptP = state.getTacaiForContext(callerContext)
             if (tacEOptP.hasUBP) {
-                handleTACAI(callerMethod, tacEOptP.ub)
-            }
-        }
-    }
-
-    private def handleTACAI(m: Method, tacai: TACAI)(
-        implicit state: ContextStringAnalysisState
-    ): Unit = {
-        if (tacai.tac.isEmpty) {
-            state._discoveredUnknownTAC = true
-        } else {
-            val tac = tacai.tac.get
-            val (callerContext, pc) = state.getDepender(m)
-            val callExpr = tac.stmts(valueOriginOfPC(pc, tac.pcToIndex).get) match {
-                case Assignment(_, _, expr) if expr.isInstanceOf[Call[_]] => expr.asInstanceOf[Call[V]]
-                case ExprStmt(_, expr) if expr.isInstanceOf[Call[_]]      => expr.asInstanceOf[Call[V]]
-                case call: Call[_]                                        => call.asInstanceOf[Call[V]]
-                case node                                                 => throw new IllegalArgumentException(s"Unexpected argument: $node")
-            }
-
-            for {
-                index <- state.stringTree.collectParameterIndices
-            } {
-                if (index >= callExpr.params.size) {
-                    OPALLogger.warn(
-                        "string analysis",
-                        s"Found parameter reference $index with insufficient parameters during analysis of call: "
-                            + s"${state.entity.m.toJava} in method ${m.toJava}"
-                    )
-                    state.registerInvalidParamReference(index, m)
+                val tacOpt = tacEOptP.ub.tac
+                if (tacOpt.isEmpty) {
+                    state._discoveredUnknownTAC = true
                 } else {
-                    val paramVC = VariableContext(
-                        pc,
-                        callExpr.params(index).asVar.toPersistentForm(tac.stmts),
-                        callerContext
-                    )
-                    state.registerParameterDependee(index, m, ps(paramVC, StringConstancyProperty.key))
+                    handleTACForContext(tacOpt.get, callerContext)
                 }
             }
         }
     }
 
-    private def computeResults(implicit state: ContextStringAnalysisState): ProperPropertyComputationResult = {
-        if (state.dm.name == "newInstance" && state.dm.declaringClassType.fqn.endsWith("FactoryFinder")) {
-            System.out.println("DAMN")
-        } else if (state.dm.name == "find" && state.dm.declaringClassType.fqn.endsWith("FactoryFinder")) {
-            System.out.println("DAMN2")
+    private def handleTACForContext(
+        tac:     TAC,
+        context: (Context, Int)
+    )(implicit state: ContextStringAnalysisState): Unit = {
+        val callExpr = tac.stmts(valueOriginOfPC(context._2, tac.pcToIndex).get) match {
+            case Assignment(_, _, expr) if expr.isInstanceOf[Call[_]] => expr.asInstanceOf[Call[V]]
+            case ExprStmt(_, expr) if expr.isInstanceOf[Call[_]]      => expr.asInstanceOf[Call[V]]
+            case call: Call[_]                                        => call.asInstanceOf[Call[V]]
+            case node                                                 => throw new IllegalArgumentException(s"Unexpected argument: $node")
         }
 
+        val previousCallExpr = state.addCallExprInformationForContext(context, callExpr)
+        if (previousCallExpr.isEmpty || previousCallExpr.get != callExpr) {
+            state.parameterIndices.foreach(handleIndexForCallExpr(context, callExpr))
+        }
+    }
+
+    private def handleIndexForCallExpr(
+        callerContext: (Context, Int),
+        callExpr:      Call[V]
+    )(index: Int)(implicit state: ContextStringAnalysisState): Unit = {
+        val dm = callerContext._1.method.asDefinedMethod
+        if (index >= callExpr.params.size) {
+            OPALLogger.warn(
+                "string analysis",
+                s"Found parameter reference $index with insufficient parameters during analysis of call: "
+                    + s"${state.dm.id} in method ID ${dm.id} at PC ${callerContext._2}."
+            )
+            state.registerInvalidParamReference(index, dm.id)
+        } else {
+            val tac = state.getTACForContext(callerContext)
+            val paramVC = VariableContext(
+                callerContext._2,
+                callExpr.params(index).asVar.toPersistentForm(tac.stmts),
+                callerContext._1
+            )
+
+            state.registerParameterDependee(index, dm, ps(paramVC, StringConstancyProperty.key))
+        }
+    }
+
+    private def computeResults(implicit state: ContextStringAnalysisState): ProperPropertyComputationResult = {
         if (state.hasDependees) {
             InterimResult(
                 state.entity,
