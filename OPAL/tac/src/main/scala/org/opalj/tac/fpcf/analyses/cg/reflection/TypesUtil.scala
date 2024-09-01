@@ -6,6 +6,7 @@ package analyses
 package cg
 package reflection
 
+import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 
 import org.opalj.br.BaseType
@@ -82,8 +83,10 @@ object TypesUtil {
         } else {
             val regex = classNameStringTree.toRegex
             try {
+                val pattern = Pattern.compile(regex)
                 project.allClassFiles.filter { cf =>
-                    cf.thisType.fqn.matches(regex) || cf.thisType.toJava.matches(regex)
+                    pattern.matcher(cf.thisType.fqn).matches() ||
+                    pattern.matcher(cf.thisType.toJava).matches()
                 }.map(_.thisType).toSet
             } catch {
                 case _: PatternSyntaxException =>
