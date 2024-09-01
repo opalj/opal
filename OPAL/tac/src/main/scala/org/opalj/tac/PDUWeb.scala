@@ -9,16 +9,16 @@ case class PDUWeb(
     defPCs: IntTrieSet,
     usePCs: IntTrieSet
 ) {
-    def containsVarAt(pc: Int, pv: PV): Boolean = pv match {
-        case PDVar(_, _)         => defPCs.contains(pc)
-        case PUVar(_, varDefPCs) => defPCs.intersect(varDefPCs).nonEmpty
-    }
-
     def identifiesSameVarAs(other: PDUWeb): Boolean = other.defPCs.intersect(defPCs).nonEmpty
 
     def combine(other: PDUWeb): PDUWeb = PDUWeb(other.defPCs ++ defPCs, other.usePCs ++ usePCs)
 
     def size: Int = defPCs.size + usePCs.size
+
+    // Performance optimizations
+    private lazy val _hashCode = scala.util.hashing.MurmurHash3.productHash(this)
+    override def hashCode(): Int = _hashCode
+    override def equals(obj: Any): Boolean = obj.hashCode() == _hashCode && super.equals(obj)
 }
 
 object PDUWeb {

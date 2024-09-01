@@ -97,7 +97,7 @@ public class FunctionCalls {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "It is (great|Hello, World)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "It is (Hello, World|great)")
     @Failure(n = 0, levels = Level.L0)
     public void appendWithTwoDefSitesWithFuncCallTest(int i) {
         String s;

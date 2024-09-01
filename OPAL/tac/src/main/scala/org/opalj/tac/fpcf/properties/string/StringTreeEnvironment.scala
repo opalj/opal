@@ -5,6 +5,7 @@ package fpcf
 package properties
 package string
 
+import org.opalj.br.fpcf.properties.string.SetBasedStringTreeOr
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeOr
 
@@ -63,17 +64,17 @@ case class StringTreeEnvironment private (
     def updateAll(value: StringTreeNode): StringTreeEnvironment = recreate(map.transform((_, _) => value))
 
     def join(other: StringTreeEnvironment): StringTreeEnvironment = {
-        recreate(map.transform { (web, tree) => StringTreeOr.fromNodes(tree, other.map(web)) })
+        recreate(map.transform { (web, tree) => SetBasedStringTreeOr.createWithSimplify(Set(tree, other.map(web))) })
     }
 
-    def joinMany(others: List[StringTreeEnvironment]): StringTreeEnvironment = {
+    def joinMany(others: Iterable[StringTreeEnvironment]): StringTreeEnvironment = {
         if (others.isEmpty) {
             this
         } else {
             // This only works as long as environment maps are not sparse
             recreate(map.transform { (web, tree) =>
-                val otherValues = tree +: others.map(_.map(web))
-                StringTreeOr.fromNodes(otherValues: _*)
+                val otherValues = others.map(_.map(web)).concat(Iterable(tree))
+                SetBasedStringTreeOr.createWithSimplify(otherValues.toSet)
             })
         }
     }

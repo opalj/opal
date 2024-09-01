@@ -15,15 +15,13 @@ package object string {
 
     type TAC = TACode[TACMethodParameter, V]
 
-    trait AnalyzableVariable {
-        def pc: Int
-        def pv: PV
-        def m: Method
+    private[string] case class VariableDefinition(pc: Int, pv: PV, m: Method)
+    case class VariableContext(pc: Int, pv: PV, context: Context) {
+        def m: Method = context.method.definedMethod
     }
 
-    private[string] case class VariableDefinition(pc: Int, pv: PV, m: Method) extends AnalyzableVariable
-    case class VariableContext(pc: Int, pv: PV, context: Context) extends AnalyzableVariable {
-        override def m: Method = context.method.definedMethod
+    private[string] case class MethodParameterContext(index: Int, context: Context) {
+        def m: Method = context.method.definedMethod
     }
 
     case class MethodPC(pc: Int, dm: DefinedMethod)

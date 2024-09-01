@@ -8,6 +8,7 @@ package string
 import scala.collection.mutable
 
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -17,7 +18,9 @@ import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeOr
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
@@ -31,84 +34,49 @@ private[string] case class ContextFreeStringAnalysisState(
     def dependees: Set[EOptionP[Entity, Property]] = Set(stringFlowDependee)
 }
 
-private[string] case class ContextStringAnalysisState(
-    entity:              VariableContext,
-    var _stringDependee: EOptionP[VariableDefinition, StringConstancyProperty]
+private[string] class ContextStringAnalysisState private (
+    _entity:                       VariableContext,
+    var _stringDependee:           EOptionP[VariableDefinition, StringConstancyProperty],
+    private var _parameterIndices: Set[Int]
 ) {
 
-    def dm: DeclaredMethod = entity.context.method
-    def stringTree: StringTreeNode = _stringDependee.ub.sci.tree
+    def entity: VariableContext = _entity
+    def dm: DeclaredMethod = _entity.context.method
 
-    // Callers
-    var _callersDependee: Option[EOptionP[DeclaredMethod, Callers]] = None
-
-    // TACAI
-    private type TACAIDepender = (Context, Int)
-    private val _tacaiDependees: mutable.Map[Method, EOptionP[Method, TACAI]] = mutable.Map.empty
-    private val _tacaiDependers: mutable.Map[Method, TACAIDepender] = mutable.Map.empty
-    var _discoveredUnknownTAC: Boolean = false
-
-    def registerTacaiDepender(tacEOptP: EOptionP[Method, TACAI], depender: TACAIDepender): Unit = {
-        _tacaiDependers(tacEOptP.e) = depender
-        _tacaiDependees(tacEOptP.e) = tacEOptP
+    def updateStringDependee(stringDependee: EPS[VariableDefinition, StringConstancyProperty]): Unit = {
+        _stringDependee = stringDependee
+        // TODO parameter indices should always grow <- when the new string dependee only contains additional information
+        _parameterIndices ++= stringDependee.ub.sci.tree.collectParameterIndices
     }
-    def getDepender(m:                Method): TACAIDepender = _tacaiDependers(m)
-    def updateTacaiDependee(tacEOptP: EOptionP[Method, TACAI]): Unit = _tacaiDependees(tacEOptP.e) = tacEOptP
+    private def stringTree: StringTreeNode = _stringDependee.ub.sci.tree
+    def parameterIndices: Set[Int] = _parameterIndices
 
     // Parameter StringConstancy
-    private val _entityToParamIndexMapping: mutable.Map[VariableContext, (Int, Method)] = mutable.Map.empty
-    private val _paramIndexToEntityMapping: mutable.Map[Int, mutable.Map[Method, Seq[VariableContext]]] =
-        mutable.Map.empty.withDefaultValue(mutable.Map.empty)
-    private val _paramDependees: mutable.Map[VariableContext, EOptionP[VariableContext, StringConstancyProperty]] =
+    private val _paramDependees: mutable.Map[MethodParameterContext, EOptionP[
+        MethodParameterContext,
+        StringConstancyProperty
+    ]] =
         mutable.Map.empty
-    private val _invalidParamReferences: mutable.Map[Method, Set[Int]] = mutable.Map.empty
 
-    def registerParameterDependee(
-        index:    Int,
-        m:        Method,
-        dependee: EOptionP[VariableContext, StringConstancyProperty]
-    ): Unit = {
-        if (!_paramIndexToEntityMapping.contains(index)) {
-            _paramIndexToEntityMapping(index) = mutable.Map.empty
+    def registerParameterDependee(dependee: EOptionP[MethodParameterContext, StringConstancyProperty]): Unit = {
+        if (_paramDependees.contains(dependee.e)) {
+            throw new IllegalArgumentException(s"Tried to register the same parameter dependee twice: $dependee")
         }
 
-        _paramIndexToEntityMapping(index).updateWith(m) {
-            case None           => Some(Seq(dependee.e))
-            case Some(previous) => Some(previous :+ dependee.e)
-        }
-        _entityToParamIndexMapping(dependee.e) = (index, m)
+        updateParamDependee(dependee)
+    }
+    def updateParamDependee(dependee: EOptionP[MethodParameterContext, StringConstancyProperty]): Unit =
         _paramDependees(dependee.e) = dependee
-    }
-    def updateParamDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit = {
-        _paramDependees(dependee.e) = dependee
-    }
-    def registerInvalidParamReference(index: Int, m: Method): Unit = {
-        _invalidParamReferences.updateWith(m)(ov => Some(ov.getOrElse(Set.empty) + index))
-    }
 
     def currentSciUB: StringConstancyInformation = {
         if (_stringDependee.hasUBP) {
-            val paramTrees = if (_discoveredUnknownTAC) {
-                stringTree.collectParameterIndices.map((_, StringTreeNode.lb)).toMap
-            } else {
-                stringTree.collectParameterIndices.map { index =>
-                    val paramOptions = _paramIndexToEntityMapping(index).keys.toSeq
-                        .sortBy(_.fullyQualifiedSignature)
-                        .flatMap { m =>
-                            if (_invalidParamReferences.contains(m)) {
-                                Some(StringTreeNode.ub)
-                            } else {
-                                _paramIndexToEntityMapping(index)(m)
-                                    .sortBy(_.pc)
-                                    .map(_paramDependees)
-                                    .filter(_.hasUBP)
-                                    .map(_.ub.sci.tree)
-                            }
-                        }
-
-                    (index, StringTreeOr(paramOptions).simplify)
-                }.toMap
-            }
+            val paramTrees = _paramDependees.map { kv =>
+                (
+                    kv._1.index,
+                    if (kv._2.hasUBP) kv._2.ub.sci.tree
+                    else StringTreeNode.ub
+                )
+            }.toMap
 
             StringConstancyInformation(stringTree.replaceParameters(paramTrees).simplify)
         } else {
@@ -116,17 +84,131 @@ private[string] case class ContextStringAnalysisState(
         }
     }
 
+    def hasDependees: Boolean = _stringDependee.isRefinable || _paramDependees.valuesIterator.exists(_.isRefinable)
+
+    def dependees: Set[EOptionP[Entity, Property]] = {
+        val preliminaryDependees =
+            _paramDependees.valuesIterator.filter(_.isRefinable) ++
+                Some(_stringDependee).filter(_.isRefinable)
+
+        preliminaryDependees.toSet
+    }
+}
+
+object ContextStringAnalysisState {
+
+    def apply(
+        entity:         VariableContext,
+        stringDependee: EOptionP[VariableDefinition, StringConstancyProperty]
+    ): ContextStringAnalysisState = {
+        val parameterIndices = if (stringDependee.hasUBP) stringDependee.ub.sci.tree.collectParameterIndices
+        else Set.empty[Int]
+        new ContextStringAnalysisState(entity, stringDependee, parameterIndices)
+    }
+}
+
+private[string] case class MethodParameterContextStringAnalysisState(
+    private val _entity: MethodParameterContext
+) {
+
+    def entity: MethodParameterContext = _entity
+    def dm: DeclaredMethod = _entity.context.method
+    def index: Int = _entity.index
+
+    // Callers
+    private[string] type CallerContext = (Context, Int)
+    var _callersDependee: Option[EOptionP[DeclaredMethod, Callers]] = None
+    private val _callerContexts: mutable.Map[CallerContext, Option[Call[V]]] = mutable.Map.empty
+    private val _callerContextsByMethod: mutable.Map[Method, Seq[CallerContext]] = mutable.Map.empty
+
+    def updateCallers(newCallers: EOptionP[DeclaredMethod, Callers]): Unit = _callersDependee = Some(newCallers)
+
+    def addCallerContext(callerContext: CallerContext): Unit = {
+        _callerContexts.update(callerContext, None)
+        _callerContextsByMethod.updateWith(callerContext._1.method.definedMethod) {
+            case None       => Some(Seq(callerContext))
+            case Some(prev) => Some(callerContext +: prev)
+        }
+    }
+    def getCallerContexts(m: Method): Seq[CallerContext] = _callerContextsByMethod(m)
+    def addCallExprInformationForContext(callerContext: CallerContext, expr: Call[V]): Option[Call[V]] =
+        _callerContexts.put(callerContext, Some(expr)).flatten
+
+    // TACAI
+    private val _tacaiDependees: mutable.Map[Method, EOptionP[Method, TACAI]] = mutable.Map.empty
+    var _discoveredUnknownTAC: Boolean = false
+
+    def updateTacaiDependee(tacEOptP: EOptionP[Method, TACAI]): Unit = _tacaiDependees(tacEOptP.e) = tacEOptP
+    def getTacaiForContext(callerContext: CallerContext)(implicit ps: PropertyStore): EOptionP[Method, TACAI] = {
+        val m = callerContext._1.method.definedMethod
+
+        if (_tacaiDependees.contains(m)) {
+            _tacaiDependees(m)
+        } else {
+            val tacEOptP = ps(m, TACAI.key)
+            _tacaiDependees(tacEOptP.e) = tacEOptP
+            tacEOptP
+        }
+    }
+    def getTACForContext(callerContext: CallerContext)(implicit ps: PropertyStore): TAC =
+        getTacaiForContext(callerContext).ub.tac.get
+
+    // Parameter StringConstancy
+    private val _methodToEntityMapping: mutable.Map[DefinedMethod, Seq[VariableContext]] = mutable.Map.empty
+    private val _paramDependees: mutable.Map[VariableContext, EOptionP[VariableContext, StringConstancyProperty]] =
+        mutable.Map.empty
+    private var _methodsWithInvalidParamReferences: Set[Int] = Set.empty[Int]
+
+    def registerParameterDependee(
+        dm:       DefinedMethod,
+        dependee: EOptionP[VariableContext, StringConstancyProperty]
+    ): Unit = {
+        if (_paramDependees.contains(dependee.e)) {
+            throw new IllegalArgumentException(s"Tried to register the same parameter dependee twice: $dependee")
+        }
+
+        _methodToEntityMapping.updateWith(dm) {
+            case None           => Some(Seq(dependee.e))
+            case Some(previous) => Some((previous :+ dependee.e).sortBy(_.pc))
+        }
+
+        updateParamDependee(dependee)
+    }
+    def updateParamDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit =
+        _paramDependees(dependee.e) = dependee
+    def registerInvalidParamReference(dmId: Int): Unit =
+        _methodsWithInvalidParamReferences += dmId
+
+    def currentSciUB: StringConstancyInformation = {
+        if (_discoveredUnknownTAC) {
+            StringConstancyInformation(StringTreeNode.lb)
+        } else {
+            val paramOptions = _methodToEntityMapping.keys.toSeq
+                .sortBy(_.id)
+                .flatMap { dm =>
+                    if (_methodsWithInvalidParamReferences.contains(dm.id)) {
+                        Some(StringTreeNode.ub)
+                    } else {
+                        _methodToEntityMapping(dm)
+                            .map(_paramDependees)
+                            .filter(_.hasUBP)
+                            .map(_.ub.sci.tree)
+                    }
+                }
+
+            StringConstancyInformation(StringTreeOr(paramOptions).simplify)
+        }
+    }
+
     def finalSci: StringConstancyInformation = {
-        if (_paramIndexToEntityMapping.valuesIterator.map(_.size).sum == 0) {
-            val paramTrees = stringTree.collectParameterIndices.map((_, StringTreeNode.lb)).toMap
-            StringConstancyInformation(stringTree.replaceParameters(paramTrees).simplify)
+        if (_methodToEntityMapping.isEmpty) {
+            StringConstancyInformation(StringTreeNode.lb)
         } else {
             currentSciUB
         }
     }
 
-    def hasDependees: Boolean = _stringDependee.isRefinable ||
-        _callersDependee.exists(_.isRefinable) ||
+    def hasDependees: Boolean = _callersDependee.exists(_.isRefinable) ||
         _tacaiDependees.valuesIterator.exists(_.isRefinable) ||
         _paramDependees.valuesIterator.exists(_.isRefinable)
 
@@ -136,10 +218,6 @@ private[string] case class ContextStringAnalysisState(
                 _paramDependees.valuesIterator.filter(_.isRefinable) ++
                 _callersDependee.filter(_.isRefinable)
 
-        if (_stringDependee.isRefinable) {
-            preliminaryDependees.toSet + _stringDependee
-        } else {
-            preliminaryDependees.toSet
-        }
+        preliminaryDependees.toSet
     }
 }

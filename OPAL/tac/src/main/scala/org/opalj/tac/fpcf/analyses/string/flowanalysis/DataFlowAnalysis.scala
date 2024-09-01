@@ -110,7 +110,7 @@ class DataFlowAnalysis(
                 _currentNode <- sortedNodes.filter(_ != entryNode)
                 currentNode = _currentNode.asInstanceOf[g.NodeT]
             } {
-                val previousEnvs = currentNode.diPredecessors.toList.sortBy(_.outer).map { dp =>
+                val previousEnvs = currentNode.diPredecessors.toList.map { dp =>
                     pipe(currentNode.outer, currentNodeEnvs(dp))
                 }
                 currentNodeEnvs.update(currentNode, previousEnvs.head.joinMany(previousEnvs.tail))
