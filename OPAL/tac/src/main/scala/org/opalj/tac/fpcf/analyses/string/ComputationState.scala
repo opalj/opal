@@ -13,7 +13,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
-import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
@@ -24,6 +23,7 @@ import org.opalj.tac.fpcf.analyses.string.flowanalysis.SuperFlowGraph
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
+import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
  * This class is to be used to store state information that are required at a later point in
@@ -76,8 +76,8 @@ case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: 
         })
     }
 
-    private var _webMap: Map[PDUWeb, StringTreeNode] = Map.empty
-    def getWebMapAndReset: Map[PDUWeb, StringTreeNode] = {
+    private var _startEnv: StringTreeEnvironment = StringTreeEnvironment(Map.empty)
+    def getStartEnvAndReset: StringTreeEnvironment = {
         if (pcToWebChangeMapping.exists(_._2)) {
             val webs = getWebs
             val indexedWebs = mutable.ArrayBuffer.empty[PDUWeb]
@@ -105,7 +105,7 @@ case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: 
                 }
             }
 
-            _webMap = indexedWebs.filter(_ != null)
+            val startMap = indexedWebs.filter(_ != null)
                 .map { web: PDUWeb =>
                     val defPCs = web.defPCs.toList.sorted
                     if (defPCs.head >= 0) {
@@ -119,9 +119,10 @@ case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: 
                         }
                     }
                 }.toMap
+            _startEnv = StringTreeEnvironment(startMap)
             pcToWebChangeMapping.mapValuesInPlace((_, _) => false)
         }
-        _webMap
+        _startEnv
     }
 }
 

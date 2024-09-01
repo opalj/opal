@@ -25,7 +25,6 @@ import org.opalj.tac.fpcf.analyses.string.flowanalysis.StructuralAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
-import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
  * @author Maximilian Rüsch
@@ -94,23 +93,19 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
 
     private def computeResults(implicit state: ComputationState): ProperPropertyComputationResult = {
         if (state.hasDependees) {
-            getInterimResult(state)
+            InterimResult.forUB(
+                state.entity,
+                computeNewUpperBound(state),
+                state.dependees.toSet,
+                continuation(state)
+            )
         } else {
             Result(state.entity, computeNewUpperBound(state))
         }
     }
 
-    private def getInterimResult(state: ComputationState): InterimResult[MethodStringFlow] = {
-        InterimResult.forUB(
-            state.entity,
-            computeNewUpperBound(state),
-            state.dependees.toSet,
-            continuation(state)
-        )
-    }
-
     private def computeNewUpperBound(state: ComputationState): MethodStringFlow = {
-        val startEnv = StringTreeEnvironment(state.getWebMapAndReset)
+        val startEnv = state.getStartEnvAndReset
         MethodStringFlow(state.flowAnalysis.compute(state.getFlowFunctionsByPC)(startEnv))
     }
 }
