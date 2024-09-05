@@ -21,6 +21,7 @@ class CommentParser() {
         var line : String = lastLine
         val nextComment = new Comment
         var currentKey = ""
+        var currentvalue : ConfigNode = null
 
         while(iterator.hasNext){
             if(line.trim.startsWith("#") || line.trim.startsWith("//")){
@@ -31,9 +32,33 @@ class CommentParser() {
                 line = line.trim.stripPrefix("}")
                 break
             } else {
-                // If it is none of these apply, the following string is a key. We need to identify, what terminates the key. This can be a ':', a '=' or a '{'
+                // If it is none of these apply, the following string is a key. We need to identify, what terminates the key. This can be a ':', a '=', a '[' or a '{'
                 // However, it is allowed to run multiple objects within these, so we need to find out what comes FIRST
+                val terminatingChars = Set(':','=','{','[')
+                val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars,line)
 
+                currentKey = line.substring(0,terminatingIndex -1)
+                line = line.substring(terminatingIndex).trim.stripPrefix(":").stripPrefix("=")
+
+                if(line.trim.startsWith("{")){
+                    // value begins with opening bracket of an object
+                    val (newvalue,newline) = this.parseObject(iterator, line, nextComment)
+                    line = newline
+                    currentvalue = newvalue
+
+                } else if(line.trim.startsWith("[")){
+                    // value begins with opening bracket of an object
+                    val (newvalue,newline) = this.parseList(iterator, line, nextComment)
+                    line = newline
+                    currentvalue = newvalue
+                } else {
+                    // value is an entry
+                    val (newvalue,newline) = this.parseEntry(iterator, line, nextComment)
+                    line = newline
+                    currentvalue = newvalue
+                }
+
+                entries.addOne(currentKey,currentvalue)
             }
 
             if(line.trim == ""){
@@ -57,8 +82,10 @@ class CommentParser() {
 
         if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
             // Case: line starts with a comment
-            currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
-            line = iterator.next()
+            while(line.trim.startsWith("#") || line.trim.startsWith("//")) {
+                currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+                line = iterator.next()
+            }
         } else if (line.trim.startsWith("\"\"\"")){
             // Case: line starts with a triple quoted string (These allow for multi-line values, so the line end does not necessarily terminate the value
             val openedvalue  = line.trim.stripPrefix("\"\"\"")
@@ -115,8 +142,8 @@ class CommentParser() {
             } else if(line.trim.startsWith("//") || line.trim.startsWith("#")){
                 nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
                 line = ""
-            } else if(line.trim.startsWith("]")){
-                line = line.trim.stripPrefix("]")
+            } else if(line.trim.startsWith("]") || (line.trim.startsWith(",") && line.trim.stripPrefix(",").trim.startsWith("]"))){
+                line = line.trim.stripPrefix(",").trim.stripPrefix("]")
                 break
             } else {
                 val (configEntry,newline) = parseEntry(iterator, line.trim.stripPrefix(","), nextComment)
