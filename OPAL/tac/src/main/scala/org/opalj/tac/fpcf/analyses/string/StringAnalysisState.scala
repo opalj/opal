@@ -46,7 +46,7 @@ private[string] class ContextStringAnalysisState private (
     def updateStringDependee(stringDependee: EPS[VariableDefinition, StringConstancyProperty]): Unit = {
         _stringDependee = stringDependee
         // TODO parameter indices should always grow <- when the new string dependee only contains additional information
-        _parameterIndices ++= stringDependee.ub.sci.tree.collectParameterIndices
+        _parameterIndices ++= stringDependee.ub.sci.tree.parameterIndices
     }
     private def stringTree: StringTreeNode = _stringDependee.ub.sci.tree
     def parameterIndices: Set[Int] = _parameterIndices
@@ -101,7 +101,7 @@ object ContextStringAnalysisState {
         entity:         VariableContext,
         stringDependee: EOptionP[VariableDefinition, StringConstancyProperty]
     ): ContextStringAnalysisState = {
-        val parameterIndices = if (stringDependee.hasUBP) stringDependee.ub.sci.tree.collectParameterIndices
+        val parameterIndices = if (stringDependee.hasUBP) stringDependee.ub.sci.tree.parameterIndices
         else Set.empty[Int]
         new ContextStringAnalysisState(entity, stringDependee, parameterIndices)
     }

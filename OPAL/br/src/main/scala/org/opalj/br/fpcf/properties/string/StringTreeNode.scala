@@ -5,7 +5,6 @@ package fpcf
 package properties
 package string
 
-import scala.collection.immutable.Seq
 import scala.util.Try
 import scala.util.matching.Regex
 
@@ -32,10 +31,15 @@ sealed trait StringTreeNode {
 
     def constancyLevel: StringConstancyLevel.Value
 
-    def collectParameterIndices: Set[Int] = children.flatMap(_.collectParameterIndices).toSet
+    lazy val parameterIndices: Set[Int] = children.flatMap(_.parameterIndices).toSet
     final def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
-        if (parameters.isEmpty) this
-        else _replaceParameters(parameters)
+        if (parameters.isEmpty ||
+            parameterIndices.isEmpty ||
+            parameters.keySet.intersect(parameterIndices).isEmpty
+        )
+            this
+        else
+            _replaceParameters(parameters)
     }
     protected def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode
 
@@ -96,7 +100,7 @@ case class StringTreeRepetition(child: StringTreeNode) extends CachedSimplifyNod
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
 
-    override def collectParameterIndices: Set[Int] = child.collectParameterIndices
+    override lazy val parameterIndices: Set[Int] = child.parameterIndices
 
     def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
         StringTreeRepetition(child.replaceParameters(parameters))
@@ -179,7 +183,7 @@ trait StringTreeOr extends CachedSimplifyNode with CachedHashCode {
     override def constancyLevel: StringConstancyLevel.Value =
         _children.map(_.constancyLevel).reduceLeft(StringConstancyLevel.determineMoreGeneral)
 
-    override def collectParameterIndices: Set[Int] = _children.flatMap(_.collectParameterIndices).toSet
+    override lazy val parameterIndices: Set[Int] = _children.flatMap(_.parameterIndices).toSet
 }
 
 object StringTreeOr {
@@ -199,7 +203,7 @@ object StringTreeOr {
     def fromNodes(children: StringTreeNode*): StringTreeNode = SetBasedStringTreeOr.createWithSimplify(children.toSet)
 }
 
-case class SeqBasedStringTreeOr(override val _children: Seq[StringTreeNode]) extends StringTreeOr {
+private case class SeqBasedStringTreeOr(override val _children: Seq[StringTreeNode]) extends StringTreeOr {
 
     override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.map(_.sorted).sortBy(_.toRegex))
 
@@ -330,7 +334,7 @@ object StringTreeEmptyConst extends StringTreeConst("") {
 case class StringTreeParameter(index: Int) extends SimpleStringTreeNode {
     override def _toRegex: String = ".*"
 
-    override def collectParameterIndices: Set[Int] = Set(index)
+    override lazy val parameterIndices: Set[Int] = Set(index)
 
     override def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
         parameters.getOrElse(index, this)
