@@ -9,7 +9,6 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 

@@ -27,7 +27,6 @@ import org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.FlowGraph
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.Statement
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.StructuralAnalysis
-import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty

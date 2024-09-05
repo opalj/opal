@@ -30,8 +30,8 @@ import org.opalj.log.Error
 import org.opalj.log.Info
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.logOnce
+import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.l2.L2StringAnalysis
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 

@@ -12,7 +12,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
+import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
