@@ -4,7 +4,7 @@ import java.nio.file.Path
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
-import scala.util.control.Breaks.break
+import scala.util.control.Breaks._
 
 class CommentParser() {
 
@@ -23,7 +23,7 @@ class CommentParser() {
         var currentKey = ""
         var currentvalue : ConfigNode = null
 
-        while(iterator.hasNext){
+        breakable { while(iterator.hasNext){
             if(line.trim.startsWith("#") || line.trim.startsWith("//")){
                 nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
                 line = ""
@@ -31,7 +31,7 @@ class CommentParser() {
                 // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
                 line = line.trim.stripPrefix("}")
                 break()
-            } else {
+            } else if(line.trim != ""){
                 // If it is none of these apply, the following string is a key. We need to identify, what terminates the key. This can be a ':', a '=', a '[' or a '{'
                 // However, it is allowed to run multiple objects within these, so we need to find out what comes FIRST
                 val terminatingChars = Set(':','=','{','[')
@@ -42,13 +42,13 @@ class CommentParser() {
 
                 if(line.trim.startsWith("{")){
                     // value begins with opening bracket of an object
-                    val (newvalue,newline) = this.parseObject(iterator, line, nextComment)
+                    val (newvalue,newline) = this.parseObject(iterator, line.trim.substring(1), nextComment)
                     line = newline
                     currentvalue = newvalue
 
                 } else if(line.trim.startsWith("[")){
                     // value begins with opening bracket of an object
-                    val (newvalue,newline) = this.parseList(iterator, line, nextComment)
+                    val (newvalue,newline) = this.parseList(iterator, line.trim.substring(1), nextComment)
                     line = newline
                     currentvalue = newvalue
                 } else {
@@ -61,10 +61,10 @@ class CommentParser() {
                 entries.addOne((currentKey,currentvalue))
             }
 
-            if(line.trim == ""){
+            if(line.trim == "" && iterator.hasNext){
                 line = iterator.next()
             }
-        }
+        }}
 
         // If there is a comment directly behind the closing bracket of the object, add it to comments too.
         if(line.trim.startsWith("#") || line.trim.startsWith("//")){
@@ -95,22 +95,28 @@ class CommentParser() {
         } else if (line.trim.startsWith("\"")) {
             // Case: line starts with a quoted string
             line = line.trim.stripPrefix("\"").trim
-            value = line.substring(0,line.indexOf("\"")-1).trim
+            value = line.substring(0,line.indexOf("\"")).trim
             line = line.stripPrefix(value).trim.stripPrefix("\"")
         } else if (line.trim.startsWith("\'")) {
             // Case: line starts with a single quoted string
             line = line.trim.stripPrefix("\'").trim
-            value = line.substring(0,line.indexOf("\'")-1).trim
+            value = line.substring(0,line.indexOf("\'")).trim
             line = line.stripPrefix(value).trim.stripPrefix("\'")
         } else {
             // Case: Line starts with an unquoted string
             // There are two ways of terminating an unquoted string
             // Option 1: The value is inside of a pattern that has other control structures
+            line = line.trim
             val terminatingChars = Set(',',']','}',' ')
             val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars,line)
 
-            value = line.trim.substring(0,terminatingIndex-1).trim
-            line = line.trim.stripPrefix(value).trim
+            if(terminatingIndex > 0) {
+                value = line.trim.substring(0, terminatingIndex).trim
+                line = line.trim.stripPrefix(value).trim
+            } else {
+                value = line.trim
+                line = ""
+            }
         }
 
         // If a comment is behind the value in the same line, this adds it to the comments too
@@ -128,7 +134,7 @@ class CommentParser() {
         val value = new ListBuffer[ConfigNode]
         var nextComment = new Comment
 
-        while(iterator.hasNext){
+        breakable { while(iterator.hasNext){
             if(line.trim.startsWith("{")){
                 val (configobject,newline) = parseObject(iterator, line.trim.stripPrefix("{"), nextComment)
                 value += configobject
@@ -151,10 +157,10 @@ class CommentParser() {
                 line = newline
             }
 
-            if(line.trim == ""){
+            if(line.trim == "" && iterator.hasNext){
                 line = iterator.next()
             }
-        }
+        }}
         if(line.trim.startsWith("#") || line.trim.startsWith("//")){
             currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
             line = ""
@@ -172,7 +178,7 @@ class CommentParser() {
             remainingLine = line.substring(line.indexOf(terminatingSymbol)).stripPrefix(terminatingSymbol)
         } else {
             value = line
-            while(iterator.hasNext){
+            breakable { while(iterator.hasNext){
                 remainingLine = iterator.next()
                 if(remainingLine.contains(terminatingSymbol)){
                     value += remainingLine.trim.substring(0,remainingLine.trim.indexOf(terminatingSymbol))
@@ -181,7 +187,7 @@ class CommentParser() {
                 } else {
                     value += remainingLine.trim()
                 }
-            }
+            }}
         }
         (value,remainingLine)
     }
