@@ -113,7 +113,7 @@ class DataFlowAnalysis(
                 val previousEnvs = currentNode.diPredecessors.toList.map { dp =>
                     pipe(currentNode.outer, currentNodeEnvs(dp))
                 }
-                currentNodeEnvs.update(currentNode, previousEnvs.head.joinMany(previousEnvs.tail))
+                currentNodeEnvs.update(currentNode, StringTreeEnvironment.joinMany(previousEnvs))
             }
 
             currentNodeEnvs(sortedNodes.last.asInstanceOf[g.NodeT])
