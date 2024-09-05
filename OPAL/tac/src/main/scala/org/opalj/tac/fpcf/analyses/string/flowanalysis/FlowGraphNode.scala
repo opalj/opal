@@ -31,6 +31,11 @@ case class Region(regionType: RegionType, override val nodeIds: Set[Int], entry:
 
     override def toString: String =
         s"Region(${regionType.productPrefix}; ${nodeIds.toList.sorted.mkString(",")}; ${entry.toString})"
+
+    // Performance optimizations
+    private lazy val _hashCode = scala.util.hashing.MurmurHash3.productHash(this)
+    override def hashCode(): Int = _hashCode
+    override def canEqual(obj: Any): Boolean = obj.hashCode() == _hashCode
 }
 
 case class Statement(nodeId: Int) extends FlowGraphNode {
