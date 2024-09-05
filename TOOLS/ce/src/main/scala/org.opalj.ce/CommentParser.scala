@@ -27,9 +27,12 @@ class CommentParser() {
                 nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
                 line = ""
             } else if (line.trim.startsWith("}")) {
+                // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
                 line = line.trim.stripPrefix("}")
                 break
             } else {
+                // If it is none of these apply, the following string is a key. We need to identify, what terminates the key. This can be a ':', a '=' or a '{'
+                // However, it is allowed to run multiple objects within these, so we need to find out what comes FIRST
 
             }
 
@@ -38,6 +41,7 @@ class CommentParser() {
             }
         }
 
+        // If there is a comment directly behind the closing bracket of the object, add it to comments too.
         if(line.trim.startsWith("#") || line.trim.startsWith("//")){
             currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
             line = ""
@@ -52,35 +56,40 @@ class CommentParser() {
         var value = ""
 
         if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
+            // Case: line starts with a comment
             currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
             line = iterator.next()
+        } else if (line.trim.startsWith("\"\"\"")){
+            // Case: line starts with a triple quoted string (These allow for multi-line values, so the line end does not necessarily terminate the value
+            val openedvalue  = line.trim.stripPrefix("\"\"\"")
+            val (newline,newvalue) = this.extractValue(iterator,openedvalue,"\"\"\"")
+            line = newline
+            value = newvalue
         } else if (line.trim.startsWith("\"")) {
-            val openedvalue = line.trim.stripPrefix("\"") // Located the opening Bracket of the value, but the closing bracket has not been found yet
-            val (newline,newvalue) = this.extractValue(iterator,openedvalue,'\"')
-            line = newline
-            value = newvalue
-            if(line.trim.startsWith("#") || line.trim.startsWith("//")){
-                currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
-                line = ""
-            }
+            // Case: line starts with a quoted string
+            line = line.trim.stripPrefix("\"").trim
+            value = line.substring(0,line.indexOf("\"")-1).trim
+            line = line.stripPrefix(value).trim.stripPrefix("\"")
         } else if (line.trim.startsWith("\'")) {
-            val openedvalue = line.trim.substring(1) // Located the opening Bracket of the value, but the closing bracket has not been found yet
-            val (newline,newvalue) = this.extractValue(iterator,openedvalue,'\'')
-            line = newline
-            value = newvalue
-            if(line.trim.startsWith("#") || line.trim.startsWith("//")){
-                currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
-                line = ""
-            }
+            // Case: line starts with a single quoted string
+            line = line.trim.stripPrefix("\'").trim
+            value = line.substring(0,line.indexOf("\'")-1).trim
+            line = line.stripPrefix(value).trim.stripPrefix("\'")
         } else {
-            val openedvalue = line.trim
-            val (newline,newvalue) = this.extractValue(iterator,openedvalue,' ')
-            line = newline
-            value = newvalue
-            if(line.trim.startsWith("#") || line.trim.startsWith("//")){
-                currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
-                line = ""
-            }
+            // Case: Line starts with an unquoted string
+            // There are two ways of terminating an unquoted string
+            // Option 1: The value is inside of a pattern that has other control structures
+            val terminatingChars = Set(',',']','}',' ')
+            val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars,line)
+
+            value = line.trim.substring(0,terminatingIndex-1).trim
+            line = line.trim.stripPrefix(value).trim
+        }
+
+        // If a comment is behind the value in the same line, this adds it to the comments too
+        if(line.trim.startsWith("#") || line.trim.startsWith("//")){
+            currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+            line = ""
         }
 
         currentComment.commitComments()
@@ -128,19 +137,19 @@ class CommentParser() {
         (ConfigList(value, currentComment),line)
     }
 
-    private def extractValue(iterator: Iterator[String], line : String, terminatingSymbol : Char): (String,String) = {
+    private def extractValue(iterator: Iterator[String], line : String, terminatingSymbol : String): (String,String) = {
         var value = ""
         var remainingLine = ""
         if(line.contains(terminatingSymbol)) {
             value = line.substring(0,line.indexOf(terminatingSymbol))
-            remainingLine = line.substring(line.indexOf(terminatingSymbol))
+            remainingLine = line.substring(line.indexOf(terminatingSymbol)).stripPrefix(terminatingSymbol)
         } else {
             value = line
             while(iterator.hasNext){
                 remainingLine = iterator.next()
                 if(remainingLine.contains(terminatingSymbol)){
                     value += remainingLine.trim.substring(0,remainingLine.trim.indexOf(terminatingSymbol))
-                    remainingLine = remainingLine.trim.stripPrefix(remainingLine.trim.substring(0,remainingLine.trim.indexOf(terminatingSymbol)))
+                    remainingLine = remainingLine.trim.stripPrefix(remainingLine.trim.substring(0,remainingLine.trim.indexOf(terminatingSymbol))).stripPrefix(terminatingSymbol)
                     break
                 } else {
                     value += remainingLine.trim()
@@ -148,5 +157,11 @@ class CommentParser() {
             }
         }
         (value,remainingLine)
+    }
+
+    private def findIndexOfCharsetInString(characterSet : Set[Char], string: String): Int = {
+        string.zipWithIndex.collectFirst {
+            case(char,index) if characterSet.contains(char) => index
+        }.getOrElse(-1)
     }
 }
