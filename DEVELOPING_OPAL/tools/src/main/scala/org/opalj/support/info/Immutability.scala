@@ -56,14 +56,15 @@ import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.log.LogContext
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
@@ -152,7 +153,8 @@ object Immutability {
                 LazyTypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazySimpleEscapeAnalysis
+                LazySimpleEscapeAnalysis,
+                EagerFieldAccessInformationAnalysis
             )
 
         project.get(callgraphKey)
