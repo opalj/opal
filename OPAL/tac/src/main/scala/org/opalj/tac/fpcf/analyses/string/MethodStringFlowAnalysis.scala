@@ -27,6 +27,7 @@ import org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.FlowGraph
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.Statement
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.StructuralAnalysis
+import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -56,6 +57,22 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
 
         logOnce(Info(ConfigLogCategory, s"${packages.size} packages are excluded from string flow analysis"))
         packages.toSeq
+    }
+
+    private val soundnessMode: SoundnessMode = {
+        val mode =
+            try {
+                SoundnessMode(project.config.getBoolean(MethodStringFlowAnalysis.SoundnessModeConfigKey))
+            } catch {
+                case t: Throwable =>
+                    logOnce {
+                        Error(ConfigLogCategory, s"couldn't read: ${MethodStringFlowAnalysis.SoundnessModeConfigKey}", t)
+                    }
+                    SoundnessMode(false)
+            }
+
+        logOnce(Info(ConfigLogCategory, "using soundness mode " + mode))
+        mode
     }
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -93,7 +110,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
             StructuralAnalysis.analyze(state.flowGraph, FlowGraph.entry)
         state.superFlowGraph = superFlowGraph
         state.controlTree = controlTree
-        state.flowAnalysis = new DataFlowAnalysis(state.controlTree, state.superFlowGraph)
+        state.flowAnalysis = new DataFlowAnalysis(state.controlTree, state.superFlowGraph, soundnessMode)
 
         state.flowGraph.nodes.toOuter.foreach {
             case Statement(pc) if pc >= 0 =>
@@ -142,4 +159,5 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
 object MethodStringFlowAnalysis {
 
     final val ExcludedPackagesConfigKey = "org.opalj.fpcf.analyses.string.MethodStringFlowAnalysis.excludedPackages"
+    final val SoundnessModeConfigKey = "org.opalj.fpcf.analyses.string.MethodStringFlowAnalysis.highSoundness"
 }

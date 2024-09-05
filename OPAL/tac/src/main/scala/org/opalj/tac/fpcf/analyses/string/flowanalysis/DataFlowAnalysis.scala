@@ -9,6 +9,8 @@ package flowanalysis
 import scala.collection.mutable
 
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
+import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
+import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
@@ -17,7 +19,8 @@ import scalax.collection.GraphTraversal.Parameters
 
 class DataFlowAnalysis(
     private val controlTree:    ControlTree,
-    private val superFlowGraph: SuperFlowGraph
+    private val superFlowGraph: SuperFlowGraph,
+    private val soundnessMode:  SoundnessMode
 ) {
 
     private val _nodeOrderings = mutable.Map.empty[FlowGraphNode, Seq[SuperFlowGraph#NodeT]]
@@ -125,9 +128,8 @@ class DataFlowAnalysis(
 
         def processSelfLoop(entry: FlowGraphNode): StringTreeEnvironment = {
             val resultEnv = pipe(entry, env)
-            // Looped operations that modify environment contents are not supported here
-            if (resultEnv != env) env.updateAll(StringTreeDynamicString)
-            else env
+            if (resultEnv != env && soundnessMode.isHigh) env.updateAll(StringTreeDynamicString)
+            else resultEnv
         }
 
         def processWhileLoop(entry: FlowGraphNode): StringTreeEnvironment = {
@@ -145,9 +147,8 @@ class DataFlowAnalysis(
                 resultEnv = pipe(currentNode.outer, resultEnv)
             }
 
-            // Looped operations that modify environment contents are not supported here
-            if (resultEnv != envAfterEntry) envAfterEntry.updateAll(StringTreeDynamicString)
-            else envAfterEntry
+            if (resultEnv != envAfterEntry && soundnessMode.isHigh) envAfterEntry.updateAll(StringTreeDynamicString)
+            else resultEnv
         }
 
         def processNaturalLoop(entry: FlowGraphNode): StringTreeEnvironment = {
@@ -165,7 +166,8 @@ class DataFlowAnalysis(
             )
 
             if (isCyclic) {
-                env.updateAll(StringTreeDynamicString)
+                if (soundnessMode.isHigh) env.updateAll(StringTreeDynamicString)
+                else env.updateAll(StringTreeInvalidElement)
             } else {
                 // Handle resulting acyclic region
                 val resultEnv = handleProperSubregion[FlowGraphNode, removedBackEdgesGraph.type](
@@ -173,9 +175,8 @@ class DataFlowAnalysis(
                     removedBackEdgesGraph.nodes.toSet,
                     entry
                 )
-                // Looped operations that modify string contents are not supported here
-                if (resultEnv != env) env.updateAll(StringTreeDynamicString)
-                else env
+                if (resultEnv != env && soundnessMode.isHigh) env.updateAll(StringTreeDynamicString)
+                else resultEnv
             }
         }
 

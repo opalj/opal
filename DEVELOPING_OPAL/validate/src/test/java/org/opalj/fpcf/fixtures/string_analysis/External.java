@@ -127,10 +127,8 @@ public class External {
      * Methods are called that return a string but are not within this project => cannot / will not interpret
      */
     @Dynamic(n = 0, levels = Level.TRUTH, value = "(.*)*")
-    @Failure(n = 0, levels = Level.L0)
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, value = ".*")
+    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
     @Invalid(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
-    @Dynamic(n = 1, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = ".*")
     @Dynamic(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = ".*")
     public void methodsOutOfScopeTest() throws FileNotFoundException {
         File file = new File("my-file.txt");
