@@ -7,6 +7,8 @@ import java.net.URL
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -84,6 +86,10 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => Set(domain)
             case Some(requirements) => requirements + domain
+        }
+        p.updateProjectInformationKeyInitializationData(EagerDetachedTACAIKey) {
+            case None    => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
+            case Some(_) => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
         }
 
         initBeforeCallGraph(p)
