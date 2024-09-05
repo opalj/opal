@@ -170,7 +170,7 @@ trait StringTreeOr extends CachedSimplifyNode with CachedHashCode {
 
     protected val _children: Iterable[StringTreeNode]
 
-    override final val children: Seq[StringTreeNode] = _children.toSeq
+    override final lazy val children: Seq[StringTreeNode] = _children.toSeq
 
     override def _toRegex: String = {
         children.size match {
@@ -294,10 +294,13 @@ object SetBasedStringTreeOr {
             case 0 => StringTreeInvalidElement
             case 1 => _children.head
             case _ =>
-                val newChildren = _children.flatMap {
-                    case orChild: StringTreeOr => orChild.children
-                    case child                 => Set(child)
+                val newChildrenBuilder = Set.newBuilder[StringTreeNode]
+                _children.foreach {
+                    case setOrChild: SetBasedStringTreeOr => newChildrenBuilder.addAll(setOrChild._children)
+                    case orChild: StringTreeOr            => newChildrenBuilder.addAll(orChild.children)
+                    case child                            => newChildrenBuilder.addOne(child)
                 }
+                val newChildren = newChildrenBuilder.result()
                 newChildren.size match {
                     case 1 => newChildren.head
                     case _ => SetBasedStringTreeOr(newChildren)
