@@ -30,7 +30,7 @@ class CommentParser() {
             } else if (line.trim.startsWith("}")) {
                 // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
                 line = line.trim.stripPrefix("}")
-                break
+                break()
             } else {
                 // If it is none of these apply, the following string is a key. We need to identify, what terminates the key. This can be a ':', a '=', a '[' or a '{'
                 // However, it is allowed to run multiple objects within these, so we need to find out what comes FIRST
@@ -57,8 +57,8 @@ class CommentParser() {
                     line = newline
                     currentvalue = newvalue
                 }
-
-                entries.addOne(currentKey,currentvalue)
+                line = line.trim.stripPrefix(",")
+                entries.addOne((currentKey,currentvalue))
             }
 
             if(line.trim == ""){
@@ -144,7 +144,7 @@ class CommentParser() {
                 line = ""
             } else if(line.trim.startsWith("]") || (line.trim.startsWith(",") && line.trim.stripPrefix(",").trim.startsWith("]"))){
                 line = line.trim.stripPrefix(",").trim.stripPrefix("]")
-                break
+                break()
             } else {
                 val (configEntry,newline) = parseEntry(iterator, line.trim.stripPrefix(","), nextComment)
                 value += configEntry
@@ -177,7 +177,7 @@ class CommentParser() {
                 if(remainingLine.contains(terminatingSymbol)){
                     value += remainingLine.trim.substring(0,remainingLine.trim.indexOf(terminatingSymbol))
                     remainingLine = remainingLine.trim.stripPrefix(remainingLine.trim.substring(0,remainingLine.trim.indexOf(terminatingSymbol))).stripPrefix(terminatingSymbol)
-                    break
+                    break()
                 } else {
                     value += remainingLine.trim()
                 }
