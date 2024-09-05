@@ -15,6 +15,8 @@ sealed trait StringTreeNode {
 
     val children: Seq[StringTreeNode]
 
+    lazy val depth: Int = children.map(_.depth).maxOption.getOrElse(0) + 1
+
     def sorted: StringTreeNode
 
     private var _regex: Option[String] = None
