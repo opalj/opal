@@ -10,7 +10,7 @@ import scala.collection.mutable
 
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
-import org.opalj.tac.fpcf.analyses.string.interpretation.SoundnessMode
+import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 

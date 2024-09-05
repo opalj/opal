@@ -4,7 +4,6 @@ package tac
 package fpcf
 package analyses
 package string
-package interpretation
 
 trait SoundnessMode {
 
