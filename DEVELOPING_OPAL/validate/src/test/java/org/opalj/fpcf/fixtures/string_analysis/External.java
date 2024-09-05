@@ -79,6 +79,7 @@ public class External {
     @Invalid(n = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.LOW)
     @Dynamic(n = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.HIGH,
         value = "^-?\\d*\\.{0,1}\\d+$", reason = "the field value is inlined using L2 domains")
+    @Invalid(n = 0, levels = Level.L2, soundness = SoundnessMode.LOW)
     public void fieldInitByConstructorParameter() {
         analyzeString(new StringBuilder().append(fieldWithConstructorParameterInit).toString());
     }

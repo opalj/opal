@@ -29,7 +29,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.log.Error
 import org.opalj.log.Info
-import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
@@ -262,23 +261,13 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
         callExpr:      Call[V]
     )(implicit state: MethodParameterContextStringAnalysisState): Unit = {
         val dm = callerContext._1.method.asDefinedMethod
-        if (state.index >= callExpr.params.size) {
-            OPALLogger.warn(
-                "string analysis",
-                s"Found parameter reference ${state.index} with insufficient parameters during analysis of call: "
-                    + s"${state.dm.id} in method ID ${dm.id} at PC ${callerContext._2}."
-            )
-            state.registerInvalidParamReference(dm.id)
-        } else {
-            val tac = state.getTACForContext(callerContext)
-            val paramVC = VariableContext(
-                callerContext._2,
-                callExpr.params(state.index).asVar.toPersistentForm(tac.stmts),
-                callerContext._1
-            )
-
-            state.registerParameterDependee(dm, ps(paramVC, StringConstancyProperty.key))
-        }
+        val tac = state.getTACForContext(callerContext)
+        val paramVC = VariableContext(
+            callerContext._2,
+            callExpr.params(state.index).asVar.toPersistentForm(tac.stmts),
+            callerContext._1
+        )
+        state.registerParameterDependee(dm, ps(paramVC, StringConstancyProperty.key))
     }
 
     private def computeResults(implicit

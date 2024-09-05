@@ -125,8 +125,6 @@ class L2FieldReadInterpreter(
         implicit val accessState: FieldReadState = FieldReadState(target, fieldAccessEOptP)
         if (fieldAccessEOptP.hasUBP) {
             handleFieldAccessInformation(fieldAccessEOptP.ub)
-
-            tryComputeFinalResult
         } else {
             accessState.previousResults.prepend(StringTreeNode.ub)
             InterimResult.forUB(
@@ -195,8 +193,16 @@ class L2FieldReadInterpreter(
             computeFinalResult(computeUBWithNewTree(StringTreeDynamicString))
         } else {
             var trees = accessState.accessDependees.map { ad =>
-                if (ad.hasUBP) ad.ub.sci.tree
-                else StringTreeNode.ub
+                if (ad.hasUBP) {
+                    val tree = ad.ub.sci.tree
+                    if (tree.parameterIndices.nonEmpty) {
+                        // We cannot handle write values that contain parameter indices since resolving the parameters
+                        // requires context and this interpreter is present in multiple contexts.
+                        if (soundnessMode.isHigh) StringTreeNode.lb
+                        else StringTreeNode.ub
+                    } else
+                        tree
+                } else StringTreeNode.ub
             }
             // No init is present => append a `null` element to indicate that the field might be null; this behavior
             // could be refined by only setting the null element if no statement is guaranteed to be executed prior
@@ -204,8 +210,8 @@ class L2FieldReadInterpreter(
             if (accessState.fieldAccessDependee.isFinal && !accessState.hasInit) {
                 trees = trees :+ StringTreeNull
             }
-            // If an access could not be resolved, append a dynamic element
-            if (accessState.hasUnresolvableAccess) {
+
+            if (accessState.hasUnresolvableAccess && soundnessMode.isHigh) {
                 trees = trees :+ StringTreeNode.lb
             }
 
