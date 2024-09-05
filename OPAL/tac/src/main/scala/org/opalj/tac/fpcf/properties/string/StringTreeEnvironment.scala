@@ -14,16 +14,16 @@ import org.opalj.br.fpcf.properties.string.StringTreeOr
  */
 case class StringTreeEnvironment private (
     private val map:      Map[PDUWeb, StringTreeNode],
-    private val pcToWebs: Map[Int, Iterable[PDUWeb]]
+    private val pcToWebs: Map[Int, Seq[PDUWeb]]
 ) {
 
     private def getWebsFor(pc: Int, pv: PV): Seq[PDUWeb] = {
         val webs = pv match {
-            case PDVar(_, _)         => pcToWebs(pc)
-            case PUVar(_, varDefPCs) => varDefPCs.map(pcToWebs).flatten
+            case _: PDVar[_] => pcToWebs(pc)
+            case _: PUVar[_] => pv.defPCs.map(pcToWebs).toSeq.flatten
         }
 
-        webs.toSeq.sortBy(_.defPCs.toList.toSet.min)
+        webs.sortBy(_.defPCs.toList.toSet.min)
     }
 
     private def getWebsFor(web: PDUWeb): Seq[PDUWeb] = map.keys
@@ -67,18 +67,6 @@ case class StringTreeEnvironment private (
         recreate(map.transform { (web, tree) => SetBasedStringTreeOr.createWithSimplify(Set(tree, other.map(web))) })
     }
 
-    def joinMany(others: Iterable[StringTreeEnvironment]): StringTreeEnvironment = {
-        if (others.isEmpty) {
-            this
-        } else {
-            // This only works as long as environment maps are not sparse
-            recreate(map.transform { (web, tree) =>
-                val otherValues = others.map(_.map(web)).concat(Iterable(tree))
-                SetBasedStringTreeOr.createWithSimplify(otherValues.toSet)
-            })
-        }
-    }
-
     def recreate(newMap: Map[PDUWeb, StringTreeNode]): StringTreeEnvironment = StringTreeEnvironment(newMap, pcToWebs)
 }
 
@@ -86,8 +74,21 @@ object StringTreeEnvironment {
 
     def apply(map: Map[PDUWeb, StringTreeNode]): StringTreeEnvironment = {
         val pcToWebs =
-            map.keys.flatMap(web => web.defPCs.map((_, web))).groupMap(_._1)(_._2)
-                .withDefaultValue(Iterable.empty)
+            map.keys.toSeq.flatMap(web => web.defPCs.map((_, web))).groupMap(_._1)(_._2)
+                .withDefaultValue(Seq.empty)
         StringTreeEnvironment(map, pcToWebs)
+    }
+
+    def joinMany(envs: Iterable[StringTreeEnvironment]): StringTreeEnvironment = {
+        envs.size match {
+            case 0 => throw new IllegalArgumentException("Cannot join zero environments!")
+            case 1 => envs.head
+            case _ =>
+                val head = envs.head
+                // This only works as long as environment maps are not sparse
+                head.recreate(head.map.transform { (web, _) =>
+                    SetBasedStringTreeOr.createWithSimplify(envs.map(_.map(web)).toSet)
+                })
+        }
     }
 }

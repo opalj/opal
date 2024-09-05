@@ -3,10 +3,13 @@ package org.opalj
 package fpcf
 
 import java.net.URL
+import java.util
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -46,6 +49,8 @@ import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.string.MethodStringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
@@ -71,6 +76,12 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
 
         super.createConfig()
             .withValue(InterpretationHandler.SoundnessModeConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
+            .withValue(
+                MethodStringFlowAnalysis.ExcludedPackagesConfigKey,
+                ConfigValueFactory.fromIterable(new util.ArrayList[String]())
+            )
+            .withValue(MethodStringFlowAnalysis.SoundnessModeConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
+            .withValue(StringAnalysis.MaxDepthConfigKey, ConfigValueFactory.fromAnyRef(30))
     }
 
     override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/string_analysis")
@@ -84,6 +95,10 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => Set(domain)
             case Some(requirements) => requirements + domain
+        }
+        p.updateProjectInformationKeyInitializationData(EagerDetachedTACAIKey) {
+            case None    => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
+            case Some(_) => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
         }
 
         initBeforeCallGraph(p)

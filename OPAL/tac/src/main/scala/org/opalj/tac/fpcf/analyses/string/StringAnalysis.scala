@@ -27,14 +27,41 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.log.Error
+import org.opalj.log.Info
 import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
+
+trait StringAnalysis extends FPCFAnalysis {
+
+    private final val ConfigLogCategory = "analysis configuration - string analysis"
+
+    protected val maxDepth: Int = {
+        val maxDepth =
+            try {
+                project.config.getInt(StringAnalysis.MaxDepthConfigKey)
+            } catch {
+                case t: Throwable =>
+                    logOnce(Error(ConfigLogCategory, s"couldn't read: ${StringAnalysis.MaxDepthConfigKey}", t))
+                    30
+            }
+
+        logOnce(Info(ConfigLogCategory, "using maximum depth " + maxDepth))
+        maxDepth
+    }
+}
+
+object StringAnalysis {
+
+    final val MaxDepthConfigKey = "org.opalj.fpcf.analyses.string.StringAnalysis.maxDepth"
+}
 
 /**
  * @author Maximilian Rüsch
  */
-private[string] class ContextFreeStringAnalysis(override val project: SomeProject) extends FPCFAnalysis {
+private[string] class ContextFreeStringAnalysis(override val project: SomeProject) extends StringAnalysis {
 
     def analyze(vd: VariableDefinition): ProperPropertyComputationResult =
         computeResults(ContextFreeStringAnalysisState(vd, ps(vd.m, MethodStringFlow.key)))
@@ -67,7 +94,14 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
     private def computeNewUpperBound(state: ContextFreeStringAnalysisState): StringConstancyProperty = {
         StringConstancyProperty(state.stringFlowDependee match {
             case UBP(methodStringFlow) =>
-                StringConstancyInformation(methodStringFlow(state.entity.pc, state.entity.pv).simplify)
+                val tree = methodStringFlow(state.entity.pc, state.entity.pv)
+                if (tree.depth > maxDepth) {
+                    // String constancy information got too complex, abort. This guard can probably be removed once
+                    // recursing functions are properly handled using e.g. the widen-converge approach.
+                    StringConstancyInformation.lb
+                } else {
+                    StringConstancyInformation(tree.simplify)
+                }
             case _: EPK[_, MethodStringFlow] =>
                 StringConstancyInformation.ub
         })
@@ -77,7 +111,7 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
 /**
  * @author Maximilian Rüsch
  */
-class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnalysis {
+class ContextStringAnalysis(override val project: SomeProject) extends StringAnalysis {
 
     def analyze(vc: VariableContext): ProperPropertyComputationResult = {
         val vdScp = ps(VariableDefinition(vc.pc, vc.pv, vc.m), StringConstancyProperty.key)
@@ -137,7 +171,7 @@ class ContextStringAnalysis(override val project: SomeProject) extends FPCFAnaly
     }
 }
 
-private[string] class MethodParameterContextStringAnalysis(override val project: SomeProject) extends FPCFAnalysis {
+private[string] class MethodParameterContextStringAnalysis(override val project: SomeProject) extends StringAnalysis {
 
     private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 

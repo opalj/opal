@@ -112,16 +112,9 @@ public class FunctionCalls {
     /**
      * A case where the single valid return value of the called function can be resolved without calling the function.
      */
-    @Constant(n = 0, levels = Level.TRUTH, domains = DomainLevel.L1, value = "(One|java.lang.Object|val)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "val")
     @Failure(n = 0, levels = { Level.L0, Level.L1 }, domains = DomainLevel.L1)
-    // Since the virtual function return value is inlined in L2 and its actual runtime return
-    // value is not used, the function call gets converted to a method call, which modifies the
-    // TAC: The def PC from the `analyzeString` parameter is now different and points to the def
-    // PC for the `resolvableReturnValueFunction` parameter. This results in no string flow being
-    // detected since the def and use sites are now inconsistent.
-    // The actual truth @Constant(n = 0, value = "val", domains = DomainLevel.L2)
-    @Invalid(n = 0, levels = Level.L1, domains = DomainLevel.L2)
-    @Invalid(n = 0, levels = Level.L2, domains = DomainLevel.L2)
+    @Constant(n = 0, levels = Level.L2, domains = DomainLevel.L1, value = "(One|java.lang.Object|val)")
     public void resolvableReturnValue() {
         analyzeString(resolvableReturnValueFunction("val", 42));
     }
