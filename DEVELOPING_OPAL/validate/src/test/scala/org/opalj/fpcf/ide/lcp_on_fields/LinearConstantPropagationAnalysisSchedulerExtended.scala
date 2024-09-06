@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 object LinearConstantPropagationAnalysisSchedulerExtended
     extends JavaIDEAnalysisScheduler[LinearConstantPropagationFact, LinearConstantPropagationValue] {
-    override def property: IDEPropertyMetaInformation[LinearConstantPropagationFact, LinearConstantPropagationValue] =
+    override def propertyMetaInformation: IDEPropertyMetaInformation[LinearConstantPropagationFact, LinearConstantPropagationValue] =
         LinearConstantPropagationPropertyMetaInformation
 
     override def requiredProjectInformation: ProjectInformationKeys =

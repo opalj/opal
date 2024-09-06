@@ -3,7 +3,7 @@ package org.opalj.fpcf.ide.lcp_on_fields
 
 import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.lcp_on_fields.LCPOnFieldsProperty
-import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
+import org.opalj.ide.integration.IDEAnalysisProxyScheduler
 
 class LCPOnFieldsTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
@@ -13,12 +13,14 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
     describe("Execute the o.o.t.f.a.i.i.l.LCPOnFieldsAnalysis") {
         val testContext = executeAnalyses(Set(
             LinearConstantPropagationAnalysisSchedulerExtended,
-            LCPOnFieldsAnalysisScheduler
+            LCPOnFieldsAnalysisScheduler,
+            new IDEAnalysisProxyScheduler(LinearConstantPropagationAnalysisSchedulerExtended),
+            new IDEAnalysisProxyScheduler(LCPOnFieldsAnalysisScheduler)
         ))
 
         val entryPoints = methodsWithAnnotations(testContext.project)
         entryPoints.foreach { case (method, _, _) =>
-            testContext.propertyStore.force(method, LCPOnFieldsAnalysisScheduler.property.key)
+            testContext.propertyStore.force(method, LCPOnFieldsAnalysisScheduler.propertyMetaInformation.key)
         }
 
         testContext.propertyStore.waitOnPhaseCompletion()
@@ -27,7 +29,7 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
         validateProperties(
             testContext,
             methodsWithAnnotations(testContext.project),
-            Set(LCPOnFieldsProperty.KEY, LinearConstantPropagationProperty.KEY),
+            Set(LCPOnFieldsProperty.KEY),
             failOnInterimResults = false
         )
     }

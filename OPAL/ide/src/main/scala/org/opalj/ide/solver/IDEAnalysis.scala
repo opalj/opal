@@ -20,8 +20,8 @@ import org.opalj.fpcf.SomePartialResult
 import org.opalj.ide.ConfigKeyDebugLog
 import org.opalj.ide.ConfigKeyTraceLog
 import org.opalj.ide.FrameworkName
-import org.opalj.ide.integration.IDEProperty
 import org.opalj.ide.integration.IDEPropertyMetaInformation
+import org.opalj.ide.integration.IDERawProperty
 import org.opalj.ide.problem.AllTopEdgeFunction
 import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
@@ -395,9 +395,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         val (resultsByStatement, resultsForExit) = s.collectResults(callable)
         val propertiesByStatement = resultsByStatement.map { case (stmt, results) =>
-            (stmt, propertyMetaInformation.createProperty(results))
+            (stmt, new IDERawProperty(propertyMetaInformation.backingPropertyMetaInformation.key, results))
         }
-        val propertyForExit = propertyMetaInformation.createProperty(resultsForExit)
+        val propertyForExit =
+            new IDERawProperty(propertyMetaInformation.backingPropertyMetaInformation.key, resultsForExit)
 
         logDebug("finished creation of properties")
 
@@ -412,16 +413,14 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             )
         } else {
             logDebug("creating interim results")
-            Results(
-                Iterable(
-                    InterimPartialResult(
-                        s.getDependees.toSet,
-                        onDependeeUpdateContinuation(callable)
-                    ),
+            InterimPartialResult(
+                propertiesByStatement.map {
+                    case (stmt, property) => createPartialResult((callable, stmt), property)
+                } ++ Iterable(
                     createPartialResult(callable, propertyForExit)
-                ) ++ propertiesByStatement.map { case (stmt, property) =>
-                    createPartialResult((callable, stmt), property)
-                }
+                ),
+                s.getDependees.toSet,
+                onDependeeUpdateContinuation(callable)
             )
         }
     }
@@ -442,10 +441,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         createResult(callable)
     }
 
-    private def createPartialResult(entity: Entity, property: IDEProperty[Fact, Value]): SomePartialResult = {
+    private def createPartialResult(entity: Entity, property: IDERawProperty[Fact, Value]): SomePartialResult = {
         PartialResult(
             entity,
-            propertyMetaInformation.key,
+            propertyMetaInformation.backingPropertyMetaInformation.key,
             { (eOptionP: SomeEOptionP) =>
                 if (eOptionP.hasUBP && eOptionP.ub == property) {
                     None

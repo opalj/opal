@@ -7,40 +7,36 @@ import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEValue
 
 /**
- * Base class of properties that are produced by an IDE analysis
+ * Base interface of properties that are produced by an IDE analysis
  */
-abstract class IDEProperty[Fact <: IDEFact, Value <: IDEValue] extends Property
-    with IDEPropertyMetaInformation[Fact, Value]
+trait IDEProperty[Fact <: IDEFact, Value <: IDEValue] extends Property
 
 /**
  * Basic implementation of [[IDEProperty]] that simply wraps the fact-value results of an IDE analysis
+ * @param key the property key
  * @param results the results produced by the analysis
- * @param propertyMetaInformation corresponding to the produced property
  */
 class BasicIDEProperty[Fact <: IDEFact, Value <: IDEValue](
-    val results:                 collection.Set[(Fact, Value)],
-    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
+    val key:     PropertyKey[BasicIDEProperty[Fact, Value]],
+    val results: collection.Set[(Fact, Value)]
 ) extends IDEProperty[Fact, Value] {
-
-    override type Self = propertyMetaInformation.Self
-
-    override def key: PropertyKey[Self] = propertyMetaInformation.key
+    override type Self = BasicIDEProperty[Fact, Value]
 
     override def toString: String = {
-        s"${PropertyKey.name(propertyMetaInformation.key)}:\n${
+        s"BasicIDEProperty(${PropertyKey.name(key)}, {\n${
                 results.map { case (fact, value) => s"\t($fact,$value)" }.mkString("\n")
-            }"
+            }\n})"
     }
 
-    override def equals(obj: Any): Boolean = {
-        obj match {
+    override def equals(other: Any): Boolean = {
+        other match {
             case basicIDEProperty: BasicIDEProperty[?, ?] =>
-                results == basicIDEProperty.results && propertyMetaInformation == basicIDEProperty.propertyMetaInformation
+                key == basicIDEProperty.key && results == basicIDEProperty.results
             case _ => false
         }
     }
 
     override def hashCode(): Int = {
-        results.hashCode() * 31 + propertyMetaInformation.hashCode()
+        key.hashCode() * 31 + results.hashCode()
     }
 }

@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 object LCPOnFieldsAnalysisScheduler
     extends JavaIDEAnalysisScheduler[LCPOnFieldsFact, LCPOnFieldsValue] {
-    override def property: IDEPropertyMetaInformation[LCPOnFieldsFact, LCPOnFieldsValue] =
+    override def propertyMetaInformation: IDEPropertyMetaInformation[LCPOnFieldsFact, LCPOnFieldsValue] =
         LCPOnFieldsPropertyMetaInformation
 
     override def requiredProjectInformation: ProjectInformationKeys =

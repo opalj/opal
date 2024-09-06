@@ -3,6 +3,7 @@ package org.opalj.fpcf.ide.linear_constant_propagation
 
 import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
+import org.opalj.ide.integration.IDEAnalysisProxyScheduler
 
 class LinearConstantPropagationTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
@@ -11,12 +12,16 @@ class LinearConstantPropagationTests extends IDEPropertiesTest {
 
     describe("Execute the o.o.t.f.a.i.i.l.LinearConstantPropagationAnalysis") {
         val testContext = executeAnalyses(Set(
-            LinearConstantPropagationAnalysisScheduler
+            LinearConstantPropagationAnalysisScheduler,
+            new IDEAnalysisProxyScheduler(LinearConstantPropagationAnalysisScheduler)
         ))
 
         methodsWithAnnotations(testContext.project)
             .foreach { case (method, _, _) =>
-                testContext.propertyStore.force(method, LinearConstantPropagationAnalysisScheduler.property.key)
+                testContext.propertyStore.force(
+                    method,
+                    LinearConstantPropagationAnalysisScheduler.propertyMetaInformation.key
+                )
             }
 
         testContext.propertyStore.waitOnPhaseCompletion()

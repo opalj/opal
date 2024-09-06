@@ -22,12 +22,10 @@ import org.opalj.ide.problem.IDEValue
  * The [[IDEAnalysis]] solver runs on callables only and additionally produces results for each statement of that
  * callable. This proxy analysis reduces all analysis requests to the callable and then forward it to the actual IDE
  * solver.
- * @param backingPropertyKey the property key used for the backing analysis
  */
-private[ide] class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
-        val project:                 SomeProject,
-        val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value],
-        val backingPropertyKey:      PropertyKey[IDEPropertyMetaInformation[Fact, Value]#Self]
+class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
+    val project:                 SomeProject,
+    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
 ) extends FPCFAnalysis {
     /**
      * @param entity either only a callable or a pair of callable and statement that should be analyzed (if no statement
@@ -45,7 +43,7 @@ private[ide] class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statemen
     }
 
     private def createCoarseResult(callable: Callable, stmt: Option[Statement]): ProperPropertyComputationResult = {
-        val eOptionP = propertyStore(callable, backingPropertyKey)
+        val eOptionP = propertyStore(callable, propertyMetaInformation.backingPropertyMetaInformation.key)
         eOptionP match {
             case _: EPK[Callable, ?] =>
                 // In this case, the analysis has not been called yet
@@ -67,12 +65,24 @@ private[ide] class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statemen
     }
 
     private def createFineResult(callable: Callable, stmt: Option[Statement]): ProperPropertyComputationResult = {
-        val eOptionP = propertyStore((callable, stmt.get), backingPropertyKey)
-        if (eOptionP.isFinal) {
-            Result(eOptionP.asFinal)
+        val eOptionP = propertyStore(
+            stmt match {
+                case Some(statement) => (callable, statement)
+                case None            => callable
+            },
+            propertyMetaInformation.backingPropertyMetaInformation.key
+        )
+        if (eOptionP.isEPK) {
+            InterimPartialResult(
+                immutable.Set(eOptionP),
+                onDependeeUpdateContinuationFine(callable, stmt)
+            )
+        } else if (eOptionP.isFinal) {
+            Result(eOptionP.e, propertyMetaInformation.createProperty(eOptionP.ub.results))
         } else if (eOptionP.hasUBP) {
-            InterimResult(
-                eOptionP.asInterim,
+            InterimResult.forUB(
+                eOptionP.e,
+                propertyMetaInformation.createProperty(eOptionP.ub.results),
                 immutable.Set(eOptionP),
                 onDependeeUpdateContinuationFine(callable, stmt)
             )
