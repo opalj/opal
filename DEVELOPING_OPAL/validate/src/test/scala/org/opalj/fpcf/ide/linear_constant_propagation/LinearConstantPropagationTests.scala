@@ -1,9 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.ide.linear_constant_propagation
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
-import org.opalj.ide.integration.IDEAnalysisProxyScheduler
+import org.opalj.ide.integration.EagerIDEAnalysisProxyScheduler
 
 class LinearConstantPropagationTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
@@ -13,18 +14,12 @@ class LinearConstantPropagationTests extends IDEPropertiesTest {
     describe("Execute the o.o.t.f.a.i.i.l.LinearConstantPropagationAnalysis") {
         val testContext = executeAnalyses(Set(
             LinearConstantPropagationAnalysisScheduler,
-            new IDEAnalysisProxyScheduler(LinearConstantPropagationAnalysisScheduler)
+            new EagerIDEAnalysisProxyScheduler(
+                LinearConstantPropagationAnalysisScheduler,
+                { (project: SomeProject) => methodsWithAnnotations(project).map(_._1) }
+            )
         ))
 
-        methodsWithAnnotations(testContext.project)
-            .foreach { case (method, _, _) =>
-                testContext.propertyStore.force(
-                    method,
-                    LinearConstantPropagationAnalysisScheduler.propertyMetaInformation.key
-                )
-            }
-
-        testContext.propertyStore.waitOnPhaseCompletion()
         testContext.propertyStore.shutdown()
 
         validateProperties(

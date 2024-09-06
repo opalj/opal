@@ -19,7 +19,7 @@ final class IDERawPropertyMetaInformation[Fact <: IDEFact, Value <: IDEValue](
     /**
      * The used property key, based on [[propertyMetaInformation]]
      */
-    private val backingPropertyKey: PropertyKey[IDERawProperty[Fact, Value]] = {
+    private lazy val backingPropertyKey: PropertyKey[IDERawProperty[Fact, Value]] = {
         PropertyKey.create(s"${PropertyKey.name(propertyMetaInformation.key)}_Raw")
     }
 

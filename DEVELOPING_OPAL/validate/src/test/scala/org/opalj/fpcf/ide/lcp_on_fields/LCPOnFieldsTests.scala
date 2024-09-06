@@ -3,7 +3,7 @@ package org.opalj.fpcf.ide.lcp_on_fields
 
 import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.lcp_on_fields.LCPOnFieldsProperty
-import org.opalj.ide.integration.IDEAnalysisProxyScheduler
+import org.opalj.ide.integration.LazyIDEAnalysisProxyScheduler
 
 class LCPOnFieldsTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
@@ -14,8 +14,8 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
         val testContext = executeAnalyses(Set(
             LinearConstantPropagationAnalysisSchedulerExtended,
             LCPOnFieldsAnalysisScheduler,
-            new IDEAnalysisProxyScheduler(LinearConstantPropagationAnalysisSchedulerExtended),
-            new IDEAnalysisProxyScheduler(LCPOnFieldsAnalysisScheduler)
+            new LazyIDEAnalysisProxyScheduler(LinearConstantPropagationAnalysisSchedulerExtended),
+            new LazyIDEAnalysisProxyScheduler(LCPOnFieldsAnalysisScheduler)
         ))
 
         val entryPoints = methodsWithAnnotations(testContext.project)
