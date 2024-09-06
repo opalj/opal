@@ -33,13 +33,13 @@ import org.opalj.ide.problem.IDEValue
  * @param recordEdgeFunctions whether to record edge functions too or just stick with the flow
  */
 class FlowRecordingIDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
-        project:                 SomeProject,
-        baseProblem:             IDEProblem[Fact, Value, Statement, Callable],
-        propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value],
-        path:                    Option[Path]     = None,
-        recorderMode:            FlowRecorderMode = FlowRecorderModes.NODE_AS_STMT_AND_FACT,
-        uniqueFlowsOnly:         Boolean          = true,
-        recordEdgeFunctions:     Boolean          = true
+    project:                 SomeProject,
+    baseProblem:             IDEProblem[Fact, Value, Statement, Callable],
+    propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value],
+    path:                    Option[Path]     = None,
+    recorderMode:            FlowRecorderMode = FlowRecorderModes.NODE_AS_STMT_AND_FACT,
+    uniqueFlowsOnly:         Boolean          = true,
+    recordEdgeFunctions:     Boolean          = true
 ) extends IDEAnalysis(
         project,
         new FlowRecordingIDEProblem(baseProblem, recorderMode, uniqueFlowsOnly, recordEdgeFunctions),

@@ -18,8 +18,8 @@ abstract class IDEProperty[Fact <: IDEFact, Value <: IDEValue] extends Property
  * @param propertyMetaInformation corresponding to the produced property
  */
 class BasicIDEProperty[Fact <: IDEFact, Value <: IDEValue](
-        val results:                 collection.Set[(Fact, Value)],
-        val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
+    val results:                 collection.Set[(Fact, Value)],
+    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
 ) extends IDEProperty[Fact, Value] {
 
     override type Self = propertyMetaInformation.Self

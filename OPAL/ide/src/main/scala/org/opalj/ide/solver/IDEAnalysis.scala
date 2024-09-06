@@ -38,9 +38,9 @@ import org.opalj.log.OPALLogger
  * from 1996 as base.
  */
 class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
-        val project:                 SomeProject,
-        val problem:                 IDEProblem[Fact, Value, Statement, Callable],
-        val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
+    val project:                 SomeProject,
+    val problem:                 IDEProblem[Fact, Value, Statement, Callable],
+    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
 ) extends FPCFAnalysis {
     private type Node = (Statement, Fact)
     /**
