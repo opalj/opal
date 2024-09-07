@@ -141,9 +141,13 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                         (_: Null, subtype: ObjectType) =>
                             val subClassFile = p.classFile(subtype).get
                             val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
-                            if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
-                                val interfaceMethods =
-                                    p.resolveAllMethodReferences(subtype, m.name, m.descriptor)
+                            if (p.instanceMethods(subtype).exists { mdc =>
+                                    mdc.name == m.name && mdc.descriptor == m.descriptor
+                                }
+                            ) {
+                                (null, true, false) // Stop traversal on overridden method
+                            } else {
+                                val interfaceMethods = p.resolveAllMethodReferences(subtype, m.name, m.descriptor)
                                 interfaceMethods.size match {
                                     case 0 =>
                                     case 1 =>
@@ -158,23 +162,14 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                         insertDeclaredMethod(
                                             subtypeDms,
                                             new MethodContext(m.name, m.descriptor),
-                                            id =>
-                                                new MultipleDefinedMethods(
-                                                    subtype,
-                                                    methods,
-                                                    id
-                                                )
+                                            id => new MultipleDefinedMethods(subtype, methods, id)
                                         )
                                 }
 
                                 (null, false, false) // Continue traversal on non-overridden method
-                            } else {
-                                (null, true, false) // Stop traversal on overridden method
                             }
                     }
-                } else if (m.isStatic && !m.isPrivate &&
-                           !m.isStaticInitializer && !cf.isInterfaceDeclaration
-                ) {
+                } else if (m.isStatic && !m.isPrivate && !m.isStaticInitializer && !cf.isInterfaceDeclaration) {
                     // Static methods are inherited as well - they can be invoked on subtypes
                     // this is not true for static initializers and static methods on interfaces
                     p.classHierarchy.processSubtypes(classType)(initial = null) {
