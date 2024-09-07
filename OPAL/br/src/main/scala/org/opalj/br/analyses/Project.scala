@@ -1365,10 +1365,8 @@ object Project {
                     definedMethod.name == inheritedInterfaceMethod.name
                 } match {
                     case Some(mdc) =>
-                        // If there is already a method and it is from an interface, then it is not
-                        // maximally specific and must be replaced. If it is from a class however, we
-                        // must keep it.
-
+                        // If there is already a method and it is from an interface, then it is might not be maximally
+                        // specific and must be replaced. If the method is from a class however, we must always keep it.
                         if (mdc.method.classFile.isInterfaceDeclaration) {
                             definedMethods = definedMethods filterNot { definedMethod =>
                                 definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
@@ -1405,28 +1403,41 @@ object Project {
                 }
             }
 
-            uniqueInterfaceMethods foreach { m => processMaximallySpecificSuperinterfaceMethod(m) }
+            // Methods already defined must be scrutinized under the 'maximally specific interface method' rules
+            if (uniqueInterfaceMethods.nonEmpty) {
+                definedMethods foreach { definedMethod =>
+                    val signature = MethodSignature(definedMethod.name, definedMethod.descriptor)
+                    if (uniqueInterfaceMethodSignatures.contains(signature)) {
+                        uniqueInterfaceMethodSignatures -= signature
+                        uniqueInterfaceMethods = uniqueInterfaceMethods.filterNot { m => m.signature == signature }
+                    }
+                }
+            }
 
-            // let's keep the contexts related to the maximally specific methods.
-            /* OLD
-            interfaceMethods.iterator.filterNot { ms =>
-                uniqueInterfaceMethodSignatures.contains(ms)
-            } foreach { interfaceMethod =>
-             */
+            uniqueInterfaceMethods foreach { m =>
+                if (!m.isAbstract)
+                    definedMethods ::= MethodDeclarationContext(m)
+            }
+
             interfaceMethods foreach { interfaceMethod =>
                 if (!uniqueInterfaceMethodSignatures.contains(interfaceMethod)) {
-                    val (_, maximallySpecificSuperiniterfaceMethod) =
+                    val (_, maximallySpecificSuperinterfaceMethod) =
                         findMaximallySpecificSuperinterfaceMethods(
                             superinterfaceTypes,
                             interfaceMethod.name,
                             interfaceMethod.descriptor,
                             UIDSet.empty[ObjectType]
                         )(objectTypeToClassFile, classHierarchy, logContext)
-                    if (maximallySpecificSuperiniterfaceMethod.size == 1) {
+                    if (maximallySpecificSuperinterfaceMethod.size == 1) {
                         // A maximally specific interface method can only be invoked if it is unique!
                         processMaximallySpecificSuperinterfaceMethod(
-                            maximallySpecificSuperiniterfaceMethod.head
+                            maximallySpecificSuperinterfaceMethod.head
                         )
+                    } else {
+                        definedMethods = definedMethods filterNot { definedMethod =>
+                            definedMethod.descriptor == interfaceMethod.descriptor &&
+                            definedMethod.name == interfaceMethod.name
+                        }
                     }
                 }
             }
