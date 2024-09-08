@@ -365,7 +365,7 @@ sealed trait SimpleStringTreeNode extends StringTreeNode {
 }
 
 case class StringTreeConst(string: String) extends SimpleStringTreeNode {
-    override def _toRegex: String = Regex.quoteReplacement(string)
+    override def _toRegex: String = Regex.quoteReplacement(string).replaceAll("\\[", "\\\\[")
 
     override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
 

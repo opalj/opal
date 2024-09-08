@@ -41,4 +41,17 @@ public class Integration {
     public void unknownHierarchyInstanceTest(GreetingService greetingService) {
         analyzeString(greetingService.getGreeting("World"));
     }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "\\[B")
+    @Constant(n = 1, levels = Level.TRUTH, value = "\\[Ljava.lang.String;")
+    @Constant(n = 2, levels = Level.TRUTH, value = "\\[\\[Lsun.security.pkcs.SignerInfo;")
+    @Constant(n = 3, levels = Level.TRUTH, value = "US\\$")
+    @Constant(n = 4, levels = Level.TRUTH, value = "US\\\\")
+    public void regexCompilableTest() {
+        analyzeString("[B");
+        analyzeString("[Ljava.lang.String;");
+        analyzeString("[[Lsun.security.pkcs.SignerInfo;");
+        analyzeString("US$");
+        analyzeString("US\\");
+    }
 }
