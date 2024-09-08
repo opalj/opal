@@ -18,14 +18,12 @@ import org.opalj.value.TheIntegerValue
 /**
  * @author Maximilian Rüsch
  */
-object L1VirtualMethodCallInterpreter extends StringInterpreter {
+case class L1VirtualMethodCallInterpreter()(
+    implicit val soundnessMode: SoundnessMode
+) extends StringInterpreter {
 
     override type T = VirtualMethodCall[V]
 
-    /**
-     * Currently, this function supports no method calls. However, it treats [[StringBuilder.setLength]] such that it
-     * will return the lower bound for now.
-     */
     override def interpret(call: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         val pReceiver = call.receiver.asVar.toPersistentForm(state.tac.stmts)
 
@@ -49,7 +47,12 @@ object L1VirtualMethodCallInterpreter extends StringInterpreter {
                                         sb.setLength(intVal)
                                         env.update(state.pc, pReceiver, StringTreeConst(sb.toString()))
                                     case _ =>
-                                        env.update(state.pc, pReceiver, StringTreeNode.lb)
+                                        env.update(
+                                            state.pc,
+                                            pReceiver,
+                                            if (soundnessMode.isHigh) StringTreeNode.lb
+                                            else StringTreeNode.ub
+                                        )
                                 }
                             }
                         )

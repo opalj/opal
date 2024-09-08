@@ -114,7 +114,7 @@ public class FunctionCalls {
      */
     @Constant(n = 0, levels = Level.TRUTH, value = "val")
     @Failure(n = 0, levels = { Level.L0, Level.L1 }, domains = DomainLevel.L1)
-    @Constant(n = 0, levels = Level.L2, domains = DomainLevel.L1, value = "(One|java.lang.Object|val)")
+    @Constant(n = 0, levels = { Level.L2, Level.L3 }, domains = DomainLevel.L1, value = "(One|java.lang.Object|val)")
     public void resolvableReturnValue() {
         analyzeString(resolvableReturnValueFunction("val", 42));
     }

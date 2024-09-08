@@ -26,7 +26,8 @@ import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
 private[string] case class ContextFreeStringAnalysisState(
     entity:                 VariableDefinition,
-    var stringFlowDependee: EOptionP[Method, MethodStringFlow]
+    var stringFlowDependee: EOptionP[Method, MethodStringFlow],
+    var hitMaximumDepth:    Boolean = false
 ) {
 
     def hasDependees: Boolean = stringFlowDependee.isRefinable
@@ -45,7 +46,6 @@ private[string] class ContextStringAnalysisState private (
 
     def updateStringDependee(stringDependee: EPS[VariableDefinition, StringConstancyProperty]): Unit = {
         _stringDependee = stringDependee
-        // TODO parameter indices should always grow <- when the new string dependee only contains additional information
         _parameterIndices ++= stringDependee.ub.sci.tree.parameterIndices
     }
     private def stringTree: StringTreeNode = _stringDependee.ub.sci.tree

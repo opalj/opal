@@ -8,7 +8,6 @@ package l2
 package interpretation
 
 import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
@@ -70,7 +69,9 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
         override val target:     PV,
         override val parameters: Seq[PV],
         methodContext:           Context,
-        var calleeDependee:      EOptionP[DefinedMethod, Callees]
+        var calleeDependee:      EOptionP[DefinedMethod, Callees],
+        var seenDirectCallees:   Int = 0,
+        var seenIndirectCallees: Int = 0
     ) extends FunctionCallState(target, parameters) {
 
         override def hasDependees: Boolean = calleeDependee.isRefinable || super.hasDependees
@@ -82,6 +83,7 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
+        // IMPROVE pass the actual method context through the entity - needs to be differentiated from "upward" entities
         val depender = CalleeDepender(target, params, contextProvider.newContext(state.dm), ps(state.dm, Callees.key))
 
         if (depender.calleeDependee.isEPK) {
@@ -102,10 +104,18 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(c: Callees) =>
+                val newCallees = c.directCallees(callState.methodContext, state.pc).drop(callState.seenDirectCallees) ++
+                    c.indirectCallees(callState.methodContext, state.pc).drop(callState.seenIndirectCallees)
+
+                // IMPROVE add some uncertainty element if methods with unknown body exist
+                val newMethods = newCallees
+                    .filter(_.method.hasSingleDefinedMethod)
+                    .map(_.method.definedMethod)
+                    .filterNot(callState.calleeMethods.contains)
+                    .distinct.toList.sortBy(_.classFile.fqn)
+
                 callState.calleeDependee = eps.asInstanceOf[EOptionP[DefinedMethod, Callees]]
-                val newMethods = getNewMethodsFromCallees(callState.methodContext, c)(state, callState)
-                if (newMethods.isEmpty && eps.isFinal) {
-                    // Improve add previous results back
+                if (newMethods.isEmpty && callState.calleeMethods.isEmpty && eps.isFinal) {
                     failure(callState.target)(state, soundnessMode)
                 } else {
                     for {
@@ -119,18 +129,5 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
 
             case _ => super.continuation(state, callState)(eps)
         }
-    }
-
-    private def getNewMethodsFromCallees(context: Context, callees: Callees)(implicit
-        state:     InterpretationState,
-        callState: CallState
-    ): Seq[Method] = {
-        // IMPROVE only process newest callees
-        callees.callees(context, state.pc)
-            // IMPROVE add some uncertainty element if methods with unknown body exist
-            .filter(_.method.hasSingleDefinedMethod)
-            .map(_.method.definedMethod)
-            .filterNot(callState.calleeMethods.contains)
-            .distinct.toList.sortBy(_.classFile.fqn)
     }
 }

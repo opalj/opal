@@ -63,7 +63,7 @@ public class Complex {
     @Constant(n = 0, levels = Level.TRUTH, value = "Hello, World_paintname(_PAD|_REFLECT|_REPEAT)?(_AlphaTest)?")
     @Failure(n = 0, levels = Level.L0)
     // or-cases are currently not collapsed into simpler conditionals / or-cases using prefix checking
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, value = "((Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT)_AlphaTest|Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT)")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, value = "((Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT)_AlphaTest|Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT)")
     public void getPaintShader(boolean getPaintType, int spreadMethod, boolean alphaTest) {
         String shaderName = getHelloWorld() + "_" + "paintname";
         if (getPaintType) {

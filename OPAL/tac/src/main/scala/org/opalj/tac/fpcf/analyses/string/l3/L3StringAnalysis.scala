@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l2
+package l3
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -14,21 +14,21 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.string.l2.interpretation.L2InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string.l3.interpretation.L3InterpretationHandler
 
 /**
  * @author Maximilian Rüsch
  */
-object LazyL2StringAnalysis {
+object LazyL3StringAnalysis {
 
     def allRequiredAnalyses: Seq[FPCFLazyAnalysisScheduler] = Seq(
         LazyStringAnalysis,
         LazyMethodStringFlowAnalysis,
-        LazyL2StringFlowAnalysis
+        LazyL3StringFlowAnalysis
     )
 }
 
-object LazyL2StringFlowAnalysis extends LazyStringFlowAnalysis {
+object LazyL3StringFlowAnalysis extends LazyStringFlowAnalysis {
 
     override final def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(
         Callees,
@@ -36,8 +36,8 @@ object LazyL2StringFlowAnalysis extends LazyStringFlowAnalysis {
         SystemProperties
     )
 
-    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = L2InterpretationHandler(p)
+    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = L3InterpretationHandler(p)
 
     override def requiredProjectInformation: ProjectInformationKeys = super.requiredProjectInformation ++
-        L2InterpretationHandler.requiredProjectInformation
+        L3InterpretationHandler.requiredProjectInformation
 }

@@ -7,6 +7,7 @@ package string
 package l1
 package interpretation
 
+import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.string.StringTreeEmptyConst
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -15,14 +16,20 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 /**
  * @author Maximilian Rüsch
  */
-object L1NonVirtualMethodCallInterpreter extends StringInterpreter {
+case class L1NonVirtualMethodCallInterpreter()(
+    implicit val soundnessMode: SoundnessMode
+) extends StringInterpreter {
 
     override type T = NonVirtualMethodCall[V]
 
     override def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         instr.name match {
-            case "<init>" => interpretInit(instr)
-            case _        => computeFinalResult(StringFlowFunctionProperty.identity)
+            case "<init>"
+                if instr.declaringClass.asReferenceType == ObjectType.StringBuffer ||
+                    instr.declaringClass.asReferenceType == ObjectType.StringBuilder ||
+                    instr.declaringClass.asReferenceType == ObjectType.String =>
+                interpretInit(instr)
+            case _ => computeFinalResult(StringFlowFunctionProperty.identity)
         }
     }
 
@@ -32,14 +39,15 @@ object L1NonVirtualMethodCallInterpreter extends StringInterpreter {
         init.params.size match {
             case 0 =>
                 computeFinalResult(StringFlowFunctionProperty.constForVariableAt(pc, targetVar, StringTreeEmptyConst))
-            case _ =>
-                // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
+            case 1 =>
                 val paramVar = init.params.head.asVar.toPersistentForm(state.tac.stmts)
 
                 computeFinalResult(
                     Set(PDUWeb(pc, targetVar), PDUWeb(pc, paramVar)),
                     (env: StringTreeEnvironment) => env.update(pc, targetVar, env(pc, paramVar))
                 )
+            case _ =>
+                failure(targetVar)
         }
     }
 }

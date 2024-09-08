@@ -264,13 +264,13 @@ public class SimpleStringOps {
      * A more comprehensive case where multiple definition sites have to be considered each with a different string
      * generation mechanism
      */
-    @Dynamic(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.Runtime|java.lang.System|java.lang.StringBuilder)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.Runtime|java.lang.System|java.lang.StringBuilder)")
     @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "java.lang.System")
     @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System)")
     @Constant(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "java.lang.System")
     @Dynamic(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|java.lang..*|java.lang.System)")
-    @Constant(n = 0, levels = Level.L2, soundness = SoundnessMode.LOW, value = "(java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
-    @Dynamic(n = 0, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
+    @Constant(n = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "(java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
+    @Dynamic(n = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
 

@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l2
+package l3
 package interpretation
 
 import scala.collection.mutable.ListBuffer
@@ -15,7 +15,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeNull
 import org.opalj.br.fpcf.properties.string.StringTreeOr
@@ -26,13 +25,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.log.Error
-import org.opalj.log.Info
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string.l2.L2StringAnalysis
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
@@ -41,7 +35,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  *
  * @author Maximilian Rüsch
  */
-class L2FieldReadInterpreter(
+class L3FieldReadInterpreter(
     implicit val ps:              PropertyStore,
     implicit val project:         SomeProject,
     implicit val declaredFields:  DeclaredFields,
@@ -50,31 +44,6 @@ class L2FieldReadInterpreter(
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = FieldRead[V]
-
-    private final val FieldWriteThresholdConfigKey = {
-        "org.opalj.fpcf.analyses.string.l1.L1StringAnalysis.fieldWriteThreshold"
-    }
-
-    /**
-     * To analyze a read operation of field, ''f'', all write accesses, ''wa_f'', to ''f'' have to be analyzed.
-     * ''fieldWriteThreshold'' determines the threshold of ''|wa_f|'' when ''f'' is to be approximated as the lower bound.
-     */
-    private val fieldWriteThreshold = {
-        implicit val logContext: LogContext = project.logContext
-        val threshold =
-            try {
-                project.config.getInt(FieldWriteThresholdConfigKey)
-            } catch {
-                case t: Throwable =>
-                    logOnce {
-                        Error(L2StringAnalysis.ConfigLogCategory, s"couldn't read: $FieldWriteThresholdConfigKey", t)
-                    }
-                    10
-            }
-
-        logOnce(Info(L2StringAnalysis.ConfigLogCategory, "uses a field write threshold of " + threshold))
-        threshold
-    }
 
     private case class FieldReadState(
         target:                        PV,
@@ -105,13 +74,6 @@ class L2FieldReadInterpreter(
         }
     }
 
-    /**
-     * Currently, fields are approximated using the following approach: If a field of a type not supported by the
-     * [[L2StringAnalysis]] is passed, a flow function producing the LB will be produced. Otherwise, all write accesses
-     * are considered and analyzed. If a field is not initialized within a constructor or the class itself, it will be
-     * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
-     * [[org.opalj.br.fpcf.properties.string.StringConstancyLevel.DYNAMIC]].
-     */
     override def interpretExpr(target: PV, fieldRead: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
@@ -141,14 +103,11 @@ class L2FieldReadInterpreter(
         accessState: FieldReadState,
         state:       InterpretationState
     ): ProperPropertyComputationResult = {
-        if (accessInformation.accesses.length > fieldWriteThreshold) {
-            return computeFinalResult(computeUBWithNewTree(StringTreeDynamicString))
-        }
-
         if (accessState.fieldAccessDependee.isFinal && accessInformation.accesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
             return computeFinalResult(computeUBWithNewTree(StringTreeOr.fromNodes(
-                StringTreeDynamicString,
+                if (soundnessMode.isHigh) StringTreeNode.lb
+                else StringTreeNode.ub,
                 StringTreeNull
             )))
         }
@@ -187,10 +146,10 @@ class L2FieldReadInterpreter(
         accessState: FieldReadState,
         state:       InterpretationState
     ): ProperPropertyComputationResult = {
-        if (accessState.hasWriteInSameMethod) {
+        if (accessState.hasWriteInSameMethod && soundnessMode.isHigh) {
             // We cannot handle writes to a field that is read in the same method at the moment as the flow functions do
             // not capture field state. This can be improved upon in the future.
-            computeFinalResult(computeUBWithNewTree(StringTreeDynamicString))
+            computeFinalResult(computeUBWithNewTree(StringTreeNode.lb))
         } else {
             var trees = accessState.accessDependees.map { ad =>
                 if (ad.hasUBP) {

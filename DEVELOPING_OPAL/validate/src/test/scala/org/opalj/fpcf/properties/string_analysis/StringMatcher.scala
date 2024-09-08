@@ -4,6 +4,9 @@ package fpcf
 package properties
 package string_analysis
 
+import java.util.regex.Pattern
+import scala.util.Try
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -46,7 +49,12 @@ sealed abstract class ConstancyStringMatcher(val constancyLevel: StringConstancy
             if (expectedConstancy != actLevel || expectedStrings != actString) {
                 Some(s"Level: $expectedConstancy, Strings: $expectedStrings")
             } else {
-                None
+                val patternTry = Try(Pattern.compile(actString))
+                if (patternTry.isFailure) {
+                    Some(s"Same string, but it does not compile to a regex: ${patternTry.failed.get}")
+                } else {
+                    None
+                }
             }
         }
     }

@@ -30,7 +30,7 @@ public class SimpleStringBuilderOps {
     @Failure(n = 0, levels = Level.L0)
     @Constant(n = 1, levels = Level.TRUTH, value = "SomeOther")
     @Failure(n = 1, levels = Level.L0)
-    @Constant(n = 1, levels = { Level.L1, Level.L2 }, value = "(Some|SomeOther)")
+    @Constant(n = 1, levels = { Level.L1, Level.L2, Level.L3 }, value = "(Some|SomeOther)")
     public void stringValueOfWithStringBuilder() {
         StringBuilder sb = new StringBuilder("Some");
         sb.append("Other");

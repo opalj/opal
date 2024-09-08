@@ -18,6 +18,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -77,33 +78,32 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
     }
 
     private def computeResults(implicit state: ContextFreeStringAnalysisState): ProperPropertyComputationResult = {
-        if (state.hasDependees) {
-            InterimResult(
-                state.entity,
-                StringConstancyProperty.lb,
-                computeNewUpperBound(state),
-                state.dependees,
-                continuation(state)
-            )
-        } else {
-            Result(state.entity, computeNewUpperBound(state))
-        }
-    }
-
-    private def computeNewUpperBound(state: ContextFreeStringAnalysisState): StringConstancyProperty = {
-        StringConstancyProperty(state.stringFlowDependee match {
+        val newProperty = StringConstancyProperty(state.stringFlowDependee match {
             case UBP(methodStringFlow) =>
                 val tree = methodStringFlow(state.entity.pc, state.entity.pv)
-                if (tree.depth > maxDepth) {
+                if (tree.depth == maxDepth) {
                     // String constancy information got too complex, abort. This guard can probably be removed once
                     // recursing functions are properly handled using e.g. the widen-converge approach.
-                    StringConstancyInformation.lb
+                    state.hitMaximumDepth = true
+                    StringConstancyInformation(tree.limitToDepth(maxDepth, StringTreeNode.lb))
                 } else {
                     StringConstancyInformation(tree.simplify)
                 }
             case _: EPK[_, MethodStringFlow] =>
                 StringConstancyInformation.ub
         })
+
+        if (state.hasDependees && !state.hitMaximumDepth) {
+            InterimResult(
+                state.entity,
+                StringConstancyProperty.lb,
+                newProperty,
+                state.dependees,
+                continuation(state)
+            )
+        } else {
+            Result(state.entity, newProperty)
+        }
     }
 }
 

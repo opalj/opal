@@ -59,13 +59,15 @@ class L1VirtualFunctionCallInterpreter(
                         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
                             state.pc,
                             at.get,
-                            StringTreeDynamicInt
+                            if (soundnessMode.isHigh) StringTreeDynamicInt
+                            else StringTreeNode.ub
                         ))
                     case FloatType | DoubleType if at.isDefined =>
                         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
                             state.pc,
                             at.get,
-                            StringTreeDynamicFloat
+                            if (soundnessMode.isHigh) StringTreeDynamicFloat
+                            else StringTreeNode.ub
                         ))
                     case _ if at.isDefined =>
                         interpretArbitraryCall(at.get, call)
@@ -111,6 +113,8 @@ private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends Assignme
  */
 private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
+    val soundnessMode: SoundnessMode
+
     override type E = VirtualFunctionCall[V]
 
     def interpretAppendCall(at: Option[PV], pt: PV, call: E)(implicit
@@ -138,7 +142,8 @@ private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringI
                         if (valueState.constancyLevel == StringConstancyLevel.CONSTANT) {
                             valueState
                         } else {
-                            StringTreeDynamicFloat
+                            if (soundnessMode.isHigh) StringTreeDynamicFloat
+                            else StringTreeNode.ub
                         }
                     case _ =>
                         valueState
