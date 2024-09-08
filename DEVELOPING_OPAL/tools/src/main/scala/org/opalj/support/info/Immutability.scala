@@ -157,8 +157,6 @@ object Immutability {
                 EagerFieldAccessInformationAnalysis
             )
 
-        project.get(callgraphKey)
-
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
@@ -187,10 +185,11 @@ object Immutability {
 
         val propertyStore = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
+        val all_dependencies = callgraphKey.getAnalyses(project, propertyStore) ++ dependencies
 
         time {
             analysesManager.runAll(
-                dependencies,
+                all_dependencies,
                 {
                     (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                         analysis match {
