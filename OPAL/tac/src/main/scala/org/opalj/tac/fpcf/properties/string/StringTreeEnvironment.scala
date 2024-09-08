@@ -5,6 +5,8 @@ package fpcf
 package properties
 package string
 
+import org.opalj.br.PDVar
+import org.opalj.br.PUVar
 import org.opalj.br.fpcf.properties.string.SetBasedStringTreeOr
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeOr

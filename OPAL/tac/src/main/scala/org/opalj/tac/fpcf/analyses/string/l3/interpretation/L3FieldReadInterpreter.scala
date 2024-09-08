@@ -10,6 +10,7 @@ package interpretation
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.DeclaredField
+import org.opalj.br.PUVar
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider

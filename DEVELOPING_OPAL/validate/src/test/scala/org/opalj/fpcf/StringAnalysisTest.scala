@@ -144,7 +144,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
     }
 
     /**
-     * Extracts [[org.opalj.tac.PUVar]]s from a set of statements. The locations of the [[org.opalj.tac.PUVar]]s are
+     * Extracts [[org.opalj.br.PUVar]]s from a set of statements. The locations of the [[org.opalj.br.PUVar]]s are
      * identified by the argument to the very first call to [[nameTestMethod]].
      *
      * @return Returns the arguments of the [[nameTestMethod]] as a PUVars list in the order in which they occurred.
