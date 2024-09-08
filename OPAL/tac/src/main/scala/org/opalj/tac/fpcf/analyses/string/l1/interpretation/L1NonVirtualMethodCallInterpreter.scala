@@ -7,6 +7,7 @@ package string
 package l1
 package interpretation
 
+import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.string.StringTreeEmptyConst
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -23,8 +24,12 @@ case class L1NonVirtualMethodCallInterpreter()(
 
     override def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         instr.name match {
-            case "<init>" => interpretInit(instr)
-            case _        => computeFinalResult(StringFlowFunctionProperty.identity)
+            case "<init>"
+                if instr.declaringClass.asReferenceType == ObjectType.StringBuffer ||
+                    instr.declaringClass.asReferenceType == ObjectType.StringBuilder ||
+                    instr.declaringClass.asReferenceType == ObjectType.String =>
+                interpretInit(instr)
+            case _ => computeFinalResult(StringFlowFunctionProperty.identity)
         }
     }
 
