@@ -2,6 +2,8 @@
 package org.opalj
 package tac
 
+import org.opalj.br.PDVar
+import org.opalj.br.PUVar
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
 

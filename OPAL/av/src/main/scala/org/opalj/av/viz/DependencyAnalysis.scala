@@ -7,6 +7,7 @@ import scala.language.reflectiveCalls
 
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
+import scala.io.Source
 import scala.util.Random
 
 import org.opalj.br.ArrayType
@@ -23,6 +24,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.de.DependencyExtractor
 import org.opalj.de.DependencyProcessor
 import org.opalj.de.DependencyType
+import org.opalj.io.processSource
 import org.opalj.io.writeAndOpen
 
 /**
@@ -30,13 +32,14 @@ import org.opalj.io.writeAndOpen
  */
 object DependencyAnalysis extends AnalysisApplication {
 
-    val template = this.getClass().getResource("DependencyAnalysis.html.template")
+    val template: URL = this.getClass.getResource("DependencyAnalysis.html.template")
     if (template eq null)
         throw new RuntimeException(
             "the HTML template (DependencyAnalysis.html.template) cannot be found"
         )
 
-    val colors = Set("#E41A1C", "#FFFF33", "#FF7F00", "#999999", "#984EA3", "#377EB8", "#4DAF4A", "#F781BF", "#A65628")
+    val colors: Set[String] =
+        Set("#E41A1C", "#FFFF33", "#FF7F00", "#999999", "#984EA3", "#377EB8", "#4DAF4A", "#F781BF", "#A65628")
 
     var mainPackage: String = ""
     var debug = false
@@ -97,7 +100,7 @@ object DependencyAnalysis extends AnalysisApplication {
         doc
     }
 
-    val analysis = new Analysis[URL, BasicReport] {
+    val analysis: Analysis[URL, BasicReport] = new Analysis[URL, BasicReport] {
 
         override def description: String =
             "Collects information about the number of dependencies on others packages per package."
@@ -106,7 +109,7 @@ object DependencyAnalysis extends AnalysisApplication {
             project:                Project[URL],
             parameters:             Seq[String],
             initProgressManagement: (Int) => ProgressManagement
-        ) = {
+        ): BasicReport = {
 
             val pm = initProgressManagement(3)
             pm.progress(1, ProgressEvents.Start, Some("setup"))
@@ -228,7 +231,7 @@ object DependencyAnalysis extends AnalysisApplication {
                 else
                     ""
             // read the template
-            var htmlDocument = scala.io.Source.fromFile(template.getPath())(scala.io.Codec.UTF8).mkString
+            var htmlDocument = processSource(Source.fromFile(template.getPath)(scala.io.Codec.UTF8)) { _.mkString }
 
             if (!htmlDocument.contains("<%DATA%>") || !htmlDocument.contains("<%PACKAGES%>")) {
                 println(Console.RED +

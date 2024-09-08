@@ -65,7 +65,9 @@ object SimpleContextsKey extends ProjectInformationKey[SimpleContexts, Nothing] 
 
 }
 
-class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
+trait Contexts[ContextType <: Context]
+
+class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) extends Contexts[SimpleContext] {
 
     @volatile private var id2Context = new Array[SimpleContext](declaredMethods._UNSAFE_size)
 
@@ -131,7 +133,7 @@ object CallStringContextsKey extends ProjectInformationKey[CallStringContexts, N
 
 }
 
-class CallStringContexts {
+class CallStringContexts extends Contexts[CallStringContext] {
 
     @volatile private var id2Context = new Array[CallStringContext](32768)
     private val context2id = new mutable.HashMap[(DeclaredMethod, List[(DeclaredMethod, Int)]), CallStringContext]()

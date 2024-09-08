@@ -73,7 +73,7 @@ object PackageMatcher {
         packageName:      String,
         matchSubpackages: Boolean
     ): PackageMatcher = {
-        apply(packageName.replace('.', '/'), AllClasses, matchSubpackages)
+        apply(packageName, AllClasses, matchSubpackages)
     }
 
 }

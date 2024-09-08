@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac
+package org.opalj
+package br
 
-import org.opalj.ai.PCs
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
 
@@ -31,8 +31,6 @@ abstract class PDUVar[+Value <: ValueInformation] {
      * For more information see [[DUVar.definedBy]]
      */
     def defPCs: PCs
-
-    def toValueOriginForm(implicit pcToIndex: Array[Int]): DUVar[Value]
 }
 
 class PDVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
@@ -52,18 +50,9 @@ class PDVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/
     override def toString: String = {
         s"PDVar(usePCs=${usePCs.mkString("{", ",", "}")},value=$value)"
     }
-
-    def toValueOriginForm(implicit pcToIndex: Array[Int]): Nothing = throw new UnsupportedOperationException
 }
 
 object PDVar {
-
-    def apply(d: org.opalj.ai.ValuesDomain)(
-        value:  d.DomainValue,
-        usePCs: PCs
-    ): PDVar[d.DomainValue] = {
-        new PDVar[d.DomainValue](value, usePCs)
-    }
 
     def apply[Value <: ValueInformation](value: Value, useSites: IntTrieSet): PDVar[Value] = new PDVar(value, useSites)
 
@@ -88,19 +77,9 @@ class PUVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/
         s"PUVar(defPCs=${defPCs.mkString("{", ",", "}")},value=$value)"
     }
 
-    override def toValueOriginForm(
-        implicit pcToIndex: Array[Int]
-    ): UVar[Value] = UVar(value, valueOriginsOfPCs(defPCs, pcToIndex))
 }
 
 object PUVar {
-
-    def apply(d: org.opalj.ai.ValuesDomain)(
-        value:  d.DomainValue,
-        defPCs: PCs
-    ): PUVar[d.DomainValue] = {
-        new PUVar[d.DomainValue](value, defPCs)
-    }
 
     def apply[Value <: ValueInformation](value: Value, defPCs: IntTrieSet): PUVar[Value] = new PUVar(value, defPCs)
 

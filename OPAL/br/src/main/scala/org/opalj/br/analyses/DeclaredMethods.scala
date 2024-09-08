@@ -97,7 +97,7 @@ class DeclaredMethods(
         // In case of an unseen method, compute id
         lock.writeLock().lock()
         try {
-            if (!dmSet.contains(context)) {
+            if (!dmSet.containsKey(context)) {
                 val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter)
                 idCounter += 1
                 dmSet.put(MethodContext(p, runtimeType, "", name, descriptor, false), vm)

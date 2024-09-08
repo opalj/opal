@@ -27,7 +27,7 @@ object NoCallGraphKey extends CallGraphKey {
         Seq(PropertyStoreKey, FPCFAnalysesManagerKey, SimpleContextsKey)
     }
 
-    override protected def callGraphSchedulers(project: SomeProject): Iterable[FPCFAnalysisScheduler] = List.empty
+    override protected[cg] def callGraphSchedulers(project: SomeProject): Iterable[FPCFAnalysisScheduler] = List.empty
 
     override def getTypeIterator(project: SomeProject) = new CHATypeIterator(project)
 

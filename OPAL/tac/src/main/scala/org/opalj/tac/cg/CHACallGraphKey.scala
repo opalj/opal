@@ -26,7 +26,7 @@ object CHACallGraphKey extends CallGraphKey {
             super.requirements(project)
     }
 
-    override protected def callGraphSchedulers(
+    override protected[cg] def callGraphSchedulers(
         project: SomeProject
     ): Iterable[FPCFAnalysisScheduler] = List.empty
 
