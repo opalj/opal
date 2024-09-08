@@ -9,6 +9,8 @@ import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
+import org.opalj.br.PDUVar
+import org.opalj.br.PUVar
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
 

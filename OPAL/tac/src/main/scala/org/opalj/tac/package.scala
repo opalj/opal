@@ -16,6 +16,7 @@ import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.PCs
+import org.opalj.br.PUVar
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
@@ -33,6 +34,14 @@ package object tac {
     type V = DUVar[ValueInformation]
     type PV = PDUVar[ValueInformation]
 
+    final def uVarFromPersistentForm[Value <: ValueInformation](
+        puVar: PUVar[Value]
+    )(
+        implicit pcToIndex: Array[Int]
+    ): UVar[Value] = {
+        UVar(puVar.value, valueOriginsOfPCs(puVar.defPCs, pcToIndex))
+    }
+
     final def pcOfDefSite(valueOrigin: ValueOrigin)(implicit stmts: Array[Stmt[V]]): Int = {
         if (valueOrigin >= 0)
             stmts(valueOrigin).pc
@@ -46,21 +55,19 @@ package object tac {
             )
     }
 
-    final def valueOriginOfPC(pc: Int, pcToIndex: Array[Int]): Option[ValueOrigin] = {
-        if (ai.underlyingPC(pc) < 0)
-            Some(pc) // parameter
-        else if (pc >= 0 && pcToIndex(pc) >= 0)
-            Some(pcToIndex(pc)) // local
-        else if (isImmediateVMException(pc) && pcToIndex(pcOfImmediateVMException(pc)) >= 0)
-            Some(ValueOriginForImmediateVMException(pcToIndex(pcOfImmediateVMException(pc))))
-        else if (isMethodExternalExceptionOrigin(pc) && pcToIndex(pcOfMethodExternalException(pc)) >= 0)
-            Some(ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc))))
-        else
-            None
-    }
-
     final def valueOriginsOfPCs(pcs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
-        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) => origins ++ valueOriginOfPC(pc, pcToIndex) }
+        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) =>
+            if (ai.underlyingPC(pc) < 0)
+                origins + pc // parameter
+            else if (pc >= 0 && pcToIndex(pc) >= 0)
+                origins + pcToIndex(pc) // local
+            else if (isImmediateVMException(pc) && pcToIndex(pcOfImmediateVMException(pc)) >= 0)
+                origins + ValueOriginForImmediateVMException(pcToIndex(pcOfImmediateVMException(pc)))
+            else if (isMethodExternalExceptionOrigin(pc) && pcToIndex(pcOfMethodExternalException(pc)) >= 0)
+                origins + ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc)))
+            else
+                origins // as is
+        }
     }
 
     /**

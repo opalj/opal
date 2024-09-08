@@ -1,0 +1,107 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.fpcf.fixtures.alias;
+
+import org.opalj.fpcf.properties.alias.MayAlias;
+import org.opalj.fpcf.properties.alias.NoAlias;
+
+
+
+public class ReturnValueAlias {
+
+    @NoAlias(reason = "no Alias with local variable", lineNumber = 15)
+    public static Object noAliasWithLocal() {
+        Object o1 = new Object();
+
+        o1.hashCode();
+
+        return new Object();
+    }
+
+    @MayAlias(reason = "mayAlias with local variable", lineNumber = 29)
+    public static Object mayAliasWithLocal1() {
+        Object o1 = new Object();
+        Object o2 = new Object();
+
+        if (Math.random() > 0.5) {
+            o2 = o1;
+        }
+
+        o2.hashCode();
+
+        return o2;
+    }
+
+    @MayAlias(reason = "mayAlias with local variable", lineNumber = 38)
+    public static Object mayAliasWithLocal2() {
+        Object o1 = new Object();
+
+        o1.hashCode();
+
+        return o1;
+    }
+
+    @NoAlias(reason = "noAlias with parameter", id = 0)
+    public static Object noAliasWithParam(
+            @NoAlias(reason = "noAlias with parameter", id = 0)
+            Object a) {
+        Object o1 = new Object();
+        return o1;
+    }
+
+    @MayAlias(reason = "mayAlias with parameter", id = 1)
+    public static Object mayAliasWithParam1(
+            @MayAlias(reason = "mayAlias with parameter", id = 1)
+            Object a) {
+        return a;
+    }
+
+    @MayAlias(reason = "mayAlias with parameter", id = 2)
+    public static Object mayAliasWithParam2(
+            @MayAlias(reason = "mayAlias with parameter", id = 2)
+            Object a) {
+        return a;
+    }
+
+    @MayAlias(reason = "mayAlias with parameter", id = 3)
+    public static Object mayAliasWithParam3(
+            @MayAlias(reason = "mayAlias with parameter", id = 3)
+            Object a) {
+
+        Object o1 = new Object();
+
+        if (Math.random() > 0.5) {
+            o1 = a;
+        }
+
+        return o1;
+    }
+
+    @MayAlias(reason = "mayAlias with parameter", id = 4)
+    public static Object mayAliasWithParam4(
+            @MayAlias(reason = "mayAlias with parameter", id = 4)
+            Object a) {
+
+        Object o1 = new Object();
+
+        if (Math.random() > 0.5) {
+            return o1;
+        }
+
+        return a;
+    }
+
+    public static void main(String[] args) {
+        Object o1 = new Object();
+        Object o2 = new Object();
+
+        mayAliasWithParam1(o1);
+
+        mayAliasWithParam2(o1);
+        mayAliasWithParam2(o2);
+
+        mayAliasWithParam3(o1);
+
+        mayAliasWithParam4(o1);
+    }
+
+}
