@@ -16,6 +16,13 @@ sealed trait StringTreeNode {
     val children: Seq[StringTreeNode]
 
     lazy val depth: Int = children.map(_.depth).maxOption.getOrElse(0) + 1
+    final def limitToDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
+        if (depth <= targetDepth)
+            this
+        else
+            _limitToDepth(targetDepth, replacement)
+    }
+    protected def _limitToDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode
 
     def sorted: StringTreeNode
 
@@ -106,6 +113,13 @@ case class StringTreeRepetition(child: StringTreeNode) extends CachedSimplifyNod
 
     def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
         StringTreeRepetition(child.replaceParameters(parameters))
+
+    def _limitToDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
+        if (targetDepth == 1)
+            replacement
+        else
+            StringTreeRepetition(child.limitToDepth(targetDepth - 1, replacement))
+    }
 }
 
 case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends CachedSimplifyNode with CachedHashCode {
@@ -153,6 +167,13 @@ case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends 
         } else {
             this
         }
+    }
+
+    def _limitToDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
+        if (targetDepth == 1)
+            replacement
+        else
+            StringTreeConcat(children.map(_.limitToDepth(targetDepth - 1, replacement)))
     }
 }
 
@@ -239,6 +260,13 @@ private case class SeqBasedStringTreeOr(override val _children: Seq[StringTreeNo
             this
         }
     }
+
+    def _limitToDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
+        if (targetDepth == 1)
+            replacement
+        else
+            SeqBasedStringTreeOr(children.map(_.limitToDepth(targetDepth - 1, replacement)))
+    }
 }
 
 object SeqBasedStringTreeOr {
@@ -255,6 +283,8 @@ object SeqBasedStringTreeOr {
 }
 
 case class SetBasedStringTreeOr(override val _children: Set[StringTreeNode]) extends StringTreeOr {
+
+    override lazy val depth: Int = _children.map(_.depth).maxOption.getOrElse(0) + 1
 
     override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.map(_.sorted).sortBy(_.toRegex))
 
@@ -273,6 +303,13 @@ case class SetBasedStringTreeOr(override val _children: Set[StringTreeNode]) ext
         } else {
             this
         }
+    }
+
+    def _limitToDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
+        if (targetDepth == 1)
+            replacement
+        else
+            SetBasedStringTreeOr(_children.map(_.limitToDepth(targetDepth - 1, replacement)))
     }
 }
 
@@ -319,6 +356,12 @@ sealed trait SimpleStringTreeNode extends StringTreeNode {
     override final def simplify: StringTreeNode = this
 
     override def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = this
+    override def _limitToDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
+        if (targetDepth == 1)
+            replacement
+        else
+            limitToDepth(targetDepth - 1, replacement)
+    }
 }
 
 case class StringTreeConst(string: String) extends SimpleStringTreeNode {
