@@ -51,6 +51,7 @@ class L2InterpretationHandler(implicit override val project: SomeProject) extend
         case stmt @ ExprStmt(_, expr: VirtualFunctionCall[V]) =>
             new L2VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
 
+        // IMPROVE add call-graph based interpreters for other call types than virtual function calls to L2
         case stmt @ Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
             L1NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
         case stmt @ ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
