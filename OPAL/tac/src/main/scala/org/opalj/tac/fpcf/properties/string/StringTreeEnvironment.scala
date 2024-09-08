@@ -9,23 +9,20 @@ import org.opalj.br.PDVar
 import org.opalj.br.PUVar
 import org.opalj.br.fpcf.properties.string.SetBasedStringTreeOr
 import org.opalj.br.fpcf.properties.string.StringTreeNode
-import org.opalj.br.fpcf.properties.string.StringTreeOr
 
 /**
  * @author Maximilian Rüsch
  */
 case class StringTreeEnvironment private (
     private val map:      Map[PDUWeb, StringTreeNode],
-    private val pcToWebs: Map[Int, Seq[PDUWeb]]
+    private val pcToWebs: Map[Int, Set[PDUWeb]]
 ) {
 
-    private def getWebsFor(pc: Int, pv: PV): Seq[PDUWeb] = {
-        val webs = pv match {
+    private def getWebsFor(pc: Int, pv: PV): Set[PDUWeb] = {
+        pv match {
             case _: PDVar[_] => pcToWebs(pc)
-            case _: PUVar[_] => pv.defPCs.map(pcToWebs).toSeq.flatten
+            case _: PUVar[_] => pv.defPCs.map(pcToWebs).flatten
         }
-
-        webs.sortBy(_.defPCs.toList.toSet.min)
     }
 
     private def getWebsFor(web: PDUWeb): Seq[PDUWeb] = map.keys
@@ -51,7 +48,8 @@ case class StringTreeEnvironment private (
         }
     }
 
-    def mergeAllMatching(pc: Int, pv: PV): StringTreeNode = StringTreeOr.fromNodes(getWebsFor(pc, pv).map(map(_)): _*)
+    def mergeAllMatching(pc: Int, pv: PV): StringTreeNode =
+        SetBasedStringTreeOr.createWithSimplify(getWebsFor(pc, pv).map(map(_)))
 
     def apply(pc: Int, pv: PV): StringTreeNode = map(getWebFor(pc, pv))
 
@@ -76,8 +74,8 @@ object StringTreeEnvironment {
 
     def apply(map: Map[PDUWeb, StringTreeNode]): StringTreeEnvironment = {
         val pcToWebs =
-            map.keys.toSeq.flatMap(web => web.defPCs.map((_, web))).groupMap(_._1)(_._2)
-                .withDefaultValue(Seq.empty)
+            map.keySet.flatMap(web => web.defPCs.map((_, web))).groupMap(_._1)(_._2)
+                .withDefaultValue(Set.empty)
         StringTreeEnvironment(map, pcToWebs)
     }
 

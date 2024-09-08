@@ -46,6 +46,7 @@ class SystemPropertiesAnalysis private[analyses] (
     private type Values = Set[StringTreeNode]
 
     def processMethod(callContext: ContextType, tacaiEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
+        // IMPROVE add initialization framework similar to the EntryPointFinder framework
         implicit val state: State = new SystemPropertiesState(callContext, tacaiEP, Map.empty)
 
         var values: Values = Set.empty

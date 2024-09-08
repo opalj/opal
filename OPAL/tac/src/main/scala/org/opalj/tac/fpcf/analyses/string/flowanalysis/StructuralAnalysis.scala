@@ -348,6 +348,7 @@ object StructuralAnalysis {
         }
 
         if (reachUnder.exists(m => graph.get(startingNode).pathTo(graph.get(m)).isEmpty)) {
+            // IMPROVE reliably detect size of improper regions and reduce
             throw new IllegalStateException("This implementation of structural analysis cannot handle improper regions!")
         }
 

@@ -179,4 +179,8 @@ public class SimpleStringBuilderOps {
         sb.append(data);
         analyzeString(sb.toString());
     }
+
+    // IMPROVE Add the following tests
+    // - Passing string builders as call parameters should result in a failure (called method can modify string builder)
+    // - Support generic function calls, in particular with upper return type bounds that are non-object
 }
