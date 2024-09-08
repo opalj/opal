@@ -17,7 +17,7 @@ public class SimpleControlStructures {
 
     @Dynamic(n = 0, levels = Level.TRUTH, value = "(^-?\\d+$|x)")
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "x")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "x")
     @Constant(n = 1, levels = Level.TRUTH, value = "(42-42|x)")
     @Failure(n = 1, levels = Level.L0)
     public void ifElseWithStringBuilderWithIntExpr() {
@@ -38,7 +38,7 @@ public class SimpleControlStructures {
 
     @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "(3.142.71828|^-?\\d*\\.{0,1}\\d+$2.71828)")
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "3.142.71828")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "3.142.71828")
     public void ifElseWithStringBuilderWithFloatExpr() {
         StringBuilder sb1 = new StringBuilder();
         int i = new Random().nextInt();

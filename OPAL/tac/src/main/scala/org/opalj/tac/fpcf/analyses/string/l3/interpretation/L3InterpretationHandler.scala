@@ -4,9 +4,11 @@ package tac
 package fpcf
 package analyses
 package string
-package l2
+package l3
 package interpretation
 
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
@@ -19,6 +21,7 @@ import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1NonVirtualFunction
 import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1NonVirtualMethodCallInterpreter
 import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1StaticFunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1VirtualMethodCallInterpreter
+import org.opalj.tac.fpcf.analyses.string.l2.interpretation.L2VirtualFunctionCallInterpreter
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
@@ -26,8 +29,9 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  *
  * @author Maximilian Rüsch
  */
-class L2InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
+class L3InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
 
+    implicit val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
     implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
     override protected def processStatement(implicit
@@ -38,7 +42,12 @@ class L2InterpretationHandler(implicit override val project: SomeProject) extend
 
         // Currently unsupported
         case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.failure(target)
-        case Assignment(_, target, _: FieldRead[V]) => StringInterpreter.failure(target)
+
+        case stmt @ Assignment(_, _, expr: FieldRead[V]) =>
+            new L3FieldReadInterpreter().interpretExpr(stmt, expr)
+        // Field reads without result usage are irrelevant
+        case ExprStmt(_, _: FieldRead[V]) =>
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
         case stmt: FieldWriteAccessStmt[V] =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(
@@ -86,9 +95,9 @@ class L2InterpretationHandler(implicit override val project: SomeProject) extend
     }
 }
 
-object L2InterpretationHandler {
+object L3InterpretationHandler {
 
-    def requiredProjectInformation: ProjectInformationKeys = Seq(ContextProviderKey)
+    def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredFieldsKey, ContextProviderKey)
 
-    def apply(project: SomeProject): L2InterpretationHandler = new L2InterpretationHandler()(project)
+    def apply(project: SomeProject): L3InterpretationHandler = new L3InterpretationHandler()(project)
 }

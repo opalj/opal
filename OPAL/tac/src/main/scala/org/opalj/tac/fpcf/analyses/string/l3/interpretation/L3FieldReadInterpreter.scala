@@ -4,7 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
-package l2
+package l3
 package interpretation
 
 import scala.collection.mutable.ListBuffer
@@ -35,7 +35,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  *
  * @author Maximilian Rüsch
  */
-class L2FieldReadInterpreter(
+class L3FieldReadInterpreter(
     implicit val ps:              PropertyStore,
     implicit val project:         SomeProject,
     implicit val declaredFields:  DeclaredFields,

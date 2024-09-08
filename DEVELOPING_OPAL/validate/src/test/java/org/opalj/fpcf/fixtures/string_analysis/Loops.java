@@ -22,12 +22,12 @@ public class Loops {
      */
     @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "a(b)*")
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "ab")
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = ".*")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "ab")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = ".*")
     @PartiallyConstant(n = 1, levels = Level.TRUTH, value = "a(b)*")
     @Failure(n = 1, levels = Level.L0)
-    @Constant(n = 1, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "ab")
-    @Dynamic(n = 1, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = ".*")
+    @Constant(n = 1, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "ab")
+    @Dynamic(n = 1, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = ".*")
     public void simpleForLoopWithKnownBounds() {
         StringBuilder sb = new StringBuilder("a");
         for (int i = 0; i < 10; i++) {
@@ -45,8 +45,8 @@ public class Loops {
 
     @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "((x|^-?\\d+$))*yz")
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "xyz")
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = "(.*|.*yz)")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "xyz")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "(.*|.*yz)")
     public void ifElseInLoopWithAppendAfterwards() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 20; i++) {
@@ -63,8 +63,8 @@ public class Loops {
 
     @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "a(b)*")
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "ab")
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = ".*")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "ab")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = ".*")
     public void nestedLoops(int range) {
         for (int i = 0; i < range; i++) {
             StringBuilder sb = new StringBuilder("a");
@@ -77,8 +77,8 @@ public class Loops {
 
     @PartiallyConstant(n = 0, value = "((x|^-?\\d+$))*yz", levels = Level.TRUTH)
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "xyz")
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = "(.*|.*yz)")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "xyz")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "(.*|.*yz)")
     public void stringBufferExample() {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < 20; i++) {
@@ -95,8 +95,8 @@ public class Loops {
 
     @PartiallyConstant(n = 0, value = "a(b)*", levels = Level.TRUTH)
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "ab")
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = ".*")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "ab")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = ".*")
     public void whileTrueWithBreak() {
         StringBuilder sb = new StringBuilder("a");
         while (true) {
@@ -110,8 +110,8 @@ public class Loops {
 
     @PartiallyConstant(n = 0, value = "a(b)*", levels = Level.TRUTH)
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "ab")
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = ".*")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "ab")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = ".*")
     public void whileNonTrueWithBreak(int i) {
         StringBuilder sb = new StringBuilder("a");
         int j = 0;
@@ -127,17 +127,17 @@ public class Loops {
 
     @Constant(n = 0, levels = Level.TRUTH, value = "(iv1|iv2): ")
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "(iv1|iv2): ")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "(iv1|iv2): ")
     // The real value is not fully resolved yet, since the string builder is used in a while loop,
     // which leads to the string builder potentially carrying any value. This can be refined by
     // recording pc specific states during data flow analysis.
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = "((iv1|iv2): |.*)")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "((iv1|iv2): |.*)")
     @PartiallyConstant(n = 1, levels = Level.TRUTH, value = "(iv1|iv2): ((great!)?)*(java.lang.Runtime)?")
     @Failure(n = 1, levels = Level.L0)
     @Constant(n = 1, levels = Level.L1, soundness = SoundnessMode.LOW, value = "(iv1|iv2): great!")
     @Dynamic(n = 1, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|.*.*)")
-    @Constant(n = 1, levels = Level.L2, soundness = SoundnessMode.LOW, value = "((iv1|iv2): great!|(iv1|iv2): great!java.lang.Runtime)")
-    @Dynamic(n = 1, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(.*|.*java.lang.Runtime)")
+    @Constant(n = 1, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "((iv1|iv2): great!|(iv1|iv2): great!java.lang.Runtime)")
+    @Dynamic(n = 1, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "(.*|.*java.lang.Runtime)")
     public void extensiveWithManyControlStructures(boolean cond) {
         StringBuilder sb = new StringBuilder();
         if (cond) {
@@ -167,17 +167,17 @@ public class Loops {
     // The bytecode produces an "if" within an "if" inside the first loop => two conditions
     @Constant(n = 0, levels = Level.TRUTH, value = "abc((d)?)*")
     @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "(abc|abcd)")
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = ".*")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "(abc|abcd)")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = ".*")
     @Constant(n = 1, levels = Level.TRUTH, value = "")
     @Failure(n = 1, levels = Level.L0)
-    @Constant(n = 1, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "")
-    @Dynamic(n = 1, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = "(|.*)")
+    @Constant(n = 1, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "")
+    @Dynamic(n = 1, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "(|.*)")
     @Dynamic(n = 2, levels = Level.TRUTH, value = "((.*)?)*")
     @Failure(n = 2, levels = Level.L0)
     @Constant(n = 2, levels = Level.L1, soundness = SoundnessMode.LOW, value = "")
-    @Constant(n = 2, levels = Level.L2, soundness = SoundnessMode.LOW, value = "(|java.lang.Runtime)")
-    @Dynamic(n = 2, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = ".*")
+    @Constant(n = 2, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "(|java.lang.Runtime)")
+    @Dynamic(n = 2, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = ".*")
     public void breakContinueExamples(int value) {
         StringBuilder sb1 = new StringBuilder("abc");
         for (int i = 0; i < value; i++) {
@@ -220,9 +220,9 @@ public class Loops {
     @Constant(n = 0, levels = Level.TRUTH, value = "Hello: (java.lang.Runtime|java.lang.StringBuilder|StringBuilder)?")
     @Failure(n = 0, levels = Level.L0)
     @Constant(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "Hello: ")
-    @Constant(n = 0, levels = Level.L2, soundness = SoundnessMode.LOW,
+    @Constant(n = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.LOW,
             value = "(Hello: |Hello: StringBuilder|Hello: java.lang.Runtime|Hello: java.lang.StringBuilder)")
-    @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = ".*")
+    @Dynamic(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = ".*")
     protected void setDebugFlags(String[] var1) {
         for(int var2 = 0; var2 < var1.length; ++var2) {
             String var3 = var1[var2];

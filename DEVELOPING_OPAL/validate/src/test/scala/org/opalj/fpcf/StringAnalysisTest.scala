@@ -56,6 +56,7 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringAnalysis
 import org.opalj.tac.fpcf.analyses.systemproperties.EagerSystemPropertiesAnalysisScheduler
 
 sealed abstract class StringAnalysisTest extends PropertiesTest {
@@ -335,15 +336,7 @@ sealed abstract class L2StringAnalysisTest extends StringAnalysisTest {
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
         LazyL2StringAnalysis.allRequiredAnalyses :+
-            EagerFieldAccessInformationAnalysis :+
             EagerSystemPropertiesAnalysisScheduler
-    }
-
-    override def initBeforeCallGraph(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(FieldAccessInformationKey) {
-            case None               => Seq(EagerFieldAccessInformationAnalysis)
-            case Some(requirements) => requirements :+ EagerFieldAccessInformationAnalysis
-        }
     }
 }
 
@@ -360,6 +353,48 @@ class L2StringAnalysisWithL2DefaultDomainTest extends L2StringAnalysisTest {
 }
 
 class HighSoundnessL2StringAnalysisWithL2DefaultDomainTest extends L2StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L2
+    override def soundnessMode: SoundnessMode = SoundnessMode.HIGH
+}
+
+/**
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringAnalysis]] works correctly with
+ * respect to some well-defined tests.
+ *
+ * @author Maximilian Rüsch
+ */
+sealed abstract class L3StringAnalysisTest extends StringAnalysisTest {
+
+    override def level = Level.L3
+
+    override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
+        LazyL3StringAnalysis.allRequiredAnalyses :+
+            EagerFieldAccessInformationAnalysis :+
+            EagerSystemPropertiesAnalysisScheduler
+    }
+
+    override def initBeforeCallGraph(p: Project[URL]): Unit = {
+        p.updateProjectInformationKeyInitializationData(FieldAccessInformationKey) {
+            case None               => Seq(EagerFieldAccessInformationAnalysis)
+            case Some(requirements) => requirements :+ EagerFieldAccessInformationAnalysis
+        }
+    }
+}
+
+class L3StringAnalysisWithL1DefaultDomainTest extends L3StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L1
+    override def soundnessMode: SoundnessMode = SoundnessMode.LOW
+}
+
+class L3StringAnalysisWithL2DefaultDomainTest extends L3StringAnalysisTest {
+
+    override def domainLevel: DomainLevel = DomainLevel.L2
+    override def soundnessMode: SoundnessMode = SoundnessMode.LOW
+}
+
+class HighSoundnessL3StringAnalysisWithL2DefaultDomainTest extends L3StringAnalysisTest {
 
     override def domainLevel: DomainLevel = DomainLevel.L2
     override def soundnessMode: SoundnessMode = SoundnessMode.HIGH
