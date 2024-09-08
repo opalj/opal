@@ -7,7 +7,6 @@ package cg
 package reflection
 
 import java.util.regex.Pattern
-import java.util.regex.PatternSyntaxException
 
 import org.opalj.br.BaseType
 import org.opalj.br.ClassType
@@ -81,19 +80,11 @@ object TypesUtil {
         ) {
             Set.empty
         } else {
-            val regex = classNameStringTree.toRegex
-            try {
-                val pattern = Pattern.compile(regex)
-                project.allClassFiles.filter { cf =>
-                    pattern.matcher(cf.thisType.fqn).matches() ||
+            val pattern = Pattern.compile(classNameStringTree.toRegex)
+            project.allClassFiles.filter { cf =>
+                pattern.matcher(cf.thisType.fqn).matches() ||
                     pattern.matcher(cf.thisType.toJava).matches()
-                }.map(_.thisType).toSet
-            } catch {
-                case _: PatternSyntaxException =>
-                    // Workaround for now to handle non-compatible regexes
-                    System.out.println(s"FOUND PATTERN EXCEPTION FOR REGEX $regex")
-                    Set.empty
-            }
+            }.map(_.thisType).toSet
         }
     }
 
