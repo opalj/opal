@@ -45,7 +45,7 @@ public class Loops {
 
     @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "((x|^-?\\d+$))*yz")
     @Failure(n = 0, levels = Level.L0)
-    @PartiallyConstant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "(^-?\\d+$|x)yz")
+    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "xyz")
     @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = "(.*|.*yz)")
     public void ifElseInLoopWithAppendAfterwards() {
         StringBuilder sb = new StringBuilder();
@@ -77,7 +77,7 @@ public class Loops {
 
     @PartiallyConstant(n = 0, value = "((x|^-?\\d+$))*yz", levels = Level.TRUTH)
     @Failure(n = 0, levels = Level.L0)
-    @PartiallyConstant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "(^-?\\d+$|x)yz")
+    @Constant(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.LOW, value = "xyz")
     @Dynamic(n = 0, levels = { Level.L1, Level.L2 }, soundness = SoundnessMode.HIGH, value = "(.*|.*yz)")
     public void stringBufferExample() {
         StringBuffer sb = new StringBuffer();

@@ -70,13 +70,12 @@ class L2InterpretationHandler(implicit override val project: SomeProject) extend
         case ExprStmt(_, _: StaticFunctionCall[V]) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
-        // TODO: For binary expressions, use the underlying domain to retrieve the result of such expressions
-        case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(stmt, expr)
+        case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter().interpretExpr(stmt, expr)
 
         case vmc: VirtualMethodCall[V] =>
-            L1VirtualMethodCallInterpreter.interpret(vmc)
+            L1VirtualMethodCallInterpreter().interpret(vmc)
         case nvmc: NonVirtualMethodCall[V] =>
-            L1NonVirtualMethodCallInterpreter.interpret(nvmc)
+            L1NonVirtualMethodCallInterpreter().interpret(nvmc)
 
         case Assignment(_, _, _: New) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)

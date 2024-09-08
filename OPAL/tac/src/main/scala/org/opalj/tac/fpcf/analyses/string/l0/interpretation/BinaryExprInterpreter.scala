@@ -11,13 +11,16 @@ import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicFloat
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicInt
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * @author Maximilian Rüsch
  */
-object BinaryExprInterpreter extends AssignmentBasedStringInterpreter {
+case class BinaryExprInterpreter()(
+    implicit val soundnessMode: SoundnessMode
+) extends AssignmentBasedStringInterpreter {
 
     override type E = BinaryExpr[V]
 
@@ -32,11 +35,16 @@ object BinaryExprInterpreter extends AssignmentBasedStringInterpreter {
     override def interpretExpr(target: PV, expr: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
+        // IMPROVE Use the underlying domain to retrieve the result of such expressions if possible in low soundness mode
         computeFinalResult(expr.cTpe match {
-            case ComputationalTypeInt =>
+            case ComputationalTypeInt if soundnessMode.isHigh =>
                 StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeDynamicInt)
-            case ComputationalTypeFloat =>
+            case ComputationalTypeInt =>
+                StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeNode.ub)
+            case ComputationalTypeFloat if soundnessMode.isHigh =>
                 StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeDynamicFloat)
+            case ComputationalTypeFloat =>
+                StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeNode.ub)
             case _ => StringFlowFunctionProperty.identity
         })
     }

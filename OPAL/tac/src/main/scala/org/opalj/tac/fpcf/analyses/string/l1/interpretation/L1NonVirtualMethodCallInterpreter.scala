@@ -15,7 +15,9 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 /**
  * @author Maximilian Rüsch
  */
-object L1NonVirtualMethodCallInterpreter extends StringInterpreter {
+case class L1NonVirtualMethodCallInterpreter()(
+    implicit val soundnessMode: SoundnessMode
+) extends StringInterpreter {
 
     override type T = NonVirtualMethodCall[V]
 
@@ -32,14 +34,15 @@ object L1NonVirtualMethodCallInterpreter extends StringInterpreter {
         init.params.size match {
             case 0 =>
                 computeFinalResult(StringFlowFunctionProperty.constForVariableAt(pc, targetVar, StringTreeEmptyConst))
-            case _ =>
-                // Only StringBuffer and StringBuilder are interpreted which have constructors with <= 1 parameters
+            case 1 =>
                 val paramVar = init.params.head.asVar.toPersistentForm(state.tac.stmts)
 
                 computeFinalResult(
                     Set(PDUWeb(pc, targetVar), PDUWeb(pc, paramVar)),
                     (env: StringTreeEnvironment) => env.update(pc, targetVar, env(pc, paramVar))
                 )
+            case _ =>
+                failure(targetVar)
         }
     }
 }

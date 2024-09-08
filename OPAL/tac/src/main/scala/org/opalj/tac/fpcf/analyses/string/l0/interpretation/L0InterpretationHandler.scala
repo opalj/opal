@@ -24,7 +24,7 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
     ): PartialFunction[Stmt[V], ProperPropertyComputationResult] = {
         case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
-        case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(stmt, expr)
+        case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter().interpretExpr(stmt, expr)
 
         case ExprStmt(_, expr: VirtualFunctionCall[V])    => StringInterpreter.failure(expr.receiver.asVar)
         case ExprStmt(_, expr: NonVirtualFunctionCall[V]) => StringInterpreter.failure(expr.receiver.asVar)

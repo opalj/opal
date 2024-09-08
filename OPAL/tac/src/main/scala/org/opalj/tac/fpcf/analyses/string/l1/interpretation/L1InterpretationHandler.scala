@@ -26,7 +26,7 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
     ): PartialFunction[Stmt[V], ProperPropertyComputationResult] = {
         case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
-        case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter.interpretExpr(stmt, expr)
+        case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter().interpretExpr(stmt, expr)
 
         // Currently unsupported
         case Assignment(_, target, _: ArrayExpr[V]) => StringInterpreter.failure(target)
@@ -51,8 +51,8 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
         case ExprStmt(_, _: StaticFunctionCall[V]) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
-        case vmc: VirtualMethodCall[V]     => L1VirtualMethodCallInterpreter.interpret(vmc)
-        case nvmc: NonVirtualMethodCall[V] => L1NonVirtualMethodCallInterpreter.interpret(nvmc)
+        case vmc: VirtualMethodCall[V]     => L1VirtualMethodCallInterpreter().interpret(vmc)
+        case nvmc: NonVirtualMethodCall[V] => L1NonVirtualMethodCallInterpreter().interpret(nvmc)
 
         case Assignment(_, target, _) =>
             StringInterpreter.failure(target)
