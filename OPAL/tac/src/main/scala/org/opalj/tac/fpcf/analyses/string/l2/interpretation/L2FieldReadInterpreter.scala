@@ -15,7 +15,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeNull
 import org.opalj.br.fpcf.properties.string.StringTreeOr
@@ -107,7 +106,8 @@ class L2FieldReadInterpreter(
         if (accessState.fieldAccessDependee.isFinal && accessInformation.accesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
             return computeFinalResult(computeUBWithNewTree(StringTreeOr.fromNodes(
-                StringTreeDynamicString,
+                if (soundnessMode.isHigh) StringTreeNode.lb
+                else StringTreeNode.ub,
                 StringTreeNull
             )))
         }
@@ -146,10 +146,10 @@ class L2FieldReadInterpreter(
         accessState: FieldReadState,
         state:       InterpretationState
     ): ProperPropertyComputationResult = {
-        if (accessState.hasWriteInSameMethod) {
+        if (accessState.hasWriteInSameMethod && soundnessMode.isHigh) {
             // We cannot handle writes to a field that is read in the same method at the moment as the flow functions do
             // not capture field state. This can be improved upon in the future.
-            computeFinalResult(computeUBWithNewTree(StringTreeDynamicString))
+            computeFinalResult(computeUBWithNewTree(StringTreeNode.lb))
         } else {
             var trees = accessState.accessDependees.map { ad =>
                 if (ad.hasUBP) {

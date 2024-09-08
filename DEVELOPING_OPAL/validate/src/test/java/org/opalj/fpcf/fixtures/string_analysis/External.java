@@ -87,7 +87,8 @@ public class External {
     // Contains a field write in the same method which cannot be captured by flow functions
     @Constant(n = 0, levels = Level.TRUTH, value = "(some value|^null$)")
     @Failure(n = 0, levels = { Level.L0, Level.L1 })
-    @Dynamic(n = 0, levels = Level.L2, value = ".*")
+    @Constant(n = 0, levels = Level.L2, soundness = SoundnessMode.LOW, value = "some value")
+    @Dynamic(n = 0, levels = Level.L2, soundness = SoundnessMode.HIGH, value = ".*")
     public void fieldWriteInSameMethod() {
         writeInSameMethodField = "some value";
         analyzeString(writeInSameMethodField);
@@ -95,6 +96,7 @@ public class External {
 
     @Dynamic(n = 0, levels = Level.TRUTH, value = "(.*|^null$)")
     @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    @Constant(n = 0, levels = Level.L2, soundness = SoundnessMode.LOW, value = "^null$")
     public void fieldWithNoWriteTest() {
         analyzeString(noWriteField);
     }
