@@ -971,7 +971,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         if (definition.isMethodHandleConst) {
             definition.asMethodHandleConst.value match {
                 case handle: InstanceFieldAccessMethodHandle =>
-                    val receiver = actualParams.flatMap(_.head)
+                    val receiver = actualParams.flatMap(_.headOption).flatten
                     if (receiver.forall(r => r.value.isPrimitiveValue)) {
                         matchers = Set(NoFieldsMatcher)
                     } else {
@@ -1060,10 +1060,10 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
                 if (!matchers.contains(NoFieldsMatcher))
                     if (!handleData.isStatic) {
-                        if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
-                            val receiverValue = actualParams.get.head.get.value
-                            if (receiverValue.isReferenceValue)
-                                matchers += new ActualReceiverBasedFieldMatcher(receiverValue.asReferenceValue)
+                        val receiverValueOpt = actualParams.flatMap(_.headOption).flatten.map(_.value)
+                        if (receiverValueOpt.isDefined) {
+                            if (receiverValueOpt.get.isReferenceValue)
+                                matchers += new ActualReceiverBasedFieldMatcher(receiverValueOpt.get.asReferenceValue)
                         } else
                             matchers += MatcherUtil.retrieveClassBasedFieldMatcher(
                                 context,
