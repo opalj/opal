@@ -19,11 +19,6 @@ import org.opalj.tac.fpcf.analyses.string.l2.interpretation.L2InterpretationHand
 /**
  * @author Maximilian Rüsch
  */
-object L2StringAnalysis {
-
-    private[l2] final val ConfigLogCategory = "analysis configuration - l1 string analysis"
-}
-
 object LazyL2StringAnalysis {
 
     def allRequiredAnalyses: Seq[FPCFLazyAnalysisScheduler] = Seq(

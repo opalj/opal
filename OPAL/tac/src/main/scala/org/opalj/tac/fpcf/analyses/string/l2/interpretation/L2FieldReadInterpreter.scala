@@ -26,13 +26,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.log.Error
-import org.opalj.log.Info
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.analyses.string.l2.L2StringAnalysis
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
@@ -50,31 +45,6 @@ class L2FieldReadInterpreter(
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = FieldRead[V]
-
-    private final val FieldWriteThresholdConfigKey = {
-        "org.opalj.fpcf.analyses.string.l1.L1StringAnalysis.fieldWriteThreshold"
-    }
-
-    /**
-     * To analyze a read operation of field, ''f'', all write accesses, ''wa_f'', to ''f'' have to be analyzed.
-     * ''fieldWriteThreshold'' determines the threshold of ''|wa_f|'' when ''f'' is to be approximated as the lower bound.
-     */
-    private val fieldWriteThreshold = {
-        implicit val logContext: LogContext = project.logContext
-        val threshold =
-            try {
-                project.config.getInt(FieldWriteThresholdConfigKey)
-            } catch {
-                case t: Throwable =>
-                    logOnce {
-                        Error(L2StringAnalysis.ConfigLogCategory, s"couldn't read: $FieldWriteThresholdConfigKey", t)
-                    }
-                    10
-            }
-
-        logOnce(Info(L2StringAnalysis.ConfigLogCategory, "uses a field write threshold of " + threshold))
-        threshold
-    }
 
     private case class FieldReadState(
         target:                        PV,
@@ -105,13 +75,6 @@ class L2FieldReadInterpreter(
         }
     }
 
-    /**
-     * Currently, fields are approximated using the following approach: If a field of a type not supported by the
-     * [[L2StringAnalysis]] is passed, a flow function producing the LB will be produced. Otherwise, all write accesses
-     * are considered and analyzed. If a field is not initialized within a constructor or the class itself, it will be
-     * approximated using all write accesses as well as with the lower bound and "null" => in these cases fields are
-     * [[org.opalj.br.fpcf.properties.string.StringConstancyLevel.DYNAMIC]].
-     */
     override def interpretExpr(target: PV, fieldRead: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
@@ -141,10 +104,6 @@ class L2FieldReadInterpreter(
         accessState: FieldReadState,
         state:       InterpretationState
     ): ProperPropertyComputationResult = {
-        if (accessInformation.accesses.length > fieldWriteThreshold) {
-            return computeFinalResult(computeUBWithNewTree(StringTreeDynamicString))
-        }
-
         if (accessState.fieldAccessDependee.isFinal && accessInformation.accesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
             return computeFinalResult(computeUBWithNewTree(StringTreeOr.fromNodes(
