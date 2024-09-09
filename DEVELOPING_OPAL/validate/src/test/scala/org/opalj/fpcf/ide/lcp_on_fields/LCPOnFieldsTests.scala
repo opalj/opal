@@ -1,9 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.ide.lcp_on_fields
 
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.lcp_on_fields.LCPOnFieldsProperty
 import org.opalj.ide.integration.LazyIDEAnalysisProxyScheduler
+import org.opalj.tac.fpcf.analyses.ide.linear_constant_propagation.LCPOnFieldsAnalysisScheduler
 
 class LCPOnFieldsTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
@@ -15,22 +18,22 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
             LinearConstantPropagationAnalysisSchedulerExtended,
             LCPOnFieldsAnalysisScheduler,
             new LazyIDEAnalysisProxyScheduler(LinearConstantPropagationAnalysisSchedulerExtended),
-            new LazyIDEAnalysisProxyScheduler(LCPOnFieldsAnalysisScheduler)
+            new LazyIDEAnalysisProxyScheduler(LCPOnFieldsAnalysisScheduler) {
+                override def afterPhaseScheduling(propertyStore: PropertyStore, analysis: FPCFAnalysis): Unit = {
+                    val entryPoints = methodsWithAnnotations(analysis.project)
+                    entryPoints.foreach { case (method, _, _) =>
+                        propertyStore.force(method, LCPOnFieldsAnalysisScheduler.propertyMetaInformation.key)
+                    }
+                }
+            }
         ))
 
-        val entryPoints = methodsWithAnnotations(testContext.project)
-        entryPoints.foreach { case (method, _, _) =>
-            testContext.propertyStore.force(method, LCPOnFieldsAnalysisScheduler.propertyMetaInformation.key)
-        }
-
-        testContext.propertyStore.waitOnPhaseCompletion()
         testContext.propertyStore.shutdown()
 
         validateProperties(
             testContext,
             methodsWithAnnotations(testContext.project),
-            Set(LCPOnFieldsProperty.KEY),
-            failOnInterimResults = false
+            Set(LCPOnFieldsProperty.KEY)
         )
     }
 }
