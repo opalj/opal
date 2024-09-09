@@ -332,9 +332,9 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
             var constantCount, partConstantCount, dynamicCount = 0
             entries.foreach {
                 _.constancyLevel match {
-                    case StringConstancyLevel.CONSTANT           => constantCount += 1
-                    case StringConstancyLevel.PARTIALLY_CONSTANT => partConstantCount += 1
-                    case StringConstancyLevel.DYNAMIC            => dynamicCount += 1
+                    case StringConstancyLevel.Constant          => constantCount += 1
+                    case StringConstancyLevel.PartiallyConstant => partConstantCount += 1
+                    case StringConstancyLevel.Dynamic           => dynamicCount += 1
                 }
             }
 

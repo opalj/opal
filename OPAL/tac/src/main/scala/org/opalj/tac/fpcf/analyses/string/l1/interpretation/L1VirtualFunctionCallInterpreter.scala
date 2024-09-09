@@ -140,7 +140,7 @@ private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringI
                             valueState
                         }
                     case ComputationalTypeFloat | ComputationalTypeDouble =>
-                        if (valueState.constancyLevel == StringConstancyLevel.CONSTANT) {
+                        if (valueState.constancyLevel == StringConstancyLevel.Constant) {
                             valueState
                         } else {
                             if (soundnessMode.isHigh) StringTreeDynamicFloat

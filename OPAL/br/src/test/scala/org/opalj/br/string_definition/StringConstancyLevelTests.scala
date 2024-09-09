@@ -6,44 +6,34 @@ package string_definition
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.opalj.br.fpcf.properties.string.StringConstancyLevel
-import org.opalj.br.fpcf.properties.string.StringConstancyLevel.CONSTANT
-import org.opalj.br.fpcf.properties.string.StringConstancyLevel.DYNAMIC
-import org.opalj.br.fpcf.properties.string.StringConstancyLevel.PARTIALLY_CONSTANT
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel.Constant
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel.Dynamic
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel.PartiallyConstant
 
 /**
  * Tests for [[StringConstancyLevel]] methods.
  *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
 @org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
 class StringConstancyLevelTests extends AnyFunSuite {
 
     test("tests that the more general string constancy level is computed correctly") {
         // Trivial cases
-        assert(StringConstancyLevel.determineMoreGeneral(DYNAMIC, DYNAMIC) == DYNAMIC)
-        assert(StringConstancyLevel.determineMoreGeneral(
-            PARTIALLY_CONSTANT,
-            PARTIALLY_CONSTANT
-        ) == PARTIALLY_CONSTANT)
-        assert(StringConstancyLevel.determineMoreGeneral(CONSTANT, CONSTANT) == CONSTANT)
+        assert(StringConstancyLevel.determineMoreGeneral(Dynamic, Dynamic) == Dynamic)
+        assert(StringConstancyLevel.determineMoreGeneral(PartiallyConstant, PartiallyConstant) == PartiallyConstant)
+        assert(StringConstancyLevel.determineMoreGeneral(Constant, Constant) == Constant)
 
-        // Test all other cases, start with { DYNAMIC, CONSTANT }
-        assert(StringConstancyLevel.determineMoreGeneral(CONSTANT, DYNAMIC) == DYNAMIC)
-        assert(StringConstancyLevel.determineMoreGeneral(DYNAMIC, CONSTANT) == DYNAMIC)
+        // Test all other cases, start with { Dynamic, Constant }
+        assert(StringConstancyLevel.determineMoreGeneral(Constant, Dynamic) == Dynamic)
+        assert(StringConstancyLevel.determineMoreGeneral(Dynamic, Constant) == Dynamic)
 
-        // { DYNAMIC, PARTIALLY_CONSTANT }
-        assert(StringConstancyLevel.determineMoreGeneral(PARTIALLY_CONSTANT, DYNAMIC) == DYNAMIC)
-        assert(StringConstancyLevel.determineMoreGeneral(DYNAMIC, PARTIALLY_CONSTANT) == DYNAMIC)
+        // { Dynamic, PartiallyConstant }
+        assert(StringConstancyLevel.determineMoreGeneral(PartiallyConstant, Dynamic) == Dynamic)
+        assert(StringConstancyLevel.determineMoreGeneral(Dynamic, PartiallyConstant) == Dynamic)
 
-        // { PARTIALLY_CONSTANT, CONSTANT }
-        assert(StringConstancyLevel.determineMoreGeneral(
-            PARTIALLY_CONSTANT,
-            CONSTANT
-        ) == PARTIALLY_CONSTANT)
-        assert(StringConstancyLevel.determineMoreGeneral(
-            CONSTANT,
-            PARTIALLY_CONSTANT
-        ) == PARTIALLY_CONSTANT)
+        // { PartiallyConstant, Constant }
+        assert(StringConstancyLevel.determineMoreGeneral(PartiallyConstant, Constant) == PartiallyConstant)
+        assert(StringConstancyLevel.determineMoreGeneral(Constant, PartiallyConstant) == PartiallyConstant)
     }
-
 }
