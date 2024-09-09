@@ -139,7 +139,6 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     // override/implement them here
                     p.classHierarchy.processSubtypes(classType)(null) {
                         (_: Null, subtype: ObjectType) =>
-                            val subClassFile = p.classFile(subtype).get
                             val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
                             if (p.instanceMethods(subtype).exists { mdc =>
                                     mdc.name == m.name && mdc.descriptor == m.descriptor
