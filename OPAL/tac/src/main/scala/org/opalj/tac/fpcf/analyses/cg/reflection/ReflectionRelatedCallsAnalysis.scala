@@ -265,7 +265,7 @@ class ClassForNameAnalysis private[analyses] (
 
         val scpUpdate = eps.asInstanceOf[EOptionP[VariableContext, StringConstancyProperty]]
         state.addNewLoadedClasses(TypesUtil.getPossibleForNameClasses(
-            scpUpdate.ub.sci.tree,
+            scpUpdate.ub.tree,
             project,
             allowDynamicStringTrees
         ))

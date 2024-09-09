@@ -98,7 +98,7 @@ object StringUtil {
         }
 
         stringEOptP match {
-            case UBP(ub) => Some(ub.sci.tree)
+            case UBP(ub) => Some(ub.tree)
             case _       => None
         }
     }

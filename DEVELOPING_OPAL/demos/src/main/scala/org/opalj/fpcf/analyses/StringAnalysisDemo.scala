@@ -117,7 +117,7 @@ object StringAnalysisDemo extends ProjectAnalysisApplication {
         def getDepths(filter: Entity => Boolean): Seq[String] = {
             val depths = propertyStore.entities(StringConstancyProperty.key)
                 .filter(eps => filter(eps.e))
-                .map(_.ub.sci.tree.depth).toSeq
+                .map(_.ub.tree.depth).toSeq
 
             depths
                 .groupBy(depth => depth)
