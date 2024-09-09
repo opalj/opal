@@ -85,7 +85,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
             .withValue(StringAnalysis.MaxDepthConfigKey, ConfigValueFactory.fromAnyRef(30))
     }
 
-    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/string_analysis")
+    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/string")
 
     override final def init(p: Project[URL]): Unit = {
         val domain = domainLevel match {
