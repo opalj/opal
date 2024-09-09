@@ -11,6 +11,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.string.SoundnessMode
+import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**

@@ -10,6 +10,7 @@ package interpretation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.BinaryExprInterpreter
 import org.opalj.tac.fpcf.analyses.string.l0.interpretation.SimpleValueConstExprInterpreter
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty

@@ -28,6 +28,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
@@ -154,7 +155,7 @@ class L3FieldReadInterpreter(
         } else {
             var trees = accessState.accessDependees.map { ad =>
                 if (ad.hasUBP) {
-                    val tree = ad.ub.sci.tree
+                    val tree = ad.ub.tree
                     if (tree.parameterIndices.nonEmpty) {
                         // We cannot handle write values that contain parameter indices since resolving the parameters
                         // requires context and this interpreter is present in multiple contexts.

@@ -18,6 +18,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 private[string] trait L1SystemPropertiesInterpreter extends StringInterpreter {

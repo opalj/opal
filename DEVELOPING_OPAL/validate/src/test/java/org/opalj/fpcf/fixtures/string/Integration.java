@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.string_analysis;
+package org.opalj.fpcf.fixtures.string;
 
-import org.opalj.fpcf.fixtures.string_analysis.tools.GreetingService;
-import org.opalj.fpcf.fixtures.string_analysis.tools.HelloGreeting;
+import org.opalj.fpcf.fixtures.string.tools.GreetingService;
+import org.opalj.fpcf.fixtures.string.tools.HelloGreeting;
 import org.opalj.fpcf.properties.string_analysis.*;
 
 /**

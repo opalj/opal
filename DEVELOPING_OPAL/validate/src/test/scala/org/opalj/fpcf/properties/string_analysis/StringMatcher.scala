@@ -20,7 +20,7 @@ sealed trait StringMatcher extends AbstractPropertyMatcher {
 
     protected def getActualValues: Property => Option[(String, String)] = {
         case prop: StringConstancyProperty =>
-            val tree = prop.sci.tree.simplify.sorted
+            val tree = prop.tree.simplify.sorted
             if (tree.isInvalid) {
                 None
             } else {
@@ -30,7 +30,7 @@ sealed trait StringMatcher extends AbstractPropertyMatcher {
     }
 }
 
-sealed abstract class ConstancyStringMatcher(val constancyLevel: StringConstancyLevel.Value) extends StringMatcher {
+sealed abstract class ConstancyStringMatcher(val constancyLevel: StringConstancyLevel) extends StringMatcher {
 
     override def validateProperty(
         p:          Project[_],
@@ -60,9 +60,9 @@ sealed abstract class ConstancyStringMatcher(val constancyLevel: StringConstancy
     }
 }
 
-class ConstantStringMatcher extends ConstancyStringMatcher(StringConstancyLevel.CONSTANT)
-class PartiallyConstantStringMatcher extends ConstancyStringMatcher(StringConstancyLevel.PARTIALLY_CONSTANT)
-class DynamicStringMatcher extends ConstancyStringMatcher(StringConstancyLevel.DYNAMIC)
+class ConstantStringMatcher extends ConstancyStringMatcher(StringConstancyLevel.Constant)
+class PartiallyConstantStringMatcher extends ConstancyStringMatcher(StringConstancyLevel.PartiallyConstant)
+class DynamicStringMatcher extends ConstancyStringMatcher(StringConstancyLevel.Dynamic)
 
 class InvalidStringMatcher extends StringMatcher {
 

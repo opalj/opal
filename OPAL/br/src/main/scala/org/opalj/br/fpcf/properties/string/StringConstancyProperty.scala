@@ -17,28 +17,25 @@ sealed trait StringConstancyPropertyMetaInformation extends PropertyMetaInformat
 }
 
 class StringConstancyProperty(
-    val stringConstancyInformation: StringConstancyInformation
+    val tree: StringTreeNode
 ) extends Property with StringConstancyPropertyMetaInformation {
-
-    def sci: StringConstancyInformation = stringConstancyInformation
 
     final def key: PropertyKey[StringConstancyProperty] = StringConstancyProperty.key
 
     override def toString: String = {
-        val level = stringConstancyInformation.constancyLevel.toString.toLowerCase
-        val strings = if (stringConstancyInformation.tree.simplify.isInvalid) {
+        val level = tree.constancyLevel.toString.toLowerCase
+        val strings = if (tree.simplify.isInvalid) {
             "No possible strings - Invalid Flow"
-        } else stringConstancyInformation.tree.sorted.toRegex
+        } else tree.sorted.toRegex
 
         s"Level: $level, Possible Strings: $strings"
     }
 
-    override def hashCode(): Int = stringConstancyInformation.hashCode()
+    override def hashCode(): Int = tree.hashCode()
 
     override def equals(o: Any): Boolean = o match {
-        case scp: StringConstancyProperty =>
-            stringConstancyInformation.equals(scp.stringConstancyInformation)
-        case _ => false
+        case scp: StringConstancyProperty => tree.equals(scp.tree)
+        case _                            => false
     }
 }
 
@@ -53,16 +50,15 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
         )
     }
 
-    def apply(stringConstancyInformation: StringConstancyInformation): StringConstancyProperty =
-        new StringConstancyProperty(stringConstancyInformation)
+    def apply(tree: StringTreeNode): StringConstancyProperty = new StringConstancyProperty(tree)
 
     /**
      * @return Returns the lower bound from a lattice-point of view.
      */
-    def lb: StringConstancyProperty = StringConstancyProperty(StringConstancyInformation.lb)
+    def lb: StringConstancyProperty = StringConstancyProperty(StringTreeNode.lb)
 
     /**
      * @return Returns the upper bound from a lattice-point of view.
      */
-    def ub: StringConstancyProperty = StringConstancyProperty(StringConstancyInformation.ub)
+    def ub: StringConstancyProperty = StringConstancyProperty(StringTreeNode.ub)
 }

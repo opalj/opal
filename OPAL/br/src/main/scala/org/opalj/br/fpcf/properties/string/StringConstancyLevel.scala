@@ -6,36 +6,30 @@ package properties
 package string
 
 /**
- * Values in this enumeration represent the granularity of used strings.
- *
- * @author Patrick Mell
+ * @author Maximilian Rüsch
  */
-object StringConstancyLevel extends Enumeration {
+sealed trait StringConstancyLevel
 
-    type StringConstancyLevel = StringConstancyLevel.Value
+object StringConstancyLevel {
 
     /**
-     * This level indicates that a string has a constant value at a given read operation.
+     * Indicates that a string has a constant value at a given read operation.
      */
-    final val CONSTANT = Value("constant")
+    case object Constant extends StringConstancyLevel
 
     /**
-     * This level indicates that a string is partially constant (constant + dynamic part) at some
-     * read operation, that is, the initial value of a string variable needs to be preserved. For
-     * instance, it is fine if a string variable is modified after its initialization by
-     * appending another string, s2. Later, s2 might be removed partially or entirely without
-     * violating the constraints of this level.
+     * Indicates that a string is partially constant (has a constant and a dynamic part) at some read operation.
      */
-    final val PARTIALLY_CONSTANT = Value("partially_constant")
+    case object PartiallyConstant extends StringConstancyLevel
 
     /**
-     * This level indicates that a string at some read operations has an unpredictable value.
+     * Indicates that a string at some read operations has an unpredictable value.
      */
-    final val DYNAMIC = Value("dynamic")
+    case object Dynamic extends StringConstancyLevel
 
     /**
-     * Returns the more general StringConstancyLevel of the two given levels. DYNAMIC is more
-     * general than PARTIALLY_CONSTANT which is more general than CONSTANT.
+     * The more general StringConstancyLevel of the two given levels, i.e. the one that allows more possible
+     * values at the given read operation.
      *
      * @param level1 The first level.
      * @param level2 The second level.
@@ -45,21 +39,23 @@ object StringConstancyLevel extends Enumeration {
         level1: StringConstancyLevel,
         level2: StringConstancyLevel
     ): StringConstancyLevel = {
-        if (level1 == DYNAMIC || level2 == DYNAMIC) {
-            DYNAMIC
-        } else if (level1 == PARTIALLY_CONSTANT || level2 == PARTIALLY_CONSTANT) {
-            PARTIALLY_CONSTANT
+        if (level1 == Dynamic || level2 == Dynamic) {
+            Dynamic
+        } else if (level1 == PartiallyConstant || level2 == PartiallyConstant) {
+            PartiallyConstant
         } else {
-            CONSTANT
+            Constant
         }
     }
 
     /**
      * Returns the StringConstancyLevel of a concatenation of two values.
-     * CONSTANT + CONSTANT = CONSTANT
-     * DYNAMIC + DYNAMIC = DYNAMIC
-     * CONSTANT + DYNAMIC = PARTIALLY_CONSTANT
-     * PARTIALLY_CONSTANT + {DYNAMIC, CONSTANT} = PARTIALLY_CONSTANT
+     * <ul>
+     *   <li>Constant + Constant = Constant</li>
+     *   <li>Dynamic + Dynamic = Dynamic</li>
+     *   <li>Constant + Dynamic = PartiallyConstant</li>
+     *   <li>PartiallyConstant + {Dynamic, Constant} = PartiallyConstant</li>
+     * </ul>
      *
      * @param level1 The first level.
      * @param level2 The second level.
@@ -69,12 +65,10 @@ object StringConstancyLevel extends Enumeration {
         level1: StringConstancyLevel,
         level2: StringConstancyLevel
     ): StringConstancyLevel = {
-        if (level1 == PARTIALLY_CONSTANT || level2 == PARTIALLY_CONSTANT) {
-            PARTIALLY_CONSTANT
-        } else if ((level1 == CONSTANT && level2 == DYNAMIC) ||
-                   (level1 == DYNAMIC && level2 == CONSTANT)
-        ) {
-            PARTIALLY_CONSTANT
+        if (level1 == PartiallyConstant || level2 == PartiallyConstant) {
+            PartiallyConstant
+        } else if ((level1 == Constant && level2 == Dynamic) || (level1 == Dynamic && level2 == Constant)) {
+            PartiallyConstant
         } else {
             level1
         }

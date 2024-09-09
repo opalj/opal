@@ -38,7 +38,7 @@ sealed trait StringTreeNode {
 
     def simplify: StringTreeNode
 
-    def constancyLevel: StringConstancyLevel.Value
+    def constancyLevel: StringConstancyLevel
 
     lazy val parameterIndices: Set[Int] = children.flatMap(_.parameterIndices).toSet
     final def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
@@ -89,39 +89,6 @@ object StringTreeNode {
     def ub: StringTreeNode = StringTreeInvalidElement
 }
 
-case class StringTreeRepetition(child: StringTreeNode) extends CachedSimplifyNode with CachedHashCode {
-
-    override val children: Seq[StringTreeNode] = Seq(child)
-
-    override def _toRegex: String = s"(${child.toRegex})*"
-
-    override def sorted: StringTreeNode = this
-
-    override def _simplify: StringTreeNode = {
-        val simplifiedChild = child.simplify
-        if (simplifiedChild.isInvalid)
-            StringTreeInvalidElement
-        else if (simplifiedChild.isEmpty)
-            StringTreeEmptyConst
-        else
-            StringTreeRepetition(simplifiedChild)
-    }
-
-    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
-
-    override lazy val parameterIndices: Set[Int] = child.parameterIndices
-
-    def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
-        StringTreeRepetition(child.replaceParameters(parameters))
-
-    def _limitToDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
-        if (targetDepth == 1)
-            replacement
-        else
-            StringTreeRepetition(child.limitToDepth(targetDepth - 1, replacement))
-    }
-}
-
 case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends CachedSimplifyNode with CachedHashCode {
 
     override def _toRegex: String = {
@@ -153,7 +120,7 @@ case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends 
         }
     }
 
-    override def constancyLevel: StringConstancyLevel.Value =
+    override def constancyLevel: StringConstancyLevel =
         children.map(_.constancyLevel).reduceLeft(StringConstancyLevel.determineForConcat)
 
     def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
@@ -203,7 +170,7 @@ trait StringTreeOr extends CachedSimplifyNode with CachedHashCode {
         }
     }
 
-    override def constancyLevel: StringConstancyLevel.Value =
+    override def constancyLevel: StringConstancyLevel =
         _children.map(_.constancyLevel).reduceLeft(StringConstancyLevel.determineMoreGeneral)
 
     override lazy val parameterIndices: Set[Int] = _children.flatMap(_.parameterIndices).toSet
@@ -367,7 +334,7 @@ sealed trait SimpleStringTreeNode extends StringTreeNode {
 case class StringTreeConst(string: String) extends SimpleStringTreeNode {
     override def _toRegex: String = Regex.quoteReplacement(string).replaceAll("\\[", "\\\\[")
 
-    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
+    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Constant
 
     def isIntConst: Boolean = Try(string.toInt).isSuccess
 
@@ -387,7 +354,7 @@ case class StringTreeParameter(index: Int) extends SimpleStringTreeNode {
     override def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
         parameters.getOrElse(index, this)
 
-    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
+    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }
 
 object StringTreeParameter {
@@ -404,7 +371,7 @@ object StringTreeParameter {
 object StringTreeInvalidElement extends SimpleStringTreeNode {
     override def _toRegex: String = throw new UnsupportedOperationException()
 
-    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
+    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Constant
 
     override def isInvalid: Boolean = true
 }
@@ -413,23 +380,23 @@ object StringTreeNull extends SimpleStringTreeNode {
     // Using this element nested in some other element might lead to unexpected results...
     override def _toRegex: String = "^null$"
 
-    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.CONSTANT
+    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Constant
 }
 
 object StringTreeDynamicString extends SimpleStringTreeNode {
     override def _toRegex: String = ".*"
 
-    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
+    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }
 
 object StringTreeDynamicInt extends SimpleStringTreeNode {
     override def _toRegex: String = "^-?\\d+$"
 
-    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
+    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }
 
 object StringTreeDynamicFloat extends SimpleStringTreeNode {
     override def _toRegex: String = "^-?\\d*\\.{0,1}\\d+$"
 
-    override def constancyLevel: StringConstancyLevel.Value = StringConstancyLevel.DYNAMIC
+    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }

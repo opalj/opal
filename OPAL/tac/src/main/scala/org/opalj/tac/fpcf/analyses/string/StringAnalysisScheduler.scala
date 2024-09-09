@@ -16,6 +16,7 @@ import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.analyses.string.flowanalysis.MethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow

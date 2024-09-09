@@ -49,9 +49,9 @@ import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
-import org.opalj.tac.fpcf.analyses.string.MethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.VariableContext
+import org.opalj.tac.fpcf.analyses.string.flowanalysis.MethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
@@ -85,7 +85,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
             .withValue(StringAnalysis.MaxDepthConfigKey, ConfigValueFactory.fromAnyRef(30))
     }
 
-    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/string_analysis")
+    override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/string")
 
     override final def init(p: Project[URL]): Unit = {
         val domain = domainLevel match {

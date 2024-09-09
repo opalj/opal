@@ -22,6 +22,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
+import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1FunctionCallInterpreter
 import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1SystemPropertiesInterpreter
 import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1VirtualFunctionCallInterpreter
