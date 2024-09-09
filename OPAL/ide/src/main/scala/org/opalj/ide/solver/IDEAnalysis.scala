@@ -74,7 +74,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     /**
      * Container class for simpler interaction and passing of the 'shared' data
      */
-    private class State {
+    private class State(
+        val targetCallable: Callable
+    ) {
         /**
          * The work list for paths used in P1
          */
@@ -324,21 +326,21 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     def performAnalysis(callable: Callable): ProperPropertyComputationResult = {
         logDebug(s"performing ${getClass.getSimpleName} for $callable")
 
-        implicit val state: State = new State
+        implicit val state: State = new State(callable)
 
-        performPhase1(callable)
-        performPhase2(callable)
+        performPhase1()
+        performPhase2()
 
-        createResult(callable)
+        createResult()
     }
 
     /**
      * @return whether the phase is finished or has to be continued once the dependees are resolved
      */
-    private def performPhase1(callable: Callable)(implicit s: State): Boolean = {
+    private def performPhase1()(implicit s: State): Boolean = {
         logDebug("starting phase 1")
 
-        seedPhase1(callable)
+        seedPhase1()
         processPathWorkList()
 
         if (s.areDependeesEmpty) {
@@ -373,7 +375,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     /**
      * Perform phase 2 from scratch
      */
-    private def performPhase2(callable: Callable)(implicit s: State): Unit = {
+    private def performPhase2()(implicit s: State): Unit = {
         logDebug("starting phase 2")
 
         // TODO (IDE) PHASE 2 IS PERFORMED ALSO FOR INTERIM RESULTS TO MAKE CYCLIC ANALYSES POSSIBLE
@@ -382,16 +384,18 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         //  - DO WE NEED TO RERUN IT FROM SCRATCH EACH TIME OR IS THERE AN INCREMENTAL SOLUTION?
         s.clearValues()
 
-        seedPhase2(callable)
+        seedPhase2()
         computeValues()
 
         logDebug("finished phase 2")
     }
 
-    private def createResult(callable: Callable)(
+    private def createResult()(
         implicit s: State
     ): ProperPropertyComputationResult = {
         logDebug("starting creation of properties")
+
+        val callable = s.targetCallable
 
         val (resultsByStatement, resultsForExit) = s.collectResults(callable)
         val propertiesByStatement = resultsByStatement.map { case (stmt, results) =>
@@ -420,12 +424,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     createPartialResult(callable, propertyForExit)
                 ),
                 s.getDependees.toSet,
-                onDependeeUpdateContinuation(callable)
+                onDependeeUpdateContinuation
             )
         }
     }
 
-    private def onDependeeUpdateContinuation(callable: Callable)(eps: SomeEPS)(
+    private def onDependeeUpdateContinuation(eps: SomeEPS)(
         implicit s: State
     ): ProperPropertyComputationResult = {
         // Get and remove all continuations that are remembered for the EPS
@@ -436,9 +440,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         // The continuations can have enqueued paths to the path work list
         continuePhase1()
-        performPhase2(callable)
+        performPhase2()
 
-        createResult(callable)
+        createResult()
     }
 
     private def createPartialResult(entity: Entity, property: IDERawProperty[Fact, Value]): SomePartialResult = {
@@ -455,7 +459,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         )
     }
 
-    private def seedPhase1(callable: Callable)(implicit s: State): Unit = {
+    private def seedPhase1()(implicit s: State): Unit = {
+        val callable = s.targetCallable
+
         s.rememberCallable(callable)
 
         // IDE P1 lines 5 - 6
@@ -693,7 +699,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
-    private def seedPhase2(callable: Callable)(implicit s: State): Unit = {
+    private def seedPhase2()(implicit s: State): Unit = {
+        val callable = s.targetCallable
+
         // IDE P2 lines 2 - 3
         icfg.getStartStatements(callable).foreach { stmt =>
             val node = (stmt, problem.nullFact)
