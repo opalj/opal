@@ -180,7 +180,6 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
      * @param  eas An iterator over the relevant entities along with the found annotations.
      * @param  propertyKinds The kinds of properties (as specified by the annotations) that are
      *         to be tested.
-     * @param  failOnInterimResults Whether to fail when seeing a non-final result or to accept (and validate) it
      */
     def validateProperties(
         context: TestContext,
@@ -188,8 +187,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             Entity, /*the processed annotation*/ String => String /* a String identifying the entity */,
             Iterable[AnnotationLike]
         )],
-        propertyKinds:        Set[String],
-        failOnInterimResults: Boolean = true
+        propertyKinds: Set[String]
     ): Unit = {
         val TestContext(p: Project[URL], ps: PropertyStore, as: List[FPCFAnalysis]) = context
         val ats =
@@ -209,20 +207,12 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                 it(entityIdentifier(s"$annotationTypeName")) {
                     info(s"validator: " + matcherClass.toString.substring(32))
                     val epss = ps.properties(e).toIndexedSeq
-                    if (failOnInterimResults) {
-                        val nonFinalPSs = epss.filter(_.isRefinable)
-                        assert(
-                            nonFinalPSs.isEmpty,
-                            nonFinalPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
-                        )
-                    }
-                    val properties = epss.map {
-                        case FinalP(p)                          => p
-                        case eps @ InterimUBP(ub) if eps.hasUBP => ub
-                        case eps @ InterimLBP(lb) if eps.hasLBP => lb
-                        case eps =>
-                            throw new IllegalStateException(s"Unable to extract property from $eps!")
-                    }
+                    val nonFinalPSs = epss.filter(_.isRefinable)
+                    assert(
+                        nonFinalPSs.isEmpty,
+                        nonFinalPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
+                    )
+                    val properties = epss.map(_.toFinalEP.p)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
                         case Some(error: String) =>
                             val propertiesAsStrings = properties.map(_.toString)
