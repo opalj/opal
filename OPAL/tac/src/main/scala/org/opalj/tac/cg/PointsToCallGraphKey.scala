@@ -33,7 +33,7 @@ trait PointsToCallGraphKey extends CallGraphKey {
             project.config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
                 "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
 
-        resolveAnalysisRunner(getModuleFQN("")).toList ++ (
+        resolveAnalysisRunner(getModuleFQN("PointsTo")).toList ++ (
             if (isLibrary) resolveAnalysisRunner(getModuleFQN("Library")) else Nil
         ) ++ (
             if (TamiFlexKey.isConfigured(project)) resolveAnalysisRunner(getModuleFQN("TamiFlex")) else Nil
@@ -53,6 +53,6 @@ trait PointsToCallGraphKey extends CallGraphKey {
     }
 
     private[this] def getModuleFQN(moduleName: String): String = {
-        s"org.opalj.tac.fpcf.analyses.pointsto.${pointsToType}${moduleName}PointsToAnalysisScheduler"
+        s"org.opalj.tac.fpcf.analyses.pointsto.${pointsToType}${moduleName}AnalysisScheduler"
     }
 }
