@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org
-package opalj
+package org.opalj
 package tac
 package fpcf
 package analyses
 package string
+package flowanalysis
 
 import scala.collection.mutable
 
@@ -16,10 +16,6 @@ import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
 import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.ControlTree
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.FlowGraph
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.SuperFlowGraph
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -30,7 +26,7 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
  * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
  * have all required information ready for a final result.
  */
-case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {
+case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {
 
     def tac: TAC = {
         if (tacDependee.hasUBP && tacDependee.ub.tac.isDefined)
@@ -123,15 +119,5 @@ case class ComputationState(entity: Method, dm: DefinedMethod, var tacDependee: 
             pcToWebChangeMapping.mapValuesInPlace((_, _) => false)
         }
         _startEnv
-    }
-}
-
-case class InterpretationState(pc: Int, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {
-
-    def tac: TAC = {
-        if (tacDependee.hasUBP && tacDependee.ub.tac.isDefined)
-            tacDependee.ub.tac.get
-        else
-            throw new IllegalStateException("Cannot get a TAC from a TACAI with no or empty upper bound!")
     }
 }

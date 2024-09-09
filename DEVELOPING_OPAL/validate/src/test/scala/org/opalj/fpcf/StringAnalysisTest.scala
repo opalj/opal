@@ -49,9 +49,9 @@ import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
-import org.opalj.tac.fpcf.analyses.string.MethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.VariableContext
+import org.opalj.tac.fpcf.analyses.string.flowanalysis.MethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis

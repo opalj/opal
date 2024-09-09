@@ -4,6 +4,7 @@ package tac
 package fpcf
 package analyses
 package string
+package flowanalysis
 
 import scala.jdk.CollectionConverters._
 
@@ -23,10 +24,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.log.Error
 import org.opalj.log.Info
 import org.opalj.log.OPALLogger.logOnce
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.FlowGraph
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.Statement
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.StructuralAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -77,7 +74,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(method: Method): ProperPropertyComputationResult = {
-        val state = ComputationState(method, declaredMethods(method), ps(method, TACAI.key))
+        val state = MethodStringFlowAnalysisState(method, declaredMethods(method), ps(method, TACAI.key))
 
         if (excludedPackages.exists(method.classFile.thisType.packageName.startsWith(_))) {
             Result(state.entity, MethodStringFlow.lb)
@@ -101,7 +98,9 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
      * the possible string values. This method returns either a final [[Result]] or an
      * [[InterimResult]] depending on whether other information needs to be computed first.
      */
-    private def determinePossibleStrings(implicit state: ComputationState): ProperPropertyComputationResult = {
+    private def determinePossibleStrings(implicit
+        state: MethodStringFlowAnalysisState
+    ): ProperPropertyComputationResult = {
         implicit val tac: TAC = state.tac
 
         state.flowGraph = FlowGraph(tac.cfg)
@@ -121,7 +120,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         computeResults
     }
 
-    private def continuation(state: ComputationState)(eps: SomeEPS): ProperPropertyComputationResult = {
+    private def continuation(state: MethodStringFlowAnalysisState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case FinalP(_: TACAI) if eps.pk.equals(TACAI.key) =>
                 state.tacDependee = eps.asInstanceOf[FinalEP[Method, TACAI]]
@@ -136,7 +135,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         }
     }
 
-    private def computeResults(implicit state: ComputationState): ProperPropertyComputationResult = {
+    private def computeResults(implicit state: MethodStringFlowAnalysisState): ProperPropertyComputationResult = {
         if (state.hasDependees) {
             InterimResult.forUB(
                 state.entity,
@@ -149,7 +148,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         }
     }
 
-    private def computeNewUpperBound(state: ComputationState): MethodStringFlow = {
+    private def computeNewUpperBound(state: MethodStringFlowAnalysisState): MethodStringFlow = {
         val startEnv = state.getStartEnvAndReset
         MethodStringFlow(state.flowAnalysis.compute(state.getFlowFunctionsByPC)(startEnv))
     }
