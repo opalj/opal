@@ -12,7 +12,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeOr
@@ -46,9 +45,9 @@ private[string] class ContextStringAnalysisState private (
 
     def updateStringDependee(stringDependee: EPS[VariableDefinition, StringConstancyProperty]): Unit = {
         _stringDependee = stringDependee
-        _parameterIndices ++= stringDependee.ub.sci.tree.parameterIndices
+        _parameterIndices ++= stringDependee.ub.tree.parameterIndices
     }
-    private def stringTree: StringTreeNode = _stringDependee.ub.sci.tree
+    private def stringTree: StringTreeNode = _stringDependee.ub.tree
     def parameterIndices: Set[Int] = _parameterIndices
 
     // Parameter StringConstancy
@@ -68,19 +67,19 @@ private[string] class ContextStringAnalysisState private (
     def updateParamDependee(dependee: EOptionP[MethodParameterContext, StringConstancyProperty]): Unit =
         _paramDependees(dependee.e) = dependee
 
-    def currentSciUB: StringConstancyInformation = {
+    def currentTreeUB: StringTreeNode = {
         if (_stringDependee.hasUBP) {
             val paramTrees = _paramDependees.map { kv =>
                 (
                     kv._1.index,
-                    if (kv._2.hasUBP) kv._2.ub.sci.tree
+                    if (kv._2.hasUBP) kv._2.ub.tree
                     else StringTreeNode.ub
                 )
             }.toMap
 
-            StringConstancyInformation(stringTree.replaceParameters(paramTrees).simplify)
+            stringTree.replaceParameters(paramTrees).simplify
         } else {
-            StringConstancyInformation.ub
+            StringTreeNode.ub
         }
     }
 
@@ -101,7 +100,7 @@ object ContextStringAnalysisState {
         entity:         VariableContext,
         stringDependee: EOptionP[VariableDefinition, StringConstancyProperty]
     ): ContextStringAnalysisState = {
-        val parameterIndices = if (stringDependee.hasUBP) stringDependee.ub.sci.tree.parameterIndices
+        val parameterIndices = if (stringDependee.hasUBP) stringDependee.ub.tree.parameterIndices
         else Set.empty[Int]
         new ContextStringAnalysisState(entity, stringDependee, parameterIndices)
     }
@@ -157,7 +156,6 @@ private[string] case class MethodParameterContextStringAnalysisState(
     private val _methodToEntityMapping: mutable.Map[DefinedMethod, Seq[VariableContext]] = mutable.Map.empty
     private val _paramDependees: mutable.Map[VariableContext, EOptionP[VariableContext, StringConstancyProperty]] =
         mutable.Map.empty
-    private var _methodsWithInvalidParamReferences: Set[Int] = Set.empty[Int]
 
     def registerParameterDependee(
         dm:       DefinedMethod,
@@ -176,35 +174,29 @@ private[string] case class MethodParameterContextStringAnalysisState(
     }
     def updateParamDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit =
         _paramDependees(dependee.e) = dependee
-    def registerInvalidParamReference(dmId: Int): Unit =
-        _methodsWithInvalidParamReferences += dmId
 
-    def currentSciUB: StringConstancyInformation = {
+    def currentTreeUB: StringTreeNode = {
         if (_discoveredUnknownTAC) {
-            StringConstancyInformation(StringTreeNode.lb)
+            StringTreeNode.lb
         } else {
             val paramOptions = _methodToEntityMapping.keys.toSeq
                 .sortBy(_.id)
                 .flatMap { dm =>
-                    if (_methodsWithInvalidParamReferences.contains(dm.id)) {
-                        Some(StringTreeNode.ub)
-                    } else {
-                        _methodToEntityMapping(dm)
-                            .map(_paramDependees)
-                            .filter(_.hasUBP)
-                            .map(_.ub.sci.tree)
-                    }
+                    _methodToEntityMapping(dm)
+                        .map(_paramDependees)
+                        .filter(_.hasUBP)
+                        .map(_.ub.tree)
                 }
 
-            StringConstancyInformation(StringTreeOr(paramOptions).simplify)
+            StringTreeOr(paramOptions).simplify
         }
     }
 
-    def finalSci: StringConstancyInformation = {
+    def finalTree: StringTreeNode = {
         if (_methodToEntityMapping.isEmpty) {
-            StringConstancyInformation(StringTreeNode.lb)
+            StringTreeNode.lb
         } else {
-            currentSciUB
+            currentTreeUB
         }
     }
 

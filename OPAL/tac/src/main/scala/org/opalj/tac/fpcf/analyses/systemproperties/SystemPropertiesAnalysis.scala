@@ -102,7 +102,7 @@ class SystemPropertiesAnalysis private[analyses] (
 
             case eps @ EUBP(_: VariableContext, ub: StringConstancyProperty) =>
                 state.updateStringDependee(eps.asInstanceOf[EPS[VariableContext, StringConstancyProperty]])
-                returnResults(Set(ub.sci.tree))(state)
+                returnResults(Set(ub.tree))(state)
 
             case _ =>
                 throw new IllegalArgumentException(s"unexpected eps $eps")
@@ -116,7 +116,7 @@ class SystemPropertiesAnalysis private[analyses] (
         ) match {
             case eps @ UBP(ub) =>
                 state.updateStringDependee(eps)
-                Set(ub.sci.tree)
+                Set(ub.tree)
 
             case epk: EOptionP[VariableContext, StringConstancyProperty] =>
                 state.updateStringDependee(epk)

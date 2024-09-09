@@ -16,7 +16,6 @@ import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.EOptionP
@@ -85,12 +84,12 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
                     // String constancy information got too complex, abort. This guard can probably be removed once
                     // recursing functions are properly handled using e.g. the widen-converge approach.
                     state.hitMaximumDepth = true
-                    StringConstancyInformation(tree.limitToDepth(maxDepth, StringTreeNode.lb))
+                    tree.limitToDepth(maxDepth, StringTreeNode.lb)
                 } else {
-                    StringConstancyInformation(tree.simplify)
+                    tree.simplify
                 }
             case _: EPK[_, MethodStringFlow] =>
-                StringConstancyInformation.ub
+                StringTreeNode.ub
         })
 
         if (state.hasDependees && !state.hitMaximumDepth) {
@@ -160,12 +159,12 @@ class ContextStringAnalysis(override val project: SomeProject) extends StringAna
             InterimResult(
                 state.entity,
                 StringConstancyProperty.lb,
-                StringConstancyProperty(state.currentSciUB),
+                StringConstancyProperty(state.currentTreeUB),
                 state.dependees,
                 continuation(state)
             )
         } else {
-            Result(state.entity, StringConstancyProperty(state.currentSciUB))
+            Result(state.entity, StringConstancyProperty(state.currentTreeUB))
         }
     }
 }
@@ -277,12 +276,12 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
             InterimResult(
                 state.entity,
                 StringConstancyProperty.lb,
-                StringConstancyProperty(state.currentSciUB),
+                StringConstancyProperty(state.currentTreeUB),
                 state.dependees,
                 continuation(state)
             )
         } else {
-            Result(state.entity, StringConstancyProperty(state.finalSci))
+            Result(state.entity, StringConstancyProperty(state.finalTree))
         }
     }
 }

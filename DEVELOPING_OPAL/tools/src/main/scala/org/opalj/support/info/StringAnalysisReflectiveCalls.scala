@@ -22,9 +22,9 @@ import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -281,7 +281,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         implicit val (propertyStore, _) = manager.runAll(configuration.analyses)
 
         // Stores the obtained results for each supported reflective operation
-        val resultMap = mutable.Map[String, ListBuffer[StringConstancyInformation]]()
+        val resultMap = mutable.Map[String, ListBuffer[StringTreeNode]]()
         relevantMethodNames.foreach { resultMap(_) = ListBuffer() }
 
         project.allMethodsWithBody.foreach { m =>
@@ -314,9 +314,9 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
                 case (e, callName) =>
                     propertyStore.properties(e).toIndexedSeq.foreach {
                         case FinalP(p: StringConstancyProperty) =>
-                            resultMap(callName).append(p.stringConstancyInformation)
+                            resultMap(callName).append(p.tree)
                         case InterimEUBP(_, ub: StringConstancyProperty) =>
-                            resultMap(callName).append(ub.stringConstancyInformation)
+                            resultMap(callName).append(ub.tree)
                         case _ =>
                             println(s"No result for $e in $callName found!")
                     }
@@ -326,7 +326,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         resultMapToReport(resultMap)
     }
 
-    private def resultMapToReport(resultMap: mutable.Map[String, ListBuffer[StringConstancyInformation]]): BasicReport = {
+    private def resultMapToReport(resultMap: mutable.Map[String, ListBuffer[StringTreeNode]]): BasicReport = {
         val report = ListBuffer[String]("Results of the Reflection Analysis:")
         for ((reflectiveCall, entries) <- resultMap) {
             var constantCount, partConstantCount, dynamicCount = 0

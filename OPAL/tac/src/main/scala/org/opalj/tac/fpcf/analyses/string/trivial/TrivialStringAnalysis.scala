@@ -14,7 +14,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.string.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.br.fpcf.properties.string.StringTreeNode
@@ -81,7 +80,7 @@ class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnaly
             )
         } else if (state.tacDependee.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
-            Result(state.entity, StringConstancyProperty(StringConstancyInformation(failure)))
+            Result(state.entity, StringConstancyProperty(failure))
         } else {
             determinePossibleStrings
         }
@@ -122,7 +121,7 @@ class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnaly
                 mapDefPCToStringTree(state.entity.pc)
         }
 
-        Result(state.entity, StringConstancyProperty(StringConstancyInformation(tree)))
+        Result(state.entity, StringConstancyProperty(tree))
     }
 
     private def failure: StringTreeNode = {
