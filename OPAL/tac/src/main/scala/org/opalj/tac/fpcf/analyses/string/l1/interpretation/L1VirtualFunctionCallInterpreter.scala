@@ -22,6 +22,7 @@ import org.opalj.br.fpcf.properties.string.StringTreeDynamicInt
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.tac.fpcf.analyses.string.SoundnessMode
+import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 import org.opalj.value.TheIntegerValue
