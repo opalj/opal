@@ -81,10 +81,9 @@ object TypesUtil {
             Set.empty
         } else {
             val pattern = Pattern.compile(classNameStringTree.toRegex)
-            project.allClassFiles.filter { cf =>
-                pattern.matcher(cf.thisType.fqn).matches() ||
-                pattern.matcher(cf.thisType.toJava).matches()
-            }.map(_.thisType).toSet
+            project.allClassFiles
+                .filter(cf => pattern.matcher(cf.thisType.toBinaryJavaName).matches())
+                .map(_.thisType).toSet
         }
     }
 
