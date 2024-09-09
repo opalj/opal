@@ -594,12 +594,12 @@ abstract class ProjectLike extends ClassFileRepository { project =>
 
         project.classFile(receiverType) match {
             case Some(classFile) =>
-                assert(
-                    !classFile.isInterfaceDeclaration, {
-                        val methodInfo = descriptor.toJava(receiverType.toJava, name)
-                        s"the method is defined in an interface $methodInfo"
-                    }
-                )
+                if (classFile.isInterfaceDeclaration) {
+                    OPALLogger.error(
+                        "project configuration - class hierarchy",
+                        s"invalid inheritance: $receiverType is an interface"
+                    )
+                }
 
                 def resolveSuperclassMethodReference(): Result[Method] = {
                     classFile.superclassType match {

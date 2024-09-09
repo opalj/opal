@@ -23,6 +23,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 
@@ -50,6 +51,7 @@ object PureVoidMethods extends ProjectAnalysisApplication {
         project.get(RTACallGraphKey)
 
         project.get(FPCFAnalysesManagerKey).runAll(
+            EagerFieldAccessInformationAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyInterProceduralEscapeAnalysis,

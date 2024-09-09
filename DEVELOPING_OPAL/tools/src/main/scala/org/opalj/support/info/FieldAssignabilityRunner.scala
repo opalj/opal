@@ -18,6 +18,7 @@ import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 
 /**
@@ -42,6 +43,7 @@ object FieldAssignabilityRunner extends ProjectAnalysisApplication {
         val (ps, _) = project
             .get(FPCFAnalysesManagerKey)
             .runAll(
+                EagerFieldAccessInformationAnalysis,
                 LazyL2FieldAssignabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
