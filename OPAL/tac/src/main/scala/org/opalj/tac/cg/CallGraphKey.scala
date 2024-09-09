@@ -52,7 +52,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
      * Lists the call graph specific schedulers that must be run to compute the respective call
      * graph.
      */
-    protected def callGraphSchedulers(
+    protected[cg] def callGraphSchedulers(
         project: SomeProject
     ): Iterable[FPCFAnalysisScheduler]
 
@@ -153,7 +153,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         manager.runAll(allCallGraphAnalyses(project))
     }
 
-    private[this] def resolveAnalysisRunner(
+    protected[this] def resolveAnalysisRunner(
         className: String
     )(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
         val mirror = runtimeMirror(getClass.getClassLoader)
