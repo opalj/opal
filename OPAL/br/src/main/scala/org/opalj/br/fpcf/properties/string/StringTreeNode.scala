@@ -89,39 +89,6 @@ object StringTreeNode {
     def ub: StringTreeNode = StringTreeInvalidElement
 }
 
-case class StringTreeRepetition(child: StringTreeNode) extends CachedSimplifyNode with CachedHashCode {
-
-    override val children: Seq[StringTreeNode] = Seq(child)
-
-    override def _toRegex: String = s"(${child.toRegex})*"
-
-    override def sorted: StringTreeNode = this
-
-    override def _simplify: StringTreeNode = {
-        val simplifiedChild = child.simplify
-        if (simplifiedChild.isInvalid)
-            StringTreeInvalidElement
-        else if (simplifiedChild.isEmpty)
-            StringTreeEmptyConst
-        else
-            StringTreeRepetition(simplifiedChild)
-    }
-
-    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
-
-    override lazy val parameterIndices: Set[Int] = child.parameterIndices
-
-    def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
-        StringTreeRepetition(child.replaceParameters(parameters))
-
-    def _limitToDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
-        if (targetDepth == 1)
-            replacement
-        else
-            StringTreeRepetition(child.limitToDepth(targetDepth - 1, replacement))
-    }
-}
-
 case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends CachedSimplifyNode with CachedHashCode {
 
     override def _toRegex: String = {
