@@ -10,6 +10,7 @@ import java.util.Calendar
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+import commandlinebase.commandlines.{ClassPathCommandLine, ProjectDirCommandLine}
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
@@ -78,18 +79,26 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.rogach.scallop.ScallopOption
 
 import scala.collection.immutable.ArraySeq
 
-class PurityConf(opalConfBase: OpalConfBase) {
+class PurityConf(args: Array[String]) {
+
+    // Daten deklarieren
+    val cp: File = null
 
 
-    private val classPath: ScallopOption[String] = opalConfBase.getClassPath("JAR file/Folder containing class files OR -JDK")
-    private val projectDir: ScallopOption[String] = opalConfBase.getProjectDir("directory with project class files relative to cp")
-    private val libClassPath: ScallopOption[String] = opalConfBase.getLibClassPath("directory with library class files relative to cp")
-    private val analysis: ScallopOption[String] = opalConfBase.getAnalysis(Seq("L0", "L1", "L2"), Some("L2"), "Default: L2, the most precise analysis configuration")
-    private val fieldAssignability: ScallopOption[String] = opalConfBase.getFieldAssignability(Seq("none", "L0", "L1", "L2"), null, "Default: Depends on analysis level")
+
+    // die args verarbeiten, sodass PurityConf nur noch die geparsten Daten hat
+    for (a <- args) {
+        a match {
+            case "cp" => cp =
+            case 2 => println("Zwei")
+            case 3 => println("Drei")
+            case _ => println("Unbekannt")
+        }
+    }
+    // verarbeitete Daten
 
 }
 
@@ -491,12 +500,9 @@ object Purity {
 
     def main(args: Array[String]): Unit = {
 
-        val opalConfBase = new OpalConfBase(ArraySeq.unsafeWrapArray(args))
-        val purityConf = new PurityConf(opalConfBase)
-
 
         // Parameters:
-        var cp: File = purityConf.parseClassPath()
+        var cp: File = purityConf.getClassPath().parse()
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var analysisName: Option[String] = None
@@ -507,7 +513,7 @@ object Purity {
         var callGraphName: Option[String] = None
         var configurationName: Option[String] = None
         var schedulingStrategy: Option[String] = None
-        var withoutJDK = purityConf.parseWithoutJDK()
+        var withoutJDK = false
         var individual = false
         var isLibrary = false
         var cwa = false
@@ -730,5 +736,8 @@ object Purity {
 
         val end = Calendar.getInstance()
         Console.println(end.getTime)
+
+        // =================================================================================
+        val purityConf = new PurityConf(args)
     }
 }
