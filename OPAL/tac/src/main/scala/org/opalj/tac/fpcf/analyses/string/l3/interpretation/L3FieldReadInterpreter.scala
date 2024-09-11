@@ -133,6 +133,8 @@ class L3FieldReadInterpreter(
                     // Field parameter information is not available
                     accessState.hasUnresolvableAccess = true
                 } else {
+                    // IMPROVE use variable contexts here to support field writes based on method parameters in other
+                    // methods
                     val entity = VariableDefinition(pc, PUVar(parameter.get._1, parameter.get._2), method)
                     accessState.accessDependees = accessState.accessDependees :+ ps(entity, StringConstancyProperty.key)
                 }
@@ -159,8 +161,13 @@ class L3FieldReadInterpreter(
                     if (tree.parameterIndices.nonEmpty) {
                         // We cannot handle write values that contain parameter indices since resolving the parameters
                         // requires context and this interpreter is present in multiple contexts.
-                        if (soundnessMode.isHigh) StringTreeNode.lb
-                        else StringTreeNode.ub
+                        tree.replaceParameters(tree.parameterIndices.map { paramIndex =>
+                            (
+                                paramIndex,
+                                if (soundnessMode.isHigh) StringTreeNode.lb
+                                else StringTreeNode.ub
+                            )
+                        }.toMap)
                     } else
                         tree
                 } else StringTreeNode.ub
