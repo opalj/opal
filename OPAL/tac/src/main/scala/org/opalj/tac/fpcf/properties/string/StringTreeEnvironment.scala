@@ -80,6 +80,9 @@ object StringTreeEnvironment {
     }
 
     def joinMany(envs: Iterable[StringTreeEnvironment]): StringTreeEnvironment = {
+        // IMPROVE as environments get larger (with growing variable count in a method) joining them impacts performance
+        // especially when analysing flow through proper regions. This could be improved by detecting and joining only
+        // changes between multiple environments, e.g. with linked lists.
         envs.size match {
             case 0 => throw new IllegalArgumentException("Cannot join zero environments!")
             case 1 => envs.head
