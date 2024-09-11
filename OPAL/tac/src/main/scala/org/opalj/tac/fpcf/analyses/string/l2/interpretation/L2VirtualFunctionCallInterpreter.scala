@@ -50,11 +50,7 @@ class L2VirtualFunctionCallInterpreter(
     override protected def interpretArbitraryCall(target: PV, call: E)(
         implicit state: InterpretationState
     ): ProperPropertyComputationResult = {
-        if (call.name == "getClassName" && call.declaringClass == ObjectType("jdk/internal/org/objectweb/asm/Type")) {
-            // IMPROVE This function generates string trees with great width and uses a lot of resources while providing
-            // little value. It could be approximated by proper handling of recursive functions.
-            failure(target)
-        } else if (call.name == "getProperty" && call.declaringClass == ObjectType("java/util/Properties")) {
+        if (call.name == "getProperty" && call.declaringClass == ObjectType("java/util/Properties")) {
             interpretGetSystemPropertiesCall(target)
         } else {
             interpretArbitraryCallWithCallees(target)

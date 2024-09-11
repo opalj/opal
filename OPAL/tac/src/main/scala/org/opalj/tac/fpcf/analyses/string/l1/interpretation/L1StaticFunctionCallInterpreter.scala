@@ -38,13 +38,8 @@ case class L1StaticFunctionCallInterpreter()(
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         call.name match {
-            case "getProperty" if call.declaringClass == ObjectType.System =>
-                interpretGetSystemPropertiesCall(target)
-            case "valueOf" if call.declaringClass == ObjectType.String                                         => processStringValueOf(target, call)
-            case "getClassName" if call.declaringClass == ObjectType("jdk/internal/reflect/AccessorGenerator") =>
-                // IMPROVE This function generates string trees with great width and uses a lot of resources while providing
-                // little value. It could be approximated by proper handling of recursive functions.
-                failure(target)
+            case "getProperty" if call.declaringClass == ObjectType.System => interpretGetSystemPropertiesCall(target)
+            case "valueOf" if call.declaringClass == ObjectType.String     => processStringValueOf(target, call)
             case _
                 if call.descriptor.returnType == ObjectType.String ||
                     call.descriptor.returnType == ObjectType.Object =>
