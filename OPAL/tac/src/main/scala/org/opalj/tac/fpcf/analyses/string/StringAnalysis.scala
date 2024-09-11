@@ -37,24 +37,31 @@ trait StringAnalysis extends FPCFAnalysis with UniversalStringConfig {
 
     private final val ConfigLogCategory = "analysis configuration - string analysis"
 
-    protected val maxDepth: Int = {
-        val maxDepth =
+    /**
+     * @see [[StringAnalysis.DepthThresholdConfigKey]]
+     */
+    protected val depthThreshold: Int = {
+        val depthThreshold =
             try {
-                project.config.getInt(StringAnalysis.MaxDepthConfigKey)
+                project.config.getInt(StringAnalysis.DepthThresholdConfigKey)
             } catch {
                 case t: Throwable =>
-                    logOnce(Error(ConfigLogCategory, s"couldn't read: ${StringAnalysis.MaxDepthConfigKey}", t))
+                    logOnce(Error(ConfigLogCategory, s"couldn't read: ${StringAnalysis.DepthThresholdConfigKey}", t))
                     30
             }
 
-        logOnce(Info(ConfigLogCategory, "using maximum depth " + maxDepth))
-        maxDepth
+        logOnce(Info(ConfigLogCategory, "using depth threshold " + depthThreshold))
+        depthThreshold
     }
 }
 
 object StringAnalysis {
 
-    final val MaxDepthConfigKey = "org.opalj.fpcf.analyses.string.StringAnalysis.maxDepth"
+    /**
+     * The string tree depth after which the string analysis does not continue and returns either the current tree
+     * or the tree limited to the depth threshold, depending on the soundness mode in use.
+     */
+    final val DepthThresholdConfigKey = "org.opalj.fpcf.analyses.string.StringAnalysis.depthThreshold"
 }
 
 /**
@@ -79,20 +86,28 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
     private def computeResults(implicit state: ContextFreeStringAnalysisState): ProperPropertyComputationResult = {
         val newProperty = StringConstancyProperty(state.stringFlowDependee match {
             case UBP(methodStringFlow) =>
-                val tree = methodStringFlow(state.entity.pc, state.entity.pv)
-                if (tree.depth >= maxDepth) {
+                val tree = methodStringFlow(state.entity.pc, state.entity.pv).simplify
+                if (tree.depth >= depthThreshold) {
                     // String constancy information got too complex, abort. This guard can probably be removed once
                     // recursing functions are properly handled using e.g. the widen-converge approach.
-                    state.hitMaximumDepth = true
-                    tree.limitToDepth(maxDepth, StringTreeNode.lb)
+                    state.hitDepthThreshold = true
+                    if (soundnessMode.isHigh) {
+                        tree.limitToDepth(depthThreshold, StringTreeNode.lb)
+                    } else {
+                        // In low soundness, we cannot decrease the matched string values by limiting the string tree
+                        // with the upper bound. We should also not limit it with the lower bound, since that would
+                        // make the string tree at least partially dynamic and cause other low soundness analysis to
+                        // abort. Thus, return the tree itself as the final value.
+                        tree
+                    }
                 } else {
-                    tree.simplify
+                    tree
                 }
             case _: EPK[_, MethodStringFlow] =>
                 StringTreeNode.ub
         })
 
-        if (state.hasDependees && !state.hitMaximumDepth) {
+        if (state.hasDependees && !state.hitDepthThreshold) {
             InterimResult(
                 state.entity,
                 StringConstancyProperty.lb,
