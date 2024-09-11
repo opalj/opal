@@ -33,7 +33,7 @@ import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
-trait StringAnalysis extends FPCFAnalysis {
+trait StringAnalysis extends FPCFAnalysis with UniversalStringConfig {
 
     private final val ConfigLogCategory = "analysis configuration - string analysis"
 
@@ -80,7 +80,7 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
         val newProperty = StringConstancyProperty(state.stringFlowDependee match {
             case UBP(methodStringFlow) =>
                 val tree = methodStringFlow(state.entity.pc, state.entity.pv)
-                if (tree.depth == maxDepth) {
+                if (tree.depth >= maxDepth) {
                     // String constancy information got too complex, abort. This guard can probably be removed once
                     // recursing functions are properly handled using e.g. the widen-converge approach.
                     state.hitMaximumDepth = true

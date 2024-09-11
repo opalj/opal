@@ -50,9 +50,9 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.string.StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.UniversalStringConfig
 import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.MethodStringFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis
@@ -76,13 +76,12 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         }
 
         super.createConfig()
-            .withValue(InterpretationHandler.SoundnessModeConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
+            .withValue(UniversalStringConfig.SoundnessModeConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
+            .withValue(StringAnalysis.MaxDepthConfigKey, ConfigValueFactory.fromAnyRef(30))
             .withValue(
                 MethodStringFlowAnalysis.ExcludedPackagesConfigKey,
                 ConfigValueFactory.fromIterable(new util.ArrayList[String]())
             )
-            .withValue(MethodStringFlowAnalysis.SoundnessModeConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
-            .withValue(StringAnalysis.MaxDepthConfigKey, ConfigValueFactory.fromAnyRef(30))
     }
 
     override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/string")

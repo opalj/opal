@@ -14,9 +14,6 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.SomeEPS
-import org.opalj.log.Error
-import org.opalj.log.Info
-import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
@@ -29,25 +26,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  *
  * @author Maximilian Rüsch
  */
-abstract class InterpretationHandler extends FPCFAnalysis {
-
-    private final val ConfigLogCategory = "analysis configuration - string flow interpretation analysis"
-
-    implicit val soundnessMode: SoundnessMode = {
-        val mode =
-            try {
-                SoundnessMode(project.config.getBoolean(InterpretationHandler.SoundnessModeConfigKey))
-            } catch {
-                case t: Throwable =>
-                    logOnce {
-                        Error(ConfigLogCategory, s"couldn't read: ${InterpretationHandler.SoundnessModeConfigKey}", t)
-                    }
-                    SoundnessMode(false)
-            }
-
-        logOnce(Info(ConfigLogCategory, "using soundness mode " + mode))
-        mode
-    }
+abstract class InterpretationHandler extends FPCFAnalysis with UniversalStringConfig {
 
     def analyze(entity: MethodPC): ProperPropertyComputationResult = {
         val tacaiEOptP = ps(entity.dm.definedMethod, TACAI.key)
@@ -99,8 +78,6 @@ abstract class InterpretationHandler extends FPCFAnalysis {
 }
 
 object InterpretationHandler {
-
-    final val SoundnessModeConfigKey = "org.opalj.fpcf.analyses.string.InterpretationHandler.highSoundness"
 
     def getEntity(implicit state: InterpretationState): MethodPC = MethodPC(state.pc, state.dm)
 

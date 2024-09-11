@@ -31,7 +31,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 /**
  * @author Maximilian Rüsch
  */
-class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAnalysis {
+class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAnalysis with UniversalStringConfig {
 
     private final val ConfigLogCategory = "analysis configuration - method string flow analysis"
 
@@ -53,22 +53,6 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
 
         logOnce(Info(ConfigLogCategory, s"${packages.size} packages are excluded from string flow analysis"))
         packages.toSeq
-    }
-
-    private val soundnessMode: SoundnessMode = {
-        val mode =
-            try {
-                SoundnessMode(project.config.getBoolean(MethodStringFlowAnalysis.SoundnessModeConfigKey))
-            } catch {
-                case t: Throwable =>
-                    logOnce {
-                        Error(ConfigLogCategory, s"couldn't read: ${MethodStringFlowAnalysis.SoundnessModeConfigKey}", t)
-                    }
-                    SoundnessMode(false)
-            }
-
-        logOnce(Info(ConfigLogCategory, "using soundness mode " + mode))
-        mode
     }
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -157,5 +141,4 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
 object MethodStringFlowAnalysis {
 
     final val ExcludedPackagesConfigKey = "org.opalj.fpcf.analyses.string.MethodStringFlowAnalysis.excludedPackages"
-    final val SoundnessModeConfigKey = "org.opalj.fpcf.analyses.string.MethodStringFlowAnalysis.highSoundness"
 }

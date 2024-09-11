@@ -26,9 +26,6 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.log.Error
-import org.opalj.log.Info
-import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -42,25 +39,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @see [[StringAnalysis]]
  */
-class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnalysis {
-
-    private final val ConfigLogCategory = "analysis configuration - trivial string analysis"
-
-    private val soundnessMode: SoundnessMode = {
-        val mode =
-            try {
-                SoundnessMode(project.config.getBoolean(TrivialStringAnalysis.SoundnessModeConfigKey))
-            } catch {
-                case t: Throwable =>
-                    logOnce {
-                        Error(ConfigLogCategory, s"couldn't read: ${TrivialStringAnalysis.SoundnessModeConfigKey}", t)
-                    }
-                    SoundnessMode(false)
-            }
-
-        logOnce(Info(ConfigLogCategory, "using soundness mode " + mode))
-        mode
-    }
+class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnalysis with UniversalStringConfig {
 
     private case class TrivialStringAnalysisState(entity: VariableContext, var tacDependee: EOptionP[Method, TACAI])
 
@@ -128,11 +107,6 @@ class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnaly
         if (soundnessMode.isHigh) StringTreeNode.lb
         else StringTreeNode.ub
     }
-}
-
-private object TrivialStringAnalysis {
-
-    private final val SoundnessModeConfigKey = "org.opalj.fpcf.analyses.string.TrivialStringAnalysis.highSoundness"
 }
 
 /**
