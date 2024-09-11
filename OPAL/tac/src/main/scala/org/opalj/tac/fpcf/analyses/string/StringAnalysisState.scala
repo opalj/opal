@@ -25,29 +25,27 @@ import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
 private[string] case class ContextFreeStringAnalysisState(
     entity:                 VariableDefinition,
-    var stringFlowDependee: EOptionP[Method, MethodStringFlow],
-    var hitDepthThreshold:  Boolean = false
+    var tacaiDependee:      EOptionP[Method, TACAI],
+    var stringFlowDependee: Option[EOptionP[Method, MethodStringFlow]] = None,
+    var hitDepthThreshold:  Boolean                                    = false
 ) {
 
-    def hasDependees: Boolean = stringFlowDependee.isRefinable
+    def hasDependees: Boolean = tacaiDependee.isRefinable || stringFlowDependee.exists(_.isRefinable)
 
-    def dependees: Set[EOptionP[Entity, Property]] = Set(stringFlowDependee)
+    def dependees: Set[EOptionP[Entity, Property]] =
+        Set(tacaiDependee).filter(_.isRefinable) ++ stringFlowDependee.filter(_.isRefinable)
 }
 
 private[string] class ContextStringAnalysisState private (
-    _entity:                       VariableContext,
-    var _stringDependee:           EOptionP[VariableDefinition, StringConstancyProperty],
+    val entity:                    VariableContext,
+    private var _stringDependee:   EOptionP[VariableDefinition, StringConstancyProperty],
     private var _parameterIndices: Set[Int]
 ) {
-
-    def entity: VariableContext = _entity
-    def dm: DeclaredMethod = _entity.context.method
 
     def updateStringDependee(stringDependee: EPS[VariableDefinition, StringConstancyProperty]): Unit = {
         _stringDependee = stringDependee
         _parameterIndices ++= stringDependee.ub.tree.parameterIndices
     }
-    private def stringTree: StringTreeNode = _stringDependee.ub.tree
     def parameterIndices: Set[Int] = _parameterIndices
 
     // Parameter StringConstancy
@@ -77,7 +75,7 @@ private[string] class ContextStringAnalysisState private (
                 )
             }.toMap
 
-            stringTree.replaceParameters(paramTrees).simplify
+            _stringDependee.ub.tree.replaceParameters(paramTrees).simplify
         } else {
             StringTreeNode.ub
         }
@@ -107,12 +105,11 @@ object ContextStringAnalysisState {
 }
 
 private[string] case class MethodParameterContextStringAnalysisState(
-    private val _entity: MethodParameterContext
+    entity: MethodParameterContext
 ) {
 
-    def entity: MethodParameterContext = _entity
-    def dm: DeclaredMethod = _entity.context.method
-    def index: Int = _entity.index
+    def dm: DeclaredMethod = entity.context.method
+    def index: Int = entity.index
 
     // Callers
     private[string] type CallerContext = (Context, Int)

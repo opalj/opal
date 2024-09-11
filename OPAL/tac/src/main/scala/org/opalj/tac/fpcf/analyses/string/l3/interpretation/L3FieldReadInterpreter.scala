@@ -90,7 +90,6 @@ class L3FieldReadInterpreter(
         if (fieldAccessEOptP.hasUBP) {
             handleFieldAccessInformation(fieldAccessEOptP.ub)
         } else {
-            accessState.previousResults.prepend(StringTreeNode.ub)
             InterimResult.forUB(
                 InterpretationHandler.getEntity,
                 StringFlowFunctionProperty.ub(state.pc, target),
@@ -107,11 +106,15 @@ class L3FieldReadInterpreter(
     ): ProperPropertyComputationResult = {
         if (accessState.fieldAccessDependee.isFinal && accessInformation.accesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
-            return computeFinalResult(computeUBWithNewTree(StringTreeOr.fromNodes(
-                if (soundnessMode.isHigh) StringTreeNode.lb
-                else StringTreeNode.ub,
-                StringTreeNull
-            )))
+            return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                state.pc,
+                accessState.target,
+                StringTreeOr.fromNodes(
+                    if (soundnessMode.isHigh) StringTreeNode.lb
+                    else StringTreeNode.ub,
+                    StringTreeNull
+                )
+            ))
         }
 
         accessInformation.getNewestAccesses(
@@ -134,7 +137,7 @@ class L3FieldReadInterpreter(
                     accessState.hasUnresolvableAccess = true
                 } else {
                     // IMPROVE use variable contexts here to support field writes based on method parameters in other
-                    // methods
+                    // methods. Requires a context to exist for variable definitions as well
                     val entity = VariableDefinition(pc, PUVar(parameter.get._1, parameter.get._2), method)
                     accessState.accessDependees = accessState.accessDependees :+ ps(entity, StringConstancyProperty.key)
                 }
@@ -153,7 +156,7 @@ class L3FieldReadInterpreter(
         if (accessState.hasWriteInSameMethod && soundnessMode.isHigh) {
             // We cannot handle writes to a field that is read in the same method at the moment as the flow functions do
             // not capture field state. This can be improved upon in the future.
-            computeFinalResult(computeUBWithNewTree(StringTreeNode.lb))
+            computeFinalResult(StringFlowFunctionProperty.lb(state.pc, accessState.target))
         } else {
             var trees = accessState.accessDependees.map { ad =>
                 if (ad.hasUBP) {
@@ -183,15 +186,16 @@ class L3FieldReadInterpreter(
                 trees = trees :+ StringTreeNode.lb
             }
 
+            val newUB = StringFlowFunctionProperty.constForVariableAt(state.pc, accessState.target, StringTreeOr(trees))
             if (accessState.hasDependees) {
                 InterimResult.forUB(
                     InterpretationHandler.getEntity,
-                    computeUBWithNewTree(StringTreeOr(trees)),
+                    newUB,
                     accessState.dependees.toSet,
                     continuation(accessState, state)
                 )
             } else {
-                computeFinalResult(computeUBWithNewTree(StringTreeOr(trees)))
+                computeFinalResult(newUB)
             }
         }
     }
@@ -211,19 +215,5 @@ class L3FieldReadInterpreter(
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }
-    }
-
-    private def computeUBWithNewTree(newTree: StringTreeNode)(
-        implicit
-        accessState: FieldReadState,
-        state:       InterpretationState
-    ): StringFlowFunctionProperty = {
-        accessState.previousResults.prepend(newTree)
-
-        StringFlowFunctionProperty.constForVariableAt(
-            state.pc,
-            accessState.target,
-            StringTreeOr(accessState.previousResults.toSeq)
-        )
     }
 }
