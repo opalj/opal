@@ -25,13 +25,15 @@ import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
 private[string] case class ContextFreeStringAnalysisState(
     entity:                 VariableDefinition,
-    var stringFlowDependee: EOptionP[Method, MethodStringFlow],
-    var hitDepthThreshold:  Boolean = false
+    var tacaiDependee:      EOptionP[Method, TACAI],
+    var stringFlowDependee: Option[EOptionP[Method, MethodStringFlow]] = None,
+    var hitDepthThreshold:  Boolean                                    = false
 ) {
 
-    def hasDependees: Boolean = stringFlowDependee.isRefinable
+    def hasDependees: Boolean = tacaiDependee.isRefinable || stringFlowDependee.exists(_.isRefinable)
 
-    def dependees: Set[EOptionP[Entity, Property]] = Set(stringFlowDependee)
+    def dependees: Set[EOptionP[Entity, Property]] =
+        Set(tacaiDependee).filter(_.isRefinable) ++ stringFlowDependee.filter(_.isRefinable)
 }
 
 private[string] class ContextStringAnalysisState private (

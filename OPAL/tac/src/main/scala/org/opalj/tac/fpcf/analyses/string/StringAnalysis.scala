@@ -9,6 +9,8 @@ import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
+import org.opalj.br.PDVar
+import org.opalj.br.PUVar
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -17,7 +19,9 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.br.fpcf.properties.string.StringTreeNode
+import org.opalj.br.fpcf.properties.string.StringTreeOr
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -69,13 +73,32 @@ object StringAnalysis {
  */
 private[string] class ContextFreeStringAnalysis(override val project: SomeProject) extends StringAnalysis {
 
-    def analyze(vd: VariableDefinition): ProperPropertyComputationResult =
-        computeResults(ContextFreeStringAnalysisState(vd, ps(vd.m, MethodStringFlow.key)))
+    def analyze(vd: VariableDefinition): ProperPropertyComputationResult = {
+        implicit val state: ContextFreeStringAnalysisState = ContextFreeStringAnalysisState(vd, ps(vd.m, TACAI.key))
+
+        if (state.tacaiDependee.isRefinable) {
+            InterimResult.forUB(
+                state.entity,
+                StringConstancyProperty.ub,
+                state.dependees,
+                continuation(state)
+            )
+        } else if (state.tacaiDependee.ub.tac.isEmpty) {
+            // No TAC available, e.g., because the method has no body
+            Result(state.entity, StringConstancyProperty.lb)
+        } else {
+            computeResults
+        }
+    }
 
     private def continuation(state: ContextFreeStringAnalysisState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
+            case _ if eps.pk == TACAI.key =>
+                state.tacaiDependee = eps.asInstanceOf[EOptionP[Method, TACAI]]
+                computeResults(state)
+
             case _ if eps.pk == MethodStringFlow.key =>
-                state.stringFlowDependee = eps.asInstanceOf[EOptionP[Method, MethodStringFlow]]
+                state.stringFlowDependee = Some(eps.asInstanceOf[EOptionP[Method, MethodStringFlow]])
                 computeResults(state)
 
             case _ =>
@@ -84,7 +107,61 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
     }
 
     private def computeResults(implicit state: ContextFreeStringAnalysisState): ProperPropertyComputationResult = {
-        val newProperty = StringConstancyProperty(state.stringFlowDependee match {
+        val newUB = StringConstancyProperty(
+            if (state.stringFlowDependee.isEmpty) computeUBTreeUsingTACAI
+            else computeUBTreeUsingStringFlow
+        )
+
+        if (state.hasDependees && !state.hitDepthThreshold) {
+            InterimResult(
+                state.entity,
+                StringConstancyProperty.lb,
+                newUB,
+                state.dependees,
+                continuation(state)
+            )
+        } else {
+            Result(state.entity, newUB)
+        }
+    }
+
+    private def computeUBTreeUsingTACAI(implicit state: ContextFreeStringAnalysisState): StringTreeNode = {
+        val tac = state.tacaiDependee.ub.tac.get
+
+        def mapDefPCToStringTree(defPC: Int): Option[StringTreeNode] = {
+            if (defPC < 0) {
+                None
+            } else {
+                tac.stmts(valueOriginOfPC(defPC, tac.pcToIndex).get).asAssignment.expr match {
+                    case StringConst(_, v) => Some(StringTreeConst(v))
+                    case _                 => None
+                }
+            }
+        }
+
+        val treeOpts = state.entity.pv match {
+            case PUVar(_, defPCs) =>
+                defPCs.map(pc => mapDefPCToStringTree(pc))
+
+            case PDVar(_, _) =>
+                Set(mapDefPCToStringTree(state.entity.pc))
+        }
+
+        if (treeOpts.exists(_.isEmpty)) {
+            // Could not resolve all values immediately (i.e. non-literal strings), so revert to computing string flow
+            state.stringFlowDependee = Some(ps(state.entity.m, MethodStringFlow.key))
+            computeUBTreeUsingStringFlow
+        } else {
+            StringTreeOr(treeOpts.map(_.get))
+        }
+    }
+
+    private def computeUBTreeUsingStringFlow(implicit state: ContextFreeStringAnalysisState): StringTreeNode = {
+        if (state.stringFlowDependee.isEmpty) {
+            throw new IllegalStateException(s"Requested to compute an UB using method string flow but none is given!")
+        }
+
+        state.stringFlowDependee.get match {
             case UBP(methodStringFlow) =>
                 val tree = methodStringFlow(state.entity.pc, state.entity.pv).simplify
                 if (tree.depth >= depthThreshold) {
@@ -105,18 +182,6 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
                 }
             case _: EPK[_, MethodStringFlow] =>
                 StringTreeNode.ub
-        })
-
-        if (state.hasDependees && !state.hitDepthThreshold) {
-            InterimResult(
-                state.entity,
-                StringConstancyProperty.lb,
-                newProperty,
-                state.dependees,
-                continuation(state)
-            )
-        } else {
-            Result(state.entity, newProperty)
         }
     }
 }
