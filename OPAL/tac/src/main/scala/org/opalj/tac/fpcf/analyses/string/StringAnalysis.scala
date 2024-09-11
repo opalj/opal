@@ -33,7 +33,7 @@ import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
-trait StringAnalysis extends FPCFAnalysis {
+trait StringAnalysis extends FPCFAnalysis with UniversalStringConfig {
 
     private final val ConfigLogCategory = "analysis configuration - string analysis"
 
