@@ -10,6 +10,8 @@ package interpretation
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.DeclaredField
+import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
 import org.opalj.br.PUVar
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.SomeProject
@@ -79,7 +81,7 @@ class L3FieldReadInterpreter(
     override def interpretExpr(target: PV, fieldRead: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        if (!InterpretationHandler.isSupportedType(fieldRead.declaredFieldType)) {
+        if (!L3FieldReadInterpreter.isSupportedType(fieldRead.declaredFieldType)) {
             return failure(target)
         }
 
@@ -216,4 +218,13 @@ class L3FieldReadInterpreter(
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }
     }
+}
+
+object L3FieldReadInterpreter {
+
+    /**
+     * Checks whether the given type is supported by the field read analysis, i.e. if it may contain values desirable
+     * AND resolvable by the string analysis as a whole.
+     */
+    private def isSupportedType(fieldType: FieldType): Boolean = fieldType.isBaseType || fieldType == ObjectType.String
 }

@@ -6,7 +6,6 @@ package analyses
 package string
 package interpretation
 
-import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.string.StringTreeNode
@@ -80,44 +79,4 @@ abstract class InterpretationHandler extends FPCFAnalysis with UniversalStringCo
 object InterpretationHandler {
 
     def getEntity(implicit state: InterpretationState): MethodPC = MethodPC(state.pc, state.dm)
-
-    /**
-     * This function checks whether a given type is a supported primitive type. Supported currently
-     * means short, int, float, or double.
-     */
-    private def isSupportedPrimitiveNumberType(typeName: String): Boolean =
-        typeName == "short" || typeName == "int" || typeName == "float" || typeName == "double"
-
-    /**
-     * Checks whether a given type, identified by its string representation, is supported by the
-     * string analysis. That means, if this function returns `true`, a value, which is of type
-     * `typeName` may be approximated by the string analysis better than just the lower bound.
-     *
-     * @param typeName The name of the type to check. May either be the name of a primitive type or
-     *                 a fully-qualified class name (dot-separated).
-     * @return Returns `true`, if `typeName` is an element in [char, short, int, float, double,
-     *         java.lang.String] and `false` otherwise.
-     */
-    def isSupportedType(typeName: String): Boolean =
-        typeName == "char" || isSupportedPrimitiveNumberType(typeName) ||
-            typeName == "java.lang.String" || typeName == "java.lang.String[]"
-
-    /**
-     * Determines whether a given element is supported by the string analysis.
-     *
-     * @return Returns true if the given [[FieldType]] is of a supported type. For supported types,
-     *         see [[InterpretationHandler.isSupportedType(String)]].
-     */
-    def isSupportedType(v: V): Boolean =
-        if (v.value.isPrimitiveValue) {
-            isSupportedType(v.value.asPrimitiveValue.primitiveType.toJava)
-        } else {
-            try {
-                isSupportedType(v.value.verificationTypeInfo.asObjectVariableInfo.clazz.toJava)
-            } catch {
-                case _: Exception => false
-            }
-        }
-
-    def isSupportedType(fieldType: FieldType): Boolean = isSupportedType(fieldType.toJava)
 }
