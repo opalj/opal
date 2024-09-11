@@ -6,61 +6,103 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.control.Breaks._
 
+/**
+ * The Comment Parser is responsible for parsing the HOCON files and its comments
+ * Do NOT use this class directly, use ConfigParserWrapper for safe parsing instead
+ */
 class CommentParser() {
 
-
-    def parseComments(filePath: Path): ConfigNode = {
+    /**
+     * parseComments initiates the parsing process
+     * A ConfigNode can consist out of 3 possible types that are parsed differently: Objects, Lists and Entries
+     * The source node of a config file always is an object
+     * During parsing, the Parser will iterate the file and sort it into the ConfigNode structure.
+     * Since the Nodes can be nested and there can be multiple Nodes in one line, the Parser needs to examine most control structures like a stream and not linewise
+     * @param filePath accepts the path to a valid HOCON file
+     * @return returns the fully parsed file as a configObject
+     */
+    def parseComments(filePath: Path): ConfigObject = {
         val lines = Source.fromFile(filePath.toString()).getLines().toList
         val iterator = lines.iterator
         val (node,remains) = parseObject(iterator, "", new Comment)
         node
     }
 
-    def parseObject(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigObject,String) = {
+    /**
+     * Method responsible to parse Object-Type Nodes
+     * @param iterator accepts the iterator over the current config file
+     * @param lastLine accepts the remains of the line that belongs to this object
+     * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
+     * @return returns the fully parsed object
+     */
+    private def parseObject(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigObject,String) = {
+
+        // Creating necessary components
         val entries = mutable.Map[String, ConfigNode]()
         var line : String = lastLine
-        val nextComment = new Comment
+        var nextComment = new Comment
         var currentKey = ""
         var currentvalue : ConfigNode = null
 
+        // Using a breakable while loop to interrupt as soon as the object ends
         breakable { while(iterator.hasNext){
+
             if(line.trim.startsWith("#") || line.trim.startsWith("//")){
+                // Found a comment. Comments are terminated by the end of the line. Add the entire line to the comments and continue with the next one
                 nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
                 line = ""
+
             } else if (line.trim.startsWith("}")) {
                 // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
                 line = line.trim.stripPrefix("}")
                 break()
+
             } else if(line.trim != ""){
-                // If it is none of these apply, the following string is a key. We need to identify, what terminates the key. This can be a ':', a '=', a '[' or a '{'
-                // However, it is allowed to run multiple objects within these, so we need to find out what comes FIRST
+                // If none of the options above apply and the line is NOT empty (in which case load the next line and ignore this)
+                // What follows now is part of the content of the object
+                // Objects are Key Value pairs, so parsing these is a two stage job: Separating Key and value and then parsing the value
+
+                // 1. Separating Key and value
+                // In JSON, Keys and values are separated with ':'. HOCON allows substituting ':' with '=' and also allows ommitting these symbols when using a '{' or '[' to open an object/list afterwards
+                // Finding first instance of these symbols
+                // TerminatingIndex is the index of the symbol that terminates the key.
                 val terminatingChars = Set(':','=','{','[')
                 val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars,line)
 
+                // Splitting the key from the string (while splitting of the ':' or '=' as they are not needed anymore
                 currentKey = line.substring(0,terminatingIndex -1)
                 line = line.substring(terminatingIndex).trim.stripPrefix(":").stripPrefix("=")
 
+                // Evaluating the type of value
                 if(line.trim.startsWith("{")){
-                    // value begins with opening bracket of an object
+                    // Case: Value is an object
                     val (newvalue,newline) = this.parseObject(iterator, line.trim.substring(1), nextComment)
                     line = newline
                     currentvalue = newvalue
 
                 } else if(line.trim.startsWith("[")){
-                    // value begins with opening bracket of an object
+                    // Case: Value is a list
                     val (newvalue,newline) = this.parseList(iterator, line.trim.substring(1), nextComment)
                     line = newline
                     currentvalue = newvalue
                 } else {
-                    // value is an entry
+                    // Case: Value is an entry
                     val (newvalue,newline) = this.parseEntry(iterator, line, nextComment)
                     line = newline
                     currentvalue = newvalue
                 }
+
+                // Reset next comment
+                nextComment = new Comment
+
+                // Json Keys are split using a ",". This is not necessary, but tolerated in HOCON syntax
                 line = line.trim.stripPrefix(",")
+
+                // Adding the new Key, Value pair to the Map
                 entries.addOne((currentKey,currentvalue))
             }
 
+            // Proceed with the next line if the current one was fully parsed
             if(line.trim == "" && iterator.hasNext){
                 line = iterator.next()
             }
@@ -72,11 +114,22 @@ class CommentParser() {
             line = ""
         }
 
+        // Start the internal parser of the comment
         currentComment.commitComments()
+
+        // Return the finished ConfigObject
         (ConfigObject(entries.toMap, currentComment),"")
     }
 
-    def parseEntry(iterator: Iterator[String], lastLine : String, currentComment : Comment) : (ConfigEntry,String) = {
+    /**
+     * Method responsible to parse Entry-Type Nodes
+     * @param iterator accepts the iterator over the current config file
+     * @param lastLine accepts the remains of the line that belongs to this object
+     * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
+     * @return returns the fully parsed entry
+     */
+    private def parseEntry(iterator: Iterator[String], lastLine : String, currentComment : Comment) : (ConfigEntry,String) = {
+        // Creation of necessary values
         var line: String = lastLine
         var value = ""
 
@@ -114,6 +167,7 @@ class CommentParser() {
                 value = line.trim.substring(0, terminatingIndex).trim
                 line = line.trim.stripPrefix(value).trim
             } else {
+                // Option 2: The end of the line
                 value = line.trim
                 line = ""
             }
@@ -129,7 +183,7 @@ class CommentParser() {
         (ConfigEntry(value,currentComment),line)
     }
 
-    def parseList(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigList,String) = {
+    private def parseList(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigList,String) = {
         var line = lastLine
         val value = new ListBuffer[ConfigNode]
         var nextComment = new Comment
