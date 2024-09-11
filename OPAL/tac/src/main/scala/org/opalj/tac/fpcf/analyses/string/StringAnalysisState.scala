@@ -26,7 +26,7 @@ import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 private[string] case class ContextFreeStringAnalysisState(
     entity:                 VariableDefinition,
     var stringFlowDependee: EOptionP[Method, MethodStringFlow],
-    var hitMaximumDepth:    Boolean = false
+    var hitDepthThreshold:  Boolean = false
 ) {
 
     def hasDependees: Boolean = stringFlowDependee.isRefinable
