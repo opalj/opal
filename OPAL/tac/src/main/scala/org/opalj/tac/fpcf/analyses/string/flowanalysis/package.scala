@@ -8,10 +8,8 @@ package string
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 
-import scalax.collection.OneOrMore
 import scalax.collection.edges.DiEdge
 import scalax.collection.generic.Edge
-import scalax.collection.hyperedges.DiHyperEdge
 import scalax.collection.immutable.Graph
 import scalax.collection.immutable.TypedGraphFactory
 import scalax.collection.io.dot.DotAttr
@@ -154,31 +152,6 @@ package object flowanalysis {
                 cNodeTransformer = Some(nodeTransformer),
                 iNodeTransformer = Some(nodeTransformer)
             )
-        }
-
-        def enrichWithControlTree(
-            flowGraph:   FlowGraph,
-            controlTree: ControlTree
-        ): Graph[FlowGraphNode, Edge[FlowGraphNode]] = {
-            var combinedGraph = flowGraph
-                .++[FlowGraphNode, DiEdge[FlowGraphNode]](controlTree.nodes.map(_.outer), Iterable.empty)
-                .asInstanceOf[Graph[FlowGraphNode, Edge[FlowGraphNode]]]
-
-            for {
-                node <- controlTree.nodes.toOuter
-                nodes = combinedGraph.nodes.filter((n: Graph[FlowGraphNode, Edge[FlowGraphNode]]#NodeT) =>
-                    n.outer.nodeIds.subsetOf(node.nodeIds)
-                ).map(_.outer)
-                actualSubsetNodes = nodes.filter(n => n.nodeIds != node.nodeIds)
-                remainingNodes = actualSubsetNodes.filter(n =>
-                    !actualSubsetNodes.exists(nn => n.nodeIds != nn.nodeIds && n.nodeIds.subsetOf(nn.nodeIds))
-                )
-                if remainingNodes.size > 1
-            } {
-                combinedGraph = combinedGraph.incl(DiHyperEdge(OneOrMore(node), OneOrMore.from(remainingNodes).get))
-            }
-
-            combinedGraph
         }
     }
 }
