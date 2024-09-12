@@ -24,7 +24,9 @@ class CommentParser() {
     def parseComments(filePath: Path): ConfigObject = {
         val lines = Source.fromFile(filePath.toString()).getLines().toList
         val iterator = lines.iterator
-        val (node,remains) = parseObject(iterator, "", new Comment)
+        val initialComment = new Comment
+        initialComment.addComment("@label " + filePath.toString.substring(filePath.toString.indexOf("opal") + 4))
+        val (node,remains) = parseObject(iterator, "", initialComment)
         node
     }
 
@@ -36,7 +38,6 @@ class CommentParser() {
      * @return returns the fully parsed object
      */
     private def parseObject(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigObject,String) = {
-
         // Creating necessary components
         val entries = mutable.Map[String, ConfigNode]()
         var line : String = lastLine
@@ -146,9 +147,21 @@ class CommentParser() {
             line = newline
             value = newvalue
         } else if (line.trim.startsWith("\"")) {
-            // Case: line starts with a quoted string
+            // Case: line starts with a double quoted string
             line = line.trim.stripPrefix("\"").trim
-            value = line.substring(0,line.indexOf("\"")).trim
+            // A '\' can escape a quote. Thus we need to exclude that from the terminating Index
+            val terminatingIndices = line.zipWithIndex.collect {
+                case (char, index) if char == '\"' => index
+            }
+            var terminatingIndex = line.length
+
+            for(i <- 0 to terminatingIndices.length -1){
+                if((terminatingIndices(i) == 0 || line((terminatingIndices(i)-1)) != '\\') && terminatingIndex == line.length){
+                    terminatingIndex = terminatingIndices(i)
+                }
+            }
+
+            value = line.substring(0,terminatingIndex).trim
             line = line.stripPrefix(value).trim.stripPrefix("\"")
         } else if (line.trim.startsWith("\'")) {
             // Case: line starts with a single quoted string
