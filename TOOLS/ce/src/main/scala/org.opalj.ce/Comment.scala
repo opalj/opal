@@ -15,6 +15,15 @@ class Comment {
 
     }
 
+    def toHTML(): String = {
+        var HTMLString = "<p>"
+        for(line <- commentBuffer) {
+            HTMLString += line + "<br>"
+        }
+        HTMLString += "</p>"
+        return HTMLString
+    }
+
     override def toString() : String = {
         commentBuffer.toString()
     }
