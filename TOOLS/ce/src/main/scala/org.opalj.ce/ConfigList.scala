@@ -5,8 +5,6 @@ import scala.collection.mutable.ListBuffer
 case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends ConfigNode {
     override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String): String = {
         var HTMLString = ""
-
-        // Placeholder: The Comment object is supposed to store the label later and it should be retrieved from there
         var head = label
         if(this.comment.label.isEmpty != true) head = this.comment.label
 
