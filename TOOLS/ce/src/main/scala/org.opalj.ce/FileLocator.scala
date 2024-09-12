@@ -9,8 +9,6 @@ import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
 class FileLocator(var config: Config)  {
-    println("FileLocator created. Initializing...")
-
     def getProjectRoot: String = {
         val projectRoot = this.config.getString("user.dir")
         println("Searching in the following directory: " + projectRoot)
