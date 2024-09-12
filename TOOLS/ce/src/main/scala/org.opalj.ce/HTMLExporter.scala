@@ -10,7 +10,7 @@ class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
 
         // Generate HTML
         var fileContent = ""
-        val template = Source.fromFile(templatePath.toString()).getLines().mkString("\n")
+        val template = Source.fromFile(templatePath.toString).getLines().mkString("\n")
         var body = ""
         for(config <- ConfigList)
         {

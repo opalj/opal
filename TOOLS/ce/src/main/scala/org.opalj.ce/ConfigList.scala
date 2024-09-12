@@ -6,7 +6,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
     override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String): String = {
         var HTMLString = ""
         var head = label
-        if(this.comment.label.isEmpty != true) head = this.comment.label
+        if(this.comment.label.isEmpty == false) head = this.comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML() + "</p>"
@@ -20,7 +20,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
 
-        return HTMLString
+        HTMLString
     }
 
     override def isEmpty(): Boolean = {

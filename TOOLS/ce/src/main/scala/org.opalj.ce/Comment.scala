@@ -35,15 +35,15 @@ class Comment {
     def toHTML(): String = {
         var HTMLString = ""
         if(isEmpty() == false) {
-            if(description.length > 0) {
+            if(description.nonEmpty) {
                 HTMLString += "<p><b> Description: </b> <br>"
                 for (line <- description) {
                     HTMLString += line + "<br>"
                 }
                 HTMLString += "</p>"
             }
-            if(datatype.length > 0) HTMLString += "<p><b> Type: </b>" + datatype + "<br></p>"
-            if(constraints.length > 0) {
+            if(datatype.nonEmpty) HTMLString += "<p><b> Type: </b>" + datatype + "<br></p>"
+            if(constraints.nonEmpty) {
                 HTMLString += "<p><b> Constraints: </b><br>"
                 for (line <- constraints) {
                     HTMLString += line + "<br>"
@@ -51,7 +51,7 @@ class Comment {
                 HTMLString += "</p>"
             }
         }
-        return HTMLString
+        HTMLString
     }
 
     def isEmpty(): Boolean = {

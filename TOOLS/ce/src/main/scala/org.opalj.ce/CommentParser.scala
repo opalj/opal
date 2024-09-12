@@ -22,7 +22,7 @@ class CommentParser() {
      * @return returns the fully parsed file as a configObject
      */
     def parseComments(filePath: Path): ConfigObject = {
-        val lines = Source.fromFile(filePath.toString()).getLines().toList
+        val lines = Source.fromFile(filePath.toString).getLines().toList
         val iterator = lines.iterator
         val initialComment = new Comment
         initialComment.addComment("@label " + filePath.toString.substring(filePath.toString.indexOf("opal") + 4))

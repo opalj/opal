@@ -23,7 +23,7 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
 
-        return HTMLString
+        HTMLString
     }
 
     override def isEmpty(): Boolean = {

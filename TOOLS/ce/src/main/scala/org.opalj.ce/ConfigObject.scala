@@ -4,7 +4,7 @@ case class ConfigObject(entries: Map[String, ConfigNode], comment: Comment) exte
     override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String): String = {
         var HTMLString = ""
         var head = label
-        if(this.comment.label.isEmpty != true) head = this.comment.label
+        if(this.comment.label.isEmpty == false) head = this.comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML() + "</p>"
@@ -18,7 +18,7 @@ case class ConfigObject(entries: Map[String, ConfigNode], comment: Comment) exte
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
 
-        return HTMLString
+        HTMLString
     }
 
     override def isEmpty(): Boolean = {
