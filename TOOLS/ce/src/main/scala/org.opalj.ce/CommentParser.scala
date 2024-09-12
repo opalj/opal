@@ -119,7 +119,7 @@ class CommentParser() {
         currentComment.commitComments()
 
         // Return the finished ConfigObject
-        (ConfigObject(entries.toMap, currentComment),"")
+        (ConfigObject(entries.toMap, currentComment),line)
     }
 
     /**
@@ -154,12 +154,12 @@ class CommentParser() {
                 case (char, index) if char == '\"' => index
             }
             var terminatingIndex = line.length
-
-            for(i <- 0 to terminatingIndices.length -1){
+            breakable{for(i <- 0 to terminatingIndices.length -1){
                 if((terminatingIndices(i) == 0 || line((terminatingIndices(i)-1)) != '\\') && terminatingIndex == line.length){
                     terminatingIndex = terminatingIndices(i)
+                    break()
                 }
-            }
+            }}
 
             value = line.substring(0,terminatingIndex).trim
             line = line.stripPrefix(value).trim.stripPrefix("\"")
@@ -196,29 +196,42 @@ class CommentParser() {
         (ConfigEntry(value,currentComment),line)
     }
 
+    /**
+     * Method responsible to parse List-Type Nodes
+     * @param iterator accepts the iterator over the current config file
+     * @param lastLine accepts the remains of the line that belongs to this object
+     * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
+     * @return returns the fully parsed entry
+     */
     private def parseList(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigList,String) = {
+        // Creating necessary variables
         var line = lastLine
         val value = new ListBuffer[ConfigNode]
         var nextComment = new Comment
 
         breakable { while(iterator.hasNext){
             if(line.trim.startsWith("{")){
+                // Case: The following symbol opens an object
                 val (configobject,newline) = parseObject(iterator, line.trim.stripPrefix("{"), nextComment)
                 value += configobject
-                line = newline
+                line = newline.trim.stripPrefix(",")
                 nextComment = new Comment
             } else if (line.trim.startsWith("[")){
+                // Case: The following symbol opens a list
                 val (configlist,newline) = parseList(iterator, line.trim.stripPrefix("["), nextComment)
                 value += configlist
-                line = newline
+                line = newline.trim.stripPrefix(",")
                 nextComment = new Comment
             } else if(line.trim.startsWith("//") || line.trim.startsWith("#")){
+                // Case: The following symbol opens a comment
                 nextComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
                 line = ""
             } else if(line.trim.startsWith("]") || (line.trim.startsWith(",") && line.trim.stripPrefix(",").trim.startsWith("]"))){
+                // Case: The following symbol closes the list
                 line = line.trim.stripPrefix(",").trim.stripPrefix("]")
                 break()
             } else if(line.trim != ""){
+                // Case: The following symbol is an entry
                 val (configEntry,newline) = parseEntry(iterator, line.trim.stripPrefix(","), nextComment)
                 value += configEntry
                 line = newline
@@ -226,25 +239,41 @@ class CommentParser() {
             }
 
             if(line.trim == "" && iterator.hasNext){
+                // Load next line when done
                 line = iterator.next()
             }
         }}
         if(line.trim.startsWith("#") || line.trim.startsWith("//")){
+            // Add the comment in the same line of the list as well
             currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
             line = ""
         }
 
+        // Load sub-fields of the comment NOW
         currentComment.commitComments()
+
+        // Finish
         (ConfigList(value, currentComment),line)
     }
 
+    /**
+     * Internal method for finding the end of a multi line value
+     * @param iterator accepts the iterator that currently iterates over the config file
+     * @param line accepts the substring of the line that has not been parsed yet
+     * @param terminatingSymbol is the string that terminates the value
+     * @return returns a tuple of the parsed value and the substring of the line that has not been parsed yet
+     */
     private def extractValue(iterator: Iterator[String], line : String, terminatingSymbol : String): (String,String) = {
+        // creating necessary variables
         var value = ""
         var remainingLine = ""
+
         if(line.contains(terminatingSymbol)) {
+            // The value is a single line value
             value = line.substring(0,line.indexOf(terminatingSymbol))
             remainingLine = line.substring(line.indexOf(terminatingSymbol)).stripPrefix(terminatingSymbol)
         } else {
+            // The value is a multi line value
             value = line
             breakable { while(iterator.hasNext){
                 remainingLine = iterator.next()
@@ -260,6 +289,13 @@ class CommentParser() {
         (value,remainingLine)
     }
 
+    /**
+     * Method that finds the first instance of a character out of a character set
+     * @param characterSet accepts the selection of characters that is supposed to be looked for
+     * @param string accepts the string that is to be searched
+     * @return returns the lowest index of any character out of the character set that occurs in the string
+     * @return returns -1 if none of the characters appear in the string
+     */
     private def findIndexOfCharsetInString(characterSet : Set[Char], string: String): Int = {
         string.zipWithIndex.collectFirst {
             case(char,index) if characterSet.contains(char) => index
