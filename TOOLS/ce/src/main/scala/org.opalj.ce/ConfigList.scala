@@ -24,5 +24,13 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
 
         return HTMLString
     }
+
+    override def isEmpty(): Boolean = {
+        for(entry <- entries){
+            if(entry.isEmpty() == false) return false
+        }
+        if(comment.isEmpty() == false) return false
+        true
+    }
 }
 

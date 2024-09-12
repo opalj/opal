@@ -56,7 +56,9 @@ class Comment {
     }
 
     def isEmpty(): Boolean = {
-        return commentBuffer.length == 0
+        if(commentBuffer.length <= 0) return true
+        if(commentBuffer.length <= 1 && label.trim != "") return true
+        false
     }
 
     def printObject() : Unit = {

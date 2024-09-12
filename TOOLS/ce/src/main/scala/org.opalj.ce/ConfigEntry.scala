@@ -21,4 +21,9 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
 
         return HTMLString
     }
+
+    override def isEmpty(): Boolean = {
+        if(value.isEmpty() && comment.isEmpty()) return true
+        false
+    }
 }

@@ -22,4 +22,12 @@ case class ConfigObject(entries: Map[String, ConfigNode], comment: Comment) exte
 
         return HTMLString
     }
+
+    override def isEmpty(): Boolean = {
+        if(comment.isEmpty() == false) return false
+        for((key,value) <- entries){
+            if(value.isEmpty() == false) return false
+        }
+        true
+    }
 }
