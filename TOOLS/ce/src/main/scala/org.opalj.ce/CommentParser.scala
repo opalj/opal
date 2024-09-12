@@ -11,6 +11,8 @@ import scala.util.control.Breaks._
  * Do NOT use this class directly, use ConfigParserWrapper for safe parsing instead
  */
 class CommentParser() {
+    var iterator: Iterator[String] = null
+    var line = ""
 
     /**
      * parseComments initiates the parsing process
@@ -22,12 +24,14 @@ class CommentParser() {
      * @return returns the fully parsed file as a configObject
      */
     def parseComments(filePath: Path): ConfigObject = {
+        // Initialize iterator
         val lines = Source.fromFile(filePath.toString).getLines().toList
-        val iterator = lines.iterator
+        iterator = lines.iterator
+
+
         val initialComment = new Comment
         initialComment.addComment("@label " + filePath.toString.substring(filePath.toString.indexOf("opal") + 4))
-        val (node,remains) = parseObject(iterator, "", initialComment)
-        node
+        parseObject(initialComment)
     }
 
     /**
@@ -37,10 +41,10 @@ class CommentParser() {
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed object
      */
-    private def parseObject(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigObject,String) = {
+    private def parseObject(currentComment : Comment) : ConfigObject = {
+        line = line.trim.stripPrefix("{")
         // Creating necessary components
         val entries = mutable.Map[String, ConfigNode]()
-        var line : String = lastLine
         var nextComment = new Comment
         var currentKey = ""
         var currentvalue : ConfigNode = null
@@ -77,20 +81,13 @@ class CommentParser() {
                 // Evaluating the type of value
                 if(line.trim.startsWith("{")){
                     // Case: Value is an object
-                    val (newvalue,newline) = this.parseObject(iterator, line.trim.substring(1), nextComment)
-                    line = newline
-                    currentvalue = newvalue
-
+                    currentvalue = this.parseObject(nextComment)
                 } else if(line.trim.startsWith("[")){
                     // Case: Value is a list
-                    val (newvalue,newline) = this.parseList(iterator, line.trim.substring(1), nextComment)
-                    line = newline
-                    currentvalue = newvalue
+                    currentvalue = this.parseList(nextComment)
                 } else {
                     // Case: Value is an entry
-                    val (newvalue,newline) = this.parseEntry(iterator, line, nextComment)
-                    line = newline
-                    currentvalue = newvalue
+                    currentvalue = this.parseEntry(nextComment)
                 }
 
                 // Reset next comment
@@ -119,7 +116,7 @@ class CommentParser() {
         currentComment.commitComments()
 
         // Return the finished ConfigObject
-        (ConfigObject(entries.toMap, currentComment),line)
+        ConfigObject(entries.toMap, currentComment)
     }
 
     /**
@@ -129,9 +126,8 @@ class CommentParser() {
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed entry
      */
-    private def parseEntry(iterator: Iterator[String], lastLine : String, currentComment : Comment) : (ConfigEntry,String) = {
+    private def parseEntry(currentComment : Comment) : ConfigEntry = {
         // Creation of necessary values
-        var line: String = lastLine
         var value = ""
 
         if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
@@ -193,7 +189,7 @@ class CommentParser() {
         }
 
         currentComment.commitComments()
-        (ConfigEntry(value,currentComment),line)
+        ConfigEntry(value,currentComment)
     }
 
     /**
@@ -203,24 +199,22 @@ class CommentParser() {
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed entry
      */
-    private def parseList(iterator: Iterator[String], lastLine: String, currentComment : Comment) : (ConfigList,String) = {
+    private def parseList(currentComment : Comment) : ConfigList = {
+        line = line.trim.stripPrefix("[")
         // Creating necessary variables
-        var line = lastLine
         val value = new ListBuffer[ConfigNode]
         var nextComment = new Comment
 
         breakable { while(iterator.hasNext){
             if(line.trim.startsWith("{")){
                 // Case: The following symbol opens an object
-                val (configobject,newline) = parseObject(iterator, line.trim.stripPrefix("{"), nextComment)
-                value += configobject
-                line = newline.trim.stripPrefix(",")
+                value += parseObject(nextComment)
+                line = line.trim.stripPrefix(",")
                 nextComment = new Comment
             } else if (line.trim.startsWith("[")){
                 // Case: The following symbol opens a list
-                val (configlist,newline) = parseList(iterator, line.trim.stripPrefix("["), nextComment)
-                value += configlist
-                line = newline.trim.stripPrefix(",")
+                value += parseList(nextComment)
+                line = line.trim.stripPrefix(",")
                 nextComment = new Comment
             } else if(line.trim.startsWith("//") || line.trim.startsWith("#")){
                 // Case: The following symbol opens a comment
@@ -232,9 +226,7 @@ class CommentParser() {
                 break()
             } else if(line.trim != ""){
                 // Case: The following symbol is an entry
-                val (configEntry,newline) = parseEntry(iterator, line.trim.stripPrefix(","), nextComment)
-                value += configEntry
-                line = newline
+                value += parseEntry(nextComment)
                 nextComment = new Comment
             }
 
@@ -253,7 +245,7 @@ class CommentParser() {
         currentComment.commitComments()
 
         // Finish
-        (ConfigList(value, currentComment),line)
+        ConfigList(value, currentComment)
     }
 
     /**
