@@ -8,7 +8,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
 
         // Placeholder: The Comment object is supposed to store the label later and it should be retrieved from there
         var head = label
-        if(head == "") head = "placeholder"
+        if(this.comment.label.isEmpty != true) head = this.comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML() + "</p>"
@@ -17,10 +17,10 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label",head)
+        HTMLString += HTMLHeadline.replace("$label",head).replace("$brief",this.comment.brief)
 
         // Add content below
-        HTMLString += HTMLContent.replace("$Content", content)
+        HTMLString += HTMLContent.replace("$content", content)
 
         return HTMLString
     }
