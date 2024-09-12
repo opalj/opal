@@ -228,6 +228,7 @@ class CommentParser() {
                 // Case: The following symbol is an entry
                 value += parseEntry(nextComment)
                 nextComment = new Comment
+                line = line.trim.stripPrefix(",")
             }
 
             if(line.trim == "" && iterator.hasNext){
