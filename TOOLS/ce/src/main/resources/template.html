@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verschachtelte Elemente ein-/ausklappen</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 1em;
+        }
+
+        hr {
+            margin-top : 2em;
+            margin-bottom: 2em;
+            color: #DCDCDE;
+        }
+        .content {
+            padding: 1em;
+            border: 0.1em solid #DCDCDE;
+            border-radius: 0.5em;
+            margin-left: 2em;
+            display: none;
+        }
+
+        .header {
+            cursor: pointer;
+            color: #28272D;
+            background-color: #FBFAFD;
+        }
+
+        .preview {
+            font-weight: normal;
+            font-size: 0.65em;
+            color: #626168;
+        }
+
+        .expandBox {
+            float: right;
+            color: #626168;
+            font-size: 0.5em;
+            padding: 0.4em;
+            border: 0.1em solid #DCDCDE;
+            border-radius: 0.25em;
+            border-collapse: collapse;
+        }
+    </style>
+</head>
+<body>
+
+$body
+
+<script>
+    document.querySelectorAll('.header').forEach(header => {
+        header.addEventListener('click', () => {
+            const content = header.nextElementSibling;
+            const bottomText = header.querySelector('.bottom');
+
+            if (content.style.display === 'none' || content.style.display === '') {
+                content.style.display = 'block';
+                bottomText.textContent = 'Hide';
+            } else {
+                content.style.display = 'none';
+                bottomText.textContent = 'Show';
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
