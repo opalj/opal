@@ -54,7 +54,7 @@ $body
     document.querySelectorAll('.header').forEach(header => {
         header.addEventListener('click', () => {
             const content = header.nextElementSibling;
-            const bottomText = header.querySelector('.bottom');
+            const bottomText = header.querySelector('.expandBox');
 
             if (content.style.display === 'none' || content.style.display === '') {
                 content.style.display = 'block';
