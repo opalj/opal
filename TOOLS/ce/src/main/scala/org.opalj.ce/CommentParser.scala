@@ -4,7 +4,8 @@ import java.nio.file.Path
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
-import scala.util.control.Breaks._
+import scala.util.control.Breaks.break
+import scala.util.control.Breaks.breakable
 
 /**
  * The Comment Parser is responsible for parsing the HOCON files and its comments

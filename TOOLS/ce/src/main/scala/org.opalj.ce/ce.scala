@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.ce
 
-import com.typesafe.config._
-
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
 import java.io.File
 import java.nio.file.Paths
 

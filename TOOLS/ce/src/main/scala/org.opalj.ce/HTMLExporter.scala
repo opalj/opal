@@ -1,6 +1,7 @@
 package org.opalj.ce
 
-import java.io.{File, PrintWriter}
+import java.io.File
+import java.io.PrintWriter
 import java.nio.file.Path
 import scala.collection.mutable.ListBuffer
 import scala.io.Source

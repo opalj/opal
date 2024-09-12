@@ -2,8 +2,11 @@
 package org.opalj.ce
 
 import com.typesafe.config.Config
+
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.file._
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
