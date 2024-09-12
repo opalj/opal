@@ -35,22 +35,21 @@ class Comment {
     def toHTML(): String = {
         var HTMLString = ""
         if(isEmpty() == false) {
-            HTMLString += "<p>"
             if(description.length > 0) {
-                HTMLString += "<b> Description: </b> <br>"
+                HTMLString += "<p><b> Description: </b> <br>"
                 for (line <- description) {
                     HTMLString += line + "<br>"
                 }
-                HTMLString += "<br> <br>"
+                HTMLString += "</p>"
             }
-            if(datatype.length > 0) HTMLString += "<b> Type: </b>" + datatype + "<br>"
+            if(datatype.length > 0) HTMLString += "<p><b> Type: </b>" + datatype + "<br></p>"
             if(constraints.length > 0) {
-                HTMLString += "<b> Constraints: </b><br>"
+                HTMLString += "<p><b> Constraints: </b><br>"
                 for (line <- constraints) {
                     HTMLString += line + "<br>"
                 }
+                HTMLString += "</p>"
             }
-            HTMLString += "</p>"
         }
         return HTMLString
     }
