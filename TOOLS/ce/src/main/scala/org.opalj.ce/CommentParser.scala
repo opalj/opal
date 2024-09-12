@@ -218,10 +218,11 @@ class CommentParser() {
             } else if(line.trim.startsWith("]") || (line.trim.startsWith(",") && line.trim.stripPrefix(",").trim.startsWith("]"))){
                 line = line.trim.stripPrefix(",").trim.stripPrefix("]")
                 break()
-            } else {
+            } else if(line.trim != ""){
                 val (configEntry,newline) = parseEntry(iterator, line.trim.stripPrefix(","), nextComment)
                 value += configEntry
                 line = newline
+                nextComment = new Comment
             }
 
             if(line.trim == "" && iterator.hasNext){
