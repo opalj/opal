@@ -8,7 +8,7 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
         else if (head == "") head = value
 
         // Get HTML data for all child Nodes
-        var content = "<b>Value: </b>" + value + "<br>"
+        var content = "<b>Value: </b><code>" + value.replace("<","&lt").replace(">","&gt") + "</code><br>"
         content += this.comment.toHTML()
 
         // Adds Header line with collapse + expand options
