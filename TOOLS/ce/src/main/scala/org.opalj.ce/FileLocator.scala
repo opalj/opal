@@ -11,13 +11,26 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
+/**
+ * File Locator aids locating the config Files that the configuration Explorer needs to parse
+ * @param config accepts the config of the Configuration Explorer
+ */
 class FileLocator(var config: Config)  {
+
+    /**
+     * Small helper method for finding the project root
+     * @return returns the root directory of the opal project
+     */
     def getProjectRoot: String = {
         val projectRoot = this.config.getString("user.dir")
         println("Searching in the following directory: " + projectRoot)
         projectRoot
     }
 
+    /**
+     * Loads the filenames of the configuration files that shall be parsed
+     * @return is a List of the filenames that shall be parsed by the Configuration Explorer
+     */
     def getConfigurationFilenames : mutable.Buffer[String] = {
         val projectNames = this.config.getStringList("org.opalj.ce.configurationFilenames").asScala
 
@@ -29,6 +42,10 @@ class FileLocator(var config: Config)  {
         projectNames
     }
 
+    /**
+     * Finds all files that are named after one of the configuration filenames and are NOT within the target folder structure
+     * @return returns a List of full FilePaths to all found config files
+     */
     def SearchFiles : mutable.Buffer[Path] = {
         val projectNames = this.getConfigurationFilenames
         val projectRoot = Paths.get(this.getProjectRoot)
