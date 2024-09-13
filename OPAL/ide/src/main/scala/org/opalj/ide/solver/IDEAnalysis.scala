@@ -409,11 +409,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         if (s.areDependeesEmpty) {
             logDebug("creating final results")
             Results(
-                Iterable(
-                    Result(callable, propertyForExit)
-                ) ++ propertiesByStatement.map { case (stmt, property) =>
+                propertiesByStatement.map { case (stmt, property) =>
                     Result((callable, stmt), property)
-                }
+                } ++ Iterable(
+                    Result(callable, propertyForExit)
+                )
             )
         } else {
             logDebug("creating interim results")
