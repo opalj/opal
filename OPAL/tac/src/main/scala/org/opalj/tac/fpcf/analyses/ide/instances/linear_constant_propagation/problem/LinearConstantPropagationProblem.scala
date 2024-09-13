@@ -315,6 +315,13 @@ class LinearConstantPropagationProblem(project: SomeProject)
                     case (None, None, _) =>
                         VariableValueEdgeFunction
 
+                    case (_, _, BinaryArithmeticOperators.And) =>
+                        VariableValueEdgeFunction
+                    case (_, _, BinaryArithmeticOperators.Or) =>
+                        VariableValueEdgeFunction
+                    case (_, _, BinaryArithmeticOperators.XOr) =>
+                        VariableValueEdgeFunction
+
                     case (_, _, op) =>
                         throw new UnsupportedOperationException(s"Operator $op is not implemented!")
                 }
