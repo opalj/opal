@@ -24,6 +24,16 @@ case class ObjectValue(values: immutable.Map[String, LinearConstantPropagationVa
 }
 
 /**
+ * Value representing the state of an array
+ */
+case class ArrayValue(
+    initValue: LinearConstantPropagationValue,
+    elements:  immutable.Map[Int, LinearConstantPropagationValue]
+) extends LCPOnFieldsValue {
+    override def toString: String = s"ArrayValue($initValue, ${elements.mkString(", ")})"
+}
+
+/**
  * Value is variable (not really used currently, mainly for completeness)
  */
 case object VariableValue extends LCPOnFieldsValue

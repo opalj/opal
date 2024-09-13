@@ -14,9 +14,9 @@ trait LCPOnFieldsFact extends IDEFact
 case object NullFact extends LCPOnFieldsFact
 
 /**
- * Type for
+ * Common type for different types of entities
  */
-trait AbstractObjectFact extends LCPOnFieldsFact {
+trait AbstractEntityFact extends LCPOnFieldsFact {
     /**
      * The name of the variable (e.g. `lv0`)
      */
@@ -25,7 +25,12 @@ trait AbstractObjectFact extends LCPOnFieldsFact {
      * Where the variable is defined (used to uniquely identify a variable/variable fact)
      */
     val definedAtIndex: Int
+}
 
+/**
+ * Type for object facts
+ */
+trait AbstractObjectFact extends AbstractEntityFact {
     def toObjectFact: ObjectFact = ObjectFact(name, definedAtIndex)
 }
 
@@ -51,4 +56,34 @@ case class NewObjectFact(name: String, definedAtIndex: Int) extends AbstractObje
  */
 case class PutFieldFact(name: String, definedAtIndex: Int, fieldName: String) extends AbstractObjectFact {
     override def toString: String = s"PutFieldFact($name, $fieldName)"
+}
+
+/**
+ * Type for array facts
+ */
+trait AbstractArrayFact extends AbstractEntityFact {
+    def toArrayFact: ArrayFact = ArrayFact(name, definedAtIndex)
+}
+
+/**
+ * Fact representing a seen array variable
+ */
+case class ArrayFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
+    override def toArrayFact: ArrayFact = this
+
+    override def toString: String = s"ArrayFact($name)"
+}
+
+/**
+ * Fact representing a seen array variable and modeling that it gets initialized
+ */
+case class NewArrayFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
+    override def toString: String = s"NewArrayFact($name)"
+}
+
+/**
+ * Fact representing a seen array variable and modeling that one of its elements gets written
+ */
+case class PutElementFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
+    override def toString: String = s"PutElementFact($name)"
 }
