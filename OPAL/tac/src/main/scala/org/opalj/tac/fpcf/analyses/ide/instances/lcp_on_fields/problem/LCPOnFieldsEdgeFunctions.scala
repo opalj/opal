@@ -17,10 +17,12 @@ case class ObjectEdgeFunction(
 ) extends EdgeFunction[LCPOnFieldsValue] {
     override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue =
         sourceValue match {
-            case UnknownValue => UnknownValue
-            case ObjectValue(_) =>
+            case UnknownValue         => UnknownValue
+            case ObjectValue(values2) => ObjectValue((values -- values2.keys) ++ values2)
+            case VariableValue        => ObjectValue(values)
+
+            case _ =>
                 throw new UnsupportedOperationException(s"Computing $this for $sourceValue is not implemented!")
-            case VariableValue => ObjectValue(values)
         }
 
     override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
