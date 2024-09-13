@@ -52,8 +52,23 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
                     onDependeeUpdateContinuationCoarse(callable, stmt)
                 )
             case _ =>
-                // In this case, some kind of result is present (for the callable, as well as for each statement)
-                createFineResult(callable, stmt)
+                if (propertyStore.hasProperty(
+                        stmt match {
+                            case Some(statement) => (callable, statement)
+                            case None            => callable
+                        },
+                        propertyMetaInformation.backingPropertyMetaInformation.key
+                    )
+                ) {
+                    // In this case, some kind of result is present (for the callable, as well as for each statement)
+                    createFineResult(callable, stmt)
+                } else {
+                    // Otherwise, the algorithm did not reach the statement (yet)
+                    InterimPartialResult(
+                        immutable.Set(eOptionP),
+                        onDependeeUpdateContinuationCoarse(callable, stmt)
+                    )
+                }
         }
     }
 
