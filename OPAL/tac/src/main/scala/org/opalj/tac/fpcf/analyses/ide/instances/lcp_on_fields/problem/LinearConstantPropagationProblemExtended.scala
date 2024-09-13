@@ -13,12 +13,12 @@ import org.opalj.ide.problem.FinalEdgeFunction
 import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
-import org.opalj.tac.Expr
 import org.opalj.tac.GetField
 import org.opalj.tac.GetStatic
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.ConstantValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearCombinationEdgeFunction
+import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationFact
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationProblem
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.UnknownValue
@@ -32,58 +32,68 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
  * fields analysis.
  */
 class LinearConstantPropagationProblemExtended(project: SomeProject) extends LinearConstantPropagationProblem(project) {
-    override def getEdgeFunctionForExpression(
-        expr:   Expr[JavaStatement.V],
-        source: JavaStatement
+    override def getNormalEdgeFunctionForArrayLength(
+        arrayLengthExpr: ArrayLength[JavaStatement.V]
+    )(
+        source:     JavaStatement,
+        sourceFact: LinearConstantPropagationFact,
+        target:     JavaStatement,
+        targetFact: LinearConstantPropagationFact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
-        expr.astID match {
-            case ArrayLength.ASTID =>
-                UnknownValueEdgeFunction
+        UnknownValueEdgeFunction
+    }
 
-            case ArrayLoad.ASTID =>
-                UnknownValueEdgeFunction
+    override def getNormalEdgeFunctionForArrayLoad(
+        arrayLoadExpr: ArrayLoad[JavaStatement.V]
+    )(
+        source:     JavaStatement,
+        sourceFact: LinearConstantPropagationFact,
+        target:     JavaStatement,
+        targetFact: LinearConstantPropagationFact
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
+        UnknownValueEdgeFunction
+    }
 
-            case GetField.ASTID =>
-                val getFieldExpr = expr.asGetField
-                val objectVar = getFieldExpr.objRef.asVar
-                val fieldName = getFieldExpr.name
+    override def getNormalEdgeFunctionForGetField(
+        getFieldExpr: GetField[JavaStatement.V]
+    )(
+        source:     JavaStatement,
+        sourceFact: LinearConstantPropagationFact,
+        target:     JavaStatement,
+        targetFact: LinearConstantPropagationFact
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
+        val objectVar = getFieldExpr.objRef.asVar
+        val fieldName = getFieldExpr.name
 
-                val lcpOnFieldsEOptionP =
-                    propertyStore((source.method, source), LCPOnFieldsPropertyMetaInformation.key)
+        val lcpOnFieldsEOptionP =
+            propertyStore((source.method, source), LCPOnFieldsPropertyMetaInformation.key)
 
-                /* Decide based on the current result of the LCP on fields analysis */
-                lcpOnFieldsEOptionP match {
-                    case FinalP(property) =>
-                        val value = getObjectFieldFromProperty(objectVar, fieldName)(property)
-                        FinalEdgeFunction(value match {
-                            case UnknownValue     => UnknownValueEdgeFunction
-                            case ConstantValue(c) => LinearCombinationEdgeFunction(0, c, lattice.top)
-                            case VariableValue    => VariableValueEdgeFunction
-                        })
+        /* Decide based on the current result of the LCP on fields analysis */
+        lcpOnFieldsEOptionP match {
+            case FinalP(property) =>
+                val value = getObjectFieldFromProperty(objectVar, fieldName)(property)
+                FinalEdgeFunction(value match {
+                    case UnknownValue     => UnknownValueEdgeFunction
+                    case ConstantValue(c) => LinearCombinationEdgeFunction(0, c, lattice.top)
+                    case VariableValue    => VariableValueEdgeFunction
+                })
 
-                    case InterimUBP(property) =>
-                        val value = getObjectFieldFromProperty(objectVar, fieldName)(property)
-                        value match {
-                            case UnknownValue =>
-                                InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(lcpOnFieldsEOptionP))
-                            case ConstantValue(c) =>
-                                InterimEdgeFunction(
-                                    LinearCombinationEdgeFunction(0, c, lattice.top),
-                                    immutable.Set(lcpOnFieldsEOptionP)
-                                )
-                            case VariableValue =>
-                                FinalEdgeFunction(VariableValueEdgeFunction)
-                        }
-
-                    case _ =>
+            case InterimUBP(property) =>
+                val value = getObjectFieldFromProperty(objectVar, fieldName)(property)
+                value match {
+                    case UnknownValue =>
                         InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(lcpOnFieldsEOptionP))
+                    case ConstantValue(c) =>
+                        InterimEdgeFunction(
+                            LinearCombinationEdgeFunction(0, c, lattice.top),
+                            immutable.Set(lcpOnFieldsEOptionP)
+                        )
+                    case VariableValue =>
+                        FinalEdgeFunction(VariableValueEdgeFunction)
                 }
 
-            case GetStatic.ASTID =>
-                UnknownValueEdgeFunction
-
-            /* Unchanged behavior for all other expressions */
-            case _ => super.getEdgeFunctionForExpression(expr, source)
+            case _ =>
+                InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(lcpOnFieldsEOptionP))
         }
     }
 
@@ -104,5 +114,16 @@ class LinearConstantPropagationProblemExtended(project: SomeProject) extends Lin
                 case (value, ObjectValue(values)) =>
                     lattice.meet(value, values(fieldName))
             }
+    }
+
+    override def getNormalEdgeFunctionForGetStatic(
+        getStaticExpr: GetStatic
+    )(
+        source:     JavaStatement,
+        sourceFact: LinearConstantPropagationFact,
+        target:     JavaStatement,
+        targetFact: LinearConstantPropagationFact
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
+        UnknownValueEdgeFunction
     }
 }
