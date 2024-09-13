@@ -7,8 +7,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractRepeatablePropertyMatcher
 import org.opalj.ide.integration.BasicIDEProperty
-import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.{problem => LCPOnFieldsProblem}
-import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.{problem => LCPProblem}
+import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields
+import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 
 /**
  * Matcher for [[ObjectValue]] and [[ObjectValues]] annotations
@@ -68,25 +68,26 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher {
         if (properties.exists {
                 case property: BasicIDEProperty[?, ?] =>
                     property.results.exists {
-                        case (f: LCPOnFieldsProblem.AbstractObjectFact, LCPOnFieldsProblem.ObjectValue(values)) =>
+                        case (f: lcp_on_fields.problem.AbstractObjectFact, lcp_on_fields.problem.ObjectValue(values)) =>
                             expectedVariableName == f.name &&
                                 expectedConstantValues.forall {
                                     case (fieldName, value) =>
                                         values.get(fieldName) match {
-                                            case Some(LCPProblem.ConstantValue(c)) => value == c
-                                            case _                                 => false
+                                            case Some(linear_constant_propagation.problem.ConstantValue(c)) =>
+                                                value == c
+                                            case _ => false
                                         }
                                 } &&
                                 expectedVariableValues.forall { fieldName =>
                                     values.get(fieldName) match {
-                                        case Some(LCPProblem.VariableValue) => true
-                                        case _                              => false
+                                        case Some(linear_constant_propagation.problem.VariableValue) => true
+                                        case _                                                       => false
                                     }
                                 } &&
                                 expectedUnknownValues.forall { fieldName =>
                                     values.get(fieldName) match {
-                                        case Some(LCPProblem.UnknownValue) => true
-                                        case _                             => false
+                                        case Some(linear_constant_propagation.problem.UnknownValue) => true
+                                        case _                                                      => false
                                     }
                                 }
 
@@ -100,12 +101,16 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher {
         } else {
             val expectedValues =
                 expectedConstantValues
-                    .map { case (fieldName, c) => fieldName -> LCPProblem.ConstantValue(c) }
-                    .concat(expectedVariableValues.map { fieldName => fieldName -> LCPProblem.VariableValue })
-                    .concat(expectedUnknownValues.map { fieldName => fieldName -> LCPProblem.UnknownValue })
+                    .map { case (fieldName, c) => fieldName -> linear_constant_propagation.problem.ConstantValue(c) }
+                    .concat(expectedVariableValues.map { fieldName =>
+                        fieldName -> linear_constant_propagation.problem.VariableValue
+                    })
+                    .concat(expectedUnknownValues.map { fieldName =>
+                        fieldName -> linear_constant_propagation.problem.UnknownValue
+                    })
                     .toMap
             Some(
-                s"Result should contain (${LCPOnFieldsProblem.ObjectFact(expectedVariableName, 0)}, ${LCPOnFieldsProblem.ObjectValue(expectedValues)})"
+                s"Result should contain (${lcp_on_fields.problem.ObjectFact(expectedVariableName, 0)}, ${lcp_on_fields.problem.ObjectValue(expectedValues)})"
             )
         }
     }
