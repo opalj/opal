@@ -6,7 +6,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.lcp_on_fields.LCPOnFieldsProperty
 import org.opalj.ide.integration.LazyIDEAnalysisProxyScheduler
-import org.opalj.tac.fpcf.analyses.ide.linear_constant_propagation.LCPOnFieldsAnalysisScheduler
 
 class LCPOnFieldsTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
