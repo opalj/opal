@@ -1,4 +1,5 @@
-package org.opalj.ce
+package org.opalj
+package ce
 
 /**
  * Trait for representing the config structure

@@ -1,4 +1,5 @@
-package org.opalj.ce
+package org.opalj
+package ce
 
 /**
  * Stores a value inside the structure of the configNode

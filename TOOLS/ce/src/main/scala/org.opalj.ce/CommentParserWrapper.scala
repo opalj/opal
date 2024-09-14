@@ -1,4 +1,5 @@
-package org.opalj.ce
+package org.opalj
+package ce
 
 import java.nio.file.Path
 import scala.collection.mutable

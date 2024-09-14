@@ -1,4 +1,5 @@
-package org.opalj.ce
+package org.opalj
+package ce
 
 /**
  * Stores a List structure inside the ConfigNode structure
@@ -38,7 +39,7 @@ case class ConfigObject(entries: Map[String, ConfigNode], comment: Comment) exte
      * @return true if both the Object and the comment are empty
      */
     override def isEmpty(): Boolean = {
-        if(comment.isEmpty() == false) return false
+        if(!comment.isEmpty()) return false
         for((key,value) <- entries){
             if(value.isEmpty() == false) return false
         }
