@@ -96,7 +96,7 @@ class L1VirtualFunctionCallInterpreter(
      */
     private def interpretReplaceCall(target: PV)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         // Improve: Support fluent API by returning combined web for both assignment target and call target
-        computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
+        failure(target)
     }
 }
 
@@ -163,6 +163,8 @@ private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStri
 
     override type E <: VirtualFunctionCall[V]
 
+    implicit val soundnessMode: SoundnessMode
+
     def interpretSubstringCall(at: Option[PV], pt: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
@@ -182,12 +184,12 @@ private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStri
                                     case StringTreeConst(string) if intVal <= string.length =>
                                         env.update(state.pc, at.get, StringTreeConst(string.substring(intVal)))
                                     case _ =>
-                                        env.update(state.pc, at.get, StringTreeNode.lb)
+                                        env.update(state.pc, at.get, failureTree)
                                 }
                             }
                         )
                     case _ =>
-                        computeFinalResult(StringFlowFunctionProperty.ub(state.pc, at.get))
+                        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(state.pc, at.get, failureTree))
                 }
 
             case 2 =>
@@ -207,12 +209,12 @@ private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStri
                                             StringTreeConst(string.substring(firstIntVal, secondIntVal))
                                         )
                                     case _ =>
-                                        env.update(state.pc, at.get, StringTreeNode.lb)
+                                        env.update(state.pc, at.get, failureTree)
                                 }
                             }
                         )
                     case _ =>
-                        computeFinalResult(StringFlowFunctionProperty.ub(state.pc, at.get))
+                        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(state.pc, at.get, failureTree))
                 }
 
             case _ => throw new IllegalStateException(

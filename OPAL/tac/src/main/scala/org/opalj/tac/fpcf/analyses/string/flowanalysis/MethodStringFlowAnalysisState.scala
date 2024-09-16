@@ -11,7 +11,6 @@ import scala.collection.mutable
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
 import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.collection.immutable.IntTrieSet
@@ -73,7 +72,7 @@ case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, var 
     }
 
     private var _startEnv: StringTreeEnvironment = StringTreeEnvironment(Map.empty)
-    def getStartEnvAndReset: StringTreeEnvironment = {
+    def getStartEnvAndReset(implicit soundnessMode: SoundnessMode): StringTreeEnvironment = {
         if (pcToWebChangeMapping.exists(_._2)) {
             val webs = getWebs
             val indexedWebs = mutable.ArrayBuffer.empty[PDUWeb]
@@ -103,16 +102,15 @@ case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, var 
 
             val startMap = indexedWebs.filter(_ != null)
                 .map { web: PDUWeb =>
-                    val defPCs = web.defPCs.toList.sorted
-                    if (defPCs.head >= 0) {
+                    val defPC = web.defPCs.toList.min
+
+                    if (defPC >= 0) {
                         (web, StringTreeInvalidElement)
+                    } else if (defPC < -1 && defPC > ImmediateVMExceptionsOriginOffset) {
+                        (web, StringTreeParameter.forParameterPC(defPC))
                     } else {
-                        val pc = defPCs.head
-                        if (pc == -1 || pc <= ImmediateVMExceptionsOriginOffset) {
-                            (web, StringTreeDynamicString)
-                        } else {
-                            (web, StringTreeParameter.forParameterPC(pc))
-                        }
+                        // IMPROVE interpret "this" (parameter pc -1) with reference to String and StringBuilder classes
+                        (web, StringInterpreter.failureTree)
                     }
                 }.toMap
             _startEnv = StringTreeEnvironment(startMap)

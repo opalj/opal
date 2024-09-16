@@ -59,7 +59,7 @@ class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnaly
             )
         } else if (state.tacDependee.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
-            Result(state.entity, StringConstancyProperty(failure))
+            Result(state.entity, StringConstancyProperty(StringInterpreter.failureTree))
         } else {
             determinePossibleStrings
         }
@@ -83,11 +83,11 @@ class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnaly
 
         def mapDefPCToStringTree(defPC: Int): StringTreeNode = {
             if (defPC < 0) {
-                failure
+                StringInterpreter.failureTree
             } else {
                 tac.stmts(valueOriginOfPC(defPC, tac.pcToIndex).get).asAssignment.expr match {
                     case StringConst(_, v) => StringTreeConst(v)
-                    case _                 => failure
+                    case _                 => StringInterpreter.failureTree
                 }
             }
         }
@@ -101,11 +101,6 @@ class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnaly
         }
 
         Result(state.entity, StringConstancyProperty(tree))
-    }
-
-    private def failure: StringTreeNode = {
-        if (soundnessMode.isHigh) StringTreeNode.lb
-        else StringTreeNode.ub
     }
 }
 

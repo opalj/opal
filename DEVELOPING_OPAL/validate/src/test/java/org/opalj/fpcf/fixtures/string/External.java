@@ -6,6 +6,7 @@ import org.opalj.fpcf.properties.string_analysis.*;
 import javax.management.remote.rmi.RMIServer;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Random;
 import java.util.Scanner;
 
 /**
@@ -17,12 +18,20 @@ public class External {
     public static String nonFinalStaticField = "will not be revealed here";
     public static final String finalStaticField = "mine";
     private String fieldWithSelfInit = "init field value";
-    private static final String fieldWithSelfInitWithOutOfScopeCall = RMIServer.class.getName() + "Impl_Stub";
+    private static final String fieldWithSelfInitWithComplexInit;
     private String fieldWithConstructorInit;
     private float fieldWithConstructorParameterInit;
     private String writeInSameMethodField;
     private String noWriteField;
     private Object unsupportedTypeField;
+
+    static {
+        if (new Random().nextBoolean()) {
+            fieldWithSelfInitWithComplexInit = "Impl_Stub_1";
+        } else {
+            fieldWithSelfInitWithComplexInit = "Impl_Stub_2";
+        }
+    }
 
     public External(float e) {
         fieldWithConstructorInit = "initialized by constructor";
@@ -61,10 +70,10 @@ public class External {
         analyzeString(fieldWithSelfInit.toString());
     }
 
-    @PartiallyConstant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = ".*Impl_Stub")
+    @Constant(n = 0, levels = Level.TRUTH, value = "(Impl_Stub_1|Impl_Stub_2)")
     @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
     public void fieldWithInitWithOutOfScopeRead() {
-        analyzeString(fieldWithSelfInitWithOutOfScopeCall);
+        analyzeString(fieldWithSelfInitWithComplexInit);
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "initialized by constructor")
@@ -106,12 +115,24 @@ public class External {
         analyzeString(unsupportedTypeField.toString());
     }
 
-    @Dynamic(n = 0, levels = Level.TRUTH, value = ".*")
-    @Dynamic(n = 1, levels = Level.TRUTH, value = ".*")
+    public void parameterCaller() {
+        this.parameterRead("some-param-value", new StringBuilder("some-other-param-value"));
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "some-param-value")
+    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|some-param-value)",
+            reason = "method is an entry point and thus has callers with unknown context")
+    @Constant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "some-other-param-value")
+    @Dynamic(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|some-other-param-value)",
+            reason = "method is an entry point and thus has callers with unknown context")
     @Failure(n = 1, levels = Level.L0)
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, value = "value=.*")
+    @Constant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "value=some-param-value")
+    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "value=(.*|some-param-value)",
+            reason = "method is an entry point and thus has callers with unknown context")
     @Failure(n = 2, levels = Level.L0)
-    @PartiallyConstant(n = 3, levels = Level.TRUTH, value = "value=.*.*")
+    @Constant(n = 3, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "value=some-param-value-some-other-param-value")
+    @PartiallyConstant(n = 3, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "value=(.*|some-param-value)-(.*|some-other-param-value)",
+            reason = "method is an entry point and thus has callers with unknown context")
     @Failure(n = 3, levels = Level.L0)
     public void parameterRead(String stringValue, StringBuilder sbValue) {
         analyzeString(stringValue);
@@ -122,6 +143,7 @@ public class External {
         sb.append(stringValue);
         analyzeString(sb.toString());
 
+        sb.append("-");
         sb.append(sbValue.toString());
         analyzeString(sb.toString());
     }

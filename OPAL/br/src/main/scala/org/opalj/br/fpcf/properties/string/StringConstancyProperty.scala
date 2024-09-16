@@ -8,6 +8,7 @@ package string
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
@@ -46,7 +47,14 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
     final val key: PropertyKey[StringConstancyProperty] = {
         PropertyKey.create(
             PropertyKeyName,
-            (_: PropertyStore, _: FallbackReason, _: Entity) => lb
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => {
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        lb
+                    case _ =>
+                        throw new IllegalStateException(s"Analysis required for property: $PropertyKeyName")
+                }
+            }
         )
     }
 

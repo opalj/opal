@@ -63,15 +63,20 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         if (excludedPackages.exists(method.classFile.thisType.packageName.startsWith(_))) {
             Result(state.entity, MethodStringFlow.lb)
         } else if (state.tacDependee.isRefinable) {
-            InterimResult.forUB(
+            InterimResult(
                 state.entity,
+                MethodStringFlow.lb,
                 MethodStringFlow.ub,
                 Set(state.tacDependee),
                 continuation(state)
             )
         } else if (state.tacDependee.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
-            Result(state.entity, MethodStringFlow.lb)
+            Result(
+                state.entity,
+                if (soundnessMode.isHigh) MethodStringFlow.lb
+                else MethodStringFlow.ub
+            )
         } else {
             determinePossibleStrings(state)
         }

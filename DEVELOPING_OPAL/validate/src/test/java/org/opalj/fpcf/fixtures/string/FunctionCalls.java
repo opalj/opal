@@ -161,7 +161,8 @@ public class FunctionCalls {
         }
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello, World|my.helper.Class)")
+    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(Hello, World|my.helper.Class)")
+    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|Hello, World|my.helper.Class)")
     @Failure(n = 0, levels = Level.L0)
     public String calleeWithFunctionParameter(String s, float i) {
         analyzeString(s);
@@ -179,7 +180,8 @@ public class FunctionCalls {
         calleeWithFunctionParameter(getHelperClassProxy(), 900);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello, World|my.helper.Class)")
+    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(Hello, World|my.helper.Class)")
+    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|Hello, World|my.helper.Class)")
     @Failure(n = 0, levels = Level.L0)
     public String calleeWithFunctionParameterMultipleCallsInSameMethodTest(String s, float i) {
         analyzeString(s);
@@ -191,7 +193,8 @@ public class FunctionCalls {
         calleeWithFunctionParameterMultipleCallsInSameMethodTest(getHelperClassProxy(), 900);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(string.1|string.2)")
+    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(string.1|string.2)")
+    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|string.1|string.2)")
     public String calleeWithStringParameterMultipleCallsInSameMethodTest(String s, float i) {
         analyzeString(s);
         return s;

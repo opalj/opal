@@ -172,29 +172,25 @@ private[string] case class MethodParameterContextStringAnalysisState(
     def updateParamDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit =
         _paramDependees(dependee.e) = dependee
 
-    def currentTreeUB: StringTreeNode = {
-        if (_discoveredUnknownTAC) {
-            StringTreeNode.lb
-        } else {
-            val paramOptions = _methodToEntityMapping.keys.toSeq
-                .sortBy(_.id)
-                .flatMap { dm =>
-                    _methodToEntityMapping(dm)
-                        .map(_paramDependees)
-                        .filter(_.hasUBP)
-                        .map(_.ub.tree)
-                }
+    def currentTreeUB(implicit soundnessMode: SoundnessMode): StringTreeNode = {
+        var paramOptions = _methodToEntityMapping.keys.toSeq
+            .sortBy(_.id)
+            .flatMap { dm =>
+                _methodToEntityMapping(dm)
+                    .map(_paramDependees)
+                    .filter(_.hasUBP)
+                    .map(_.ub.tree)
+            }
 
-            StringTreeOr(paramOptions).simplify
+        if (soundnessMode.isHigh && (
+                _discoveredUnknownTAC ||
+                _callersDependee.exists(cd => cd.hasUBP && cd.ub.hasCallersWithUnknownContext)
+            )
+        ) {
+            paramOptions :+= StringTreeNode.lb
         }
-    }
 
-    def finalTree: StringTreeNode = {
-        if (_methodToEntityMapping.isEmpty) {
-            StringTreeNode.lb
-        } else {
-            currentTreeUB
-        }
+        StringTreeOr(paramOptions).simplify
     }
 
     def hasDependees: Boolean = _callersDependee.exists(_.isRefinable) ||

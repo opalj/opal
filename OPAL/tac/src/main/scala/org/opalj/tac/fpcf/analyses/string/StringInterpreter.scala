@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package string
 
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
@@ -27,6 +28,9 @@ trait StringInterpreter {
      */
     def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult
 
+    def failureTree(implicit soundnessMode: SoundnessMode): StringTreeNode =
+        StringInterpreter.failureTree
+
     def failure(v: PV)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
         StringInterpreter.failure(v)
 
@@ -42,16 +46,16 @@ trait StringInterpreter {
 
 object StringInterpreter {
 
+    def failureTree(implicit soundnessMode: SoundnessMode): StringTreeNode = {
+        if (soundnessMode.isHigh) StringTreeNode.lb
+        else StringTreeNode.ub
+    }
+
     def failure(v: V)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
         failure(v.toPersistentForm(state.tac.stmts))
 
-    def failure(pv: PV)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result = {
-        if (soundnessMode.isHigh) {
-            computeFinalResult(StringFlowFunctionProperty.lb(state.pc, pv))
-        } else {
-            computeFinalResult(StringFlowFunctionProperty.ub(state.pc, pv))
-        }
-    }
+    def failure(pv: PV)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
+        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(state.pc, pv, failureTree))
 
     def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
         Result(FinalEP(InterpretationHandler.getEntity(state), StringFlowFunctionProperty(web, sff)))

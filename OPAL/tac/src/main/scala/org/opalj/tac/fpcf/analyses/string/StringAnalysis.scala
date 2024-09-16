@@ -77,15 +77,20 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
         implicit val state: ContextFreeStringAnalysisState = ContextFreeStringAnalysisState(vd, ps(vd.m, TACAI.key))
 
         if (state.tacaiDependee.isRefinable) {
-            InterimResult.forUB(
+            InterimResult(
                 state.entity,
+                StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
                 state.dependees,
                 continuation(state)
             )
         } else if (state.tacaiDependee.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
-            Result(state.entity, StringConstancyProperty.lb)
+            Result(
+                state.entity,
+                if (soundnessMode.isHigh) StringConstancyProperty.lb
+                else StringConstancyProperty.ub
+            )
         } else {
             computeResults
         }
@@ -361,7 +366,7 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
                 continuation(state)
             )
         } else {
-            Result(state.entity, StringConstancyProperty(state.finalTree))
+            Result(state.entity, StringConstancyProperty(state.currentTreeUB))
         }
     }
 }

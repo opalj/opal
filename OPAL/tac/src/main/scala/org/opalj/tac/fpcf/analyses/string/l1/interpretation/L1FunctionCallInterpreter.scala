@@ -35,6 +35,7 @@ trait L1FunctionCallInterpreter
     override type E <: FunctionCall[V]
 
     implicit val ps: PropertyStore
+    implicit val soundnessMode: SoundnessMode
 
     type CallState <: FunctionCallState
 
@@ -119,7 +120,7 @@ trait L1FunctionCallInterpreter
                 StringTreeOr {
                     callState.calleeMethods.map { m =>
                         if (callState.hasUnresolvableReturnValue(m)) {
-                            StringTreeNode.lb
+                            failureTree
                         } else if (callState.returnDependees.contains(m)) {
                             StringTreeOr(callState.returnDependees(m).map { rd =>
                                 if (rd.hasUBP) {

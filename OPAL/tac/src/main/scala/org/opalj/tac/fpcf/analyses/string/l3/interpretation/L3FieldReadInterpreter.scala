@@ -111,11 +111,7 @@ class L3FieldReadInterpreter(
             return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
                 state.pc,
                 accessState.target,
-                StringTreeOr.fromNodes(
-                    if (soundnessMode.isHigh) StringTreeNode.lb
-                    else StringTreeNode.ub,
-                    StringTreeNull
-                )
+                StringTreeOr.fromNodes(failureTree, StringTreeNull)
             ))
         }
 
@@ -166,13 +162,7 @@ class L3FieldReadInterpreter(
                     if (tree.parameterIndices.nonEmpty) {
                         // We cannot handle write values that contain parameter indices since resolving the parameters
                         // requires context and this interpreter is present in multiple contexts.
-                        tree.replaceParameters(tree.parameterIndices.map { paramIndex =>
-                            (
-                                paramIndex,
-                                if (soundnessMode.isHigh) StringTreeNode.lb
-                                else StringTreeNode.ub
-                            )
-                        }.toMap)
+                        tree.replaceParameters(tree.parameterIndices.map((_, failureTree)).toMap)
                     } else
                         tree
                 } else StringTreeNode.ub

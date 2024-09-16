@@ -5,7 +5,6 @@ package fpcf
 package properties
 package string
 
-import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
@@ -40,7 +39,8 @@ object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformat
     def apply(pc: Int, pv: PV, flow: StringFlowFunction): StringFlowFunctionProperty =
         StringFlowFunctionProperty(PDUWeb(pc, pv), flow)
 
-    def ub: StringFlowFunctionProperty = constForAll(StringTreeInvalidElement)
+    def lb: StringFlowFunctionProperty = constForAll(StringTreeNode.lb)
+    def ub: StringFlowFunctionProperty = constForAll(StringTreeNode.ub)
 
     def identity: StringFlowFunctionProperty =
         StringFlowFunctionProperty(Set.empty[PDUWeb], (env: StringTreeEnvironment) => env)
@@ -53,7 +53,7 @@ object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformat
         constForVariableAt(pc, v, StringTreeNode.lb)
 
     def ub(pc: Int, v: PV): StringFlowFunctionProperty =
-        constForVariableAt(pc, v, StringTreeInvalidElement)
+        constForVariableAt(pc, v, StringTreeNode.ub)
 
     def constForVariableAt(pc: Int, v: PV, result: StringTreeNode): StringFlowFunctionProperty =
         StringFlowFunctionProperty(pc, v, (env: StringTreeEnvironment) => env.update(pc, v, result))

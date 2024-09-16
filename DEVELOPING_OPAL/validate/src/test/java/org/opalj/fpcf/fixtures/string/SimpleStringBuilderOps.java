@@ -82,13 +82,17 @@ public class SimpleStringBuilderOps {
         analyzeString(sb.toString());
     }
 
-    @Dynamic(n = 0, levels = Level.TRUTH, value = ".*")
-    @Failure(n = 0, levels = Level.L0)
-    @PartiallyConstant(n = 1, levels = Level.TRUTH, value = "(.*Goodbye|init_value:Hello, world!Goodbye)")
+    @Constant(n = 0, levels = Level.TRUTH, value = "replaced_value")
+    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 })
+    @Constant(n = 1, levels = Level.TRUTH, value = "(...:Goodbye|init_value:Hello, world!Goodbye)")
     @Failure(n = 1, levels = Level.L0)
+    @Constant(n = 1, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW,
+            value = "init_value:Hello, world!Goodbye")
+    @PartiallyConstant(n = 1, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH,
+            value = "(.*Goodbye|init_value:Hello, world!Goodbye)")
     public void replaceExamples(int value) {
         StringBuilder sb1 = new StringBuilder("init_value");
-        sb1.replace(0, 5, "replaced_value");
+        sb1.replace(0, 5, "replaced_");
         analyzeString(sb1.toString());
 
         sb1 = new StringBuilder("init_value:");

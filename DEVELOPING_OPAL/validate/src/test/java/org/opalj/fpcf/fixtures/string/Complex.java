@@ -17,37 +17,15 @@ public class Complex {
     public void analyzeString(String s) {}
 
     /**
-     * Extracted from com.oracle.webservices.internal.api.message.BasePropertySet, has two def-sites and one use-site
-     */
-    @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "(s.*|set.*)")
-    @Failure(n = 0, levels = Level.L0)
-    public void twoDefinitionsOneUsage(String getName) throws ClassNotFoundException {
-        String name = getName;
-        String setName = name.startsWith("is") ?
-                "set" + name.substring(2) :
-                's' + name.substring(1);
-
-        Class clazz = Class.forName("java.lang.MyClass");
-        Method setter;
-        try {
-            setter = clazz.getMethod(setName);
-            analyzeString(setName);
-        } catch (NoSuchMethodException var15) {
-            setter = null;
-            System.out.println("Error occurred");
-        }
-    }
-
-    /**
      * Taken from com.sun.javafx.property.PropertyReference#reflect.
      */
     @Failure(n = 0, levels = Level.L0)
-    @PartiallyConstant(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(get.*|getHello, World.*)")
-    @PartiallyConstant(n = 0, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(get.*|getHello, Worldjava.lang.Runtime)")
+    @PartiallyConstant(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-.*)")
+    @PartiallyConstant(n = 0, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-java.lang.Runtime)")
     public void complexDependencyResolve(String s, Class clazz) {
-        String properName = s.length() == 1 ? s.substring(0, 1).toUpperCase() :
-                getHelloWorld() + getRuntimeClassName();
-        String getterName = "get" + properName;
+        String properName = s.length() == 1 ? s.substring(0, 1) :
+                getHelloWorld() + "-" + getRuntimeClassName();
+        String getterName = "get-" + properName;
         Method m;
         try {
             m = clazz.getMethod(getterName);

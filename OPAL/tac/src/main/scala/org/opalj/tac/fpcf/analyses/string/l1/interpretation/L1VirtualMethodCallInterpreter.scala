@@ -9,7 +9,6 @@ package interpretation
 
 import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.br.fpcf.properties.string.StringTreeEmptyConst
-import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -51,8 +50,7 @@ case class L1VirtualMethodCallInterpreter()(
                                         env.update(
                                             state.pc,
                                             pReceiver,
-                                            if (soundnessMode.isHigh) StringTreeNode.lb
-                                            else StringTreeNode.ub
+                                            failureTree
                                         )
                                 }
                             }
