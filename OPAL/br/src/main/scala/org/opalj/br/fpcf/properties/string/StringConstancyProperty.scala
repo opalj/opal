@@ -24,12 +24,12 @@ class StringConstancyProperty(
     final def key: PropertyKey[StringConstancyProperty] = StringConstancyProperty.key
 
     override def toString: String = {
-        val level = tree.constancyLevel.toString.toLowerCase
-        val strings = if (tree.simplify.isInvalid) {
+        val level = tree.constancyLevel
+        val strings = if (level == StringConstancyLevel.Invalid) {
             "No possible strings - Invalid Flow"
         } else tree.sorted.toRegex
 
-        s"Level: $level, Possible Strings: $strings"
+        s"Level: ${level.toString.toLowerCase}, Possible Strings: $strings"
     }
 
     override def hashCode(): Int = tree.hashCode()
