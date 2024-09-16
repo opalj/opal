@@ -61,6 +61,9 @@ import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringAnalysis
 import org.opalj.tac.fpcf.analyses.systemproperties.TriggeredSystemPropertiesAnalysisScheduler
 
+// IMPROVE the test runner structure is far from optimal and could be reduced down to a simple test matrix. This however
+// would require generating the wrapping "describes" and tag the tests using e.g. "asTagged" to be able to filter them
+// during runs.
 sealed abstract class StringAnalysisTest extends PropertiesTest {
 
     // The name of the method from which to extract PUVars to analyze.
