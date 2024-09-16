@@ -6,10 +6,10 @@ package info
 import scala.annotation.switch
 
 import java.net.URL
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.Try
 
-import org.opalj.br.Method
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
@@ -21,23 +21,18 @@ import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.string.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
-import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimLUBP
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
+import org.opalj.tac.ComputeTACAIKey
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.Stmt
@@ -46,38 +41,73 @@ import org.opalj.tac.TACode
 import org.opalj.tac.V
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.string.LazyMethodStringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.LazyStringAnalysis
 import org.opalj.tac.fpcf.analyses.string.VariableContext
-import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
-import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis
-import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.trivial.LazyTrivialStringAnalysis
+import org.opalj.tac.fpcf.analyses.systemproperties.TriggeredSystemPropertiesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
- * Analyzes a project for calls provided by the Java Reflection API and tries to determine which
- * string values are / could be passed to these calls.
- * <p>
- * Currently, this runner supports / handles the following reflective calls:
- * <ul>
- * <li>`Class.forName(string)`</li>
- * <li>`Class.forName(string, boolean, classLoader)`</li>
- * <li>`Class.getField(string)`</li>
- * <li>`Class.getDeclaredField(string)`</li>
- * <li>`Class.getMethod(String, Class[])`</li>
- * <li>`Class.getDeclaredMethod(String, Class[])`</li>
- * </ul>
+ * Analyzes a project for calls provided by the Java Reflection API and tries to determine which string values are /
+ * could be passed to these calls. Includes an option to also analyze relevant JavaX Crypto API calls.
  *
  * @author Maximilian Rüsch
  */
 object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
 
+    /**
+     * @param detectedValues Stores a list of pairs where the first element corresponds to the entities passed to the analysis and the second
+     * element corresponds to the method name in which the entity occurred, i.e. a value in [[relevantMethodNames]].
+     */
+    private case class State(detectedValues: ListBuffer[(VariableContext, String)])
+
     private case class Configuration(
-        includeCrypto:             Boolean,
-        private val runL0Analysis: Boolean
+        includeCrypto:              Boolean,
+        private val analysisConfig: Configuration.AnalysisConfig
     ) {
 
         def analyses: Seq[FPCFLazyAnalysisScheduler] = {
-            if (runL0Analysis) LazyL0StringAnalysis.allRequiredAnalyses
-            else LazyL2StringAnalysis.allRequiredAnalyses
+            analysisConfig match {
+                case Configuration.TrivialAnalysis => Seq(LazyTrivialStringAnalysis)
+                case Configuration.LevelAnalysis(level) =>
+                    Seq(
+                        LazyStringAnalysis,
+                        LazyMethodStringFlowAnalysis,
+                        Configuration.LevelToSchedulerMapping(level)
+                    )
+            }
+        }
+    }
+
+    private object Configuration {
+
+        private[Configuration] trait AnalysisConfig
+        private[Configuration] case object TrivialAnalysis extends AnalysisConfig
+        private[Configuration] case class LevelAnalysis(level: Int) extends AnalysisConfig
+
+        final val LevelToSchedulerMapping = Map(
+            0 -> LazyL0StringFlowAnalysis,
+            1 -> LazyL1StringFlowAnalysis,
+            2 -> LazyL2StringFlowAnalysis,
+            3 -> LazyL3StringFlowAnalysis
+        )
+
+        def apply(parameters: Seq[String]): Configuration = {
+            val includeCrypto = parameters.contains("-includeCryptoApi")
+            val levelParameter = parameters.find(_.startsWith("-level=")).getOrElse("-level=trivial")
+            val analysisConfig = levelParameter.replace("-level=", "") match {
+                case "trivial" => TrivialAnalysis
+                case string    => LevelAnalysis(string.toInt)
+            }
+
+            new Configuration(includeCrypto, analysisConfig)
         }
     }
 
@@ -107,22 +137,35 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         "java.lang.Class#getDeclaredMethod"
     )
 
-    /**
-     * Stores a list of pairs where the first element corresponds to the entities passed to the analysis and the second
-     * element corresponds to the method name in which the entity occurred, i.e. a value in [[relevantMethodNames]].
-     */
-    private val entityContext = ListBuffer[(VariableContext, String)]()
-
-    /**
-     * A list of fully-qualified method names that are to be skipped, e.g., because they make an
-     * analysis crash (e.g., com/sun/jmx/mbeanserver/MBeanInstantiator#deserialize)
-     */
-    private val ignoreMethods = List()
-
     override def title: String = "String Analysis for Reflective Calls"
 
     override def description: String = {
         "Finds calls to methods provided by the Java Reflection API and tries to resolve passed string values"
+    }
+
+    override def analysisSpecificParametersDescription: String =
+        s"""
+          | [-includeCryptoApi]
+          | [-level=trivial|${Configuration.LevelToSchedulerMapping.keys.toSeq.sorted.mkString("|")}]
+          |""".stripMargin
+
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
+        parameters.flatMap {
+            case "-includeCryptoApi" => None
+            case levelParameter if levelParameter.startsWith("-level=") =>
+                levelParameter.replace("-level=", "") match {
+                    case "trivial" =>
+                        None
+                    case string
+                        if Try(string.toInt).isSuccess
+                            && Configuration.LevelToSchedulerMapping.keySet.contains(string.toInt) =>
+                        None
+                    case value =>
+                        Some(s"Unknown level parameter value: $value")
+                }
+
+            case param => Some(s"unknown parameter: $param")
+        }
     }
 
     /**
@@ -178,32 +221,35 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      * `method`, is relevant at all, and if so uses the given function `call` to call the
      * analysis using the property store, `ps`, to finally store it in the given `resultMap`.
      */
-    private def processFunctionCall(pc: Int, method: Method, call: Call[V])(
+    private def processFunctionCall(pc: Int, dm: DeclaredMethod, call: Call[V])(
         implicit
         stmts:           Array[Stmt[V]],
         ps:              PropertyStore,
         contextProvider: ContextProvider,
-        declaredMethods: DeclaredMethods,
+        state:           State,
         configuration:   Configuration
     ): Unit = {
         if (isRelevantCall(call.declaringClass, call.name)) {
             // Loop through all parameters and start the analysis for those that take a string
             call.descriptor.parameterTypes.zipWithIndex.foreach {
                 case (ft, index) if ft == ObjectType.String =>
-                    val context = contextProvider.newContext(declaredMethods(method))
-                    val e = VariableContext(pc, call.params(index).asVar.toPersistentForm, context)
+                    val e = VariableContext(
+                        pc,
+                        call.params(index).asVar.toPersistentForm,
+                        contextProvider.newContext(dm)
+                    )
                     ps.force(e, StringConstancyProperty.key)
-                    entityContext.append((e, buildFQMethodName(call.declaringClass, call.name)))
+                    state.detectedValues.append((e, buildFQMethodName(call.declaringClass, call.name)))
                 case _ =>
             }
         }
     }
 
-    private def processStatements(tac: TACode[TACMethodParameter, V], m: Method)(
+    private def processStatements(tac: TACode[TACMethodParameter, V], dm: DeclaredMethod)(
         implicit
         contextProvider: ContextProvider,
         ps:              PropertyStore,
-        declaredMethods: DeclaredMethods,
+        state:           State,
         configuration:   Configuration
     ): Unit = {
         implicit val stmts: Array[Stmt[V]] = tac.stmts
@@ -212,52 +258,19 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
             (stmt.astID: @switch) match {
                 case Assignment.ASTID => stmt match {
                         case Assignment(pc, _, c: StaticFunctionCall[V]) =>
-                            processFunctionCall(pc, m, c)
+                            processFunctionCall(pc, dm, c)
                         case Assignment(pc, _, c: VirtualFunctionCall[V]) =>
-                            processFunctionCall(pc, m, c)
+                            processFunctionCall(pc, dm, c)
                         case _ =>
                     }
                 case ExprStmt.ASTID => stmt match {
                         case ExprStmt(pc, c: StaticFunctionCall[V]) =>
-                            processFunctionCall(pc, m, c)
+                            processFunctionCall(pc, dm, c)
                         case ExprStmt(pc, c: VirtualFunctionCall[V]) =>
-                            processFunctionCall(pc, m, c)
+                            processFunctionCall(pc, dm, c)
                         case _ =>
                     }
                 case _ =>
-            }
-        }
-    }
-
-    private def continuation(m: Method)(eps: SomeEPS)(
-        implicit
-        contextProvider: ContextProvider,
-        declaredMethods: DeclaredMethods,
-        ps:              PropertyStore,
-        configuration:   Configuration
-    ): ProperPropertyComputationResult = {
-        eps match {
-            case FinalP(tac: TACAI) =>
-                processStatements(tac.tac.get, m)
-                Result(m, tac)
-            case InterimLUBP(lb, ub) =>
-                InterimResult(
-                    m,
-                    lb,
-                    ub,
-                    Set(eps),
-                    continuation(m)
-                )
-            case _ => throw new IllegalStateException("should never happen!")
-        }
-    }
-
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
-        parameters.flatMap { p =>
-            p.toLowerCase match {
-                case "-includecryptoapi" => Nil
-                case "-l0"               => Nil
-                case _                   => List(s"Unknown parameter: $p")
             }
         }
     }
@@ -267,80 +280,57 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         parameters:    Seq[String],
         isInterrupted: () => Boolean
     ): ReportableAnalysisResult = {
-        implicit val configuration: Configuration = Configuration(
-            // Check whether string-consuming methods of the javax.crypto API should be considered. Default is false.
-            includeCrypto = parameters.exists(p => p.equalsIgnoreCase("-includeCryptoApi")),
-            // Check whether the L0 analysis should be run. By default, L1 is selected.
-            runL0Analysis = parameters.exists(p => p.equalsIgnoreCase("-l0"))
-        )
+        implicit val state: State = State(detectedValues = ListBuffer.empty)
+        implicit val configuration: Configuration = Configuration(parameters)
+
+        val cgKey = RTACallGraphKey
+        val typeIterator = cgKey.getTypeIterator(project)
+        project.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
 
         val manager = project.get(FPCFAnalysesManagerKey)
-        project.get(RTACallGraphKey)
+        val computeTac = project.get(ComputeTACAIKey)
+        val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
-        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-        implicit val (propertyStore, _) = manager.runAll(configuration.analyses)
-
-        // Stores the obtained results for each supported reflective operation
-        val resultMap = mutable.Map[String, ListBuffer[StringTreeNode]]()
-        relevantMethodNames.foreach { resultMap(_) = ListBuffer() }
-
-        project.allMethodsWithBody.foreach { m =>
-            val fqnMethodName = buildFQMethodName(m.classFile.thisType, m.name)
-            // To dramatically reduce work, quickly check if a method is ignored or not relevant at all
-            if (!ignoreMethods.contains(fqnMethodName) && instructionsContainRelevantMethod(m.body.get.instructions)) {
-                val tacaiEOptP = propertyStore(m, TACAI.key)
-                if (tacaiEOptP.hasUBP) {
-                    if (tacaiEOptP.ub.tac.isEmpty) {
-                        // No TAC available, e.g., because the method has no body
-                        println(s"No body for method: ${m.classFile.fqn}#${m.name}")
-                    } else {
-                        processStatements(tacaiEOptP.ub.tac.get, m)
-                    }
-                } else {
-                    InterimResult(
-                        m,
-                        StringConstancyProperty.ub,
-                        StringConstancyProperty.lb,
-                        Set(tacaiEOptP),
-                        continuation(m)
-                    )
-                }
-            }
-        }
 
         time {
-            propertyStore.waitOnPhaseCompletion()
-            entityContext.foreach {
-                case (e, callName) =>
-                    propertyStore.properties(e).toIndexedSeq.foreach {
-                        case FinalP(p: StringConstancyProperty) =>
-                            resultMap(callName).append(p.tree)
-                        case InterimEUBP(_, ub: StringConstancyProperty) =>
-                            resultMap(callName).append(ub.tree)
-                        case _ =>
-                            println(s"No result for $e in $callName found!")
+            manager.runAll(
+                cgKey.allCallGraphAnalyses(project) ++
+                    configuration.analyses ++
+                    Seq(
+                        EagerFieldAccessInformationAnalysis,
+                        ReflectionRelatedFieldAccessesAnalysisScheduler,
+                        TriggeredSystemPropertiesAnalysisScheduler
+                    ),
+                afterPhaseScheduling = _ => {
+                    project.allMethodsWithBody.foreach { m =>
+                        // To dramatically reduce work, quickly check if a method is relevant at all
+                        if (instructionsContainRelevantMethod(m.body.get.instructions)) {
+                            processStatements(computeTac(m), declaredMethods(m))
+                        }
                     }
-            }
-        } { t => println(s"Elapsed Time: ${t.toMilliseconds} ms") }
-
-        resultMapToReport(resultMap)
-    }
-
-    private def resultMapToReport(resultMap: mutable.Map[String, ListBuffer[StringTreeNode]]): BasicReport = {
-        val report = ListBuffer[String]("Results of the Reflection Analysis:")
-        for ((reflectiveCall, entries) <- resultMap) {
-            var constantCount, partConstantCount, dynamicCount = 0
-            entries.foreach {
-                _.constancyLevel match {
-                    case StringConstancyLevel.Constant          => constantCount += 1
-                    case StringConstancyLevel.PartiallyConstant => partConstantCount += 1
-                    case StringConstancyLevel.Dynamic           => dynamicCount += 1
                 }
-            }
+            )
+        } { t => println(s"Elapsed Time: ${t.toMilliseconds}") }
 
-            report.append(s"$reflectiveCall: ${entries.length}x")
+        val resultMap = Map.from(relevantMethodNames.map((_, ListBuffer.empty[FinalEP[_, StringConstancyProperty]])))
+        state.detectedValues.foreach {
+            case (e, callName) =>
+                resultMap(callName).append(propertyStore(e, StringConstancyProperty.key).asFinal)
+        }
+
+        val report = ListBuffer[String]("Results of the Reflection Analysis:")
+        for ((reflectiveCall, stringTrees) <- resultMap.toSeq.sortBy(_._1)) {
+            val invalidCount = stringTrees.count(_.p.tree.constancyLevel == StringConstancyLevel.Invalid)
+            val constantCount = stringTrees.count(_.p.tree.constancyLevel == StringConstancyLevel.Constant)
+            val partiallyConstantCount =
+                stringTrees.count(_.p.tree.constancyLevel == StringConstancyLevel.PartiallyConstant)
+            val dynamicCount = stringTrees.count(_.p.tree.constancyLevel == StringConstancyLevel.Dynamic)
+
+            report.append(s"$reflectiveCall: ${stringTrees.length}x")
+            report.append(s" -> Invalid:            ${invalidCount}x")
             report.append(s" -> Constant:           ${constantCount}x")
-            report.append(s" -> Partially Constant: ${partConstantCount}x")
+            report.append(s" -> Partially Constant: ${partiallyConstantCount}x")
             report.append(s" -> Dynamic:            ${dynamicCount}x")
         }
         BasicReport(report)
