@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package string
 
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Result
@@ -27,7 +28,10 @@ trait StringInterpreter {
      */
     def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult
 
-    def failure(v: PV)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
+    def failureTree(implicit highSoundness: HighSoundness): StringTreeNode =
+        StringInterpreter.failureTree
+
+    def failure(v: PV)(implicit state: InterpretationState, highSoundness: HighSoundness): Result =
         StringInterpreter.failure(v)
 
     def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
@@ -42,16 +46,16 @@ trait StringInterpreter {
 
 object StringInterpreter {
 
-    def failure(v: V)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
+    def failureTree(implicit highSoundness: HighSoundness): StringTreeNode = {
+        if (highSoundness) StringTreeNode.lb
+        else StringTreeNode.ub
+    }
+
+    def failure(v: V)(implicit state: InterpretationState, highSoundness: HighSoundness): Result =
         failure(v.toPersistentForm(state.tac.stmts))
 
-    def failure(pv: PV)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result = {
-        if (soundnessMode.isHigh) {
-            computeFinalResult(StringFlowFunctionProperty.lb(state.pc, pv))
-        } else {
-            computeFinalResult(StringFlowFunctionProperty.ub(state.pc, pv))
-        }
-    }
+    def failure(pv: PV)(implicit state: InterpretationState, highSoundness: HighSoundness): Result =
+        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(state.pc, pv, failureTree))
 
     def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
         Result(FinalEP(InterpretationHandler.getEntity(state), StringFlowFunctionProperty(web, sff)))

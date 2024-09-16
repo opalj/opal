@@ -28,7 +28,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -44,7 +43,7 @@ class L3FieldReadInterpreter(
     implicit val project:         SomeProject,
     implicit val declaredFields:  DeclaredFields,
     implicit val contextProvider: ContextProvider,
-    implicit val soundnessMode:   SoundnessMode
+    implicit val highSoundness:   HighSoundness
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = FieldRead[V]
@@ -111,11 +110,7 @@ class L3FieldReadInterpreter(
             return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
                 state.pc,
                 accessState.target,
-                StringTreeOr.fromNodes(
-                    if (soundnessMode.isHigh) StringTreeNode.lb
-                    else StringTreeNode.ub,
-                    StringTreeNull
-                )
+                StringTreeOr.fromNodes(failureTree, StringTreeNull)
             ))
         }
 
@@ -155,7 +150,7 @@ class L3FieldReadInterpreter(
         accessState: FieldReadState,
         state:       InterpretationState
     ): ProperPropertyComputationResult = {
-        if (accessState.hasWriteInSameMethod && soundnessMode.isHigh) {
+        if (accessState.hasWriteInSameMethod && highSoundness) {
             // We cannot handle writes to a field that is read in the same method at the moment as the flow functions do
             // not capture field state. This can be improved upon in the future.
             computeFinalResult(StringFlowFunctionProperty.lb(state.pc, accessState.target))
@@ -166,13 +161,7 @@ class L3FieldReadInterpreter(
                     if (tree.parameterIndices.nonEmpty) {
                         // We cannot handle write values that contain parameter indices since resolving the parameters
                         // requires context and this interpreter is present in multiple contexts.
-                        tree.replaceParameters(tree.parameterIndices.map { paramIndex =>
-                            (
-                                paramIndex,
-                                if (soundnessMode.isHigh) StringTreeNode.lb
-                                else StringTreeNode.ub
-                            )
-                        }.toMap)
+                        tree.replaceParameters(tree.parameterIndices.map((_, failureTree)).toMap)
                     } else
                         tree
                 } else StringTreeNode.ub
@@ -184,7 +173,7 @@ class L3FieldReadInterpreter(
                 trees = trees :+ StringTreeNull
             }
 
-            if (accessState.hasUnresolvableAccess && soundnessMode.isHigh) {
+            if (accessState.hasUnresolvableAccess && highSoundness) {
                 trees = trees :+ StringTreeNode.lb
             }
 

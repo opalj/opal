@@ -371,7 +371,7 @@ object StringTreeParameter {
 object StringTreeInvalidElement extends SimpleStringTreeNode {
     override def _toRegex: String = throw new UnsupportedOperationException()
 
-    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Constant
+    override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Invalid
 
     override def isInvalid: Boolean = true
 }

@@ -10,7 +10,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.properties.SystemProperties
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -145,33 +144,6 @@ object TriggeredSystemPropertiesAnalysisScheduler extends BasicFPCFTriggeredAnal
     ): SystemPropertiesAnalysis = {
         val analysis = new SystemPropertiesAnalysis(p)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
-        analysis
-    }
-
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
-
-    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(SystemProperties)
-}
-
-object EagerSystemPropertiesAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey)
-
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        Callers,
-        TACAI,
-        StringConstancyProperty,
-        SystemProperties
-    )
-
-    override def start(
-        p:      SomeProject,
-        ps:     PropertyStore,
-        unused: Null
-    ): SystemPropertiesAnalysis = {
-        val analysis = new SystemPropertiesAnalysis(p)
-        val dm = p.get(DeclaredMethodsKey)
-        ps.scheduleEagerComputationsForEntities(p.allMethods.map(dm.apply))(analysis.analyze)
         analysis
     }
 

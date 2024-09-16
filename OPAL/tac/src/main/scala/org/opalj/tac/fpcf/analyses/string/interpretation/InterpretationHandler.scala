@@ -8,7 +8,6 @@ package interpretation
 
 import org.opalj.br.Method
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -32,15 +31,16 @@ abstract class InterpretationHandler extends FPCFAnalysis with UniversalStringCo
         implicit val state: InterpretationState = InterpretationState(entity.pc, entity.dm, tacaiEOptP)
 
         if (tacaiEOptP.isRefinable) {
-            InterimResult.forUB(
+            InterimResult(
                 InterpretationHandler.getEntity,
+                StringFlowFunctionProperty.lb,
                 StringFlowFunctionProperty.ub,
                 Set(state.tacDependee),
                 continuation(state)
             )
         } else if (tacaiEOptP.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
-            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.constForAll(StringTreeNode.lb))
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.constForAll(StringInterpreter.failureTree))
         } else {
             processStatementForState
         }

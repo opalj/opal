@@ -13,6 +13,11 @@ sealed trait StringConstancyLevel
 object StringConstancyLevel {
 
     /**
+     * Indicates that a string has no value at a given read operation.
+     */
+    case object Invalid extends StringConstancyLevel
+
+    /**
      * Indicates that a string has a constant value at a given read operation.
      */
     case object Constant extends StringConstancyLevel
@@ -43,8 +48,10 @@ object StringConstancyLevel {
             Dynamic
         } else if (level1 == PartiallyConstant || level2 == PartiallyConstant) {
             PartiallyConstant
-        } else {
+        } else if (level1 == Constant || level2 == Constant) {
             Constant
+        } else {
+            Invalid
         }
     }
 
@@ -65,7 +72,9 @@ object StringConstancyLevel {
         level1: StringConstancyLevel,
         level2: StringConstancyLevel
     ): StringConstancyLevel = {
-        if (level1 == PartiallyConstant || level2 == PartiallyConstant) {
+        if (level1 == Invalid || level2 == Invalid) {
+            PartiallyConstant
+        } else if (level1 == PartiallyConstant || level2 == PartiallyConstant) {
             PartiallyConstant
         } else if ((level1 == Constant && level2 == Dynamic) || (level1 == Dynamic && level2 == Constant)) {
             PartiallyConstant

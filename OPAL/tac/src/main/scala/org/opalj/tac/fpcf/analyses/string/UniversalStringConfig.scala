@@ -21,24 +21,24 @@ trait UniversalStringConfig {
 
     private final val ConfigLogCategory = "analysis configuration - string analysis - universal"
 
-    implicit val soundnessMode: SoundnessMode = {
-        val mode =
+    implicit val highSoundness: HighSoundness = {
+        val isHighSoundness =
             try {
-                SoundnessMode(project.config.getBoolean(UniversalStringConfig.SoundnessModeConfigKey))
+                project.config.getBoolean(UniversalStringConfig.HighSoundnessConfigKey)
             } catch {
                 case t: Throwable =>
                     logOnce {
-                        Error(ConfigLogCategory, s"couldn't read: ${UniversalStringConfig.SoundnessModeConfigKey}", t)
+                        Error(ConfigLogCategory, s"couldn't read: ${UniversalStringConfig.HighSoundnessConfigKey}", t)
                     }
-                    SoundnessMode(false)
+                    false
             }
 
-        logOnce(Info(ConfigLogCategory, "using soundness mode " + mode))
-        mode
+        logOnce(Info(ConfigLogCategory, s"using ${if (isHighSoundness) "high" else "low"} soundness mode"))
+        isHighSoundness
     }
 }
 
 object UniversalStringConfig {
 
-    final val SoundnessModeConfigKey = "org.opalj.fpcf.analyses.string.highSoundness"
+    final val HighSoundnessConfigKey = "org.opalj.fpcf.analyses.string.highSoundness"
 }

@@ -41,12 +41,14 @@ import org.opalj.fpcf.properties.string_analysis.Level
 import org.opalj.fpcf.properties.string_analysis.PartiallyConstant
 import org.opalj.fpcf.properties.string_analysis.PartiallyConstants
 import org.opalj.fpcf.properties.string_analysis.SoundnessMode
+import org.opalj.log.OPALLogger
 import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.PV
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.string.StringAnalysis
@@ -57,12 +59,17 @@ import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringAnalysis
-import org.opalj.tac.fpcf.analyses.systemproperties.EagerSystemPropertiesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.systemproperties.TriggeredSystemPropertiesAnalysisScheduler
 
+// IMPROVE the test runner structure is far from optimal and could be reduced down to a simple test matrix. This however
+// would require generating the wrapping "describes" and tag the tests using e.g. "asTagged" to be able to filter them
+// during runs.
 sealed abstract class StringAnalysisTest extends PropertiesTest {
 
     // The name of the method from which to extract PUVars to analyze.
     val nameTestMethod: String = "analyzeString"
+
+    final val callGraphKey: CallGraphKey = RTACallGraphKey
 
     def level: Level
     def analyses: Iterable[ComputationSpecification[FPCFAnalysis]]
@@ -76,7 +83,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         }
 
         super.createConfig()
-            .withValue(UniversalStringConfig.SoundnessModeConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
+            .withValue(UniversalStringConfig.HighSoundnessConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
             .withValue(StringAnalysis.DepthThresholdConfigKey, ConfigValueFactory.fromAnyRef(10))
             .withValue(
                 MethodStringFlowAnalysis.ExcludedPackagesConfigKey,
@@ -86,7 +93,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/string")
 
-    override final def init(p: Project[URL]): Unit = {
+    override def init(p: Project[URL]): Unit = {
         val domain = domainLevel match {
             case DomainLevel.L1 => classOf[DefaultDomainWithCFGAndDefUse[_]]
             case DomainLevel.L2 => classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
@@ -101,19 +108,20 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
             case Some(_) => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
         }
 
-        initBeforeCallGraph(p)
-
-        p.get(RTACallGraphKey)
+        val typeIterator = callGraphKey.getTypeIterator(p)
+        p.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
     }
-
-    def initBeforeCallGraph(p: Project[URL]): Unit = {}
 
     describe(s"using level=$level, domainLevel=$domainLevel, soundness=$soundnessMode") {
         describe(s"the string analysis is started") {
             var entities = Iterable.empty[(VariableContext, Method)]
-            val as = executeAnalyses(
-                analyses,
-                (project, currentPhaseAnalyses) => {
+            val project = FixtureProject.recreate { piKeyUniqueId => piKeyUniqueId != PropertyStoreKey.uniqueId }
+            init(project)
+
+            val as = executeAnalysesForProject(
+                project,
+                callGraphKey.allCallGraphAnalyses(project) ++ analyses,
+                currentPhaseAnalyses => {
                     if (currentPhaseAnalyses.exists(_.derives.exists(_.pk == StringConstancyProperty))) {
                         val ps = project.get(PropertyStoreKey)
                         entities = determineEntitiesToAnalyze(project)
@@ -125,7 +133,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
             as.propertyStore.waitOnPhaseCompletion()
             as.propertyStore.shutdown()
 
-            validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
+            validateProperties(as, determineEAS(entities, project), Set("StringConstancy"))
         }
     }
 
@@ -162,11 +170,23 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         val m2e = entities.groupBy(_._2).iterator.map(e =>
             e._1 -> (e._1, e._2.map(k => k._1))
         ).toMap
+
+        var detectedMissingAnnotations = false
         // As entity, we need not the method but a tuple (PUVar, Method), thus this transformation
-        methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
+        val eas = methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
             val annotationsByIndex = getCheckableAnnotationsByIndex(project, am._3)
             m2e(am._1)._2.zipWithIndex.map {
                 case (vc, index) =>
+                    // Ensure every test that is annotated for at least one configuration is annotated for all
+                    // configurations so we do not miss tests when adding new levels.
+                    if (annotationsByIndex(index).isEmpty) {
+                        OPALLogger.error(
+                            "string analysis test setup",
+                            s"Could not find annotations to check for #$index of ${am._1.toJava.substring(24)}"
+                        )(project.logContext)
+                        detectedMissingAnnotations = true
+                    }
+
                     Tuple3(
                         vc,
                         { s: String => s"${am._2(s)} (#$index)" },
@@ -174,6 +194,12 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
                     )
             }
         }
+
+        if (detectedMissingAnnotations) {
+            throw new IllegalStateException("Detected missing tests for this configuration!")
+        }
+
+        eas
     }
 
     private def getCheckableAnnotationsByIndex(project: Project[URL], as: Annotations): Map[Int, Annotations] = {
@@ -301,7 +327,7 @@ sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
         LazyL1StringAnalysis.allRequiredAnalyses :+
-            EagerSystemPropertiesAnalysisScheduler
+            TriggeredSystemPropertiesAnalysisScheduler
     }
 }
 
@@ -335,7 +361,7 @@ sealed abstract class L2StringAnalysisTest extends StringAnalysisTest {
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
         LazyL2StringAnalysis.allRequiredAnalyses :+
-            EagerSystemPropertiesAnalysisScheduler
+            TriggeredSystemPropertiesAnalysisScheduler
     }
 }
 
@@ -370,10 +396,12 @@ sealed abstract class L3StringAnalysisTest extends StringAnalysisTest {
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
         LazyL3StringAnalysis.allRequiredAnalyses :+
             EagerFieldAccessInformationAnalysis :+
-            EagerSystemPropertiesAnalysisScheduler
+            TriggeredSystemPropertiesAnalysisScheduler
     }
 
-    override def initBeforeCallGraph(p: Project[URL]): Unit = {
+    override def init(p: Project[URL]): Unit = {
+        super.init(p)
+
         p.updateProjectInformationKeyInitializationData(FieldAccessInformationKey) {
             case None               => Seq(EagerFieldAccessInformationAnalysis)
             case Some(requirements) => requirements :+ EagerFieldAccessInformationAnalysis

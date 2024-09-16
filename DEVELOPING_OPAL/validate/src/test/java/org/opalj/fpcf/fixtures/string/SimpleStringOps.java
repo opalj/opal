@@ -115,16 +115,17 @@ public class SimpleStringOps {
     @Constant(n = 0, levels = Level.TRUTH, value = "(Some|SomeOther)")
     @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "Some")
     @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|Some)")
-    @Dynamic(n = 1, levels = Level.TRUTH, value = "(.*|Some)")
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, value = "(Some.*|SomeOther)")
+    @Constant(n = 1, levels = Level.TRUTH, value = "(Impostor|Some)")
+    @Constant(n = 2, levels = Level.TRUTH, value = "(SomeImpostor|SomeOther)")
     @Failure(n = 2, levels = Level.L0)
-    public void ternaryOperators(boolean flag, String param) {
+    public void ternaryOperators(boolean flag) {
         String s1 = "Some";
         String s2 = s1 + "Other";
+        String s3 = "Impostor";
 
         analyzeString(flag ? s1 : s2);
-        analyzeString(flag ? s1 : param);
-        analyzeString(flag ? s1 + param : s2);
+        analyzeString(flag ? s1 : s3);
+        analyzeString(flag ? s1 + s3 : s2);
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac)")

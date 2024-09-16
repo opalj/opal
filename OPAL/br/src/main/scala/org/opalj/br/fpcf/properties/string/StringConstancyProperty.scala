@@ -8,6 +8,7 @@ package string
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
@@ -23,12 +24,12 @@ class StringConstancyProperty(
     final def key: PropertyKey[StringConstancyProperty] = StringConstancyProperty.key
 
     override def toString: String = {
-        val level = tree.constancyLevel.toString.toLowerCase
-        val strings = if (tree.simplify.isInvalid) {
+        val level = tree.constancyLevel
+        val strings = if (level == StringConstancyLevel.Invalid) {
             "No possible strings - Invalid Flow"
         } else tree.sorted.toRegex
 
-        s"Level: $level, Possible Strings: $strings"
+        s"Level: ${level.toString.toLowerCase}, Possible Strings: $strings"
     }
 
     override def hashCode(): Int = tree.hashCode()
@@ -46,7 +47,14 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
     final val key: PropertyKey[StringConstancyProperty] = {
         PropertyKey.create(
             PropertyKeyName,
-            (_: PropertyStore, _: FallbackReason, _: Entity) => lb
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => {
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
+                        lb
+                    case _ =>
+                        throw new IllegalStateException(s"Analysis required for property: $PropertyKeyName")
+                }
+            }
         )
     }
 

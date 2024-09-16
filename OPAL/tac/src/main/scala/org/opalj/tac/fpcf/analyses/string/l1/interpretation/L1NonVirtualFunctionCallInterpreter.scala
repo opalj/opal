@@ -10,7 +10,6 @@ package interpretation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -22,7 +21,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 case class L1NonVirtualFunctionCallInterpreter()(
     implicit val p:             SomeProject,
     implicit val ps:            PropertyStore,
-    implicit val soundnessMode: SoundnessMode
+    implicit val highSoundness: HighSoundness
 ) extends AssignmentLikeBasedStringInterpreter
     with L1FunctionCallInterpreter {
 

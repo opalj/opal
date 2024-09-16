@@ -21,7 +21,6 @@ import org.opalj.br.fpcf.properties.string.StringTreeDynamicFloat
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicInt
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
@@ -33,7 +32,7 @@ import org.opalj.value.TheIntegerValue
  * @author Maximilian Rüsch
  */
 class L1VirtualFunctionCallInterpreter(
-    implicit val soundnessMode: SoundnessMode
+    implicit val highSoundness: HighSoundness
 ) extends AssignmentLikeBasedStringInterpreter
     with L1ArbitraryVirtualFunctionCallInterpreter
     with L1AppendCallInterpreter
@@ -60,14 +59,14 @@ class L1VirtualFunctionCallInterpreter(
                         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
                             state.pc,
                             at.get,
-                            if (soundnessMode.isHigh) StringTreeDynamicInt
+                            if (highSoundness) StringTreeDynamicInt
                             else StringTreeNode.ub
                         ))
                     case FloatType | DoubleType if at.isDefined =>
                         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
                             state.pc,
                             at.get,
-                            if (soundnessMode.isHigh) StringTreeDynamicFloat
+                            if (highSoundness) StringTreeDynamicFloat
                             else StringTreeNode.ub
                         ))
                     case _ if at.isDefined =>
@@ -96,13 +95,13 @@ class L1VirtualFunctionCallInterpreter(
      */
     private def interpretReplaceCall(target: PV)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         // Improve: Support fluent API by returning combined web for both assignment target and call target
-        computeFinalResult(StringFlowFunctionProperty.lb(state.pc, target))
+        failure(target)
     }
 }
 
 private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
-    implicit val soundnessMode: SoundnessMode
+    implicit val highSoundness: HighSoundness
 
     protected def interpretArbitraryCall(target: PV, call: E)(implicit
         state: InterpretationState
@@ -114,7 +113,7 @@ private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends Assignme
  */
 private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
-    val soundnessMode: SoundnessMode
+    val highSoundness: HighSoundness
 
     override type E = VirtualFunctionCall[V]
 
@@ -143,7 +142,7 @@ private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringI
                         if (valueState.constancyLevel == StringConstancyLevel.Constant) {
                             valueState
                         } else {
-                            if (soundnessMode.isHigh) StringTreeDynamicFloat
+                            if (highSoundness) StringTreeDynamicFloat
                             else StringTreeNode.ub
                         }
                     case _ =>
@@ -162,6 +161,8 @@ private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringI
 private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
     override type E <: VirtualFunctionCall[V]
+
+    implicit val highSoundness: HighSoundness
 
     def interpretSubstringCall(at: Option[PV], pt: PV, call: E)(implicit
         state: InterpretationState
@@ -182,12 +183,12 @@ private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStri
                                     case StringTreeConst(string) if intVal <= string.length =>
                                         env.update(state.pc, at.get, StringTreeConst(string.substring(intVal)))
                                     case _ =>
-                                        env.update(state.pc, at.get, StringTreeNode.lb)
+                                        env.update(state.pc, at.get, failureTree)
                                 }
                             }
                         )
                     case _ =>
-                        computeFinalResult(StringFlowFunctionProperty.ub(state.pc, at.get))
+                        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(state.pc, at.get, failureTree))
                 }
 
             case 2 =>
@@ -207,12 +208,12 @@ private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStri
                                             StringTreeConst(string.substring(firstIntVal, secondIntVal))
                                         )
                                     case _ =>
-                                        env.update(state.pc, at.get, StringTreeNode.lb)
+                                        env.update(state.pc, at.get, failureTree)
                                 }
                             }
                         )
                     case _ =>
-                        computeFinalResult(StringFlowFunctionProperty.ub(state.pc, at.get))
+                        computeFinalResult(StringFlowFunctionProperty.constForVariableAt(state.pc, at.get, failureTree))
                 }
 
             case _ => throw new IllegalStateException(

@@ -63,15 +63,20 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         if (excludedPackages.exists(method.classFile.thisType.packageName.startsWith(_))) {
             Result(state.entity, MethodStringFlow.lb)
         } else if (state.tacDependee.isRefinable) {
-            InterimResult.forUB(
+            InterimResult(
                 state.entity,
+                MethodStringFlow.lb,
                 MethodStringFlow.ub,
                 Set(state.tacDependee),
                 continuation(state)
             )
         } else if (state.tacDependee.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
-            Result(state.entity, MethodStringFlow.lb)
+            Result(
+                state.entity,
+                if (highSoundness) MethodStringFlow.lb
+                else MethodStringFlow.ub
+            )
         } else {
             determinePossibleStrings(state)
         }
@@ -92,7 +97,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
             StructuralAnalysis.analyze(state.flowGraph, FlowGraph.entry)
         state.superFlowGraph = superFlowGraph
         state.controlTree = controlTree
-        state.flowAnalysis = new DataFlowAnalysis(state.controlTree, state.superFlowGraph, soundnessMode)
+        state.flowAnalysis = new DataFlowAnalysis(state.controlTree, state.superFlowGraph, highSoundness)
 
         state.flowGraph.nodes.toOuter.foreach {
             case Statement(pc) if pc >= 0 =>

@@ -13,6 +13,7 @@ import org.opalj.br.fpcf.properties.Context
  */
 package object string {
 
+    type HighSoundness = Boolean
     type TAC = TACode[TACMethodParameter, V]
 
     private[string] case class VariableDefinition(pc: Int, pv: PV, m: Method)

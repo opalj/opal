@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  * @author Maximilian Rüsch
  */
 case class BinaryExprInterpreter()(
-    implicit val soundnessMode: SoundnessMode
+    implicit val highSoundness: HighSoundness
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = BinaryExpr[V]
@@ -38,11 +38,11 @@ case class BinaryExprInterpreter()(
     ): ProperPropertyComputationResult = {
         // IMPROVE Use the underlying domain to retrieve the result of such expressions if possible in low soundness mode
         computeFinalResult(expr.cTpe match {
-            case ComputationalTypeInt if soundnessMode.isHigh =>
+            case ComputationalTypeInt if highSoundness =>
                 StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeDynamicInt)
             case ComputationalTypeInt =>
                 StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeNode.ub)
-            case ComputationalTypeFloat if soundnessMode.isHigh =>
+            case ComputationalTypeFloat if highSoundness =>
                 StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeDynamicFloat)
             case ComputationalTypeFloat =>
                 StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeNode.ub)

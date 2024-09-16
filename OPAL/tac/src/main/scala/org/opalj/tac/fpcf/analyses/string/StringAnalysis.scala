@@ -77,15 +77,20 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
         implicit val state: ContextFreeStringAnalysisState = ContextFreeStringAnalysisState(vd, ps(vd.m, TACAI.key))
 
         if (state.tacaiDependee.isRefinable) {
-            InterimResult.forUB(
+            InterimResult(
                 state.entity,
+                StringConstancyProperty.lb,
                 StringConstancyProperty.ub,
                 state.dependees,
                 continuation(state)
             )
         } else if (state.tacaiDependee.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
-            Result(state.entity, StringConstancyProperty.lb)
+            Result(
+                state.entity,
+                if (highSoundness) StringConstancyProperty.lb
+                else StringConstancyProperty.ub
+            )
         } else {
             computeResults
         }
@@ -168,7 +173,7 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
                     // String constancy information got too complex, abort. This guard can probably be removed once
                     // recursing functions are properly handled using e.g. the widen-converge approach.
                     state.hitDepthThreshold = true
-                    if (soundnessMode.isHigh) {
+                    if (highSoundness) {
                         tree.limitToDepth(depthThreshold, StringTreeNode.lb)
                     } else {
                         // In low soundness, we cannot decrease the matched string values by limiting the string tree
@@ -271,7 +276,7 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
         implicit val _state: MethodParameterContextStringAnalysisState = state
         eps match {
             case UBP(callers: Callers) =>
-                val oldCallers = state._callersDependee.get.ub
+                val oldCallers = if (state._callersDependee.get.hasUBP) state._callersDependee.get.ub else NoCallers
                 state.updateCallers(eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]])
                 handleNewCallers(oldCallers, callers)
                 computeResults
@@ -361,7 +366,7 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
                 continuation(state)
             )
         } else {
-            Result(state.entity, StringConstancyProperty(state.finalTree))
+            Result(state.entity, StringConstancyProperty(state.currentTreeUB))
         }
     }
 }

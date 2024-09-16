@@ -12,7 +12,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
@@ -26,7 +25,7 @@ case class L1StaticFunctionCallInterpreter()(
     override val p:       SomeProject,
     override val ps:      PropertyStore,
     override val project: SomeProject,
-    val soundnessMode:    SoundnessMode
+    val highSoundness:    HighSoundness
 ) extends AssignmentBasedStringInterpreter
     with L1ArbitraryStaticFunctionCallInterpreter
     with L1StringValueOfFunctionCallInterpreter
@@ -54,7 +53,6 @@ private[string] trait L1ArbitraryStaticFunctionCallInterpreter
     with L1FunctionCallInterpreter {
 
     implicit val p: SomeProject
-    implicit val soundnessMode: SoundnessMode
 
     override type E <: StaticFunctionCall[V]
     override type CallState = FunctionCallState
