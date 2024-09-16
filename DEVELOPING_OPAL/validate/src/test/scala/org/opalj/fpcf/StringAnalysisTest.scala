@@ -47,6 +47,7 @@ import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 import org.opalj.tac.V
 import org.opalj.tac.VirtualMethodCall
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.string.StringAnalysis
@@ -57,12 +58,14 @@ import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringAnalysis
-import org.opalj.tac.fpcf.analyses.systemproperties.EagerSystemPropertiesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.systemproperties.TriggeredSystemPropertiesAnalysisScheduler
 
 sealed abstract class StringAnalysisTest extends PropertiesTest {
 
     // The name of the method from which to extract PUVars to analyze.
     val nameTestMethod: String = "analyzeString"
+
+    final val callGraphKey: CallGraphKey = RTACallGraphKey
 
     def level: Level
     def analyses: Iterable[ComputationSpecification[FPCFAnalysis]]
@@ -86,7 +89,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = List("org/opalj/fpcf/fixtures/string")
 
-    override final def init(p: Project[URL]): Unit = {
+    override def init(p: Project[URL]): Unit = {
         val domain = domainLevel match {
             case DomainLevel.L1 => classOf[DefaultDomainWithCFGAndDefUse[_]]
             case DomainLevel.L2 => classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
@@ -101,19 +104,20 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
             case Some(_) => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
         }
 
-        initBeforeCallGraph(p)
-
-        p.get(RTACallGraphKey)
+        val typeIterator = callGraphKey.getTypeIterator(p)
+        p.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
     }
-
-    def initBeforeCallGraph(p: Project[URL]): Unit = {}
 
     describe(s"using level=$level, domainLevel=$domainLevel, soundness=$soundnessMode") {
         describe(s"the string analysis is started") {
             var entities = Iterable.empty[(VariableContext, Method)]
-            val as = executeAnalyses(
-                analyses,
-                (project, currentPhaseAnalyses) => {
+            val project = FixtureProject.recreate { piKeyUniqueId => piKeyUniqueId != PropertyStoreKey.uniqueId }
+            init(project)
+
+            val as = executeAnalysesForProject(
+                project,
+                callGraphKey.allCallGraphAnalyses(project) ++ analyses,
+                currentPhaseAnalyses => {
                     if (currentPhaseAnalyses.exists(_.derives.exists(_.pk == StringConstancyProperty))) {
                         val ps = project.get(PropertyStoreKey)
                         entities = determineEntitiesToAnalyze(project)
@@ -125,7 +129,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
             as.propertyStore.waitOnPhaseCompletion()
             as.propertyStore.shutdown()
 
-            validateProperties(as, determineEAS(entities, as.project), Set("StringConstancy"))
+            validateProperties(as, determineEAS(entities, project), Set("StringConstancy"))
         }
     }
 
@@ -301,7 +305,7 @@ sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
         LazyL1StringAnalysis.allRequiredAnalyses :+
-            EagerSystemPropertiesAnalysisScheduler
+            TriggeredSystemPropertiesAnalysisScheduler
     }
 }
 
@@ -335,7 +339,7 @@ sealed abstract class L2StringAnalysisTest extends StringAnalysisTest {
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
         LazyL2StringAnalysis.allRequiredAnalyses :+
-            EagerSystemPropertiesAnalysisScheduler
+            TriggeredSystemPropertiesAnalysisScheduler
     }
 }
 
@@ -370,10 +374,12 @@ sealed abstract class L3StringAnalysisTest extends StringAnalysisTest {
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
         LazyL3StringAnalysis.allRequiredAnalyses :+
             EagerFieldAccessInformationAnalysis :+
-            EagerSystemPropertiesAnalysisScheduler
+            TriggeredSystemPropertiesAnalysisScheduler
     }
 
-    override def initBeforeCallGraph(p: Project[URL]): Unit = {
+    override def init(p: Project[URL]): Unit = {
+        super.init(p)
+
         p.updateProjectInformationKeyInitializationData(FieldAccessInformationKey) {
             case None               => Seq(EagerFieldAccessInformationAnalysis)
             case Some(requirements) => requirements :+ EagerFieldAccessInformationAnalysis

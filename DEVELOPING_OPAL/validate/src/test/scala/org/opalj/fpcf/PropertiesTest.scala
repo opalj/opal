@@ -365,21 +365,38 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         afterPhaseScheduling: (Project[URL], List[ComputationSpecification[FPCFAnalysis]]) => Unit = (_, _) => ()
     ): TestContext = {
         try {
-            val p = FixtureProject.recreate { piKeyUnidueId => piKeyUnidueId != PropertyStoreKey.uniqueId } // to ensure that this project is not "polluted"
-            implicit val logContext: LogContext = p.logContext
+            val p = FixtureProject.recreate { piKeyUniqueId => piKeyUniqueId != PropertyStoreKey.uniqueId } // to ensure that this project is not "polluted"
+
             init(p)
+
+            executeAnalysesForProject(p, analysisRunners, afterPhaseScheduling = afterPhaseScheduling(p, _))
+        } catch {
+            case t: Throwable =>
+                t.printStackTrace()
+                t.getSuppressed.foreach(e => e.printStackTrace())
+                throw t;
+        }
+    }
+
+    def executeAnalysesForProject(
+        project:              Project[URL],
+        analysisRunners:      Iterable[ComputationSpecification[FPCFAnalysis]],
+        afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
+    ): TestContext = {
+        try {
+            implicit val logContext: LogContext = project.logContext
 
             PropertyStore.updateDebug(true)
 
-            p.getOrCreateProjectInformationKeyInitializationData(
+            project.getOrCreateProjectInformationKeyInitializationData(
                 PropertyStoreKey,
                 (context: List[PropertyStoreContext[AnyRef]]) => PKESequentialPropertyStore(context: _*)
             )
 
-            val ps = p.get(PropertyStoreKey)
+            val ps = project.get(PropertyStoreKey)
 
-            val (_, csas) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners, afterPhaseScheduling(p, _))
-            TestContext(p, ps, csas.collect { case (_, as) => as })
+            val (_, csas) = project.get(FPCFAnalysesManagerKey).runAll(analysisRunners, afterPhaseScheduling(_))
+            TestContext(project, ps, csas.collect { case (_, as) => as })
         } catch {
             case t: Throwable =>
                 t.printStackTrace()
