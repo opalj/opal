@@ -109,7 +109,7 @@ class LCPOnFieldsProblem(project: SomeProject)
         (sourceFact: LCPOnFieldsFact) =>
             {
                 // TODO (IDE) REMOVE ONCE PRECOMPUTED SUMMARIES ARE IMPLEMENTED
-                if (callee.classFile.thisType.fqn.startsWith("java/") && callee.name != "<init>") {
+                if (callee.classFile.thisType.fqn.startsWith("java/") && !callee.isConstructor) {
                     immutable.Set.empty
                 } else {
                     sourceFact match {
