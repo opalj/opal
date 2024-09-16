@@ -276,7 +276,7 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
         implicit val _state: MethodParameterContextStringAnalysisState = state
         eps match {
             case UBP(callers: Callers) =>
-                val oldCallers = state._callersDependee.get.ub
+                val oldCallers = if (state._callersDependee.get.hasUBP) state._callersDependee.get.ub else NoCallers
                 state.updateCallers(eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]])
                 handleNewCallers(oldCallers, callers)
                 computeResults
