@@ -190,7 +190,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def toPersistentForm(
         implicit stmts: Array[Stmt[V]]
-    ): PDVar[Value] = PDVar(value, usedBy.map(pcOfDefSite _))
+    ): PDVar[Value] = PDVar(pcOfDefSite(origin), value, usedBy.map(pcOfDefSite _))
 
 }
 
