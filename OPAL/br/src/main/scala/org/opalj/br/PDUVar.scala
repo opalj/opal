@@ -34,15 +34,18 @@ abstract class PDUVar[+Value <: ValueInformation] {
 }
 
 class PDVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
-    val value:  Value,
-    val usePCs: PCs
+    val originPC: Int,
+    val value:    Value,
+    val usePCs:   PCs
 ) extends PDUVar[Value] {
 
     def defPCs: Nothing = throw new UnsupportedOperationException
 
+    override def hashCode(): Int = scala.util.hashing.MurmurHash3.productHash((originPC, usePCs))
+
     override def equals(other: Any): Boolean = {
         other match {
-            case that: PDVar[_] => this.usePCs == that.usePCs
+            case that: PDVar[_] => this.originPC == that.originPC && this.usePCs == that.usePCs
             case _              => false
         }
     }
@@ -54,9 +57,11 @@ class PDVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/
 
 object PDVar {
 
-    def apply[Value <: ValueInformation](value: Value, useSites: IntTrieSet): PDVar[Value] = new PDVar(value, useSites)
+    def apply[Value <: ValueInformation](originSite: Int, value: Value, useSites: IntTrieSet): PDVar[Value] =
+        new PDVar(originSite, value, useSites)
 
-    def unapply[Value <: ValueInformation](d: PDVar[Value]): Some[(Value, IntTrieSet)] = Some((d.value, d.usePCs))
+    def unapply[Value <: ValueInformation](d: PDVar[Value]): Some[(Int, Value, IntTrieSet)] =
+        Some((d.originPC, d.value, d.usePCs))
 }
 
 class PUVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
@@ -65,6 +70,8 @@ class PUVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/
 ) extends PDUVar[Value] {
 
     def usePCs: Nothing = throw new UnsupportedOperationException
+
+    override def hashCode(): Int = defPCs.hashCode()
 
     override def equals(other: Any): Boolean = {
         other match {
