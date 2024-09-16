@@ -1,0 +1,35 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.fpcf.fixtures.lcp_on_fields;
+
+import org.opalj.fpcf.properties.lcp_on_fields.ArrayValue;
+import org.opalj.fpcf.properties.lcp_on_fields.ArrayValues;
+import org.opalj.fpcf.properties.lcp_on_fields.ConstantArrayElement;
+
+public class ArrayReadWriteConstantExample {
+    @ArrayValues({
+            @ArrayValue(variable = "lv1", constantElements = {
+                    @ConstantArrayElement(index = 0, value = 0),
+                    @ConstantArrayElement(index = 1, value = 0),
+                    @ConstantArrayElement(index = 2, value = 42),
+                    @ConstantArrayElement(index = 3, value = 4),
+                    @ConstantArrayElement(index = 4, value = 0)
+            }),
+            @ArrayValue(variable = "lv3", constantElements = {
+                    @ConstantArrayElement(index = 0, value = 0),
+                    @ConstantArrayElement(index = 1, value = 2),
+                    @ConstantArrayElement(index = 2, value = 3),
+                    @ConstantArrayElement(index = 3, value = 4)
+            })
+    })
+    public static void main(String[] args) {
+        int[] arr1 = new int[5];
+        int[] arr2 = new int[]{1, 2, 3, 4};
+
+        arr1[2] = 42;
+        arr1[3] = arr2[3];
+        arr2[0] = arr1[4];
+
+        System.out.println("arr1: {" + arr1[0] + ", " + arr1[1] + ", " + arr1[2] + ", " + arr1[3] + ", " + arr1[4] +
+                "}; arr2: {" + arr2[0] + ", " + arr2[1] + ", " + arr2[2] + ", " + arr2[3] + "}");
+    }
+}

@@ -17,6 +17,7 @@ object LCPOnFieldsLattice extends MeetLattice[LCPOnFieldsValue] {
         case (x, UnknownValue)  => x
         case (VariableValue, _) => VariableValue
         case (_, VariableValue) => VariableValue
+
         case (ObjectValue(xValues), ObjectValue(yValues)) =>
             val values = xValues.keySet
                 .intersect(yValues.keySet)
@@ -25,6 +26,22 @@ object LCPOnFieldsLattice extends MeetLattice[LCPOnFieldsValue] {
                 }
                 .toMap
             ObjectValue(values)
+
+        case (ArrayValue(xInitValue, xElements), ArrayValue(yInitValue, yElements)) =>
+            val elements = xElements.keySet
+                .union(yElements.keySet)
+                .map { index =>
+                    index -> LinearConstantPropagationLattice.meet(
+                        xElements.getOrElse(index, xInitValue),
+                        yElements.getOrElse(index, yInitValue)
+                    )
+                }
+                .toMap
+            ArrayValue(
+                LinearConstantPropagationLattice.meet(xInitValue, yInitValue),
+                elements
+            )
+
         case _ => VariableValue
     }
 }

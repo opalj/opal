@@ -14,8 +14,10 @@ import org.opalj.ide.problem.FinalEdgeFunction
 import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.ide.problem.MeetLattice
+import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.New
+import org.opalj.tac.NewArray
 import org.opalj.tac.PutField
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationPropertyMetaInformation
@@ -28,7 +30,8 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
 /**
  * Definition of linear constant propagation on fields problem. This implementation detects basic cases of linear
  * constant propagation involving fields. It detects direct field assignments but fails to detect assignments done in a
- * method where the value is passed as an argument (e.g. a classical setter).
+ * method where the value is passed as an argument (e.g. a classical setter). Similar, array read accesses can only be
+ * resolved if the index is a constant literal.
  * This implementation is mainly intended to be an example of a cyclic IDE analysis.
  */
 class LCPOnFieldsProblem(project: SomeProject)
@@ -51,6 +54,15 @@ class LCPOnFieldsProblem(project: SomeProject)
                             /* Generate new object fact from null fact if assignment is a 'new' expression */
                             immutable.Set(sourceFact, NewObjectFact(assignment.targetVar.name, source.index))
 
+                        case NewArray.ASTID =>
+                            /* Generate new array fact from null fact if assignment is a 'new array' expression for an
+                             * integer array */
+                            if (assignment.expr.asNewArray.tpe.componentType.isIntegerType) {
+                                immutable.Set(sourceFact, NewArrayFact(assignment.targetVar.name, source.index))
+                            } else {
+                                immutable.Set(sourceFact)
+                            }
+
                         case _ => immutable.Set(sourceFact)
                     }
 
@@ -69,9 +81,21 @@ class LCPOnFieldsProblem(project: SomeProject)
                         immutable.Set(f.toObjectFact)
                     }
 
-                case (_, f: AbstractObjectFact) =>
-                    /* Specialized facts only live for one step and are turned back into object facts afterwards */
-                    immutable.Set(f.toObjectFact)
+                case (ArrayStore.ASTID, f: AbstractArrayFact) =>
+                    val arrayStore = source.stmt.asArrayStore
+                    val arrayVar = arrayStore.arrayRef.asVar
+                    if (arrayVar.definedBy.contains(f.definedAtIndex)) {
+                        immutable.Set(PutElementFact(f.name, f.definedAtIndex))
+                    } else {
+                        immutable.Set(f.toArrayFact)
+                    }
+
+                case (_, f: AbstractEntityFact) =>
+                    /* Specialized facts only live for one step and are turned back into basic ones afterwards */
+                    immutable.Set(f match {
+                        case f: AbstractObjectFact => f.toObjectFact
+                        case f: AbstractArrayFact  => f.toArrayFact
+                    })
 
                 case _ => immutable.Set(sourceFact)
             }
@@ -90,14 +114,18 @@ class LCPOnFieldsProblem(project: SomeProject)
                 } else {
                     sourceFact match {
                         case NullFact =>
-                            /* Only propagate null fact if function returns an object */
+                            /* Only propagate null fact if function returns an object or an array of integers */
                             if (callee.returnType.isObjectType) {
+                                immutable.Set(sourceFact)
+                            } else if (callee.returnType.isArrayType &&
+                                       callee.returnType.asArrayType.componentType.isIntegerType
+                            ) {
                                 immutable.Set(sourceFact)
                             } else {
                                 immutable.Set.empty
                             }
 
-                        case f: AbstractObjectFact =>
+                        case f: AbstractEntityFact =>
                             val callStmt = callSite.stmt.asCall()
 
                             /* All parameters (including the implicit 'this' reference) */
@@ -111,7 +139,10 @@ class LCPOnFieldsProblem(project: SomeProject)
                                     param.asVar.definedBy.contains(f.definedAtIndex)
                                 }
                                 .map { case (_, index) =>
-                                    ObjectFact(s"param$index", -(index + 1))
+                                    f match {
+                                        case _: AbstractObjectFact => ObjectFact(s"param$index", -(index + 1))
+                                        case _: AbstractArrayFact  => ArrayFact(s"param$index", -(index + 1))
+                                    }
                                 }
                                 .toSet
                     }
@@ -131,7 +162,7 @@ class LCPOnFieldsProblem(project: SomeProject)
                         /* Always propagate null fact */
                         immutable.Set(sourceFact)
 
-                    case f: AbstractObjectFact =>
+                    case f: AbstractEntityFact =>
                         val definedAtIndex = f.definedAtIndex
 
                         val callStmt = returnSite.stmt.asCall()
@@ -143,7 +174,12 @@ class LCPOnFieldsProblem(project: SomeProject)
                             val paramIndex = -(definedAtIndex + 1)
                             val param = allParams(paramIndex)
                             val paramName = param.asVar.name.substring(1, param.asVar.name.length - 1)
-                            param.asVar.definedBy.map { dAI => ObjectFact(paramName, dAI) }.toSet
+                            param.asVar.definedBy.map { dAI =>
+                                f match {
+                                    case _: AbstractObjectFact => ObjectFact(paramName, dAI)
+                                    case _: AbstractArrayFact  => ArrayFact(paramName, dAI)
+                                }
+                            }.toSet
                         } else {
                             returnSite.stmt.astID match {
                                 case Assignment.ASTID =>
@@ -153,7 +189,12 @@ class LCPOnFieldsProblem(project: SomeProject)
                                     /* Only propagate if the variable represented by the source fact is one possible
                                      * initializer of the variable at the return site */
                                     if (returnExpr.asVar.definedBy.contains(f.definedAtIndex)) {
-                                        immutable.Set(ObjectFact(assignment.targetVar.name, returnSite.index))
+                                        immutable.Set(f match {
+                                            case _: AbstractObjectFact =>
+                                                ObjectFact(assignment.targetVar.name, returnSite.index)
+                                            case _: AbstractArrayFact =>
+                                                ArrayFact(assignment.targetVar.name, returnSite.index)
+                                        })
                                     } else {
                                         immutable.Set.empty
                                     }
@@ -179,13 +220,16 @@ class LCPOnFieldsProblem(project: SomeProject)
                         /* Always propagate null fact */
                         immutable.Set(sourceFact)
 
-                    case f: AbstractObjectFact =>
+                    case f: AbstractEntityFact =>
                         /* Only propagate if the variable represented by the source fact is no initializer of one of the
                          * parameters */
                         if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
                             immutable.Set.empty
                         } else {
-                            immutable.Set(f.toObjectFact)
+                            immutable.Set(f match {
+                                case f: AbstractObjectFact => f.toObjectFact
+                                case f: AbstractArrayFact  => f.toArrayFact
+                            })
                         }
                 }
             }
