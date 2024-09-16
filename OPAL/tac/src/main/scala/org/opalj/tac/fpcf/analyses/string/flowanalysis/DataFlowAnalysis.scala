@@ -10,7 +10,6 @@ import scala.collection.mutable
 
 import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
 import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
-import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
@@ -20,7 +19,7 @@ import scalax.collection.GraphTraversal.Parameters
 class DataFlowAnalysis(
     private val controlTree:    ControlTree,
     private val superFlowGraph: SuperFlowGraph,
-    private val soundnessMode:  SoundnessMode
+    private val highSoundness:  HighSoundness
 ) {
 
     private val _nodeOrderings = mutable.Map.empty[FlowGraphNode, Seq[SuperFlowGraph#NodeT]]
@@ -128,7 +127,7 @@ class DataFlowAnalysis(
 
         def processSelfLoop(entry: FlowGraphNode): StringTreeEnvironment = {
             val resultEnv = pipe(entry, env)
-            if (resultEnv != env && soundnessMode.isHigh) env.updateAll(StringTreeDynamicString)
+            if (resultEnv != env && highSoundness) env.updateAll(StringTreeDynamicString)
             else resultEnv
         }
 
@@ -147,7 +146,7 @@ class DataFlowAnalysis(
                 resultEnv = pipe(currentNode.outer, resultEnv)
             }
 
-            if (resultEnv != envAfterEntry && soundnessMode.isHigh) envAfterEntry.updateAll(StringTreeDynamicString)
+            if (resultEnv != envAfterEntry && highSoundness) envAfterEntry.updateAll(StringTreeDynamicString)
             else resultEnv
         }
 
@@ -166,7 +165,7 @@ class DataFlowAnalysis(
             )
 
             if (isCyclic) {
-                if (soundnessMode.isHigh) env.updateAll(StringTreeDynamicString)
+                if (highSoundness) env.updateAll(StringTreeDynamicString)
                 else env.updateAll(StringTreeInvalidElement)
             } else {
                 // Handle resulting acyclic region
@@ -175,7 +174,7 @@ class DataFlowAnalysis(
                     removedBackEdgesGraph.nodes.toSet,
                     entry
                 )
-                if (resultEnv != env && soundnessMode.isHigh) env.updateAll(StringTreeDynamicString)
+                if (resultEnv != env && highSoundness) env.updateAll(StringTreeDynamicString)
                 else resultEnv
             }
         }

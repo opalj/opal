@@ -79,7 +79,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         }
 
         super.createConfig()
-            .withValue(UniversalStringConfig.SoundnessModeConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
+            .withValue(UniversalStringConfig.HighSoundnessConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
             .withValue(StringAnalysis.DepthThresholdConfigKey, ConfigValueFactory.fromAnyRef(10))
             .withValue(
                 MethodStringFlowAnalysis.ExcludedPackagesConfigKey,

@@ -88,7 +88,7 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
             // No TAC available, e.g., because the method has no body
             Result(
                 state.entity,
-                if (soundnessMode.isHigh) StringConstancyProperty.lb
+                if (highSoundness) StringConstancyProperty.lb
                 else StringConstancyProperty.ub
             )
         } else {
@@ -173,7 +173,7 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
                     // String constancy information got too complex, abort. This guard can probably be removed once
                     // recursing functions are properly handled using e.g. the widen-converge approach.
                     state.hitDepthThreshold = true
-                    if (soundnessMode.isHigh) {
+                    if (highSoundness) {
                         tree.limitToDepth(depthThreshold, StringTreeNode.lb)
                     } else {
                         // In low soundness, we cannot decrease the matched string values by limiting the string tree

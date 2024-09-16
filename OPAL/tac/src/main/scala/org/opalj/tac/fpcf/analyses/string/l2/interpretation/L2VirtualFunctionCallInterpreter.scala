@@ -20,7 +20,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1FunctionCallInterpreter
@@ -39,7 +38,7 @@ class L2VirtualFunctionCallInterpreter(
     implicit val ps:                     PropertyStore,
     implicit val contextProvider:        ContextProvider,
     implicit val project:                SomeProject,
-    override implicit val soundnessMode: SoundnessMode
+    override implicit val highSoundness: HighSoundness
 ) extends L1VirtualFunctionCallInterpreter
     with StringInterpreter
     with L1SystemPropertiesInterpreter
@@ -62,7 +61,6 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
 
     implicit val ps: PropertyStore
     implicit val contextProvider: ContextProvider
-    implicit val soundnessMode: SoundnessMode
 
     override type CallState = CalleeDepender
 
@@ -117,7 +115,7 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
 
                 callState.calleeDependee = eps.asInstanceOf[EOptionP[DefinedMethod, Callees]]
                 if (newMethods.isEmpty && callState.calleeMethods.isEmpty && eps.isFinal) {
-                    failure(callState.target)(state, soundnessMode)
+                    failure(callState.target)(state, highSoundness)
                 } else {
                     for {
                         method <- newMethods

@@ -28,10 +28,10 @@ trait StringInterpreter {
      */
     def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult
 
-    def failureTree(implicit soundnessMode: SoundnessMode): StringTreeNode =
+    def failureTree(implicit highSoundness: HighSoundness): StringTreeNode =
         StringInterpreter.failureTree
 
-    def failure(v: PV)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
+    def failure(v: PV)(implicit state: InterpretationState, highSoundness: HighSoundness): Result =
         StringInterpreter.failure(v)
 
     def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
@@ -46,15 +46,15 @@ trait StringInterpreter {
 
 object StringInterpreter {
 
-    def failureTree(implicit soundnessMode: SoundnessMode): StringTreeNode = {
-        if (soundnessMode.isHigh) StringTreeNode.lb
+    def failureTree(implicit highSoundness: HighSoundness): StringTreeNode = {
+        if (highSoundness) StringTreeNode.lb
         else StringTreeNode.ub
     }
 
-    def failure(v: V)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
+    def failure(v: V)(implicit state: InterpretationState, highSoundness: HighSoundness): Result =
         failure(v.toPersistentForm(state.tac.stmts))
 
-    def failure(pv: PV)(implicit state: InterpretationState, soundnessMode: SoundnessMode): Result =
+    def failure(pv: PV)(implicit state: InterpretationState, highSoundness: HighSoundness): Result =
         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(state.pc, pv, failureTree))
 
     def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =

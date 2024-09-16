@@ -19,7 +19,7 @@ import org.opalj.value.TheIntegerValue
  * @author Maximilian Rüsch
  */
 case class L1VirtualMethodCallInterpreter()(
-    implicit val soundnessMode: SoundnessMode
+    implicit val highSoundness: HighSoundness
 ) extends StringInterpreter {
 
     override type T = VirtualMethodCall[V]

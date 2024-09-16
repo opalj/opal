@@ -74,7 +74,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
             // No TAC available, e.g., because the method has no body
             Result(
                 state.entity,
-                if (soundnessMode.isHigh) MethodStringFlow.lb
+                if (highSoundness) MethodStringFlow.lb
                 else MethodStringFlow.ub
             )
         } else {
@@ -97,7 +97,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
             StructuralAnalysis.analyze(state.flowGraph, FlowGraph.entry)
         state.superFlowGraph = superFlowGraph
         state.controlTree = controlTree
-        state.flowAnalysis = new DataFlowAnalysis(state.controlTree, state.superFlowGraph, soundnessMode)
+        state.flowAnalysis = new DataFlowAnalysis(state.controlTree, state.superFlowGraph, highSoundness)
 
         state.flowGraph.nodes.toOuter.foreach {
             case Statement(pc) if pc >= 0 =>

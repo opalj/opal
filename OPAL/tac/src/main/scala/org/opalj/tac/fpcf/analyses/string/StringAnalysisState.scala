@@ -172,7 +172,7 @@ private[string] case class MethodParameterContextStringAnalysisState(
     def updateParamDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit =
         _paramDependees(dependee.e) = dependee
 
-    def currentTreeUB(implicit soundnessMode: SoundnessMode): StringTreeNode = {
+    def currentTreeUB(implicit highSoundness: HighSoundness): StringTreeNode = {
         var paramOptions = _methodToEntityMapping.keys.toSeq
             .sortBy(_.id)
             .flatMap { dm =>
@@ -182,7 +182,7 @@ private[string] case class MethodParameterContextStringAnalysisState(
                     .map(_.ub.tree)
             }
 
-        if (soundnessMode.isHigh && (
+        if (highSoundness && (
                 _discoveredUnknownTAC ||
                 _callersDependee.exists(cd => cd.hasUBP && cd.ub.hasCallersWithUnknownContext)
             )

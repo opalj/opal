@@ -28,7 +28,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.tac.fpcf.analyses.string.SoundnessMode
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -44,7 +43,7 @@ class L3FieldReadInterpreter(
     implicit val project:         SomeProject,
     implicit val declaredFields:  DeclaredFields,
     implicit val contextProvider: ContextProvider,
-    implicit val soundnessMode:   SoundnessMode
+    implicit val highSoundness:   HighSoundness
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = FieldRead[V]
@@ -151,7 +150,7 @@ class L3FieldReadInterpreter(
         accessState: FieldReadState,
         state:       InterpretationState
     ): ProperPropertyComputationResult = {
-        if (accessState.hasWriteInSameMethod && soundnessMode.isHigh) {
+        if (accessState.hasWriteInSameMethod && highSoundness) {
             // We cannot handle writes to a field that is read in the same method at the moment as the flow functions do
             // not capture field state. This can be improved upon in the future.
             computeFinalResult(StringFlowFunctionProperty.lb(state.pc, accessState.target))
@@ -174,7 +173,7 @@ class L3FieldReadInterpreter(
                 trees = trees :+ StringTreeNull
             }
 
-            if (accessState.hasUnresolvableAccess && soundnessMode.isHigh) {
+            if (accessState.hasUnresolvableAccess && highSoundness) {
                 trees = trees :+ StringTreeNode.lb
             }
 

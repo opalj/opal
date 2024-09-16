@@ -72,7 +72,7 @@ case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, var 
     }
 
     private var _startEnv: StringTreeEnvironment = StringTreeEnvironment(Map.empty)
-    def getStartEnvAndReset(implicit soundnessMode: SoundnessMode): StringTreeEnvironment = {
+    def getStartEnvAndReset(implicit highSoundness: HighSoundness): StringTreeEnvironment = {
         if (pcToWebChangeMapping.exists(_._2)) {
             val webs = getWebs
             val indexedWebs = mutable.ArrayBuffer.empty[PDUWeb]
