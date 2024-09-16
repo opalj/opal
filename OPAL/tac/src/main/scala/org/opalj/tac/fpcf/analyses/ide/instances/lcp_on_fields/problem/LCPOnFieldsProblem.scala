@@ -288,6 +288,39 @@ class LCPOnFieldsProblem(project: SomeProject)
                         )
                 }
 
+            case NewArrayFact(_, _) =>
+                FinalEdgeFunction(NewArrayEdgeFunction)
+
+            case PutElementFact(_, _) =>
+                val arrayStore = source.stmt.asArrayStore
+                val indexVar = arrayStore.index.asVar
+                val valueVar = arrayStore.value.asVar
+
+                val lcpEOptionP =
+                    propertyStore((source.method, source), LinearConstantPropagationPropertyMetaInformation.key)
+
+                /* Decide based on the current result of the linear constant propagation analysis */
+                lcpEOptionP match {
+                    case FinalP(property) =>
+                        val index = getVariableFromProperty(indexVar)(property)
+                        val value = getVariableFromProperty(valueVar)(property)
+                        FinalEdgeFunction(PutElementEdgeFunction(index, value))
+
+                    case InterimUBP(property) =>
+                        val index = getVariableFromProperty(indexVar)(property)
+                        val value = getVariableFromProperty(valueVar)(property)
+                        InterimEdgeFunction(PutElementEdgeFunction(index, value), immutable.Set(lcpEOptionP))
+
+                    case _ =>
+                        InterimEdgeFunction(
+                            PutElementEdgeFunction(
+                                linear_constant_propagation.problem.UnknownValue,
+                                linear_constant_propagation.problem.UnknownValue
+                            ),
+                            immutable.Set(lcpEOptionP)
+                        )
+                }
+
             case _ => FinalEdgeFunction(identityEdgeFunction)
         }
     }
