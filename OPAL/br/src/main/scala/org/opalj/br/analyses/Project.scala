@@ -1365,7 +1365,7 @@ object Project {
                     definedMethod.name == inheritedInterfaceMethod.name
                 } match {
                     case Some(mdc) =>
-                        // If there is already a method and it is from an interface, then it is might not be maximally
+                        // If there is already a method and it is from an interface, then it might not be maximally
                         // specific and must be replaced. If the method is from a class however, we must always keep it.
                         if (mdc.method.classFile.isInterfaceDeclaration) {
                             definedMethods = definedMethods filterNot { definedMethod =>
