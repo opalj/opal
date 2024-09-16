@@ -19,9 +19,11 @@ public class Complex {
     /**
      * Taken from com.sun.javafx.property.PropertyReference#reflect.
      */
+    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "get-Hello, World-java.lang.Runtime")
+    @PartiallyConstant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-java.lang.Runtime)")
     @Failure(n = 0, levels = Level.L0)
+    @Invalid(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW)
     @PartiallyConstant(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-.*)")
-    @PartiallyConstant(n = 0, levels = Level.L2, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-java.lang.Runtime)")
     public void complexDependencyResolve(String s, Class clazz) {
         String properName = s.length() == 1 ? s.substring(0, 1) :
                 getHelloWorld() + "-" + getRuntimeClassName();
@@ -73,7 +75,7 @@ public class Complex {
     }
 
     @Failure(n = 0, levels = { Level.L0, Level.L1 })
-    @Constant(n = 0, levels = Level.L2, value = "value")
+    @Constant(n = 0, levels = { Level.L2, Level.L3 }, value = "value")
     public String cyclicDependencyTest(String s) {
         String value = getProperty(s);
         analyzeString(value);

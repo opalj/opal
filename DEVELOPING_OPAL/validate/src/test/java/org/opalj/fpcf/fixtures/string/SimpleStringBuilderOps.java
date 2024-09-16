@@ -175,6 +175,7 @@ public class SimpleStringBuilderOps {
         analyzeString(sbRun.toString());
     }
 
+    @Invalid(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
     @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "File Content:.*", soundness = SoundnessMode.HIGH)
     @Failure(n = 0, levels = Level.L0)
     public void withUnknownAppendSource(String filename) throws IOException {

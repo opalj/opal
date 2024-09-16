@@ -41,6 +41,7 @@ import org.opalj.fpcf.properties.string_analysis.Level
 import org.opalj.fpcf.properties.string_analysis.PartiallyConstant
 import org.opalj.fpcf.properties.string_analysis.PartiallyConstants
 import org.opalj.fpcf.properties.string_analysis.SoundnessMode
+import org.opalj.log.OPALLogger
 import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.PV
 import org.opalj.tac.TACMethodParameter
@@ -166,11 +167,23 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         val m2e = entities.groupBy(_._2).iterator.map(e =>
             e._1 -> (e._1, e._2.map(k => k._1))
         ).toMap
+
+        var detectedMissingAnnotations = false
         // As entity, we need not the method but a tuple (PUVar, Method), thus this transformation
-        methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
+        val eas = methodsWithAnnotations(project).filter(am => m2e.contains(am._1)).flatMap { am =>
             val annotationsByIndex = getCheckableAnnotationsByIndex(project, am._3)
             m2e(am._1)._2.zipWithIndex.map {
                 case (vc, index) =>
+                    // Ensure every test that is annotated for at least one configuration is annotated for all
+                    // configurations so we do not miss tests when adding new levels.
+                    if (annotationsByIndex(index).isEmpty) {
+                        OPALLogger.error(
+                            "string analysis test setup",
+                            s"Could not find annotations to check for #$index of ${am._1.toJava.substring(24)}"
+                        )(project.logContext)
+                        detectedMissingAnnotations = true
+                    }
+
                     Tuple3(
                         vc,
                         { s: String => s"${am._2(s)} (#$index)" },
@@ -178,6 +191,12 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
                     )
             }
         }
+
+        if (detectedMissingAnnotations) {
+            throw new IllegalStateException("Detected missing tests for this configuration!")
+        }
+
+        eas
     }
 
     private def getCheckableAnnotationsByIndex(project: Project[URL], as: Annotations): Map[Int, Annotations] = {
