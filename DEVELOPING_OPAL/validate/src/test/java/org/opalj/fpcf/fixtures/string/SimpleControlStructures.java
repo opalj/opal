@@ -6,6 +6,8 @@ import org.opalj.fpcf.properties.string_analysis.*;
 import java.util.Random;
 
 /**
+ * Various tests that test compatibility of the data flow analysis with simple control structures like if-statements.
+ *
  * @see SimpleStringOps
  */
 public class SimpleControlStructures {
@@ -125,6 +127,139 @@ public class SimpleControlStructures {
         StringBuilder sb = new StringBuilder();
         if (sb.append("java.lang.Runtime").toString().equals(className)) {
             System.out.println("Yep, got the correct class!");
+        }
+        analyzeString(sb.toString());
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
+    @Failure(n = 0, levels = Level.L0)
+    public void switchRelevantAndIrrelevant(int value) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+        case 0:
+            sb.append("b");
+            break;
+        case 1:
+            sb.append("c");
+            break;
+        case 3:
+            break;
+        case 4:
+            break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad)")
+    @Failure(n = 0, levels = Level.L0)
+    public void switchRelevantAndIrrelevantWithRelevantDefault(int value) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+        case 0:
+            sb.append("b");
+            break;
+        case 1:
+            sb.append("c");
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        default:
+            sb.append("d");
+            break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
+    @Failure(n = 0, levels = Level.L0)
+    public void switchRelevantAndIrrelevantWithIrrelevantDefault(int value) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+        case 0:
+            sb.append("b");
+            break;
+        case 1:
+            sb.append("c");
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        default:
+            break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|ad)")
+    @Failure(n = 0, levels = Level.L0)
+    public void switchRelevantWithRelevantDefault(int value) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+        case 0:
+            sb.append("b");
+            break;
+        case 1:
+            sb.append("c");
+            break;
+        default:
+            sb.append("d");
+            break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad|af)")
+    @Failure(n = 0, levels = Level.L0)
+    public void switchNestedNoNestedDefault(int value, int value2) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+        case 0:
+            sb.append("b");
+            break;
+        case 1:
+            switch (value2) {
+            case 0:
+                sb.append("c");
+                break;
+            case 1:
+                sb.append("d");
+                break;
+            }
+            break;
+        default:
+            sb.append("f");
+            break;
+        }
+        analyzeString(sb.toString());
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|ad|ae|af)")
+    @Failure(n = 0, levels = Level.L0)
+    public void switchNestedWithNestedDefault(int value, int value2) {
+        StringBuilder sb = new StringBuilder("a");
+        switch (value) {
+        case 0:
+            sb.append("b");
+            break;
+        case 1:
+            switch (value2) {
+            case 0:
+                sb.append("c");
+                break;
+            case 1:
+                sb.append("d");
+                break;
+            default:
+                sb.append("e");
+                break;
+            }
+            break;
+        default:
+            sb.append("f");
+            break;
         }
         analyzeString(sb.toString());
     }

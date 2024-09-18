@@ -5,6 +5,9 @@ import org.opalj.fpcf.fixtures.string.tools.StringProvider;
 import org.opalj.fpcf.properties.string_analysis.*;
 
 /**
+ * Various tests that test compatibility with array operations (mainly reads with specific array indexes).
+ * Currently, the string analysis does not support array operations and thus fails for every level.
+ *
  * @see SimpleStringOps
  */
 public class ArrayOps {
@@ -28,14 +31,17 @@ public class ArrayOps {
         }
     }
 
-    @Dynamic(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.Runtime|java.lang.Integer|.*)")
+    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW,
+            value = "(java.lang.Object|java.lang.Runtime|java.lang.Integer)")
+    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH,
+            value = "(java.lang.Object|java.lang.Runtime|java.lang.Integer|.*)")
     @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 }, reason = "arrays are not supported")
     public void arrayStaticAndVirtualFunctionCalls(int i) {
         String[] classes = {
                 "java.lang.Object",
                 getRuntimeClassName(),
                 StringProvider.getFQClassNameWithStringBuilder("java.lang", "Integer"),
-                System.getProperty("SomeClass")
+                System.clearProperty("SomeClass")
         };
         analyzeString(classes[i]);
     }

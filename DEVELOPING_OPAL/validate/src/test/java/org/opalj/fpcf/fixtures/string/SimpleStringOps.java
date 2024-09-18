@@ -6,30 +6,95 @@ import org.opalj.fpcf.properties.string_analysis.*;
 /**
  * All files in this package define various tests for the string analysis. The following things are to be considered
  * when adding test cases:
+ *
  * <ul>
- * <li> The asterisk symbol (*) is used to indicate that a string (or part of it) can occur >= 0 times. </li>
- * <li> Question marks (?) are used to indicate that a string (or part of it) can occur either zero times or once. </li>
- * <li> The string "\w" is used to indicate that a string (or part of it) is unknown / arbitrary, i.e., it cannot be approximated. </li>
- * <li> The pipe symbol is used to indicate that a string (or part of it) consists of one of several options (but definitely one of these values). </li>
- * <li> Brackets ("(" and ")") are used for nesting and grouping string expressions. </li>
- * <li>
- * The string "^-?\d+$" represents (positive and negative) integer numbers. This RegExp has been taken
- * from https://www.freeformatter.com/java-regex-tester.html#examples as of 2019-02-02.
- * </li>
- * <li>
- * The string "^-?\\d*\\.{0,1}\\d+$" represents (positive and negative) float and double numbers.
- * This RegExp has been taken from https://www.freeformatter.com/java-regex-tester.html#examples as
- * of 2019-02-02.
- * </li>
+ *   <li>
+ *     In order to trigger the analysis for a particular string variable, call the <i>analyzeString</i> method with the
+ *     variable to be analyzed. Multiple calls to the sink <i>analyzeString</i> within the same test method are allowed.
+ *   </li>
+ *   <li>
+ *     For a given sink call, the expected string and its constancy can be defined using one of these annotations:
+ *     <ul>
+ *       <li>
+ *         {@link Invalid} The given string variable does not contain any string analyzable by the string
+ *         analysis. Usually used as a fallback in low-soundness mode.
+ *       </li>
+ *       <li>
+ *         {@link Constant} The given string variable contains only constant strings and its set of possible
+ *         values is thus enumerable within finite time.
+ *       </li>
+ *       <li>
+ *         {@link PartiallyConstant} The given string variable contains strings which have some constant part
+ *         concatenated with some dynamic part. Its set of possible values is constrained but not enumerable
+ *         within finite time.
+ *       </li>
+ *       <li>
+ *         {@link Dynamic} The given string variable contains strings which only consist of dynamic information.
+ *         Its set of possible values may be constrained but is definitely not enumerable within finite time.
+ *         Usually used as a fallback in high-soundness mode.
+ *       </li>
+ *       <li>
+ *         {@link Failure} Combines {@link Invalid} and {@link Dynamic} by generating the former for test runs in
+ *         low-soundness mode and the latter for test runs in high-soundness mode.
+ *       </li>
+ *     </ul>
+ *   </li>
+ *   <li>
+ *     For each test run configuration (different domain level, different soundness mode, different analysis level)
+ *     exactly one such annotation should be defined for each test function. For every annotation, the following
+ *     information should / can be given:
+ *     <ul>
+ *       <li> (Required) <code>n = ?</code>: The index of the sink call that this annotation is defined for. </li>
+ *       <li>
+ *         (Required) <code>value = "?"</code>: The expected value (see below for format).
+ *         Cannot be defined for {@link Invalid} annotations.
+ *       </li>
+ *       <li>
+ *         (Required) <code>levels = ?</code>: One or multiple of {@link Level} to allow restricting an annotation
+ *         to certain string analysis level configurations. The value {@link Level#TRUTH } may be used to explicitly
+ *         define the ground truth that all test run configurations will fall back to if no more specific annotation
+ *         is found.
+ *       </li>
+ *       <li>
+ *         (Optional) <code>domains = ?</code>: One or multiple of {@link DomainLevel} to allow restricting an
+ *         annotation to certain domain level configurations.
+ *       </li>
+ *       <li>
+ *         (Optional) <code>soundness = ?</code>: One or multiple of {@link SoundnessMode} to allow restricting an
+ *         annotation to certain soundness mode configurations.
+ *       </li>
+ *       <li>
+ *         (Optional) <code>reason = "?"</code>: Some reasoning for the given annotation type and value. Not part of
+ *         the test output.
+ *       </li>
+ *     </ul>
+ *   </li>
+ *   <li>
+ *     Expected values for string variables should be given in a reduced regex format:
+ *     <ul>
+ *        <li> The asterisk symbol (*) is used to indicate that a string (or part of it) can occur >= 0 times. </li>
+ *        <li>
+ *          The pipe symbol is used to indicate that a string (or part of it) consists of one of several options
+ *          (but definitely one of these values).
+ *        </li>
+ *        <li> Brackets ("(" and ")") are used for nesting and grouping string expressions. </li>
+ *        <li>
+ *          The string "^-?\d+$" represents (positive and negative) integer numbers. This RegExp has been taken from
+ *          <a href="https://www.freeformatter.com/java-regex-tester.html#examples">www.freeformatter.com/java-regex-tester.html</a>
+ *          as of 2019-02-02.
+ *        </li>
+ *        <li>
+ *          The string "^-?\\d*\\.{0,1}\\d+$" represents (positive and negative) float and double numbers. This RegExp
+ *          has been taken from
+ *          <a href="https://www.freeformatter.com/java-regex-tester.html#examples">www.freeformatter.com/java-regex-tester.html</a>
+ *          as of 2019-02-02.
+ *        </li>
+ *      </ul>
+ *   </li>
  * </ul>
  * <p>
- * Thus, you should avoid the following characters / strings to occur in "expectedStrings":
- * {*, ?, \w, |}. In the future, "expectedStrings" might be parsed back into a StringTree. Thus, to
- * be on the safe side, brackets should be avoided as well.
- * <p>
- * On order to trigger the analysis for a particular string or String{Buffer, Builder} call the
- * <i>analyzeString</i> method with the variable to be analyzed. It is legal to have multiple
- * calls to <i>analyzeString</i> within the same test method.
+ * This file defines various tests related to simple operations on strings and presence of multiple def sites of such
+ * strings.
  *
  * @author Maximilian Rüsch
  */
@@ -126,139 +191,6 @@ public class SimpleStringOps {
         analyzeString(flag ? s1 : s2);
         analyzeString(flag ? s1 : s3);
         analyzeString(flag ? s1 + s3 : s2);
-    }
-
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
-    @Failure(n = 0, levels = Level.L0)
-    public void switchRelevantAndIrrelevant(int value) {
-        StringBuilder sb = new StringBuilder("a");
-        switch (value) {
-            case 0:
-                sb.append("b");
-                break;
-            case 1:
-                sb.append("c");
-                break;
-            case 3:
-                break;
-            case 4:
-                break;
-        }
-        analyzeString(sb.toString());
-    }
-
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad)")
-    @Failure(n = 0, levels = Level.L0)
-    public void switchRelevantAndIrrelevantWithRelevantDefault(int value) {
-        StringBuilder sb = new StringBuilder("a");
-        switch (value) {
-            case 0:
-                sb.append("b");
-                break;
-            case 1:
-                sb.append("c");
-                break;
-            case 2:
-                break;
-            case 3:
-                break;
-            default:
-                sb.append("d");
-                break;
-        }
-        analyzeString(sb.toString());
-    }
-
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
-    @Failure(n = 0, levels = Level.L0)
-    public void switchRelevantAndIrrelevantWithIrrelevantDefault(int value) {
-        StringBuilder sb = new StringBuilder("a");
-        switch (value) {
-            case 0:
-                sb.append("b");
-                break;
-            case 1:
-                sb.append("c");
-                break;
-            case 2:
-                break;
-            case 3:
-                break;
-            default:
-                break;
-        }
-        analyzeString(sb.toString());
-    }
-
-    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|ad)")
-    @Failure(n = 0, levels = Level.L0)
-    public void switchRelevantWithRelevantDefault(int value) {
-        StringBuilder sb = new StringBuilder("a");
-        switch (value) {
-            case 0:
-                sb.append("b");
-                break;
-            case 1:
-                sb.append("c");
-                break;
-            default:
-                sb.append("d");
-                break;
-        }
-        analyzeString(sb.toString());
-    }
-
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad|af)")
-    @Failure(n = 0, levels = Level.L0)
-    public void switchNestedNoNestedDefault(int value, int value2) {
-        StringBuilder sb = new StringBuilder("a");
-        switch (value) {
-            case 0:
-                sb.append("b");
-                break;
-            case 1:
-                switch (value2) {
-                    case 0:
-                        sb.append("c");
-                        break;
-                    case 1:
-                        sb.append("d");
-                        break;
-                }
-                break;
-            default:
-                sb.append("f");
-                break;
-        }
-        analyzeString(sb.toString());
-    }
-
-    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|ad|ae|af)")
-    @Failure(n = 0, levels = Level.L0)
-    public void switchNestedWithNestedDefault(int value, int value2) {
-        StringBuilder sb = new StringBuilder("a");
-        switch (value) {
-            case 0:
-                sb.append("b");
-                break;
-            case 1:
-                switch (value2) {
-                    case 0:
-                        sb.append("c");
-                        break;
-                    case 1:
-                        sb.append("d");
-                        break;
-                    default:
-                        sb.append("e");
-                        break;
-                }
-                break;
-            default:
-                sb.append("f");
-                break;
-        }
-        analyzeString(sb.toString());
     }
 
     /**

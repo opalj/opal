@@ -3,16 +3,15 @@ package org.opalj.fpcf.fixtures.string;
 
 import org.opalj.fpcf.properties.string_analysis.*;
 
-import javax.management.remote.rmi.RMIServer;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Random;
-import java.util.Scanner;
 
 /**
+ * Various tests that test general compatibility with the field access information FPCF property, e.g. being able to
+ * analyze field reads and writes across method boundaries.
+ *
  * @see SimpleStringOps
  */
-public class External {
+public class FieldAccesses {
 
     protected String nonFinalNonStaticField = "private l0 non-final string field";
     public static String nonFinalStaticField = "will not be revealed here";
@@ -33,7 +32,7 @@ public class External {
         }
     }
 
-    public External(float e) {
+    public FieldAccesses(float e) {
         fieldWithConstructorInit = "initialized by constructor";
         fieldWithConstructorParameterInit = e;
     }
@@ -113,57 +112,5 @@ public class External {
     @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 })
     public void nonSupportedFieldTypeRead() {
         analyzeString(unsupportedTypeField.toString());
-    }
-
-    public void parameterCaller() {
-        this.parameterRead("some-param-value", new StringBuilder("some-other-param-value"));
-    }
-
-    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "some-param-value")
-    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|some-param-value)",
-            reason = "method is an entry point and thus has callers with unknown context")
-    @Constant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "some-other-param-value")
-    @Dynamic(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|some-other-param-value)",
-            reason = "method is an entry point and thus has callers with unknown context")
-    @Failure(n = 1, levels = Level.L0)
-    @Constant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "value=some-param-value")
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "value=(.*|some-param-value)",
-            reason = "method is an entry point and thus has callers with unknown context")
-    @Failure(n = 2, levels = Level.L0)
-    @Constant(n = 3, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "value=some-param-value-some-other-param-value")
-    @PartiallyConstant(n = 3, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "value=(.*|some-param-value)-(.*|some-other-param-value)",
-            reason = "method is an entry point and thus has callers with unknown context")
-    @Failure(n = 3, levels = Level.L0)
-    public void parameterRead(String stringValue, StringBuilder sbValue) {
-        analyzeString(stringValue);
-        analyzeString(sbValue.toString());
-
-        StringBuilder sb = new StringBuilder("value=");
-        System.out.println(sb.toString());
-        sb.append(stringValue);
-        analyzeString(sb.toString());
-
-        sb.append("-");
-        sb.append(sbValue.toString());
-        analyzeString(sb.toString());
-    }
-
-    /**
-     * Methods are called that return a string but are not within this project => cannot / will not interpret
-     */
-    @Dynamic(n = 0, levels = Level.TRUTH, value = "(.*)*")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 })
-    @Invalid(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
-    @Dynamic(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = ".*")
-    public void methodsOutOfScopeTest() throws FileNotFoundException {
-        File file = new File("my-file.txt");
-        Scanner sc = new Scanner(file);
-        StringBuilder sb = new StringBuilder();
-        while (sc.hasNextLine()) {
-            sb.append(sc.nextLine());
-        }
-        analyzeString(sb.toString());
-
-        analyzeString(System.clearProperty("os.version"));
     }
 }

@@ -1,10 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string;
 
+import org.opalj.fpcf.fixtures.string.tools.GreetingService;
+import org.opalj.fpcf.fixtures.string.tools.HelloGreeting;
 import org.opalj.fpcf.fixtures.string.tools.StringProvider;
 import org.opalj.fpcf.properties.string_analysis.*;
 
 /**
+ * Various tests that test specific compatibility of the different levels of the string analysis with resolving
+ * different types of function calls and their impact on the analyzed strings. As an example, arbitrary virtual function
+ * calls may be analyzable in one level of the string analysis but not another.
+ *
  * @see SimpleStringOps
  */
 public class FunctionCalls {
@@ -107,6 +113,19 @@ public class FunctionCalls {
             s = getHelloWorld();
         }
         analyzeString(new StringBuilder("It is ").append(s).toString());
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "Hello World")
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    public void knownHierarchyInstanceTest() {
+        GreetingService gs = new HelloGreeting();
+        analyzeString(gs.getGreeting("World"));
+    }
+
+    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello|Hello World)")
+    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    public void unknownHierarchyInstanceTest(GreetingService greetingService) {
+        analyzeString(greetingService.getGreeting("World"));
     }
 
     /**

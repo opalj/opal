@@ -8,6 +8,10 @@ import java.lang.reflect.Modifier;
 import java.util.Random;
 
 /**
+ * Various tests that contain some kind of loops which modify string variables, requiring data flow analysis to resolve
+ * these values or at least approximate them. Currently, the string analysis either only interprets the loop body once
+ * (in low-soundness mode) or over-approximates with "any string" (in high-soundness mode).
+ *
  * @see SimpleStringOps
  */
 public class Loops {

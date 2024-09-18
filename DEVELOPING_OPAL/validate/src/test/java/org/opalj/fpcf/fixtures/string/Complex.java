@@ -3,10 +3,17 @@ package org.opalj.fpcf.fixtures.string;
 
 import org.opalj.fpcf.properties.string_analysis.*;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.lang.reflect.Method;
 import java.util.Random;
+import java.util.Scanner;
 
 /**
+ * Various tests that test certain complex string analysis scenarios which were either constructed or extracted from the
+ * JDK. Such tests should combine multiple string analysis techniques, the most common are interprocedurality and
+ * control flow sensitivity.
+ *
  * @see SimpleStringOps
  */
 public class Complex {
@@ -40,12 +47,12 @@ public class Complex {
     /**
      * Taken from com.sun.prism.impl.ps.BaseShaderContext#getPaintShader and slightly adapted
      */
-    @Constant(n = 0, levels = Level.TRUTH, value = "Hello, World_paintname(_PAD|_REFLECT|_REPEAT)?(_AlphaTest)?")
+    @Constant(n = 0, levels = Level.TRUTH, value = "Hello, World_paintName(_PAD|_REFLECT|_REPEAT)?(_AlphaTest)?")
     @Failure(n = 0, levels = Level.L0)
     // or-cases are currently not collapsed into simpler conditionals / or-cases using prefix checking
-    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, value = "((Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT)_AlphaTest|Hello, World_paintname|Hello, World_paintname_PAD|Hello, World_paintname_REFLECT|Hello, World_paintname_REPEAT)")
+    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, value = "((Hello, World_paintName|Hello, World_paintName_PAD|Hello, World_paintName_REFLECT|Hello, World_paintName_REPEAT)_AlphaTest|Hello, World_paintName|Hello, World_paintName_PAD|Hello, World_paintName_REFLECT|Hello, World_paintName_REPEAT)")
     public void getPaintShader(boolean getPaintType, int spreadMethod, boolean alphaTest) {
-        String shaderName = getHelloWorld() + "_" + "paintname";
+        String shaderName = getHelloWorld() + "_" + "paintName";
         if (getPaintType) {
             if (spreadMethod == 0) {
                 shaderName = shaderName + "_PAD";
@@ -80,6 +87,25 @@ public class Complex {
         String value = getProperty(s);
         analyzeString(value);
         return value;
+    }
+
+    /**
+     * Methods are called that return a string but are not within this project => cannot / will not interpret
+     */
+    @Dynamic(n = 0, levels = Level.TRUTH, value = "(.*)*")
+    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 })
+    @Invalid(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
+    @Dynamic(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = ".*")
+    public void methodsOutOfScopeTest() throws FileNotFoundException {
+        File file = new File("my-file.txt");
+        Scanner sc = new Scanner(file);
+        StringBuilder sb = new StringBuilder();
+        while (sc.hasNextLine()) {
+            sb.append(sc.nextLine());
+        }
+        analyzeString(sb.toString());
+
+        analyzeString(System.clearProperty("os.version"));
     }
 
     private String getProperty(String name) {

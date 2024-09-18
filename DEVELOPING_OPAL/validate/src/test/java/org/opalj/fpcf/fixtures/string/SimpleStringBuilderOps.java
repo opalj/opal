@@ -8,6 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 /**
+ * Various tests that test compatibility with selected methods defined on string builders and string buffers, such as
+ * append, reset etc.
+ *
  * @see SimpleStringOps
  */
 public class SimpleStringBuilderOps {
