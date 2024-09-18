@@ -14,6 +14,15 @@ import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 
 /**
+ * Holds the possible values that a [[java.util.Properties]] can take on, e.g. by analyzing the parameters given to
+ * calls like [[java.util.Properties.setProperty]] that are found in reachable methods.
+ * <p>
+ * Currently, values are not distinguished by the keys they are set for since the key parameters may also take on any
+ * value conforming to their string tree, which can be infinitely many (see [[StringTreeNode]]).
+ * <p>
+ * All existing analyses do not distinguish between the system-wide properties (set through [[System.setProperty]] or
+ * similar) and all other [[java.util.Properties]] instances.
+ *
  * @author Maximilian Rüsch
  */
 sealed trait SystemPropertiesPropertyMetaInformation extends PropertyMetaInformation {

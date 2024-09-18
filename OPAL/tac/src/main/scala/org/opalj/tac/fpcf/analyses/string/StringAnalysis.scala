@@ -174,7 +174,7 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
                     // recursing functions are properly handled using e.g. the widen-converge approach.
                     state.hitDepthThreshold = true
                     if (highSoundness) {
-                        tree.limitToDepth(depthThreshold, StringTreeNode.lb)
+                        tree.replaceAtDepth(depthThreshold, StringTreeNode.lb)
                     } else {
                         // In low soundness, we cannot decrease the matched string values by limiting the string tree
                         // with the upper bound. We should also not limit it with the lower bound, since that would

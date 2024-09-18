@@ -6,6 +6,11 @@ package properties
 package string
 
 /**
+ * Documents the string constancy that a string tree consisting of [[StringTreeNode]] has, meaning a summary whether the
+ * string tree in question is invalid, has at most constant values, has at most constant values concatenated with
+ * dynamic values or also contains un-concatenated dynamic values. The companion object also defines useful combination
+ * functions for instances of this trait.
+ *
  * @author Maximilian Rüsch
  */
 sealed trait StringConstancyLevel
