@@ -17,9 +17,6 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
-import org.opalj.ide.ConfigKeyDebugLog
-import org.opalj.ide.ConfigKeyTraceLog
-import org.opalj.ide.FrameworkName
 import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.ide.integration.IDERawProperty
 import org.opalj.ide.problem.AllTopEdgeFunction
@@ -31,7 +28,7 @@ import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.IDEValue
 import org.opalj.ide.problem.InterimEdgeFunction
-import org.opalj.log.OPALLogger
+import org.opalj.ide.util.Logging
 
 /**
  * Basic solver for IDE problems. Uses the exhaustive/forward algorithm that was presented in the original IDE paper
@@ -41,7 +38,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     val project:                 SomeProject,
     val problem:                 IDEProblem[Fact, Value, Statement, Callable],
     val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
-) extends FPCFAnalysis {
+) extends FPCFAnalysis with Logging.ByProjectConfig {
     private type Node = (Statement, Fact)
     /**
      * A 'path' in the graph, denoted by it's start and end node as done in the IDE algorithm
@@ -289,31 +286,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
     private val icfg: ICFG[Statement, Callable] = problem.icfg
 
-    private val isDebug: Boolean = project.config.getBoolean(ConfigKeyDebugLog)
-    private val isTrace: Boolean = project.config.getBoolean(ConfigKeyTraceLog)
-
     private def nodeToString(node: Node, indent: String = ""): String = {
         s"Node(\n$indent\t${icfg.stringifyStatement(node._1, s"$indent\t")},\n$indent\t${node._2}\n$indent)"
     }
 
     private def pathToString(path: Path, indent: String = ""): String = {
         s"Path(\n$indent\t${nodeToString(path._1, s"$indent\t")} ->\n$indent\t${nodeToString(path._2, s"$indent\t")}\n$indent)"
-    }
-
-    protected def logInfo(message: => String): Unit = {
-        OPALLogger.info(FrameworkName, message)
-    }
-
-    protected def logWarn(message: => String): Unit = {
-        OPALLogger.warn(FrameworkName, message)
-    }
-
-    protected def logDebug(message: => String): Unit = {
-        OPALLogger.debug({ isDebug }, s"$FrameworkName - debug", message)
-    }
-
-    protected def logTrace(message: => String): Unit = {
-        OPALLogger.debug({ isTrace }, s"$FrameworkName - trace", message)
     }
 
     /**
