@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string;
 
-import org.opalj.fpcf.fixtures.string.tools.GreetingService;
-import org.opalj.fpcf.fixtures.string.tools.HelloGreeting;
+import org.opalj.fpcf.fixtures.string.tools.StringFactory;
+import org.opalj.fpcf.fixtures.string.tools.ParameterDependentStringFactory;
 import org.opalj.fpcf.fixtures.string.tools.StringProvider;
 import org.opalj.fpcf.properties.string_analysis.*;
 
@@ -118,14 +118,14 @@ public class FunctionCalls {
     @Constant(n = 0, levels = Level.TRUTH, value = "Hello World")
     @Failure(n = 0, levels = { Level.L0, Level.L1 })
     public void knownHierarchyInstanceTest() {
-        GreetingService gs = new HelloGreeting();
-        analyzeString(gs.getGreeting("World"));
+        StringFactory sf = new ParameterDependentStringFactory();
+        analyzeString(sf.getString("World"));
     }
 
     @Constant(n = 0, levels = Level.TRUTH, value = "(Hello|Hello World)")
     @Failure(n = 0, levels = { Level.L0, Level.L1 })
-    public void unknownHierarchyInstanceTest(GreetingService greetingService) {
-        analyzeString(greetingService.getGreeting("World"));
+    public void unknownHierarchyInstanceTest(StringFactory stringFactory) {
+        analyzeString(stringFactory.getString("World"));
     }
 
     /**
