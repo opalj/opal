@@ -23,7 +23,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
-import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
+import org.opalj.tac.fpcf.analyses.ide.problem.JavaForwardIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
 
@@ -35,7 +35,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
  * This implementation is mainly intended to be an example of a cyclic IDE analysis.
  */
 class LCPOnFieldsProblem(project: SomeProject)
-    extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValue](project) {
+    extends JavaForwardIDEProblem[LCPOnFieldsFact, LCPOnFieldsValue](project) {
     override val nullFact: LCPOnFieldsFact =
         NullFact
 
