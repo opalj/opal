@@ -78,7 +78,7 @@ object StringConstancyLevel {
         level2: StringConstancyLevel
     ): StringConstancyLevel = {
         if (level1 == Invalid || level2 == Invalid) {
-            PartiallyConstant
+            Invalid
         } else if (level1 == PartiallyConstant || level2 == PartiallyConstant) {
             PartiallyConstant
         } else if ((level1 == Constant && level2 == Dynamic) || (level1 == Dynamic && level2 == Constant)) {
