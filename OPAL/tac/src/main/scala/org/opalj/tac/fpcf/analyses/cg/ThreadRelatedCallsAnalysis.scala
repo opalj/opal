@@ -62,7 +62,7 @@ class ThreadStartAnalysis private[cg] (
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         val partialAnalysisResults = new ThreadStartAnalysisResults()
-        implicit val state: CGState[ContextType] = new CGState[ContextType](
+        implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
             callerContext,
             FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
@@ -80,7 +80,7 @@ class ThreadStartAnalysis private[cg] (
     def returnResult(
         receiver:               V,
         partialAnalysisResults: ThreadStartAnalysisResults
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val runnableResults = Results(partialAnalysisResults.partialResults(state.callContext))
         if (state.hasOpenDependencies)
             Results(
@@ -91,12 +91,12 @@ class ThreadStartAnalysis private[cg] (
             Results(runnableResults)
     }
 
-    def c(receiver: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+    def c(receiver: V, state: TACAIBasedCGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         val epk = eps.toEPK
 
         // ensures, that we only add new vm reachable methods
         val partialAnalysisResults = new ThreadStartAnalysisResults()
-        implicit val _state: CGState[ContextType] = state
+        implicit val _state: TACAIBasedCGState[ContextType] = state
 
         eps.ub match {
             case _: TACAI =>
@@ -178,7 +178,7 @@ class ThreadStartAnalysis private[cg] (
         callPC:                 Int,
         receiver:               V,
         partialAnalysisResults: ThreadStartAnalysisResults
-    )(implicit state: CGState[ContextType]): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
         // a call to Thread.start will trigger the JVM to later on call Thread.exit()
         val exitMethod = project.specialCall(
             ObjectType.Thread,
@@ -480,7 +480,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         val vmReachableMethods = new VMReachableMethods()
 
-        implicit val state: CGState[ContextType] = new CGState[ContextType](
+        implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
             callerContext,
             FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
@@ -497,7 +497,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
 
     def c(
         receiver: V,
-        state:    CGState[ContextType]
+        state:    TACAIBasedCGState[ContextType]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         val epk = eps.toEPK
         val pc = state.dependersOf(epk).head.asInstanceOf[Int]
@@ -521,7 +521,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
     def returnResult(
         receiver:           V,
         vmReachableMethods: VMReachableMethods
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val results = vmReachableMethods.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -545,7 +545,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         receiver:           V,
         callPC:             Int,
         vmReachableMethods: VMReachableMethods
-    )(implicit state: CGState[ContextType]): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
         typeIterator.foreachType(
             receiver,
             typeIterator.typesProperty(receiver, callContext, callPC.asInstanceOf[Entity], state.tac.stmts)

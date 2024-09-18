@@ -13,6 +13,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.NoResult
@@ -56,27 +57,20 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
         val tacEP = propertyStore(method, TACAI.key)
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod(callersEOptP, NoCallers, Some(tacEP.asEPS))
+            processMethod(callersEOptP, NoCallers, tacEP)
         } else {
             InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod))
         }
     }
 
-    protected val processesMethodsWithoutBody = false
-
     protected def processMethodWithoutBody(
         eOptP: EOptionP[DeclaredMethod, Callers]
-    ): PropertyComputationResult = {
-        if (processesMethodsWithoutBody) {
-            processMethod(eOptP, NoCallers, None)
-        } else
-            NoResult
-    }
+    ): PropertyComputationResult = processMethod(eOptP, NoCallers, EPK(eOptP.e.definedMethod, TACAI.key))
 
     private[this] def processMethod(
         eOptP:      EOptionP[DeclaredMethod, Callers],
         oldCallers: Callers,
-        tacEPOpt:   Option[EPS[Method, TACAI]]
+        tacEOptP:   EOptionP[Method, TACAI]
     ): ProperPropertyComputationResult = {
         val newCallers = if (eOptP.hasUBP) eOptP.ub else NoCallers
         var results: List[ProperPropertyComputationResult] = Nil
@@ -85,27 +79,19 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
             val theCalleeContext =
                 if (calleeContext.hasContext) calleeContext.asInstanceOf[ContextType]
                 else typeIterator.newContext(eOptP.e)
-            results ::= processMethod(theCalleeContext, tacEPOpt)
+            results ::= processMethod(theCalleeContext, tacEOptP)
         }
 
         Results(
-            InterimPartialResult(Set(eOptP), continuationForCallers(newCallers, tacEPOpt)),
+            InterimPartialResult(Set(eOptP), continuationForCallers(newCallers, tacEOptP)),
             results
         )
     }
 
-    /**
-     * @deprecated Use [[processMethod]](ContextType, Option[_]) instead
-     */
     def processMethod(
         callContext: ContextType,
-        tacEP:       EPS[Method, TACAI]
+        tacEOptP:    EOptionP[Method, TACAI]
     ): ProperPropertyComputationResult
-
-    def processMethod(
-        callContext: ContextType,
-        tacEPOpt:    Option[EPS[Method, TACAI]]
-    ): ProperPropertyComputationResult = processMethod(callContext, tacEPOpt.orNull)
 
     protected def continuationForTAC(
         declaredMethod: DeclaredMethod
@@ -115,7 +101,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
                 processMethod(
                     propertyStore(declaredMethod, Callers.key),
                     NoCallers,
-                    Some(someEPS.asInstanceOf[EPS[Method, TACAI]])
+                    someEPS.asInstanceOf[EPS[Method, TACAI]]
                 )
             case _ =>
                 throw new IllegalArgumentException(s"unexpected eps $someEPS")
@@ -124,11 +110,28 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
     private[this] def continuationForCallers(
         oldCallers: Callers,
-        tacEPOpt:   Option[EPS[Method, TACAI]]
+        tacEOptP:   EOptionP[Method, TACAI]
     )(
         update: SomeEPS
     ): ProperPropertyComputationResult = {
         val newCallers = update.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processMethod(newCallers, oldCallers, tacEPOpt)
+        processMethod(newCallers, oldCallers, tacEOptP)
     }
+}
+
+trait DefinedBodyReachableMethodAnalysis extends ReachableMethodAnalysis {
+
+    override protected final def processMethodWithoutBody(
+        eOptP: EOptionP[DeclaredMethod, Callers]
+    ): PropertyComputationResult = NoResult
+
+    override final def processMethod(
+        callContext: ContextType,
+        tacEPOpt:    EOptionP[Method, TACAI]
+    ): ProperPropertyComputationResult = processMethod(callContext, tacEPOpt.asEPS)
+
+    def processMethod(
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]
+    ): ProperPropertyComputationResult
 }

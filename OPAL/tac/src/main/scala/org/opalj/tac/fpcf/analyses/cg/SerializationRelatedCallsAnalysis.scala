@@ -83,7 +83,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             val receiver = persistentUVar(param)
             val parameters = Seq(receiverOption.flatMap(os => persistentUVar(os.asVar)))
 
-            implicit val state: CGState[ContextType] = new CGState[ContextType](
+            implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
                 callerContext,
                 FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
             )
@@ -101,7 +101,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         receiverVar: V,
         receiver:    Option[(ValueInformation, IntTrieSet)],
         parameters:  Seq[Option[(ValueInformation, IntTrieSet)]],
-        state:       CGState[ContextType]
+        state:       TACAIBasedCGState[ContextType]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         val pc = state.dependersOf(eps.toEPK).head.asInstanceOf[Int]
 
@@ -126,7 +126,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         receiver:      Option[(ValueInformation, IntTrieSet)],
         parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
         indirectCalls: IndirectCalls
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val results = indirectCalls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -144,7 +144,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         receiver:      Option[(ValueInformation, IntTrieSet)],
         parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
         indirectCalls: IndirectCalls
-    )(implicit state: CGState[ContextType]): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
         typeIterator.foreachType(
             param,
             typeIterator.typesProperty(param, callContext, callPC.asInstanceOf[Entity], state.tac.stmts)
