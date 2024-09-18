@@ -2,7 +2,7 @@
 package org.opalj.fpcf.fixtures.string;
 
 import org.opalj.fpcf.fixtures.string.tools.StringProvider;
-import org.opalj.fpcf.properties.string_analysis.*;
+import org.opalj.fpcf.properties.string.*;
 
 /**
  * Various tests that test compatibility with array operations (mainly reads with specific array indexes).

@@ -1,20 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.string_analysis;
+package org.opalj.fpcf.properties.string;
 
 /**
  * @author Maximilian Rüsch
  */
-public enum Level {
+public enum SoundnessMode {
 
-    TRUTH("TRUTH"),
-    L0("L0"),
-    L1("L1"),
-    L2("L2"),
-    L3("L3");
+    LOW("LOW"),
+    HIGH("HIGH");
 
     private final String value;
 
-    Level(String value) {
+    SoundnessMode(String value) {
         this.value = value;
     }
 

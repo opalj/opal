@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string;
 
-import org.opalj.fpcf.properties.string_analysis.*;
+import org.opalj.fpcf.properties.string.*;
 
 /**
  * Various tests that test whether detection of needing to resolve parameters for a given string works or not. Note that

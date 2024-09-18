@@ -1,16 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.string_analysis;
+package org.opalj.fpcf.properties.string;
 
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
 
-@PropertyValidator(key = "StringConstancy", validator = ConstantStringMatcher.class)
+@PropertyValidator(key = "StringConstancy", validator = PartiallyConstantStringMatcher.class)
 @Documented
-@Repeatable(Constants.class)
+@Repeatable(PartiallyConstants.class)
 @Retention(RetentionPolicy.CLASS)
-@Target({ ElementType.METHOD, ElementType.LOCAL_VARIABLE })
-public @interface Constant {
+@Target({ ElementType.METHOD })
+public @interface PartiallyConstant {
 
     int n();
 

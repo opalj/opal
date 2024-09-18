@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string;
 
-import org.opalj.fpcf.properties.string_analysis.*;
+import org.opalj.fpcf.properties.string.*;
 
 /**
  * Tests compatibility of the results of the string analysis with e.g. being compiled to a regex string.

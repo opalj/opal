@@ -1,17 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.string_analysis;
+package org.opalj.fpcf.properties.string;
 
 /**
  * @author Maximilian Rüsch
  */
-public enum SoundnessMode {
+public enum DomainLevel {
 
-    LOW("LOW"),
-    HIGH("HIGH");
+    L1("L1"),
+    L2("L2");
 
     private final String value;
 
-    SoundnessMode(String value) {
+    DomainLevel(String value) {
         this.value = value;
     }
 

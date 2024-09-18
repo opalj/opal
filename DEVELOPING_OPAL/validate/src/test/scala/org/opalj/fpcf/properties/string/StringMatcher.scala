@@ -2,7 +2,7 @@
 package org.opalj
 package fpcf
 package properties
-package string_analysis
+package string
 
 import java.util.regex.Pattern
 import scala.util.Try

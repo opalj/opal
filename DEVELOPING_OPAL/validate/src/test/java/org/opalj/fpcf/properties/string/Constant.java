@@ -1,20 +1,25 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.string_analysis;
+package org.opalj.fpcf.properties.string;
 
 import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
 
-@PropertyValidator(key = "StringConstancy", validator = InvalidStringMatcher.class)
+@PropertyValidator(key = "StringConstancy", validator = ConstantStringMatcher.class)
 @Documented
-@Repeatable(Invalids.class)
+@Repeatable(Constants.class)
 @Retention(RetentionPolicy.CLASS)
-@Target({ ElementType.METHOD })
-public @interface Invalid {
+@Target({ ElementType.METHOD, ElementType.LOCAL_VARIABLE })
+public @interface Constant {
 
     int n();
 
     String reason() default "N/A";
+
+    /**
+     * A regexp like string that describes the element(s) that are expected.
+     */
+    String value();
 
     Level[] levels();
 

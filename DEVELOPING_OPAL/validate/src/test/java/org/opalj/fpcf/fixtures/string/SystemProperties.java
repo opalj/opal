@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string;
 
-import org.opalj.fpcf.properties.string_analysis.Constant;
-import org.opalj.fpcf.properties.string_analysis.Failure;
-import org.opalj.fpcf.properties.string_analysis.Level;
+import org.opalj.fpcf.properties.string.Constant;
+import org.opalj.fpcf.properties.string.Failure;
+import org.opalj.fpcf.properties.string.Level;
 
 /**
  * Tests the integration with the system properties FPCF property.

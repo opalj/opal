@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string;
 
-import org.opalj.fpcf.properties.string_analysis.*;
+import org.opalj.fpcf.properties.string.*;
 
 import java.util.Random;
 
