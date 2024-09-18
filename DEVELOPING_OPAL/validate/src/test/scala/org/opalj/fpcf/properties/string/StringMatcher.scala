@@ -14,6 +14,8 @@ import org.opalj.br.fpcf.properties.string.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 
 /**
+ * @see [[StringAnalysisTest]]
+ * @see [[org.opalj.fpcf.fixtures.string.SimpleStringOps]]
  * @author Maximilian Rüsch
  */
 sealed trait StringMatcher extends AbstractPropertyMatcher {

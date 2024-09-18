@@ -5,6 +5,10 @@ import org.opalj.fpcf.properties.PropertyValidator;
 
 import java.lang.annotation.*;
 
+/**
+ * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ * @author Maximilian Rüsch
+ */
 @PropertyValidator(key = "StringConstancy", validator = PartiallyConstantStringMatcher.class)
 @Documented
 @Repeatable(PartiallyConstants.class)
