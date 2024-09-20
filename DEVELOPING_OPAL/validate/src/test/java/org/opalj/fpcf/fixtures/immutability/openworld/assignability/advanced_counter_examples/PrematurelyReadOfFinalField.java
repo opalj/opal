@@ -17,6 +17,7 @@ public class PrematurelyReadOfFinalField {
     }
 
 }
+
 class B {
     B() {
         PrematurelyReadOfFinalField.n = ((C) this).x;
