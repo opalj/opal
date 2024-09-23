@@ -21,28 +21,28 @@ class StringConstancyLevelTests extends AnyFunSuite {
 
     test("tests that the more general string constancy level is computed correctly") {
         // Trivial cases
-        assert(StringConstancyLevel.determineMoreGeneral(Invalid, Invalid) == Invalid)
-        assert(StringConstancyLevel.determineMoreGeneral(Constant, Constant) == Constant)
-        assert(StringConstancyLevel.determineMoreGeneral(PartiallyConstant, PartiallyConstant) == PartiallyConstant)
-        assert(StringConstancyLevel.determineMoreGeneral(Dynamic, Dynamic) == Dynamic)
+        assert(StringConstancyLevel.meet(Invalid, Invalid) == Invalid)
+        assert(StringConstancyLevel.meet(Constant, Constant) == Constant)
+        assert(StringConstancyLevel.meet(PartiallyConstant, PartiallyConstant) == PartiallyConstant)
+        assert(StringConstancyLevel.meet(Dynamic, Dynamic) == Dynamic)
 
         // <= Constant
-        assert(StringConstancyLevel.determineMoreGeneral(Constant, Invalid) == Constant)
-        assert(StringConstancyLevel.determineMoreGeneral(Invalid, Constant) == Constant)
+        assert(StringConstancyLevel.meet(Constant, Invalid) == Constant)
+        assert(StringConstancyLevel.meet(Invalid, Constant) == Constant)
 
         // <= PartiallyConstant
-        assert(StringConstancyLevel.determineMoreGeneral(PartiallyConstant, Invalid) == PartiallyConstant)
-        assert(StringConstancyLevel.determineMoreGeneral(Invalid, PartiallyConstant) == PartiallyConstant)
-        assert(StringConstancyLevel.determineMoreGeneral(PartiallyConstant, Constant) == PartiallyConstant)
-        assert(StringConstancyLevel.determineMoreGeneral(Constant, PartiallyConstant) == PartiallyConstant)
+        assert(StringConstancyLevel.meet(PartiallyConstant, Invalid) == PartiallyConstant)
+        assert(StringConstancyLevel.meet(Invalid, PartiallyConstant) == PartiallyConstant)
+        assert(StringConstancyLevel.meet(PartiallyConstant, Constant) == PartiallyConstant)
+        assert(StringConstancyLevel.meet(Constant, PartiallyConstant) == PartiallyConstant)
 
         // <= Dynamic
-        assert(StringConstancyLevel.determineMoreGeneral(Invalid, Dynamic) == Dynamic)
-        assert(StringConstancyLevel.determineMoreGeneral(Dynamic, Invalid) == Dynamic)
-        assert(StringConstancyLevel.determineMoreGeneral(Constant, Dynamic) == Dynamic)
-        assert(StringConstancyLevel.determineMoreGeneral(Dynamic, Constant) == Dynamic)
-        assert(StringConstancyLevel.determineMoreGeneral(PartiallyConstant, Dynamic) == Dynamic)
-        assert(StringConstancyLevel.determineMoreGeneral(Dynamic, PartiallyConstant) == Dynamic)
+        assert(StringConstancyLevel.meet(Invalid, Dynamic) == Dynamic)
+        assert(StringConstancyLevel.meet(Dynamic, Invalid) == Dynamic)
+        assert(StringConstancyLevel.meet(Constant, Dynamic) == Dynamic)
+        assert(StringConstancyLevel.meet(Dynamic, Constant) == Dynamic)
+        assert(StringConstancyLevel.meet(PartiallyConstant, Dynamic) == Dynamic)
+        assert(StringConstancyLevel.meet(Dynamic, PartiallyConstant) == Dynamic)
     }
 
     test("tests that the string constancy level for concatenation of two levels is computed correctly") {

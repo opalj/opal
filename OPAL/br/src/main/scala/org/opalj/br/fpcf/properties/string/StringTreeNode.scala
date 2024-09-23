@@ -233,7 +233,7 @@ trait StringTreeOr extends CachedSimplifyNode with CachedHashCode {
     }
 
     override def constancyLevel: StringConstancyLevel =
-        _children.map(_.constancyLevel).reduceLeft(StringConstancyLevel.determineMoreGeneral)
+        _children.map(_.constancyLevel).reduceLeft(StringConstancyLevel.meet)
 
     override lazy val parameterIndices: Set[Int] = _children.flatMap(_.parameterIndices).toSet
 }

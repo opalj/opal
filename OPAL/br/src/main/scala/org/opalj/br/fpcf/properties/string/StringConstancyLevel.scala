@@ -45,10 +45,7 @@ object StringConstancyLevel {
      * @param level2 The second level.
      * @return Returns the more general level of both given inputs.
      */
-    def determineMoreGeneral(
-        level1: StringConstancyLevel,
-        level2: StringConstancyLevel
-    ): StringConstancyLevel = {
+    def meet(level1: StringConstancyLevel, level2: StringConstancyLevel): StringConstancyLevel = {
         if (level1 == Dynamic || level2 == Dynamic) {
             Dynamic
         } else if (level1 == PartiallyConstant || level2 == PartiallyConstant) {
@@ -73,10 +70,7 @@ object StringConstancyLevel {
      * @param level2 The second level.
      * @return Returns the level for a concatenation.
      */
-    def determineForConcat(
-        level1: StringConstancyLevel,
-        level2: StringConstancyLevel
-    ): StringConstancyLevel = {
+    def determineForConcat(level1: StringConstancyLevel, level2: StringConstancyLevel): StringConstancyLevel = {
         if (level1 == Invalid || level2 == Invalid) {
             Invalid
         } else if (level1 == PartiallyConstant || level2 == PartiallyConstant) {
