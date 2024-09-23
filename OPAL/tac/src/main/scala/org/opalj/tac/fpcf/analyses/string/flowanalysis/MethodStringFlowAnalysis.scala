@@ -31,7 +31,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 /**
  * @author Maximilian Rüsch
  */
-class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAnalysis with UniversalStringConfig {
+class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAnalysis with StringAnalysisConfig {
 
     private final val ConfigLogCategory = "analysis configuration - method string flow analysis"
 

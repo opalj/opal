@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  *
  * @author Maximilian Rüsch
  */
-abstract class InterpretationHandler extends FPCFAnalysis with UniversalStringConfig {
+abstract class InterpretationHandler extends FPCFAnalysis with StringAnalysisConfig {
 
     def analyze(entity: MethodPC): ProperPropertyComputationResult = {
         val tacaiEOptP = ps(entity.dm.definedMethod, TACAI.key)

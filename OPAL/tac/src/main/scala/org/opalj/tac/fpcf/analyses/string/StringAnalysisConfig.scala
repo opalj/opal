@@ -14,7 +14,7 @@ import org.opalj.log.OPALLogger.logOnce
 /**
  * @author Maximilian Rüsch
  */
-trait UniversalStringConfig {
+trait StringAnalysisConfig {
 
     val project: SomeProject
     implicit def logContext: LogContext
@@ -24,11 +24,11 @@ trait UniversalStringConfig {
     implicit val highSoundness: Boolean = {
         val isHighSoundness =
             try {
-                project.config.getBoolean(UniversalStringConfig.HighSoundnessConfigKey)
+                project.config.getBoolean(StringAnalysisConfig.HighSoundnessConfigKey)
             } catch {
                 case t: Throwable =>
                     logOnce {
-                        Error(ConfigLogCategory, s"couldn't read: ${UniversalStringConfig.HighSoundnessConfigKey}", t)
+                        Error(ConfigLogCategory, s"couldn't read: ${StringAnalysisConfig.HighSoundnessConfigKey}", t)
                     }
                     false
             }
@@ -38,7 +38,7 @@ trait UniversalStringConfig {
     }
 }
 
-object UniversalStringConfig {
+object StringAnalysisConfig {
 
     final val HighSoundnessConfigKey = "org.opalj.fpcf.analyses.string.highSoundness"
 }

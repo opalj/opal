@@ -52,7 +52,7 @@ import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.string.StringAnalysis
-import org.opalj.tac.fpcf.analyses.string.UniversalStringConfig
+import org.opalj.tac.fpcf.analyses.string.StringAnalysisConfig
 import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.MethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
@@ -83,7 +83,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         }
 
         super.createConfig()
-            .withValue(UniversalStringConfig.HighSoundnessConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
+            .withValue(StringAnalysisConfig.HighSoundnessConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
             .withValue(StringAnalysis.DepthThresholdConfigKey, ConfigValueFactory.fromAnyRef(10))
             .withValue(
                 MethodStringFlowAnalysis.ExcludedPackagesConfigKey,

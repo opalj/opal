@@ -39,7 +39,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @see [[StringAnalysis]]
  */
-class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnalysis with UniversalStringConfig {
+class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnalysis with StringAnalysisConfig {
 
     private case class TrivialStringAnalysisState(entity: VariableContext, var tacDependee: EOptionP[Method, TACAI])
 
