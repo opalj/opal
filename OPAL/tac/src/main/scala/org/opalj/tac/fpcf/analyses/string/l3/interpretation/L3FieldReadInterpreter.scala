@@ -215,5 +215,5 @@ object L3FieldReadInterpreter {
      * Checks whether the given type is supported by the field read analysis, i.e. if it may contain values desirable
      * AND resolvable by the string analysis as a whole.
      */
-    private def isSupportedType(fieldType: FieldType): Boolean = fieldType.isBaseType || fieldType == ObjectType.String
+    private def isSupportedType(fieldType: FieldType): Boolean = fieldType.isBaseType || (fieldType eq ObjectType.String)
 }
