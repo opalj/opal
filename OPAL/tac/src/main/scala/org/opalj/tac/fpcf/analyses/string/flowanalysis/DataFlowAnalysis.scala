@@ -16,6 +16,24 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 import scalax.collection.GraphTraversal.BreadthFirst
 import scalax.collection.GraphTraversal.Parameters
 
+/**
+ * Performs structural string data flow analysis based on the results of a [[StructuralAnalysis]]. In more detail, this
+ * means that the control tree produced by the [[StructuralAnalysis]] is traversed recursively in a depth-first manner.
+ * Individual regions are processed by piping a [[StringTreeEnvironment]] through their nodes and joining the
+ * environments where paths meet up. Thus, the individual flow functions defined at the statement PCs of a method are
+ * combined using region-type-specific patterns to effectively act as a string flow function of the entire region, which
+ * is then processed itself due to the recursive nature of the algorithm.
+ *
+ * @param controlTree The control tree from the structural analysis.
+ * @param superFlowGraph The super flow graph from the structural analysis
+ * @param highSoundness Whether to use high soundness mode or not. Currently, this influences the handling of loops,
+ *                      i.e. whether they are approximated by one execution of the loop body (low soundness) or via
+ *                      "any string" on all variables in the method (high soundness).
+ *
+ * @see [[StructuralAnalysis]], [[StringTreeEnvironment]]
+ *
+ * @author Maximilian Rüsch
+ */
 class DataFlowAnalysis(
     private val controlTree:    ControlTree,
     private val superFlowGraph: SuperFlowGraph,
@@ -25,6 +43,14 @@ class DataFlowAnalysis(
     private val _nodeOrderings = mutable.Map.empty[FlowGraphNode, Seq[SuperFlowGraph#NodeT]]
     private val _removedBackEdgesGraphs = mutable.Map.empty[FlowGraphNode, (Boolean, SuperFlowGraph)]
 
+    /**
+     * Computes the resulting string tree environment after the data flow analysis.
+     *
+     * @param flowFunctionByPc A mapping from PC to the flow functions to be used
+     * @param startEnv The base environment which is piped into the first region to be processed.
+     * @return The resulting [[StringTreeEnvironment]] after execution of all string flow functions using the region
+     *         hierarchy given in the control tree.
+     */
     def compute(
         flowFunctionByPc: Map[Int, StringFlowFunction]
     )(startEnv: StringTreeEnvironment): StringTreeEnvironment = {
@@ -37,10 +63,6 @@ class DataFlowAnalysis(
         pipeThroughNode(flowFunctionByPc)(startNode, startEnv)
     }
 
-    /**
-     * @note This function should be stable with regards to an ordering on the piped flow graph nodes, e.g. a proper
-     *       region should always be traversed in the same way.
-     */
     private def pipeThroughNode(flowFunctionByPc: Map[Int, StringFlowFunction])(
         node: FlowGraphNode,
         env:  StringTreeEnvironment
@@ -127,6 +149,7 @@ class DataFlowAnalysis(
 
         def processSelfLoop(entry: FlowGraphNode): StringTreeEnvironment = {
             val resultEnv = pipe(entry, env)
+            // IMPROVE only update affected variables instead of all
             if (resultEnv != env && highSoundness) env.updateAll(StringTreeDynamicString)
             else resultEnv
         }
@@ -146,6 +169,7 @@ class DataFlowAnalysis(
                 resultEnv = pipe(currentNode.outer, resultEnv)
             }
 
+            // IMPROVE only update affected variables instead of all
             if (resultEnv != envAfterEntry && highSoundness) envAfterEntry.updateAll(StringTreeDynamicString)
             else resultEnv
         }
@@ -165,6 +189,7 @@ class DataFlowAnalysis(
             )
 
             if (isCyclic) {
+                // IMPROVE only update affected variables instead of all
                 if (highSoundness) env.updateAll(StringTreeDynamicString)
                 else env.updateAll(StringTreeInvalidElement)
             } else {
@@ -174,6 +199,7 @@ class DataFlowAnalysis(
                     removedBackEdgesGraph.nodes.toSet,
                     entry
                 )
+                // IMPROVE only update affected variables instead of all
                 if (resultEnv != env && highSoundness) env.updateAll(StringTreeDynamicString)
                 else resultEnv
             }

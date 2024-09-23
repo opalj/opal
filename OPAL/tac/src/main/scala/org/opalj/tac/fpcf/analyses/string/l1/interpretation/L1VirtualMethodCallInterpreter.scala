@@ -16,6 +16,9 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 import org.opalj.value.TheIntegerValue
 
 /**
+ * Processes [[VirtualMethodCall]]s without a call graph. Currently, only calls to `setLength` of string buffers and
+ * string builders are interpreted. For other calls, ID is returned.
+ *
  * @author Maximilian Rüsch
  */
 case class L1VirtualMethodCallInterpreter()(

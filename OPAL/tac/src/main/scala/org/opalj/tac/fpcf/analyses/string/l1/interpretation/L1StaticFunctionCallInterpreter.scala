@@ -18,6 +18,12 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
+ * Interprets some specific static calls in the context of their method as well as arbitrary static calls without a call
+ * graph.
+ *
+ * @see [[L1ArbitraryStaticFunctionCallInterpreter]], [[L1StringValueOfFunctionCallInterpreter]],
+ *      [[L1SystemPropertiesInterpreter]]
+ *
  * @author Maximilian Rüsch
  */
 case class L1StaticFunctionCallInterpreter()(

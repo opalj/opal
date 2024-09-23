@@ -23,6 +23,13 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
+/**
+ * FPCF analysis state for the [[ContextFreeStringAnalysis]].
+ *
+ * @see [[ContextFreeStringAnalysis]]
+ *
+ * @author Maximilian Rüsch
+ */
 private[string] case class ContextFreeStringAnalysisState(
     entity:                 VariableDefinition,
     var tacaiDependee:      EOptionP[Method, TACAI],
@@ -36,6 +43,14 @@ private[string] case class ContextFreeStringAnalysisState(
         Set(tacaiDependee).filter(_.isRefinable) ++ stringFlowDependee.filter(_.isRefinable)
 }
 
+/**
+ * FPCF analysis state for the [[ContextStringAnalysis]]. Provides support for adding required parameter dependees due
+ * to changes in the string dependee at runtime.
+ *
+ * @see [[ContextStringAnalysis]]
+ *
+ * @author Maximilian Rüsch
+ */
 private[string] class ContextStringAnalysisState private (
     val entity:                    VariableContext,
     private var _stringDependee:   EOptionP[VariableDefinition, StringConstancyProperty],
@@ -104,6 +119,14 @@ object ContextStringAnalysisState {
     }
 }
 
+/**
+ * FPCF analysis state for the [[MethodParameterContextStringAnalysis]]. Provides support for finding call sites for a
+ * given method as well as the relevant TACAI properties and their call parameter string dependees.
+ *
+ * @see [[MethodParameterContextStringAnalysis]]
+ *
+ * @author Maximilian Rüsch
+ */
 private[string] case class MethodParameterContextStringAnalysisState(
     entity: MethodParameterContext
 ) {
@@ -113,9 +136,11 @@ private[string] case class MethodParameterContextStringAnalysisState(
 
     // Callers
     private[string] type CallerContext = (Context, Int)
-    var _callersDependee: Option[EOptionP[DeclaredMethod, Callers]] = None
+    private var _callersDependee: Option[EOptionP[DeclaredMethod, Callers]] = None
     private val _callerContexts: mutable.Map[CallerContext, Option[Call[V]]] = mutable.Map.empty
     private val _callerContextsByMethod: mutable.Map[Method, Seq[CallerContext]] = mutable.Map.empty
+
+    def callersDependee: Option[EOptionP[DeclaredMethod, Callers]] = _callersDependee
 
     def updateCallers(newCallers: EOptionP[DeclaredMethod, Callers]): Unit = _callersDependee = Some(newCallers)
 
@@ -132,7 +157,7 @@ private[string] case class MethodParameterContextStringAnalysisState(
 
     // TACAI
     private val _tacaiDependees: mutable.Map[Method, EOptionP[Method, TACAI]] = mutable.Map.empty
-    var _discoveredUnknownTAC: Boolean = false
+    var discoveredUnknownTAC: Boolean = false
 
     def updateTacaiDependee(tacEOptP: EOptionP[Method, TACAI]): Unit = _tacaiDependees(tacEOptP.e) = tacEOptP
     def getTacaiForContext(callerContext: CallerContext)(implicit ps: PropertyStore): EOptionP[Method, TACAI] = {
@@ -183,7 +208,7 @@ private[string] case class MethodParameterContextStringAnalysisState(
             }
 
         if (highSoundness && (
-                _discoveredUnknownTAC ||
+                discoveredUnknownTAC ||
                 _callersDependee.exists(cd => cd.hasUBP && cd.ub.hasCallersWithUnknownContext)
             )
         ) {

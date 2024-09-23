@@ -21,9 +21,12 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
- * This class is to be used to store state information that are required at a later point in
- * time during the analysis, e.g., due to the fact that another analysis had to be triggered to
- * have all required information ready for a final result.
+ * The state of the [[MethodStringFlowAnalysis]] containing data flow analysis relevant information such as flow graphs
+ * and all string flow dependees for the method under analysis.
+ *
+ * @see [[MethodStringFlowAnalysis]]
+ *
+ * @author Maximilian Rüsch
  */
 case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {
 
@@ -61,7 +64,7 @@ case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, var 
         else StringFlowFunctionProperty.ub.flow
     }
 
-    private def getWebs: IndexedSeq[PDUWeb] = {
+    private def webs: IndexedSeq[PDUWeb] = {
         pcToDependeeMapping.values.flatMap { v =>
             if (v.hasUBP) v.ub.webs
             else StringFlowFunctionProperty.ub.webs
@@ -74,7 +77,6 @@ case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, var 
     private var _startEnv: StringTreeEnvironment = StringTreeEnvironment(Map.empty)
     def getStartEnvAndReset(implicit highSoundness: Boolean): StringTreeEnvironment = {
         if (pcToWebChangeMapping.exists(_._2)) {
-            val webs = getWebs
             val indexedWebs = mutable.ArrayBuffer.empty[PDUWeb]
             val defPCToWebIndex = mutable.Map.empty[Int, Int]
             webs.foreach { web =>

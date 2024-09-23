@@ -21,6 +21,11 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
+/**
+ * Processes assignments of system property references to variables by using the [[SystemProperties]] FPCF property.
+ *
+ * @author Maximilian Rüsch
+ */
 private[string] trait L1SystemPropertiesInterpreter extends StringInterpreter {
 
     implicit val ps: PropertyStore

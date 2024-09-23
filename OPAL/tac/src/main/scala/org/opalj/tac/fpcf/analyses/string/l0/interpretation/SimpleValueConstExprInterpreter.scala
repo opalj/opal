@@ -13,6 +13,11 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
+ * Interprets the given assignment statement containing a [[SimpleValueConst]] expression by determining the possible
+ * constant values from the given expression. The result is converted to a [[StringTreeConst]] and applied to the
+ * assignment target variable in the string flow function. If no applicable const is found, ID is returned for all
+ * variables.
+ *
  * @author Maximilian Rüsch
  */
 object SimpleValueConstExprInterpreter extends AssignmentBasedStringInterpreter {
@@ -22,8 +27,6 @@ object SimpleValueConstExprInterpreter extends AssignmentBasedStringInterpreter 
     override def interpretExpr(target: PV, expr: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        // IMPROVE the constants generated here could also be interpreted outside string flow interpretation, reducing
-        // the overhead needed to interpret a simple string const for e.g. a call parameter.
         computeFinalResult(expr match {
             case ic: IntConst =>
                 StringFlowFunctionProperty.constForVariableAt(state.pc, target, StringTreeConst(ic.value.toString))

@@ -28,6 +28,9 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 /**
  * @inheritdoc
  *
+ * Interprets statements similar to [[org.opalj.tac.fpcf.analyses.string.l2.interpretation.L2InterpretationHandler]] but
+ * handles field read accesses as well.
+ *
  * @author Maximilian Rüsch
  */
 class L3InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
@@ -37,7 +40,7 @@ class L3InterpretationHandler(implicit override val project: SomeProject) extend
 
     override protected def processStatement(implicit
         state: InterpretationState
-    ): PartialFunction[Stmt[V], ProperPropertyComputationResult] = {
+    ): Stmt[V] => ProperPropertyComputationResult = {
         case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
 

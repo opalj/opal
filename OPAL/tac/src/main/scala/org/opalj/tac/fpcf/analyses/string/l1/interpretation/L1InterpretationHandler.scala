@@ -18,13 +18,16 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 /**
  * @inheritdoc
  *
+ * Interprets statements similar to the [[org.opalj.tac.fpcf.analyses.string.l0.interpretation.L0InterpretationHandler]]
+ * but handles all sorts of function calls on top.
+ *
  * @author Maximilian Rüsch
  */
 class L1InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
 
     override protected def processStatement(implicit
         state: InterpretationState
-    ): PartialFunction[Stmt[V], ProperPropertyComputationResult] = {
+    ): Stmt[V] => ProperPropertyComputationResult = {
         case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
         case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter().interpretExpr(stmt, expr)

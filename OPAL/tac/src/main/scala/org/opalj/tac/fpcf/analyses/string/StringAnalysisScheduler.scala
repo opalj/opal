@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package string
 
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
@@ -16,13 +15,12 @@ import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.MethodStringFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
-import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
-import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
+ * A trait for FPCF analysis schedulers that combine the parts of the string analysis that produce
+ * [[StringConstancyProperty]]s.
+ *
  * @author Maximilian Rüsch
  */
 sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
@@ -47,6 +45,12 @@ sealed trait StringAnalysisScheduler extends FPCFAnalysisScheduler {
     override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 }
 
+/**
+ * A lazy adaptation of the [[StringAnalysisScheduler]]. All three string analyses are combined since the property store
+ * does not allow registering more than one lazy analysis scheduler for a given property.
+ *
+ * @author Maximilian Rüsch
+ */
 object LazyStringAnalysis
     extends StringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
@@ -68,65 +72,4 @@ object LazyStringAnalysis
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(ContextProviderKey)
-}
-
-sealed trait MethodStringFlowAnalysisScheduler extends FPCFAnalysisScheduler {
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.ub(MethodStringFlow)
-
-    override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(TACAI),
-        PropertyBounds.ub(StringFlowFunctionProperty)
-    )
-
-    override final type InitializationData = MethodStringFlowAnalysis
-    override def init(p: SomeProject, ps: PropertyStore): InitializationData = new MethodStringFlowAnalysis(p)
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-}
-
-object LazyMethodStringFlowAnalysis
-    extends MethodStringFlowAnalysisScheduler with FPCFLazyAnalysisScheduler {
-
-    override def register(p: SomeProject, ps: PropertyStore, initData: InitializationData): FPCFAnalysis = {
-        ps.registerLazyPropertyComputation(MethodStringFlow.key, initData.analyze)
-        initData
-    }
-
-    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
-}
-
-sealed trait StringFlowAnalysisScheduler extends FPCFAnalysisScheduler {
-
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringFlowFunctionProperty)
-
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI)
-
-    override final type InitializationData = InterpretationHandler
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-}
-
-trait LazyStringFlowAnalysis
-    extends StringFlowAnalysisScheduler with FPCFLazyAnalysisScheduler {
-
-    override def register(p: SomeProject, ps: PropertyStore, initData: InitializationData): FPCFAnalysis = {
-        ps.registerLazyPropertyComputation(StringFlowFunctionProperty.key, initData.analyze)
-
-        initData
-    }
-
-    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 }

@@ -26,6 +26,9 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
+ * Base trait for all function call interpreters on L1. Provides support for multiple possible called methods as well as
+ * adding called methods and return dependees at runtime.
+ *
  * @author Maximilian Rüsch
  */
 trait L1FunctionCallInterpreter
@@ -120,14 +123,17 @@ trait L1FunctionCallInterpreter
                 StringTreeOr {
                     callState.calleeMethods.map { m =>
                         if (callState.hasUnresolvableReturnValue(m)) {
+                            // We know we cannot resolve a definitive return value for this function
                             failureTree
                         } else if (callState.returnDependees.contains(m)) {
+                            // We have some return dependees and can thus join their state
                             StringTreeOr(callState.returnDependees(m).map { rd =>
                                 if (rd.hasUBP) {
                                     rd.ub.tree.replaceParameters(parameters.map { kv => (kv._1, env(pc, kv._2)) })
                                 } else StringTreeNode.ub
                             })
                         } else {
+                            // Empty join -> Upper bound
                             StringTreeNode.ub
                         }
                     }

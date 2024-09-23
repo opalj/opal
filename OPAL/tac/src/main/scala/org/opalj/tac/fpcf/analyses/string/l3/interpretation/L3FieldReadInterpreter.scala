@@ -33,8 +33,8 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
- * Responsible for processing direct reads to fields (see [[FieldRead]]) by analyzing the write accesses to these fields
- * via the [[FieldWriteAccessInformation]].
+ * Interprets direct reads to fields (see [[FieldRead]]) by analyzing the write accesses to these fields via the
+ * [[FieldWriteAccessInformation]] and the possible string values passed to these write accesses.
  *
  * @author Maximilian Rüsch
  */

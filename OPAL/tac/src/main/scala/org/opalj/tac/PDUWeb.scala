@@ -5,8 +5,16 @@ package tac
 import org.opalj.br.PDVar
 import org.opalj.br.PUVar
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value.ValueInformation
 
+/**
+ * Identifies a variable inside a given fixed method. A methods webs can be constructed through the maximal unions of
+ * all intersecting DU-UD-chains of the method.
+ *
+ * @param defPCs The def PCs of the variable that is identified through this web.
+ * @param usePCs The use PCs of the variable that is identified through this web.
+ *
+ * @author Maximilian Rüsch
+ */
 case class PDUWeb(
     defPCs: IntTrieSet,
     usePCs: IntTrieSet
@@ -14,8 +22,6 @@ case class PDUWeb(
     def identifiesSameVarAs(other: PDUWeb): Boolean = other.defPCs.intersect(defPCs).nonEmpty
 
     def combine(other: PDUWeb): PDUWeb = PDUWeb(other.defPCs ++ defPCs, other.usePCs ++ usePCs)
-
-    def size: Int = defPCs.size + usePCs.size
 
     // Performance optimizations
     private lazy val _hashCode = scala.util.hashing.MurmurHash3.productHash(this)
@@ -26,13 +32,7 @@ case class PDUWeb(
 object PDUWeb {
 
     def apply(pc: Int, pv: PV): PDUWeb = pv match {
-        case pdVar: PDVar[_] => forDVar(pc, pdVar)
-        case puVar: PUVar[_] => forUVar(pc, puVar)
+        case pdVar: PDVar[_] => PDUWeb(IntTrieSet(pc), pdVar.usePCs)
+        case puVar: PUVar[_] => PDUWeb(puVar.defPCs, IntTrieSet(pc))
     }
-
-    def forDVar[Value <: ValueInformation](defPC: Int, pdVar: PDVar[Value]): PDUWeb =
-        PDUWeb(IntTrieSet(defPC), pdVar.usePCs)
-
-    def forUVar[Value <: ValueInformation](usePC: Int, puVar: PUVar[Value]): PDUWeb =
-        PDUWeb(puVar.defPCs, IntTrieSet(usePC))
 }

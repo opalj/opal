@@ -16,13 +16,16 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 /**
  * @inheritdoc
  *
+ * Interprets statements on a very basic level by only interpreting either constant or binary expressions and their
+ * resulting assignments.
+ *
  * @author Maximilian Rüsch
  */
 class L0InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
 
     override protected def processStatement(implicit
         state: InterpretationState
-    ): PartialFunction[Stmt[V], ProperPropertyComputationResult] = {
+    ): Stmt[V] => ProperPropertyComputationResult = {
         case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
         case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter().interpretExpr(stmt, expr)

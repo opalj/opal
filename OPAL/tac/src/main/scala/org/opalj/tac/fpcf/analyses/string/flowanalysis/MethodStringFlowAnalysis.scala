@@ -29,6 +29,15 @@ import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
+ * Analyzes a methods string flow results by applying a [[StructuralAnalysis]] to identify all control flow regions of
+ * the methods CFG and subsequently applying a [[DataFlowAnalysis]] to compute a resulting string tree environment
+ * using string flow functions derived from the FPCF [[StringFlowFunctionProperty]].
+ *
+ * @note Packages can be configured to be excluded from analysis entirely due to e.g. size problems. In these cases, the
+ *       lower or upper bound string tree environment will be returned, depending on the soundness mode of the analysis.
+ *
+ * @see [[StructuralAnalysis]], [[DataFlowAnalysis]], [[StringFlowFunctionProperty]], [[StringAnalysisConfig]]
+ *
  * @author Maximilian Rüsch
  */
 class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAnalysis with StringAnalysisConfig {
@@ -61,7 +70,11 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         val state = MethodStringFlowAnalysisState(method, declaredMethods(method), ps(method, TACAI.key))
 
         if (excludedPackages.exists(method.classFile.thisType.packageName.startsWith(_))) {
-            Result(state.entity, MethodStringFlow.lb)
+            Result(
+                state.entity,
+                if (highSoundness) MethodStringFlow.lb
+                else MethodStringFlow.ub
+            )
         } else if (state.tacDependee.isRefinable) {
             InterimResult(
                 state.entity,
@@ -82,11 +95,6 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         }
     }
 
-    /**
-     * Takes the `data` an analysis was started with as well as a computation `state` and determines
-     * the possible string values. This method returns either a final [[Result]] or an
-     * [[InterimResult]] depending on whether other information needs to be computed first.
-     */
     private def determinePossibleStrings(implicit
         state: MethodStringFlowAnalysisState
     ): ProperPropertyComputationResult = {

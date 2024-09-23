@@ -12,6 +12,8 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.logOnce
 
 /**
+ * Shared config between the multiple analyses of the string analysis package.
+ *
  * @author Maximilian Rüsch
  */
 trait StringAnalysisConfig {

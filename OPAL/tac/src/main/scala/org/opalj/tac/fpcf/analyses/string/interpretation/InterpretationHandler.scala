@@ -17,10 +17,11 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
  * Processes expressions that are relevant in order to determine which value(s) the string value at a given def site
- * might have.
+ * might have. Produces string flow functions that transform a given string state during data flow analysis.
  *
- * [[InterpretationHandler]]s of any level may use [[StringInterpreter]]s from their level or any level below.
- * [[StringInterpreter]]s defined in the [[interpretation]] package may be used by any level.
+ * @note [[InterpretationHandler]]s of any level may use [[StringInterpreter]]s from their level or any level below.
+ *
+ * @see [[StringFlowFunctionProperty]], [[org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis]]
  *
  * @author Maximilian Rüsch
  */
@@ -71,9 +72,7 @@ abstract class InterpretationHandler extends FPCFAnalysis with StringAnalysisCon
         processStatement(state)(state.tac.stmts(defSiteOpt.get))
     }
 
-    protected def processStatement(
-        implicit state: InterpretationState
-    ): PartialFunction[Stmt[V], ProperPropertyComputationResult]
+    protected def processStatement(implicit state: InterpretationState): Stmt[V] => ProperPropertyComputationResult
 }
 
 object InterpretationHandler {

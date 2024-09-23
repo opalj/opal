@@ -37,6 +37,11 @@ import org.opalj.log.OPALLogger.logOnce
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 
+/**
+ * Base trait for all string analyses that compute results for the FPCF [[StringConstancyProperty]].
+ *
+ * @author Maximilian Rüsch
+ */
 trait StringAnalysis extends FPCFAnalysis with StringAnalysisConfig {
 
     private final val ConfigLogCategory = "analysis configuration - string analysis"
@@ -51,7 +56,7 @@ trait StringAnalysis extends FPCFAnalysis with StringAnalysisConfig {
             } catch {
                 case t: Throwable =>
                     logOnce(Error(ConfigLogCategory, s"couldn't read: ${StringAnalysis.DepthThresholdConfigKey}", t))
-                    30
+                    10
             }
 
         logOnce(Info(ConfigLogCategory, "using depth threshold " + depthThreshold))
@@ -69,6 +74,16 @@ object StringAnalysis {
 }
 
 /**
+ * Analyzes a given variable in context of its method in a context free manner, i.e. without trying to resolve method
+ * parameter references present in the string tree computed for the variable.
+ *
+ * @note This particular instance of the analysis also tries to resolve string constants without involving the
+ *       [[MethodStringFlow]] FPCF property in an effort to maintain scalability. Once a variable is known to require
+ *       flow-sensitive information, a [[MethodStringFlow]] property is requested from the property store and all
+ *       subsequent computations are made simply in reaction to changes in the method string flow dependee.
+ *
+ * @see [[org.opalj.tac.fpcf.analyses.string.flowanalysis.MethodStringFlowAnalysis]], [[ContextStringAnalysis]]
+ *
  * @author Maximilian Rüsch
  */
 private[string] class ContextFreeStringAnalysis(override val project: SomeProject) extends StringAnalysis {
@@ -192,6 +207,12 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
 }
 
 /**
+ * Analyzes a given variable in context of its method in a context-sensitive manner, i.e. resolving all method
+ * parameter references given in the string tree that was resolved for the variable from the
+ * [[ContextFreeStringAnalysis]].
+ *
+ * @see [[ContextFreeStringAnalysis]], [[MethodParameterContextStringAnalysis]]
+ *
  * @author Maximilian Rüsch
  */
 class ContextStringAnalysis(override val project: SomeProject) extends StringAnalysis {
@@ -254,6 +275,15 @@ class ContextStringAnalysis(override val project: SomeProject) extends StringAna
     }
 }
 
+/**
+ * Analyzes the possible values of a given method parameter by analyzing the actual method parameters at all call sites
+ * of the given method using the [[ContextStringAnalysis]]. Uses the call graph to find all call sites of the given
+ * method.
+ *
+ * @see [[ContextStringAnalysis]]
+ *
+ * @author Maximilian Rüsch
+ */
 private[string] class MethodParameterContextStringAnalysis(override val project: SomeProject) extends StringAnalysis {
 
     private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
@@ -276,14 +306,14 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
         implicit val _state: MethodParameterContextStringAnalysisState = state
         eps match {
             case UBP(callers: Callers) =>
-                val oldCallers = if (state._callersDependee.get.hasUBP) state._callersDependee.get.ub else NoCallers
+                val oldCallers = if (state.callersDependee.get.hasUBP) state.callersDependee.get.ub else NoCallers
                 state.updateCallers(eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]])
                 handleNewCallers(oldCallers, callers)
                 computeResults
 
             case EUBP(m: Method, tacai: TACAI) =>
                 if (tacai.tac.isEmpty) {
-                    state._discoveredUnknownTAC = true
+                    state.discoveredUnknownTAC = true
                 } else {
                     state.getCallerContexts(m).foreach(handleTACForContext(tacai.tac.get, _))
                 }
@@ -315,7 +345,7 @@ private[string] class MethodParameterContextStringAnalysis(override val project:
             if (tacEOptP.hasUBP) {
                 val tacOpt = tacEOptP.ub.tac
                 if (tacOpt.isEmpty) {
-                    state._discoveredUnknownTAC = true
+                    state.discoveredUnknownTAC = true
                 } else {
                     handleTACForContext(tacOpt.get, callerContext)
                 }

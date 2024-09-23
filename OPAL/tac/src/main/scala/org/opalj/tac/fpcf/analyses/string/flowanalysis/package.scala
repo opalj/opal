@@ -34,13 +34,26 @@ package object flowanalysis {
 
     object FlowGraph extends TypedGraphFactory[FlowGraphNode, DiEdge[FlowGraphNode]] {
 
-        def entry: FlowGraphNode = GlobalEntry
+        /**
+         * The entry point of all flow graphs.
+         *
+         * @see [[GlobalEntry]]
+         */
+        val entry: FlowGraphNode = GlobalEntry
 
         private def mapInstrIndexToPC[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]])(index: Int): Int = {
             if (index >= 0) cfg.code.instructions(index).pc
             else index
         }
 
+        /**
+         * Converts a given CFG to a flow graph with additional global entry and exit nodes.
+         *
+         * @see [[FlowGraphNode]]
+         *
+         * @param cfg The CFG to convert to a flow graph.
+         * @return The flow graph obtained from the CFG.
+         */
         def apply[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): FlowGraph = {
             val toPC = mapInstrIndexToPC(cfg) _
 
@@ -90,6 +103,10 @@ package object flowanalysis {
         private[this] def entryFromCFG[V <: Var[V]](cfg: CFG[Stmt[V], TACStmts[V]]): Statement =
             Statement(mapInstrIndexToPC(cfg)(cfg.startBlock.nodeId))
 
+        /**
+         * @param graph The graph consisting of flow graph nodes to convert to DOT format.
+         * @return A DOT string of the graph.
+         */
         def toDot[N <: FlowGraphNode, E <: Edge[N]](graph: Graph[N, E]): String = {
             val root = DotRootGraph(
                 directed = true,

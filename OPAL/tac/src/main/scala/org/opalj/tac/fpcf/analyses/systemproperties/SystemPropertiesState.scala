@@ -14,27 +14,21 @@ import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.properties.TACAI
 
+/**
+ * @see [[SystemPropertiesAnalysis]]
+ * @author Maximilian Rüsch
+ */
 final class SystemPropertiesState[ContextType <: Context](
-    override val callContext:                    ContextType,
-    override protected[this] var _tacDependee:   EOptionP[Method, TACAI],
-    private[this] var _stringConstancyDependees: Map[VariableContext, EOptionP[VariableContext, StringConstancyProperty]]
+    override val callContext:                  ContextType,
+    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
-    /////////////////////////////////////////////
-    //                                         //
-    //                 strings                 //
-    //                                         //
-    /////////////////////////////////////////////
+    private[this] var _stringConstancyDependees: Map[VariableContext, EOptionP[VariableContext, StringConstancyProperty]] =
+        Map.empty
 
     def updateStringDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit = {
         _stringConstancyDependees = _stringConstancyDependees.updated(dependee.e, dependee)
     }
-
-    /////////////////////////////////////////////
-    //                                         //
-    //      general dependency management      //
-    //                                         //
-    /////////////////////////////////////////////
 
     override def hasOpenDependencies: Boolean = {
         super.hasOpenDependencies ||
