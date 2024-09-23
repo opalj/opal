@@ -4,8 +4,6 @@ package fpcf
 package analyses
 
 import java.net.URL
-import java.util.concurrent.ScheduledThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 import scala.util.Try
 
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
@@ -23,7 +21,6 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
-import org.opalj.fpcf.par.PKECPropertyStore
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.string.LazyStringAnalysis
@@ -135,25 +132,6 @@ object StringAnalysisDemo extends ProjectAnalysisApplication {
         val typeIterator = cgKey.getTypeIterator(project)
         project.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
 
-        val ex = new ScheduledThreadPoolExecutor(1)
-        val task = new Runnable {
-            def run(): Unit = {
-                propertyStore match {
-                    case realPS: PKECPropertyStore =>
-                        val sizes = realPS.ps.map(_.size())
-                        val topEPK = sizes.zipWithIndex.sortBy(-_._1).take(5)
-                            .filter(_._2 <= PropertyKey.maxId)
-                            .map(s => s"${PropertyKey.key(s._2)}: ${s._1}")
-                        System.out.println(s"Top States: ${topEPK.mkString("\n|        ", "\n|        ", "\n")}")
-                        System.out.println(s"PS EPK States: ${sizes.sum}")
-                        System.out.println(s"PS Active tasks: ${realPS.activeTasks.get}")
-                        System.out.println("---------------------------------------------------------------------------")
-
-                    case _ =>
-                }
-            }
-        }
-        val f = ex.scheduleAtFixedRate(task, 0, 5, TimeUnit.SECONDS)
         project.get(SimpleContextsKey)
         time {
             analysesManager
@@ -167,7 +145,6 @@ object StringAnalysisDemo extends ProjectAnalysisApplication {
                 )
             propertyStore.waitOnPhaseCompletion()
         } { t => analysisTime = t.toSeconds }
-        f.cancel(false)
 
         val declaredMethods = project.get(DeclaredMethodsKey)
         val entrypointMethod = project.allMethodsWithBody.find { m =>
