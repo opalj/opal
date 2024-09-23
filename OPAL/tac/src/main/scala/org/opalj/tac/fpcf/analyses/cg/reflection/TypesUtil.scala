@@ -6,7 +6,8 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.br.ArrayType
+import java.util.regex.Pattern
+
 import org.opalj.br.BaseType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -16,6 +17,8 @@ import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.ForNameClasses
+import org.opalj.br.fpcf.properties.string.StringConstancyLevel
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -44,51 +47,44 @@ object TypesUtil {
     /**
      * Returns classes that may be loaded by an invocation of Class.forName.
      * Clients MUST handle dependencies where the depender is the given one and the dependee
-     * provides allocation sites of Strings that give class names of such classes.
+     * provides a string regex that matches the FQN class names of the loaded classes.
      */
     def getPossibleForNameClasses(
-        className: V,
-        context:   Context,
-        depender:  Entity,
-        stmts:     Array[Stmt[V]],
-        project:   SomeProject,
-        failure:   () => Unit
+        pc:           Int,
+        className:    V,
+        context:      Context,
+        stmts:        Array[Stmt[V]],
+        project:      SomeProject,
+        allowDynamic: Boolean
     )(
         implicit
-        typeIterator: TypeIterator,
-        state:        TypeIteratorState,
-        ps:           PropertyStore
-    ): Set[ReferenceType] = {
-        StringUtil.getPossibleStrings(className, context, depender, stmts, failure).flatMap { cls =>
-            referenceTypeFromFQN(cls)
-        }.filter {
-            case at: ArrayType =>
-                val et = at.elementType
-                !et.isObjectType || project.classFile(et.asObjectType).isDefined
-            case ot: ObjectType =>
-                project.classFile(ot).isDefined
-        }
+        ps:    PropertyStore,
+        state: TypeIteratorState
+    ): Set[ObjectType] = {
+        val stringTree = StringUtil.getPossibleStrings(pc, className, context, stmts)
+        stringTree.map(getPossibleForNameClasses(_, project, allowDynamic)).getOrElse(Set.empty)
     }
 
     /**
      * Returns class that may be loaded by an invocation of Class.forName with the given String.
      */
-    def getPossibleForNameClass(
-        classNameDefSite: Int,
-        stmts:            Array[Stmt[V]],
-        project:          SomeProject,
-        failure:          () => Unit,
-        onlyObjectTypes:  Boolean
-    ): Option[ObjectType] = {
-        val className = StringUtil.getString(classNameDefSite, stmts).flatMap { cls =>
-            val tpe = referenceTypeFromFQN(cls)
-            if (tpe.isDefined && tpe.get.isArrayType)
-                if (onlyObjectTypes) None
-                else Some(ObjectType.Object)
-            else tpe.asInstanceOf[Option[ObjectType]]
+    def getPossibleForNameClasses(
+        classNameStringTree: StringTreeNode,
+        project:             SomeProject,
+        allowDynamic:        Boolean
+    ): Set[ObjectType] = {
+        if (classNameStringTree.isInvalid || (
+                classNameStringTree.constancyLevel != StringConstancyLevel.Constant
+                && !allowDynamic
+            )
+        ) {
+            Set.empty
+        } else {
+            val pattern = Pattern.compile(classNameStringTree.toRegex)
+            project.allClassFiles
+                .filter(cf => pattern.matcher(cf.thisType.toBinaryJavaName).matches())
+                .map(_.thisType).toSet
         }
-        if (className.isEmpty) failure()
-        className.filter(project.classFile(_).isDefined)
     }
 
     @inline private[this] def referenceTypeFromFQN(fqn: String): Option[ReferenceType] = {
@@ -308,7 +304,7 @@ object TypesUtil {
      * Retrieves the possible runtime types of a local variable if they are known precisely.
      * Otherwise, an empty Iterator is returned.
      */
-    def getTypesOfVar(
+    private[reflection] def getTypesOfVar(
         uvar: V
     ): Option[Iterator[ReferenceType]] = {
         val value = uvar.value.asReferenceValue
@@ -319,5 +315,4 @@ object TypesUtil {
             None
         }
     }
-
 }

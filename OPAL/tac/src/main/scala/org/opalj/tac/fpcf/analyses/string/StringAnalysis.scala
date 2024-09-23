@@ -163,7 +163,7 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
             case PUVar(_, defPCs) =>
                 defPCs.map(pc => mapDefPCToStringTree(pc))
 
-            case PDVar(_, _) =>
+            case PDVar(_, _, _) =>
                 Set(mapDefPCToStringTree(state.entity.pc))
         }
 
