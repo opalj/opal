@@ -26,8 +26,8 @@ import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.fpcf.par.PKECPropertyStore
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.string.LazyMethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.LazyStringAnalysis
+import org.opalj.tac.fpcf.analyses.string.flowanalysis.LazyMethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringFlowAnalysis
