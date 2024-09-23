@@ -17,10 +17,14 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
+ * Interprets the given assignment statement containing a [[BinaryExpr]] by determining its return type and using the
+ * appropriate dynamic [[StringTreeNode]] in high soundness mode. In low soundness mode, no string value can be
+ * determined.
+ *
  * @author Maximilian Rüsch
  */
 case class BinaryExprInterpreter()(
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = BinaryExpr[V]

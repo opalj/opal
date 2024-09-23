@@ -14,9 +14,12 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.fpcf.analyses.string.flowanalysis.LazyMethodStringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.interpretation.LazyStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l3.interpretation.L3InterpretationHandler
 
 /**
+ * @see [[L3InterpretationHandler]]
  * @author Maximilian Rüsch
  */
 object LazyL3StringAnalysis {

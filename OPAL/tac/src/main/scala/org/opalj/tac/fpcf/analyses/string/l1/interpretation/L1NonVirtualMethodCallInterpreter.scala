@@ -15,10 +15,13 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
+ * Processes [[NonVirtualMethodCall]]s without a call graph. Currently, only calls to `<init>` of strings, string
+ * buffers and string builders are interpreted. For other calls, ID is returned.
+ *
  * @author Maximilian Rüsch
  */
 case class L1NonVirtualMethodCallInterpreter()(
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 ) extends StringInterpreter {
 
     override type T = NonVirtualMethodCall[V]

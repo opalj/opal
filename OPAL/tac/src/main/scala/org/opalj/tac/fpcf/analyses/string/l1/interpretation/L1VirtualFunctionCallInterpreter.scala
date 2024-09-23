@@ -27,12 +27,16 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 import org.opalj.value.TheIntegerValue
 
 /**
- * Responsible for processing [[VirtualFunctionCall]]s without a call graph.
+ * Processes [[VirtualFunctionCall]]s without a call graph. Some string operations such as `append`, `toString` or
+ * `substring` are either fully interpreted or approximated.
+ *
+ * @note Due to a missing call graph, arbitrary (i.e. not otherwise interpreted) virtual function calls will not be
+ *       interpreted.
  *
  * @author Maximilian Rüsch
  */
 class L1VirtualFunctionCallInterpreter(
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 ) extends AssignmentLikeBasedStringInterpreter
     with L1ArbitraryVirtualFunctionCallInterpreter
     with L1AppendCallInterpreter
@@ -101,7 +105,7 @@ class L1VirtualFunctionCallInterpreter(
 
 private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 
     protected def interpretArbitraryCall(target: PV, call: E)(implicit
         state: InterpretationState
@@ -110,10 +114,12 @@ private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends Assignme
 
 /**
  * Interprets calls to [[StringBuilder#append]] or [[StringBuffer#append]].
+ *
+ * @author Maximilian Rüsch
  */
 private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
-    val highSoundness: HighSoundness
+    val highSoundness: Boolean
 
     override type E = VirtualFunctionCall[V]
 
@@ -157,12 +163,14 @@ private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringI
 
 /**
  * Interprets calls to [[String#substring]].
+ *
+ * @author Maximilian Rüsch
  */
 private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
     override type E <: VirtualFunctionCall[V]
 
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 
     def interpretSubstringCall(at: Option[PV], pt: PV, call: E)(implicit
         state: InterpretationState

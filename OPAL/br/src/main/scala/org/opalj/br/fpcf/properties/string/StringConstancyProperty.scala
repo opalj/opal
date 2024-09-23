@@ -13,6 +13,11 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 
+/**
+ * Wrapper property around [[StringTreeNode]] to allow it to be stored in the [[PropertyStore]].
+ *
+ * @author Maximilian Rüsch
+ */
 sealed trait StringConstancyPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = StringConstancyProperty
 }
@@ -61,12 +66,12 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
     def apply(tree: StringTreeNode): StringConstancyProperty = new StringConstancyProperty(tree)
 
     /**
-     * @return Returns the lower bound from a lattice-point of view.
+     * @return The lower bound from a lattice-point of view.
      */
     def lb: StringConstancyProperty = StringConstancyProperty(StringTreeNode.lb)
 
     /**
-     * @return Returns the upper bound from a lattice-point of view.
+     * @return The upper bound from a lattice-point of view.
      */
     def ub: StringConstancyProperty = StringConstancyProperty(StringTreeNode.ub)
 }

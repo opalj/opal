@@ -25,6 +25,11 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 /**
  * @inheritdoc
  *
+ * Interprets statements similar to [[org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1InterpretationHandler]] but
+ * handles virtual function calls using the call graph.
+ *
+ * @note This level can be expanded to handle all function calls via the call graph, not just virtual ones.
+ *
  * @author Maximilian Rüsch
  */
 class L2InterpretationHandler(implicit override val project: SomeProject) extends InterpretationHandler {
@@ -33,7 +38,7 @@ class L2InterpretationHandler(implicit override val project: SomeProject) extend
 
     override protected def processStatement(implicit
         state: InterpretationState
-    ): PartialFunction[Stmt[V], ProperPropertyComputationResult] = {
+    ): Stmt[V] => ProperPropertyComputationResult = {
         case stmt @ Assignment(_, _, expr: SimpleValueConst) =>
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
 

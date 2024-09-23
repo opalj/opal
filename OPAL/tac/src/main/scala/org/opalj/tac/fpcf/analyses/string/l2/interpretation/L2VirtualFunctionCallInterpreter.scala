@@ -38,7 +38,7 @@ class L2VirtualFunctionCallInterpreter(
     implicit val ps:                     PropertyStore,
     implicit val contextProvider:        ContextProvider,
     implicit val project:                SomeProject,
-    override implicit val highSoundness: HighSoundness
+    override implicit val highSoundness: Boolean
 ) extends L1VirtualFunctionCallInterpreter
     with StringInterpreter
     with L1SystemPropertiesInterpreter

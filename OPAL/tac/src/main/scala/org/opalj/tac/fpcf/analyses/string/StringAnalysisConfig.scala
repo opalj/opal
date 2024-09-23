@@ -12,23 +12,25 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.logOnce
 
 /**
+ * Shared config between the multiple analyses of the string analysis package.
+ *
  * @author Maximilian Rüsch
  */
-trait UniversalStringConfig {
+trait StringAnalysisConfig {
 
     val project: SomeProject
     implicit def logContext: LogContext
 
     private final val ConfigLogCategory = "analysis configuration - string analysis - universal"
 
-    implicit val highSoundness: HighSoundness = {
+    implicit val highSoundness: Boolean = {
         val isHighSoundness =
             try {
-                project.config.getBoolean(UniversalStringConfig.HighSoundnessConfigKey)
+                project.config.getBoolean(StringAnalysisConfig.HighSoundnessConfigKey)
             } catch {
                 case t: Throwable =>
                     logOnce {
-                        Error(ConfigLogCategory, s"couldn't read: ${UniversalStringConfig.HighSoundnessConfigKey}", t)
+                        Error(ConfigLogCategory, s"couldn't read: ${StringAnalysisConfig.HighSoundnessConfigKey}", t)
                     }
                     false
             }
@@ -38,7 +40,7 @@ trait UniversalStringConfig {
     }
 }
 
-object UniversalStringConfig {
+object StringAnalysisConfig {
 
     final val HighSoundnessConfigKey = "org.opalj.fpcf.analyses.string.highSoundness"
 }

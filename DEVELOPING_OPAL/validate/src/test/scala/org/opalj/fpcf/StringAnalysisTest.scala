@@ -28,19 +28,19 @@ import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
-import org.opalj.fpcf.properties.string_analysis.Constant
-import org.opalj.fpcf.properties.string_analysis.Constants
-import org.opalj.fpcf.properties.string_analysis.DomainLevel
-import org.opalj.fpcf.properties.string_analysis.Dynamic
-import org.opalj.fpcf.properties.string_analysis.Dynamics
-import org.opalj.fpcf.properties.string_analysis.Failure
-import org.opalj.fpcf.properties.string_analysis.Failures
-import org.opalj.fpcf.properties.string_analysis.Invalid
-import org.opalj.fpcf.properties.string_analysis.Invalids
-import org.opalj.fpcf.properties.string_analysis.Level
-import org.opalj.fpcf.properties.string_analysis.PartiallyConstant
-import org.opalj.fpcf.properties.string_analysis.PartiallyConstants
-import org.opalj.fpcf.properties.string_analysis.SoundnessMode
+import org.opalj.fpcf.properties.string.Constant
+import org.opalj.fpcf.properties.string.Constants
+import org.opalj.fpcf.properties.string.DomainLevel
+import org.opalj.fpcf.properties.string.Dynamic
+import org.opalj.fpcf.properties.string.Dynamics
+import org.opalj.fpcf.properties.string.Failure
+import org.opalj.fpcf.properties.string.Failures
+import org.opalj.fpcf.properties.string.Invalid
+import org.opalj.fpcf.properties.string.Invalids
+import org.opalj.fpcf.properties.string.Level
+import org.opalj.fpcf.properties.string.PartiallyConstant
+import org.opalj.fpcf.properties.string.PartiallyConstants
+import org.opalj.fpcf.properties.string.SoundnessMode
 import org.opalj.log.OPALLogger
 import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.PV
@@ -52,7 +52,7 @@ import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.string.StringAnalysis
-import org.opalj.tac.fpcf.analyses.string.UniversalStringConfig
+import org.opalj.tac.fpcf.analyses.string.StringAnalysisConfig
 import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.MethodStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
@@ -83,7 +83,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         }
 
         super.createConfig()
-            .withValue(UniversalStringConfig.HighSoundnessConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
+            .withValue(StringAnalysisConfig.HighSoundnessConfigKey, ConfigValueFactory.fromAnyRef(highSoundness))
             .withValue(StringAnalysis.DepthThresholdConfigKey, ConfigValueFactory.fromAnyRef(10))
             .withValue(
                 MethodStringFlowAnalysis.ExcludedPackagesConfigKey,

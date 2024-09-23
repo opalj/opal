@@ -15,6 +15,9 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
+ * The base trait for all string interpreters, producing a FPCF [[StringFlowFunctionProperty]] for a given statement
+ * in the context of its method.
+ *
  * @author Maximilian Rüsch
  */
 trait StringInterpreter {
@@ -24,49 +27,59 @@ trait StringInterpreter {
     /**
      * @param instr   The instruction that is to be interpreted.
      * @return A [[ProperPropertyComputationResult]] for the given pc containing the interpretation of the given
-     *         instruction.
+     *         instruction in the form of a [[StringFlowFunctionProperty]].
      */
     def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult
 
-    def failureTree(implicit highSoundness: HighSoundness): StringTreeNode =
+    protected[this] def failureTree(implicit highSoundness: Boolean): StringTreeNode =
         StringInterpreter.failureTree
 
-    def failure(v: PV)(implicit state: InterpretationState, highSoundness: HighSoundness): Result =
+    protected[this] def failure(v: PV)(implicit state: InterpretationState, highSoundness: Boolean): Result =
         StringInterpreter.failure(v)
 
-    def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
+    protected[this] def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit
+        state: InterpretationState
+    ): Result =
         StringInterpreter.computeFinalResult(web, sff)
 
-    def computeFinalResult(webs: Set[PDUWeb], sff: StringFlowFunction)(implicit state: InterpretationState): Result =
+    protected[this] def computeFinalResult(webs: Set[PDUWeb], sff: StringFlowFunction)(implicit
+        state: InterpretationState
+    ): Result =
         StringInterpreter.computeFinalResult(webs, sff)
 
-    def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
+    protected[this] def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
         StringInterpreter.computeFinalResult(p)
 }
 
 object StringInterpreter {
 
-    def failureTree(implicit highSoundness: HighSoundness): StringTreeNode = {
+    def failureTree(implicit highSoundness: Boolean): StringTreeNode = {
         if (highSoundness) StringTreeNode.lb
         else StringTreeNode.ub
     }
 
-    def failure(v: V)(implicit state: InterpretationState, highSoundness: HighSoundness): Result =
+    def failure(v: V)(implicit state: InterpretationState, highSoundness: Boolean): Result =
         failure(v.toPersistentForm(state.tac.stmts))
 
-    def failure(pv: PV)(implicit state: InterpretationState, highSoundness: HighSoundness): Result =
+    def failure(pv: PV)(implicit state: InterpretationState, highSoundness: Boolean): Result =
         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(state.pc, pv, failureTree))
 
     def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit state: InterpretationState): Result =
-        Result(FinalEP(InterpretationHandler.getEntity(state), StringFlowFunctionProperty(web, sff)))
+        computeFinalResult(StringFlowFunctionProperty(web, sff))
 
     def computeFinalResult(webs: Set[PDUWeb], sff: StringFlowFunction)(implicit state: InterpretationState): Result =
-        Result(FinalEP(InterpretationHandler.getEntity(state), StringFlowFunctionProperty(webs, sff)))
+        computeFinalResult(StringFlowFunctionProperty(webs, sff))
 
     def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
         Result(FinalEP(InterpretationHandler.getEntity(state), p))
 }
 
+/**
+ * Base trait for all [[StringInterpreter]]s that have to evaluate parameters at a given call site, thus providing
+ * appropriate utility.
+ *
+ * @author Maximilian Rüsch
+ */
 trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
 
     protected def getParametersForPC(pc: Int)(implicit state: InterpretationState): Seq[Expr[V]] = {
@@ -78,6 +91,12 @@ trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
     }
 }
 
+/**
+ * Base trait for all string interpreters that only process [[AssignmentLikeStmt]]s, allowing the trait to pre-unpack
+ * the expression of the [[AssignmentLikeStmt]].
+ *
+ * @author Maximilian Rüsch
+ */
 trait AssignmentLikeBasedStringInterpreter extends StringInterpreter {
 
     type E <: Expr[V]
@@ -90,6 +109,12 @@ trait AssignmentLikeBasedStringInterpreter extends StringInterpreter {
     def interpretExpr(instr: T, expr: E)(implicit state: InterpretationState): ProperPropertyComputationResult
 }
 
+/**
+ * Base trait for all string interpreters that only process [[Assignment]]s, allowing the trait to pre-unpack the
+ * assignment target variable as well as the operation performed by [[AssignmentLikeBasedStringInterpreter]].
+ *
+ * @author Maximilian Rüsch
+ */
 trait AssignmentBasedStringInterpreter extends AssignmentLikeBasedStringInterpreter {
 
     override type T = Assignment[V]

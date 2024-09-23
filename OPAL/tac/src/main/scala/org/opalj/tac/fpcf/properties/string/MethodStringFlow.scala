@@ -11,6 +11,11 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 
 /**
+ * An FPCF property that captures the string flow results of an entire method based on the final [[StringTreeEnvironment]]
+ * after executing the [[org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis]].
+ *
+ * @see [[StringTreeEnvironment]]
+ *
  * @author Maximilian Rüsch
  */
 sealed trait MethodStringFlowPropertyMetaInformation extends PropertyMetaInformation {

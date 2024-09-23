@@ -1,13 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.string;
 
-import org.opalj.fpcf.properties.string_analysis.*;
+import org.opalj.fpcf.properties.string.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
 /**
+ * Various tests that test compatibility with selected methods defined on string builders and string buffers, such as
+ * append, reset etc.
+ *
  * @see SimpleStringOps
  */
 public class SimpleStringBuilderOps {

@@ -11,6 +11,9 @@ import org.opalj.br.fpcf.properties.string.SetBasedStringTreeOr
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 
 /**
+ * A mapping from [[PDUWeb]] to [[StringTreeNode]], used to identify the state of string variables during a given fixed
+ * point of the [[org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis]].
+ *
  * @author Maximilian Rüsch
  */
 case class StringTreeEnvironment private (

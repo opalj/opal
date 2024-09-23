@@ -35,20 +35,24 @@ import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
+ * An FPCF analysis that analyses reachable methods for calls that modify [[java.util.Properties]], including the
+ * system properties given on [[System.setProperty]].
+ *
+ * @see [[SystemProperties]]
+ *
  * @author Maximilian Rüsch
  */
 class SystemPropertiesAnalysis private[analyses] (
     final val project: SomeProject
 ) extends ReachableMethodAnalysis {
 
-    type State = SystemPropertiesState[ContextType]
-    private type Values = Set[StringTreeNode]
+    private type State = SystemPropertiesState[ContextType]
 
     def processMethod(callContext: ContextType, tacaiEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         // IMPROVE add initialization framework similar to the EntryPointFinder framework
-        implicit val state: State = new SystemPropertiesState(callContext, tacaiEP, Map.empty)
+        implicit val state: State = new SystemPropertiesState(callContext, tacaiEP)
 
-        var values: Values = Set.empty
+        var values: Set[StringTreeNode] = Set.empty
         for (stmt <- state.tac.stmts) stmt match {
             case VirtualFunctionCallStatement(call)
                 if (call.name == "setProperty" || call.name == "put") &&
@@ -124,6 +128,11 @@ class SystemPropertiesAnalysis private[analyses] (
     }
 }
 
+/**
+ * A scheduler for the reachable method [[SystemPropertiesAnalysis]] that is triggered on the [[Callers]] property.
+ *
+ * @author Maximilian Rüsch
+ */
 object TriggeredSystemPropertiesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, TypeIteratorKey)

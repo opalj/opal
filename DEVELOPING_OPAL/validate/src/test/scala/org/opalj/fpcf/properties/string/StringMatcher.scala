@@ -2,7 +2,7 @@
 package org.opalj
 package fpcf
 package properties
-package string_analysis
+package string
 
 import java.util.regex.Pattern
 import scala.util.Try
@@ -14,6 +14,8 @@ import org.opalj.br.fpcf.properties.string.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 
 /**
+ * @see [[StringAnalysisTest]]
+ * @see [[org.opalj.fpcf.fixtures.string.SimpleStringOps]]
  * @author Maximilian Rüsch
  */
 sealed trait StringMatcher extends AbstractPropertyMatcher {

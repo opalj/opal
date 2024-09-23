@@ -33,8 +33,8 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 
 /**
- * Responsible for processing direct reads to fields (see [[FieldRead]]) by analyzing the write accesses to these fields
- * via the [[FieldWriteAccessInformation]].
+ * Interprets direct reads to fields (see [[FieldRead]]) by analyzing the write accesses to these fields via the
+ * [[FieldWriteAccessInformation]] and the possible string values passed to these write accesses.
  *
  * @author Maximilian Rüsch
  */
@@ -43,7 +43,7 @@ class L3FieldReadInterpreter(
     implicit val project:         SomeProject,
     implicit val declaredFields:  DeclaredFields,
     implicit val contextProvider: ContextProvider,
-    implicit val highSoundness:   HighSoundness
+    implicit val highSoundness:   Boolean
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = FieldRead[V]
@@ -215,5 +215,5 @@ object L3FieldReadInterpreter {
      * Checks whether the given type is supported by the field read analysis, i.e. if it may contain values desirable
      * AND resolvable by the string analysis as a whole.
      */
-    private def isSupportedType(fieldType: FieldType): Boolean = fieldType.isBaseType || fieldType == ObjectType.String
+    private def isSupportedType(fieldType: FieldType): Boolean = fieldType.isBaseType || (fieldType eq ObjectType.String)
 }

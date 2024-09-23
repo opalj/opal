@@ -35,11 +35,11 @@ import org.opalj.tac.fpcf.properties.TACAI
  * If the variable represents any other value, no string value can be derived and the analysis returns either the upper
  * or lower bound depending on the soundness mode.
  *
- * @author Maximilian Rüsch
- *
  * @see [[StringAnalysis]]
+ *
+ * @author Maximilian Rüsch
  */
-class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnalysis with UniversalStringConfig {
+class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnalysis with StringAnalysisConfig {
 
     private case class TrivialStringAnalysisState(entity: VariableContext, var tacDependee: EOptionP[Method, TACAI])
 
@@ -105,9 +105,9 @@ class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnaly
 }
 
 /**
- * @author Maximilian Rüsch
- *
  * @see [[TrivialStringAnalysis]]
+ *
+ * @author Maximilian Rüsch
  */
 object LazyTrivialStringAnalysis extends BasicFPCFLazyAnalysisScheduler {
 
