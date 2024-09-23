@@ -43,7 +43,7 @@ class L3FieldReadInterpreter(
     implicit val project:         SomeProject,
     implicit val declaredFields:  DeclaredFields,
     implicit val contextProvider: ContextProvider,
-    implicit val highSoundness:   HighSoundness
+    implicit val highSoundness:   Boolean
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = FieldRead[V]

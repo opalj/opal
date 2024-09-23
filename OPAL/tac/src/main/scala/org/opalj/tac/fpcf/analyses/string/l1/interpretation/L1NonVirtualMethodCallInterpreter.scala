@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
  * @author Maximilian Rüsch
  */
 case class L1NonVirtualMethodCallInterpreter()(
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 ) extends StringInterpreter {
 
     override type T = NonVirtualMethodCall[V]

@@ -21,7 +21,7 @@ trait UniversalStringConfig {
 
     private final val ConfigLogCategory = "analysis configuration - string analysis - universal"
 
-    implicit val highSoundness: HighSoundness = {
+    implicit val highSoundness: Boolean = {
         val isHighSoundness =
             try {
                 project.config.getBoolean(UniversalStringConfig.HighSoundnessConfigKey)

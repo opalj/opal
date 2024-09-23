@@ -172,7 +172,7 @@ private[string] case class MethodParameterContextStringAnalysisState(
     def updateParamDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit =
         _paramDependees(dependee.e) = dependee
 
-    def currentTreeUB(implicit highSoundness: HighSoundness): StringTreeNode = {
+    def currentTreeUB(implicit highSoundness: Boolean): StringTreeNode = {
         var paramOptions = _methodToEntityMapping.keys.toSeq
             .sortBy(_.id)
             .flatMap { dm =>

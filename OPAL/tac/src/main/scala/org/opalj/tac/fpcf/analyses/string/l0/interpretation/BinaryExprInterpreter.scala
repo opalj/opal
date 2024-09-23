@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  * @author Maximilian Rüsch
  */
 case class BinaryExprInterpreter()(
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 ) extends AssignmentBasedStringInterpreter {
 
     override type E = BinaryExpr[V]

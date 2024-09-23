@@ -35,7 +35,7 @@ trait L1FunctionCallInterpreter
     override type E <: FunctionCall[V]
 
     implicit val ps: PropertyStore
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 
     type CallState <: FunctionCallState
 

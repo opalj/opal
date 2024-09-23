@@ -19,7 +19,7 @@ import scalax.collection.GraphTraversal.Parameters
 class DataFlowAnalysis(
     private val controlTree:    ControlTree,
     private val superFlowGraph: SuperFlowGraph,
-    private val highSoundness:  HighSoundness
+    private val highSoundness:  Boolean
 ) {
 
     private val _nodeOrderings = mutable.Map.empty[FlowGraphNode, Seq[SuperFlowGraph#NodeT]]

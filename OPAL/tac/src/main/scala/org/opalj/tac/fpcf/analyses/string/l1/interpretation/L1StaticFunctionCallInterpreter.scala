@@ -25,7 +25,7 @@ case class L1StaticFunctionCallInterpreter()(
     override val p:       SomeProject,
     override val ps:      PropertyStore,
     override val project: SomeProject,
-    val highSoundness:    HighSoundness
+    val highSoundness:    Boolean
 ) extends AssignmentBasedStringInterpreter
     with L1ArbitraryStaticFunctionCallInterpreter
     with L1StringValueOfFunctionCallInterpreter

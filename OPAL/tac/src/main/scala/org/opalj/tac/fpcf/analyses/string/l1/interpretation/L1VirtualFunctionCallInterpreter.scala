@@ -32,7 +32,7 @@ import org.opalj.value.TheIntegerValue
  * @author Maximilian Rüsch
  */
 class L1VirtualFunctionCallInterpreter(
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 ) extends AssignmentLikeBasedStringInterpreter
     with L1ArbitraryVirtualFunctionCallInterpreter
     with L1AppendCallInterpreter
@@ -101,7 +101,7 @@ class L1VirtualFunctionCallInterpreter(
 
 private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 
     protected def interpretArbitraryCall(target: PV, call: E)(implicit
         state: InterpretationState
@@ -113,7 +113,7 @@ private[string] trait L1ArbitraryVirtualFunctionCallInterpreter extends Assignme
  */
 private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringInterpreter {
 
-    val highSoundness: HighSoundness
+    val highSoundness: Boolean
 
     override type E = VirtualFunctionCall[V]
 
@@ -162,7 +162,7 @@ private[string] trait L1SubstringCallInterpreter extends AssignmentLikeBasedStri
 
     override type E <: VirtualFunctionCall[V]
 
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 
     def interpretSubstringCall(at: Option[PV], pt: PV, call: E)(implicit
         state: InterpretationState

@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 case class L1NonVirtualFunctionCallInterpreter()(
     implicit val p:             SomeProject,
     implicit val ps:            PropertyStore,
-    implicit val highSoundness: HighSoundness
+    implicit val highSoundness: Boolean
 ) extends AssignmentLikeBasedStringInterpreter
     with L1FunctionCallInterpreter {
 
