@@ -38,7 +38,7 @@ class PKECPropertyStore(
 
     implicit val propertyStore: PKECPropertyStore = this
 
-    var evaluationDepth: Int = 0
+    val evaluationDepth: ThreadLocal[Int] = ThreadLocal.withInitial[Int](() => 0)
 
     val ps: Array[ConcurrentHashMap[Entity, EPKState]] =
         Array.fill(PropertyKind.SupportedPropertyKinds) { new ConcurrentHashMap() }
@@ -402,10 +402,11 @@ class PKECPropertyStore(
                        synchronization overhead, but we restrict ourselves to at most
                        MaxEvaluationDepth levels of recursion before scheduling a task for a
                        different thread instead. */
-                    if (evaluationDepth < MaxEvaluationDepth) {
-                        evaluationDepth += 1
+                    val currentEvaluationDepth = evaluationDepth.get()
+                    if (currentEvaluationDepth < MaxEvaluationDepth) {
+                        evaluationDepth.set(currentEvaluationDepth + 1)
                         handleResult(lazyComputation(e))
-                        evaluationDepth -= 1
+                        evaluationDepth.set(currentEvaluationDepth)
                         ps(pkId).get(e).eOptP.asInstanceOf[EOptionP[E, P]]
                     } else {
                         scheduleTask(
