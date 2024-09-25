@@ -480,7 +480,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
-    private def processCallFlow(path: Path, f: JumpFunction, qs: collection.Set[? <: Callable])(
+    private def processCallFlow(path: Path, f: JumpFunction, qs: collection.Set[Callable])(
         implicit s: State
     ): Unit = {
         logDebug("processing as call flow")
@@ -787,7 +787,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
-    private def processCallNode(node: Node, qs: collection.Set[? <: Callable])(implicit s: State): Unit = {
+    private def processCallNode(node: Node, qs: collection.Set[Callable])(implicit s: State): Unit = {
         logDebug("processing as call node")
 
         val (n, d) = node
