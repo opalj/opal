@@ -35,7 +35,21 @@ trait ICFG[Statement, Callable <: Entity] {
     /**
      * Get all possible callees a call statement could call
      */
-    def getCalleesIfCallStatement(stmt: Statement): Option[collection.Set[? <: Callable]]
+    def getCallees(stmt: Statement): collection.Set[? <: Callable]
+
+    /**
+     * Get all possible callees a call statement could call. Throws an exception if no callees could be found.
+     */
+    def getCalleesNonEmpty(stmt: Statement): collection.Set[? <: Callable] = {
+        val callees = getCallees(stmt)
+        if (callees.isEmpty) {
+            throw new IllegalStateException(
+                s"Statement ${stringifyStatement(stmt)} is detected as call statement but no callees were found!"
+            )
+        } else {
+            callees
+        }
+    }
 
     /**
      * Get the callable a statement belongs to

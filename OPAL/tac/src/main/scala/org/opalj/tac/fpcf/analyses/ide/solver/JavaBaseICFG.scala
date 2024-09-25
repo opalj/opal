@@ -2,29 +2,89 @@
 package org.opalj.tac.fpcf.analyses.ide.solver
 
 import org.opalj.br.Method
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.AITACode
+import org.opalj.tac.Assignment
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.LazyDetachedTACAIKey
+import org.opalj.tac.NonVirtualFunctionCall
+import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.VirtualMethodCall
+import org.opalj.value.ValueInformation
 
 /**
- * Base interprocedural control flow graph for Java programs
+ * Base interprocedural control flow graph for Java programs. This implementation is based on the
+ * [[org.opalj.tac.fpcf.analyses.ifds.JavaICFG]] from IFDS.
  */
-abstract class JavaBaseICFG extends JavaICFG {
-    override def isNormalExitStatement(stmt: JavaStatement): Boolean = {
-        stmt.index == stmt.basicBlock.asBasicBlock.endPC &&
-        stmt.basicBlock.successors.exists(_.isNormalReturnExitNode)
+abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
+    protected val tacProvider: Method => AITACode[TACMethodParameter, ValueInformation] = {
+        // TODO (IDE) DOCS SAY, THAT LazyDetachedTACAIKey DOES NOT CACHE ANYTHING
+        project.get(LazyDetachedTACAIKey)
+    }
+    protected implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    protected val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+
+    override def isCallStatement(javaStmt: JavaStatement): Boolean = {
+        if (javaStmt.isReturnNode) {
+            return false
+        }
+
+        val stmt = javaStmt.stmt
+        stmt.astID match {
+            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID => true
+            case Assignment.ASTID | ExprStmt.ASTID =>
+                val expr = stmt.astID match {
+                    case Assignment.ASTID => stmt.asAssignment.expr
+                    case ExprStmt.ASTID   => stmt.asExprStmt.expr
+                }
+                expr.astID match {
+                    case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID => true
+                    case _                                                                                   => false
+                }
+            case _ => false
+        }
     }
 
-    override def isAbnormalExitStatement(stmt: JavaStatement): Boolean = {
-        stmt.index == stmt.basicBlock.asBasicBlock.endPC &&
-        stmt.basicBlock.successors.exists(_.isAbnormalReturnExitNode)
+    override def getCallees(javaStmt: JavaStatement): collection.Set[Method] = {
+        val caller = declaredMethods(javaStmt.method)
+        val calleesEOptionP = propertyStore(caller, Callees.key)
+        calleesEOptionP match {
+            case FinalP(callees) =>
+                callees
+                    .directCallees(contextProvider.newContext(caller), javaStmt.stmt.pc)
+                    .map(_.method)
+                    .flatMap { callee =>
+                        if (callee.hasSingleDefinedMethod) {
+                            Seq(callee.definedMethod)
+                        } else if (callee.hasMultipleDefinedMethods) {
+                            callee.definedMethods
+                        } else {
+                            Seq.empty
+                        }
+                    }
+                    .toSet
+            case _ =>
+                throw new IllegalStateException("Call graph must be computed before the analysis starts!")
+        }
     }
 
-    override def isCallStatement(stmt: JavaStatement): Boolean = {
-        getCalleesIfCallStatement(stmt).nonEmpty
-    }
+    override def getCallable(javaStmt: JavaStatement): Method = javaStmt.method
 
-    override def getCallable(stmt: JavaStatement): Method = stmt.method
-
-    override def stringifyStatement(stmt: JavaStatement, indent: String = "", short: Boolean = false): String = {
-        val stringifiedStatement = stmt.toString
+    override def stringifyStatement(javaStmt: JavaStatement, indent: String = "", short: Boolean = false): String = {
+        val stringifiedStatement = javaStmt.toString
         if (short) {
             stringifiedStatement.substring(0, stringifiedStatement.indexOf("{"))
         } else {

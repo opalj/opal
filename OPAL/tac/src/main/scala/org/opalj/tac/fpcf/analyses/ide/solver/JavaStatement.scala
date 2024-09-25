@@ -14,29 +14,29 @@ import org.opalj.value.ValueInformation
 
 /**
  * Class to model statements used with IDE analyses
- * @param index the index of the statement in the code
+ * @param pc the pc of the statement in the code
  * @param isReturnNode whether the statement models the return node of a call
  */
 case class JavaStatement(
     method:       Method,
-    index:        Int,
+    pc:        Int,
     isReturnNode: Boolean = false,
-    code:         Array[Stmt[JavaStatement.V]],
+    stmts:         Array[Stmt[JavaStatement.V]],
     cfg:          CFG[Stmt[JavaStatement.V], TACStmts[JavaStatement.V]]
 ) {
     // TODO (IDE) DOES THIS GET REEVALUATED EACH CALL? DO WE ALWAYS CALL IT AT LEAST ONCE? MAYBE MAKE IT A (LAZY)
     //  PROPERTY
-    def stmt: Stmt[JavaStatement.V] = code(index)
+    def stmt: Stmt[JavaStatement.V] = stmts(pc)
 
     // TODO (IDE) DOES THIS GET REEVALUATED EACH CALL? DO WE ALWAYS CALL IT AT LEAST ONCE? MAYBE MAKE IT A (LAZY)
     //  PROPERTY
-    def basicBlock: BasicBlock = cfg.bb(index)
+    def basicBlock: BasicBlock = cfg.bb(pc)
 
-    override def hashCode(): Int = method.hashCode() * 31 + index
+    override def hashCode(): Int = method.hashCode() * 31 + pc
 
     override def equals(obj: Any): Boolean = obj match {
-        case JavaStatement(method2, index2, isReturnNode2, _, _) =>
-            method == method2 && index == index2 && isReturnNode == isReturnNode2
+        case JavaStatement(method2, pc2, isReturnNode2, _, _) =>
+            method == method2 && pc == pc2 && isReturnNode == isReturnNode2
         case _ => false
     }
 
@@ -44,7 +44,7 @@ case class JavaStatement(
         val returnOptional =
             if (isReturnNode) { "(return)" }
             else { "" }
-        s"${method.classFile.thisType.simpleName}:${method.name}[$index]$returnOptional{$stmt}"
+        s"${method.classFile.thisType.simpleName}:${method.name}[$pc]$returnOptional{$stmt}"
     }
 }
 

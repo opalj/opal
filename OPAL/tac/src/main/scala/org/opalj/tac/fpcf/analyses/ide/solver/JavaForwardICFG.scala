@@ -2,60 +2,46 @@
 package org.opalj.tac.fpcf.analyses.ide.solver
 
 import scala.collection.immutable
+import scala.collection.mutable
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.fpcf.analyses.ifds
 
 /**
- * Interprocedural control flow graph for Java programs in forward direction
+ * Interprocedural control flow graph for Java programs in forward direction. This implementation is based on the
+ * [[org.opalj.tac.fpcf.analyses.ifds.JavaForwardICFG]] from IFDS.
  */
-class JavaForwardICFG(project: SomeProject) extends JavaBaseICFG {
-    // TODO (IDE) CURRENTLY DEPENDS ON IMPLEMENTATION FROM IFDS
-    private val baseICFG = new ifds.JavaForwardICFG(project)
-
-    override def getStartStatements(callable: Method): collection.Set[JavaStatement] =
-        baseICFG.startStatements(callable).map {
-            case org.opalj.tac.fpcf.analyses.ifds.JavaStatement(method, index, code, cfg) =>
-                JavaStatement(method, index, isReturnNode = false, code, cfg)
-        }
-
-    override def getNextStatements(stmt: JavaStatement): collection.Set[JavaStatement] = {
-        if (isCallStatement(stmt)) {
-            immutable.Set(JavaStatement(stmt.method, stmt.index, isReturnNode = true, stmt.code, stmt.cfg))
-        } else {
-            baseICFG.nextStatements(
-                org.opalj.tac.fpcf.analyses.ifds.JavaStatement(stmt.method, stmt.index, stmt.code, stmt.cfg)
-            ).map {
-                case org.opalj.tac.fpcf.analyses.ifds.JavaStatement(method, index, code, cfg) =>
-                    JavaStatement(method, index, isReturnNode = false, code, cfg)
-            }
-        }
+class JavaForwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
+    override def getStartStatements(callable: Method): collection.Set[JavaStatement] = {
+        val tac = tacProvider(callable)
+        immutable.Set(
+            JavaStatement(callable, 0, isReturnNode = false, tac.stmts, tac.cfg)
+        )
     }
 
-    // TODO (IDE) REFACTOR AS 'getCallees(...): Set[Method]'
-    override def getCalleesIfCallStatement(stmt: JavaStatement): Option[collection.Set[Method]] = {
-        if (stmt.isReturnNode) {
-            None
-        } else {
-            val calleesOption = baseICFG.getCalleesIfCallStatement(
-                org.opalj.tac.fpcf.analyses.ifds.JavaStatement(stmt.method, stmt.index, stmt.code, stmt.cfg)
+    override def getNextStatements(javaStmt: JavaStatement): collection.Set[JavaStatement] = {
+        if (isCallStatement(javaStmt)) {
+            immutable.Set(
+                JavaStatement(javaStmt.method, javaStmt.pc, isReturnNode = true, javaStmt.stmts, javaStmt.cfg)
             )
-            calleesOption match {
-                case None => None
-                case Some(callees) =>
-                    if (callees.isEmpty) {
-                        throw new IllegalStateException(
-                            s"Statement ${stringifyStatement(stmt)} is detected as call statement but no callees were found!"
-                        )
-                    } else {
-                        Some(callees)
-                    }
+        } else {
+            val successors = mutable.Set.empty[JavaStatement]
+            javaStmt.cfg.foreachSuccessor(javaStmt.pc) { nextPc =>
+                successors.add(
+                    JavaStatement(javaStmt.method, nextPc, isReturnNode = false, javaStmt.stmts, javaStmt.cfg)
+                )
             }
+            successors
         }
     }
 
-    override def getCallablesCallableFromOutside: collection.Set[Method] = {
-        baseICFG.methodsCallableFromOutside.map { declaredMethod => declaredMethod.asDefinedMethod.definedMethod }
+    override def isNormalExitStatement(javaStmt: JavaStatement): Boolean = {
+        javaStmt.pc == javaStmt.basicBlock.asBasicBlock.endPC &&
+        javaStmt.basicBlock.successors.exists(_.isNormalReturnExitNode)
+    }
+
+    override def isAbnormalExitStatement(javaStmt: JavaStatement): Boolean = {
+        javaStmt.pc == javaStmt.basicBlock.asBasicBlock.endPC &&
+        javaStmt.basicBlock.successors.exists(_.isAbnormalReturnExitNode)
     }
 }

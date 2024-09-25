@@ -59,7 +59,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
                         if (isExpressionGeneratedByFact(assignment.expr)(source, sourceFact, target)) {
                             /* Generate fact for target of assignment if the expression is influenced by the source
                              * fact */
-                            immutable.Set(sourceFact, VariableFact(assignment.targetVar.name, source.index))
+                            immutable.Set(sourceFact, VariableFact(assignment.targetVar.name, source.pc))
                         } else {
                             immutable.Set(sourceFact)
                         }
@@ -275,7 +275,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
                                     /* Only propagate if the variable represented by the source fact is one possible
                                      * initializer of the variable at the return site */
                                     if (returnExpr.asVar.definedBy.contains(definedAtIndex)) {
-                                        immutable.Set(VariableFact(assignment.targetVar.name, returnSite.index))
+                                        immutable.Set(VariableFact(assignment.targetVar.name, returnSite.pc))
                                     } else {
                                         immutable.Set.empty
                                     }

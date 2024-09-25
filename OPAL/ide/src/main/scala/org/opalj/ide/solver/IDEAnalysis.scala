@@ -468,13 +468,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             logTrace(s"path=${pathToString(path)}")
             logTrace(s"current jumpFunction=$f")
 
-            icfg.getCalleesIfCallStatement(n) match { // IDE P1 line 11
-                case Some(qs) =>
-                    processCallFlow(path, f, qs)
-                case None if icfg.isNormalExitStatement(n) => // IDE P1 line 19
-                    processExitFlow(path, f)
-                case None => // IDE P1 line 30
-                    processNormalFlow(path, f)
+            if (icfg.isCallStatement(n)) { // IDE P1 line 11
+                processCallFlow(path, f, icfg.getCalleesNonEmpty(n))
+            } else if (icfg.isNormalExitStatement(n)) { // IDE P1 line 19
+                processExitFlow(path, f)
+            } else { // IDE P1 line 30
+                processNormalFlow(path, f)
             }
 
             logDebug(s"${s.getPathWorkListSize} path(s) remaining after processing last path")
@@ -704,11 +703,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
             val (n, _) = node
 
-            icfg.getCalleesIfCallStatement(n) match { // IDE P2 line 11
-                case Some(qs) =>
-                    processCallNode(node, qs)
-                case None => // IDE P2 line 7
-                    processStartNode(node)
+            if (icfg.isCallStatement(n)) { // IDE P2 line 11
+                processCallNode(node, icfg.getCalleesNonEmpty(n))
+            } else { // IDE P2 line 7
+                processStartNode(node)
             }
 
             logDebug(s"${s.getNodeWorkListSize} node(s) remaining after processing last node")

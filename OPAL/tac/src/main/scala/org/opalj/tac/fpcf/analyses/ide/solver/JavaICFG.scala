@@ -7,6 +7,4 @@ import org.opalj.ide.solver.ICFG
 /**
  * Interprocedural control flow graph for Java programs
  */
-trait JavaICFG extends ICFG[JavaStatement, Method] {
-    def getCallablesCallableFromOutside: collection.Set[Method]
-}
+trait JavaICFG extends ICFG[JavaStatement, Method]

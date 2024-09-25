@@ -52,13 +52,13 @@ class LCPOnFieldsProblem(project: SomeProject)
                     assignment.expr.astID match {
                         case New.ASTID =>
                             /* Generate new object fact from null fact if assignment is a 'new' expression */
-                            immutable.Set(sourceFact, NewObjectFact(assignment.targetVar.name, source.index))
+                            immutable.Set(sourceFact, NewObjectFact(assignment.targetVar.name, source.pc))
 
                         case NewArray.ASTID =>
                             /* Generate new array fact from null fact if assignment is a 'new array' expression for an
                              * integer array */
                             if (assignment.expr.asNewArray.tpe.componentType.isIntegerType) {
-                                immutable.Set(sourceFact, NewArrayFact(assignment.targetVar.name, source.index))
+                                immutable.Set(sourceFact, NewArrayFact(assignment.targetVar.name, source.pc))
                             } else {
                                 immutable.Set(sourceFact)
                             }
@@ -191,9 +191,9 @@ class LCPOnFieldsProblem(project: SomeProject)
                                     if (returnExpr.asVar.definedBy.contains(f.definedAtIndex)) {
                                         immutable.Set(f match {
                                             case _: AbstractObjectFact =>
-                                                ObjectFact(assignment.targetVar.name, returnSite.index)
+                                                ObjectFact(assignment.targetVar.name, returnSite.pc)
                                             case _: AbstractArrayFact =>
-                                                ArrayFact(assignment.targetVar.name, returnSite.index)
+                                                ArrayFact(assignment.targetVar.name, returnSite.pc)
                                         })
                                     } else {
                                         immutable.Set.empty
