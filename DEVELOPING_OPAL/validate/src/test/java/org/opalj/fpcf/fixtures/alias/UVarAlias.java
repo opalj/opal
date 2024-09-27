@@ -4,13 +4,14 @@ package org.opalj.fpcf.fixtures.alias;
 import org.opalj.fpcf.properties.alias.MayAlias;
 import org.opalj.fpcf.properties.alias.MustAlias;
 import org.opalj.fpcf.properties.alias.NoAlias;
-
+import org.opalj.tac.fpcf.analyses.alias.IntraProceduralAliasAnalysis;
+import org.opalj.tac.fpcf.analyses.alias.pointsto.AllocationSitePointsToBasedAliasAnalysis;
 
 public class UVarAlias {
 
     @MustAlias(reason = "same local variable with single defSite without loop used",
             lineNumber = 18,
-            secondLineNumber = 18)
+            secondLineNumber = 18, analyses = {AllocationSitePointsToBasedAliasAnalysis.class, IntraProceduralAliasAnalysis.class})
     public static void mustAliasLocals() {
         Object o1 = new Object();
 
@@ -29,7 +30,7 @@ public class UVarAlias {
 
     @MustAlias(reason = "same local variable with single defSite with loop in front of defSite",
             lineNumber = 41,
-            secondLineNumber = 41)
+            secondLineNumber = 41, analyses = {AllocationSitePointsToBasedAliasAnalysis.class, IntraProceduralAliasAnalysis.class})
     public static void mustAliasLoopInFront() {
         for (int i = 0; i < 10; i++) {
             Object o1 = new Object();
@@ -42,7 +43,7 @@ public class UVarAlias {
 
     @MustAlias(reason = "same local variable with single defSite with loop behind defSite",
             lineNumber = 50,
-            secondLineNumber = 50)
+            secondLineNumber = 50, analyses = {AllocationSitePointsToBasedAliasAnalysis.class, IntraProceduralAliasAnalysis.class})
     public static void mustAliasLoopBehind() {
         Object o1 = new Object();
 
@@ -55,7 +56,7 @@ public class UVarAlias {
 
     @MustAlias(reason = "same local variable with single defSite with loop behind defSite",
             lineNumber = 64,
-            secondLineNumber = 64)
+            secondLineNumber = 64, analyses = {AllocationSitePointsToBasedAliasAnalysis.class, IntraProceduralAliasAnalysis.class})
     public static void mustAliasLoopBehind2() {
         Object o1 = new Object();
 
@@ -75,7 +76,7 @@ public class UVarAlias {
 
     @MustAlias(reason = "same local variable with single defSite with irrelevant recursion",
             lineNumber = 82,
-            secondLineNumber = 83, secondParameterIndex = 0)
+            secondLineNumber = 83, secondParameterIndex = 0, analyses = {AllocationSitePointsToBasedAliasAnalysis.class, IntraProceduralAliasAnalysis.class})
     public static void mustAliasRecursion(Object a) {
         a = new Object();
         a.hashCode();
@@ -108,7 +109,7 @@ public class UVarAlias {
 
     @NoAlias(reason = "no alias with local variables",
             lineNumber = 116,
-            secondLineNumber = 117)
+            secondLineNumber = 117, analyses = {AllocationSitePointsToBasedAliasAnalysis.class, IntraProceduralAliasAnalysis.class})
     public static void noAliasLocals() {
         Object o1 = new Object();
         Object o2 = new Object();
@@ -129,5 +130,43 @@ public class UVarAlias {
 
         o1.hashCode();
         o2.hashCode();
+    }
+
+    @MayAlias(reason = "same local variable with single defSite inside inner nested loop",
+            lineNumber = 142,
+            secondLineNumber = 142)
+    public static void mayAliasInnerNestedLoop() {
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                Object o1 = new Object();
+                o1.hashCode();
+            }
+        }
+    }
+
+    @MayAlias(reason = "same local variable with single defSite inside outer nested loop",
+            lineNumber = 156,
+            secondLineNumber = 156)
+    public static void mayAliasOuterNestedLoop1() {
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                Object o2 = new Object();
+            }
+            Object o1 = new Object();
+            o1.hashCode();
+        }
+    }
+
+    @MayAlias(reason = "same local variable with single defSite inside outer nested loop",
+            lineNumber = 166,
+            secondLineNumber = 166)
+    public static void mayAliasOuterNestedLoop2() {
+        for (int i = 0; i < 10; i++) {
+            Object o1 = new Object();
+            o1.hashCode();
+            for (int j = 0; j < 10; j++) {
+                Object o2 = new Object();
+            }
+        }
     }
 }
