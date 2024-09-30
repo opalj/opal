@@ -38,8 +38,6 @@ class CommentParser() {
 
     /**
      * Method responsible to parse Object-Type Nodes
-     * @param iterator accepts the iterator over the current config file
-     * @param lastLine accepts the remains of the line that belongs to this object
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed object
      */
@@ -118,13 +116,11 @@ class CommentParser() {
         currentComment.commitComments()
 
         // Return the finished ConfigObject
-        ConfigObject(entries.toMap, currentComment)
+        ConfigObject(entries, currentComment)
     }
 
     /**
      * Method responsible to parse Entry-Type Nodes
-     * @param iterator accepts the iterator over the current config file
-     * @param lastLine accepts the remains of the line that belongs to this object
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed entry
      */
@@ -196,8 +192,6 @@ class CommentParser() {
 
     /**
      * Method responsible to parse List-Type Nodes
-     * @param iterator accepts the iterator over the current config file
-     * @param lastLine accepts the remains of the line that belongs to this object
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed entry
      */

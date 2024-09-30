@@ -47,5 +47,25 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
         if(comment.isEmpty() == false) return false
         true
     }
+
+    /**
+     * This method collapses the object structure by joining inheriting objects containing only one value
+     * Inverse function of expand
+     */
+    override def collapse() : Unit = {
+        for(entry <- this.entries){
+            entry.collapse()
+        }
+    }
+
+    /**
+     * This method expands the current object to represent all ob-objects within the structure
+     * Inverse function of collapse
+     */
+    override def expand() : Unit = {
+        for(entry <- this.entries){
+            entry.expand()
+        }
+    }
 }
 

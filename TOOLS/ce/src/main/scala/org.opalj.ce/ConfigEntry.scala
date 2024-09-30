@@ -47,4 +47,7 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
         if(value.isEmpty() && comment.isEmpty()) return true
         false
     }
+
+    override def collapse(): Unit = {}
+    override def expand() : Unit ={}
 }
