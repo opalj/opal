@@ -1,12 +1,15 @@
 package org.opalj
 package ce
 
+import scala.collection.mutable
+
 /**
  * Stores a List structure inside the ConfigNode structure
+ *
  * @param entries contains a K,V Map of ConfigNodes
  * @param comment are all the comments associated with the Object
  */
-case class ConfigObject(entries: Map[String, ConfigNode], comment: Comment) extends ConfigNode {
+case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comment) extends ConfigNode {
     /**
      * Formats the entry into HTML code
      * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object.
@@ -44,5 +47,91 @@ case class ConfigObject(entries: Map[String, ConfigNode], comment: Comment) exte
             if(value.isEmpty() == false) return false
         }
         true
+    }
+
+    /**
+     * Merges two type compatible objects.
+     * This means that the objects are free of conflicting values and lists. Objects are allowed to overlap as long as there are no conflicts down the tree.
+     * @param insertingObject Is the object that is supposed to be merged into the executing one
+     */
+    def merge(insertingObject : ConfigObject): Unit = {
+        this.expand()
+        insertingObject.expand()
+        for(kvpair <- insertingObject.entries){
+            val (key,value) = kvpair
+            if(this.entries.contains(key)){
+                val conflicting_entry = this.entries.get(key).getOrElse(null).asInstanceOf[ConfigObject]
+                if(conflicting_entry.isInstanceOf[ConfigObject] && value.isInstanceOf[ConfigObject]){
+                    val conflicting_child_object = conflicting_entry.asInstanceOf[ConfigObject]
+                    conflicting_child_object.merge(value.asInstanceOf[ConfigObject])
+                } else {
+                    throw new Exception("Unable to merge incompatible types:" + value.getClass + " & " + conflicting_entry.getClass)
+                }
+            } else {
+                this.entries += kvpair
+            }
+        }
+
+        this.collapse()
+    }
+
+    /**
+     * This method collapses the object structure by joining inheriting objects containing only one value.
+     * Inverse function of expand.
+     */
+    def collapse() : Unit = {
+        for(entry <- this.entries){
+            val (key,value) = entry
+            value.collapse()
+
+            // If the entry is a config object with exactly one child -> merge
+            if(value.isInstanceOf[ConfigObject]){
+                val value_object = value.asInstanceOf[ConfigObject]
+                if(value_object.entries.size == 1){
+                    // Merge Keys
+                    val (childkey,childvalue) = value_object.entries.head
+                    val newkey = key + "." + childkey
+
+                    // Add new object
+                    this.entries += (newkey -> childvalue)
+
+                    // Remove old object
+                    this.entries -= key
+                }
+            }
+        }
+        if(this.entries.size == 1){
+            if(this.comment.isEmpty()){
+
+            } else {
+                val (key, value) = this.entries.head
+                if(value.comment.isEmpty()){
+
+                }
+            }
+        }
+    }
+
+    /**
+     * This method expands the current object to represent all ob-objects within the structure
+     * Inverse function of collapse
+     */
+    def expand() : Unit = {
+        for(entry <- this.entries){
+            // Expand substructure of monitored object
+            val (key,value) = entry
+            value.expand()
+
+            if(key.contains("\\.")) {
+                // Create expanded object
+                val newkey = key.split("\\.",2)
+                val new_entry = mutable.Map[String, ConfigNode](newkey(1) -> value)
+                val new_object = ConfigObject(new_entry, new Comment)
+                this.entries += (newkey(0) -> new_object)
+
+                // Delete old entry from the map to avoid duplicates
+                this.entries -= key
+            }
+        }
     }
 }

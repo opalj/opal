@@ -148,8 +148,8 @@ class CommentParser() {
                 case (char, index) if char == '\"' => index
             }
             var terminatingIndex = line.length
-            breakable{for(i <- 0 to terminatingIndices.length -1){
-                if((terminatingIndices(i) == 0 || line((terminatingIndices(i)-1)) != '\\') && terminatingIndex == line.length){
+            breakable{for(i <- 0 until terminatingIndices.length -1){
+                if((terminatingIndices(i) == 0 || line(terminatingIndices(i)-1) != '\\') && terminatingIndex == line.length){
                     terminatingIndex = terminatingIndices(i)
                     break()
                 }

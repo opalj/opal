@@ -18,7 +18,7 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
         var HTMLString = ""
         var head = label
         var brief = this.comment.brief
-        if(this.comment.label.isEmpty != true) head = this.comment.label
+        if(!this.comment.label.isEmpty) head = this.comment.label
         else if (head == "") head = value
 
         // Write value into HTML code
