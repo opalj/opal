@@ -19,7 +19,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
     override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String): String = {
         var HTMLString = ""
         var head = label
-        if(!this.comment.label.isEmpty) head = this.comment.label
+        if(this.comment.label.nonEmpty) head = this.comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML() + "</p>"

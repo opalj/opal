@@ -20,7 +20,7 @@ case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comme
     override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String): String = {
         var HTMLString = ""
         var head = label
-        if(this.comment.label.isEmpty == false) head = this.comment.label
+        if(!this.comment.label.isEmpty) head = this.comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML() + "</p>"
@@ -44,7 +44,7 @@ case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comme
     override def isEmpty(): Boolean = {
         if(!comment.isEmpty()) return false
         for((key,value) <- entries){
-            if(value.isEmpty() == false) return false
+            if(!value.isEmpty()) return false
         }
         true
     }
@@ -60,9 +60,9 @@ case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comme
         for(kvpair <- insertingObject.entries){
             val (key,value) = kvpair
             if(this.entries.contains(key)){
-                val conflicting_entry = this.entries.get(key).getOrElse(null).asInstanceOf[ConfigObject]
+                val conflicting_entry = this.entries.getOrElse(key,null).asInstanceOf[ConfigObject]
                 if(conflicting_entry.isInstanceOf[ConfigObject] && value.isInstanceOf[ConfigObject]){
-                    val conflicting_child_object = conflicting_entry.asInstanceOf[ConfigObject]
+                    val conflicting_child_object = conflicting_entry
                     conflicting_child_object.merge(value.asInstanceOf[ConfigObject])
                 } else {
                     throw new Exception("Unable to merge incompatible types:" + value.getClass + " & " + conflicting_entry.getClass)
