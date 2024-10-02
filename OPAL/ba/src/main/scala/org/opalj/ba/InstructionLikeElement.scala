@@ -43,7 +43,7 @@ object InstructionLikeElement {
  * Wrapper for [[org.opalj.br.instructions.LabeledInstruction]]s.
  */
 case class InstructionElement(
-        instruction: LabeledInstruction
+    instruction: LabeledInstruction
 ) extends InstructionLikeElement[Nothing] {
     override final def isAnnotated: Boolean = false
     override final def annotation: Nothing = throw new UnsupportedOperationException
@@ -53,8 +53,8 @@ case class InstructionElement(
  * Wrapper for annotated [[org.opalj.br.instructions.LabeledInstruction]]s.
  */
 case class AnnotatedInstructionElement[+T](
-        instruction: LabeledInstruction,
-        annotation:  T
+    instruction: LabeledInstruction,
+    annotation:  T
 ) extends InstructionLikeElement[T] {
     override final def isAnnotated: Boolean = true
 }

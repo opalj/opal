@@ -8,8 +8,8 @@ import scala.xml.Node
  * @author Michael Eichberg
  */
 case class Unknown_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        info:                 Array[Byte]
+    attribute_name_index: Constant_Pool_Index,
+    info:                 Array[Byte]
 ) extends Attribute {
 
     override final def attribute_length: Int = info.size

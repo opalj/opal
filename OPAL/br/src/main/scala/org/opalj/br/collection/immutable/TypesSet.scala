@@ -11,8 +11,8 @@ package immutable
  * @author Dominik Helm
  */
 case class TypesSet(
-        final val concreteTypes:   Set[ObjectType],
-        final val upperTypeBounds: Set[ObjectType]
+    final val concreteTypes:   Set[ObjectType],
+    final val upperTypeBounds: Set[ObjectType]
 )(implicit classHierarchy: ClassHierarchy) extends collection.TypesSet {
 
     import classHierarchy.isSubtypeOf

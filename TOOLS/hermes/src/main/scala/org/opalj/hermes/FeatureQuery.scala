@@ -110,7 +110,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
 }
 
 abstract class DefaultFeatureQuery(
-        implicit hermes: HermesConfig
+    implicit hermes: HermesConfig
 ) extends FeatureQuery {
 
     def evaluate[S](
@@ -132,7 +132,7 @@ abstract class DefaultFeatureQuery(
 }
 
 abstract class DefaultGroupedFeaturesQuery(
-        implicit hermes: HermesConfig
+    implicit hermes: HermesConfig
 ) extends DefaultFeatureQuery {
 
     def groupedFeatureIDs: Seq[Seq[String]]

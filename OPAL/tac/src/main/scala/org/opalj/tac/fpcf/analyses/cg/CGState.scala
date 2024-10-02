@@ -17,8 +17,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 class CGState[ContextType <: Context](
-        override val callContext:                  ContextType,
-        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+    override val callContext:                  ContextType,
+    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TypeIteratorState with TACAIBasedAnalysisState[ContextType] {
 
     // maps a definition site to the receiver var

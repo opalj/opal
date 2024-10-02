@@ -22,7 +22,7 @@ class ConstraintsBetweenIntegerValuesTest extends AnyFunSpec with Matchers {
     final val IrrelevantPC = Int.MinValue
 
     class IntegerRangesWithInterIntegerConstraintsTestDomain(
-            override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
     ) extends CorrelationalDomain
         with ThrowAllPotentialExceptionsConfiguration
         with l0.DefaultTypeLevelLongValues

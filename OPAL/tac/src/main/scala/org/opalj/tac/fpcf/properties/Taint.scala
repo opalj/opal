@@ -19,8 +19,8 @@ import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
  * @author Marc Clement
  */
 case class Taint(
-        flows:     Map[JavaStatement, Set[TaintFact]],
-        debugData: Map[JavaStatement, Set[TaintFact]] = Map.empty
+    flows:     Map[JavaStatement, Set[TaintFact]],
+    debugData: Map[JavaStatement, Set[TaintFact]] = Map.empty
 ) extends IFDSProperty[JavaStatement, TaintFact] {
 
     override type Self = Taint

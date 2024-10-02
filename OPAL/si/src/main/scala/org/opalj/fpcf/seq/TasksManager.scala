@@ -116,23 +116,23 @@ private[seq] final class FIFOTasksManager extends TasksManager {
 }
 
 private class WeightedQualifiedTask(
-        val task:   QualifiedTask,
-        val weight: Int
+    val task:   QualifiedTask,
+    val weight: Int
 ) extends Comparable[WeightedQualifiedTask] {
     def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
 }
 
 private class WeightedExtendedQualifiedTask(
-        val task:    QualifiedTask,
-        val taskEPK: SomeEPK,
-        val weight:  Int
+    val task:    QualifiedTask,
+    val taskEPK: SomeEPK,
+    val weight:  Int
 ) extends Comparable[WeightedQualifiedTask] {
     def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
 }
 
 private class ExtendedQualifiedTask(
-        val task:    QualifiedTask,
-        val taskEPK: SomeEPK
+    val task:    QualifiedTask,
+    val taskEPK: SomeEPK
 )
 
 trait PropertyStoreDependentTasksManager extends TasksManager {
@@ -480,8 +480,8 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksMan
 }
 
 private[seq] final class AllDependeesTasksManager(
-        final val forward:           Boolean = true,
-        final val manyDependeesLast: Boolean = true
+    final val forward:           Boolean = true,
+    final val manyDependeesLast: Boolean = true
 ) extends PropertyStoreDependentTasksManager {
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)

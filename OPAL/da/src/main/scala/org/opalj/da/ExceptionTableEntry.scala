@@ -13,10 +13,10 @@ import org.opalj.bytecode.PC
  * @author Noorulla Sharief
  */
 case class ExceptionTableEntry(
-        start_pc:   PC,
-        end_pc:     PC,
-        handler_pc: PC,
-        catch_type: Int
+    start_pc:   PC,
+    end_pc:     PC,
+    handler_pc: PC,
+    catch_type: Int
 ) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {

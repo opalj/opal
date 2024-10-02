@@ -15,8 +15,8 @@ package cfg
  */
 // IMPROVE create specialized implementations for the most common cases: (1) just one instruction and just on predecessor, (2) just one predecessor, (3) just one successor
 final class BasicBlock(
-        val startPC:             Int, // <= determines this basic blocks' hash value!
-        private[cfg] var _endPC: Int = Int.MinValue
+    val startPC:             Int, // <= determines this basic blocks' hash value!
+    private[cfg] var _endPC: Int = Int.MinValue
 ) extends CFGNode {
 
     def this(startPC: Int, successors: Set[CFGNode]) = {

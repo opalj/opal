@@ -12,7 +12,7 @@ package br
  * @author Michael Eichberg
  */
 case class CodeAnalysisFailedException(
-        message: String,
-        code:    Code,
-        pc:      PC
+    message: String,
+    code:    Code,
+    pc:      PC
 ) extends RuntimeException(message)

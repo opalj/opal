@@ -549,7 +549,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     }
 
     protected class NullValue(
-            override val origin: ValueOrigin
+        override val origin: ValueOrigin
     ) extends super.ANullValue with SingleOriginReferenceValue { this: DomainNullValue =>
 
         final def refId: RefId = domain.nullRefId
@@ -1052,12 +1052,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      *          types!
      */
     protected class MultipleReferenceValues(
-            val values:             UIDSet[DomainSingleOriginReferenceValue],
-            val origins:            ValueOrigins,
-            override val isNull:    Answer,
-            override val isPrecise: Boolean,
-            val upperTypeBound:     UIDSet[_ <: ReferenceType],
-            override val refId:     RefId
+        val values:             UIDSet[DomainSingleOriginReferenceValue],
+        val origins:            ValueOrigins,
+        override val isNull:    Answer,
+        override val isPrecise: Boolean,
+        val upperTypeBound:     UIDSet[_ <: ReferenceType],
+        override val refId:     RefId
     ) extends IsMultipleReferenceValue
         with TheReferenceValue
         with MultipleOriginsValue {

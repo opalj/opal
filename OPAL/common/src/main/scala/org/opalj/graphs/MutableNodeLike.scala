@@ -27,10 +27,10 @@ import scala.collection.immutable
  * @author Michael Eichberg
  */
 class MutableNodeLike[I, N <: Node](
-        private[this] var theIdentifier:       I,
-        val identifierToString:                I => String,
-        private[this] var theVisualProperties: immutable.Map[String, String],
-        private[this] var theChildren:         List[N]
+    private[this] var theIdentifier:       I,
+    val identifierToString:                I => String,
+    private[this] var theVisualProperties: immutable.Map[String, String],
+    private[this] var theChildren:         List[N]
 ) extends MutableNode[I, N] {
 
     def identifier: I = this.synchronized(theIdentifier)

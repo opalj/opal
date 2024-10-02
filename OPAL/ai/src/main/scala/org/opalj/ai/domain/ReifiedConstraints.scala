@@ -50,19 +50,19 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
      * Representation of a constraint related to a single value.
      */
     case class ReifiedSingleValueConstraint(
-            pc:         Int,
-            value:      DomainValue,
-            constraint: String
+        pc:         Int,
+        value:      DomainValue,
+        constraint: String
     ) extends ReifiedConstraint
 
     /**
      * Representation of a constraint related to two values.
      */
     case class ReifiedTwoValuesConstraint(
-            pc:         Int,
-            value1:     DomainValue,
-            value2:     DomainValue,
-            constraint: String
+        pc:         Int,
+        value1:     DomainValue,
+        value2:     DomainValue,
+        constraint: String
     ) extends ReifiedConstraint
 
     abstract override def refEstablishIsNull(

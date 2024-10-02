@@ -24,9 +24,9 @@ import org.opalj.fpcf.SinglePropertiesBoundType
  * of a lightweight abstract interpretation.
  */
 class PrimitiveTACAIDomainWithSignatureRefinement(
-        val project:   SomeProject,
-        val method:    Method,
-        val dependees: EOptionPSet[Entity, Property] = EOptionPSet.empty
+    val project:   SomeProject,
+    val method:    Method,
+    val dependees: EOptionPSet[Entity, Property] = EOptionPSet.empty
 ) extends TypeLevelDomain
     with ThrowAllPotentialExceptionsConfiguration
     with IgnoreSynchronization

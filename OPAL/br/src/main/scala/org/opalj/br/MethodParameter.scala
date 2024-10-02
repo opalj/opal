@@ -12,8 +12,8 @@ import org.opalj.bi.ACC_SYNTHETIC
  * @author Michael Eichberg
  */
 case class MethodParameter(
-        name:        Option[String],
-        accessFlags: Int
+    name:        Option[String],
+    accessFlags: Int
 ) {
 
     final def isSynthetic: Boolean = (ACC_SYNTHETIC.mask & accessFlags) != 0

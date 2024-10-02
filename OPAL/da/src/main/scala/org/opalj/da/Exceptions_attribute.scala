@@ -18,8 +18,8 @@ import scala.xml.Text
  * @author Michael Eichberg
  */
 case class Exceptions_attribute(
-        attribute_name_index:  Constant_Pool_Index,
-        exception_index_table: ExceptionIndexTable
+    attribute_name_index:  Constant_Pool_Index,
+    exception_index_table: ExceptionIndexTable
 ) extends Attribute {
 
     override final def attribute_length: Int = 2 /*table_size*/ + exception_index_table.size * 2

@@ -5,7 +5,10 @@ package cg
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.CallStringContextsKey
+import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeIterator
 
 /**
@@ -19,7 +22,8 @@ import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeIterator
 object CFA_1_1_CallGraphKey extends CallGraphKey {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        AllocationSiteBasedPointsToCallGraphKey.requirements(project)
+        Seq(DefinitionSitesKey, VirtualFormalParametersKey, CallStringContextsKey) ++:
+            super.requirements(project)
     }
 
     override protected def callGraphSchedulers(
@@ -27,6 +31,7 @@ object CFA_1_1_CallGraphKey extends CallGraphKey {
     ): Iterable[FPCFAnalysisScheduler] = {
         AllocationSiteBasedPointsToCallGraphKey.callGraphSchedulers(project)
     }
+
     override def getTypeIterator(project: SomeProject) =
         new CFA_k_l_TypeIterator(project, 1, 1)
 }

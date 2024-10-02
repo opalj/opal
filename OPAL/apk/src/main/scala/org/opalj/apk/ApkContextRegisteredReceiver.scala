@@ -19,10 +19,10 @@ import org.opalj.br.Method
  * @author Nicolas Gross
  */
 class ApkContextRegisteredReceiver(
-        clazz:            String,
-        intentActions:    Seq[String],
-        intentCategories: Seq[String],
-        val method:       Method,
-        val callPc:       UShort
+    clazz:            String,
+    intentActions:    Seq[String],
+    intentCategories: Seq[String],
+    val method:       Method,
+    val callPc:       UShort
 )(implicit config: Config)
     extends ApkComponent(ApkComponentType.BroadcastReceiver, clazz, intentActions, intentCategories)

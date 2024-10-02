@@ -40,14 +40,14 @@ import org.opalj.collection.mutable.Locals
  * @author Michael Eichberg
  */
 class CodeAttributeBuilder[T] private[ba] (
-        private[ba] val instructions:                   Array[Instruction],
-        private[ba] val hasControlTransferInstructions: Boolean,
-        private[ba] val pcMapping:                      PCMapping, // the PCMapping must not be complete w.r.t. the set of original PCs
-        private[ba] val annotations:                    Map[br.PC, T],
-        private[ba] var maxStack:                       Option[Int],
-        private[ba] var maxLocals:                      Option[Int],
-        private[ba] var exceptionHandlers:              br.ExceptionHandlers,
-        private[ba] var attributes:                     br.Attributes
+    private[ba] val instructions:                   Array[Instruction],
+    private[ba] val hasControlTransferInstructions: Boolean,
+    private[ba] val pcMapping:                      PCMapping, // the PCMapping must not be complete w.r.t. the set of original PCs
+    private[ba] val annotations:                    Map[br.PC, T],
+    private[ba] var maxStack:                       Option[Int],
+    private[ba] var maxLocals:                      Option[Int],
+    private[ba] var exceptionHandlers:              br.ExceptionHandlers,
+    private[ba] var attributes:                     br.Attributes
 ) extends br.CodeAttributeBuilder[(Map[br.PC, T], List[String])] {
 
     def copy(attributes: br.Attributes = this.attributes): CodeAttributeBuilder[T] = {

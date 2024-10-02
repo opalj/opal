@@ -91,10 +91,10 @@ sealed abstract class DeclaredMethod {
  * may have several package-private methods with the same signature.
  */
 final class VirtualDeclaredMethod private[br] (
-        override val declaringClassType: ObjectType,
-        override val name:               String,
-        override val descriptor:         MethodDescriptor,
-        override val id:                 Int
+    override val declaringClassType: ObjectType,
+    override val name:               String,
+    override val descriptor:         MethodDescriptor,
+    override val id:                 Int
 ) extends DeclaredMethod {
 
     override def isVirtualOrHasSingleDefinedMethod: Boolean = true
@@ -121,9 +121,9 @@ final class VirtualDeclaredMethod private[br] (
  * class along with a reference to the original declaration.
  */
 final class DefinedMethod private[br] (
-        override val declaringClassType: ObjectType,
-        override val definedMethod:      Method,
-        override val id:                 Int
+    override val declaringClassType: ObjectType,
+    override val definedMethod:      Method,
+    override val id:                 Int
 ) extends DeclaredMethod {
 
     override def name: String = definedMethod.name
@@ -146,9 +146,9 @@ final class DefinedMethod private[br] (
 }
 
 final class MultipleDefinedMethods private[br] (
-        override val declaringClassType: ObjectType,
-        override val definedMethods:     ArraySeq[Method],
-        override val id:                 Int
+    override val declaringClassType: ObjectType,
+    override val definedMethods:     ArraySeq[Method],
+    override val id:                 Int
 ) extends DeclaredMethod {
 
     override def name: String = definedMethods.head.name

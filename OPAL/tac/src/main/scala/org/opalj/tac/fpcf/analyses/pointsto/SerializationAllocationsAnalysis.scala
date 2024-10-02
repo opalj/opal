@@ -32,7 +32,7 @@ import org.opalj.fpcf.Results
  * @author Dominik Helm
  */
 abstract class SerializationAllocationsAnalysis(
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis { self =>
 
     override final val apiMethod: DeclaredMethod = declaredMethods(

@@ -10,6 +10,6 @@ import org.opalj.br.analyses.Project
  * A basic Domain that is used to identify recursive calls.
  */
 class CoordinatingValuesDomain[Source](
-        val project: Project[Source]
+    val project: Project[Source]
 ) extends ValuesCoordinatingDomain
     with SharedValuesDomain[Source]

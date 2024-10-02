@@ -11,8 +11,8 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class Annotation(
-        type_index:          Constant_Pool_Index,
-        element_value_pairs: ElementValuePairs = NoElementValuePairs
+    type_index:          Constant_Pool_Index,
+    element_value_pairs: ElementValuePairs = NoElementValuePairs
 ) extends AbstractAnnotation {
 
     final def attribute_length: Int = {

@@ -9,8 +9,8 @@ package br
  * @author Michael Eichberg
  */
 final case class MethodSignature(
-        name:       String,
-        descriptor: MethodDescriptor
+    name:       String,
+    descriptor: MethodDescriptor
 ) {
 
     def toJava: String = descriptor.toJava(name)

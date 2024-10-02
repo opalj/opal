@@ -83,12 +83,12 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     extends FPCFAnalysis {
 
     case class State(
-            field:                          DeclaredField,
-            var fieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = Set.empty,
-            var genericTypeParameters:      SortedSet[String]               = SortedSet.empty,
-            var innerTypes:                 Set[ReferenceType]              = Set.empty,
-            var lowerBound:                 FieldImmutability               = MutableField,
-            var upperBound:                 FieldImmutability               = TransitivelyImmutableField
+        field:                          DeclaredField,
+        var fieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = Set.empty,
+        var genericTypeParameters:      SortedSet[String]               = SortedSet.empty,
+        var innerTypes:                 Set[ReferenceType]              = Set.empty,
+        var lowerBound:                 FieldImmutability               = MutableField,
+        var upperBound:                 FieldImmutability               = TransitivelyImmutableField
     ) extends BaseAnalysisState with TypeIteratorState {
         def hasFieldImmutabilityDependees: Boolean = fieldImmutabilityDependees.nonEmpty || super.hasOpenDependencies
         def getFieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = fieldImmutabilityDependees

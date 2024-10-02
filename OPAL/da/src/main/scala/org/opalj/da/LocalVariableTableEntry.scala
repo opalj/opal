@@ -12,11 +12,11 @@ import scala.xml.Node
  * @author Tobias Becker
  */
 case class LocalVariableTableEntry(
-        start_pc:         Int,
-        length:           Int,
-        name_index:       Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index,
-        index:            Int
+    start_pc:         Int,
+    length:           Int,
+    name_index:       Constant_Pool_Index,
+    descriptor_index: Constant_Pool_Index,
+    index:            Int
 ) {
 
     def toXHTML(implicit cp: Constant_Pool): Node = {

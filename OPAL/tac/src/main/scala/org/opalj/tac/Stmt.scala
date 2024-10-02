@@ -111,11 +111,11 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
  *        generating source code.
  */
 case class If[+V <: Var[V]](
-        pc:                      PC,
-        left:                    Expr[V],
-        condition:               RelationalOperator,
-        right:                   Expr[V],
-        private[tac] var target: Int
+    pc:                      PC,
+    left:                    Expr[V],
+    condition:               RelationalOperator,
+    right:                   Expr[V],
+    private[tac] var target: Int
 ) extends Stmt[V] {
 
     override final def asIf: this.type = this
@@ -292,10 +292,10 @@ object JSR {
  *        were determined to be dead.
  */
 case class Switch[+V <: Var[V]](
-        pc:                        PC,
-        private var defaultTarget: Int,
-        index:                     Expr[V],
-        private var npairs:        ArraySeq[IntIntPair /*(Case Value, Jump Target)*/ ]
+    pc:                        PC,
+    private var defaultTarget: Int,
+    index:                     Expr[V],
+    private var npairs:        ArraySeq[IntIntPair /*(Case Value, Jump Target)*/ ]
 ) extends Stmt[V] {
 
     override final def asSwitch: this.type = this
@@ -363,9 +363,9 @@ object AssignmentLikeStmt {
 }
 
 case class Assignment[+V <: Var[V]](
-        pc:        PC,
-        targetVar: V,
-        expr:      Expr[V]
+    pc:        PC,
+    targetVar: V,
+    expr:      Expr[V]
 ) extends AssignmentLikeStmt[V] {
 
     override final def asAssignment: this.type = this
@@ -577,10 +577,10 @@ object MonitorExit {
 }
 
 case class ArrayStore[+V <: Var[V]](
-        pc:       PC,
-        arrayRef: Expr[V],
-        index:    Expr[V],
-        value:    Expr[V]
+    pc:       PC,
+    arrayRef: Expr[V],
+    index:    Expr[V],
+    value:    Expr[V]
 ) extends Stmt[V] {
 
     override final def asArrayStore: this.type = this
@@ -667,11 +667,11 @@ sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
 }
 
 case class PutStatic[+V <: Var[V]](
-        pc:                PC,
-        declaringClass:    ObjectType,
-        name:              String,
-        declaredFieldType: FieldType,
-        value:             Expr[V]
+    pc:                PC,
+    declaringClass:    ObjectType,
+    name:              String,
+    declaredFieldType: FieldType,
+    value:             Expr[V]
 ) extends FieldWriteAccessStmt[V] {
 
     override final def asPutStatic: this.type = this
@@ -713,12 +713,12 @@ object PutStatic {
 }
 
 case class PutField[+V <: Var[V]](
-        pc:                Int,
-        declaringClass:    ObjectType,
-        name:              String,
-        declaredFieldType: FieldType,
-        objRef:            Expr[V],
-        value:             Expr[V]
+    pc:                Int,
+    declaringClass:    ObjectType,
+    name:              String,
+    declaredFieldType: FieldType,
+    objRef:            Expr[V],
+    value:             Expr[V]
 ) extends FieldWriteAccessStmt[V] {
 
     override final def asPutField: this.type = this
@@ -807,13 +807,13 @@ object InstanceMethodCall {
  * I.e., it is either a super-call, a private instance method call or a constructor call.
  */
 case class NonVirtualMethodCall[+V <: Var[V]](
-        pc:             Int,
-        declaringClass: ObjectType,
-        isInterface:    Boolean,
-        name:           String,
-        descriptor:     MethodDescriptor,
-        receiver:       Expr[V],
-        params:         Seq[Expr[V]]
+    pc:             Int,
+    declaringClass: ObjectType,
+    isInterface:    Boolean,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr[V],
+    params:         Seq[Expr[V]]
 ) extends InstanceMethodCall[V] {
 
     override final def asNonVirtualMethodCall: this.type = this
@@ -867,13 +867,13 @@ object NonVirtualMethodCall {
 }
 
 case class VirtualMethodCall[+V <: Var[V]](
-        pc:             Int,
-        declaringClass: ReferenceType,
-        isInterface:    Boolean,
-        name:           String,
-        descriptor:     MethodDescriptor,
-        receiver:       Expr[V],
-        params:         Seq[Expr[V]]
+    pc:             Int,
+    declaringClass: ReferenceType,
+    isInterface:    Boolean,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    receiver:       Expr[V],
+    params:         Seq[Expr[V]]
 ) extends InstanceMethodCall[V] with VirtualCall[V] {
 
     override final def asVirtualMethodCall: this.type = this
@@ -907,12 +907,12 @@ object VirtualMethodCall {
 }
 
 case class StaticMethodCall[+V <: Var[V]](
-        pc:             Int,
-        declaringClass: ObjectType,
-        isInterface:    Boolean,
-        name:           String,
-        descriptor:     MethodDescriptor,
-        params:         Seq[Expr[V]]
+    pc:             Int,
+    declaringClass: ObjectType,
+    isInterface:    Boolean,
+    name:           String,
+    descriptor:     MethodDescriptor,
+    params:         Seq[Expr[V]]
 ) extends MethodCall[V] {
 
     override final def allParams: Seq[Expr[V]] = params
@@ -983,11 +983,11 @@ object StaticMethodCall {
  * @tparam V The type of the [[Var]]s.
  */
 case class InvokedynamicMethodCall[+V <: Var[V]](
-        pc:              PC,
-        bootstrapMethod: BootstrapMethod,
-        name:            String,
-        descriptor:      MethodDescriptor,
-        params:          Seq[Expr[V]]
+    pc:              PC,
+    bootstrapMethod: BootstrapMethod,
+    name:            String,
+    descriptor:      MethodDescriptor,
+    params:          Seq[Expr[V]]
 ) extends Stmt[V] {
 
     override final def astID: Int = InvokedynamicMethodCall.ASTID
@@ -1126,9 +1126,9 @@ object StaticFunctionCallStatement {
  * @note `CaughtException` expression are only created by [[TACAI]]!
  */
 case class CaughtException[+V <: Var[V]](
-        pc:                        PC,
-        exceptionType:             Option[ObjectType],
-        private var throwingStmts: IntTrieSet
+    pc:                        PC,
+    exceptionType:             Option[ObjectType],
+    private var throwingStmts: IntTrieSet
 ) extends Stmt[V] {
 
     override final def isCaughtException: Boolean = true

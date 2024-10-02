@@ -72,8 +72,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         this(project, useAnsiColors = false)
 
     def this(
-            classFiles:    Iterable[(ClassFile, URL)],
-            useAnsiColors: Boolean = false
+        classFiles:    Iterable[(ClassFile, URL)],
+        useAnsiColors: Boolean = false
     ) =
         this(
             run {
@@ -233,8 +233,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     var architectureCheckers: List[ArchitectureChecker] = Nil
 
     case class GlobalIncomingConstraint(
-            targetEnsemble:  Symbol,
-            sourceEnsembles: Seq[Symbol]
+        targetEnsemble:  Symbol,
+        sourceEnsembles: Seq[Symbol]
     ) extends DependencyChecker {
 
         override def targetEnsembles: Seq[Symbol] = Seq(targetEnsemble)
@@ -278,9 +278,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * belonging to `ey` then a [[SpecificationViolation]] is generated.
      */
     case class LocalOutgoingNotAllowedConstraint(
-            dependencyTypes: Set[DependencyType],
-            sourceEnsemble:  Symbol,
-            targetEnsembles: Seq[Symbol]
+        dependencyTypes: Set[DependencyType],
+        sourceEnsemble:  Symbol,
+        targetEnsembles: Seq[Symbol]
     ) extends DependencyChecker {
 
         if (targetEnsembles.isEmpty)
@@ -345,9 +345,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      * to `ey` then a [[SpecificationViolation]] is generated.
      */
     case class LocalOutgoingOnlyAllowedConstraint(
-            dependencyTypes: Set[DependencyType],
-            sourceEnsemble:  Symbol,
-            targetEnsembles: Seq[Symbol]
+        dependencyTypes: Set[DependencyType],
+        sourceEnsemble:  Symbol,
+        targetEnsembles: Seq[Symbol]
     ) extends DependencyChecker {
 
         if (targetEnsembles.isEmpty)
@@ -421,16 +421,16 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *  @param matchAny true if only one match is needed, false if all annotations should match
      */
     case class LocalOutgoingAnnotatedWithConstraint(
-            sourceEnsemble:       Symbol,
-            annotationPredicates: Seq[AnnotationPredicate],
-            property:             String,
-            matchAny:             Boolean
+        sourceEnsemble:       Symbol,
+        annotationPredicates: Seq[AnnotationPredicate],
+        property:             String,
+        matchAny:             Boolean
     ) extends PropertyChecker {
 
         def this(
-                sourceEnsemble:       Symbol,
-                annotationPredicates: Seq[AnnotationPredicate],
-                matchAny:             Boolean = false
+            sourceEnsemble:       Symbol,
+            annotationPredicates: Seq[AnnotationPredicate],
+            matchAny:             Boolean = false
         ) =
             this(
                 sourceEnsemble,
@@ -513,8 +513,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *  @param methodPredicate The method to match.
      */
     case class LocalOutgoingShouldImplementMethodConstraint(
-            sourceEnsemble:  Symbol,
-            methodPredicate: SourceElementPredicate[Method]
+        sourceEnsemble:  Symbol,
+        methodPredicate: SourceElementPredicate[Method]
     ) extends PropertyChecker {
 
         override def property: String = methodPredicate.toDescription()
@@ -556,8 +556,8 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      *  @param targetEnsembles Ensembles containing elements, that should be extended by the given classes.
      */
     case class LocalOutgoingShouldExtendConstraint(
-            sourceEnsemble:  Symbol,
-            targetEnsembles: Seq[Symbol]
+        sourceEnsemble:  Symbol,
+        targetEnsembles: Seq[Symbol]
     ) extends PropertyChecker {
 
         override def property: String = targetEnsembles.mkString(", ")

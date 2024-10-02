@@ -12,10 +12,10 @@ import scala.collection.immutable.ArraySeq
  * @author Michael Eichberg
  */
 case class FIELD(
-        accessModifiers:    AccessModifier,
-        name:               String,
-        descriptor:         String,
-        attributesBuilders: ArraySeq[br.FieldAttributeBuilder] = ArraySeq.empty
+    accessModifiers:    AccessModifier,
+    name:               String,
+    descriptor:         String,
+    attributesBuilders: ArraySeq[br.FieldAttributeBuilder] = ArraySeq.empty
 ) {
 
     /**

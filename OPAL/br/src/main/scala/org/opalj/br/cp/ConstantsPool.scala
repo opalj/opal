@@ -12,8 +12,8 @@ import scala.collection.immutable
  * @author  Michael Eichberg
  */
 class ConstantsPool(
-        val constantPool:     immutable.Map[Constant_Pool_Entry, Constant_Pool_Index],
-        val bootstrapMethods: IndexedSeq[BootstrapMethod]
+    val constantPool:     immutable.Map[Constant_Pool_Entry, Constant_Pool_Index],
+    val bootstrapMethods: IndexedSeq[BootstrapMethod]
 ) extends ConstantsPoolLike {
 
     private[this] def validateIndex(index: Int, requiresUByteIndex: Boolean): Int = {

@@ -48,7 +48,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Dominik Helm
  */
 class InstantiatedTypesAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)

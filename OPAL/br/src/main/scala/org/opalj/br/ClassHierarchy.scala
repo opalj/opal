@@ -102,29 +102,29 @@ import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
  * @author Michael Eichberg
  */
 class ClassHierarchy private (
-        // the case "java.lang.Object" is handled explicitly!
-        private[this] val knownTypesMap:       Array[ObjectType],
-        private[this] val isKnownTypeMap:      Array[Boolean],
-        private[this] val isInterfaceTypeMap:  Array[Boolean],
-        private[this] val isKnownToBeFinalMap: Array[Boolean],
+    // the case "java.lang.Object" is handled explicitly!
+    private[this] val knownTypesMap:       Array[ObjectType],
+    private[this] val isKnownTypeMap:      Array[Boolean],
+    private[this] val isInterfaceTypeMap:  Array[Boolean],
+    private[this] val isKnownToBeFinalMap: Array[Boolean],
 
-        // The element is null for types for which we have no complete information
-        // (unless it is java.lang.Object)!
-        private[this] val superclassTypeMap:      Array[ObjectType],
-        private[this] val superinterfaceTypesMap: Array[UIDSet[ObjectType]],
+    // The element is null for types for which we have no complete information
+    // (unless it is java.lang.Object)!
+    private[this] val superclassTypeMap:      Array[ObjectType],
+    private[this] val superinterfaceTypesMap: Array[UIDSet[ObjectType]],
 
-        // In the following all elements are non-null for each known type!
-        private[this] val subclassTypesMap:     Array[UIDSet[ObjectType]],
-        private[this] val subinterfaceTypesMap: Array[UIDSet[ObjectType]],
+    // In the following all elements are non-null for each known type!
+    private[this] val subclassTypesMap:     Array[UIDSet[ObjectType]],
+    private[this] val subinterfaceTypesMap: Array[UIDSet[ObjectType]],
 
-        // DERIVED INFORMATION
-        val rootTypes:                                       UIDSet[ObjectType],
-        val leafTypes:                                       UIDSet[ObjectType],
-        private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
-        private[this] val supertypeInformationMap:           Array[SupertypeInformation],
-        private[this] val subtypeInformationMap:             Array[SubtypeInformation]
+    // DERIVED INFORMATION
+    val rootTypes:                                       UIDSet[ObjectType],
+    val leafTypes:                                       UIDSet[ObjectType],
+    private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
+    private[this] val supertypeInformationMap:           Array[SupertypeInformation],
+    private[this] val subtypeInformationMap:             Array[SubtypeInformation]
 )(
-        implicit val logContext: LogContext
+    implicit val logContext: LogContext
 ) {
 
     def updatedLogContext(newLogContext: LogContext): ClassHierarchy = {
@@ -222,17 +222,17 @@ class ClassHierarchy private (
         }
 
         case class TypeInfo(
-                objectType:                     String,
-                objectTypeId:                   Int,
-                isInterface:                    Boolean,
-                isFinal:                        Boolean,
-                isRootType:                     Boolean,
-                isLeafType:                     Boolean,
-                isSupertypeInformationComplete: Boolean,
-                superclassType:                 String,
-                superinterfaceTypes:            String,
-                subclassTypes:                  String,
-                subinterfaceTypes:              String
+            objectType:                     String,
+            objectTypeId:                   Int,
+            isInterface:                    Boolean,
+            isFinal:                        Boolean,
+            isRootType:                     Boolean,
+            isLeafType:                     Boolean,
+            isSupertypeInformationComplete: Boolean,
+            superclassType:                 String,
+            superinterfaceTypes:            String,
+            subclassTypes:                  String,
+            subinterfaceTypes:              String
         ) {
             override def toString: String = {
                 s"$objectType \t$objectTypeId \t$isInterface \t$isFinal \t$isRootType \t$isLeafType \t" +

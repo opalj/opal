@@ -538,8 +538,8 @@ class RTATypeIterator(project: SomeProject)
  * entity plus a global set of types.
  */
 class PropagationBasedTypeIterator(
-        project:               SomeProject,
-        typeSetEntitySelector: TypeSetEntitySelector
+    project:               SomeProject,
+    typeSetEntitySelector: TypeSetEntitySelector
 ) extends TypeIterator(project) with SimpleContextProvider {
 
     override type InformationType = (InstantiatedTypes, InstantiatedTypes)
