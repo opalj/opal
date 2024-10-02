@@ -5,11 +5,12 @@ package collection
 package mutable
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.opalj.log.GlobalLogContext
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.br.analyses.Project
+import org.opalj.log.GlobalLogContext
 
 /**
  * Basic tests of the TypesSet class.

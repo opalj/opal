@@ -3,13 +3,26 @@ package org.opalj
 
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
+import org.opalj.ai.ImmediateVMExceptionsOriginOffset
+import org.opalj.ai.MethodExternalExceptionsOriginOffset
+import org.opalj.ai.ValueOrigin
+import org.opalj.ai.ValueOriginForImmediateVMException
+import org.opalj.ai.ValueOriginForMethodExternalException
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.br.ExceptionHandlers
+import org.opalj.ai.isImmediateVMException
+import org.opalj.ai.isMethodExternalExceptionOrigin
+import org.opalj.ai.pcOfImmediateVMException
+import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ExceptionHandler
+import org.opalj.br.ExceptionHandlers
+import org.opalj.br.PCs
+import org.opalj.br.PUVar
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
+import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.graphs.Node
+import org.opalj.value.ValueInformation
 
 /**
  * Common definitions related to the definition and processing of three address code.
@@ -17,6 +30,44 @@ import org.opalj.graphs.Node
  * @author Michael Eichberg
  */
 package object tac {
+
+    type V = DUVar[ValueInformation]
+
+    final def uVarFromPersistentForm[Value <: ValueInformation](
+        puVar: PUVar[Value]
+    )(
+        implicit pcToIndex: Array[Int]
+    ): UVar[Value] = {
+        UVar(puVar.value, valueOriginsOfPCs(puVar.defPCs, pcToIndex))
+    }
+
+    final def pcOfDefSite(valueOrigin: ValueOrigin)(implicit stmts: Array[Stmt[V]]): Int = {
+        if (valueOrigin >= 0)
+            stmts(valueOrigin).pc
+        else if (valueOrigin > ImmediateVMExceptionsOriginOffset)
+            valueOrigin // <- it is a parameter!
+        else if (valueOrigin > MethodExternalExceptionsOriginOffset)
+            ValueOriginForImmediateVMException(stmts(pcOfImmediateVMException(valueOrigin)).pc)
+        else
+            ValueOriginForMethodExternalException(
+                stmts(pcOfMethodExternalException(valueOrigin)).pc
+            )
+    }
+
+    final def valueOriginsOfPCs(pcs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
+        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) =>
+            if (ai.underlyingPC(pc) < 0)
+                origins + pc // parameter
+            else if (pc >= 0 && pcToIndex(pc) >= 0)
+                origins + pcToIndex(pc) // local
+            else if (isImmediateVMException(pc) && pcToIndex(pcOfImmediateVMException(pc)) >= 0)
+                origins + ValueOriginForImmediateVMException(pcToIndex(pcOfImmediateVMException(pc)))
+            else if (isMethodExternalExceptionOrigin(pc) && pcToIndex(pcOfMethodExternalException(pc)) >= 0)
+                origins + ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc)))
+            else
+                origins // as is
+        }
+    }
 
     /**
      * Identifies the implicit `this` reference in the 3-address code representation.
@@ -39,7 +90,7 @@ package object tac {
         stmts: Array[Stmt[V]],
         cfg:   CFG[Stmt[V], TACStmts[V]]
     ): Iterable[Node] = {
-        val (_, allNodes) = cfg.toDot { bb: BasicBlock =>
+        val (_, allNodes) = cfg.toDot { (bb: BasicBlock) =>
             val pcRange = bb.startPC to bb.endPC
             val bbStmts = stmts.slice(bb.startPC, bb.endPC + 1).zip(pcRange)
             val txtStmts = bbStmts.map { stmtPC =>
@@ -65,8 +116,7 @@ package object tac {
         oldEH:      ExceptionHandler,
         newIndexes: Array[Int]
     )(
-        implicit
-        aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
     ): (Int, Int) = {
         val oldStartPC = oldEH.startPC
         var newStartIndex = newIndexes(oldStartPC)
@@ -92,7 +142,7 @@ package object tac {
                43 =>   // DEAD (38 always throws an exception)
                46 =>   N/A
                48 =>   return
-            */
+             */
 
             var lastPC = oldEH.endPC
             do {
@@ -147,8 +197,7 @@ package object tac {
     def updateExceptionHandlers(
         newIndexes: Array[Int]
     )(
-        implicit
-        aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
     ): ExceptionHandlers = {
         val code = aiResult.code
         val exceptionHandlers = code.exceptionHandlers

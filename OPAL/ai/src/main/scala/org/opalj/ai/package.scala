@@ -2,20 +2,21 @@
 package org.opalj
 
 import scala.language.existentials
+import scala.reflect.ClassTag
 
 import scala.collection.AbstractIterator
 
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
-import org.opalj.util.AnyToAnyThis
-import org.opalj.collection.IntIterator
-import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.Code
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.PC
+import org.opalj.br.instructions.Instruction
+import org.opalj.collection.IntIterator
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.util.AnyToAnyThis
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -63,8 +64,10 @@ package object ai {
      */
     type SomeAI[D <: Domain] = AI[_ >: D]
 
-    type PrimitiveValuesFactory = IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
-    type ValuesFactory = PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
+    type PrimitiveValuesFactory =
+        IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+    type ValuesFactory =
+        PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
     type TargetDomain = ValuesDomain with ValuesFactory
 
     final type PCs = org.opalj.br.PCs
@@ -191,6 +194,23 @@ package object ai {
 
     /**
      * Identifies the ''upper bound for those origin values that encode origin
+     * information about formal parameters''. That is, respective values
+     * identify formal parameters of a method including the `this` parameter (in first position).
+     */
+    final val FormalParametersOriginOffset /*: ValueOrigin*/ = -1
+
+    /**
+     * Returns `true` if the value with the given origin was (implicitly) created
+     * by the JVM while declaring a formal parameter.
+     *
+     * @see [[ImmediateVMExceptionsOriginOffset]] for further information.
+     */
+    final def isFormalParameter(origin: ValueOrigin): Boolean = {
+        FormalParametersOriginOffset >= origin && origin > ImmediateVMExceptionsOriginOffset
+    }
+
+    /**
+     * Identifies the ''upper bound for those origin values that encode origin
      * information about exceptions created by the JVM''. That is, respective values
      * identify VM generated and thrown exceptions due to the ''immediate execution'' of the
      * instruction; exceptions that may have been raised in a called method - even if they
@@ -223,8 +243,8 @@ package object ai {
         val origin = ImmediateVMExceptionsOriginOffset - pc
         assert(
             origin <= ImmediateVMExceptionsOriginOffset,
-            s"[pc:$pc] "+
-                s"origin($origin) > "+
+            s"[pc:$pc] " +
+                s"origin($origin) > " +
                 s"ImmediateVMExceptionsOriginOffset($ImmediateVMExceptionsOriginOffset)"
         )
         assert(origin > MethodExternalExceptionsOriginOffset)
@@ -272,8 +292,8 @@ package object ai {
         val origin = MethodExternalExceptionsOriginOffset - pc
         assert(
             origin <= MethodExternalExceptionsOriginOffset,
-            s"[pc:$pc] "+
-                s"origin($origin) > "+
+            s"[pc:$pc] " +
+                s"origin($origin) > " +
                 s"MethodExternalExceptionsOriginOffset($MethodExternalExceptionsOriginOffset)"
         )
         assert(SpecialValuesOriginOffset < origin)
@@ -500,9 +520,9 @@ package object ai {
      *      {{{
      *      calledMethod.descriptor.parametersCount + { if (calledMethod.isStatic) 0 else 1 }
      *      }}}.
-     *      I.e., the list of operands must contain one value per parameter and – 
+     *      I.e., the list of operands must contain one value per parameter and –
      *      in case of instance methods – the receiver object. The list __must not
-     *       contain additional values__. The latter is automatically ensured if this
+     *      contain additional values__. The latter is automatically ensured if this
      *      method is called (in)directly by [[AI]] and the operands were just passed
      *      through.
      *      If two or more operands are (reference) identical then the adaptation will only
@@ -521,12 +541,12 @@ package object ai {
         assert(
             operands.size == calledMethod.actualArgumentsCount,
             (if (calledMethod.isStatic) "static " else "/*virtual*/ ") +
-                s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) "+
+                s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) " +
                 s"${operands.mkString("Operands(", ",", ")")}"
         )
 
         import org.opalj.collection.mutable.Locals
-        implicit val domainValueTag = targetDomain.DomainValueTag
+        implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
         val parameters = Locals[targetDomain.DomainValue](calledMethod.body.get.maxLocals)
         var localVariableIndex = 0
         var processedOperands = 0
@@ -566,7 +586,7 @@ package object ai {
         theOperands:  Operands[_ <: ValuesDomain#DomainValue],
         targetDomain: ValuesDomain with ValuesFactory
     ): Array[targetDomain.DomainValue] = {
-        // implicit val domainValueTag = targetDomain.DomainValueTag
+        // implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
         import targetDomain.DomainValueTag
         val operandsCount = theOperands.size
         val adaptedOperands = new Array[targetDomain.DomainValue](operandsCount)
@@ -605,9 +625,10 @@ package object ai {
     def collectPCWithOperands[B](
         domain: ValuesDomain
     )(
-        code: Code, operandsArray: domain.OperandsArray
+        code:          Code,
+        operandsArray: domain.OperandsArray
     )(
-        f: PartialFunction[(Int /*PC*/ , Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
+        f: PartialFunction[(Int /*PC*/, Instruction, domain.Operands), B] // IMPROVE Use specialized data-structure to avoid (un)boxing
     ): Seq[B] = {
         val instructions = code.instructions
         val max_pc = instructions.length
@@ -631,9 +652,10 @@ package object ai {
     def foreachPCWithOperands[U](
         domain: ValuesDomain
     )(
-        code: Code, operandsArray: domain.OperandsArray
+        code:          Code,
+        operandsArray: domain.OperandsArray
     )(
-        f: (Int /*PC*/ , Instruction, domain.Operands) => U
+        f: (Int /*PC*/, Instruction, domain.Operands) => U
     ): Unit = {
         val instructions = code.instructions
         val max_pc = instructions.size

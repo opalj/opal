@@ -12,8 +12,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.br._
-import org.opalj.br.analyses.Project
 import org.opalj.br.TestSupport.biProject
+import org.opalj.br.analyses.Project
+import org.opalj.log.LogContext
 
 /**
  * Tests that we can detect situations in which a method calls itself.
@@ -39,10 +40,10 @@ class PerformInvocationsWithRecursionDetectionTest extends AnyFlatSpec with Matc
         val domain = new InvocationDomain(project, method)
         BaseAI(method, domain)
         if (domain.allReturnedValues.nonEmpty)
-            fail("the method never returns, but the following result was produced: "+
+            fail("the method never returns, but the following result was produced: " +
                 domain.allReturnedValues)
         if (domain.allThrownExceptions.nonEmpty)
-            fail("the method never returns, but the following exceptions were thrown: "+
+            fail("the method never returns, but the following exceptions were thrown: " +
                 domain.allThrownExceptions)
     }
 
@@ -51,10 +52,10 @@ class PerformInvocationsWithRecursionDetectionTest extends AnyFlatSpec with Matc
         val domain = new InvocationDomain(project, method)
         BaseAI(method, domain)
         if (domain.allReturnedValues.nonEmpty)
-            fail("the method never returns, but the following result was produced: "+
+            fail("the method never returns, but the following result was produced: " +
                 domain.allReturnedValues)
         if (domain.allThrownExceptions.nonEmpty)
-            fail("the method never returns, but the following exceptions were thrown: "+
+            fail("the method never returns, but the following exceptions were thrown: " +
                 domain.allThrownExceptions)
     }
 
@@ -106,8 +107,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     abstract class SharedInvocationDomain(
-            project:    Project[java.net.URL],
-            val method: Method
+        project:    Project[java.net.URL],
+        val method: Method
     ) extends BaseDomain(project) with Domain
         with TheMethod
         with l0.TypeLevelInvokeInstructions
@@ -116,7 +117,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelLongValuesShiftOperators
         with IgnoreSynchronization
-        //with DefaultHandlingOfMethodResults
+        // with DefaultHandlingOfMethodResults
         with l0.DefaultTypeLevelHandlingOfMethodResults
         with PerformInvocationsWithRecursionDetection
         with DefaultRecordMethodCallResults {
@@ -133,22 +134,25 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     class InvocationDomain(
-            project:                            Project[java.net.URL],
-            method:                             Method,
-            val frequentEvaluationWarningLevel: Int                   = 10
+        project:                            Project[java.net.URL],
+        method:                             Method,
+        val frequentEvaluationWarningLevel: Int = 10
     ) extends SharedInvocationDomain(project, method) {
         callingDomain =>
 
-        lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type; def warningIssued: Boolean } = {
+        lazy val calledMethodsStore: CalledMethodsStore {
+            val domain: coordinatingDomain.type; def warningIssued: Boolean
+        } = {
             val operands =
                 mapOperands(
                     localsArray(0).foldLeft(List.empty[DomainValue])((l, n) =>
-                        if (n ne null) n :: l else l),
+                        if (n ne null) n :: l else l
+                    ),
                     coordinatingDomain
                 )
 
             new CalledMethodsStore {
-                implicit val logContext = project.logContext
+                implicit val logContext: LogContext = project.logContext
                 val domain: coordinatingDomain.type = callingDomain.coordinatingDomain
                 val frequentEvaluationWarningLevel = callingDomain.frequentEvaluationWarningLevel
                 val calledMethods = Map((method, List(operands)))
@@ -159,7 +163,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
                     method:      Method,
                     operandsSet: List[Array[domain.DomainValue]]
                 ): Unit = {
-                    //super.frequentEvalution(definingClass, method, operandsSet)
+                    // super.frequentEvalution(definingClass, method, operandsSet)
                     warningIssued = true
                 }
 
@@ -174,9 +178,9 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     }
 
     class ChildInvocationDomain(
-            project:          Project[java.net.URL],
-            method:           Method,
-            val callerDomain: SharedInvocationDomain
+        project:          Project[java.net.URL],
+        method:           Method,
+        val callerDomain: SharedInvocationDomain
     ) extends SharedInvocationDomain(project, method)
         with ChildPerformInvocationsWithRecursionDetection { callingDomain =>
 
@@ -187,7 +191,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
     }
 
-    val project = biProject("ai.jar")
+    val project = biProject("ai-9.jar")
     val StaticCalls = project.classFile(ObjectType("ai/domain/StaticCalls")).get
 
 }

@@ -6,14 +6,16 @@ package analyses
 package cg
 package xta
 
+import scala.collection.mutable
+
 import org.opalj.br.ArrayType
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CreateNewArrayInstruction
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EPS
@@ -23,10 +25,8 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.tac.fpcf.properties.TACAI
-import scala.collection.mutable
-
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Updates InstantiatedTypes attached to a method's set for each array allocation
@@ -41,11 +41,9 @@ import org.opalj.tac.cg.TypeIteratorKey
  * @author Andreas Bauer
  */
 final class ArrayInstantiationsAnalysis(
-        val project:     SomeProject,
-        selectSetEntity: TypeSetEntitySelector
+    val project:     SomeProject,
+    selectSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
-
-    override implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
 
     override def processMethod(
         callContext: ContextType,
@@ -97,10 +95,10 @@ final class ArrayInstantiationsAnalysis(
 
         // Note: Since 'until' is an exclusive range, all array types in 'arrays' with
         // dimension 1 are not processed here.
-        for (
+        for {
             at <- arrays;
             dim <- 1 until at.dimensions
-        ) {
+        } {
 
             val targetAT = ArrayType(dim + 1, at.elementType)
             val assignedAT = targetAT.componentType.asArrayType
@@ -116,7 +114,7 @@ final class ArrayInstantiationsAnalysis(
 }
 
 class ArrayInstantiationsAnalysisScheduler(
-        selectSetEntity: TypeSetEntitySelector
+    selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey)

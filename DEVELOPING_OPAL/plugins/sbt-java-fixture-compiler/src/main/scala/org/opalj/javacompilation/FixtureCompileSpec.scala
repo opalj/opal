@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.javacompilation
+package org.opalj
+package javacompilation
 
 import sbt._
 import java.io.File
@@ -104,11 +105,11 @@ object FixtureCompileSpec {
             // Note that we have to recompile the entire project if some file is
             // just deleted to ensure that the project is still consistent.
             // see commit: 818ddcefdbf47e1368d476a8cf0ad32e1a4e4856
-            val sourceFiles = (task.fixture.sourceFolder ** ("*.java" || "compiler.config")).get
+            val sourceFiles = (task.fixture.sourceFolder ** ("*.java" || "compiler.config")).get()
             val sourceFolderDate = task.fixture.sourceFolder.lastModified()
             val newestSourceFileDate =
                 sourceFiles.map(_.lastModified).foldLeft(sourceFolderDate)(Math.max)
-            val classFiles = (task.targetFolder ** "*.class").get
+            val classFiles = (task.targetFolder ** "*.class").get()
             val targetFolderDate = task.targetFolder.lastModified()
             val newestClassFileDate = classFiles.map(_.lastModified).foldLeft(targetFolderDate)(Math.max)
 
@@ -125,7 +126,7 @@ object FixtureCompileSpec {
                 }
             }
 
-            val classfileSeq = (task.targetFolder ** "*.class").get.toSeq
+            val classfileSeq = (task.targetFolder ** "*.class").get().toSeq
             JavaFixtureCompilationResult(task, classfileSeq, !compilationNecessary)
         }
     }

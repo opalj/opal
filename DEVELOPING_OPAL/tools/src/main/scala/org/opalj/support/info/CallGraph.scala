@@ -8,35 +8,35 @@ import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.net.URL
 import java.util.Calendar
-
 import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.log.LogContext
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.Field
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.DefinedMethod
-import org.opalj.br.VirtualDeclaredMethod
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysesRegistry
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.log.LogContext
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CFA_1_0_CallGraphKey
@@ -47,14 +47,14 @@ import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
-import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 
 /**
  * Computes a call graph and reports its size.
@@ -78,7 +78,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  */
 object CallGraph extends ProjectAnalysisApplication {
 
-    //OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
+    // OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
     override def title: String = "Call Graph Analysis"
 
@@ -87,24 +87,19 @@ object CallGraph extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-algorithm=CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo|1-0-CFA|1-1-CFA]"+
-            "[-domain=domain]"+
-            "[-callers=method]"+
-            "[-callees=method]"+
-            "[-writeCG=file]"+
-            "[-analysisName=name]"+
-            "[-schedulingStrategy=name]"+
-            "[-writeOutput=file]"+
-            "[-j=<number of threads>]"+
-            "[-main=package.MainClass]"+
-            "[-tamiflex-log=logfile]"+
-            "[-finalizerAnalysis=<yes|no|default>]"+
-            "[-loadedClassesAnalysis=<yes|no|default>]"+
-            "[-staticInitializerAnalysis=<yes|no|default>]"+
-            "[-reflectionAnalysis=<yes|no|default>]"+
-            "[-serializationAnalysis=<yes|no|default>]"+
-            "[-threadRelatedCallsAnalysis=<yes|no|default>]"+
-            "[-configuredNativeMethodsAnalysis=<yes|no|default>]"
+        "[-algorithm=CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo|1-0-CFA|1-1-CFA]" +
+            "[-domain=domain]" +
+            "[-callers=method]" +
+            "[-callees=method]" +
+            "[-writeCG=file]" +
+            "[-analysisName=name]" +
+            "[-schedulingStrategy=name]" +
+            "[-writeOutput=file]" +
+            "[-j=<number of threads>]" +
+            "[-main=package.MainClass]" +
+            "[-tamiflexLog=logfile]" +
+            "[-enabledModules=<comma-separated list of modules, e.g., ReflectionRelatedCallsAnalysis,FinalizerAnalysis]" +
+            "[-disabledModules=<comma-separated list of modules, e.g., ReflectionRelatedCallsAnalysis,FinalizerAnalysis]"
     }
 
     private val algorithmRegex =
@@ -114,23 +109,18 @@ object CallGraph extends ProjectAnalysisApplication {
         val remainingParameters =
             parameters.filter { p =>
                 !p.matches(algorithmRegex.regex) &&
-                    !p.startsWith("-domain=") &&
-                    !p.startsWith("-callers=") &&
-                    !p.startsWith("-callees=") &&
-                    !p.startsWith("-analysisName=") &&
-                    !p.startsWith("-schedulingStrategy=") &&
-                    !p.startsWith("-writeCG=") &&
-                    !p.startsWith("-writeOutput=") &&
-                    !p.startsWith("-main=") &&
-                    !p.startsWith("-j=") &&
-                    !p.startsWith("-tamiflex-log=") &&
-                    !p.startsWith("-finalizerAnalysis=") &&
-                    !p.startsWith("-loadedClassesAnalysis=") &&
-                    !p.startsWith("-staticInitializerAnalysis=") &&
-                    !p.startsWith("-reflectionAnalysis=") &&
-                    !p.startsWith("-serializationAnalysis=") &&
-                    !p.startsWith("-threadRelatedCallsAnalysis=") &&
-                    !p.startsWith("-configuredNativeMethodsAnalysis=")
+                !p.startsWith("-domain=") &&
+                !p.startsWith("-callers=") &&
+                !p.startsWith("-callees=") &&
+                !p.startsWith("-analysisName=") &&
+                !p.startsWith("-schedulingStrategy=") &&
+                !p.startsWith("-writeCG=") &&
+                !p.startsWith("-writeOutput=") &&
+                !p.startsWith("-main=") &&
+                !p.startsWith("-j=") &&
+                !p.startsWith("-tamiflexLog=") &&
+                !p.startsWith("-enabledModules=") &&
+                !p.startsWith("-disabledModules=")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
@@ -164,15 +154,13 @@ object CallGraph extends ProjectAnalysisApplication {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm =>
             dm.hasSingleDefinedMethod &&
-                (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
+            (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
         }.to(Iterable)
 
         var propertyStoreTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
 
-        implicit val ps: PropertyStore = time { project.get(PropertyStoreKey) } { t =>
-            propertyStoreTime = t.toSeconds
-        }
+        implicit val ps: PropertyStore = time { project.get(PropertyStoreKey) } { t => propertyStoreTime = t.toSeconds }
 
         val cg = time {
             cgAlgorithm match {
@@ -227,7 +215,9 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"Instance Field PTS entries: ${getEntries(classOf[Tuple2[Long, Field]])}")
             println(s"Static Field PTS entries: ${getEntries(classOf[Field])}")
             println(s"Array PTS entries: ${getEntries(classOf[ArrayEntity[Long]])}")
-            println(s"Return PTS entries: ${getEntries(classOf[DefinedMethod]) + getEntries(classOf[VirtualDeclaredMethod])}")
+            println(
+                s"Return PTS entries: ${getEntries(classOf[DefinedMethod]) + getEntries(classOf[VirtualDeclaredMethod])}"
+            )
             println(s"MethodException PTS entries: ${getEntries(classOf[MethodExceptions])}")
             println(s"CallException PTS entries: ${getEntries(classOf[CallExceptions])}")
         }
@@ -242,7 +232,7 @@ object CallGraph extends ProjectAnalysisApplication {
         println(calleesSigs.mkString("\n"))
         println(callersSigs.mkString("\n"))
 
-        implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
+        implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
         for (m <- allMethods) {
             val mSig = m.descriptor.toJava(m.name)
@@ -281,16 +271,16 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (newOutputFile) {
                     output.createNewFile()
                     outputWriter.println(
-                        "analysisName;project time;propertyStore time;callGraph time;total time;"+
+                        "analysisName;project time;propertyStore time;callGraph time;total time;" +
                             "methods;reachable;edges"
                     )
                 }
 
                 val totalTime = projectTime + propertyStoreTime + callGraphTime
                 outputWriter.println(
-                    s"${analysisName.get};${projectTime.toString(false)};"+
-                        s"${propertyStoreTime.toString(false)};"+
-                        s"${callGraphTime.toString(false)};${totalTime.toString(false)};"+
+                    s"${analysisName.get};${projectTime.toString(false)};" +
+                        s"${propertyStoreTime.toString(false)};" +
+                        s"${callGraphTime.toString(false)};${totalTime.toString(false)};" +
                         s"${allMethods.size};${reachableMethods.size};$numEdges"
                 )
 
@@ -337,28 +327,23 @@ object CallGraph extends ProjectAnalysisApplication {
         val writeOutputRegex = "-writeOutput=(.*)".r
         val numThreadsRegex = "-j=(.*)".r
         val mainClassRegex = "-main=(.*)".r
-        val tamiflexLogRegex = "-tamiflex-log=(.*)".r
-
-        val finalizerAnalysisRegex = "-finalizerAnalysis=(.*)".r
-        val loadedClassesAnalysisRegex = "-loadedClassesAnalysis=(.*)".r
-        val staticInitializerAnalysisRegex = "-staticInitializerAnalysis=(.*)".r
-        val reflectionAnalysisRegex = "-reflectionAnalysis=(.*)".r
-        val serializationAnalysisRegex = "-serializationAnalysis=(.*)".r
-        val threadRelatedCallsAnalysisRegex = "-threadRelatedCallsAnalysis=(.*)".r
-        val configuredNativeMethodsAnalysisRegex = "-configuredNativeMethodsAnalysis=(.*)".r
+        val tamiflexLogRegex = "-tamiflexLog=(.*)".r
+        val enabledModulesRegex = "-enabledModules=(.*)".r
+        val disabledModulesRegex = "-disabledModules=(.*)".r
 
         var newConfig = project.config
         var modules = newConfig.getStringList("org.opalj.tac.cg.CallGraphKey.modules").asScala.toSet
 
-        def analyisOption(option: String, analysis: String): Unit = {
-            option match {
-                case "yes" =>
-                    modules += s"org.opalj.tac.fpcf.analyses.cg.${analysis}Scheduler"
-                case "no" =>
-                    modules -= s"org.opalj.tac.fpcf.analyses.cg.${analysis}Scheduler"
-                case "default" =>
-                case _         => throw new IllegalArgumentException(s"illegal value for $analysis")
-            }
+        def enforceModule(enable: Boolean, moduleName: String): Unit = {
+            val moduleFQN =
+                if (moduleName.contains('.')) moduleName
+                else
+                    FPCFAnalysesRegistry.factory(moduleName).getClass.getName.replace("$", "")
+
+            if (enable)
+                modules += moduleFQN
+            else
+                modules -= moduleFQN
         }
 
         parameters.foreach {
@@ -397,20 +382,10 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (tamiflexLog.isEmpty)
                     tamiflexLog = Some(fileName)
                 else throw new IllegalArgumentException("-tamiflex-log was set twice")
-            case finalizerAnalysisRegex(option) =>
-                analyisOption(option, "FinalizerAnalysis")
-            case loadedClassesAnalysisRegex(option) =>
-                analyisOption(option, "LoadedClassesAnalysis")
-            case staticInitializerAnalysisRegex(option) =>
-                analyisOption(option, "StaticInitializerAnalysis")
-            case reflectionAnalysisRegex(option) =>
-                analyisOption(option, "reflection.ReflectionRelatedCallsAnalysis")
-            case serializationAnalysisRegex(option) =>
-                analyisOption(option, "SerializationRelatedCallsAnalysis")
-            case threadRelatedCallsAnalysisRegex(option) =>
-                analyisOption(option, "ThreadRelatedCallsAnalysis")
-            case configuredNativeMethodsAnalysisRegex(option) =>
-                analyisOption(option, "ConfiguredNativeMethodsCallGraphAnalysis")
+            case enabledModulesRegex(moduleNames) =>
+                moduleNames.split(',').foreach(enforceModule(true, _))
+            case disabledModulesRegex(moduleNames) =>
+                moduleNames.split(',').foreach(enforceModule(false, _))
         }
 
         if (tamiflexLog.isDefined) {
@@ -418,7 +393,6 @@ object CallGraph extends ProjectAnalysisApplication {
                 TamiFlexKey.configKey,
                 ConfigValueFactory.fromAnyRef(tamiflexLog.get)
             )
-            modules += "org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler"
         }
 
         if (schedulingStrategy.isDefined) {

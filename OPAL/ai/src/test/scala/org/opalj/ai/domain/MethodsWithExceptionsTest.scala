@@ -3,18 +3,18 @@ package org.opalj
 package ai
 package domain
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-
 import scala.collection.immutable.LongMap
 
-import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.br._
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.bi.TestResources.locateTestResources
+import org.opalj.br._
+import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.collection.immutable.IntTrieSet
 
 /**
  * Basic tests of the abstract interpreter in the presence of simple control flow
@@ -121,21 +121,46 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
             import domain._
             allThrownExceptions should be(
                 Map(
-                    (19, Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 19, No, true, ObjectType.NullPointerException))),
-                    (23, Set(
-                        ObjectValue(-1, No, false, ObjectType.Throwable),
-                        ObjectValue(ImmediateVMExceptionsOriginOffset - 11, No, true, ObjectType.NullPointerException)
-                    )),
-                    (25, Set(ObjectValue(ImmediateVMExceptionsOriginOffset - 25, No, true, ObjectType.NullPointerException)))
+                    (
+                        19,
+                        Set(ObjectValue(
+                            ImmediateVMExceptionsOriginOffset - 19,
+                            No,
+                            true,
+                            ObjectType.NullPointerException
+                        ))
+                    ),
+                    (
+                        23,
+                        Set(
+                            ObjectValue(-1, No, false, ObjectType.Throwable),
+                            ObjectValue(
+                                ImmediateVMExceptionsOriginOffset - 11,
+                                No,
+                                true,
+                                ObjectType.NullPointerException
+                            )
+                        )
+                    ),
+                    (
+                        25,
+                        Set(ObjectValue(
+                            ImmediateVMExceptionsOriginOffset - 25,
+                            No,
+                            true,
+                            ObjectType.NullPointerException
+                        ))
+                    )
                 )
             )
         }
     }
 
 }
+
 private object MethodsWithExceptionsTest {
 
-    val classFiles = ClassFiles(locateTestResources("ai.jar", "bi"))
+    val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithExceptions").get
 }

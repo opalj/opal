@@ -3,12 +3,12 @@ package org.opalj
 package graphs
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Tests the (Post)[[DominatorTree]] implementation.
@@ -22,10 +22,10 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
     "a graph with just one node" should "result in a post dominator tree with a single node" in {
         val g = Graph.empty[Int] addVertice 0
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val foreachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val existNodes = Set(0)
         val dt = time {
@@ -34,10 +34,11 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 (i: Int) => i == 0,
                 IntTrieSet.empty,
                 (f: (Int => Unit)) => existNodes.foreach(e => f(e)),
-                foreachSuccessorOf, foreachPredecessorOf,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
                 0
             )
-        } { t => info("post dominator tree computed in "+t.toSeconds) }
+        } { t => info("post dominator tree computed in " + t.toSeconds) }
         var ns: List[Int] = null
 
         ns = Nil
@@ -48,16 +49,16 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
         dt.foreachDom(0, reflexive = false) { n => ns = n :: ns }
         ns should be(List())
 
-        //io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
     }
 
     "a simple tree with multiple exits" should "result in a corresponding postdominator tree" in {
         val g = Graph.empty[Int] addEdge (0 -> 1) addEdge (1 -> 2) addEdge (1 -> 3) addEdge (2 -> 4)
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val foreachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val existNodes = Set(3, 4)
         val dt = time {
@@ -66,10 +67,11 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 existNodes.contains,
                 IntTrieSet.empty,
                 (f: (Int => Unit)) => existNodes.foreach(e => f(e)),
-                foreachSuccessorOf, foreachPredecessorOf,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
                 4
             )
-        } { t => info("post dominator tree computed in "+t.toSeconds) }
+        } { t => info("post dominator tree computed in " + t.toSeconds) }
         dt.dom(0) should be(1)
         dt.dom(1) should be(5)
         dt.dom(2) should be(4)
@@ -86,16 +88,16 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
         dt.foreachDom(2, reflexive = false) { n => ns = n :: ns }
         ns should be(List(5, 4))
 
-        //io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
+        // io.writeAndOpen(dt.toDot, "PostDominatorTree", ".dot")
     }
 
     "a graph with a cycle" should "yield the correct postdominators" in {
         val g = Graph.empty[Int] addEdge (0 -> 1) addEdge (1 -> 2) addEdge (1 -> 3) addEdge (0 -> 4) addEdge (2 -> 1)
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val foreachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val existNodes = Set(3, 4)
         val dt = time {
@@ -104,10 +106,11 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 existNodes.contains,
                 IntTrieSet.empty,
                 (f: (Int => Unit)) => existNodes.foreach(e => f(e)),
-                foreachSuccessorOf, foreachPredecessorOf,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
                 4
             )
-        } { t => info("post dominator tree computed in "+t.toSeconds) }
+        } { t => info("post dominator tree computed in " + t.toSeconds) }
 
         try {
 
@@ -138,10 +141,10 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
     "a path with multiple artificial exit points" should "yield the correct postdominators" in {
         val g = Graph.empty[Int] addEdge (0 -> 1) addEdge (1 -> 2)
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val foreachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-            f: (Int => Unit) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
+            (f: (Int => Unit)) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
         }
         val existNodes = Set(1, 2)
         val dt = time {
@@ -150,10 +153,11 @@ class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
                 existNodes.contains,
                 IntTrieSet.empty,
                 (f: Int => Unit) => existNodes.foreach(e => f(e)),
-                foreachSuccessorOf, foreachPredecessorOf,
+                foreachSuccessorOf,
+                foreachPredecessorOf,
                 2
             )
-        } { t => info("post dominator tree computed in "+t.toSeconds) }
+        } { t => info("post dominator tree computed in " + t.toSeconds) }
 
         try {
 

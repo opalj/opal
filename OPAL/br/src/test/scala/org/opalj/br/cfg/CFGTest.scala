@@ -2,10 +2,10 @@
 package org.opalj.br
 package cfg
 
+import java.net.URL
+
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
-
-import java.net.URL
 
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
@@ -26,7 +26,7 @@ class CFGTest extends AbstractCFGTest {
         val testProject: Project[URL] = biProject("controlflow.jar")
         val testClassFile = testProject.classFile(ObjectType("controlflow/BoringCode")).get
 
-        implicit val testClassHierarchy = testProject.classHierarchy
+        implicit val testClassHierarchy: ClassHierarchy = testProject.classHierarchy
 
         it("the cfg of a method with no control flow statements should have one BasicBlock node") {
             val m = testClassFile.findMethod("singleBlock").head

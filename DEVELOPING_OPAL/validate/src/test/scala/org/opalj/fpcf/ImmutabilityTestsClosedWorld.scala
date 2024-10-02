@@ -1,19 +1,22 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import java.net.URL
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
-import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
+import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
 
 /**
@@ -34,14 +37,13 @@ class ImmutabilityTestsClosedWorld extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-
             Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         }
 
         p.get(TypeBasedPointsToCallGraphKey)
     }
 
-    describe("run all immutability analysis with a closed world assumption (with type provider") {
+    describe("run all immutability analysis with a closed world assumption (with type iterator") {
 
         val as = executeAnalyses(
             Set(
@@ -69,6 +71,6 @@ class ImmutabilityTestsClosedWorld extends PropertiesTest {
             classFilesWithAnnotations(as.project).map(tp => (tp._1.thisType, tp._2, tp._3)),
             Set("TypeImmutability")
         )
-        println("reachable methods: "+as.project.get(TypeBasedPointsToCallGraphKey).reachableMethods().toList.size)
+        println("reachable methods: " + as.project.get(TypeBasedPointsToCallGraphKey).reachableMethods().toList.size)
     }
 }

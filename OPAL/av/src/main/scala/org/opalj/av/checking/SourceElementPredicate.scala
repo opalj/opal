@@ -3,9 +3,9 @@ package org.opalj
 package av
 package checking
 
-import org.opalj.br.ConcreteSourceElement
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.br.{Attributes => SourceElementAttributes}
+import org.opalj.br.ConcreteSourceElement
 
 /**
  * A predicate related to a specific source element.
@@ -20,7 +20,7 @@ trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean)
 
         new SourceElementPredicate[X] {
             def apply(s: X): Boolean = left(s) && right(s)
-            def toDescription() = left.toDescription()+" and "+right.toDescription()
+            def toDescription() = left.toDescription() + " and " + right.toDescription()
         }
 
     }
@@ -41,9 +41,8 @@ trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean)
 }
 
 case class AccessFlags(
-        accessFlags: AccessFlagsMatcher
-)
-    extends SourceElementPredicate[ConcreteSourceElement] {
+    accessFlags: AccessFlagsMatcher
+) extends SourceElementPredicate[ConcreteSourceElement] {
 
     def apply(sourceElement: ConcreteSourceElement): Boolean = {
         this.accessFlags.unapply(sourceElement.accessFlags)
@@ -58,9 +57,8 @@ case class AccessFlags(
  * @author Michael Eichberg
  */
 case class Attributes(
-        attributes: SourceElementAttributes
-)
-    extends SourceElementPredicate[ConcreteSourceElement] {
+    attributes: SourceElementAttributes
+) extends SourceElementPredicate[ConcreteSourceElement] {
 
     def apply(sourceElement: ConcreteSourceElement): Boolean = {
         //    sourceElement.attributes.size == this.attributes.size &&

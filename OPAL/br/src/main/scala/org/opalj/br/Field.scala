@@ -2,14 +2,14 @@
 package org.opalj
 package br
 
-import scala.math.Ordered
-import org.opalj.bi.ACC_TRANSIENT
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_VOLATILE
-import org.opalj.bi.AccessFlagsContexts
-import org.opalj.bi.AccessFlags
-
 import scala.collection.immutable.ArraySeq
+import scala.math.Ordered
+
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_TRANSIENT
+import org.opalj.bi.ACC_VOLATILE
+import org.opalj.bi.AccessFlags
+import org.opalj.bi.AccessFlagsContexts
 
 /**
  * Represents a single field declaration/definition.
@@ -61,8 +61,11 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     // with the respective class file.
     private[br] def prepareClassFileAttachement(): Field = {
         new Field(
-            null /*will be set by class file*/ ,
-            accessFlags, name, fieldType, attributes
+            null /*will be set by class file*/,
+            accessFlags,
+            name,
+            fieldType,
+            attributes
         )
     }
 
@@ -74,9 +77,9 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      */
     def similar(other: JVMField, config: SimilarityTestConfiguration): Boolean = {
         this.accessFlags == other.accessFlags &&
-            (this.fieldType eq other.fieldType) &&
-            this.name == other.name &&
-            compareAttributes(other.attributes, config).isEmpty
+        (this.fieldType eq other.fieldType) &&
+        this.name == other.name &&
+        compareAttributes(other.attributes, config).isEmpty
     }
 
     def copy(
@@ -115,7 +118,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     }
 
     def signatureToJava(withAccessFlags: Boolean = false): String = {
-        val javaSignature = fieldType.toJava+" "+name
+        val javaSignature = fieldType.toJava + " " + name
         if (withAccessFlags) {
             val rawAccessFlags = AccessFlags.toStrings(this.accessFlags, AccessFlagsContexts.FIELD)
             val accessFlags =
@@ -150,10 +153,10 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     override def toString(): String = {
         import AccessFlagsContexts.FIELD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, FIELD).mkString(" ")
-        val jDescriptor = fieldType.toJava+" "+name
+        val jDescriptor = fieldType.toJava + " " + name
         val field =
             if (jAccessFlags.nonEmpty) {
-                jAccessFlags+" "+jDescriptor
+                jAccessFlags + " " + jDescriptor
             } else {
                 jDescriptor
             }
@@ -167,22 +170,22 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
 }
 
 final class FieldTemplate private[br] (
-        val accessFlags: Int,
-        val name:        String, // the name is interned to enable reference comparisons!
-        val fieldType:   FieldType,
-        val attributes:  Attributes
+    val accessFlags: Int,
+    val name:        String, // the name is interned to enable reference comparisons!
+    val fieldType:   FieldType,
+    val attributes:  Attributes
 ) extends JVMField {
 
-    final override def isField: Boolean = false
+    override final def isField: Boolean = false
 
 }
 
 final class Field private[br] (
-        private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
-        val accessFlags:                    Int,
-        val name:                           String, // the name is interned to enable reference comparisons!
-        val fieldType:                      FieldType,
-        val attributes:                     Attributes
+    private[br] var declaringClassFile: ClassFile, // the back-link can be updated to enable efficient load-time transformations
+    val accessFlags:                    Int,
+    val name:                           String, // the name is interned to enable reference comparisons!
+    val fieldType:                      FieldType,
+    val attributes:                     Attributes
 ) extends JVMField {
 
     // see ClassFile.unsafeReplaceMethod for THE usage!
@@ -204,7 +207,7 @@ final class Field private[br] (
     }
 
     override def toString(): String = {
-        super.toString()+" // in "+declaringClassFile.thisType.toJava
+        super.toString() + " // in " + declaringClassFile.thisType.toJava
     }
 }
 
@@ -220,7 +223,9 @@ object Field {
         fieldAttributeBuilder: FieldAttributeBuilder
     ): FieldTemplate = {
         this(
-            accessFlags, name, fieldType,
+            accessFlags,
+            name,
+            fieldType,
             ArraySeq(fieldAttributeBuilder(accessFlags, name, fieldType))
         )
     }

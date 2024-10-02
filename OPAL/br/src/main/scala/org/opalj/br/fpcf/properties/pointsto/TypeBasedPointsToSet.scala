@@ -25,8 +25,8 @@ sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInf
 }
 
 case class TypeBasedPointsToSet private[properties] (
-        private val orderedTypes: List[ReferenceType],
-        override val types:       UIDSet[ReferenceType]
+    private val orderedTypes: List[ReferenceType],
+    override val types:       UIDSet[ReferenceType]
 ) extends PointsToSetLike[ReferenceType, UIDSet[ReferenceType], TypeBasedPointsToSet]
     with OrderedProperty
     with TypeBasedPointsToSetPropertyMetaInformation {
@@ -66,7 +66,8 @@ case class TypeBasedPointsToSet private[properties] (
     override def numElements: Int = types.size
 
     override def included(
-        other: TypeBasedPointsToSet, seenElements: Int
+        other:        TypeBasedPointsToSet,
+        seenElements: Int
     ): TypeBasedPointsToSet = {
         var newOrderedTypes = orderedTypes
         var typesUnion = types
@@ -94,7 +95,8 @@ case class TypeBasedPointsToSet private[properties] (
     }
 
     override def included(
-        other: TypeBasedPointsToSet, typeFilter: ReferenceType => Boolean
+        other:      TypeBasedPointsToSet,
+        typeFilter: ReferenceType => Boolean
     ): TypeBasedPointsToSet = {
         included(other, 0, typeFilter)
     }
@@ -163,11 +165,12 @@ object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation 
         val name = "opalj.TypeBasedPointsToSet"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoTypes
-                case _ =>
-                    throw new IllegalStateException(s"no analysis is scheduled for property: $name")
-            }
+            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoTypes
+                    case _ =>
+                        throw new IllegalStateException(s"no analysis is scheduled for property: $name")
+                }
         )
     }
 }

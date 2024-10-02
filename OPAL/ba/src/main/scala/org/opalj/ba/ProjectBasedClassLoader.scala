@@ -2,9 +2,9 @@
 package org.opalj
 package ba
 
+import org.opalj.bc.Assembler
 import org.opalj.br.ClassFileRepository
 import org.opalj.br.ObjectType
-import org.opalj.bc.Assembler
 
 /**
  * A simple `ClassLoader` that looks-up the available classes from the given
@@ -13,8 +13,8 @@ import org.opalj.bc.Assembler
  * @author Andreas Muttscheller
  */
 class ProjectBasedInMemoryClassLoader(
-        val project: ClassFileRepository,
-        parent:      ClassLoader         = classOf[ProjectBasedInMemoryClassLoader].getClassLoader
+    val project: ClassFileRepository,
+    parent:      ClassLoader = classOf[ProjectBasedInMemoryClassLoader].getClassLoader
 ) extends ClassLoader(parent) {
 
     @throws[ClassNotFoundException]

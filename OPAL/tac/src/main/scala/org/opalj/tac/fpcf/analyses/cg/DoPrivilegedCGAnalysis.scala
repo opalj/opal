@@ -5,6 +5,21 @@ package fpcf
 package analyses
 package cg
 
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -16,25 +31,10 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.ValueInformation
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.ArrayType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.ValueInformation
 
 /**
  * Models the behavior for `java.security.AccessController.doPrivileged*`.
@@ -52,9 +52,9 @@ import scala.collection.immutable.ArraySeq
  * @author Dominik Helm
  */
 class DoPrivilegedMethodAnalysis private[cg] (
-        final val doPrivilegedMethod: DeclaredMethod,
-        final val declaredRunMethod:  DeclaredMethod,
-        override val project:         SomeProject
+    final val doPrivilegedMethod: DeclaredMethod,
+    final val declaredRunMethod:  DeclaredMethod,
+    override val project:         SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(
@@ -72,17 +72,14 @@ class DoPrivilegedMethodAnalysis private[cg] (
         if (params.nonEmpty && params.head.isDefined) {
             val param = params.head.get.asVar
 
-            implicit val state: CGState[ContextType] = new CGState[ContextType](
-                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
-            )
+            implicit val state: CGState[ContextType] =
+                new CGState[ContextType](callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
 
             val thisActual = persistentUVar(param)(state.tac.stmts)
 
             typeIterator.foreachType(
                 param,
-                typeIterator.typesProperty(
-                    param, callerContext, callPC.asInstanceOf[Entity], tac.stmts
-                )
+                typeIterator.typesProperty(param, callerContext, callPC.asInstanceOf[Entity], tac.stmts)
             ) { tpe => handleType(tpe, callerContext, callPC, thisActual, indirectCalls) }
 
             returnResult(param, thisActual, indirectCalls)
@@ -123,13 +120,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
         )
         if (callR.hasValue) {
             val tgtMethod = declaredMethods(callR.value)
-            calleesAndCallers.addCall(
-                callContext,
-                callPC,
-                typeIterator.expandContext(callContext, tgtMethod, callPC),
-                Seq.empty,
-                thisActual
-            )
+            calleesAndCallers.addCall(callContext, callPC, tgtMethod, Seq.empty, thisActual)
         } else {
             calleesAndCallers.addIncompleteCallSite(callPC)
         }
@@ -162,7 +153,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
 }
 
 class DoPrivilegedCGAnalysis private[cg] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     def analyze(p: SomeProject): PropertyComputationResult = {
@@ -305,7 +296,7 @@ class DoPrivilegedCGAnalysis private[cg] (
         if (doPrivilegedWithCombiner4.hasSingleDefinedMethod)
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner4, runMethod, p)
 
-        Results(analyses.iterator.map(_.registerAPIMethod())) //analyze()))
+        Results(analyses.iterator.map(_.registerAPIMethod())) // analyze()))
     }
 }
 
@@ -321,7 +312,9 @@ object DoPrivilegedAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def start(
-        p: SomeProject, ps: PropertyStore, unused: Null
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): DoPrivilegedCGAnalysis = {
         val analysis = new DoPrivilegedCGAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.analyze)

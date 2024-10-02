@@ -3,14 +3,13 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
+import scala.reflect.runtime.universe._
+
+import java.io.ByteArrayInputStream
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
-
-import java.io.ByteArrayInputStream
-
-import scala.reflect.runtime.universe._
 
 import org.opalj.bc.Assembler
 import org.opalj.br.Method
@@ -27,29 +26,34 @@ import org.opalj.util.InMemoryClassLoader
 class JumpLabelsTest extends AnyFlatSpec {
 
     val methodTemplate =
-        METHOD(PUBLIC, "returnInt", "(I)I", CODE(
-            GOTO(Symbol("IsZero_?")),
-            Symbol("Else"),
-            ILOAD_1,
-            IRETURN,
-            Symbol("IsTwo_?"),
-            ILOAD_1,
-            ICONST_2,
-            IF_ICMPNE(Symbol("Else")),
-            ICONST_2,
-            IRETURN,
-            Symbol("IsOne_?"),
-            ILOAD_1,
-            ICONST_1,
-            IF_ICMPNE(Symbol("IsTwo_?")),
-            ICONST_1,
-            IRETURN,
-            Symbol("IsZero_?"),
-            ILOAD_1,
-            IFNE(Symbol("IsOne_?")),
-            ICONST_0,
-            IRETURN
-        ))
+        METHOD(
+            PUBLIC,
+            "returnInt",
+            "(I)I",
+            CODE(
+                GOTO(Symbol("IsZero_?")),
+                Symbol("Else"),
+                ILOAD_1,
+                IRETURN,
+                Symbol("IsTwo_?"),
+                ILOAD_1,
+                ICONST_2,
+                IF_ICMPNE(Symbol("Else")),
+                ICONST_2,
+                IRETURN,
+                Symbol("IsOne_?"),
+                ILOAD_1,
+                ICONST_1,
+                IF_ICMPNE(Symbol("IsTwo_?")),
+                ICONST_1,
+                IRETURN,
+                Symbol("IsZero_?"),
+                ILOAD_1,
+                IFNE(Symbol("IsOne_?")),
+                ICONST_0,
+                IRETURN
+            )
+        )
 
     val (daJava5ClassFile, _) =
         CLASS(

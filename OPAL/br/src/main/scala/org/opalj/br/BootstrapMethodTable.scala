@@ -24,6 +24,7 @@ case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute {
     }
 
 }
+
 object BootstrapMethodTable {
 
     final val KindId = 42

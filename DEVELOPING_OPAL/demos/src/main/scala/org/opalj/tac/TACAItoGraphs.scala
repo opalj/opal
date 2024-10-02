@@ -1,15 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac
+package org.opalj
+package tac
 
-import java.net.URL
 import java.io.File
+import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.opalj.ai.common.SimpleAIKey
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * Creates for all methods of a given project the Control-flow Graph and the DefUse Graph.
@@ -34,7 +35,7 @@ object TACAItoGraphs extends ProjectAnalysisApplication {
         else if (parameters.isEmpty)
             Seq("output folder is missing")
         else
-            parameters.filterNot(_.startsWith("-o=")).map("unknown parameter: "+_)
+            parameters.filterNot(_.startsWith("-o=")).map("unknown parameter: " + _)
     }
 
     override def doAnalyze(
@@ -65,10 +66,10 @@ object TACAItoGraphs extends ProjectAnalysisApplication {
                 val nodeToIdMap = nodeToId.toMap
                 val idToNodeMap = nodeToId.map(_.swap).toMap
                 val maxNodeId = nodeToIdMap.size - 1
-                val outputDUGFile = new File(outputFileName+".dug.csv").toPath
+                val outputDUGFile = new File(outputFileName + ".dug.csv").toPath
                 def successors(i: Int) = idToNodeMap(i).children.map(nodeToIdMap).toSet
                 val g = org.opalj.graphs.toAdjacencyMatrix(maxNodeId, successors)
-                println(s"writing graph to: "+outputDUGFile)
+                println(s"writing graph to: " + outputDUGFile)
                 Files.write(outputDUGFile, g)
             }
 
@@ -77,10 +78,10 @@ object TACAItoGraphs extends ProjectAnalysisApplication {
                 val nodeToIdMap = tacs(m).cfg.allNodes.zipWithIndex.toMap
                 val idToNodeMap = nodeToIdMap.iterator.map(_.swap).toMap
                 val maxNodeId = nodeToIdMap.size - 1
-                val outputCFGFile = new File(outputFileName+".cfg.csv").toPath
+                val outputCFGFile = new File(outputFileName + ".cfg.csv").toPath
                 def successors(i: Int) = idToNodeMap(i).successors.map(nodeToIdMap)
                 val g = org.opalj.graphs.toAdjacencyMatrix(maxNodeId, successors)
-                println(s"writing graph to: "+outputCFGFile)
+                println(s"writing graph to: " + outputCFGFile)
                 Files.write(outputCFGFile, g)
             }
 

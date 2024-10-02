@@ -30,6 +30,6 @@ trait Java7Framework
 
 object Java7Framework extends Java7Framework {
 
-    final override def loadsInterfacesOnly: Boolean = false
+    override final def loadsInterfacesOnly: Boolean = false
 
 }

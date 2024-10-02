@@ -3,10 +3,11 @@ package org.opalj
 package hermes
 package queries
 
+import java.net.URI
 import java.net.URL
 
-import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.Project
 
 /**
  * Counts the number of occurrences of each bytecode instruction.
@@ -20,7 +21,7 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
     private[this] final val OpcodesToOrdinalNumbers = new Array[Int](256)
 
     override val htmlDescription: Either[String, URL] = {
-        Right(new URL("https://www.opal-project.de/bi/JVMInstructions.xml"))
+        Right(URI.create("https://www.opal-project.de/bi/JVMInstructions.xml").toURL)
     }
 
     override def featureIDs: IndexedSeq[String] = {

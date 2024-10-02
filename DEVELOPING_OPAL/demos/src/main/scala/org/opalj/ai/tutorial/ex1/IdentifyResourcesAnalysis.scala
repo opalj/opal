@@ -1,12 +1,20 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ai.tutorial.ex1
+package org.opalj
+package ai
+package tutorial
+package ex1
 
 import java.net.URL
+
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.SingleArgumentMethodDescriptor
+import org.opalj.br.VoidType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.br.instructions._
-import org.opalj.ai._
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -16,8 +24,8 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
 
     class AnalysisDomain(
-            override val project: Project[URL],
-            val method:           Method
+        override val project: Project[URL],
+        val method:           Method
     ) extends CorrelationalDomain
         with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
@@ -59,9 +67,10 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                     m.body.get.foldLeft(List.empty[Int /*PC*/ ]) { (pcs, pc, instruction) =>
                         instruction match {
                             case INVOKESPECIAL(
-                                ObjectType("java/io/File"), false /* = isInterface*/ ,
-                                "<init>",
-                                SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
+                                    ObjectType("java/io/File"),
+                                    false /* = isInterface*/,
+                                    "<init>",
+                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
                                 ) =>
                                 pc :: pcs
                             case _ =>
@@ -85,17 +94,16 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
             } yield (m, pc, value)
         } { ns => println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
 
-        def callSiteToString(callSite: (Method, Int /* PC*/ , String)): String = {
+        def callSiteToString(callSite: (Method, Int /* PC*/, String)): String = {
             val (m, pc, v) = callSite
             m.toJava(s"$pc: $v")
         }
 
         BasicReport(
             if (callSitesWithConstantStringParameter.isEmpty)
-                "Only found "+callSites.size+" candidates."
+                "Only found " + callSites.size + " candidates."
             else
-                callSitesWithConstantStringParameter.map(callSiteToString).
-                    mkString("Methods:\n", "\n", ".\n")
+                callSitesWithConstantStringParameter.map(callSiteToString).mkString("Methods:\n", "\n", ".\n")
         )
     }
 

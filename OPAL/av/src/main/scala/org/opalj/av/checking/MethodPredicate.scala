@@ -3,15 +3,15 @@ package org.opalj
 package av
 package checking
 
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
 
 /**
  * @author Marco Torsello
  */
 case object AnyMethod extends SourceElementPredicate[Method] {
 
-    final override def apply(method: Method): Boolean = true
+    override final def apply(method: Method): Boolean = true
 
     def toDescription(): String = "/*any method*/"
 
@@ -34,8 +34,8 @@ case class MethodWithName(name: String) extends SourceElementPredicate[Method] {
  * @author Marco Torsello
  */
 case class MethodWithSignature(
-        name:       String,
-        descriptor: MethodDescriptor
+    name:       String,
+    descriptor: MethodDescriptor
 ) extends SourceElementPredicate[Method] {
 
     def apply(method: Method): Boolean = {
@@ -45,4 +45,3 @@ case class MethodWithSignature(
     def toDescription(): String = descriptor.toJava(name)
 
 }
-

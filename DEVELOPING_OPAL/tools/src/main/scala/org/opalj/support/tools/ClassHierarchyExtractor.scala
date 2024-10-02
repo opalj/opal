@@ -1,11 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.tools
+package org.opalj
+package support
+package tools
 
 import java.io.File
 
 import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ObjectType
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -20,8 +22,7 @@ object ClassHierarchyExtractor {
     def deriveSpecification(
         types: Iterable[ObjectType]
     )(
-        implicit
-        classHierarchy: ClassHierarchy
+        implicit classHierarchy: ClassHierarchy
     ): String = {
         val specLines = types.map { aType =>
             var specLine =
@@ -33,7 +34,7 @@ object ClassHierarchyExtractor {
                 ) + aType.fqn
             val superclassType = classHierarchy.superclassType(aType)
             if (superclassType.isDefined) {
-                specLine += " extends "+superclassType.get.fqn
+                specLine += " extends " + superclassType.get.fqn
                 val superinterfaceTypes = classHierarchy.superinterfaceTypes(aType)
                 if (superinterfaceTypes.isDefined && superinterfaceTypes.get.nonEmpty) {
                     specLine += superinterfaceTypes.get.map(_.fqn).mkString(" implements ", ", ", "")
@@ -50,7 +51,8 @@ object ClassHierarchyExtractor {
         import org.opalj.br.reader.Java8Framework.ClassFiles
 
         if (args.length < 3 ||
-            !args.drop(2).forall(arg => arg.endsWith(".jar") || arg.endsWith(".jmod"))) {
+            !args.drop(2).forall(arg => arg.endsWith(".jar") || arg.endsWith(".jmod"))
+        ) {
             println("Usage:     java …ClassHierarchy supertype filterprefix <JAR|JMOD file>+")
             println("Example:   … java.lang.Enum \"\" .../rt.jar")
             println("           lists all subclasses of java.lang.Enum in rt.jar; \"\" effectively disables the filter.")
@@ -63,7 +65,7 @@ object ClassHierarchyExtractor {
         val classFiles = args.foldLeft(Nil: List[ClassFile]) { (classFiles, filename) =>
             classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
         }
-        implicit val classHierarchy =
+        implicit val classHierarchy: ClassHierarchy =
             if (classFiles.forall(cf => cf.thisType != ObjectType.Object)) {
                 println("the class files do not contain java.lang.Object; adding default type hierarchy")
                 // load pre-configured class hierarchy...
@@ -79,10 +81,10 @@ object ClassHierarchyExtractor {
         }
 
         println(
-            "# Class hierarchy for: "+
-                supertypeName+
-                " limited to subclasses that start with: "+
-                "\""+filterPrefix+"\""
+            "# Class hierarchy for: " +
+                supertypeName +
+                " limited to subclasses that start with: " +
+                "\"" + filterPrefix + "\""
         )
         val allRelevantSubtypes =
             classHierarchy.allSubtypes(supertype, true).filter { candidateType =>

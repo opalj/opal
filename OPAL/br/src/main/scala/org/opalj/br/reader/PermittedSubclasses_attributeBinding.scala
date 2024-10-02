@@ -1,10 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.reader
-
-import org.opalj.bi.reader.PermittedSubclasses_attributeReader
-import org.opalj.br.PermittedSubclasses
+package org.opalj
+package br
+package reader
 
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.reader.PermittedSubclasses_attributeReader
 
 /**
  * Implements the factory methods to create the `PermittedSubclasses` attribute (Java 17).

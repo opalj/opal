@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -46,7 +47,7 @@ object PropertyKey {
         val nextKeyId = this.lastKeyId.incrementAndGet()
         if (nextKeyId >= PropertyKind.SupportedPropertyKinds) {
             throw new IllegalStateException(
-                s"maximum number of property keys ($SupportedPropertyKinds) "+
+                s"maximum number of property keys ($SupportedPropertyKinds) " +
                     "exceeded; increase PropertyKind.SupportedPropertyKinds"
             );
         }
@@ -154,7 +155,7 @@ object PropertyKey {
     ): Property = {
         val fallbackComputation = fallbackPropertyComputations(pkId)
         if (fallbackComputation == null)
-            throw new IllegalArgumentException("no fallback computation exists: "+name(pkId))
+            throw new IllegalArgumentException("no fallback computation exists: " + name(pkId))
         fallbackComputation(ps, fr, e)
     }
 

@@ -20,10 +20,12 @@ sealed abstract class ComputationalTypeCategory {
      */
     val id: Int
 }
+
 case object Category1ComputationalTypeCategory extends ComputationalTypeCategory {
     final val operandSize = 1
     final val id /*: Byte*/ = 1
 }
+
 case object Category2ComputationalTypeCategory extends ComputationalTypeCategory {
     final val operandSize = 2
     final val id /*: Byte*/ = 2

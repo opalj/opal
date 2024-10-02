@@ -3,12 +3,12 @@ package org.opalj
 package br
 
 import org.opalj.bi.ACC_FINAL
-import org.opalj.bi.ACC_PUBLIC
-import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_PROTECTED
+import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
-import org.opalj.bi.VisibilityModifier
 import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.bi.VisibilityModifier
 
 /**
  * Abstractions over the common properties of class members (Methods and Fields).
@@ -38,7 +38,7 @@ trait ClassMember extends ConcreteSourceElement {
     /**
      * `True` if the `Synthetic` access flag or attribute is used.
      */
-    final override def isSynthetic: Boolean = {
+    override final def isSynthetic: Boolean = {
         super.isSynthetic || (ACC_SYNTHETIC.mask & accessFlags) != 0
     }
 
@@ -47,6 +47,7 @@ trait ClassMember extends ConcreteSourceElement {
      */
     def name: String
 }
+
 /**
  * Defines an extractor method for class members.
  *

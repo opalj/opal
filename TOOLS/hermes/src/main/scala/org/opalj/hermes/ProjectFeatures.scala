@@ -2,9 +2,9 @@
 package org.opalj
 package hermes
 
-import javafx.beans.property.StringProperty
-import javafx.beans.property.SimpleStringProperty
 import javafx.beans.property.ObjectProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.beans.property.StringProperty
 
 /**
  * The feature objects associated with every project.
@@ -12,8 +12,8 @@ import javafx.beans.property.ObjectProperty
  * @author Michael Eichberg
  */
 case class ProjectFeatures[S](
-        projectConfiguration: ProjectConfiguration,
-        featureGroups:        Seq[(FeatureQuery, Seq[ObjectProperty[Feature[S]]])]
+    projectConfiguration: ProjectConfiguration,
+    featureGroups:        Seq[(FeatureQuery, Seq[ObjectProperty[Feature[S]]])]
 ) {
 
     /** The project's unique id. */

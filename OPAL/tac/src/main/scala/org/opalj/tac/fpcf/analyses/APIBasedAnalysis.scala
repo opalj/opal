@@ -4,19 +4,19 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 
 /**
  * A trait for analyses that model the result of the invocation of a specific
@@ -36,11 +36,14 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
     val apiMethod: DeclaredMethod
 
-    implicit val typeIterator: TypeIterator
+    implicit val contextProvider: ContextProvider
     implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
     def handleNewCaller(
-        calleeContext: ContextType, callerContext: ContextType, pc: Int, isDirect: Boolean
+        calleeContext: ContextType,
+        callerContext: ContextType,
+        pc:            Int,
+        isDirect:      Boolean
     ): ProperPropertyComputationResult
 
     final def registerAPIMethod(): ProperPropertyComputationResult = {

@@ -3,24 +3,26 @@ package org.opalj
 package br
 
 import scala.annotation.tailrec
-import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.UShortPair
+
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_ANNOTATION
-import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_ENUM
 import org.opalj.bi.ACC_FINAL
 import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_MODULE
+import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlagsMatcher
 import org.opalj.bi.VisibilityModifier
-import org.opalj.collection.{binarySearch, insertedAt}
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.collection.binarySearch
+import org.opalj.collection.immutable.UShortPair
+import org.opalj.collection.insertedAt
+import org.opalj.log.OPALLogger
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -71,14 +73,14 @@ import scala.collection.immutable.ArraySeq
  * @author  Michael Eichberg
  */
 final class ClassFile private (
-        val version:        UShortPair,
-        val accessFlags:    Int,
-        val thisType:       ObjectType,
-        val superclassType: Option[ObjectType],
-        val interfaceTypes: ObjectTypes,
-        val fields:         Fields,
-        val methods:        Methods,
-        val attributes:     Attributes
+    val version:        UShortPair,
+    val accessFlags:    Int,
+    val thisType:       ObjectType,
+    val superclassType: Option[ObjectType],
+    val interfaceTypes: ObjectTypes,
+    val fields:         Fields,
+    val methods:        Methods,
+    val attributes:     Attributes
 ) extends ConcreteSourceElement {
 
     methods.foreach { m => assert(m.declaringClassFile == null); m.declaringClassFile = this }
@@ -190,8 +192,12 @@ final class ClassFile private (
         attributes:     Attributes         = this.attributes
     ): ClassFile = {
         ClassFile(
-            version.minor, version.major, accessFlags,
-            thisType, superclassType, interfaceTypes,
+            version.minor,
+            version.major,
+            accessFlags,
+            thisType,
+            superclassType,
+            interfaceTypes,
             fields,
             methods,
             attributes
@@ -438,7 +444,7 @@ final class ClassFile private (
                         if (i.innerName.isEmpty) true else return false;
                     }
             }
-        */
+         */
         isClassDeclaration && innerClasses.isDefined && !innerClasses.get.forall { i =>
             i.innerClassType != thisType || i.innerName.nonEmpty
         }
@@ -484,7 +490,8 @@ final class ClassFile private (
                             (
                                 innerClass.outerClassType.isEmpty ||
                                 (innerClass.outerClassType.get eq thisType)
-                            ))
+                            )
+                    )
                     .map[ObjectType](_.innerClassType)
             }.getOrElse {
                 ArraySeq.empty
@@ -500,8 +507,8 @@ final class ClassFile private (
             if (innerTypeNameStartIndex == -1) {
                 OPALLogger.warn(
                     "processing bytecode",
-                    "the inner class "+thisType.toJava+
-                        " does not use the standard naming schema"+
+                    "the inner class " + thisType.toJava +
+                        " does not use the standard naming schema" +
                         "; the inner classes information may be incomplete"
                 )
 
@@ -510,7 +517,6 @@ final class ClassFile private (
             val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
             classFileRepository.classFile(ObjectType(outerFQN)) match {
                 case Some(outerClass) =>
-
                     def directNestedClasses(objectTypes: Iterable[ObjectType]): Set[ObjectType] = {
                         var nestedTypes: Set[ObjectType] = Set.empty
                         objectTypes.foreach { objectType =>
@@ -520,7 +526,7 @@ final class ClassFile private (
                                 case None =>
                                     OPALLogger.warn(
                                         "class file reader",
-                                        "cannot get informaton about "+objectType.toJava+
+                                        "cannot get informaton about " + objectType.toJava +
                                             "; the inner classes information may be incomplete"
                                     )
                             }
@@ -532,8 +538,9 @@ final class ClassFile private (
                     // (indirect) outertype (they cannot be innerclasses of this class..)
                     var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
                     while (nestedClassesOfOuterClass.nonEmpty &&
-                        !nestedClassesOfOuterClass.contains(thisType) &&
-                        !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)) {
+                           !nestedClassesOfOuterClass.contains(thisType) &&
+                           !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)
+                    ) {
                         // We are still lacking sufficient information to make a decision
                         // which class is a nested class of which other class
                         // e.g., we might have the following situation:
@@ -575,8 +582,7 @@ final class ClassFile private (
     def foreachNestedClass(
         f: (ClassFile) => Unit
     )(
-        implicit
-        classFileRepository: ClassFileRepository
+        implicit classFileRepository: ClassFileRepository
     ): Unit = {
         nestedClasses(classFileRepository) foreach { nestedType =>
             classFileRepository.classFile(nestedType) foreach { nestedClassFile =>
@@ -693,9 +699,9 @@ final class ClassFile private (
 
             if (methodNameComparison == 0 &&
                 method.descriptor == noArgsAndReturnVoidDescriptor &&
-                (majorVersion < 51 || method.isStatic))
+                (majorVersion < 51 || method.isStatic)
+            )
                 return Some(method);
-
             else if (methodNameComparison < 0)
                 return None;
 
@@ -839,7 +845,8 @@ final class ClassFile private (
             case Some(candidateMethod) =>
                 import VisibilityModifier.isAtLeastAsVisibleAs
                 if (Method.canDirectlyOverride(thisType.packageName, visibility, packageName) &&
-                    isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility))
+                    isAtLeastAsVisibleAs(candidateMethod.visibilityModifier, visibility)
+                )
                     Success(candidateMethod)
                 else
                     Failure
@@ -890,18 +897,19 @@ final class ClassFile private (
             else
                 ""
 
-        "ClassFile(\n\t"+
+        "ClassFile(\n\t" +
             AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
-            thisType.toJava+"\n"+
-            superclassType.map("\textends "+_.toJava+"\n").getOrElse("") +
+            thisType.toJava + "\n" +
+            superclassType.map("\textends " + _.toJava + "\n").getOrElse("") +
             superIntefaces +
             annotationsToJava(runtimeVisibleAnnotations, "\t@{ ", " }\n") +
-            annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n")+
-            "\t[version="+majorVersion+"."+minorVersion+"]\n)"
+            annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n") +
+            "\t[version=" + majorVersion + "." + minorVersion + "]\n)"
 
     }
 
 }
+
 /**
  * Defines factory and extractor methods for `ClassFile` objects as well as related
  * constants.
@@ -938,7 +946,9 @@ object ClassFile {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),
             accessFlags,
-            thisType, superclassType, interfaceTypes,
+            thisType,
+            superclassType,
+            interfaceTypes,
             fields.sorted[JVMField].map[Field](f => f.prepareClassFileAttachement()),
             methods.sorted[JVMMethod].map[Method](f => f.prepareClassFileAttachement()),
             attributes
@@ -960,7 +970,9 @@ object ClassFile {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),
             accessFlags,
-            thisType, superclassType, interfaceTypes,
+            thisType,
+            superclassType,
+            interfaceTypes,
             fields.sorted[JVMField],
             methods.sorted[JVMMethod],
             attributes

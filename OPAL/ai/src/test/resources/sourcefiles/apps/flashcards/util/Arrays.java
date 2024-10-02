@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package apps.flashcards.util;
 
 import java.lang.reflect.Array;

@@ -23,7 +23,7 @@ trait AsMethodref extends Constant_Pool_Entry {
     @volatile private[this] var methodref: (ReferenceType, Boolean, String, MethodDescriptor) = null
     override def asMethodref(
         cp: Constant_Pool
-    ): (ReferenceType, Boolean /* isInterface*/ , String, MethodDescriptor) = {
+    ): (ReferenceType, Boolean /* isInterface*/, String, MethodDescriptor) = {
         // The following solution is sufficiently thread safe; i.e.,
         // it may happen that two or more methodref instances
         // are created, but these instances are guaranteed to

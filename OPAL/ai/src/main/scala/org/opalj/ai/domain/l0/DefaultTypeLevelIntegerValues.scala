@@ -107,7 +107,7 @@ trait DefaultTypeLevelIntegerValues
 
         override def abstractsOver(other: DomainValue): Boolean = {
             (other ne TheIllegalValue) &&
-                other.computationalType == ComputationalTypeInt
+            other.computationalType == ComputationalTypeInt
         }
 
         override def constantValue: Option[Int] = None

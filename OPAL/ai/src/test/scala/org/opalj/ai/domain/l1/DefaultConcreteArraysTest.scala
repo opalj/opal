@@ -5,11 +5,11 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.opalj.io.OpeningFileFailedException
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
+import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
@@ -22,7 +22,7 @@ import org.opalj.br.LongType
 import org.opalj.br.ObjectType
 import org.opalj.br.ShortType
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
+import org.opalj.io.OpeningFileFailedException
 
 /**
  * Tests the ArrayValues domain.
@@ -274,9 +274,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
                 isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
-                arraylength(
-                    returnIndex, varray
-                ) should be(ComputedValue(IntegerRange(4)))
+                arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
             }
         }
@@ -300,7 +298,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(10, 0),
                         varray
-                    ).result, ObjectType.Integer
+                    ).result,
+                    ObjectType.Integer
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -308,7 +307,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(17, 1),
                         varray
-                    ).result, ObjectType.Float
+                    ).result,
+                    ObjectType.Float
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -316,7 +316,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(26, 2),
                         varray
-                    ).result, ObjectType.Double
+                    ).result,
+                    ObjectType.Double
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -324,7 +325,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(33, 3),
                         varray
-                    ).result, ObjectType.Boolean
+                    ).result,
+                    ObjectType.Boolean
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -332,7 +334,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(41, 4),
                         varray
-                    ).result, ObjectType.Character
+                    ).result,
+                    ObjectType.Character
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -340,7 +343,8 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         returnIndex,
                         IntegerValue(41, 4),
                         varray
-                    ).result, ObjectType.Character
+                    ).result,
+                    ObjectType.Character
                 ) should be(Yes)
 
                 arrayload(
@@ -562,11 +566,14 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
                 isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
 
-                arraylength(returnIndex, varray) should be(throws(InitializedObjectValue(-100007, ObjectType.NullPointerException)))
+                arraylength(returnIndex, varray) should
+                    be(throws(InitializedObjectValue(-100007, ObjectType.NullPointerException)))
 
-                arraystore(returnIndex, IntegerValue(20), IntegerValue(12, 0), varray) should be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
+                arraystore(returnIndex, IntegerValue(20), IntegerValue(12, 0), varray) should
+                    be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
 
-                arrayload(returnIndex, IntegerValue(1), varray) should be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
+                arrayload(returnIndex, IntegerValue(1), varray) should
+                    be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
 
             }
         }
@@ -591,7 +598,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 }
 
 class DefaultConcreteArraysTestDomain(
-        override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
+    override val maxCardinalityOfIntegerRanges: Long = -(Int.MinValue.toLong) + Int.MaxValue
 ) extends CorrelationalDomain
     with GlobalLogContextProvider
     with DefaultSpecialDomainValuesBinding
@@ -617,12 +624,12 @@ class DefaultConcreteArraysTestDomain(
     // array, hence we can track the contents
     override protected def reifyArray(pc: Int, count: Int, arrayType: ArrayType): Boolean = {
         super.reifyArray(pc, count, arrayType) ||
-            arrayType.componentType.isObjectType && count < maxTrackedArraySize
+        arrayType.componentType.isObjectType && count < maxTrackedArraySize
     }
 }
 
 private object DefaultArraysTest {
-    val classFiles = ClassFiles(locateTestResources("ai.jar", "bi"))
+    val classFiles = ClassFiles(locateTestResources("ai-9.jar", "bi"))
 
     val classFile = classFiles.map(_._1).find(_.thisType.fqn == "ai/MethodsWithArrays").get
 }

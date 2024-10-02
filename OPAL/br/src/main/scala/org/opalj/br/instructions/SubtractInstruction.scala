@@ -10,14 +10,14 @@ package instructions
  */
 abstract class SubtractInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
 
-    final override def isShiftInstruction: Boolean = false
+    override final def isShiftInstruction: Boolean = false
 
-    final override def operator: String = "-"
+    override final def operator: String = "-"
 
-    final override def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ObjectType] = Nil
 
-    final override def mayThrowExceptions: Boolean = false
+    override final def mayThrowExceptions: Boolean = false
 
-    final override def stackSlotsChange: Int = -computationalType.operandSize
+    override final def stackSlotsChange: Int = -computationalType.operandSize
 
 }

@@ -26,7 +26,8 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     /**
      * (Indirectly) called by OPAL for a new value-based constraint.
      */
-    /*abstract*/ def nextConstraint(constraint: ReifiedConstraint): Unit
+    /*abstract*/
+    def nextConstraint(constraint: ReifiedConstraint): Unit
 
     /**
      * Representation of a reified constraint.
@@ -49,18 +50,19 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
      * Representation of a constraint related to a single value.
      */
     case class ReifiedSingleValueConstraint(
-            pc:         Int,
-            value:      DomainValue,
-            constraint: String
+        pc:         Int,
+        value:      DomainValue,
+        constraint: String
     ) extends ReifiedConstraint
 
     /**
      * Representation of a constraint related to two values.
      */
     case class ReifiedTwoValuesConstraint(
-            pc:     Int,
-            value1: DomainValue, value2: DomainValue,
-            constraint: String
+        pc:         Int,
+        value1:     DomainValue,
+        value2:     DomainValue,
+        constraint: String
     ) extends ReifiedConstraint
 
     abstract override def refEstablishIsNull(
@@ -117,7 +119,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
     ): (Operands, Locals) = {
 
         nextConstraint(
-            ReifiedSingleValueConstraint(pc, operands.head, "is subtype of "+bound.toJava)
+            ReifiedSingleValueConstraint(pc, operands.head, "is subtype of " + bound.toJava)
         )
         super.refSetUpperTypeBoundOfTopOperand(pc, bound, operands, locals)
     }
@@ -144,7 +146,7 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         locals:   Locals
     ): (Operands, Locals) = {
 
-        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is "+theValue))
+        nextConstraint(ReifiedSingleValueConstraint(pc, value, "is " + theValue))
         super.intEstablishValue(pc, theValue, value, operands, locals)
     }
 
@@ -196,4 +198,3 @@ trait ReifiedConstraints extends IntegerValuesDomain with ReferenceValuesDomain 
         super.intEstablishIsLessThanOrEqualTo(pc, value1, value2, operands, locals)
     }
 }
-

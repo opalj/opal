@@ -6,17 +6,16 @@ package par
 import scala.annotation.switch
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.LinkedBlockingQueue
-
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.util.control.ControlThrowable
 
 import com.typesafe.config.Config
 
-import org.opalj.log.LogContext
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import org.opalj.log.LogContext
 
 /**
  * Yet another parallel property store.
@@ -29,18 +28,17 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  * @author Dominik Helm
  */
 class PKECPropertyStore(
-        final val ctx:                   Map[Class[_], AnyRef],
-        val taskManager:                 PKECTaskManager,
-        val THREAD_COUNT:                Int,
-        override val MaxEvaluationDepth: Int
+    final val ctx:                   Map[Class[_], AnyRef],
+    val taskManager:                 PKECTaskManager,
+    val THREAD_COUNT:                Int,
+    override val MaxEvaluationDepth: Int
 )(
-        implicit
-        val logContext: LogContext
+    implicit val logContext: LogContext
 ) extends ParallelPropertyStore {
 
     implicit val propertyStore: PKECPropertyStore = this
 
-    var evaluationDepth: Int = 0
+    val evaluationDepth: ThreadLocal[Int] = ThreadLocal.withInitial[Int](() => 0)
 
     val ps: Array[ConcurrentHashMap[Entity, EPKState]] =
         Array.fill(PropertyKind.SupportedPropertyKinds) { new ConcurrentHashMap() }
@@ -92,9 +90,10 @@ class PKECPropertyStore(
         if (printProperties) {
             val properties = for (pkId <- 0 to PropertyKey.maxId) yield {
                 var entities: List[String] = List.empty
-                ps(pkId).forEachValue(Long.MaxValue, { state: EPKState =>
-                    entities ::= state.eOptP.toString.replace("\n", "\n\t")
-                })
+                ps(pkId).forEachValue(
+                    Long.MaxValue,
+                    (state: EPKState) => entities ::= state.eOptP.toString.replace("\n", "\n\t")
+                )
                 entities.sorted.mkString(s"Entities for property key $pkId:\n\t", "\n\t", "\n")
             }
             properties.mkString("PropertyStore(\n\t", "\n\t", "\n)")
@@ -106,18 +105,20 @@ class PKECPropertyStore(
     override def entities(propertyFilter: SomeEPS => Boolean): Iterator[Entity] = {
         ps.iterator.flatMap { propertiesPerKind =>
             val result: ListBuffer[Entity] = ListBuffer.empty
-            propertiesPerKind.forEachValue(Long.MaxValue, {
-                state: EPKState => if (propertyFilter(state.eOptP.asEPS)) result.append(state.eOptP.e)
-            })
+            propertiesPerKind.forEachValue(
+                Long.MaxValue,
+                (state: EPKState) => if (propertyFilter(state.eOptP.asEPS)) result.append(state.eOptP.e)
+            )
             result
         }
     }
 
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
         val result: ListBuffer[EPS[Entity, P]] = ListBuffer.empty
-        ps(pk.id).forEachValue(Long.MaxValue, {
-            state: EPKState => result.append(state.eOptP.asInstanceOf[EPS[Entity, P]])
-        })
+        ps(pk.id).forEachValue(
+            Long.MaxValue,
+            { (state: EPKState) => result.append(state.eOptP.asInstanceOf[EPS[Entity, P]]) }
+        )
         result.iterator
     }
 
@@ -149,9 +150,7 @@ class PKECPropertyStore(
     }
 
     override def isKnown(e: Entity): Boolean = {
-        ps.exists { propertiesPerKind =>
-            propertiesPerKind.containsKey(e)
-        }
+        ps.exists { propertiesPerKind => propertiesPerKind.containsKey(e) }
     }
 
     override def get[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Option[EOptionP[E, P]] = {
@@ -322,7 +321,7 @@ class PKECPropertyStore(
                 val epk = EPK(e, AnalysisKey)
 
                 val epkState = EPKState(epk, null, dependees)
-                epkState.c = { dependee: SomeEPS =>
+                epkState.c = { (dependee: SomeEPS) =>
                     val result = c(dependee)
 
                     val state = ps(AnalysisKeyId).remove(e)
@@ -339,7 +338,7 @@ class PKECPropertyStore(
 
     private[this] def handleFinalResult(
         finalEP:       FinalEP[Entity, Property],
-        unnotifiedPKs: Set[PropertyKind]         = Set.empty
+        unnotifiedPKs: Set[PropertyKind] = Set.empty
     ): Unit = {
         val SomeEPS(e, pk) = finalEP
         var isFresh = false
@@ -351,9 +350,7 @@ class PKECPropertyStore(
     private[par] def triggerComputations(e: Entity, pkId: Int): Unit = {
         val computations = triggeredComputations(pkId)
         if (computations ne null) {
-            computations foreach { pc =>
-                schedulePropertyComputation(e, pc.asInstanceOf[PropertyComputation[Entity]])
-            }
+            computations foreach { pc => schedulePropertyComputation(e, pc.asInstanceOf[PropertyComputation[Entity]]) }
         }
     }
 
@@ -405,10 +402,11 @@ class PKECPropertyStore(
                        synchronization overhead, but we restrict ourselves to at most
                        MaxEvaluationDepth levels of recursion before scheduling a task for a
                        different thread instead. */
-                    if (evaluationDepth < MaxEvaluationDepth) {
-                        evaluationDepth += 1
+                    val currentEvaluationDepth = evaluationDepth.get()
+                    if (currentEvaluationDepth < MaxEvaluationDepth) {
+                        evaluationDepth.set(currentEvaluationDepth + 1)
                         handleResult(lazyComputation(e))
-                        evaluationDepth -= 1
+                        evaluationDepth.set(currentEvaluationDepth)
                         ps(pkId).get(e).eOptP.asInstanceOf[EOptionP[E, P]]
                     } else {
                         scheduleTask(
@@ -579,7 +577,7 @@ class PKECPropertyStore(
                     if (tasks.isEmpty) {
                         val active = activeTasks.get()
                         if (active == 0) {
-                            return ;
+                            return;
                         } else {
                             // try workstealing:
                             val largestQueue = queues.maxBy(_.size())
@@ -623,18 +621,21 @@ class PKECPropertyStore(
             var pkId = 0
             while (pkId <= PropertyKey.maxId) {
                 if (propertyKindsComputedInThisPhase(pkId) && (lazyComputations(pkId) eq null)) {
-                    ps(pkId).forEachValue(Long.MaxValue, { epkState: EPKState =>
-                        if (epkState.eOptP.isEPK && ((epkState.dependees eq null) || epkState.dependees.isEmpty)) {
-                            val e = epkState.eOptP.e
-                            if (getResponsibleTId(e) == ownTId) {
-                                val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-                                val p = fallbackPropertyBasedOnPKId(propertyStore, reason, e, pkId)
-                                val finalEP = FinalEP(e, p)
-                                incrementFallbacksUsedForComputedPropertiesCounter()
-                                handleFinalResult(finalEP)
+                    ps(pkId).forEachValue(
+                        Long.MaxValue,
+                        { (epkState: EPKState) =>
+                            if (epkState.eOptP.isEPK && ((epkState.dependees eq null) || epkState.dependees.isEmpty)) {
+                                val e = epkState.eOptP.e
+                                if (getResponsibleTId(e) == ownTId) {
+                                    val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                                    val p = fallbackPropertyBasedOnPKId(propertyStore, reason, e, pkId)
+                                    val finalEP = FinalEP(e, p)
+                                    incrementFallbacksUsedForComputedPropertiesCounter()
+                                    handleFinalResult(finalEP)
+                                }
                             }
                         }
-                    })
+                    )
                 }
                 pkId += 1
             }
@@ -648,12 +649,15 @@ class PKECPropertyStore(
             var pkId = 0
             while (pkId <= PropertyKey.maxId) {
                 if (propertyKindsComputedInThisPhase(pkId)) {
-                    ps(pkId).forEachValue(Long.MaxValue, { epkState: EPKState =>
-                        val eOptP = epkState.eOptP
-                        if (eOptP.isRefinable && getResponsibleTId(eOptP.e) == ownTId) {
-                            localInterimStates.append(epkState)
+                    ps(pkId).forEachValue(
+                        Long.MaxValue,
+                        { (epkState: EPKState) =>
+                            val eOptP = epkState.eOptP
+                            if (eOptP.isRefinable && getResponsibleTId(eOptP.e) == ownTId) {
+                                localInterimStates.append(epkState)
+                            }
                         }
-                    })
+                    )
                 }
                 pkId += 1
             }
@@ -662,9 +666,7 @@ class PKECPropertyStore(
             successors(ownTId) = (interimEPKState: EPKState) => {
                 val dependees = interimEPKState.dependees
                 if (dependees != null) {
-                    dependees.map { eOptionP =>
-                        ps(eOptionP.pk.id).get(eOptionP.e)
-                    }
+                    dependees.map { eOptionP => ps(eOptionP.pk.id).get(eOptionP.e) }
                 } else {
                     Iterable.empty
                 }
@@ -672,18 +674,22 @@ class PKECPropertyStore(
         }
     }
 
-    class PartialPropertiesFinalizerThread(ownTId: Int) extends PKECThread(s"PropertyStorePartialPropertiesFinalizerThread-#$ownTId") {
+    class PartialPropertiesFinalizerThread(ownTId: Int)
+        extends PKECThread(s"PropertyStorePartialPropertiesFinalizerThread-#$ownTId") {
 
         override def run(): Unit = handleExceptions {
             val pksToFinalize = subPhaseFinalizationOrder(subPhaseId).toSet
 
             pksToFinalize foreach { pk =>
                 val pkId = pk.id
-                ps(pkId).forEachValue(Long.MaxValue, { epkState: EPKState =>
-                    val eOptP = epkState.eOptP
-                    if (getResponsibleTId(eOptP.e) == ownTId && eOptP.isRefinable && !eOptP.isEPK) //TODO Won't be required once subPhaseFinalizationOrder is reliably only the partial properties
-                        handleFinalResult(eOptP.toFinalEP, pksToFinalize)
-                })
+                ps(pkId).forEachValue(
+                    Long.MaxValue,
+                    { (epkState: EPKState) =>
+                        val eOptP = epkState.eOptP
+                        if (getResponsibleTId(eOptP.e) == ownTId && eOptP.isRefinable && !eOptP.isEPK) // TODO Won't be required once subPhaseFinalizationOrder is reliably only the partial properties
+                            handleFinalResult(eOptP.toFinalEP, pksToFinalize)
+                    }
+                )
             }
         }
     }
@@ -703,7 +709,7 @@ class PKECPropertyStore(
     }
 
     class SetTask[E <: Entity, P <: Property](
-            finalEP: FinalEP[E, P]
+        finalEP: FinalEP[E, P]
     ) extends QualifiedTask {
         val priority = 0
 
@@ -713,8 +719,8 @@ class PKECPropertyStore(
     }
 
     class PropertyComputationTask[E <: Entity](
-            e:  E,
-            pc: PropertyComputation[E]
+        e:  E,
+        pc: PropertyComputation[E]
     ) extends QualifiedTask {
         val priority = 0
 
@@ -724,9 +730,9 @@ class PKECPropertyStore(
     }
 
     class LazyComputationTask[E <: Entity](
-            e:    E,
-            pc:   PropertyComputation[E],
-            pkId: Int
+        e:    E,
+        pc:   PropertyComputation[E],
+        pkId: Int
     ) extends QualifiedTask {
         val priority = 0
 
@@ -740,7 +746,9 @@ class PKECPropertyStore(
     }
 
     class ContinuationTask(
-            depender: EPKState, oldDependee: SomeEOptionP, dependee: EPKState
+        depender:    EPKState,
+        oldDependee: SomeEOptionP,
+        dependee:    EPKState
     ) extends QualifiedTask {
         scheduledOnUpdateComputations.incrementAndGet()
 
@@ -757,12 +765,12 @@ class PKECPropertyStore(
 }
 
 case class EPKState(
-        var eOptP:     SomeEOptionP,
-        var c:         OnUpdateContinuation,
-        var dependees: Set[SomeEOptionP],
-        // Use Java's HashSet here, this is internal implementiton only and they are *way* faster
-        dependers:           java.util.HashSet[EPKState] = new java.util.HashSet(),
-        suppressedDependers: java.util.HashSet[EPKState] = new java.util.HashSet()
+    var eOptP:     SomeEOptionP,
+    var c:         OnUpdateContinuation,
+    var dependees: Set[SomeEOptionP],
+    // Use Java's HashSet here, this is internal implementiton only and they are *way* faster
+    dependers:           java.util.HashSet[EPKState] = new java.util.HashSet(),
+    suppressedDependers: java.util.HashSet[EPKState] = new java.util.HashSet()
 ) {
 
     override lazy val hashCode: Int = eOptP.hashCode()
@@ -772,7 +780,9 @@ case class EPKState(
         case _               => false
     }
 
-    def setFinal(finalEP: FinalEP[Entity, Property], unnotifiedPKs: Set[PropertyKind])(implicit ps: PKECPropertyStore): Unit = {
+    def setFinal(finalEP: FinalEP[Entity, Property], unnotifiedPKs: Set[PropertyKind])(implicit
+        ps: PKECPropertyStore
+    ): Unit = {
         var theEOptP: SomeEOptionP = null
         this.synchronized {
             theEOptP = eOptP
@@ -882,7 +892,7 @@ case class EPKState(
     def notifyAndClearDependers(
         oldEOptP:      SomeEOptionP,
         theDependers:  java.util.HashSet[EPKState],
-        unnotifiedPKs: Set[PropertyKind]           = Set.empty
+        unnotifiedPKs: Set[PropertyKind] = Set.empty
     )(implicit ps: PKECPropertyStore): Unit = {
         theDependers.forEach { dependerState =>
             if (!unnotifiedPKs.contains(dependerState.eOptP.pk) && dependerState.dependees != null) {
@@ -899,7 +909,8 @@ case class EPKState(
             val theDependees = dependees
             // Are we still interested in that dependee?
             if (theDependees != null &&
-                (oldDependee.isFinal || theDependees.contains(oldDependee))) {
+                (oldDependee.isFinal || theDependees.contains(oldDependee))
+            ) {
                 // We always retrieve the most up-to-date state of the dependee.
                 val currentDependee = ps.ps(oldDependee.pk.id).get(oldDependee.e).eOptP.asEPS
                 // IMPROVE: If we would know about ordering, we could only perform the operation
@@ -990,8 +1001,7 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
     )(
-        implicit
-        logContext: LogContext
+        implicit logContext: LogContext
     ): PKECPropertyStore = {
         val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
 

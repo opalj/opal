@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import scala.language.experimental.macros
 import scala.annotation.tailrec
-import scala.reflect.macros.blackbox.Context
-import scala.collection.immutable.ArraySeq
+import scala.language.experimental.macros
 import scala.reflect.ClassTag
+import scala.reflect.macros.blackbox.Context
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Defines common control abstractions.
@@ -44,7 +45,8 @@ package object control {
      * @note '''This is a macro.'''
      */
     final def forFirstN[T <: AnyRef](
-        l: List[T], n: Int
+        l: List[T],
+        n: Int
     )(
         f: T => Unit
     ): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
@@ -134,7 +136,8 @@ package object control {
      * @note '''This is a macro.'''
      */
     def iterateTo(
-        from: Int, to: Int
+        from: Int,
+        to:   Int
     )(
         f: Int => Unit
     ): Unit = macro ControlAbstractionsImplementation.iterateTo
@@ -146,7 +149,8 @@ package object control {
      * If `from` is smaller than `until`, `f` will not be called.
      */
     def iterateUntil(
-        from: Int, until: Int
+        from:  Int,
+        until: Int
     )(
         f: Int => Unit
     ): Unit = macro ControlAbstractionsImplementation.iterateUntil
@@ -251,7 +255,8 @@ package control {
         def forFirstN[T <: AnyRef: c.WeakTypeTag](
             c: Context
         )(
-            l: c.Expr[List[T]], n: c.Expr[Int]
+            l: c.Expr[List[T]],
+            n: c.Expr[Int]
         )(
             f: c.Expr[T => Unit]
         ): c.Expr[Unit] = {

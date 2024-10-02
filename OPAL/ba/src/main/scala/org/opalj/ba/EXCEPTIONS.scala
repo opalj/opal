@@ -2,9 +2,9 @@
 package org.opalj
 package ba
 
-import org.opalj.br.ObjectType
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.ObjectType
 
 /**
  * Builder for the [[org.opalj.br.ExceptionTable]] attribute.

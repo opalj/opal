@@ -16,7 +16,7 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 class TypeImmutabilityMatcher(
-        val property: TypeImmutability
+    val property: TypeImmutability
 ) extends AbstractPropertyMatcher {
 
     import org.opalj.br.analyses.SomeProject
@@ -53,6 +53,7 @@ class TypeImmutabilityMatcher(
 
 class TransitiveImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType)
+
 class DependentlyImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType(SortedSet.empty)) {
     override def validateProperty(
@@ -62,8 +63,7 @@ class DependentlyImmutableTypeMatcher
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        if (!properties.exists(
-            p =>
+        if (!properties.exists(p =>
                 p match {
                     case DependentlyImmutableType(latticeParameters) =>
                         val annotationType = a.annotationType.asFieldType.asObjectType
@@ -73,7 +73,8 @@ class DependentlyImmutableTypeMatcher
                         annotationParameters.toSet.equals(latticeParameters.toSet)
                     case _ => p == property
                 }
-        )) {
+            )
+        ) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
@@ -81,7 +82,9 @@ class DependentlyImmutableTypeMatcher
     }
 
 }
+
 class NonTransitiveImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType)
+
 class MutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.MutableType)

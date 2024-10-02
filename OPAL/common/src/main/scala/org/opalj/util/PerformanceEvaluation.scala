@@ -3,13 +3,12 @@ package org.opalj
 package util
 
 import java.lang.management.ManagementFactory
-
 import scala.collection.mutable.Map
 
 import org.opalj.concurrent.Locking
-import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Measures the execution time of some code.
@@ -116,7 +115,7 @@ object GlobalPerformanceEvaluation extends PerformanceEvaluation
  * {{{
  * import org.opalj.util.PerformanceEvaluation.{memory,time}
  * var store : Array[Object] = null
- * implicit val logContext = Some(org.opalj.log.GlobalLogContext)
+ * implicit val logContext: Option[LogContext] = Some(org.opalj.log.GlobalLogContext)
  * for(i <- 1 to 5){
  *   memory{store = null}(l => println("empty: "+l))
  *   memory{
@@ -145,8 +144,7 @@ object PerformanceEvaluation {
     )(
         mu: Long => Unit
     )(
-        implicit
-        logContext: Option[LogContext] = None
+        implicit logContext: Option[LogContext] = None
     ): T = {
         val memoryMXBean = ManagementFactory.getMemoryMXBean
         gc(memoryMXBean)
@@ -210,7 +208,7 @@ object PerformanceEvaluation {
      * {{{
      * import org.opalj.util.PerformanceEvaluation.{gc,memory,time,avg}
      * var store : Array[Object] = null
-     * implicit val logContext = Some(org.opalj.log.GlobalLogContext)
+     * implicit val logContext: Option[LogContext] = Some(org.opalj.log.GlobalLogContext)
      * time{
      *   for(i <- 1 to 5){
      *     memory{store = null}(l => println("empty: "+l))
@@ -298,7 +296,7 @@ object PerformanceEvaluation {
                     r(t, times)
                     OPALLogger.warn(
                         "common",
-                        s"the time required by the function (${t.toString}) "+
+                        s"the time required by the function (${t.toString}) " +
                             "is too small to get meaningful measurements."
                     )(GlobalLogContext)
 
@@ -331,7 +329,7 @@ object PerformanceEvaluation {
                     r(t, times)
                 }
             } while (times.size < minimalNumberOfRelevantRuns ||
-                Math.abs(avg - times.head.timeSpan) > avg * e)
+            Math.abs(avg - times.head.timeSpan) > avg * e)
 
             result
 

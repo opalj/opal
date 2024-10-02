@@ -6,10 +6,10 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 
 object StringUtil {
 
@@ -55,7 +55,12 @@ object StringUtil {
         var strings = Set.empty[String]
 
         AllocationsUtil.handleAllocations(
-            value, context, depender, stmts, _ eq ObjectType.String, failure
+            value,
+            context,
+            depender,
+            stmts,
+            _ eq ObjectType.String,
+            failure
         ) { (_, defSite, _stmts) =>
             getString(defSite, _stmts) match {
                 case Some(v) =>
@@ -68,7 +73,7 @@ object StringUtil {
         strings
     }
 
-    private[reflection] def getString(stringDefSite: Int, stmts: Array[Stmt[V]]): Option[String] = {
+    def getString(stringDefSite: Int, stmts: Array[Stmt[V]]): Option[String] = {
         val expr = stmts(stringDefSite).asAssignment.expr
         expr match {
             case StringConst(_, v) => Some(v)

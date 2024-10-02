@@ -25,29 +25,28 @@ package fpcf
  *         will suppress notifications about interim updates from `ReachableNodes` to
  *         `ReachableNodesCount`
  *
- *
  * @author Michael Eichberg
  */
 case class PropertyKindsConfiguration(
-        propertyKindsComputedInThisPhase:                      Set[PropertyKind],
-        propertyKindsComputedInLaterPhase:                     Set[PropertyKind]                    = Set.empty,
-        suppressInterimUpdates:                                Map[PropertyKind, Set[PropertyKind]] = Map.empty,
-        collaborativelyComputedPropertyKindsFinalizationOrder: List[List[PropertyKind]]             = List.empty
+    propertyKindsComputedInThisPhase:                      Set[PropertyKind],
+    propertyKindsComputedInLaterPhase:                     Set[PropertyKind]                    = Set.empty,
+    suppressInterimUpdates:                                Map[PropertyKind, Set[PropertyKind]] = Map.empty,
+    collaborativelyComputedPropertyKindsFinalizationOrder: List[List[PropertyKind]]             = List.empty
 ) {
 
     override def toString: String = {
-        s"PhaseConfiguration(\n\t"+
+        s"PhaseConfiguration(\n\t" +
             propertyKindsComputedInThisPhase.map(PropertyKey.name).mkString("computedInThisPhase={", ", ", "}\n\t") +
             propertyKindsComputedInLaterPhase.map(PropertyKey.name).mkString("computedInLaterPhase={", ", ", "}\n\t") +
             suppressInterimUpdates.map {
                 case (targetPK, sourcePKs) =>
-                    PropertyKey.name(targetPK)+
-                        "<-"+
+                    PropertyKey.name(targetPK) +
+                        "<-" +
                         sourcePKs.map(PropertyKey.name).mkString("{", ", ", "}")
             }.mkString("suppressInterimUpdates={", ",", "}\n\t") +
             collaborativelyComputedPropertyKindsFinalizationOrder
-            .map(_.map(PropertyKey.name).mkString("[", ",", "]"))
-            .mkString("finalizationOrder=[ ", " , ", " ]\n")+
+                .map(_.map(PropertyKey.name).mkString("[", ",", "]"))
+                .mkString("finalizationOrder=[ ", " , ", " ]\n") +
             ")"
     }
 }

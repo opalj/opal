@@ -40,4 +40,3 @@ trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
         }
     }
 }
-

@@ -10,6 +10,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 
 /**
  *  Tests if the return value freshness properties specified in the test project (the classes in the
@@ -29,6 +30,7 @@ class ReturnValueFreshnessTests extends PropertiesTest {
     }
 
     val analysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
+        EagerFieldAccessInformationAnalysis,
         LazyInterProceduralEscapeAnalysis,
         LazyFieldLocalityAnalysis,
         EagerReturnValueFreshnessAnalysis

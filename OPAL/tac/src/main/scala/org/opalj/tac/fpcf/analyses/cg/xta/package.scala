@@ -23,4 +23,3 @@ package object xta {
      */
     type TypeSetEntity = Entity
 }
-

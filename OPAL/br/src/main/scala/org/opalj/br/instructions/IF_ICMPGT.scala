@@ -50,7 +50,7 @@ object IF_ICMPGT extends InstructionMetaInformation {
 }
 
 case class LabeledIF_ICMPGT(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IF_ICMPGTLike {
 

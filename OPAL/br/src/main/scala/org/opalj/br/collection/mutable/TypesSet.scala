@@ -16,7 +16,7 @@ import org.opalj.br.ObjectType
  *
  * @author Michael Eichberg
  */
-class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.TypesSet {
+class TypesSet(final val classHierarchy: ClassHierarchy) extends collection.TypesSet {
 
     import classHierarchy.isSubtypeOf
 
@@ -35,7 +35,8 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
 
     def +=(tpe: ObjectType): Unit = {
         if (!theConcreteTypes.contains(tpe) &&
-            !theUpperTypeBounds.exists(utb => isSubtypeOf(tpe, utb))) {
+            !theUpperTypeBounds.exists(utb => isSubtypeOf(tpe, utb))
+        ) {
             theConcreteTypes += tpe
         }
     }

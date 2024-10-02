@@ -14,8 +14,8 @@ import org.opalj.br.analyses.SomeProject
  * abstract interpretation.
  */
 class PrimitiveTACAIDomain(
-        val classHierarchy: ClassHierarchy,
-        val method:         Method
+    val classHierarchy: ClassHierarchy,
+    val method:         Method
 ) extends TypeLevelDomain
     with ThrowAllPotentialExceptionsConfiguration
     with IgnoreSynchronization
@@ -26,4 +26,3 @@ class PrimitiveTACAIDomain(
     def this(project: SomeProject, method: Method) =
         this(project.classHierarchy, method)
 }
-

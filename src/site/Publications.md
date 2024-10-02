@@ -5,9 +5,31 @@ There are also links to [related presentations](#related-presentations) below.
 
 ## Core Papers
 
-> [**Modular Collaborative Program Analysis in OPAL**](https://2020.esec-fse.org/details/fse-2020-papers/191")  
+> [**A Modular Soundness Theory for the Blackboard Analysis Architecture**](https://link.springer.com/chapter/10.1007/978-3-031-57267-8_14)  
+> ESOP 2024  
+> *Sven Keidel, Dominik Helm, Tobias Roth, Mira Mezini*  
+> <details><summary>Abstract</summary>
+> Sound static analyses are an important ingredient for compiler optimizations and program verification tools.
+> However, mathematically proving that a static analysis is sound is a difficult task due to two problems.
+> First, soundness proofs relate two complicated program semantics (the static and the dynamic semantics) which are hard to reason about.
+> Second, the more the static and dynamic semantics differ, the more work a soundness proof needs to do to bridge the impedance mismatch.
+> These problems increase the effort and complexity of soundness proofs.
+> Existing soundness theories address these problems by deriving both the dynamic and static semantics from the same artifact, often called generic interpreter.
+> A generic interpreter provides a common structure along which a soundness proof can be composed, which avoids having to reason about the analysis as a whole.
+> However, a generic interpreter restricts which analyses can be derived, as all derived analyses must roughly follow the program execution order.
+>
+> To lift this restriction, we develop a soundness theory for the blackboard analysis architecture, which is capable of describing backward, demand-driven, and summary-based analyses.
+> The architecture describes static analyses with small independent modules, which communicate via a central store.
+> Soundness of a compound analysis follows from soundness of all of its modules.
+> Furthermore, modules can be proven sound independently, even though modules depend on each other.
+> We evaluate our theory by proving soundness of four analyses: a pointer and call-graph analysis, a reflection analysis, an immutability analysis, and a demand-driven reaching definitions analysis.</details>
+
+> [**Modular Collaborative Program Analysis in OPAL**](https://2020.esec-fse.org/details/fse-2020-papers/191)  
 > ESEC/FSE 2020  
 > *Dominik Helm, Florian Kübler, Michael Reif, Michael Eichberg, Mira Mezini*
+>
+> **If you use OPAL, please cite this publication!**
+>
 > <details><summary>Abstract</summary>
 > Current approaches combining multiple static analyses deriving different, independent properties focus either on modularity or performance.
 > Whereas declarative approaches facilitate modularity and automated, analysis-independent optimizations, imperative approaches foster manual, analysis-specific optimizations.
@@ -18,7 +40,7 @@ There are also links to [related presentations](#related-presentations) below.
 
 > [**A Programming Model for Semi-implicit Parallelization of Static Analyses**](https://conf.researchr.org/details/issta-2020/issta-2020-papers/18/A-Programming-Model-for-Semi-implicit-Parallelization-of-Static-Analyses)  
 > ISSTA 2020  
-> *Dominik Helm, Florian Kübler, Jan Thomas Kölzer, Philipp Haller, Michael Eichberg, Guido Salvaneschi, Mira Mezini*
+> *Dominik Helm, Florian Kübler, Jan Thomas Kölzer, Philipp Haller, Michael Eichberg, Guido Salvaneschi, Mira Mezini*  
 > <details><summary>Abstract</summary>
 > Parallelization of static analyses is necessary to scale to real-world programs, but it is a complex and difficult task and, therefore, often only done manually for selected high-profile analyses.
 > In this paper, we propose a programming model for semi-implicit parallelization of static analyses which is inspired by reactive programming.
@@ -29,7 +51,7 @@ There are also links to [related presentations](#related-presentations) below.
 
 > [**TACAI: An Intermediate Representation based on Abstract Interpretation**](https://pldi20.sigplan.org/details/SOAP-2020-papers/1)  
 > SOAP 2020  
-> *Michael Reif, Florian Kübler, Dominik Helm, Ben Hermann, Michael Eichberg, Mira Mezini*
+> *Michael Reif, Florian Kübler, Dominik Helm, Ben Hermann, Michael Eichberg, Mira Mezini*  
 > <details><summary>Abstract</summary>
 > To facilitate the easier development of static analyses, most Java static analysis frameworks provide an intermediate representation of Java bytecode.
 > While such representations are often based on three-address code, the transformation itself is a great, yet too little used opportunity to apply optimizations to the transformed code, such as constant propagation.
@@ -41,7 +63,7 @@ There are also links to [related presentations](#related-presentations) below.
 
 > [**Lattice Based Modularization of Static Analyses**](https://conf.researchr.org/details/ecoop-issta-2018/SOAP-2018-papers/6/Lattice-Based-Modularization-of-Static-Analyses)  
 > SOAP 2018  
-> *Michael Eichberg, Florian Kübler, Dominik Helm, Michael Reif, Guido Salvaneschi, Mira Mezini*
+> *Michael Eichberg, Florian Kübler, Dominik Helm, Michael Reif, Guido Salvaneschi, Mira Mezini*  
 > <details><summary>Abstract</summary>
 > Today, static analyses for, e.g., class immutability or method purity are developed as standalone analyses.
 > Complementary information that could improve the analyses is either ignored by making a sound over-approximation or it is also computed by the analyses but at a rudimentary level.
@@ -66,7 +88,7 @@ There are also links to [related presentations](#related-presentations) below.
 > This subset enables effective and efficient integration test suites.</details>
 
 > [**Call Graph Construction for Java Libraries**](https://doi.acm.org/10.1145/2950290.2950312)  
-> FSE 2016
+> FSE 2016  
 > *Michael Reif, Michael Eichberg, Ben Hermann, Johannes Lerch, Mira Mezini*  
 > <details><summary>Abstract</summary>
 > Today, every application uses software libraries.
@@ -84,19 +106,67 @@ There are also links to [related presentations](#related-presentations) below.
 > Overall, we observed that the proposed call graph algorithms reduce the number of call edges up to 30% when compared to existing approaches.</details>
 
 > [**A software product line for static analyses: the OPAL framework**](https://doi.acm.org/10.1145/2614628.2614630)  
-> SOAP 2014
+> SOAP 2014  
 > *Michael Eichberg, Ben Hermann*  
 > <details><summary>Abstract</summary>
 > Implementations of static analyses are usually tailored toward a single goal to be efficient, hampering reusability and adaptability of the components of an analysis.
 > To solve these issues, we propose to implement static analyses as highly-configurable software product lines (SPLs).
-> Furthermore, we also discuss an implementation of an SPL for static analyses -- called OPAL -- that uses advanced language features offered by the Scala programming language to get an easily adaptable and (type-)safe software product line.
+> Furthermore, we also discuss an implementation of an SPL for static analyses—called OPAL—that uses advanced language features offered by the Scala programming language to get an easily adaptable and (type-)safe software product line.
 >
 > OPAL is a general purpose library for static analysis of Java Bytecode that is already successfully used.
 > We present OPAL and show how a design based on software produce line engineering benefits the implementation of static analyses with the framework.</details>
 
 ## Research Using OPAL
 
-> [**CiFi: Versatile Analysis of Class and Field Immutability**](/articles/CiFi@ASE21.pdf) 
+> [**Total Recall? How Good are Static Call Graphs Really?**](/articles/TotalRecall@ISSTA24.pdf)  
+> ISSTA 2024  
+> *Dominik Helm, Sven Keidel, Anemone Kampkötter, Johannes Düsing, Tobias Roth, Ben Hermann, Mira Mezini*  
+> <details><summary>Abstract</summary>
+> Static call graphs are a fundamental building block of program analysis.
+> However, differences in call-graph construction and the use of specific language features can yield unsoundness and imprecision.
+> Call-graph analyses are evaluated using measures of precision and recall, but this is hard when a ground truth for real-world programs is generally unobtainable.
+>
+> In this work, we propose to use carefully constructed dynamic baselines based on fixed entry points and input corpora.
+> The creation of this dynamic baseline is posed as an approximation of the ground truth—an optimization problem.
+> We use manual extension and coverage-guided fuzzing for creating suitable input corpora.
+>
+> With these dynamic baselines, we study call-graph quality of multiple algorithms and implementations using four real-world Java programs.
+> We find that our methodology provides valuable insights into call-graph quality and how to measure it.
+> With this work, we provide a novel methodology to advance the field of static program analysis as we assess the computation of one of its core data structures—the call graph.</details>
+
+> [**Unimocg: Modular Call-Graph Algorithms for Consistent Handling of Language Features**](/articles/Unimocg@ISSTA24.pdf)  
+> ISSTA 2024  
+> *Dominik Helm, Tobias Roth, Sven Keidel, Michael Reif, Mira Mezini*  
+> <details><summary>Abstract</summary>
+> Traditional call-graph construction algorithms conflate the computation of possible runtime types with the actual resolution of (virtual) calls.
+> This tangled design impedes supporting complex language features and APIs and making systematic trade-offs between precision, soundness, and scalability.
+> It also impedes implementation of precise downstream analyses that rely on type information.
+>
+> To address the problem, we propose Unimocg, a modular architecture for call-graph construction that decouples the computation of type information from resolving calls.
+> Due to its modular design, Unimocg can combine a wide range of different call-graph algorithms with algorithm-agnostic modules to support individual language features.
+> Moreover, these modules operate at the same precision as the chosen call-graph algorithm with no further effort.
+> Additionally, Unimocg allows other analyses to easily reuse type information from the call-graph construction at full precision.
+>
+> We demonstrate how Unimocg enables a framework of call-graph algorithms with different precision, soundness, and scalability trade-offs from reusable modules.
+> Unimocg currently supports ten call-graph algorithms from vastly different families, such as CHA, RTA, XTA, and *k*-*l*-CFA.
+> These algorithms show consistent soundness without sacrificing precision or performance.
+> We also show how an immutability analysis is improved using Unimocg.</details>
+
+> [**AXA: Cross-Language Analysis through Integration of Single-Language Analyses**]()  
+> ASE 2024  
+> *Tobias Roth, Julius Näumann, Dominik Helm, Sven Keidel, Mira Mezini*  
+> <details><summary>Abstract</summary>
+> Modern software is often implemented in multiple interacting programming languages.
+> When performing static analysis of such software, it is desirable to reuse existing single-language analyses to allow access to the results of decades of implementation effort.
+>
+> However, there are major challenges for this approach.
+> In this paper, we analyse them and present AXA, an architecture that addresses them and enables cross-language analysis by integrating single-language analyses.
+>
+> To evaluate AXA, we implemented a cross-language points-to analysis for Java applications that interact with native code via Java Native Interface (JNI) and with JavaScript code via Java’s ScriptEngine.
+> The evaluation shows that AXA enables significant reuse of existing static analyses. 
+> It also shows that AXA supports complex interactions and significantly increased recall of reused analyses without compromising precision.</details>
+
+> [**CiFi: Versatile Analysis of Class and Field Immutability**](/articles/CiFi@ASE21.pdf)  
 > ASE 2021  
 > *Tobias Roth, Dominik Helm, Michael Reif, Mira Mezini*  
 > <details><summary>Abstract</summary>

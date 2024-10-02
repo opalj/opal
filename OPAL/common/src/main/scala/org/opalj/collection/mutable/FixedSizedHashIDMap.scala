@@ -3,8 +3,9 @@ package org.opalj
 package collection
 package mutable
 
-import scala.collection.immutable.ArraySeq
 import scala.reflect.ClassTag
+
+import scala.collection.immutable.ArraySeq
 
 /**
  * Conceptually, a map where the keys have to have unique hash codes that are spread over a
@@ -26,9 +27,9 @@ import scala.reflect.ClassTag
  * @author Michael Eichberg
  */
 class FixedSizedHashIDMap[K <: AnyRef, V] private (
-        private var theKeys:        Array[K],
-        private var theValues:      Array[V],
-        private var hashCodeOffset: Int // basically -minValue
+    private var theKeys:        Array[K],
+    private var theValues:      Array[V],
+    private var hashCodeOffset: Int // basically -minValue
 ) { self =>
 
     /**
@@ -81,7 +82,10 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
             val keys = self.theKeys
             val max = keys.length
             var i = lastIndex + 1
-            while (i < max) { if (keys(i) ne null) { return i; } else i += 1 }
+            while (i < max) {
+                if (keys(i) ne null) { return i; }
+                else i += 1
+            }
             max
         }
         private[this] var i = getNextIndex(-1)
@@ -107,6 +111,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
     override def toString: String = mkString("FixedSizedHashMap(", ", ", ")")
 
 }
+
 object FixedSizedHashIDMap {
 
     def apply[K <: AnyRef: ClassTag, V: ClassTag](
@@ -129,4 +134,3 @@ object FixedSizedHashIDMap {
     }
 
 }
-

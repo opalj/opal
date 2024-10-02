@@ -35,12 +35,12 @@ trait SharedValuesDomain[Source]
  * @author Michael Eichberg
  */
 class SharedDefaultDomain[Source](
-        val project: Project[Source],
-        val method:  Method
+    val project: Project[Source],
+    val method:  Method
 ) extends TheMethod
     with ThrowAllPotentialExceptionsConfiguration
-    with DefaultHandlingOfMethodResults
     with IgnoreSynchronization
+    with l0.DefaultTypeLevelHandlingOfMethodResults
     with l0.TypeLevelFieldAccessInstructions
     with l0.TypeLevelInvokeInstructions
     with l0.TypeLevelDynamicLoads
@@ -52,6 +52,6 @@ class SharedDefaultDomain[Source](
     with l1.LongValuesShiftOperators
     with l1.ConcretePrimitiveValuesConversions {
 
-    override def toString: String = super.toString()+"("+method.toJava+")"
+    override def toString: String = super.toString() + "(" + method.toJava + ")"
 
 }

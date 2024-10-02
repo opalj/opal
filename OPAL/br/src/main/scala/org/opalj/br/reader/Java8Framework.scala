@@ -14,6 +14,6 @@ trait Java8Framework extends Java7Framework with Java8LibraryFramework
 
 object Java8Framework extends Java8Framework {
 
-    final override def loadsInterfacesOnly: Boolean = false
+    override final def loadsInterfacesOnly: Boolean = false
 
 }

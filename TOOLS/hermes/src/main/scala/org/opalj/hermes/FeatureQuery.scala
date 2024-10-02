@@ -3,19 +3,17 @@ package org.opalj
 package hermes
 
 import java.net.URL
-
-import scala.io.Source
 import scala.io.Codec
+import scala.io.Source
+
+import org.opalj.br.analyses.Project
+import org.opalj.io.processSource
 
 import com.github.rjeschke.txtmark.Processor
-
-import javafx.beans.property.ObjectProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.LongProperty
+import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleLongProperty
-
-import org.opalj.io.processSource
-import org.opalj.br.analyses.Project
+import javafx.beans.property.SimpleObjectProperty
 
 /**
  * Extracts a feature/a set of closely related features of a given project.
@@ -112,8 +110,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
 }
 
 abstract class DefaultFeatureQuery(
-        implicit
-        hermes: HermesConfig
+    implicit hermes: HermesConfig
 ) extends FeatureQuery {
 
     def evaluate[S](
@@ -135,8 +132,7 @@ abstract class DefaultFeatureQuery(
 }
 
 abstract class DefaultGroupedFeaturesQuery(
-        implicit
-        hermes: HermesConfig
+    implicit hermes: HermesConfig
 ) extends DefaultFeatureQuery {
 
     def groupedFeatureIDs: Seq[Seq[String]]
@@ -149,7 +145,7 @@ abstract class DefaultGroupedFeaturesQuery(
 
     final def featureIDs: Seq[String] = groupedFeatureIDs.flatten
 
-    final override def evaluate[S](
+    override final def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
         rawClassFiles:        Iterable[(da.ClassFile, S)]

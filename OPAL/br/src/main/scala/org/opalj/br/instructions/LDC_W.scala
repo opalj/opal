@@ -88,15 +88,15 @@ final case class LoadString_W(value: String) extends PrimitiveLDC_W[String] {
  *       [[LDCDynamic]].
  */
 final case class LoadDynamic_W(
-        bootstrapMethod: BootstrapMethod,
-        name:            String,
-        descriptor:      FieldType
+    bootstrapMethod: BootstrapMethod,
+    name:            String,
+    descriptor:      FieldType
 ) extends LDC_W[Nothing] {
     def value: Nothing = throw new UnsupportedOperationException("dynamic constant unknown")
 
     def computationalType: ComputationalType = descriptor.computationalType
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || this == other
     }
@@ -113,7 +113,7 @@ case object INCOMPLETE_LDC_W extends LDC_W[Any] {
 
     final def value: Any = error
 
-    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = error
+    override final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = error
 }
 
 /**
@@ -133,7 +133,7 @@ object LDC_W {
             case s: String            => LoadString_W(s)
             case mh: MethodHandle     => LoadMethodHandle_W(mh)
             case md: MethodDescriptor => LoadMethodType_W(md)
-            case _                    => throw BytecodeProcessingFailedException("unsupported value: "+constantValue)
+            case _                    => throw BytecodeProcessingFailedException("unsupported value: " + constantValue)
         }
     }
 

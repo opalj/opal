@@ -4,11 +4,11 @@ package bc
 
 import java.io.File
 
-import org.opalj.io.write
-import org.opalj.log.LogContext
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.da._
+import org.opalj.io.write
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Command-line application which writes out some class files where some methods are filtered.
@@ -20,10 +20,10 @@ object MethodFilter {
     implicit val logContext: LogContext = GlobalLogContext
 
     private final val Usage =
-        "Usage: java …MethodFilter \n"+
-            "(1) <JAR file containing class files>\n"+
-            "(2) <name of the class in binary notation (e.g. java/lang/Object>\n"+
-            "(3) (+|-)<name of methods to keep/remove>\n"+
+        "Usage: java …MethodFilter \n" +
+            "(1) <JAR file containing class files>\n" +
+            "(2) <name of the class in binary notation (e.g. java/lang/Object>\n" +
+            "(3) (+|-)<name of methods to keep/remove>\n" +
             "Example:\n\tjava …Disassembler /Library/jre/lib/rt.jar java/util/ArrayList +toString"
 
     def main(args: Array[String]): Unit = {
@@ -42,7 +42,7 @@ object MethodFilter {
         } else {
             classFiles.filter(_.thisType.asJVMType == className) foreach { cf =>
                 val filteredMethods = cf.methods.filter { m =>
-                    implicit val cp = cf.constant_pool
+                    implicit val cp: Constant_Pool = cf.constant_pool
                     val matches = m.name == methodName
                     if (keepMethod)
                         matches

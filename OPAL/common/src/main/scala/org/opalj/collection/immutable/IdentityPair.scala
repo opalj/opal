@@ -25,8 +25,8 @@ package immutable
  * @author Michael Eichberg
  */
 final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
-        _1: T1,
-        _2: T2
+    _1: T1,
+    _2: T2
 ) extends Product2[T1, T2] {
 
     override def canEqual(other: Any): Boolean = other.isInstanceOf[IdentityPair[_, _]]
@@ -49,6 +49,6 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
         }
         hash
     }
-    */
+     */
     override def hashCode: Int = System.identityHashCode(_1) * 31 + System.identityHashCode(_2)
 }

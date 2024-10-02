@@ -1,15 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.debug
+package org.opalj
+package support
+package debug
 
 import java.io.File
 
-import org.opalj.graphs.toDot
-import org.opalj.log.GlobalLogContext
-import org.opalj.io.writeAndOpen
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
 import org.opalj.br.reader.Java7LibraryFramework.ClassFiles
+import org.opalj.graphs.toDot
+import org.opalj.io.writeAndOpen
+import org.opalj.log.GlobalLogContext
 
 /**
  * Creates a `dot` (Graphviz) based representation of the class hierarchy

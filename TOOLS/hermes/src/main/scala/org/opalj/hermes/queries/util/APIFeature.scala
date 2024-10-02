@@ -30,7 +30,6 @@ sealed abstract class APIFeature {
 
 /**
  * Common trait that abstracts over all Class extension scenarios.
- *
  */
 sealed abstract class ClassExtension extends APIFeature {
 
@@ -59,7 +58,7 @@ sealed abstract class APIMethod(private val fID: Option[String] = None) extends 
 
     final def matches(i: MethodInvocationInstruction): Boolean = this.unapply(i)
 
-    final override val apiMethods = List(this)
+    override final val apiMethods = List(this)
 
     private def customFeatureID: Option[String] = fID
 
@@ -88,17 +87,17 @@ sealed abstract class APIMethod(private val fID: Option[String] = None) extends 
  *         all methods with the same name, declared in the same class.
  */
 case class InstanceAPIMethod(
-        declClass:  ObjectType,
-        name:       String,
-        descriptor: Option[MethodDescriptor],
-        fID:        Option[String]           = None
+    declClass:  ObjectType,
+    name:       String,
+    descriptor: Option[MethodDescriptor],
+    fID:        Option[String] = None
 ) extends APIMethod(fID) {
 
     def unapply(i: MethodInvocationInstruction): Boolean = {
         i.isInstanceMethod &&
-            this.declClass == i.declaringClass &&
-            this.name == i.name &&
-            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
+        this.declClass == i.declaringClass &&
+        this.name == i.name &&
+        (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
     }
 }
 
@@ -134,24 +133,23 @@ object InstanceAPIMethod {
 /**
  * Represents a static API call.
  *
- *
  * @param  declClass ObjectType of the receiver.
  * @param  name Name of the API method.
  * @param  descriptor Optional method descriptor, is no descriptor assigned, it represents
  *         all methods with the same name, declared in the same class.
  */
 case class StaticAPIMethod(
-        declClass:  ObjectType,
-        name:       String,
-        descriptor: Option[MethodDescriptor],
-        fID:        Option[String]           = None
+    declClass:  ObjectType,
+    name:       String,
+    descriptor: Option[MethodDescriptor],
+    fID:        Option[String] = None
 ) extends APIMethod(fID) {
 
     def unapply(i: MethodInvocationInstruction): Boolean = {
         !i.isInstanceMethod &&
-            this.declClass == i.declaringClass &&
-            this.name == i.name &&
-            (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
+        this.declClass == i.declaringClass &&
+        this.name == i.name &&
+        (this.descriptor.isEmpty || this.descriptor.get == i.methodDescriptor)
     }
 }
 

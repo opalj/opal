@@ -4,11 +4,12 @@ package br
 package analyses
 package cg
 
-import net.ceedubs.ficus.Ficus._
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
+import net.ceedubs.ficus.Ficus._
+
 /**
- *
  * @author Florian Kuebler
  * @author Michael Reif
  */
@@ -45,12 +46,12 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
         val closedPackages = project.get(ClosedPackagesKey)
         project.allClassFiles.iterator.filter { cf =>
             !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                (cf.isPublic /* && cf.constructors.nonEmpty*/ ||
-                    !closedPackages.isClosed(cf.thisType.packageName)) &&
-                    cf.constructors.exists { ctor =>
-                        ctor.isPublic ||
-                            !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
-                    }
+            (cf.isPublic /* && cf.constructors.nonEmpty*/ ||
+            !closedPackages.isClosed(cf.thisType.packageName)) &&
+            cf.constructors.exists { ctor =>
+                ctor.isPublic ||
+                !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
+            }
         }.map(_.thisType).iterator.to(Iterable) ++ super.collectInstantiatedTypes(project)
     }
 }
@@ -86,17 +87,17 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     // don't make this a val for initialization reasons
     @inline private[this] def additionalInstantiatedTypesKey: String = {
-        InitialInstantiatedTypesKey.ConfigKeyPrefix+"instantiatedTypes"
+        InitialInstantiatedTypesKey.ConfigKeyPrefix + "instantiatedTypes"
     }
 
     override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
         var instantiatedTypes = Set.empty[ObjectType]
 
         if (!project.config.hasPath(additionalInstantiatedTypesKey)) {
             OPALLogger.info(
                 "project configuration",
-                s"configuration key $additionalInstantiatedTypesKey is missing; "+
+                s"configuration key $additionalInstantiatedTypesKey is missing; " +
                     "no additional types are considered instantiated configured"
             )
             return instantiatedTypes;
@@ -108,7 +109,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
                 case e: Throwable =>
                     OPALLogger.error(
                         "project configuration - recoverable",
-                        s"configuration key $additionalInstantiatedTypesKey is invalid; "+
+                        s"configuration key $additionalInstantiatedTypesKey is invalid; " +
                             "see InstantiatedTypesFinder documentation",
                         e
                     )
@@ -155,13 +156,11 @@ object LibraryInstantiatedTypesFinder
  */
 object AllInstantiatedTypesFinder extends InstantiatedTypesFinder {
     override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
-        val projectMethodsOnlyConfigKey = InitialInstantiatedTypesKey.ConfigKeyPrefix+
+        val projectMethodsOnlyConfigKey = InitialInstantiatedTypesKey.ConfigKeyPrefix +
             "AllInstantiatedTypesFinder.projectClassesOnly"
         val allClassFiles = if (project.config.as[Boolean](projectMethodsOnlyConfigKey))
             project.allProjectClassFiles
         else project.allClassFiles
-        allClassFiles.iterator.filter { cf =>
-            !cf.isInterfaceDeclaration && !cf.isAbstract
-        }.map(_.thisType).to(Iterable)
+        allClassFiles.iterator.filter { cf => !cf.isInterfaceDeclaration && !cf.isAbstract }.map(_.thisType).to(Iterable)
     }
 }

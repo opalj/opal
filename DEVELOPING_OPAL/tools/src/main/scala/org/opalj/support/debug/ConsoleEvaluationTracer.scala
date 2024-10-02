@@ -1,12 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.debug
+package org.opalj
+package support
+package debug
 
-import org.opalj.br.Code
-import org.opalj.br.instructions.Instruction
-import org.opalj.ai.AITracer
 import org.opalj.ai.AIResult
+import org.opalj.ai.AITracer
 import org.opalj.ai.Domain
 import org.opalj.ai.Update
+import org.opalj.br.Code
+import org.opalj.br.instructions.Instruction
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -52,7 +54,7 @@ trait ConsoleEvaluationTracer extends AITracer {
         alreadyEvaluatedPCs:              IntArrayStack,
         operandsArray:                    domain.OperandsArray,
         localsArray:                      domain.LocalsArray,
-        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/ , domain.OperandsArray, domain.LocalsArray)]
+        memoryLayoutBeforeSubroutineCall: List[(Int /*PC*/, domain.OperandsArray, domain.LocalsArray)]
     ): Unit = {
         /*EMPTY*/
     }
@@ -97,11 +99,13 @@ trait ConsoleEvaluationTracer extends AITracer {
     override def jumpToSubroutine(
         domain: Domain
     )(
-        pc: Int, targetPC: Int, nestingLevel: Int
+        pc:           Int,
+        targetPC:     Int,
+        nestingLevel: Int
     ): Unit = {
         println()
         printIndent()
-        print(BOLD+"↳\t︎"+RESET)
+        print(BOLD + "↳\t︎" + RESET)
         indent += 1
     }
 
@@ -114,15 +118,17 @@ trait ConsoleEvaluationTracer extends AITracer {
     ): Unit = {
         indent -= 1
 
-        println(BOLD+"✓"+"(Resetting: "+subroutinePCs.mkString(", ")+")"+RESET)
+        println(BOLD + "✓" + "(Resetting: " + subroutinePCs.mkString(", ") + ")" + RESET)
         printIndent()
     }
 
     def abruptSubroutineTermination(
         domain: Domain
     )(
-        details:  String,
-        sourcePC: Int, targetPC: Int, jumpToSubroutineId: Int,
+        details:                    String,
+        sourcePC:                   Int,
+        targetPC:                   Int,
+        jumpToSubroutineId:         Int,
         terminatedSubroutinesCount: Int,
         forceScheduling:            Boolean,
         oldWorklist:                List[Int /*PC*/ ],
@@ -152,9 +158,11 @@ trait ConsoleEvaluationTracer extends AITracer {
     override def result(result: AIResult): Unit = { /*EMPTY*/ }
 
     override def domainMessage(
-        domain: Domain,
-        source: Class[_], typeID: String,
-        pc: Option[Int], message: => String
+        domain:  Domain,
+        source:  Class[_],
+        typeID:  String,
+        pc:      Option[Int],
+        message: => String
     ): Unit = { /*EMPTY*/ }
 
     override def deadLocalVariable(domain: Domain)(pc: Int, lvIndex: Int): Unit = { /*EMPTY*/ }

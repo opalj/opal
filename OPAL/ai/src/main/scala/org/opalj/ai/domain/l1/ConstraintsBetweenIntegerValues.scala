@@ -5,13 +5,12 @@ package domain
 package l1
 
 import java.util.{IdentityHashMap => IDMap}
-
 import scala.jdk.CollectionConverters._
 
-import org.opalj.constraints.NumericConstraints
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.instructions.Instruction
 import org.opalj.br.LiveVariables
+import org.opalj.br.instructions.Instruction
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.constraints.NumericConstraints
 
 /**
  * Domain that traces the relationship between integer values; currently, the domain only
@@ -48,7 +47,7 @@ trait ConstraintsBetweenIntegerValues
         constraints = new Array[ConstraintsStore](theInstructions.length)
     }
 
-    private[this] var lastConstraint: Option[(Int /*PC*/ , IntegerLikeValue, IntegerLikeValue, Constraint)] = {
+    private[this] var lastConstraint: Option[(Int /*PC*/, IntegerLikeValue, IntegerLikeValue, Constraint)] = {
         None
     }
 
@@ -60,7 +59,9 @@ trait ConstraintsBetweenIntegerValues
 
     def putConstraintInStore(
         store: ConstraintsStore,
-        v1:    IntegerLikeValue, v2: IntegerLikeValue, c: Constraint
+        v1:    IntegerLikeValue,
+        v2:    IntegerLikeValue,
+        c:     Constraint
     ): ConstraintsStore = {
 
         assert(v1 ne v2)
@@ -82,7 +83,9 @@ trait ConstraintsBetweenIntegerValues
 
     def establishConstraint(
         pc: Int,
-        v1: IntegerLikeValue, v2: IntegerLikeValue, c: Constraint
+        v1: IntegerLikeValue,
+        v2: IntegerLikeValue,
+        c:  Constraint
     ): ConstraintsStore = {
 
         val store = {
@@ -116,7 +119,9 @@ trait ConstraintsBetweenIntegerValues
     ): Unit = {
         addConstraint(
             pc,
-            v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue], c
+            v1.asInstanceOf[IntegerLikeValue],
+            v2.asInstanceOf[IntegerLikeValue],
+            c
         )
     }
 
@@ -144,7 +149,8 @@ trait ConstraintsBetweenIntegerValues
     ): Option[Constraint] = {
         getConstraint(
             pc,
-            v1.asInstanceOf[IntegerLikeValue], v2.asInstanceOf[IntegerLikeValue]
+            v1.asInstanceOf[IntegerLikeValue],
+            v2.asInstanceOf[IntegerLikeValue]
         )
     }
 
@@ -176,7 +182,7 @@ trait ConstraintsBetweenIntegerValues
         def clone(store: ConstraintsStore): ConstraintsStore = {
             def stillExists(value: IntegerLikeValue): Boolean = {
                 operandsArray(successorPC).exists(_ eq value) ||
-                    localsArray(successorPC).exists(_ eq value)
+                localsArray(successorPC).exists(_ eq value)
             }
 
             val newStore = new ConstraintsStore()
@@ -225,12 +231,17 @@ trait ConstraintsBetweenIntegerValues
         this.lastConstraint = None
 
         super.flow(
-            currentPC, currentOperands, currentLocals,
-            successorPC, isSuccessorScheduled,
-            isExceptionalControlFlow, abruptSubroutineTerminationCount,
+            currentPC,
+            currentOperands,
+            currentLocals,
+            successorPC,
+            isSuccessorScheduled,
+            isExceptionalControlFlow,
+            abruptSubroutineTerminationCount,
             wasJoinPerformed,
             worklist,
-            operandsArray, localsArray,
+            operandsArray,
+            localsArray,
             tracer
         )
 
@@ -269,7 +280,8 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def intAreEqual(
         pc:     Int,
-        value1: DomainValue, value2: DomainValue
+        value1: DomainValue,
+        value2: DomainValue
     ): Answer = {
         super.intAreEqual(pc, value1, value2) match {
             case Unknown =>
@@ -596,7 +608,7 @@ trait ConstraintsBetweenIntegerValues
     ): Option[String] = {
         val superProperties = super.properties(pc)
         if (constraints(pc) != null) {
-            val otherProperties = superProperties.map(_+"\n").getOrElse("")
+            val otherProperties = superProperties.map(_ + "\n").getOrElse("")
             Some(otherProperties + constraintsToText(pc, valueToString))
         } else {
             superProperties

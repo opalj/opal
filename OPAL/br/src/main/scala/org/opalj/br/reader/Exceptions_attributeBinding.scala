@@ -3,9 +3,9 @@ package org.opalj
 package br
 package reader
 
-import org.opalj.bi.reader.Exceptions_attributeReader
-
 import scala.collection.immutable.ArraySeq
+
+import org.opalj.bi.reader.Exceptions_attributeReader
 
 /**
  * The factory method to create a method's exception attribute.
@@ -31,4 +31,3 @@ trait Exceptions_attributeBinding
         )
     }
 }
-

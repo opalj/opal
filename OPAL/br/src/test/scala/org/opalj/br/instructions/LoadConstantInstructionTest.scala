@@ -3,9 +3,9 @@ package org.opalj
 package br
 package instructions
 
+import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
 /**

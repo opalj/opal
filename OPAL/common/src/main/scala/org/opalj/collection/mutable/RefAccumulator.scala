@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection.mutable
+package org.opalj
+package collection
+package mutable
 
 /**
  * A list based accumulator of values '''and''' collections of values where the collections
@@ -14,7 +16,7 @@ package org.opalj.collection.mutable
  * @author Michael Eichberg
  */
 final class RefAccumulator[A <: AnyRef] private (
-        private var data: List[AnyRef] // either a value of type A or a non-empty iterator of A
+    private var data: List[AnyRef] // either a value of type A or a non-empty iterator of A
 ) {
 
     def isEmpty: Boolean = data.isEmpty
@@ -60,4 +62,3 @@ object RefAccumulator {
 
     def apply[N >: Null <: AnyRef](e: N): RefAccumulator[N] = new RefAccumulator[N](List(e))
 }
-

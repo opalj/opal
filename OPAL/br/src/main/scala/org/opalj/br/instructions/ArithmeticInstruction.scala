@@ -10,7 +10,7 @@ package instructions
  */
 trait ArithmeticInstruction extends Instruction with NoLabels {
 
-    final override def asArithmeticInstruction: this.type = this
+    override final def asArithmeticInstruction: this.type = this
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -41,7 +41,7 @@ trait ArithmeticInstruction extends Instruction with NoLabels {
      */
     def isShiftInstruction: Boolean
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }
 
 /**

@@ -1,12 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.instructions
-
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+package org.opalj
+package br
+package instructions
 
 import scala.collection.immutable.ArraySeq
+
+import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests instantiation and resolving of LabeledInstructions.
@@ -18,7 +20,10 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
     behavior of "LabeledInstructionsTest"
 
     val label = InstructionLabel(Symbol("TestLabel"))
-    val simpleBranchInstructionsMap: List[(LabeledSimpleConditionalBranchInstruction, InstructionLabel => LabeledSimpleConditionalBranchInstruction)] = {
+    val simpleBranchInstructionsMap: List[(
+        LabeledSimpleConditionalBranchInstruction,
+        InstructionLabel => LabeledSimpleConditionalBranchInstruction
+    )] = {
         List(
             IFEQ(label) -> LabeledIFEQ,
             IFNE(label) -> LabeledIFNE,
@@ -26,7 +31,6 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
             IFGE(label) -> LabeledIFGE,
             IFGT(label) -> LabeledIFGT,
             IFLE(label) -> LabeledIFLE,
-
             IF_ICMPEQ(label) -> LabeledIF_ICMPEQ,
             IF_ICMPNE(label) -> LabeledIF_ICMPNE,
             IF_ICMPLT(label) -> LabeledIF_ICMPLT,
@@ -35,7 +39,6 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
             IF_ICMPLE(label) -> LabeledIF_ICMPLE,
             IF_ACMPEQ(label) -> LabeledIF_ACMPEQ,
             IF_ACMPNE(label) -> LabeledIF_ACMPNE,
-
             IFNULL(label) -> LabeledIFNULL,
             IFNONNULL(label) -> LabeledIFNONNULL
         )

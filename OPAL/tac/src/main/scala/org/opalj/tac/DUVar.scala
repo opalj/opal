@@ -2,15 +2,17 @@
 package org.opalj
 package tac
 
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value.ValueInformation
-import org.opalj.br.ComputationalType
-import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.isMethodExternalExceptionOrigin
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
+import org.opalj.br.ComputationalType
+import org.opalj.br.ComputationalTypeReturnAddress
+import org.opalj.br.PDUVar
+import org.opalj.br.PUVar
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.value.ValueInformation
 
 /**
  * Identifies a variable which has a single static definition/initialization site.
@@ -45,9 +47,10 @@ abstract class DUVar[+Value <: ValueInformation] extends Var[DUVar[Value]] {
      */
     def definedBy: IntTrieSet
 
+    def toPersistentForm(implicit stmts: Array[Stmt[V]]): PDUVar[Value]
+
     override def toCanonicalForm(
-        implicit
-        ev: DUVar[Value] <:< DUVar[ValueInformation]
+        implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): DUVar[ValueInformation]
 
 }
@@ -89,13 +92,13 @@ object DefSites {
     def toString(defSites: IntTrieSet): Iterator[String] = {
         defSites.iterator.map { defSite =>
             if (isImmediateVMException(defSite))
-                "exception[VM]@"+pcOfImmediateVMException(defSite)
+                "exception[VM]@" + pcOfImmediateVMException(defSite)
             else if (isMethodExternalExceptionOrigin(defSite))
-                "exception@"+pcOfMethodExternalException(defSite)
+                "exception@" + pcOfMethodExternalException(defSite)
             else if (defSite < 0) {
-                "param"+(-defSite - 1).toHexString
+                "param" + (-defSite - 1).toHexString
             } else {
-                "lv"+defSite.toHexString
+                "lv" + defSite.toHexString
             }
         }
     }
@@ -109,12 +112,11 @@ object DefSites {
  * has the given origin. Initially, the pc of the underlying bytecode instruction is used.
  *
  * @param value The value information.
- *
  */
 class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
-        private[tac] var origin:   ValueOrigin,
-        val value:                 Value,
-        private[tac] var useSites: IntTrieSet
+    private[tac] var origin:   ValueOrigin,
+    val value:                 Value,
+    private[tac] var useSites: IntTrieSet
 ) extends DUVar[Value] {
 
     assert(origin >= 0)
@@ -148,7 +150,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
      * DVars additionally remap self-uses (which don't make sense, but can be a result
      * of the transformation of exception handlers) to uses of the next statement.
      */
-    private[tac] override def remapIndexes(
+    override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
@@ -174,8 +176,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
     }
 
     override def toCanonicalForm(
-        implicit
-        ev: DUVar[Value] <:< DUVar[ValueInformation]
+        implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): DVar[ValueInformation] = {
         new DVar(origin, value.toCanonicalForm, useSites)
     }
@@ -186,6 +187,8 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         s"DVar(useSites=${useSites.mkString("{", ",", "}")},value=$value,origin=$origin)"
     }
 
+    override def toPersistentForm(implicit stmts: Array[Stmt[V]]): Nothing = throw new UnsupportedOperationException
+
 }
 
 object DVar {
@@ -193,7 +196,9 @@ object DVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        origin: ValueOrigin, value: d.DomainValue, useSites: IntTrieSet
+        origin:   ValueOrigin,
+        value:    d.DomainValue,
+        useSites: IntTrieSet
     ): DVar[d.DomainValue] = {
 
         assert(useSites != null, s"no uses (null) for $origin: $value")
@@ -215,8 +220,8 @@ object DVar {
 }
 
 class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
-        val value:                 Value,
-        private[tac] var defSites: IntTrieSet
+    val value:                 Value,
+    private[tac] var defSites: IntTrieSet
 ) extends DUVar[Value] {
 
     def name: String = {
@@ -233,7 +238,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     final def isSideEffectFree: Boolean = true
 
-    private[tac] override def remapIndexes(
+    override private[tac] def remapIndexes(
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
@@ -252,8 +257,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
     }
 
     override def toCanonicalForm(
-        implicit
-        ev: DUVar[Value] <:< DUVar[ValueInformation]
+        implicit ev: DUVar[Value] <:< DUVar[ValueInformation]
     ): UVar[ValueInformation] = {
         new UVar(value.toCanonicalForm, defSites)
     }
@@ -271,6 +275,10 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         s"UVar(defSites=${defSites.mkString("{", ",", "}")},value=$value)"
     }
 
+    override def toPersistentForm(
+        implicit stmts: Array[Stmt[V]]
+    ): PUVar[Value] = PUVar(value, definedBy.map(pcOfDefSite _))
+
 }
 
 object UVar {
@@ -278,14 +286,13 @@ object UVar {
     def apply(
         d: org.opalj.ai.ValuesDomain
     )(
-        value: d.DomainValue, defSites: IntTrieSet
+        value:    d.DomainValue,
+        defSites: IntTrieSet
     ): UVar[d.DomainValue] = {
         new UVar[d.DomainValue](value, defSites)
     }
 
-    def apply(value: ValueInformation, defSites: IntTrieSet): UVar[ValueInformation] = {
-        new UVar(value, defSites)
-    }
+    def apply[Value <: ValueInformation](value: Value, defSites: IntTrieSet): UVar[Value] = new UVar(value, defSites)
 
     def unapply[Value <: ValueInformation /* org.opalj.ai.ValuesDomain#DomainValue*/ ](
         u: UVar[Value]

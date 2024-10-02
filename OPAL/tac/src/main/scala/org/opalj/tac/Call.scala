@@ -6,8 +6,8 @@ import scala.collection.Set
 
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ReferenceType
 import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.value.ValueInformation
 
@@ -22,6 +22,7 @@ trait Call[+V <: Var[V]] {
     def declaringClass: ReferenceType
     /** `true` iff the declaring class is an interface. */
     def isInterface: Boolean
+    def isStaticCall: Boolean
     def name: String
     def descriptor: MethodDescriptor
 
@@ -61,4 +62,3 @@ object Call {
         Some((call.declaringClass, call.isInterface, call.name, call.descriptor))
     }
 }
-

@@ -5,7 +5,6 @@ package info
 
 import java.net.URL
 
-import org.opalj.fpcf.FinalEP
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -19,12 +18,14 @@ import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
+import org.opalj.fpcf.FinalEP
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 
 /**
  * Identifies pure/side-effect free methods with a void return type.
@@ -40,7 +41,9 @@ object PureVoidMethods extends ProjectAnalysisApplication {
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val propertyStore = project.get(PropertyStoreKey)
@@ -48,6 +51,7 @@ object PureVoidMethods extends ProjectAnalysisApplication {
         project.get(RTACallGraphKey)
 
         project.get(FPCFAnalysesManagerKey).runAll(
+            EagerFieldAccessInformationAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyInterProceduralEscapeAnalysis,
@@ -63,9 +67,9 @@ object PureVoidMethods extends ProjectAnalysisApplication {
 
         val voidReturn = entities.collect {
             case FinalEP(m: DefinedMethod, p @ (CompileTimePure | Pure | SideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
-            // Empty methods still have a return instruction and therefore a body size of 1
-            if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
-                m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.length != 1 =>
+                // Empty methods still have a return instruction and therefore a body size of 1
+                if m.definedMethod.returnType.isVoidType && !m.definedMethod.isConstructor &&
+                    m.definedMethod.body.isDefined && m.definedMethod.body.get.instructions.length != 1 =>
                 (m, p)
         }
 

@@ -2,8 +2,8 @@
 package org.opalj
 package da
 
-import scala.xml.Text
 import scala.xml.NodeSeq
+import scala.xml.Text
 
 /**
  * @author Michael Eichberg
@@ -17,7 +17,7 @@ abstract class AbstractAnnotation {
             val evpsAsXHTML = this.element_value_pairs.map(_.toXHTML)
             NodeSeq.fromSeq(Seq(
                 Text("("),
-                <ol class="element_value_pairs">{ evpsAsXHTML }</ol>,
+                <ol class="element_value_pairs">{evpsAsXHTML}</ol>,
                 Text(")")
             ))
         } else {

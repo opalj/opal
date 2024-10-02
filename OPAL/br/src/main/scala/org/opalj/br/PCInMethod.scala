@@ -11,7 +11,8 @@ package br
  *
  * @author Michael Eichberg
  */
-/*no case class!*/ final class PCInMethod(val method: Method, val pc: Int /* PC */ ) {
+/*no case class!*/
+final class PCInMethod(val method: Method, val pc: Int /* PC */ ) {
 
     override def hashCode(): Opcode = method.hashCode() * 113 + pc
 

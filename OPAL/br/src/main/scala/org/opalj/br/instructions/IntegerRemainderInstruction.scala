@@ -26,7 +26,9 @@ abstract class IntegerRemainderInstruction extends RemainderInstruction {
             List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.ArithmeticException
+                this,
+                currentPC,
+                ObjectType.ArithmeticException
             )
     }
 

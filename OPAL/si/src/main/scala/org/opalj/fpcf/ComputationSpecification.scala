@@ -70,7 +70,7 @@ trait ComputationSpecification[A] {
 
     require(
         (derivesCollaboratively intersect derivesEagerly).isEmpty,
-        "a property either has to be derived eagerly or collaboratively, but not both: "+
+        "a property either has to be derived eagerly or collaboratively, but not both: " +
             (derivesCollaboratively intersect derivesEagerly).mkString(", ")
     )
 
@@ -94,19 +94,13 @@ trait ComputationSpecification[A] {
         val uses = this.uses(ps).iterator.map(_.toSpecification).mkString("uses={", ", ", "}")
 
         val derivesLazily =
-            this.derivesLazily.iterator.
-                map(_.toSpecification).
-                mkString("derivesLazily={", ", ", "}")
+            this.derivesLazily.iterator.map(_.toSpecification).mkString("derivesLazily={", ", ", "}")
         val derivesEagerly =
-            this.derivesEagerly.iterator.
-                map(_.toSpecification).
-                mkString("derivesEagerly={", ", ", "}")
+            this.derivesEagerly.iterator.map(_.toSpecification).mkString("derivesEagerly={", ", ", "}")
         val derivesCollaboratively =
-            this.derivesCollaboratively.iterator.
-                map(_.toSpecification).
-                mkString("derivesCollaboratively={", ", ", "}")
+            this.derivesCollaboratively.iterator.map(_.toSpecification).mkString("derivesCollaboratively={", ", ", "}")
 
-        s"ComputationSpecification(name=$name,type=$computationType,"+
+        s"ComputationSpecification(name=$name,type=$computationType," +
             s"$uses,$derivesLazily,$derivesEagerly,$derivesCollaboratively)"
 
     }
@@ -167,10 +161,13 @@ trait ComputationSpecification[A] {
 
 trait SimpleComputationSpecification[A] extends ComputationSpecification[A] {
 
-    final override type InitializationData = Null
-    final override def init(ps: PropertyStore): Null = null
-    final override def beforeSchedule(ps: PropertyStore): Unit = {}
-    final override def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit = {}
-    final override def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit = {}
+    override final type InitializationData = Null
+
+    override final def init(ps: PropertyStore): Null = null
+
+    override final def beforeSchedule(ps: PropertyStore): Unit = {}
+
+    override final def afterPhaseScheduling(ps: PropertyStore, analysis: A): Unit = {}
+    override final def afterPhaseCompletion(ps: PropertyStore, analysis: A): Unit = {}
 
 }

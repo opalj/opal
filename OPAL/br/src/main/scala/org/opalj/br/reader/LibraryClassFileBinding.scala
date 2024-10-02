@@ -25,7 +25,8 @@ trait LibraryClassFileBinding extends ClassFileBinding {
     ): ClassFile = {
         super.ClassFile(
             cp,
-            minor_version, major_version,
+            minor_version,
+            major_version,
             access_flags,
             this_class_index,
             super_class_index,

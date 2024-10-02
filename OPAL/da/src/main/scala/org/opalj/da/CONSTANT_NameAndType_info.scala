@@ -4,37 +4,36 @@ package da
 
 import scala.xml.Node
 import scala.xml.NodeSeq
-import org.opalj.bi.ConstantPoolTag
-
 import scala.xml.Text
 
+import org.opalj.bi.ConstantPoolTag
+
 /**
- *
  * @author Michael Eichberg
  */
 case class CONSTANT_NameAndType_info(
-        name_index:       Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index
+    name_index:       Constant_Pool_Index,
+    descriptor_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
-    final override def size: Int = 1 + 2 + 2
+    override final def size: Int = 1 + 2 + 2
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_NameAndType
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <div class="cp_entry">
-            { this.getClass().getSimpleName }
+            {this.getClass().getSimpleName}
             (
             <div class="cp_ref">
-                name_index={ name_index }
+                name_index={name_index}
                 &laquo;
-                { cp(name_index).asCPNode }
+                {cp(name_index).asCPNode}
                 &raquo;
             </div>
             <div class="cp_ref">
-                descriptor_index={ descriptor_index }
+                descriptor_index={descriptor_index}
                 &laquo;
-                { cp(descriptor_index).asCPNode }
+                {cp(descriptor_index).asCPNode}
                 &raquo;
             </div>
             )
@@ -46,7 +45,7 @@ case class CONSTANT_NameAndType_info(
             Seq(
                 parseFieldType(cp(descriptor_index).asString).asSpan(""),
                 Text(" "),
-                <span class="name">{ cp(name_index).toString(cp) } </span>
+                <span class="name">{cp(name_index).toString(cp)} </span>
             )
         } else {
             val name = cp(name_index).asString
@@ -58,7 +57,7 @@ case class CONSTANT_NameAndType_info(
     override def toString(implicit cp: Constant_Pool): String = {
         val descriptor = cp(descriptor_index).toString(cp)
         if (descriptor.charAt(0) != '(')
-            parseFieldType(cp(descriptor_index).asString).asJava+" "+cp(name_index).toString(cp)
+            parseFieldType(cp(descriptor_index).asString).asJava + " " + cp(name_index).toString(cp)
         else {
             val methodName = cp(name_index).asString
             var index = 1 // we are not interested in the leading '('

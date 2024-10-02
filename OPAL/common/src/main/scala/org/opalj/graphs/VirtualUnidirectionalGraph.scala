@@ -24,12 +24,11 @@ import org.opalj.collection.IntIterator
  * val vg = new org.opalj.graphs.VirtualUnidirectionalGraph(4/*max id of a node +1 */,successors)
  * }}}
  *
- *
  * @author Michael Eichberg
  */
 class VirtualUnidirectionalGraph(
-        val verticesCount: Int,
-        val successors:    Int => IntIterator
+    val verticesCount: Int,
+    val successors:    Int => IntIterator
 ) extends AbstractGraph[Int] {
 
     def vertices: Range = 0 until this.verticesCount

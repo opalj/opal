@@ -6,9 +6,9 @@ package l0
 
 import scala.reflect.ClassTag
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.ArrayType
 import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.UIDSet
 
 /**
  * Default implementation for handling reference values.
@@ -44,7 +44,7 @@ trait DefaultReferenceValuesBinding
     }
 
     protected case class DefaultMObjectValue(
-            upperTypeBound: UIDSet[ObjectType]
+        upperTypeBound: UIDSet[ObjectType]
     ) extends MObjectValueLike {
         override def isNull: Answer = Unknown
     }

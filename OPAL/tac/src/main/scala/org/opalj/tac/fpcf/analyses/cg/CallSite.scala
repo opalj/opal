@@ -9,5 +9,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 
 case class CallSite(
-        pc: Int, methodName: String, methodDescriptor: MethodDescriptor, receiver: ReferenceType
+    pc:               Int,
+    methodName:       String,
+    methodDescriptor: MethodDescriptor,
+    receiver:         ReferenceType
 )

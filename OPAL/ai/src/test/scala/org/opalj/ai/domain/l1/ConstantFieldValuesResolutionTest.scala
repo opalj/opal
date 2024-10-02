@@ -5,9 +5,9 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -41,7 +41,7 @@ class ConstantFieldValuesResolutionTest extends AnyFunSpec with Matchers {
 
     describe("Using ConstantFieldValuesResolution") {
 
-        val testProject = org.opalj.br.TestSupport.biProject("ai.jar")
+        val testProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
         val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
         it("(Prerequisite) it should be possible to get the constant value of a field") {

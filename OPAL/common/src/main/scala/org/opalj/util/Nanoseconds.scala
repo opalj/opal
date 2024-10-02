@@ -42,15 +42,15 @@ class Nanoseconds(val timeSpan: Long) extends AnyVal with Serializable {
 
     override def toString: String = toString(withUnit = true)
 }
+
 /**
  * Defines factory methods and constants related to time spans in [[Nanoseconds]].
  *
  * @author Michael Eichberg
  */
 object Nanoseconds {
-    implicit val nanosecondsWrites = new Writes[Nanoseconds] {
-        def writes(nanosecond: Nanoseconds) = JsNumber(nanosecond.timeSpan)
-    }
+    implicit val nanosecondsWrites: Writes[Nanoseconds] =
+        (nanosecond: Nanoseconds) => JsNumber(nanosecond.timeSpan)
 
     implicit val nanosecondsReads: Reads[Nanoseconds] = JsPath.read[Long].map(Nanoseconds.apply)
 

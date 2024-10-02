@@ -25,15 +25,15 @@ sealed abstract class TypeAnnotationTarget {
 sealed abstract class TypeAnnotationTargetInCode extends TypeAnnotationTarget
 
 sealed abstract class TypeAnnotationTargetInClassDeclaration extends TypeAnnotationTarget {
-    final override def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
+    override final def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
 sealed abstract class TypeAnnotationTargetInFieldDeclaration extends TypeAnnotationTarget {
-    final override def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
+    override final def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
 sealed abstract class TypeAnnotationTargetInMetodDeclaration extends TypeAnnotationTarget {
-    final override def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
+    override final def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
 /**
@@ -71,10 +71,10 @@ sealed abstract class TypeAnnotationPathElement {
  * @author Michael Eichberg
  */
 case class TypeAnnotation(
-        target:            TypeAnnotationTarget,
-        path:              TypeAnnotationPath,
-        annotationType:    FieldType,
-        elementValuePairs: ElementValuePairs
+    target:            TypeAnnotationTarget,
+    path:              TypeAnnotationPath,
+    annotationType:    FieldType,
+    elementValuePairs: ElementValuePairs
 ) extends AnnotationLike {
     def remapPCs(codeSize: Int, f: PC => PC): Option[TypeAnnotation] = {
         val newTargetOption = target.remapPCs(codeSize, f)
@@ -92,13 +92,13 @@ case class TypeAnnotation(
 //
 
 case class TAOfParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int
+    type_parameter_index: Int
 ) extends TypeAnnotationTargetInClassDeclaration {
     def typeId: Int = 0x00
 }
 
 case class TAOfParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int
+    type_parameter_index: Int
 ) extends TypeAnnotationTargetInMetodDeclaration {
     def typeId: Int = 0x01
 }
@@ -108,15 +108,15 @@ case class TAOfSupertype(supertype_index: Int) extends TypeAnnotationTargetInCla
 }
 
 case class TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
-        type_parameter_index: Int,
-        bound_index:          Int
+    type_parameter_index: Int,
+    bound_index:          Int
 ) extends TypeAnnotationTargetInClassDeclaration {
     def typeId: Int = 0x11
 }
 
 case class TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
-        type_parameter_index: Int,
-        bound_index:          Int
+    type_parameter_index: Int,
+    bound_index:          Int
 ) extends TypeAnnotationTargetInMetodDeclaration {
     def typeId: Int = 0x12
 }
@@ -134,7 +134,7 @@ case object TAOfReceiverType extends TypeAnnotationTargetInMetodDeclaration {
 }
 
 case class TAOfFormalParameter(
-        formal_parameter_index: Int
+    formal_parameter_index: Int
 ) extends TypeAnnotationTargetInMetodDeclaration {
     def typeId: Int = 0x16
 }
@@ -148,7 +148,7 @@ sealed abstract class TypeAnnotationTargetInVarDecl extends TypeAnnotationTarget
 }
 
 case class TAOfLocalvarDecl(
-        localVarTable: ArraySeq[LocalvarTableEntry]
+    localVarTable: ArraySeq[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
 
     override def typeId: Int = 0x40
@@ -163,7 +163,7 @@ case class TAOfLocalvarDecl(
 }
 
 case class TAOfResourcevarDecl(
-        localVarTable: ArraySeq[LocalvarTableEntry]
+    localVarTable: ArraySeq[LocalvarTableEntry]
 ) extends TypeAnnotationTargetInVarDecl {
 
     override def typeId: Int = 0x41
@@ -259,8 +259,8 @@ case class TAOfMethodReferenceExpressionIdentifier(offset: Int) extends TypeAnno
 }
 
 case class TAOfCastExpression(
-        offset:              Int,
-        type_argument_index: Int
+    offset:              Int,
+    type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
 
     def typeId: Int = 0x47
@@ -275,8 +275,8 @@ case class TAOfCastExpression(
 }
 
 case class TAOfConstructorInvocation(
-        offset:              Int,
-        type_argument_index: Int
+    offset:              Int,
+    type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
 
     def typeId: Int = 0x48
@@ -291,8 +291,8 @@ case class TAOfConstructorInvocation(
 }
 
 case class TAOfMethodInvocation(
-        offset:              Int,
-        type_argument_index: Int
+    offset:              Int,
+    type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
 
     def typeId: Int = 0x49
@@ -307,8 +307,8 @@ case class TAOfMethodInvocation(
 }
 
 case class TAOfConstructorInMethodReferenceExpression(
-        offset:              Int,
-        type_argument_index: Int
+    offset:              Int,
+    type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
 
     def typeId: Int = 0x4A
@@ -326,8 +326,8 @@ case class TAOfConstructorInMethodReferenceExpression(
 }
 
 case class TAOfMethodInMethodReferenceExpression(
-        offset:              Int,
-        type_argument_index: Int
+    offset:              Int,
+    type_argument_index: Int
 ) extends TypeAnnotationTargetInCode {
 
     def typeId: Int = 0x4B
@@ -355,27 +355,28 @@ case object TADirectlyOnType extends TypeAnnotationPath
 
 // path length > 0
 case class TAOnNestedType(
-        path: ArraySeq[TypeAnnotationPathElement]
+    path: ArraySeq[TypeAnnotationPathElement]
 ) extends TypeAnnotationPath
 
 case object TADeeperInArrayType extends TypeAnnotationPathElement {
-    final override def kindId: Int = KindId
+    override final def kindId: Int = KindId
     final val KindId = 0
 }
 
 case object TADeeperInNestedType extends TypeAnnotationPathElement {
-    final override def kindId: Int = KindId
+    override final def kindId: Int = KindId
     final val KindId = 1
 }
 
 case object TAOnBoundOfWildcardType extends TypeAnnotationPathElement {
-    final override def kindId: Int = KindId
+    override final def kindId: Int = KindId
     final val KindId = 2
 }
 
 case class TAOnTypeArgument(index: Int) extends TypeAnnotationPathElement {
-    final override def kindId: Int = TAOnTypeArgument.KindId
+    override final def kindId: Int = TAOnTypeArgument.KindId
 }
+
 object TAOnTypeArgument {
     final val KindId = 3
 }

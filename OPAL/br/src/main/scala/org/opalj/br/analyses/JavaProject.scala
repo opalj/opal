@@ -8,6 +8,7 @@ import scala.jdk.CollectionConverters._
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.StandardLogContext
 
@@ -19,19 +20,20 @@ import org.opalj.log.StandardLogContext
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-class JavaProject( final val project: Project[java.net.URL]) {
+class JavaProject(final val project: Project[java.net.URL]) {
 
     /**
      * @param classPath A list of files and jars, where to look for classes.
      */
     def this(classPath: java.util.List[java.io.File]) =
         this({
-            implicit val logCtx = new StandardLogContext()
+            implicit val logCtx: LogContext = new StandardLogContext()
             OPALLogger.register(logCtx, JavaProject.Logger)
             val cp = classPath.asScala
             Project(
                 Project.JavaClassFileReader(theLogContext = logCtx).AllClassFiles(cp),
-                Iterable.empty, true, /*true or false... doesn't matter when we have no lib. */
+                Iterable.empty,
+                true, /*true or false... doesn't matter when we have no lib. */
                 Iterable.empty,
                 Project.defaultHandlerForInconsistentProjects,
                 BaseConfig,

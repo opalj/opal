@@ -3,12 +3,12 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.collection.mutable.ArrayMap
-import org.opalj.bi.LatestSupportedJavaMajorVersion
-import org.opalj.bi.Java5MajorVersion
 import org.opalj.bi.Java1MajorVersion
+import org.opalj.bi.Java5MajorVersion
+import org.opalj.bi.LatestSupportedJavaMajorVersion
 import org.opalj.bi.jdkVersion
 import org.opalj.br.analyses.Project
+import org.opalj.collection.mutable.ArrayMap
 
 /**
  * Counts the number of class files per class file version.

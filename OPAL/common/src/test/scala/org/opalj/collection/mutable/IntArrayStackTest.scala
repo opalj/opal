@@ -3,10 +3,10 @@ package org.opalj
 package collection
 package mutable
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the IntArrayStack.
@@ -160,9 +160,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
 
         { // test pop
             var nextValue = Max - 1
-            Range(start = 0, end = Max).foreach { v =>
-                stack1.pop() should be(nextValue); nextValue -= 1
-            }
+            Range(start = 0, end = Max).foreach { v => stack1.pop() should be(nextValue); nextValue -= 1 }
             stack1.size should be(0)
         }
     }

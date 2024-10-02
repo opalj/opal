@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.reader
+package org.opalj
+package br
+package reader
 
 /**
  * This configuration can be used to read in Java 1t (version 60) class files. All
@@ -12,6 +14,6 @@ trait Java17Framework extends Java16Framework with Java17LibraryFramework
 
 object Java17Framework extends Java17Framework {
 
-    final override def loadsInterfacesOnly: Boolean = false
+    override final def loadsInterfacesOnly: Boolean = false
 
 }

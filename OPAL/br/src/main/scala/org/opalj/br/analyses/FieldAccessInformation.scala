@@ -5,80 +5,68 @@ package analyses
 
 import scala.collection.Map
 
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.fieldaccess
+import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
+import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
+import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.SomeInterimEP
+
 /**
- * Stores the information where each field is read and written. If the project
- * is incomplete the results are also necessarily incomplete. Reflective and comparable
- * accesses are not considered.
+ * Acts as a proxy for the propertyStore, accessing [[FieldReadAccessInformation]] and [[FieldWriteAccessInformation]].
+ * Should be computed outside of any FPCF phases as it cannot handle intermediate values.
  *
- * @author Michael Eichberg
+ * @author Maximilian Rüsch
  */
-class FieldAccessInformation(
-        val project:          SomeProject,
-        val allReadAccesses:  Map[Field, Seq[(Method, PCs)]],
-        val allWriteAccesses: Map[Field, Seq[(Method, PCs)]],
-        val unresolved:       Vector[(Method, PCs)]
-) {
+case class FieldAccessInformation(project: SomeProject) {
 
-    private[this] def accesses(
-        accessInformation:  Map[Field, Seq[(Method, PCs)]],
-        declaringClassType: ObjectType,
-        fieldName:          String
-    ): Seq[(Method, PCs)] = {
-        // FIX We can also use a reference to a subclass to access a field in a supertype
-        accessInformation.collectFirst {
-            case (field, accesses) if field.name == fieldName &&
-                (field.classFile.thisType eq declaringClassType) => accesses
-        }.getOrElse(Seq.empty)
-    }
+    private[this] val propertyStore = project.get(PropertyStoreKey)
 
-    def writeAccesses(declaringClassType: ObjectType, fieldName: String): Seq[(Method, PCs)] = {
-        accesses(allWriteAccesses, declaringClassType, fieldName)
-    }
-
-    def readAccesses(declaringClassType: ObjectType, fieldName: String): Seq[(Method, PCs)] = {
-        accesses(allReadAccesses, declaringClassType, fieldName)
-    }
-
-    final def writeAccesses(field: Field): Seq[(Method, PCs)] = {
-        allWriteAccesses.getOrElse(field, Seq.empty)
-    }
-
-    final def readAccesses(field: Field): Seq[(Method, PCs)] = {
-        allReadAccesses.getOrElse(field, Seq.empty)
-    }
-
-    def isRead(field: Field): Boolean = {
-        allReadAccesses.get(field) match {
-            case Some(accesses) => accesses.nonEmpty
-            case None           => false
+    private[this] def getFieldAccessInformation[S <: fieldaccess.FieldAccessInformation[S]](
+        field: DeclaredField,
+        key:   PropertyKey[fieldaccess.FieldAccessInformation[S]]
+    ): fieldaccess.FieldAccessInformation[S] = {
+        propertyStore(field, key) match {
+            case FinalP(fai) => fai
+            case _: SomeInterimEP =>
+                throw new IllegalStateException("FieldAccessInformationKey should not be called during an FPCF phase!")
+            case r =>
+                throw new IllegalStateException(s"Unexpected property found: $r")
         }
     }
 
-    def isWritten(field: Field): Boolean = {
-        allWriteAccesses.get(field) match {
-            case Some(accesses) => accesses.nonEmpty
-            case None           => false
-        }
-    }
+    def readAccesses(
+        field: Field
+    )(implicit declaredFields: DeclaredFields): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        getFieldAccessInformation(declaredFields(field), FieldReadAccessInformation.key).accesses
 
-    final def isAccessed(field: Field): Boolean = isRead(field) || isWritten(field)
+    def writeAccesses(
+        field: Field
+    )(implicit declaredFields: DeclaredFields): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        getFieldAccessInformation(declaredFields(field), FieldWriteAccessInformation.key).accesses
+
+    def isRead(field:     Field)(implicit declaredFields: DeclaredFields): Boolean = readAccesses(field).nonEmpty
+    def isWritten(field:  Field)(implicit declaredFields: DeclaredFields): Boolean = writeAccesses(field).nonEmpty
+    def isAccessed(field: Field)(implicit declaredFields: DeclaredFields): Boolean = isRead(field) || isWritten(field)
 
     /**
      * Returns a new iterator to iterate over all field access locations.
      */
-    def allAccesses(field: Field): Iterator[(Method, PCs)] = {
-        readAccesses(field).iterator ++ writeAccesses(field).iterator
-    }
+    def allAccesses(
+        field: Field
+    )(implicit declaredFields: DeclaredFields): Iterator[(Int, PC, AccessReceiver, AccessParameter)] =
+        readAccesses(field) ++ writeAccesses(field)
 
     /**
      * Basic statistics about the number of field reads and writes.
      */
-    def statistics: Map[String, Int] = {
+    def statistics(implicit declaredFields: DeclaredFields): Map[String, Int] = {
         Map(
-            "field reads" -> allReadAccesses.values.map(_.map(_._2.size).sum).sum,
-            "field writes" -> allWriteAccesses.values.map(_.map(_._2.size).sum).sum,
-            "unresolved field accesses" -> unresolved.map(_._2.size).sum
+            "field reads" -> project.allFields.flatMap(readAccesses).size,
+            "field writes" -> project.allFields.flatMap(writeAccesses).size
         )
     }
-
 }

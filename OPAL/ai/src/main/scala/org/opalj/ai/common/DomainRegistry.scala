@@ -27,8 +27,8 @@ import org.opalj.br.analyses.SomeProject
 object DomainRegistry {
 
     case class DomainMetaInformation(
-            lessPreciseDomains: Set[Class[_ <: Domain]],
-            factory:            (SomeProject, Method) => Domain
+        lessPreciseDomains: Set[Class[_ <: Domain]],
+        factory:            (SomeProject, Method) => Domain
     )
 
     type ClassRegistry = Map[Class[_ <: Domain], DomainMetaInformation]
@@ -70,18 +70,14 @@ object DomainRegistry {
             val domain = domainsToAnalyze.head
             domainsToAnalyze = domainsToAnalyze.tail
             domains += domain
-            classRegistry(domain).lessPreciseDomains.foreach { d =>
-                if (!domains.contains(d)) domainsToAnalyze += d
-            }
+            classRegistry(domain).lessPreciseDomains.foreach { d => if (!domains.contains(d)) domainsToAnalyze += d }
         }
 
         domains
     }
 
     def selectCandidates(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
-        classRegistry.keys.filter { candidate =>
-            requirements.forall(r => r.isAssignableFrom(candidate))
-        }.toSet
+        classRegistry.keys.filter { candidate => requirements.forall(r => r.isAssignableFrom(candidate)) }.toSet
     }
 
     /**
@@ -220,8 +216,8 @@ object DomainRegistry {
     )
 
     register(
-        "computations are done at the type level; "+
-            "cfg and def/use information is recorded; "+
+        "computations are done at the type level; " +
+            "cfg and def/use information is recorded; " +
             "signature refinements are used",
         classOf[fpcf.domain.PrimitiveTACAIDomainWithSignatureRefinement],
         lessPreciseDomains = Set(classOf[domain.l0.PrimitiveTACAIDomain]),
@@ -285,9 +281,9 @@ object DomainRegistry {
     )
 
     register(
-        "uses intervals for int values; "+
-            "tracks nullness and must alias information for reference types; "+
-            "records the ai-time def-use information; "+
+        "uses intervals for int values; " +
+            "tracks nullness and must alias information for reference types; " +
+            "records the ai-time def-use information; " +
             "uses refined signature information",
         classOf[fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement[_]],
         lessPreciseDomains = Set(

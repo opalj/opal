@@ -6,13 +6,13 @@ package properties
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import scala.collection.mutable
+
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-
-import scala.collection.mutable
 
 /**
  * Provides the context in which a method was invoked or an object was allocated.
@@ -65,7 +65,9 @@ object SimpleContextsKey extends ProjectInformationKey[SimpleContexts, Nothing] 
 
 }
 
-class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
+trait Contexts[ContextType <: Context]
+
+class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) extends Contexts[SimpleContext] {
 
     @volatile private var id2Context = new Array[SimpleContext](declaredMethods._UNSAFE_size)
 
@@ -97,9 +99,7 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
                     }
                 } else {
                     val newContext = SimpleContext(method)
-                    val newMap = java.util.Arrays.copyOf(
-                        id2Context, Math.max(declaredMethods._UNSAFE_size, id + 1)
-                    )
+                    val newMap = java.util.Arrays.copyOf(id2Context, Math.max(declaredMethods._UNSAFE_size, id + 1))
                     newMap(id) = newContext
                     id2Context = newMap
                     newContext
@@ -113,9 +113,9 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
  * A context that includes a call string
  */
 class CallStringContext private[properties] (
-        val id:         Int,
-        val method:     DeclaredMethod,
-        val callString: List[(DeclaredMethod, Int)]
+    val id:         Int,
+    val method:     DeclaredMethod,
+    val callString: List[(DeclaredMethod, Int)]
 ) extends Context {
     override def toString: String = {
         s"CallStringContext($method, $callString)"
@@ -133,7 +133,7 @@ object CallStringContextsKey extends ProjectInformationKey[CallStringContexts, N
 
 }
 
-class CallStringContexts {
+class CallStringContexts extends Contexts[CallStringContext] {
 
     @volatile private var id2Context = new Array[CallStringContext](32768)
     private val context2id = new mutable.HashMap[(DeclaredMethod, List[(DeclaredMethod, Int)]), CallStringContext]()

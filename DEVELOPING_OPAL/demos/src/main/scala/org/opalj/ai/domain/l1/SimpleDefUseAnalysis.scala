@@ -6,20 +6,21 @@ package l1
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.immutable.ListSet
 import scala.jdk.CollectionConverters._
+
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import scala.collection.immutable.ListSet
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
  * Simple analysis that takes the "unused"-Node from the def-use graph
@@ -65,11 +66,12 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
                                 if (method.isStatic ||
                                     method.isPrivate ||
                                     // TODO check that the method parameter is never used... across all implementations of the method... only then report it...||
-                                    method.name == "<init>") {
+                                    method.name == "<init>"
+                                ) {
                                     if (vo == -1) {
                                         values += "this"
                                     } else {
-                                        values += "param:"+(-(vo + implicitParameterOffset))
+                                        values += "param:" + (-(vo + implicitParameterOffset))
                                     }
                                 }
                             } else {
@@ -79,12 +81,12 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
                                         INVOKESTATIC.opcode | INVOKESPECIAL.opcode =>
                                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
                                         values +=
-                                            vo.toString+": invoke "+invoke.declaringClass.toJava+
-                                            "{ "+
-                                            invoke.methodDescriptor.toJava(invoke.name)+
-                                            " }"
+                                            vo.toString + ": invoke " + invoke.declaringClass.toJava +
+                                                "{ " +
+                                                invoke.methodDescriptor.toJava(invoke.name) +
+                                                " }"
                                     case _ =>
-                                        values += vo.toString+": "+instruction.toString(vo)
+                                        values += vo.toString + ": " + instruction.toString(vo)
                                 }
 
                             }
@@ -100,8 +102,8 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
         } { t => analysisTime = t.toSeconds }
 
         BasicReport(
-            unusedDefUseNodes.mkString("Methods with unused values:\n", "\n", "\n")+
-                "The analysis took "+analysisTime+" and found "+unusedDefUseNodes.size+" issues"
+            unusedDefUseNodes.mkString("Methods with unused values:\n", "\n", "\n") +
+                "The analysis took " + analysisTime + " and found " + unusedDefUseNodes.size + " issues"
         )
     }
 

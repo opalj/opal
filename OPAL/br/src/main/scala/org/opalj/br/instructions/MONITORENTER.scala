@@ -30,7 +30,9 @@ case object MONITORENTER extends SynchronizationInstruction with InstructionMeta
             List(indexOfNextInstruction(currentPC))
         else
             Instruction.nextInstructionOrExceptionHandler(
-                this, currentPC, ObjectType.NullPointerException
+                this,
+                currentPC,
+                ObjectType.NullPointerException
             )
     }
 

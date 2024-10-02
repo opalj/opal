@@ -25,8 +25,8 @@ sealed abstract class Long2List extends Serializable { self =>
     def nonEmpty: Boolean
 
     def head: Long
-    def foreach[U](f: Long => U): Unit
-    def forall(p: Long => Boolean): Boolean
+    def foreach[U](f:  Long => U): Unit
+    def forall(p:      Long => Boolean): Boolean
     def foldLeft[B](z: B)(op: (B, Long) => B): B
     /** Iterates over the first N values. */
     def forFirstN[U](n: Int)(f: Long => U): Unit
@@ -44,7 +44,7 @@ sealed abstract class Long2List extends Serializable { self =>
     override def equals(other: Any): Boolean
     override def hashCode(): Int // just added to ensure that we have to override hashCode!
 
-    final override def toString = iterator.mkString("Long2List(", ", ", ")")
+    override final def toString = iterator.mkString("Long2List(", ", ", ")")
 }
 
 object Long2List {
@@ -75,8 +75,8 @@ case object Long2List0 extends Long2List {
     override def nonEmpty: Boolean = false
 
     override def head: Long = throw new UnsupportedOperationException
-    override def foreach[U](f: Long => U): Unit = {}
-    override def forall(p: Long => Boolean): Boolean = true
+    override def foreach[U](f:  Long => U): Unit = {}
+    override def forall(p:      Long => Boolean): Boolean = true
     override def foldLeft[B](z: B)(op: (B, Long) => B): B = z
     /** Iterates over the first N values. */
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {}
@@ -90,10 +90,10 @@ case object Long2List0 extends Long2List {
     override def hashCode(): Int = 37
 }
 
-private[immutable] abstract class Long2List1_4 extends Long2List {
+abstract private[immutable] class Long2List1_4 extends Long2List {
 
-    final override def isEmpty: Boolean = false
-    final override def nonEmpty: Boolean = true
+    override final def isEmpty: Boolean = false
+    override final def nonEmpty: Boolean = true
 
     private[immutable] def rest: Long2List4
 
@@ -197,8 +197,8 @@ private[immutable] abstract class Long2List1_4 extends Long2List {
 }
 
 private[immutable] final class Long2List1(
-        private[immutable] val v1:   Long,
-        private[immutable] val rest: Long2List4
+    private[immutable] val v1:   Long,
+    private[immutable] val rest: Long2List4
 ) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = rest == null
@@ -248,9 +248,9 @@ private[immutable] final class Long2List1(
 }
 
 private[immutable] final class Long2List2(
-        private[immutable] var v1:   Long,
-        private[immutable] var v2:   Long,
-        private[immutable] var rest: Long2List4
+    private[immutable] var v1:   Long,
+    private[immutable] var v2:   Long,
+    private[immutable] var rest: Long2List4
 ) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = false
@@ -297,10 +297,10 @@ private[immutable] final class Long2List2(
 }
 
 private[immutable] final class Long2List3(
-        private[immutable] var v1:   Long,
-        private[immutable] var v2:   Long,
-        private[immutable] var v3:   Long,
-        private[immutable] var rest: Long2List4
+    private[immutable] var v1:   Long,
+    private[immutable] var v2:   Long,
+    private[immutable] var v3:   Long,
+    private[immutable] var rest: Long2List4
 ) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = false
@@ -355,11 +355,11 @@ private[immutable] final class Long2List3(
 }
 
 private[immutable] final class Long2List4(
-        private[immutable] var v1:   Long,
-        private[immutable] var v2:   Long,
-        private[immutable] var v3:   Long,
-        private[immutable] var v4:   Long,
-        private[immutable] var rest: Long2List4
+    private[immutable] var v1:   Long,
+    private[immutable] var v2:   Long,
+    private[immutable] var v3:   Long,
+    private[immutable] var v4:   Long,
+    private[immutable] var rest: Long2List4
 ) extends Long2List1_4 { list =>
 
     override def isSingletonList: Boolean = false

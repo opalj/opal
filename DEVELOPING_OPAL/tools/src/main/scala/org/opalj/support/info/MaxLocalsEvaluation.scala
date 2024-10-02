@@ -49,12 +49,12 @@ object MaxLocalsEvaluation extends ProjectAnalysisApplication {
             maxLocalsDistrbution = maxLocalsDistrbution.updated(body.maxLocals, newMaxLocalsCount)
         }
 
-        BasicReport("\nResults:\n"+
-            "Method Parameters Distribution:\n"+
-            "#Parameters\tFrequency:\n"+
-            methodParametersDistribution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n")+"\n\n"+
-            "MaxLocals Distribution:\n"+
-            "#Locals\t\tFrequency:\n"+
+        BasicReport("\nResults:\n" +
+            "Method Parameters Distribution:\n" +
+            "#Parameters\tFrequency:\n" +
+            methodParametersDistribution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n") + "\n\n" +
+            "MaxLocals Distribution:\n" +
+            "#Locals\t\tFrequency:\n" +
             maxLocalsDistrbution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n"))
     }
 }

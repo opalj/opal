@@ -16,9 +16,16 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Michael Eichberg
  */
 case class Schedule[A](
-        batches:            List[PhaseConfiguration[A]],
-        initializationData: Map[ComputationSpecification[A], Any]
-) extends ((PropertyStore, Boolean, PropertyKindsConfiguration => Unit, List[ComputationSpecification[A]] => Unit) => List[(ComputationSpecification[A], A)]) {
+    batches:            List[PhaseConfiguration[A]],
+    initializationData: Map[ComputationSpecification[A], Any]
+) extends (
+        (
+            PropertyStore,
+            Boolean,
+            PropertyKindsConfiguration => Unit,
+            List[ComputationSpecification[A]] => Unit
+        ) => List[(ComputationSpecification[A], A)]
+    ) {
 
     /**
      * Schedules the computation specifications; that is, executes the underlying analysis scenario.
@@ -31,7 +38,7 @@ case class Schedule[A](
     def apply(
         ps:                   PropertyStore,
         trace:                Boolean                                   = false,
-        afterPhaseSetup:      PropertyKindsConfiguration => Unit = _ => (),
+        afterPhaseSetup:      PropertyKindsConfiguration => Unit        = _ => (),
         afterPhaseScheduling: List[ComputationSpecification[A]] => Unit = _ => ()
     ): List[(ComputationSpecification[A], A)] = {
         implicit val logContext: LogContext = ps.logContext
@@ -87,8 +94,8 @@ case class Schedule[A](
     }
 
     override def toString: String = {
-        batches.map(_.scheduled.map(_.name).mkString("{", ", ", "}")).
-            mkString("Schedule(\n\t", "\n\t", "\n)")
+        batches.map(_.scheduled.map(_.name).mkString("{", ", ", "}"))
+            .mkString("Schedule(\n\t", "\n\t", "\n)")
     }
 
 }

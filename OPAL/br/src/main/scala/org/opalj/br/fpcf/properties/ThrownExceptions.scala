@@ -4,10 +4,10 @@ package br
 package fpcf
 package properties
 
+import org.opalj.br.collection.{TypesSet => BRTypesSet}
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.br.collection.{TypesSet => BRTypesSet}
 
 sealed trait ThrownExceptionsPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -47,9 +47,8 @@ sealed trait ThrownExceptionsPropertyMetaInformation extends PropertyMetaInforma
  * @author Michael Eichberg
  */
 case class ThrownExceptions(
-        types: BRTypesSet
-)
-    extends Property
+    types: BRTypesSet
+) extends Property
     with ThrownExceptionsPropertyMetaInformation {
 
     final def key = ThrownExceptions.key

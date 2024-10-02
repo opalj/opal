@@ -4,6 +4,14 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.properties.SystemProperties
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -17,28 +25,18 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.UBP
-import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.properties.SystemProperties
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.value.ValueInformation
 
 class SystemPropertiesAnalysisScheduler private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends ReachableMethodAnalysis {
 
-    final override implicit val typeIterator: TypeIterator = project.get(TypeIteratorKey)
-
     def processMethod(
-        callContext: ContextType, tacaiEP: EPS[Method, TACAI]
+        callContext: ContextType,
+        tacaiEP:     EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         assert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
         val stmts = tacaiEP.ub.tac.get.stmts
@@ -46,7 +44,11 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
         var propertyMap: Map[String, Set[String]] = Map.empty
 
         for (stmt <- stmts) stmt match {
-            case VirtualFunctionCallStatement(call) if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(call.declaringClass, ObjectType("java/util/Properties")) =>
+            case VirtualFunctionCallStatement(call)
+                if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(
+                    call.declaringClass,
+                    ObjectType("java/util/Properties")
+                ) =>
                 propertyMap = computeProperties(propertyMap, call.params, stmts)
             case StaticMethodCall(_, ObjectType.System, _, "setProperty", _, params) =>
                 propertyMap = computeProperties(propertyMap, params, stmts)
@@ -121,11 +123,12 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
     }
 
     def getPossibleStrings(
-        value: Expr[DUVar[ValueInformation]], stmts: Array[Stmt[DUVar[ValueInformation]]]
+        value: Expr[DUVar[ValueInformation]],
+        stmts: Array[Stmt[DUVar[ValueInformation]]]
     ): Set[String] = {
-        value.asVar.definedBy filter { index =>
-            index >= 0 && stmts(index).asAssignment.expr.isStringConst
-        } map { stmts(_).asAssignment.expr.asStringConst.value }
+        value.asVar.definedBy filter { index => index >= 0 && stmts(index).asAssignment.expr.isStringConst } map {
+            stmts(_).asAssignment.expr.asStringConst.value
+        }
     }
 
 }
@@ -143,7 +146,9 @@ object SystemPropertiesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSched
     override def triggeredBy: PropertyKey[Callers] = Callers.key
 
     override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): SystemPropertiesAnalysisScheduler = {
         val analysis = new SystemPropertiesAnalysisScheduler(p)
         ps.registerTriggeredComputation(triggeredBy, analysis.analyze)

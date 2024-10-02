@@ -4,11 +4,13 @@ package ai
 package domain
 package l0
 
+import java.net.URL
+
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
-import java.net.URL
-
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
@@ -33,12 +35,12 @@ class DefaultDomainTest extends DomainTestInfrastructure("l0.DefaultDomain") {
 
         super.analyzeAIResult(project, method, result)
 
-        implicit val code = result.code
-        implicit val classHierarchy = project.classHierarchy
+        implicit val code: Code = result.code
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         val operandsArray = result.operandsArray
         val evaluatedInstructions = result.evaluatedInstructions
         for {
-            PCAndInstruction(pc, instruction) <- result.code
+            case PCAndInstruction(pc, instruction) <- result.code
             if evaluatedInstructions.contains(pc)
             operands = operandsArray(pc)
         } {
@@ -53,7 +55,7 @@ class DefaultDomainTest extends DomainTestInfrastructure("l0.DefaultDomain") {
 
                     assert(
                         instruction.stackSlotsChange == (stackSizeAfter - stackSizeBefore),
-                        s"the height of the stack is not as expected for $instruction: "+
+                        s"the height of the stack is not as expected for $instruction: " +
                             s"${instruction.stackSlotsChange} <> ${stackSizeAfter - stackSizeBefore}"
                     )
                 }

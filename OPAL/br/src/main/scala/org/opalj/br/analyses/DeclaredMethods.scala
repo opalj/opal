@@ -6,8 +6,6 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.info
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
@@ -15,6 +13,8 @@ import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger.info
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -22,13 +22,13 @@ import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
  * @author Dominik Helm
  */
 class DeclaredMethods(
-        private[this] val p: SomeProject,
-        // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
-        // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
-        // methods on type Object when not analyzing the JDK.
-        private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
-        private[this] var id2method: Array[DeclaredMethod],
-        private[this] var idCounter: Int
+    private[this] val p: SomeProject,
+    // We need concurrent, mutable maps here, as VirtualDeclaredMethods may be added when they
+    // are queried. This can result in DeclaredMethods added for a type not yet seen, too (e.g.
+    // methods on type Object when not analyzing the JDK.
+    private[this] val data:      ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]],
+    private[this] var id2method: Array[DeclaredMethod],
+    private[this] var idCounter: Int
 ) {
 
     private[this] final val lock = new ReentrantReadWriteLock()
@@ -67,7 +67,8 @@ class DeclaredMethods(
                             s"Unexpected signature polymorphic method $name"
                         )
                 } else if ((runtimeType eq MethodHandle) &&
-                    (name == "invoke" || name == "invokeExact")) {
+                           (name == "invoke" || name == "invokeExact")
+                ) {
                     SignaturePolymorphicMethodObject
                 } else
                     throw new IllegalArgumentException(
@@ -96,7 +97,7 @@ class DeclaredMethods(
         // In case of an unseen method, compute id
         lock.writeLock().lock()
         try {
-            if (!dmSet.contains(context)) {
+            if (!dmSet.containsKey(context)) {
                 val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter)
                 idCounter += 1
                 dmSet.put(MethodContext(p, runtimeType, "", name, descriptor, false), vm)
@@ -152,4 +153,3 @@ class DeclaredMethods(
         data.values().asScala.iterator.flatMap { _.values().asScala }
     }
 }
-

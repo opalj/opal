@@ -1,13 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org
 
-import com.typesafe.config.ConfigFactory
+import scala.collection.immutable.ArraySeq
+
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * OPAL is a Scala-based framework for the static analysis, manipulation and creation of

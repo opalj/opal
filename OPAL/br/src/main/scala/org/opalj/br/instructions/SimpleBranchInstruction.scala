@@ -12,13 +12,13 @@ trait SimpleBranchInstruction
     with ConstantLengthInstruction
     with ControlTransferInstruction {
 
-    final override def isSimpleBranchInstruction: Boolean = true
+    override final def isSimpleBranchInstruction: Boolean = true
 
-    final override def asSimpleBranchInstruction: SimpleBranchInstruction = this
+    override final def asSimpleBranchInstruction: SimpleBranchInstruction = this
 
     def branchoffset: Int
 
-    final override def jumpTargets(
+    override final def jumpTargets(
         currentPC: PC
     )(
         implicit

@@ -4,17 +4,17 @@ package tac
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.collection.mutable.FixedSizeBitSet
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.IntIntPair
-import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br._
-import org.opalj.br.instructions._
-import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
-import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.BasicBlock
+import org.opalj.br.cfg.CatchNode
+import org.opalj.br.cfg.CFGFactory
+import org.opalj.br.instructions._
+import org.opalj.bytecode.BytecodeProcessingFailedException
+import org.opalj.collection.immutable.IntIntPair
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.tac.JSR
 
 /**
@@ -157,7 +157,7 @@ object TACNaive {
                 schedule(pcOfNextInstruction(pc), result :: rest)
             }
 
-            def returnInstruction(returnedValue: SimpleVar): Unit = {
+            def returnInstruction(returnedValue: IdBasedVar): Unit = {
                 statements(pc) = List(ReturnValue(pc, returnedValue))
             }
 
@@ -250,10 +250,10 @@ object TACNaive {
                 case ASTORE_3.opcode => storeInstruction(3)
                 case ASTORE.opcode   => storeInstruction(as[ASTORE](instruction).lvIndex)
 
-                case ILOAD_0.opcode  => loadInstruction(0, ComputationalTypeInt)
-                case ILOAD_1.opcode  => loadInstruction(1, ComputationalTypeInt)
-                case ILOAD_2.opcode  => loadInstruction(2, ComputationalTypeInt)
-                case ILOAD_3.opcode  => loadInstruction(3, ComputationalTypeInt)
+                case ILOAD_0.opcode => loadInstruction(0, ComputationalTypeInt)
+                case ILOAD_1.opcode => loadInstruction(1, ComputationalTypeInt)
+                case ILOAD_2.opcode => loadInstruction(2, ComputationalTypeInt)
+                case ILOAD_3.opcode => loadInstruction(3, ComputationalTypeInt)
                 case ILOAD.opcode =>
                     loadInstruction(as[ILOAD](instruction).lvIndex, ComputationalTypeInt)
 
@@ -263,10 +263,10 @@ object TACNaive {
                 case ISTORE_3.opcode => storeInstruction(3)
                 case ISTORE.opcode   => storeInstruction(as[ISTORE](instruction).lvIndex)
 
-                case DLOAD_0.opcode  => loadInstruction(0, ComputationalTypeDouble)
-                case DLOAD_1.opcode  => loadInstruction(1, ComputationalTypeDouble)
-                case DLOAD_2.opcode  => loadInstruction(2, ComputationalTypeDouble)
-                case DLOAD_3.opcode  => loadInstruction(3, ComputationalTypeDouble)
+                case DLOAD_0.opcode => loadInstruction(0, ComputationalTypeDouble)
+                case DLOAD_1.opcode => loadInstruction(1, ComputationalTypeDouble)
+                case DLOAD_2.opcode => loadInstruction(2, ComputationalTypeDouble)
+                case DLOAD_3.opcode => loadInstruction(3, ComputationalTypeDouble)
                 case DLOAD.opcode =>
                     loadInstruction(as[DLOAD](instruction).lvIndex, ComputationalTypeDouble)
 
@@ -276,10 +276,10 @@ object TACNaive {
                 case DSTORE_3.opcode => storeInstruction(3)
                 case DSTORE.opcode   => storeInstruction(as[DSTORE](instruction).lvIndex)
 
-                case FLOAD_0.opcode  => loadInstruction(0, ComputationalTypeFloat)
-                case FLOAD_1.opcode  => loadInstruction(1, ComputationalTypeFloat)
-                case FLOAD_2.opcode  => loadInstruction(2, ComputationalTypeFloat)
-                case FLOAD_3.opcode  => loadInstruction(3, ComputationalTypeFloat)
+                case FLOAD_0.opcode => loadInstruction(0, ComputationalTypeFloat)
+                case FLOAD_1.opcode => loadInstruction(1, ComputationalTypeFloat)
+                case FLOAD_2.opcode => loadInstruction(2, ComputationalTypeFloat)
+                case FLOAD_3.opcode => loadInstruction(3, ComputationalTypeFloat)
                 case FLOAD.opcode =>
                     loadInstruction(as[FLOAD](instruction).lvIndex, ComputationalTypeFloat)
 
@@ -289,10 +289,10 @@ object TACNaive {
                 case FSTORE_3.opcode => storeInstruction(3)
                 case FSTORE.opcode   => storeInstruction(as[FSTORE](instruction).lvIndex)
 
-                case LLOAD_0.opcode  => loadInstruction(0, ComputationalTypeLong)
-                case LLOAD_1.opcode  => loadInstruction(1, ComputationalTypeLong)
-                case LLOAD_2.opcode  => loadInstruction(2, ComputationalTypeLong)
-                case LLOAD_3.opcode  => loadInstruction(3, ComputationalTypeLong)
+                case LLOAD_0.opcode => loadInstruction(0, ComputationalTypeLong)
+                case LLOAD_1.opcode => loadInstruction(1, ComputationalTypeLong)
+                case LLOAD_2.opcode => loadInstruction(2, ComputationalTypeLong)
+                case LLOAD_3.opcode => loadInstruction(3, ComputationalTypeLong)
                 case LLOAD.opcode =>
                     loadInstruction(as[LLOAD](instruction).lvIndex, ComputationalTypeLong)
 
@@ -302,21 +302,21 @@ object TACNaive {
                 case LSTORE_3.opcode => storeInstruction(3)
                 case LSTORE.opcode   => storeInstruction(as[LSTORE](instruction).lvIndex)
 
-                case IRETURN.opcode  => returnInstruction(OperandVar.IntReturnValue)
-                case LRETURN.opcode  => returnInstruction(OperandVar.LongReturnValue)
-                case FRETURN.opcode  => returnInstruction(OperandVar.FloatReturnValue)
-                case DRETURN.opcode  => returnInstruction(OperandVar.DoubleReturnValue)
-                case ARETURN.opcode  => returnInstruction(OperandVar.ReferenceReturnValue)
-                case RETURN.opcode   => statements(pc) = List(Return(pc))
+                case IRETURN.opcode | LRETURN.opcode |
+                    FRETURN.opcode | DRETURN.opcode |
+                    ARETURN.opcode =>
+                    returnInstruction(stack.head)
 
-                case AALOAD.opcode   => arrayLoad(ComputationalTypeReference)
-                case DALOAD.opcode   => arrayLoad(ComputationalTypeDouble)
-                case FALOAD.opcode   => arrayLoad(ComputationalTypeFloat)
-                case IALOAD.opcode   => arrayLoad(ComputationalTypeInt)
-                case LALOAD.opcode   => arrayLoad(ComputationalTypeLong)
-                case SALOAD.opcode   => arrayLoad(ComputationalTypeInt)
-                case BALOAD.opcode   => arrayLoad(ComputationalTypeInt)
-                case CALOAD.opcode   => arrayLoad(ComputationalTypeInt)
+                case RETURN.opcode => statements(pc) = List(Return(pc))
+
+                case AALOAD.opcode => arrayLoad(ComputationalTypeReference)
+                case DALOAD.opcode => arrayLoad(ComputationalTypeDouble)
+                case FALOAD.opcode => arrayLoad(ComputationalTypeFloat)
+                case IALOAD.opcode => arrayLoad(ComputationalTypeInt)
+                case LALOAD.opcode => arrayLoad(ComputationalTypeLong)
+                case SALOAD.opcode => arrayLoad(ComputationalTypeInt)
+                case BALOAD.opcode => arrayLoad(ComputationalTypeInt)
+                case CALOAD.opcode => arrayLoad(ComputationalTypeInt)
 
                 case AASTORE.opcode | DASTORE.opcode |
                     FASTORE.opcode | IASTORE.opcode |
@@ -480,8 +480,10 @@ object TACNaive {
                         val stmt =
                             NonVirtualMethodCall(
                                 pc,
-                                declaringClass.asObjectType, isInterfaceCall,
-                                name, methodDescriptor,
+                                declaringClass.asObjectType,
+                                isInterfaceCall,
+                                name,
+                                methodDescriptor,
                                 receiver,
                                 params
                             )
@@ -492,8 +494,10 @@ object TACNaive {
                         val expr =
                             NonVirtualFunctionCall(
                                 pc,
-                                declaringClass.asObjectType, isInterfaceCall,
-                                name, methodDescriptor,
+                                declaringClass.asObjectType,
+                                isInterfaceCall,
+                                name,
+                                methodDescriptor,
                                 receiver,
                                 params
                             )
@@ -513,8 +517,10 @@ object TACNaive {
                         val stmt =
                             VirtualMethodCall(
                                 pc,
-                                declaringClass, isInterfaceCall,
-                                name, methodDescriptor,
+                                declaringClass,
+                                isInterfaceCall,
+                                name,
+                                methodDescriptor,
                                 receiver,
                                 params
                             )
@@ -525,8 +531,10 @@ object TACNaive {
                         val expr =
                             VirtualFunctionCall(
                                 pc,
-                                declaringClass, isInterfaceCall,
-                                name, methodDescriptor,
+                                declaringClass,
+                                isInterfaceCall,
+                                name,
+                                methodDescriptor,
                                 receiver,
                                 params
                             )
@@ -545,7 +553,10 @@ object TACNaive {
                         val stmt =
                             StaticMethodCall(
                                 pc,
-                                declaringClass, isInterface, name, methodDescriptor,
+                                declaringClass,
+                                isInterface,
+                                name,
+                                methodDescriptor,
                                 params
                             )
                         statements(pc) = List(stmt)
@@ -555,7 +566,10 @@ object TACNaive {
                         val expr =
                             StaticFunctionCall(
                                 pc,
-                                declaringClass, isInterface, name, methodDescriptor,
+                                declaringClass,
+                                isInterface,
+                                name,
+                                methodDescriptor,
                                 params
                             )
                         statements(pc) = List(Assignment[IdBasedVar](pc, newVar, expr))
@@ -598,7 +612,7 @@ object TACNaive {
                 case GETSTATIC.opcode =>
                     val GETSTATIC(declaringClass, name, fieldType) = instruction
                     val getStatic = GetStatic(pc, declaringClass, name, fieldType)
-                    val newVal = OperandVar(ComputationalTypeReference, stack)
+                    val newVal = OperandVar(fieldType.computationalType, stack)
                     statements(pc) = List(Assignment[IdBasedVar](pc, newVal, getStatic))
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 
@@ -606,7 +620,7 @@ object TACNaive {
                     val objRef :: rest = stack
                     val GETFIELD(declaringClass, name, fieldType) = instruction
                     val getField = GetField(pc, declaringClass, name, fieldType, objRef)
-                    val newVal = OperandVar(ComputationalTypeReference, rest)
+                    val newVal = OperandVar(fieldType.computationalType, rest)
                     statements(pc) = List(Assignment(pc, newVal, getField))
                     schedule(pcOfNextInstruction(pc), newVal :: rest)
 
@@ -648,9 +662,9 @@ object TACNaive {
                         val successor = successorNode match {
                             case cn: CatchNode  => cn.handlerPC
                             case bb: BasicBlock => bb.startPC
-                            case cfgNode =>
+                            case cfgNode        =>
                                 // in these cases something went terribly wrong...
-                                val message = "the cfg has an unexpected shape: "+cfgNode
+                                val message = "the cfg has an unexpected shape: " + cfgNode
                                 throw new AnalysisException(message)
                         }
                         successors += successor
@@ -827,7 +841,7 @@ object TACNaive {
         }
         var tacIndex = 1
         parameterTypes foreach { parameterType =>
-            val varName = code.localVariable(0, registerIndex).map(_.name).getOrElse("p_"+tacIndex)
+            val varName = code.localVariable(0, registerIndex).map(_.name).getOrElse("p_" + tacIndex)
             val cTpe = parameterType.computationalType
             val targetVar = RegisterVar(cTpe, registerIndex)
             val sourceParam = Param(cTpe, varName)
@@ -845,7 +859,8 @@ object TACNaive {
             if (currentStatements ne null) {
                 for (stmt <- currentStatements) {
                     finalStatements += stmt
-                    if (pcToIndex(currentPC) == 0 /* <=> no mapping so far; we don't care about the remapping of 0 to 0... */ )
+                    if (pcToIndex(currentPC) == 0 /* <=> no mapping so far; we don't care about the remapping of 0 to 0... */
+                    )
                         pcToIndex(currentPC) = index
                     index += 1
                 }
@@ -902,17 +917,17 @@ object TACNaive {
         }
 
         /*
-          * Updates the exception handlers by adjusting the start, end and handler index (pc).
-          *
-          * This method can only be used in simple cases where the order of instructions remains
-          * the same and the start and end still map to valid exception handlers -
-          * deleting/adding instructions is supported.
-          *
-          * @param exceptionHandlers The code's exception handlers.
-          * @param newIndexes A map that contains for each previous index the new index
-          *                   that should be used.
-          * @return The new exception handler.
-          */
+         * Updates the exception handlers by adjusting the start, end and handler index (pc).
+         *
+         * This method can only be used in simple cases where the order of instructions remains
+         * the same and the start and end still map to valid exception handlers -
+         * deleting/adding instructions is supported.
+         *
+         * @param exceptionHandlers The code's exception handlers.
+         * @param newIndexes A map that contains for each previous index the new index
+         *                   that should be used.
+         * @return The new exception handler.
+         */
         def updateExceptionHandlers(
             exceptionHandlers: ExceptionHandlers,
             newIndexes:        Array[Int]

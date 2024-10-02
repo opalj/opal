@@ -5,13 +5,14 @@ package fpcf
 package analyses
 package purity
 
-import org.opalj.value.ValueInformation
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DPure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.MethodDescriptor
+import org.opalj.value.ValueInformation
 
 /**
  * Rates, whether three address code statements perform actions that are domain-specific pure.
@@ -30,7 +31,8 @@ trait DomainSpecificRater {
         receiver: Option[Expr[V]]
     )(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity]
 
     /**
@@ -38,7 +40,8 @@ trait DomainSpecificRater {
      */
     def handleGetStatic(expr: GetStatic)(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity]
 
     /**
@@ -80,7 +83,8 @@ class BaseDomainSpecificRater extends DomainSpecificRater {
         expr: GetStatic
     )(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity] = {
         None
     }
@@ -101,7 +105,8 @@ trait SystemOutErrRater extends DomainSpecificRater {
         receiver: Option[Expr[V]]
     )(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity] = {
         if (receiver.isDefined && call.declaringClass == printStream && isOutErr(receiver.get))
             Some(DPure)
@@ -162,7 +167,8 @@ trait LoggingRater extends DomainSpecificRater {
     )
 
     abstract override def handleCall(
-        call: Call[V], receiver: Option[Expr[V]]
+        call:     Call[V],
+        receiver: Option[Expr[V]]
     )(
         implicit
         project: SomeProject,
@@ -184,7 +190,7 @@ trait LoggingRater extends DomainSpecificRater {
         code:    Array[Stmt[V]]
     ): Option[Purity] = {
         val GetStatic(_, declaringClass, _, _) = expr
-        if (logLevels.exists(declaringClass == _))
+        if (logLevels.contains(declaringClass))
             Some(DPure)
         else super.handleGetStatic(expr)
     }
@@ -202,7 +208,7 @@ trait ExceptionRater extends DomainSpecificRater {
         project: SomeProject,
         code:    Array[Stmt[V]]
     ): Option[Purity] = {
-        implicit val classHierarchy = project.classHierarchy
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         val declClass = call.declaringClass
         if (declClass.isObjectType && call.name == "<init>" &&
             declClass.asObjectType.isSubtypeOf(ObjectType.Throwable) &&
@@ -210,7 +216,9 @@ trait ExceptionRater extends DomainSpecificRater {
                 mdc.method.compare(
                     "fillInStackTrace",
                     MethodDescriptor.withNoArgs(ObjectType.Throwable)
-                )).exists(_.method.classFile.thisType != ObjectType.Throwable))
+                )
+            ).exists(_.method.classFile.thisType != ObjectType.Throwable)
+        )
             Some(DPure)
         else super.handleCall(call, receiver)
     }
@@ -247,11 +255,13 @@ trait AssertionExceptionRater extends DomainSpecificRater {
         receiver: Option[Expr[V]]
     )(
         implicit
-        project: SomeProject, code: Array[Stmt[V]]
+        project: SomeProject,
+        code:    Array[Stmt[V]]
     ): Option[Purity] = {
-        implicit val classHierarchy = project.classHierarchy;
+        implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         if (call.declaringClass.isObjectType && call.name == "<init>" &&
-            exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf))
+            exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf)
+        )
             Some(DPure)
         else super.handleCall(call, receiver)
     }

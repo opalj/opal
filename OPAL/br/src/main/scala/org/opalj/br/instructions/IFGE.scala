@@ -50,7 +50,7 @@ object IFGE extends InstructionMetaInformation {
 }
 
 case class LabeledIFGE(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IFGELike {
 

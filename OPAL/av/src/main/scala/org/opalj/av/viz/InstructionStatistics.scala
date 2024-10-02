@@ -56,7 +56,7 @@ object InstructionStatistics extends AnalysisApplication {
                 childPNs: scala.collection.Set[String]
             ): (String, Int) = {
 
-                println("PSP::::::::RootFQPN:"+rootFQPN+"  -  ChildPNs:"+childPNs)
+                println("PSP::::::::RootFQPN:" + rootFQPN + "  -  ChildPNs:" + childPNs)
 
                 if (childPNs.nonEmpty) {
                     val childPackages =
@@ -108,7 +108,7 @@ object InstructionStatistics extends AnalysisApplication {
                     if (pnNeedToBeAdded) childPNs += fqpn
                 }
 
-                println("PP:::::::::RootFQPN:"+rootFQPN+"  -  SPN:"+spn+"  -  ChildPNs:"+childPNs)
+                println("PP:::::::::RootFQPN:" + rootFQPN + "  -  SPN:" + spn + "  -  ChildPNs:" + childPNs)
 
                 val (children, instructionsInSubPackages) =
                     processSubPackages(rootFQPN, childPNs)
@@ -119,13 +119,14 @@ object InstructionStatistics extends AnalysisApplication {
                 val normalizedInstructions = Math.max(allInstructions, 1)
                 val color = if (instructionsInPackage == 0) "#8080b0" else "#80c080"
 
-                (s""""id": "$rootFQPN",
+                (
+                    s""""id": "$rootFQPN",
                    "name": "$spn ∑$allInstructions ($instructionsInPackage)",
                    "data": {
                         "$$area": $normalizedInstructions,
                         "$$dim": $normalizedInstructions,
                         "$$color": "$color"
-                    }"""+children,
+                    }""" + children,
                     allInstructions
                 )
             }
@@ -140,7 +141,7 @@ object InstructionStatistics extends AnalysisApplication {
                         "$$area": ${Math.max(instructionsInSubPackages, 1)},
                         "$$dim": ${Math.max(instructionsInSubPackages, 1)},
                         "$$color": "#3030b0"
-                    }"""+
+                    }""" +
                     children
             }
 

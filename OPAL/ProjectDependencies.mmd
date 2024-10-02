@@ -1,0 +1,71 @@
+%%{ init: { 'flowchart': { 'curve': 'linear' } } }%%
+flowchart BT
+    
+    common[Common\n common]
+
+    si[Static Analysis Infrastructure\n si]
+    bi[Bytecode Infrastructure\n bi]
+
+    br[Bytecode Representation\n br]
+    da[Bytecode Disassembler\n da]
+
+    ifds[IFDS\n ifds]
+    ai[Abstract Interpretation Framework\n ai]
+    bc[Bytecode Creator\n bc]
+
+    tac[Three Address Code\n tac]
+    de[Dependency Extraction\n de]
+    ba[Bytecode Assembler\n ba]
+
+    ll[LLVM\n ll]
+    apk[APK\n apk]
+    av[Architecture Validation\n av]
+
+    framework[Framework]
+
+    demos[Demos]
+    bp[BugPicker\n bp]
+    hermes[Hermes\n hermes]
+
+    style common fill:#9cbecc,color:black
+    style framework fill:#c0ffc0
+    style bp fill:#ffd7cf
+    style hermes fill:#ffd7cf
+
+    si --> common
+
+    bi --> common
+
+    br --> si
+    br --> bi
+    da --> bi
+
+    ifds --> si
+    ifds --> br
+
+    ai --> br
+
+    bc --> da
+
+    de --> ai
+
+    tac --> ifds
+    tac --> ai
+
+    ll --> tac
+
+    apk --> br
+    apk --> ll
+
+    ba --> ai
+    ba --> bc
+
+    av --> de
+
+    framework --> tac
+    framework --> av
+    framework --> ba
+    
+    demos --> framework
+    bp --> framework
+    hermes --> framework

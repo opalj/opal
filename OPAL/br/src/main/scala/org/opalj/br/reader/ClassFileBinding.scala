@@ -3,15 +3,15 @@ package org.opalj
 package br
 package reader
 
-import net.ceedubs.ficus.Ficus._
-import org.opalj.log.OPALLogger
-import org.opalj.bi.reader.ClassFileReader
-import org.opalj.br.reader.{ClassFileReaderConfiguration => BRClassFileReaderConfiguration}
-
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.bi.reader.ClassFileReader
+import org.opalj.br.reader.{ClassFileReaderConfiguration => BRClassFileReaderConfiguration}
+import org.opalj.log.OPALLogger
+
+import net.ceedubs.ficus.Ficus._
+
 /**
- *
  * @author Michael Eichberg
  */
 trait ClassFileBinding extends ClassFileReader {
@@ -46,8 +46,8 @@ trait ClassFileBinding extends ClassFileReader {
 
     type ClassFile = br.ClassFile
 
-    //type Fields = ArraySeq[Field_Info]
-    //type Methods = ArraySeq[Method_Info]
+    // type Fields = ArraySeq[Field_Info]
+    // type Methods = ArraySeq[Method_Info]
 
     def ClassFile(
         cp:                Constant_Pool,
@@ -62,7 +62,9 @@ trait ClassFileBinding extends ClassFileReader {
         attributes:        Attributes
     ): ClassFile = {
         br.ClassFile.reify(
-            minor_version, major_version, access_flags,
+            minor_version,
+            major_version,
+            access_flags,
             cp(this_class_index).asObjectType(cp),
             // to handle the special case that this class file represents java.lang.Object
             {
@@ -93,9 +95,7 @@ trait ClassFileBinding extends ClassFileReader {
             val newAttributes = classFile.attributes.filterNot { a =>
                 if (a.kindId == SynthesizedClassFiles.KindId) {
                     val SynthesizedClassFiles(synthesizedClassFiles) = a
-                    synthesizedClassFiles.foreach { cfAndReason =>
-                        classFilesToProcess ::= cfAndReason._1
-                    }
+                    synthesizedClassFiles.foreach { cfAndReason => classFilesToProcess ::= cfAndReason._1 }
                     hasSynthesizedClassFilesAttribute = true
                     true
                 } else {
@@ -128,7 +128,8 @@ trait ClassFileBinding extends ClassFileReader {
             val attributes = classFile.attributes
             if (classFile.majorVersion > 50 /* <=> does not have BootstrapMethodTable*/ &&
                 attributes.nonEmpty &&
-                attributes.exists(_.kindId == BootstrapMethodTable.KindId)) {
+                attributes.exists(_.kindId == BootstrapMethodTable.KindId)
+            ) {
                 val newAttributes = attributes.filter(_.kindId != BootstrapMethodTable.KindId)
                 updatedClassFiles ::= classFile._UNSAFE_replaceAttributes(newAttributes)
             } else {
@@ -138,14 +139,16 @@ trait ClassFileBinding extends ClassFileReader {
         updatedClassFiles
     }
 
-    /* EXECUTED SECOND */ registerClassFilePostProcessor(removeBootstrapMethodAttribute)
-    /* EXECUTED FIRST  */ registerClassFilePostProcessor(extractSynthesizedClassFiles)
+    /* EXECUTED SECOND */
+    registerClassFilePostProcessor(removeBootstrapMethodAttribute)
+    /* EXECUTED FIRST  */
+    registerClassFilePostProcessor(extractSynthesizedClassFiles)
 }
 
 object ClassFileBinding {
 
     final val DeleteSynthesizedClassFilesAttributesConfigKey = {
-        BRClassFileReaderConfiguration.ConfigKeyPrefix+"deleteSynthesizedClassFilesAttributes"
+        BRClassFileReaderConfiguration.ConfigKeyPrefix + "deleteSynthesizedClassFilesAttributes"
     }
 
 }

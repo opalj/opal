@@ -4,9 +4,9 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests IdentityPair.
@@ -19,7 +19,7 @@ class IdentityPairTest extends AnyFunSpec with Matchers {
     describe("an IdentityPair") {
 
         val a = new String("fooBar")
-        val b = "foo"+"Bar"
+        val b = "foo" + "Bar"
         require(a ne b)
         require(a == b)
         val p1 = new IdentityPair(a, b) // #1

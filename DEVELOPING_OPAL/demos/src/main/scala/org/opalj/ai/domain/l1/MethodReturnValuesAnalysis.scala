@@ -5,19 +5,20 @@ package domain
 package l1
 
 import java.net.URL
-import org.opalj.ai.domain
-import org.opalj.value.TypeOfReferenceValue
-import org.opalj.br.Method
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.collection.immutable.UIDSet1
-import org.opalj.util.PerformanceEvaluation.time
+
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
+import org.opalj.ai.domain
+import org.opalj.br.Method
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.immutable.UIDSet1
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.value.TypeOfReferenceValue
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -29,9 +30,9 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
 
     class AnalysisDomain(
-            override val project: Project[java.net.URL],
-            val ai:               InterruptableAI[_],
-            val method:           Method
+        override val project: Project[java.net.URL],
+        val ai:               InterruptableAI[_],
+        val method:           Method
     ) extends CorrelationalDomain
         with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration
@@ -79,9 +80,10 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
             // Test if it make sense to continue the abstract interpretation or if the
             // return value information is already not more precise than the "return type".
             theReturnedValue match {
-                case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`)) if (
-                    rv.isNull.isUnknown && !rv.isPrecise
-                ) =>
+                case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`))
+                    if (
+                        rv.isNull.isUnknown && !rv.isPrecise
+                    ) =>
                     // the return type will not be more precise than the original type
                     ai.interrupt()
 
@@ -102,7 +104,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
         parameters:    Seq[String],
         isInterrupted: () => Boolean
     ): BasicReport = {
-        val methodsWithRefinedReturnTypes = time {
+        val refinedMethods = time {
             for {
                 classFile <- theProject.allClassFiles.par
                 method <- classFile.methods
@@ -122,9 +124,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
         } { ns => println(s"the analysis took ${ns.toSeconds}") }
 
         BasicReport(
-            methodsWithRefinedReturnTypes.mkString(
-                "Methods with refined return types ("+methodsWithRefinedReturnTypes.size+"): \n", "\n", "\n"
-            )
+            refinedMethods.mkString("Methods with refined return types (" + refinedMethods.size + "): \n", "\n", "\n")
         )
     }
 
@@ -134,7 +134,7 @@ case class RefinedReturnType(method: Method, refinedType: Option[Domain#DomainVa
 
     override def toString(): String = {
         import Console._
-        "Refined the return type of "+BOLD + BLUE + method.toJava+" => "+
+        "Refined the return type of " + BOLD + BLUE + method.toJava + " => " +
             GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
     }
 

@@ -3,9 +3,10 @@ package org.opalj
 package br
 
 import java.net.URL
+
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.BasicReport
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -18,7 +19,7 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 object PrivateMethodsWithObjectTypeParameterCounter extends ProjectAnalysisApplication {
 
     override def description: String = {
-        "counts the number of package private and private methods "+
+        "counts the number of package private and private methods " +
             "with a body with at least one parameter that is an object type"
     }
 
@@ -32,7 +33,7 @@ object PrivateMethodsWithObjectTypeParameterCounter extends ProjectAnalysisAppli
             for {
                 classFile <- project.allClassFiles.par
                 method <- classFile.methods
-                if method.isPrivate //|| method.isPackagePrivate
+                if method.isPrivate // || method.isPackagePrivate
                 if method.name != "readObject" && method.name != "writeObject"
                 potential = (method.descriptor.parameterTypes.collect {
                     case ot: ObjectType => project.classHierarchy.allSubtypes(ot, false).size

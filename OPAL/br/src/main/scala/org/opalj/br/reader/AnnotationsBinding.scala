@@ -3,9 +3,10 @@ package org.opalj
 package br
 package reader
 
+import scala.reflect.ClassTag
+
 import org.opalj.bi.reader.AnnotationsAbstractions
 import org.opalj.bi.reader.ElementValuePairsReader
-import scala.reflect.ClassTag
 
 /**
  * Factory methods to create representations of Java annotations.
@@ -136,4 +137,3 @@ trait AnnotationsBinding
     }
 
 }
-

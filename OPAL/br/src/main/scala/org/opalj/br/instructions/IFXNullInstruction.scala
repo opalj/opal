@@ -23,7 +23,7 @@ trait IFXNullInstruction[T <: IFXNullInstruction[T]]
     extends SimpleConditionalBranchInstruction[T]
     with IFXNullInstructionLike {
 
-    final override def asIFXNullInstruction: this.type = this
+    override final def asIFXNullInstruction: this.type = this
 
 }
 

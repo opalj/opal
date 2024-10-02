@@ -3,12 +3,12 @@ package org.opalj
 package br
 package fpcf
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ComputationType
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.TriggeredComputation
-import org.opalj.br.analyses.SomeProject
 
 /**
  *  The underlying analysis will only be registered with the property store and
@@ -22,11 +22,11 @@ import org.opalj.br.analyses.SomeProject
  */
 trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    final override def computationType: ComputationType = TriggeredComputation
+    override final def computationType: ComputationType = TriggeredComputation
 
-    final override def derivesLazily: Option[PropertyBounds] = None
+    override final def derivesLazily: Option[PropertyBounds] = None
 
-    final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
+    override final def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
         register(ps.context(classOf[SomeProject]), ps, i)
     }
 
@@ -57,7 +57,7 @@ trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
 
 trait BasicFPCFTriggeredAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
-    override def init(p: SomeProject, ps: PropertyStore): Null = null
+    override def init(p:           SomeProject, ps: PropertyStore): Null = null
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}

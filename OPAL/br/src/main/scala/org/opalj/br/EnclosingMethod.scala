@@ -13,9 +13,9 @@ package br
  * @author Michael Eichberg
  */
 case class EnclosingMethod(
-        clazz:      ObjectType,
-        name:       Option[String],
-        descriptor: Option[MethodDescriptor]
+    clazz:      ObjectType,
+    name:       Option[String],
+    descriptor: Option[MethodDescriptor]
 ) extends Attribute {
 
     assert(name.isDefined == descriptor.isDefined)
@@ -25,6 +25,7 @@ case class EnclosingMethod(
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = this == other
 
 }
+
 object EnclosingMethod {
 
     final val KindId = 10

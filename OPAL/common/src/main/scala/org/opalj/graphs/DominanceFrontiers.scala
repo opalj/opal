@@ -2,13 +2,13 @@
 package org.opalj
 package graphs
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.collection.immutable.IntArraySet
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntRefPair
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
-
-import scala.collection.immutable.ArraySeq
 
 /**
  * Representation of the dominance frontiers.
@@ -16,7 +16,7 @@ import scala.collection.immutable.ArraySeq
  * @author Michael Eichberg
  */
 final class DominanceFrontiers private (
-        private val dfs: Array[IntArraySet] // IMPROVE Consider using an IntTrieSet (if it doesn't work, document it!)
+    private val dfs: Array[IntArraySet] // IMPROVE Consider using an IntTrieSet (if it doesn't work, document it!)
 ) extends ControlDependencies {
 
     def apply(n: Int): IntArraySet = df(n)
@@ -125,7 +125,6 @@ object DominanceFrontiers {
      * org.opalj.io.writeAndOpen(dt.toDot(),"g",".dt.gv")
      * val df = org.opalj.graphs.DominanceFrontiers(dt,isValidNode)
      * org.opalj.io.writeAndOpen(df.toDot(),"g",".df.gv")
-     *
      *
      * // A degenerated graph which consists of a single node that has a self-reference.
      * val g = org.opalj.graphs.Graph.empty[Int] += (0 -> 0)
@@ -241,7 +240,7 @@ object DominanceFrontiers {
                     }
 
                 case _: DominatorTree =>
-                //nothing special to do
+                // nothing special to do
 
                 case dt =>
                     org.opalj.log.OPALLogger.warn(

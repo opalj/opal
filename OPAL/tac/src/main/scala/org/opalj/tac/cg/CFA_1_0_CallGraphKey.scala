@@ -3,10 +3,12 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.CallStringContextProvider
+import org.opalj.br.fpcf.analyses.CallStringContextProvider
+import org.opalj.br.fpcf.properties.CallStringContexts
+import org.opalj.br.fpcf.properties.CallStringContextsKey
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
 
@@ -18,13 +20,12 @@ import org.opalj.tac.fpcf.analyses.cg.TypesBasedPointsToTypeIterator
  *
  * @author Dominik Helm
  */
-object CFA_1_0_CallGraphKey extends CallGraphKey {
+object CFA_1_0_CallGraphKey extends PointsToCallGraphKey {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = {
-        TypeBasedPointsToCallGraphKey.requirements(project)
-    }
+    override val pointsToType: String = "TypeBased"
+    override val contextKey: ProjectInformationKey[CallStringContexts, Nothing] = CallStringContextsKey
 
-    override protected def callGraphSchedulers(
+    override protected[cg] def callGraphSchedulers(
         project: SomeProject
     ): Iterable[FPCFAnalysisScheduler] = {
         TypeBasedPointsToCallGraphKey.callGraphSchedulers(project)

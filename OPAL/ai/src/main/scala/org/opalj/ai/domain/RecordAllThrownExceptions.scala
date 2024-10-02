@@ -35,4 +35,3 @@ trait RecordAllThrownExceptions extends RecordThrownExceptions {
     ): ThrownException = previouslyThrownException + value
 
 }
-

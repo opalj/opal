@@ -100,7 +100,6 @@ sealed trait Answer {
      *
      * If the other `Answer` is identical to `this` answer `this` is returned,
      * otherwise `Unknown` is returned.
-     *
      */
     def join(other: Answer): Answer
 }

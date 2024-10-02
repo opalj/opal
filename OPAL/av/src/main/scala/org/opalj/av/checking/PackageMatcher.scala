@@ -12,10 +12,9 @@ import org.opalj.br.analyses.SomeProject
  * @author Marco Torsello
  */
 case class PackageMatcher(
-        namePredicate: NamePredicate,
-        classMatcher:  ClassMatcher
-)
-    extends ClassLevelMatcher {
+    namePredicate: NamePredicate,
+    classMatcher:  ClassMatcher
+) extends ClassLevelMatcher {
 
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
         val packageName = classFile.thisType.packageName
@@ -54,7 +53,6 @@ object PackageMatcher {
      * @param classMatcher The [[ClassMatcher]], that will be used to match the class.
      * @param matchSubpackages If true, all packages, that start with the given package
      *      name are matched otherwise only classes declared in the given package are matched.
-     *
      */
     def apply(
         packageName:      String,
@@ -75,7 +73,7 @@ object PackageMatcher {
         packageName:      String,
         matchSubpackages: Boolean
     ): PackageMatcher = {
-        apply(packageName.replace('.', '/'), AllClasses, matchSubpackages)
+        apply(packageName, AllClasses, matchSubpackages)
     }
 
 }

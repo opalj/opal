@@ -18,7 +18,7 @@ sealed abstract class VirtualSourceElement
 
     override def attributes: Attributes = NoAttributes
 
-    final override def isVirtual = true
+    override final def isVirtual = true
 
     /**
      * The "natural order" is VirtualClasses < VirtualFields < VirtualMethods.
@@ -48,8 +48,8 @@ object VirtualSourceElement {
 
     def asVirtualSourceElements(
         classFiles:     Iterable[ClassFile],
-        includeMethods: Boolean             = true,
-        includeFields:  Boolean             = true
+        includeMethods: Boolean = true,
+        includeFields:  Boolean = true
     ): Set[VirtualSourceElement] = {
         var sourceElements: Set[VirtualSourceElement] = Set.empty
 
@@ -84,7 +84,7 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
     override def getLineNumber(project: ClassFileRepository): Option[Int] = None
 
     override def compare(that: VirtualSourceElement): Int = {
-        //x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
+        // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
         that match {
             case VirtualClass(thatType) => thisType.compare(thatType)
             case _                      => -1
@@ -116,16 +116,16 @@ sealed abstract class VirtualClassMember extends VirtualSourceElement
  * @author Michael Eichberg
  */
 final case class VirtualField(
-        declaringClassType: ObjectType,
-        name:               String,
-        fieldType:          FieldType
+    declaringClassType: ObjectType,
+    name:               String,
+    fieldType:          FieldType
 ) extends VirtualClassMember {
 
     override def isField: Boolean = true
 
     override def classType: ObjectType = declaringClassType
 
-    override def toJava: String = declaringClassType.toJava+"{ "+fieldType.toJava+" "+name+"; }"
+    override def toJava: String = declaringClassType.toJava + "{ " + fieldType.toJava + " " + name + "; }"
 
     override def getLineNumber(project: ClassFileRepository): Option[Int] = None
 
@@ -172,16 +172,16 @@ final case class VirtualField(
  * @author Michael Eichberg
  */
 sealed class VirtualMethod(
-        val declaringClassType: ReferenceType,
-        val name:               String,
-        val descriptor:         MethodDescriptor
+    val declaringClassType: ReferenceType,
+    val name:               String,
+    val descriptor:         MethodDescriptor
 ) extends VirtualClassMember {
 
     override def isMethod: Boolean = true
 
     override def classType: ReferenceType = declaringClassType
 
-    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+"; }"
+    override def toJava: String = declaringClassType.toJava + "{ " + descriptor.toJava(name) + "; }"
 
     override def getLineNumber(project: ClassFileRepository): Option[Int] = {
         if (declaringClassType.isArrayType)
@@ -251,13 +251,13 @@ object VirtualMethod {
 }
 
 final case class VirtualForwardingMethod(
-        override val declaringClassType: ReferenceType,
-        override val name:               String,
-        override val descriptor:         MethodDescriptor,
-        target:                          Method
+    override val declaringClassType: ReferenceType,
+    override val name:               String,
+    override val descriptor:         MethodDescriptor,
+    target:                          Method
 ) extends VirtualMethod(declaringClassType, name, descriptor) {
 
-    override def toJava: String = declaringClassType.toJava+"{ "+descriptor.toJava(name)+" }"
+    override def toJava: String = declaringClassType.toJava + "{ " + descriptor.toJava(name) + " }"
 
     override def hashCode: Opcode = (target.hashCode() * 41) + super.hashCode
 
@@ -269,4 +269,3 @@ final case class VirtualForwardingMethod(
     }
 
 }
-

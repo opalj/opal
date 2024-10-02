@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection
+package org.opalj
+package collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.propBoolean
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Generic Tests for `LongSet`s.
@@ -17,7 +18,7 @@ abstract class LongLinkedSetProperties(typeName: String) extends LongSetProperti
 
     def empty(): LongLinkedSet
 
-    property("head") = forAll { sLongSet: Set[Long] =>
+    property("head") = forAll { (sLongSet: Set[Long]) =>
         sLongSet.nonEmpty ==> {
             val sLongList = sLongSet.toList
             val oLongSet = sLongList.reverse.foldLeft(empty())(_ + _)
@@ -25,7 +26,7 @@ abstract class LongLinkedSetProperties(typeName: String) extends LongSetProperti
         }
     }
 
-    property("foreach in reverse insertion order (newest first)") = forAll { sLongSet: Set[Long] =>
+    property("foreach in reverse insertion order (newest first)") = forAll { (sLongSet: Set[Long]) =>
         val sLongList = sLongSet.toList
         val oLongSet = sLongList.foldLeft(empty())(_ + _)
         var newSLongList = List.empty[Long]
@@ -33,7 +34,7 @@ abstract class LongLinkedSetProperties(typeName: String) extends LongSetProperti
         sLongList == newSLongList
     }
 
-    property("forFirstN") = forAll { sLongSet: Set[Long] =>
+    property("forFirstN") = forAll { (sLongSet: Set[Long]) =>
         val sLongList = sLongSet.toList
         val oLongSet = sLongList.reverse.foldLeft(empty())(_ + _)
         (0 to sLongSet.size).forall { initSize =>

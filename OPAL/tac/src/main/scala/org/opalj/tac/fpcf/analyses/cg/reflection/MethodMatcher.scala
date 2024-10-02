@@ -6,20 +6,16 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsPrimitiveValue
-import org.opalj.value.IsReferenceValue
+import scala.collection.immutable.ArraySeq
+
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.BaseType
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.ReferenceType
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.IsReferenceValue
 
 /**
  * Used to determine whether a certain method should be considered as a target for a reflective
@@ -30,8 +26,8 @@ import scala.collection.immutable.ArraySeq
  */
 trait MethodMatcher {
     def initialMethods(implicit p: SomeProject): Iterator[Method]
-    def contains(m: Method)(implicit p: SomeProject): Boolean
     def priority: Int
+    def contains(m: Method)(implicit p: SomeProject): Boolean
 }
 
 final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends MethodMatcher {
@@ -41,16 +37,16 @@ final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends Metho
         possibleNames.iterator.flatMap(projectIndex.findMethods)
     }
 
+    override def priority: Int = 2
+
     override def contains(m: Method)(implicit p: SomeProject): Boolean = {
         possibleNames.contains(m.name)
     }
-
-    override def priority: Int = 2
 }
 
 class ClassBasedMethodMatcher(
-        val possibleClasses:           Set[ObjectType],
-        val onlyMethodsExactlyInClass: Boolean
+    val possibleClasses:           Set[ObjectType],
+    val onlyMethodsExactlyInClass: Boolean
 ) extends MethodMatcher {
 
     // TODO use a ProjectInformationKey or WeakHashMap to cache methods per project
@@ -67,23 +63,23 @@ class ClassBasedMethodMatcher(
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = methods.iterator
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = methods.contains(m)
-
     override def priority: Int = 1
+
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = methods.contains(m)
 }
 
 class DescriptorBasedMethodMatcher(
-        val possibleDescriptors: Set[MethodDescriptor]
+    val possibleDescriptors: Set[MethodDescriptor]
 ) extends MethodMatcher {
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = {
         p.allMethods.iterator.filter(m => possibleDescriptors.contains(m.descriptor))
     }
 
+    override def priority: Int = 3
+
     override def contains(m: Method)(implicit p: SomeProject): Boolean =
         possibleDescriptors.contains(m.descriptor)
-
-    override def priority: Int = 3
 }
 
 class ParameterTypesBasedMethodMatcher(val parameterTypes: FieldTypes) extends MethodMatcher {
@@ -92,17 +88,19 @@ class ParameterTypesBasedMethodMatcher(val parameterTypes: FieldTypes) extends M
         p.allMethods.iterator.filter(_.parameterTypes == parameterTypes)
     }
 
+    override def priority: UShort = 3
+
     override def contains(m: Method)(implicit p: SomeProject): Boolean = {
         m.parameterTypes == parameterTypes
     }
-
-    override def priority: UShort = 3
 }
 
 class ActualParameterBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatcher {
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] =
         p.allMethods.iterator.filter(contains)
+
+    override def priority: UShort = 3
 
     override def contains(m: Method)(implicit p: SomeProject): Boolean = {
         implicit val ch: ClassHierarchy = p.classHierarchy
@@ -112,35 +110,9 @@ class ActualParameterBasedMethodMatcher(val actualParams: Seq[V]) extends Method
             // IMPROVE: m.descriptor.parameterTypes.iterator.zip...
             // therefor, we need to actualParams.map(...) as Iterator
             m.descriptor.parameterTypes.zip(actualParams.map(_.value)).forall {
-                // the actual type is null and the declared type is a ref type
-                case (_: ReferenceType, _: IsNullValue) =>
-                    // TODO here we would need the declared type information
-                    true
-                // declared type and actual type are reference types and assignable
-                case (pType: ReferenceType, v: IsReferenceValue) =>
-                    v.isValueASubtypeOf(pType).isYesOrUnknown
-
-                // declared type and actual type are base types and the same type
-                case (pType: BaseType, v: IsPrimitiveValue[_]) => v.primitiveType eq pType
-
-                // the actual type is null and the declared type is a base type
-                case (_: BaseType, _: IsNullValue) =>
-                    false
-
-                // declared type is base type, actual type might be a boxed value
-                case (pType: BaseType, v: IsReferenceValue) =>
-                    v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isYesOrUnknown
-
-                // actual type is base type, declared type might be a boxed type
-                case (pType: ObjectType, v: IsPrimitiveValue[_]) =>
-                    pType.isPrimitiveTypeWrapperOf(v.primitiveType)
-
-                case _ =>
-                    false
+                case (formal, actual) => isTypeCompatible(formal, actual)
             }
     }
-
-    override def priority: UShort = 3
 }
 
 class ActualReceiverBasedMethodMatcher(val receiver: IsReferenceValue) extends MethodMatcher {
@@ -156,67 +128,67 @@ class ActualReceiverBasedMethodMatcher(val receiver: IsReferenceValue) extends M
         }
     }
 
+    override def priority: Int = 3
+
     override def contains(m: Method)(implicit p: SomeProject): Boolean = {
         implicit val ch: ClassHierarchy = p.classHierarchy
         val isNull = receiver.isNull
         (isNull.isNoOrUnknown && receiver.isValueASubtypeOf(m.classFile.thisType).isYesOrUnknown) ||
             (isNull.isYesOrUnknown && m.isStatic)
     }
-
-    override def priority: Int = 3
 }
 
 object StaticMethodMatcher extends MethodMatcher {
     override def initialMethods(implicit p: SomeProject): Iterator[Method] =
         p.allMethods.iterator.filter(contains)
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = m.isStatic
-
     override def priority: Int = 4
+
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = m.isStatic
 }
 
 object NonStaticMethodMatcher extends MethodMatcher {
     override def initialMethods(implicit p: SomeProject): Iterator[Method] =
         p.allMethods.iterator.filter(contains)
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = !m.isStatic
-
     override def priority: Int = 4
+
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = !m.isStatic
 }
 
 object PrivateMethodMatcher extends MethodMatcher {
     override def initialMethods(implicit p: SomeProject): Iterator[Method] =
         p.allMethods.iterator.filter(contains)
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = m.isPrivate
-
     override def priority: Int = 4
+
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = m.isPrivate
 }
 
 object PublicMethodMatcher extends MethodMatcher {
     override def initialMethods(implicit p: SomeProject): Iterator[Method] =
         p.allMethods.iterator.filter(contains)
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = m.isPublic
-
     override def priority: Int = 4
+
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = m.isPublic
 }
 
 object AllMethodsMatcher extends MethodMatcher {
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = p.allMethods.iterator
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = true
-
     override def priority: Int = 5
+
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = true
 }
 
 object NoMethodsMatcher extends MethodMatcher {
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = Iterator.empty
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = false
-
     override def priority: UShort = 0
+
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = false
 }
 
 object MethodMatching {

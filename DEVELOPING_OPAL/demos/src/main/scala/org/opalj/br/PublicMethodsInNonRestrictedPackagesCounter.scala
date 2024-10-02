@@ -3,10 +3,11 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
+
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.OneStepAnalysis
+import org.opalj.br.analyses.Project
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -73,7 +74,7 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisApplication {
                 ).seq
 
             BasicReport(
-                s"${methods.size} public and protected methods in non-restricted packages found:\n"+
+                s"${methods.size} public and protected methods in non-restricted packages found:\n" +
                     methods.mkString("\t", "\n\t", "\n")
             )
         }

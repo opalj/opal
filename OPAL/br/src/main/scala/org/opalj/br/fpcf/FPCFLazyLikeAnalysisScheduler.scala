@@ -3,9 +3,9 @@ package org.opalj
 package br
 package fpcf
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.SomeProject
 
 /**
  * @author Michael Eichberg
@@ -14,11 +14,11 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds]
 
-    final override def derivesEagerly: Set[PropertyBounds] = Set.empty
+    override final def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    final override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+    override final def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    final override def schedule(
+    override final def schedule(
         ps: PropertyStore,
         i:  InitializationData
     ): FPCFAnalysis = {
@@ -47,4 +47,3 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
     ): FPCFAnalysis
 
 }
-

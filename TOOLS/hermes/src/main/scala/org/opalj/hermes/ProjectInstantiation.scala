@@ -4,8 +4,8 @@ package hermes
 
 import java.net.URL
 
-import org.opalj.da
 import org.opalj.br.analyses.Project
+import org.opalj.da
 
 /**
  * The resources of the instantiated project.
@@ -13,6 +13,6 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 case class ProjectInstantiation(
-        project:       Project[URL],
-        rawClassFiles: Iterable[(da.ClassFile, URL)]
+    project:       Project[URL],
+    rawClassFiles: Iterable[(da.ClassFile, URL)]
 )

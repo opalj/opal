@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
@@ -38,7 +39,7 @@ class EOptionPSetTest extends AnyFunSuite {
         val fep2Marker = FinalEP(e2, Marker.IsMarked)
         val fe2Pal = FinalEP(e2, Palindromes.Palindrome)
 
-        implicit val ps = new InitializedPropertyStore(IntMap(
+        implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
             Marker.Key.id -> Map(
                 e1 -> mutable.Queue(ie1Marker, fep1Marker, fep1Marker),
                 e2 -> mutable.Queue(ie2Marker, fep2Marker)
@@ -72,7 +73,7 @@ class EOptionPSetTest extends AnyFunSuite {
         val fep1Marker = FinalEP(e1, Marker.IsMarked)
         val fe2Pal = FinalEP(e2, Palindromes.Palindrome)
 
-        implicit val ps = new InitializedPropertyStore(IntMap(
+        implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
             Marker.Key.id -> Map(
                 e1 -> mutable.Queue(ie1Marker, fep1Marker),
                 e2 -> mutable.Queue(ie2Marker)
@@ -101,7 +102,7 @@ class EOptionPSetTest extends AnyFunSuite {
         val e2 = new Object
         val ieupb1 = InterimEUBP(e1, Marker.NotMarked)
         val ieupb2 = InterimEUBP(e2, Marker.NotMarked)
-        implicit val ps = new InitializedPropertyStore(IntMap(
+        implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
             Marker.Key.id ->
                 Map(
                     e1 -> mutable.Queue(ieupb1),
@@ -144,7 +145,7 @@ class EOptionPSetTest extends AnyFunSuite {
         val ie2Marker = InterimEUBP(e2, Marker.NotMarked)
         val ie2Pal = InterimEUBP(e2, Palindromes.NoPalindrome)
 
-        implicit val ps = new InitializedPropertyStore(IntMap(
+        implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
             Marker.Key.id -> Map(
                 e1 -> mutable.Queue(ie1Marker),
                 e2 -> mutable.Queue(ie2Marker)
@@ -174,7 +175,7 @@ class EOptionPSetTest extends AnyFunSuite {
         val ie2Marker = InterimEUBP(e2, Marker.NotMarked)
         val ie2Pal = InterimEUBP(e2, Palindromes.NoPalindrome)
 
-        implicit val ps = new InitializedPropertyStore(IntMap(
+        implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
             Marker.Key.id -> Map(
                 e1 -> mutable.Queue(ie1Marker),
                 e2 -> mutable.Queue(ie2Marker)
@@ -196,7 +197,7 @@ class EOptionPSetTest extends AnyFunSuite {
         // the following query is passed through to the property store...
         assert(set.getOrQueryAndUpdate(e2, Palindromes.PalindromeKey) == ie2Pal)
     }
-    */
+     */
 
     test("filters filters the respective value") {
         val e1 = "e1"
@@ -205,7 +206,7 @@ class EOptionPSetTest extends AnyFunSuite {
         val ie2Marker = InterimEUBP(e2, Marker.NotMarked)
         val ie2Pal = InterimEUBP(e2, Palindromes.NoPalindrome)
 
-        implicit val ps = new InitializedPropertyStore(IntMap(
+        implicit val ps: InitializedPropertyStore = new InitializedPropertyStore(IntMap(
             Marker.Key.id -> Map(
                 e1 -> mutable.Queue(ie1Marker),
                 e2 -> mutable.Queue(ie2Marker)
@@ -222,12 +223,12 @@ class EOptionPSetTest extends AnyFunSuite {
 
         val newSet = set.filter(_.e == e1)
         assert(newSet.size == 1)
-        assert(!newSet.isEmpty)
+        assert(newSet.nonEmpty)
         assert(set.getOrQueryAndUpdate(e1, Marker.Key) == ie1Marker)
         assert(newSet.size == 1)
 
         val newSet2 = newSet.filter(_.e == e2)
-        assert(newSet2.size == 0)
+        assert(newSet2.isEmpty)
         assert(newSet2.isEmpty)
 
         // old sets are unchanged...:

@@ -20,9 +20,10 @@ case class UnknownAttribute(attributeName: String, info: Array[Byte]) extends At
 
     def similar(other: UnknownAttribute): Boolean = {
         this.attributeName.size == other.attributeName.size &&
-            java.util.Arrays.equals(this.info, other.info)
+        java.util.Arrays.equals(this.info, other.info)
     }
 }
+
 object UnknownAttribute {
 
     final val KindId = -1

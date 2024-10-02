@@ -7,6 +7,23 @@ package cg
 
 import scala.annotation.tailrec
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ElementReferenceType
+import org.opalj.br.Method
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodDescriptor.JustReturnsObject
+import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
+import org.opalj.br.ObjectType
+import org.opalj.br.ObjectType.{ObjectInputStream => ObjectInputStreamType}
+import org.opalj.br.ObjectType.{ObjectOutputStream => ObjectOutputStreamType}
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -18,28 +35,11 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.ASObjectValue
-import org.opalj.value.ValueInformation
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.ElementReferenceType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.MethodDescriptor.JustReturnsObject
-import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
-import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.{ObjectOutputStream => ObjectOutputStreamType}
-import org.opalj.br.ObjectType.{ObjectInputStream => ObjectInputStreamType}
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.tac.fpcf.properties.cg.Callers
-import org.opalj.br.Method
-import org.opalj.br.ReferenceType
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.value.ASObjectValue
+import org.opalj.value.ValueInformation
 
 /**
  * Analysis handling the specifics of java.io.ObjectOutputStream.writeObject.
@@ -49,7 +49,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Dominik Helm
  */
 class OOSWriteObjectAnalysis private[analyses] (
-        override val project: SomeProject
+    override val project: SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -84,7 +84,8 @@ class OOSWriteObjectAnalysis private[analyses] (
             val parameters = Seq(receiverOption.flatMap(os => persistentUVar(os.asVar)))
 
             implicit val state: CGState[ContextType] = new CGState[ContextType](
-                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)),
+                callerContext,
+                FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
             )
 
             handleOOSWriteObject(callerContext, param, pc, receiver, parameters, indirectCalls)
@@ -108,8 +109,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         val indirectCalls = new IndirectCalls()
 
         typeIterator.continuation(receiverVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) {
-            newType =>
-                handleType(newType, state.callContext, pc, receiver, parameters, indirectCalls)
+            newType => handleType(newType, state.callContext, pc, receiver, parameters, indirectCalls)
         }(state)
 
         if (eps.isFinal) {
@@ -147,9 +147,7 @@ class OOSWriteObjectAnalysis private[analyses] (
     )(implicit state: CGState[ContextType]): Unit = {
         typeIterator.foreachType(
             param,
-            typeIterator.typesProperty(
-                param, callContext, callPC.asInstanceOf[Entity], state.tac.stmts
-            )
+            typeIterator.typesProperty(param, callContext, callPC.asInstanceOf[Entity], state.tac.stmts)
         ) { tpe => handleType(tpe, callContext, callPC, receiver, parameters, indirectCalls) }
     }
 
@@ -163,7 +161,7 @@ class OOSWriteObjectAnalysis private[analyses] (
     ): Unit = {
         if (tpe.isArrayType && !tpe.asArrayType.elementType.isObjectType) {
             indirectCalls.addIncompleteCallSite(callPC)
-            return ;
+            return;
         }
 
         val paramType =
@@ -188,8 +186,7 @@ class OOSWriteObjectAnalysis private[analyses] (
                 "writeExternal",
                 WriteExternalDescriptor,
                 parameters,
-                receiver,
-                tgt => typeIterator.expandContext(callContext, tgt, callPC)
+                receiver
             )
         } else {
             val writeObjectMethod = project.specialCall(
@@ -199,18 +196,18 @@ class OOSWriteObjectAnalysis private[analyses] (
                 "writeObject",
                 WriteObjectDescriptor
             )
-            indirectCalls.addCallOrFallback(
-                callContext,
-                callPC,
-                writeObjectMethod,
-                ObjectType.Object.packageName,
-                ObjectType.Object,
-                "writeObject",
-                WriteObjectDescriptor,
-                parameters,
-                receiver,
-                tgt => typeIterator.expandContext(callContext, tgt, callPC)
-            )
+            if (writeObjectMethod.hasValue)
+                indirectCalls.addCallOrFallback(
+                    callContext,
+                    callPC,
+                    writeObjectMethod,
+                    ObjectType.Object.packageName,
+                    ObjectType.Object,
+                    "writeObject",
+                    WriteObjectDescriptor,
+                    parameters,
+                    receiver
+                )
         }
 
         val writeReplaceMethod = project.specialCall(
@@ -230,8 +227,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             "writeReplace",
             WriteObjectDescriptor,
             parameters,
-            receiver,
-            tgt => typeIterator.expandContext(callContext, tgt, callPC)
+            receiver
         )
     }
 
@@ -245,7 +241,7 @@ class OOSWriteObjectAnalysis private[analyses] (
  * @author Florian Kuebler
  */
 class OISReadObjectAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     final val ObjectInputValidationType = ObjectType("java/io/ObjectInputValidation")
@@ -277,9 +273,7 @@ class OISReadObjectAnalysis private[analyses] (
         val calleesAndCallers = new IndirectCalls()
 
         if (tgtVarOption.isDefined) {
-            handleOISReadObject(
-                callerContext, tgtVarOption.get, receiverOption, pc, calleesAndCallers
-            )
+            handleOISReadObject(callerContext, tgtVarOption.get, receiverOption, pc, calleesAndCallers)
 
         } else {
             calleesAndCallers.addIncompleteCallSite(pc)
@@ -295,8 +289,7 @@ class OISReadObjectAnalysis private[analyses] (
         pc:                Int,
         calleesAndCallers: IndirectCalls
     )(
-        implicit
-        stmts: Array[Stmt[V]]
+        implicit stmts: Array[Stmt[V]]
     ): Unit = {
         var foundCast = false
         val parameterList = Seq(inputStream.flatMap(is => persistentUVar(is.asVar)))
@@ -311,17 +304,16 @@ class OISReadObjectAnalysis private[analyses] (
                     t <- ch.allSubtypes(castType, reflexive = true)
                     cf <- project.classFile(t) // we ignore cases were no class file exists
                     if !cf.isInterfaceDeclaration
-                    if ch.isSubtypeOf(castType, ObjectType.Serializable)
+                    if ch.isSubtypeOf(t, ObjectType.Serializable)
                 } {
 
                     val receiver = Some(
                         (ASObjectValue(isNull = No, isPrecise = false, castType), IntTrieSet(pc))
                     )
 
-                    if (ch.isSubtypeOf(castType, ObjectType.Externalizable)) {
+                    if (ch.isSubtypeOf(t, ObjectType.Externalizable)) {
                         // call to `readExternal`
-                        val readExternal =
-                            p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
+                        val readExternal = p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
 
                         calleesAndCallers.addCallOrFallback(
                             context,
@@ -332,55 +324,41 @@ class OISReadObjectAnalysis private[analyses] (
                             "readExternal",
                             ReadExternalDescriptor,
                             parameterList,
-                            receiver,
-                            tgt => typeIterator.expandContext(context, tgt, pc)
+                            receiver
                         )
 
                         // call to no-arg constructor
                         cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c =>
-                            calleesAndCallers.addCall(
-                                context,
-                                pc,
-                                typeIterator.expandContext(context, declaredMethods(c), pc),
-                                Seq.empty,
-                                receiver
-                            )
+                            calleesAndCallers.addCall(context, pc, declaredMethods(c), Seq.empty, receiver)
                         }
                     } else {
 
                         // call to `readObject`
-                        val readObjectMethod = p.specialCall(
-                            t, t, isInterface = false, "readObject", ReadObjectDescriptor
-                        )
-                        calleesAndCallers.addCallOrFallback(
-                            context, pc, readObjectMethod,
-                            ObjectType.Object.packageName,
-                            ObjectType.Object,
-                            "readObject",
-                            ReadObjectDescriptor,
-                            parameterList,
-                            receiver,
-                            tgt => typeIterator.expandContext(context, tgt, pc)
-                        )
+                        val readObjectMethod =
+                            p.specialCall(t, t, isInterface = false, "readObject", ReadObjectDescriptor)
+                        if (readObjectMethod.hasValue)
+                            calleesAndCallers.addCallOrFallback(
+                                context,
+                                pc,
+                                readObjectMethod,
+                                ObjectType.Object.packageName,
+                                ObjectType.Object,
+                                "readObject",
+                                ReadObjectDescriptor,
+                                parameterList,
+                                receiver
+                            )
 
                         // call to first super no-arg constructor
                         val nonSerializableSuperclass = firstNotSerializableSupertype(t)
                         if (nonSerializableSuperclass.isDefined) {
-                            val constructor =
+                            val ctor =
                                 p.classFile(nonSerializableSuperclass.get).flatMap { cf =>
                                     cf.findMethod("<init>", NoArgsAndReturnVoid)
                                 }
                             // otherwise an exception will thrown at runtime
-                            if (constructor.isDefined) {
-                                calleesAndCallers.addCall(
-                                    context,
-                                    pc,
-                                    typeIterator.expandContext(
-                                        context, declaredMethods(constructor.get), pc
-                                    ),
-                                    Seq.empty,
-                                    receiver
-                                )
+                            if (ctor.isDefined) {
+                                calleesAndCallers.addCall(context, pc, declaredMethods(ctor.get), Seq.empty, receiver)
                             }
                         }
 
@@ -395,33 +373,26 @@ class OISReadObjectAnalysis private[analyses] (
                         }
 
                         if (constructors.nonEmpty) {
-                            val constructor = constructors.minBy(t => t._1)._2
+                            // val constructor = constructors.minBy(t => t._1)._2
+                            val constructor =
+                                declaredMethods(t, t.packageName, t, "<init>", MethodDescriptor.NoArgsAndReturnVoid)
 
-                            calleesAndCallers.addCall(
-                                context,
-                                pc,
-                                typeIterator.expandContext(
-                                    context, declaredMethods(constructor), pc
-                                ),
-                                Seq.empty,
-                                receiver
-                            )
+                            calleesAndCallers.addCall(context, pc, constructor, Seq.empty, receiver)
                         }
                     }
 
                     // call to `readResolve`
-                    val readResolve = p.specialCall(
-                        t, t, isInterface = false, "readResolve", JustReturnsObject
-                    )
+                    val readResolve = p.specialCall(t, t, isInterface = false, "readResolve", JustReturnsObject)
                     calleesAndCallers.addCallOrFallback(
-                        context, pc, readResolve,
+                        context,
+                        pc,
+                        readResolve,
                         ObjectType.Object.packageName,
                         ObjectType.Object,
                         "readResolve",
                         JustReturnsObject,
                         Seq.empty,
-                        receiver,
-                        tgt => typeIterator.expandContext(context, tgt, pc)
+                        receiver
                     )
 
                     // call to `validateObject`
@@ -429,16 +400,19 @@ class OISReadObjectAnalysis private[analyses] (
                         val validateObject =
                             p.instanceCall(t, t, "validateObject", JustReturnsObject)
                         calleesAndCallers.addCallOrFallback(
-                            context, pc, validateObject,
+                            context,
+                            pc,
+                            validateObject,
                             ObjectType.Object.packageName,
                             ObjectType.Object,
                             "validateObject",
                             JustReturnsObject,
                             Seq.empty,
-                            receiver,
-                            tgt => typeIterator.expandContext(context, tgt, pc)
+                            receiver
                         )
                     }
+
+                    // IMPROVE: Also handle readObjectNoData method
                 }
             case _ =>
         }
@@ -470,7 +444,7 @@ class OISReadObjectAnalysis private[analyses] (
  * @author Dominik Helm
  */
 class SerializationRelatedCallsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {
@@ -504,4 +478,3 @@ object SerializationRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysis
         analysis
     }
 }
-

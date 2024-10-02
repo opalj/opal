@@ -1,12 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.analyses.cg
-
-import org.opalj.br.analyses.ProjectIndexKey
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
+package org.opalj
+package br
+package analyses
+package cg
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
@@ -76,7 +72,7 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
 }
 
 class CallBySignatureTargets private[analyses] (
-        val data: scala.collection.Map[Method, ArraySeq[ObjectType]]
+    val data: scala.collection.Map[Method, ArraySeq[ObjectType]]
 ) {
     /**
      * Returns all call-by-signature targets of the given method. If the method is not known,

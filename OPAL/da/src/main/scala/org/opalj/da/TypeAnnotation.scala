@@ -12,10 +12,10 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class TypeAnnotation(
-        target_type:         TypeAnnotationTarget,
-        target_path:         TypeAnnotationPath,
-        type_index:          Constant_Pool_Index,
-        element_value_pairs: ElementValuePairs
+    target_type:         TypeAnnotationTarget,
+    target_path:         TypeAnnotationPath,
+    type_index:          Constant_Pool_Index,
+    element_value_pairs: ElementValuePairs
 ) extends AbstractAnnotation {
 
     final def attribute_length: Int = {
@@ -27,12 +27,12 @@ case class TypeAnnotation(
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="type_annotation">
-            { target_type.toXHTML }
+            {target_type.toXHTML}
             <div>
-                { target_path.toXHTML }
+                {target_path.toXHTML}
                 <b>Annotation Type</b>
-                { parseFieldType(type_index).asSpan("") }<br/>
-                { evps }
+                {parseFieldType(type_index).asSpan("")}<br/>
+                {evps}
             </div>
         </div>
     }

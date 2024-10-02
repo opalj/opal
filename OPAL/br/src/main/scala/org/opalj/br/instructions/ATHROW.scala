@@ -14,9 +14,9 @@ case object ATHROW extends Instruction with NoLabels {
 
     final val mnemonic = "athrow"
 
-    final override def isAthrow: Boolean = true
+    override final def isAthrow: Boolean = true
 
-    final override def asATHROW: this.type = this
+    override final def asATHROW: this.type = this
 
     final def jvmExceptions: List[ObjectType] = Instruction.justNullPointerException
 
@@ -46,10 +46,12 @@ case object ATHROW extends Instruction with NoLabels {
     final def indexOfNextInstruction(currentPC: PC, modifiedByWide: Boolean): Int = currentPC + 1
 
     final def nextInstructions(
-        currentPC: PC, regularSuccessorsOnly: Boolean
+        currentPC:             PC,
+        regularSuccessorsOnly: Boolean
     )(
         implicit
-        code: Code, classHierarchy: ClassHierarchy
+        code:           Code,
+        classHierarchy: ClassHierarchy
     ): List[PC] = {
         if (regularSuccessorsOnly)
             List.empty
@@ -59,5 +61,5 @@ case object ATHROW extends Instruction with NoLabels {
 
     final def expressionResult: NoExpression.type = NoExpression
 
-    final override def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString()
 }

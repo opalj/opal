@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support
+package org.opalj
+package support
 
 /**
  * Tools which help to debug OPAL as such.

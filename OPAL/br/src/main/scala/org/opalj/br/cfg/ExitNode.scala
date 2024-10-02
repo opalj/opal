@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.cfg
+package org.opalj
+package br
+package cfg
 
 /**
  * Represents the artificial exit node of a control flow graph. The graph contains
@@ -9,7 +11,7 @@ package org.opalj.br.cfg
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-final class ExitNode( final val normalReturn: Boolean) extends CFGNode {
+final class ExitNode(final val normalReturn: Boolean) extends CFGNode {
 
     override def nodeId: Int = {
         // OLD: if (normalReturn) Int.MinValue else Int.MinValue + 1

@@ -4,15 +4,17 @@ package tac
 
 import java.io.File
 import java.net.URL
-import org.opalj.log.OPALLogger
-import org.opalj.log.StandardLogContext
+
+import org.opalj.ai.Domain
+import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.common.SimpleAIKey
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogContext
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
@@ -25,13 +27,13 @@ object TACTemplate {
 
     /** Description of the command-line parameters. */
     def usage: String = {
-        "Usage: java …TACTemplate \n"+
-            "{-cp <JAR file/Folder containing class files>}*\n"+
-            "[{-libCP <JAR file/Folder containing library class files>}*] (generally required to get precise/correct type information)\n"+
-            "[-libJDK] (the JDK is added to the project as a library)\n"+
-            "[-class <class file name>] (filters the set of classes)\n"+
-            "[-method <method name/signature using Java notation; e.g., \"int hashCode()\">] (filters the set of methods)\n"+
-            "[-domain <class name of the domain>]\n"+
+        "Usage: java …TACTemplate \n" +
+            "{-cp <JAR file/Folder containing class files>}*\n" +
+            "[{-libCP <JAR file/Folder containing library class files>}*] (generally required to get precise/correct type information)\n" +
+            "[-libJDK] (the JDK is added to the project as a library)\n" +
+            "[-class <class file name>] (filters the set of classes)\n" +
+            "[-method <method name/signature using Java notation; e.g., \"int hashCode()\">] (filters the set of methods)\n" +
+            "[-domain <class name of the domain>]\n" +
             "Example:\n\tjava …TACTemplate -cp /Library/jre/lib/rt.jar -class java.util.ArrayList -method toString"
     }
 
@@ -93,12 +95,13 @@ object TACTemplate {
         //
         //      Given that we may use a context-sensitive domain (e.g., ...domain.l2.DefaultDomain),
         //      we also completely load the library code and not just the public API.
-        implicit val logContext = new StandardLogContext()
+        implicit val logContext: LogContext = new StandardLogContext()
         OPALLogger.register(logContext, OPALLogger.globalLogger())
         val reader = Project.JavaClassFileReader(logContext)
         val p = Project(
             reader.AllClassFiles(cp.map(new File(_))),
-            reader.AllClassFiles(libcp.map(new File(_))), libraryClassFilesAreInterfacesOnly = false
+            reader.AllClassFiles(libcp.map(new File(_))),
+            libraryClassFilesAreInterfacesOnly = false
         )
         // 4.
         // Finish the configuration of the (underlying data-flow) analyses that will be used.
@@ -123,9 +126,19 @@ object TACTemplate {
             if m.body.isDefined
             if methodSignature.isEmpty || m.signature.toJava.contains(methodSignature.get)
             c = tac(m)
-            VirtualFunctionCallStatement(VirtualFunctionCall(pc, declaringClass: ObjectType, _, name, descriptor, receiver, _)) <- c.stmts
+            VirtualFunctionCallStatement(VirtualFunctionCall(
+                pc,
+                declaringClass: ObjectType,
+                _,
+                name,
+                descriptor,
+                receiver,
+                _
+            )) <- c.stmts
         } {
-            println(m.toJava(s"$pc: virtual function call of $receiver.${descriptor.toJava(declaringClass.toJava, name)}"))
+            println(
+                m.toJava(s"$pc: virtual function call of $receiver.${descriptor.toJava(declaringClass.toJava, name)}")
+            )
         }
 
         println("Done.")

@@ -38,7 +38,7 @@ class BIPUSH private (val value: Int) extends LoadConstantInstruction[Int] {
 
     override def hashCode = value
 
-    override def toString = "BIPUSH("+value+")"
+    override def toString = "BIPUSH(" + value + ")"
 }
 
 object BIPUSH extends InstructionMetaInformation {

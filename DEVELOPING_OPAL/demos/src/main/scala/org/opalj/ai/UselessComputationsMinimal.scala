@@ -4,13 +4,12 @@ package ai
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-
 import scala.jdk.CollectionConverters._
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.instructions.IFICMPInstruction
 
 /**
@@ -53,9 +52,9 @@ object UselessComputationsMinimal extends ProjectAnalysisApplication {
             import result.domain.ConcreteIntegerValue
             collectPCWithOperands(result.domain)(method.body.get, result.operandsArray) {
                 case (
-                    pc,
-                    _: IFICMPInstruction[_],
-                    Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
+                        pc,
+                        _: IFICMPInstruction[_],
+                        Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                     ) =>
                     val context = method.toJava
                     val result = s"$context: /*pc=$pc:*/ comparison of constant values: $a and $b"

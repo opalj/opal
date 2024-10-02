@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 /**
  * Thrown if a context object is requested, but could not be found.
@@ -13,8 +14,6 @@ package org.opalj.fpcf
  * @author Michael Eichberg
  */
 case class ContextNotAvailableException(
-        context:         AnyRef,
-        completeContext: Map[Class[_], AnyRef]
-) extends RuntimeException(
-    completeContext.keys.mkString(s"unknown context $context; available: ", ", ", "")
-)
+    context:         AnyRef,
+    completeContext: Map[Class[_], AnyRef]
+) extends RuntimeException(completeContext.keys.mkString(s"unknown context $context; available: ", ", ", ""))

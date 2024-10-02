@@ -11,4 +11,3 @@ package ai
 trait CorrelationalDomainSupport
     extends JoinStabilization
     with IdentityBasedCorrelationChangeDetection
-

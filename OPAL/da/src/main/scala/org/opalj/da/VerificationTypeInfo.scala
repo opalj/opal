@@ -39,7 +39,7 @@ object VerificationTypeInfo {
 
 case object TopVariableInfo extends VerificationTypeInfo {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     def tag: Int = VerificationTypeInfo.ITEM_Top
 
@@ -50,7 +50,7 @@ case object TopVariableInfo extends VerificationTypeInfo {
 
 case object IntegerVariableInfo extends VerificationTypeInfo {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     def tag: Int = VerificationTypeInfo.ITEM_Integer
 
@@ -60,7 +60,7 @@ case object IntegerVariableInfo extends VerificationTypeInfo {
 
 case object FloatVariableInfo extends VerificationTypeInfo {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     def tag: Int = VerificationTypeInfo.ITEM_Float
 
@@ -70,7 +70,7 @@ case object FloatVariableInfo extends VerificationTypeInfo {
 
 case object LongVariableInfo extends VerificationTypeInfo {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     def tag: Int = VerificationTypeInfo.ITEM_Long
 
@@ -80,7 +80,7 @@ case object LongVariableInfo extends VerificationTypeInfo {
 
 case object DoubleVariableInfo extends VerificationTypeInfo {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     def tag: Int = VerificationTypeInfo.ITEM_Double
 
@@ -90,7 +90,7 @@ case object DoubleVariableInfo extends VerificationTypeInfo {
 
 case object NullVariableInfo extends VerificationTypeInfo {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     def tag: Int = VerificationTypeInfo.ITEM_Null
 
@@ -100,7 +100,7 @@ case object NullVariableInfo extends VerificationTypeInfo {
 
 case object UninitializedThisVariableInfo extends VerificationTypeInfo {
 
-    final override def attribute_length: Int = 1
+    override final def attribute_length: Int = 1
 
     def tag: Int = VerificationTypeInfo.ITEM_UninitializedThis
 
@@ -111,7 +111,7 @@ case object UninitializedThisVariableInfo extends VerificationTypeInfo {
 
 case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
     def tag: Int = VerificationTypeInfo.ITEM_Object
 
@@ -123,11 +123,11 @@ case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
 
 case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeInfo {
 
-    final override def attribute_length: Int = 1 + 2
+    override final def attribute_length: Int = 1 + 2
 
     def tag: Int = VerificationTypeInfo.ITEM_Unitialized
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="verification_type">&lt;Uninitialized({ offset })&gt;</span>
+        <span class="verification_type">&lt;Uninitialized({offset})&gt;</span>
     }
 }

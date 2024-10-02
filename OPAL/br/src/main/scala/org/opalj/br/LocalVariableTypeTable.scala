@@ -21,7 +21,7 @@ case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extend
     def similar(other: LocalVariableTypeTable): Boolean = {
         // the order of two local variable type tables does not need to be identical
         this.localVariableTypes.size == other.localVariableTypes.size &&
-            this.localVariableTypes.forall(other.localVariableTypes.contains)
+        this.localVariableTypes.forall(other.localVariableTypes.contains)
     }
 
     override def remapPCs(codeSize: Int, f: PC => PC): CodeAttribute = {
@@ -30,6 +30,7 @@ case class LocalVariableTypeTable(localVariableTypes: LocalVariableTypes) extend
         )
     }
 }
+
 object LocalVariableTypeTable {
 
     final val KindId = 21
@@ -37,11 +38,11 @@ object LocalVariableTypeTable {
 }
 
 case class LocalVariableType(
-        startPC:   PC,
-        length:    Int,
-        name:      String,
-        signature: FieldTypeSignature,
-        index:     Int
+    startPC:   PC,
+    length:    Int,
+    name:      String,
+    signature: FieldTypeSignature,
+    index:     Int
 ) {
     def remapPCs(codeSize: Int, f: PC => PC): Option[LocalVariableType] = {
         val newStartPC = f(startPC)

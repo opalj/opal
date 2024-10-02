@@ -12,18 +12,18 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.time.Instant
-
 import scala.collection.mutable
 
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.DefinedMethod
-import org.opalj.br.ReferenceType
-import org.opalj.tac.fpcf.properties.cg.Callees
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
 
 /**
@@ -60,6 +60,7 @@ private[xta] class TypePropagationTrace {
 
     private def simplifiedName(e: Any): String = e match {
         case defM: DefinedMethod => s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
+        case m: Method           => s"${simplifiedName(m.classFile.thisType)}.${m.name}(...)"
         case rt: ReferenceType   => rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
         case _                   => e.toString
     }
@@ -79,7 +80,9 @@ private[xta] class TypePropagationTrace {
                 calleesEOptP.ub.callSites(typeIterator.newContext(method)).flatMap(_._2)
             else Iterator.empty
         }
-        traceMsg(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")
+        traceMsg(
+            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
+        )
         _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
     }
 
@@ -90,8 +93,22 @@ private[xta] class TypePropagationTrace {
     }
 
     @elidable(elidable.ASSERTION)
+    def traceReadAccessUpdate(receiver: Method): Unit = {
+        traceMsg(s"read access property update: ${simplifiedName(receiver)}")
+        _trace.events += TypePropagationTrace.ReadAccessUpdate(receiver)
+    }
+
+    @elidable(elidable.ASSERTION)
+    def traceWriteAccessUpdate(receiver: Method): Unit = {
+        traceMsg(s"write access property update: ${simplifiedName(receiver)}")
+        _trace.events += TypePropagationTrace.WriteAccessUpdate(receiver)
+    }
+
+    @elidable(elidable.ASSERTION)
     def traceTypeUpdate(receiver: DeclaredMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
-        traceMsg(s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}")
+        traceMsg(
+            s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}"
+        )
         _trace.events += TypePropagationTrace.TypeSetUpdate(receiver, source, types)
     }
 
@@ -108,10 +125,13 @@ object TypePropagationTrace {
     trait Event {
         val typePropagations: mutable.ArrayBuffer[TypePropagation] = new mutable.ArrayBuffer[TypePropagation]()
     }
-    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context]) extends Event
+    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context])
+        extends Event
     trait UpdateEvent extends Event
     case class TypeSetUpdate(receiver: Entity, source: Entity, sourceTypes: UIDSet[ReferenceType]) extends UpdateEvent
     case class CalleesUpdate(receiver: Entity) extends UpdateEvent
+    case class ReadAccessUpdate(receiver: Entity) extends UpdateEvent
+    case class WriteAccessUpdate(receiver: Entity) extends UpdateEvent
 
     // Global variable holding the type propagation trace of the last executed XTA analysis.
     var LastTrace: Trace = _

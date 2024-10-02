@@ -4,24 +4,24 @@ package ai
 package domain
 package l1
 
-import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-
 import scala.Iterable
 import scala.collection.immutable.SortedSet
 
-import org.opalj.br.ArrayType
-import org.opalj.br.IntegerType
-import org.opalj.br.ObjectType
+import org.junit.runner.RunWith
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.ai.NoUpdate
-import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
 import org.opalj.ai.domain.DefaultHandlingOfMethodResults
+import org.opalj.ai.domain.DefaultSpecialDomainValuesBinding
 import org.opalj.ai.domain.IgnoreSynchronization
 import org.opalj.ai.domain.PredefinedClassHierarchy
 import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
+import org.opalj.br.ArrayType
+import org.opalj.br.IntegerType
+import org.opalj.br.ObjectType
 
 /**
  * Tests the IntegerSets Domain.
@@ -36,7 +36,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
     final val SomePC = 100000
 
     class IntegerSetsTestDomain(
-            override val maxCardinalityOfIntegerSets: Int = 126 // <= MAX SUPPORTED VALUE
+        override val maxCardinalityOfIntegerSets: Int = 126 // <= MAX SUPPORTED VALUE
     ) extends CorrelationalDomain
         with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration
@@ -393,8 +393,18 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val v1 = IntegerSet(SortedSet[Int](Int.MinValue, Int.MaxValue))
                 val v2 = IntegerSet(SortedSet[Int](8, 19))
 
-                ixor(-1, v1, v2) should be(IntegerSet(SortedSet[Int](Int.MinValue + 8, Int.MinValue + 19, Int.MaxValue - 19, Int.MaxValue - 8)))
-                ixor(-1, v2, v1) should be(IntegerSet(SortedSet[Int](Int.MinValue + 8, Int.MinValue + 19, Int.MaxValue - 19, Int.MaxValue - 8)))
+                ixor(-1, v1, v2) should be(IntegerSet(SortedSet[Int](
+                    Int.MinValue + 8,
+                    Int.MinValue + 19,
+                    Int.MaxValue - 19,
+                    Int.MaxValue - 8
+                )))
+                ixor(-1, v2, v1) should be(IntegerSet(SortedSet[Int](
+                    Int.MinValue + 8,
+                    Int.MinValue + 19,
+                    Int.MaxValue - 19,
+                    Int.MaxValue - 8
+                )))
             }
 
             it("{Int.MaxValue-2,Int.MaxValue-1} ^ {Int.MaxValue-1,Int.MaxValue} => {0,1,2,3}") {
@@ -1257,7 +1267,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
 
         describe("using IntegerSetValues") {
 
-            val aiProject = org.opalj.br.TestSupport.biProject("ai.jar")
+            val aiProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
             val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
 
             describe("without constraint tracking between values") {
@@ -1265,9 +1275,10 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 it("it should be able to collect a switch statement's cases and use that information to calculate a result") {
                     val domain = new IntegerSetsTestDomain
                     val method = IntegerValues.findMethod("someSwitch").head
-                    /*val result =*/ BaseAI(method, domain)
+                    /*val result =*/
+                    BaseAI(method, domain)
                     if (domain.allReturnedValues.size != 1)
-                        fail("expected one result; found: "+domain.allReturnedValues)
+                        fail("expected one result; found: " + domain.allReturnedValues)
 
                     domain.allReturnedValues.head._2 should be(domain.IntegerSet(SortedSet[Int](0, 2, 4, 8)))
                 }
@@ -1277,7 +1288,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     val method = IntegerValues.findMethod("array10").head
                     val result = BaseAI(method, domain)
                     if (domain.allReturnedValues.size != 1)
-                        fail("expected one result; found: "+domain.allReturnedValues)
+                        fail("expected one result; found: " + domain.allReturnedValues)
 
                     // we don't know the size of the array
                     domain.allReturnedValues.head._2 abstractsOver (
@@ -1301,7 +1312,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                     result.operandsArray(62) should be(null)
                     result.operandsArray(65) should be(null)
                     result.operandsArray(68) should be(null)
-                    //...
+                    // ...
                     result.operandsArray(89) should be(null)
 
                 }

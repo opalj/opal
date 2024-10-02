@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection.immutable
+package org.opalj
+package collection
+package immutable
 
 /**
  * An immutable pair of int values.
@@ -24,4 +26,3 @@ final case class IntIntPair(_1: Int, _2: Int) {
         new IntIntPair(_1, _2 + increment)
     }
 }
-

@@ -2,12 +2,12 @@
 package org.opalj
 package control
 
+import scala.collection.immutable.ArraySeq
+
 import org.junit.runner.RunWith
-import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-
-import scala.collection.immutable.ArraySeq
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the implemented control abstractions.
@@ -28,14 +28,14 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
         foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; new Array(0)
         } {
-            (i, e) => /*nothing*/ ;
+            (i, e) => /*nothing*/
         }
 
         initialized = false
         foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; Array("a", "b", "c", null, null, "d")
         } {
-            (i, e) => /*nothing*/ ;
+            (i, e) => /*nothing*/
         }
     }
 

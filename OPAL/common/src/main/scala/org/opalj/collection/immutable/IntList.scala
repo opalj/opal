@@ -36,7 +36,10 @@ sealed trait IntList extends Serializable { self =>
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     def +:(v: Int): IntList
 
-    final override def equals(other: Any): Boolean = {
+    /** Prepends the given values from the other list to this list. */
+    def ++:(other: IntList): IntList
+
+    override final def equals(other: Any): Boolean = {
         other match {
             case l: IntList => equals(l)
             case _          => false
@@ -77,6 +80,8 @@ case object EmptyIntList extends IntList {
     /** Prepends the given value to this list. E.g., `l = 2 +: l`. */
     override def +:(v: Int): IntList = new IntListNode(v, this)
 
+    override def ++:(other: IntList): IntList = other
+
     override def equals(that: IntList): Boolean = that eq this
     override def hashCode(): Int = 31
 }
@@ -87,8 +92,8 @@ case object EmptyIntList extends IntList {
  * @author Michael Eichberg
  */
 final case class IntListNode(
-        head:                        Int,
-        private[immutable] var rest: IntList = EmptyIntList
+    head:                        Int,
+    private[immutable] var rest: IntList = EmptyIntList
 ) extends IntList { list =>
 
     override def tail: IntList = rest
@@ -105,7 +110,7 @@ final case class IntListNode(
     }
 
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {
-        if (n == 0) return ;
+        if (n == 0) return;
 
         var i = 0
         var list: IntList = this
@@ -130,6 +135,8 @@ final case class IntListNode(
 
     override def +:(v: Int): IntList = new IntListNode(v, this)
 
+    override def ++:(other: IntList): IntList = other.iterator.foldLeft(this)((list, value) => IntListNode(value, list))
+
     override def equals(that: IntList): Boolean = {
         (that eq this) || {
             var thisList: IntList = this
@@ -140,7 +147,7 @@ final case class IntListNode(
                 thisList = thisList.tail
                 thatList = thatList.tail
             }
-            thisList eq thatList //... <=> true iff both lists are empty
+            thisList eq thatList // ... <=> true iff both lists are empty
         }
     }
 

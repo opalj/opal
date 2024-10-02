@@ -5,8 +5,9 @@ package domain
 package l1
 
 import scala.reflect.ClassTag
-import org.opalj.value.IsClassValue
-import org.opalj.value.TheClassValue
+
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.BooleanType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.ByteType
@@ -23,8 +24,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.Type
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.value.IsClassValue
+import org.opalj.value.TheClassValue
 
 /**
  * Enables the tracking of concrete `Class` values.
@@ -146,7 +147,8 @@ trait ClassValues
             val elementType = classValue.asArrayType.elementType
             if (elementType.isBaseType ||
                 classHierarchy.isKnown(elementType.asObjectType) ||
-                !throwClassNotFoundException) {
+                !throwClassNotFoundException
+            ) {
                 ComputedValue(ClassValue(pc, classValue))
             } else {
                 ComputedValueOrException(
@@ -169,9 +171,10 @@ trait ClassValues
         import org.opalj.ai.domain.l1.ClassValues._
 
         if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
-            //TODO handle missing methods (cf. https://github.com/opalj/opal/issues/87)
-            operands.last match {
-                case sv: StringValue =>
+
+            operands match {
+                case _ :+ (sv: StringValue) =>
+                    // Handle forName calls where the first argument is the class FQN
                     val value = sv.value
                     methodDescriptor match {
                         case `forName_String`                           => simpleClassForNameCall(pc, value)
@@ -183,11 +186,24 @@ trait ClassValues
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
+                case _ :+ (sv: StringValue) :+ _ =>
+                    // Handle forName calls where the second argument is the class FQN
+
+                    // IMPROVE: If there was tracking for Module values in place, we could validate that the FQN is
+                    //          actually part of the given module. For now, this is a safe over-approximation.
+                    val value = sv.value
+                    methodDescriptor match {
+                        case `forName_Module_String`       => simpleClassForNameCall(pc, value)
+                        case `forName_Module_String_Class` => simpleClassForNameCall(pc, value)
+                        case _ =>
+                            throw new DomainException(
+                                s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
+                            )
+                    }
 
                 case _ =>
-                    // call default handler (the first argument is not a string)
+                    // call default handler (the first and second argument are not a string)
                     super.invokestatic(pc, declaringClass, isInterface, name, methodDescriptor, operands)
-
             }
         } else {
             // call default handler
@@ -212,7 +228,7 @@ trait ClassValues
                 case ObjectType.Float     => ComputedValue(ClassValue(pc, FloatType))
                 case ObjectType.Double    => ComputedValue(ClassValue(pc, DoubleType))
 
-                case _                    => super.getstatic(pc, declaringClass, name, fieldType)
+                case _ => super.getstatic(pc, declaringClass, name, fieldType)
             }
         } else {
             super.getstatic(pc, declaringClass, name, fieldType)
@@ -227,7 +243,15 @@ trait ClassValues
     ): Computation[DomainValue, Nothing] = {
 
         bootstrapMethod match {
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, "primitiveClass", ConstantBootstrapsPrimitiveClassDescriptor), ArraySeq()) =>
+            case BootstrapMethod(
+                    InvokeStaticMethodHandle(
+                        ObjectType.ConstantBootstraps,
+                        false,
+                        "primitiveClass",
+                        ConstantBootstrapsPrimitiveClassDescriptor
+                    ),
+                    ArraySeq()
+                ) =>
                 ComputedValue(ClassValue(pc, FieldType(name)))
             case _ =>
                 super.loadDynamic(pc, bootstrapMethod, name, descriptor)
@@ -265,6 +289,20 @@ private object ClassValues {
     final val forName_String_boolean_ClassLoader_Class = {
         MethodDescriptor(
             ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader"), ObjectType.Class),
+            ObjectType.Class
+        )
+    }
+
+    final val forName_Module_String = {
+        MethodDescriptor(
+            ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
+            ObjectType.Class
+        )
+    }
+
+    final val forName_Module_String_Class = {
+        MethodDescriptor(
+            ArraySeq(ObjectType("java/lang/Module"), ObjectType.String, ObjectType.Class),
             ObjectType.Class
         )
     }

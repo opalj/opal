@@ -4,6 +4,8 @@ package fpcf
 package properties
 package callgraph
 
+import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ArrayValue
 import org.opalj.br.ClassValue
@@ -16,12 +18,10 @@ import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.analyses.cg.TypeIterator
-import org.opalj.tac.fpcf.properties.cg.Callees
-
-import scala.collection.immutable.ArraySeq
+import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
 
 class DirectCallMatcher extends AbstractPropertyMatcher {
 
@@ -84,7 +84,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
             return None;
 
         implicit val ps: PropertyStore = p.get(PropertyStoreKey)
-        implicit val typeIterator: TypeIterator = p.get(TypeIteratorKey)
+        implicit val contextProvider: ContextProvider = p.get(ContextProviderKey)
 
         val calleesP = {
             properties.find(_.isInstanceOf[Callees]) match {

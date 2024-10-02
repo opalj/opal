@@ -4,27 +4,28 @@ package hermes
 package queries
 
 import scala.annotation.tailrec
+
 import scala.collection.mutable
 
 import com.typesafe.config.Config
 
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
-import org.opalj.log.LogContext
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.da.ClassFile
 import org.opalj.da.CONSTANT_Class_info
 import org.opalj.da.CONSTANT_Fieldref_info
 import org.opalj.da.CONSTANT_InterfaceMethodref_info
 import org.opalj.da.CONSTANT_MethodHandle_info
 import org.opalj.da.CONSTANT_Methodref_info
-import org.opalj.da.Constant_Pool
 import org.opalj.da.CONSTANT_NameAndType_info
-import org.opalj.da.CONSTANT_Utf8_info
-import org.opalj.da.ClassFile
+import org.opalj.da.Constant_Pool
 import org.opalj.da.Constant_Pool_Entry
+import org.opalj.da.CONSTANT_Utf8_info
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  *  This metric computes the Fan-In and Fan-Out of a class.
@@ -41,10 +42,10 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
     ///// ###############################################################
 
     case class FeatureConfiguration(
-            featureName:   String,
-            numCategories: Int,
-            categorySize:  Double,
-            offset:        Int
+        featureName:   String,
+        numCategories: Int,
+        categorySize:  Double,
+        offset:        Int
     ) {
 
         private[this] lazy val _maxFeatureIndex = numCategories - 1
@@ -72,7 +73,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             categorySizeDefault: Double,
             offset:              Int
         ): FeatureConfiguration = {
-            implicit val config = hermes.Config.getConfig(FanInFanOutConfigPrefix)
+            implicit val config: Config = hermes.Config.getConfig(FanInFanOutConfigPrefix)
             val numCategories = parseNumCategories(categoriesKey).getOrElse(categoriesDefault)
             val categorySize = parseCategorySize(categorySizeKey).getOrElse(categorySizeDefault)
 
@@ -82,15 +83,14 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         private[this] def parseNumCategories(
             categoriesKey: String
         )(
-            implicit
-            config: Config
+            implicit config: Config
         ): Option[Int] = {
             val numCategories = config.getInt(categoriesKey)
             if (numCategories > 0)
                 Some(numCategories)
             else {
                 val message =
-                    FanInFanOutConfigPrefix + categoriesKey+
+                    FanInFanOutConfigPrefix + categoriesKey +
                         " setting invalid - value <= 0; category size has been set to default"
                 OPALLogger.warn(logCategory, message)
                 None
@@ -100,15 +100,14 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         private[this] def parseCategorySize(
             categorySizeKey: String
         )(
-            implicit
-            config: Config
+            implicit config: Config
         ): Option[Double] = {
             val categorySize = config.getDouble(categorySizeKey)
             if (categorySize > 0) {
                 Some(categorySize)
             } else {
                 val message =
-                    FanInFanOutConfigPrefix + categorySizeKey+
+                    FanInFanOutConfigPrefix + categorySizeKey +
                         " setting invalid - value <= 0; category size has been set to default"
                 OPALLogger.warn(logCategory, message)
                 None
@@ -213,7 +212,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             objectTypeId = ObjectType(classFileType).id
             location = ClassFileLocation(Some(source), classFileType)
         } {
-            implicit val constantPool = classFile.constant_pool
+            implicit val constantPool: Constant_Pool = classFile.constant_pool
             val cpEntryPredicate: PartialFunction[Constant_Pool_Entry, Constant_Pool_Entry] = {
                 case CONSTANT_Fieldref_info(_, name_and_type_index) => constantPool(name_and_type_index)
                 case CONSTANT_NameAndType_info(_, descriptor_index) => constantPool(descriptor_index)
@@ -232,7 +231,8 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
                     referencedTypes ++= md.parameterTypes.foldLeft(Set.empty[Int])((res, p) =>
                         if (p.isObjectType)
                             res + p.asObjectType.id
-                        else res)
+                        else res
+                    )
                     if (md.returnType.isObjectType)
                         referencedTypes += md.returnType.asObjectType.id
                 } else {
@@ -299,4 +299,3 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         }
     }
 }
-

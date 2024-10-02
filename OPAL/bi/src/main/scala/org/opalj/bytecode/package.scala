@@ -2,9 +2,8 @@
 package org.opalj
 
 import java.io.File
-
-import scala.io.Source
 import scala.collection.immutable.BitSet
+import scala.io.Source
 
 import org.opalj.io.process
 
@@ -52,7 +51,8 @@ package object bytecode {
 
         val rootPkg = fqnA.substring(0, pkgSeparatorIndex)
         if (pkgSeparatorIndex == fqnB.indexOf(pkgSeparatorChar) + 1 &&
-            rootPkg == fqnB.substring(0, pkgSeparatorIndex)) {
+            rootPkg == fqnB.substring(0, pkgSeparatorIndex)
+        ) {
             val commonPkg = commonPackage(
                 fqnA.substring(pkgSeparatorIndex, fqnA.length()),
                 fqnB.substring(pkgSeparatorIndex, fqnB.length())
@@ -90,7 +90,7 @@ package object bytecode {
     def abbreviateType(
         definingTypeFQN:  String,
         memberTypeFQN:    String,
-        pkgSeparatorChar: Int    = '.'
+        pkgSeparatorChar: Int = '.'
     ): String = {
 
         commonPackage(definingTypeFQN, memberTypeFQN) match {
@@ -134,7 +134,7 @@ package object bytecode {
                     }
             }
         } else {
-            val javaJMods = System.getProperty("java.home")+"/jmods"
+            val javaJMods = System.getProperty("java.home") + "/jmods"
             val directory = new File(javaJMods)
             if (!directory.exists())
                 throw new RuntimeException("cannot locate the JRE libraries")
@@ -168,7 +168,7 @@ package object bytecode {
                     }
             }
         } else {
-            val javaBaseJMod = System.getProperty("java.home")+"/jmods/java.base.jmod" // ~ rt.jar
+            val javaBaseJMod = System.getProperty("java.home") + "/jmods/java.base.jmod" // ~ rt.jar
             val file = new File(javaBaseJMod)
             if (!file.exists())
                 throw new RuntimeException("cannot locate the JRE libraries")
