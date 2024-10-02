@@ -137,29 +137,20 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             else
                 EffectivelyNonAssignable
 
-        if (field.isPublic && !field.isFinal)
-            return Result(field, Assignable);
-
         val thisType = field.classFile.thisType
-
-        if (field.isPublic && !field.isFinal) {
-            if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
-                return Result(field, Assignable);
-            }
-        } else if (field.isProtected && !field.isFinal) {
-            if (typeExtensibility(thisType).isYesOrUnknown) {
-                return Result(field, Assignable);
-            }
-            if (!closedPackages(thisType.packageName)) {
+        if(!field.isFinal) {
+        if (field.isPublic) {
+            return Result(field, Assignable)
+        } else if (field.isProtected) {
+            if (typeExtensibility(thisType).isYesOrUnknown || !closedPackages(thisType.packageName)) {
                 return Result(field, Assignable);
             }
         }
 
-        if (field.isPackagePrivate && !field.isFinal) {
-            if (!closedPackages(thisType.packageName)) {
+        if (field.isPackagePrivate && !closedPackages(thisType.packageName)) {
                 return Result(field, Assignable);
-            }
         }
+    }
 
         val fwaiEP = propertyStore(declaredFields(field), FieldWriteAccessInformation.key)
 
