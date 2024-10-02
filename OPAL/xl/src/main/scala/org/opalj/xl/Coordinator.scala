@@ -5,6 +5,8 @@ package xl
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
+import org.opalj.xl.logger.PointsToInteractionLogger
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
@@ -46,7 +48,6 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAn
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedLibraryPointsToAnalysisScheduler
 import org.opalj.value.ValueInformation
 import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
-import org.opalj.xl.logger.PointsToInteractionLogger
 import org.opalj.xl.utility.AnalysisResult
 import org.opalj.xl.utility.InterimAnalysisResult
 
@@ -234,7 +235,7 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
                | Native to Java field reads
                |
                | reachable Methods $recheableMethods
-               | The analysis took $seconds seconds
+               |
                |""".stripMargin)
     }
 }
