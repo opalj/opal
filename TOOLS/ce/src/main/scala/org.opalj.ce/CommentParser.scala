@@ -144,16 +144,16 @@ class CommentParser() {
             // Case: line starts with a double quoted string
             line = line.trim.stripPrefix("\"").trim
             // A '\' can escape a quote. Thus we need to exclude that from the terminating Index
-            val terminatingIndices = line.zipWithIndex.collect {
-                case (char, index) if char == '\"' => index
-            }
             var terminatingIndex = line.length
-            breakable{for(i <- 0 until terminatingIndices.length -1){
-                if((terminatingIndices(i) == 0 || line(terminatingIndices(i)-1) != '\\') && terminatingIndex == line.length){
-                    terminatingIndex = terminatingIndices(i)
+            var i = 0
+            breakable(while (i < line.length) {
+                if (line(i) == '\"' && (i == 0 || line(i - 1) != '\\')) {
+                    terminatingIndex = i
+                    // Sobald wir das erste gültige Anführungszeichen finden, beenden wir die Schleife
                     break()
                 }
-            }}
+                i += 1
+            })
 
             value = line.substring(0,terminatingIndex).trim
             line = line.stripPrefix(value).trim.stripPrefix("\"")
