@@ -78,9 +78,26 @@ class Comment {
     }
 
     /**
-     * Checks if the comment is empty
-     * @return returns true if the comment is empty
-     * @return returns true if the comment is empty but the label property (the label property is set automatically for config files.)
+     * Merges another committed comment into this comment.
+     * @param comment accepts the comment that should be merged into this comment.
+     */
+    def mergeComment(comment : Comment) : Unit = {
+        // Make sure every comment is committed
+        this.commitComments()
+        comment.commitComments()
+
+        // Merge comments
+        this.label = comment.label + "." + this.label
+        this.description += comment.description
+        this.brief = comment.brief + "   " + this.brief
+        this.brief = this.brief.trim
+        this.constraints += comment.constraints
+    }
+
+    /**
+     * Checks if the comment is empty.
+     * @return returns true if the comment is empty.
+     * @return returns true if the comment is empty but the label property (the label property is set automatically for config files.).
      */
     def isEmpty(): Boolean = {
         if(commentBuffer.length <= 0) return true

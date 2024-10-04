@@ -92,6 +92,9 @@ case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comme
                     val (childkey,childvalue) = value_object.entries.head
                     val newkey = key + "." + childkey
 
+                    // Merge comments
+                    childvalue.comment.mergeComment(value_object.comment)
+
                     // Add new object
                     this.entries += (newkey -> childvalue)
 
