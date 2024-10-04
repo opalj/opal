@@ -47,14 +47,22 @@ class FileLocator(var config: Config)  {
      * Finds all files that are named after one of the configuration filenames and are NOT within the target folder structure
      * @return returns a List of full FilePaths to all found config files
      */
-    def SearchFiles : mutable.Buffer[Path] = {
+    def getConfigurationPaths : mutable.Buffer[Path] = {
         val projectNames = this.getConfigurationFilenames
+        return this.SearchFiles(projectNames)
+    }
+
+    /**
+     * Finds all files that match the filename within the
+     * @return returns a List of full FilePaths to all found files
+     */
+    def SearchFiles(Filenames : mutable.Buffer[String]) : mutable.Buffer[Path] = {
         val projectRoot = Paths.get(this.getProjectRoot)
         val foundFiles = ListBuffer[Path]()
 
         Files.walkFileTree(projectRoot, new java.nio.file.SimpleFileVisitor[Path]() {
             override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {
-                if (projectNames.contains(file.getFileName.toString) && (file.toAbsolutePath.toString.contains("target\\scala-2.13") == false) && (file.toAbsolutePath.toString.contains("target/scala-2.13") == false)) {
+                if (Filenames.contains(file.getFileName.toString) && (file.toAbsolutePath.toString.contains("target\\scala-2.13") == false) && (file.toAbsolutePath.toString.contains("target/scala-2.13") == false)) {
                     foundFiles += file
                     println(s"Found file: ${file.toString}")
                 }

@@ -6,6 +6,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import java.io.File
 import java.nio.file.Paths
+// import org.opalj.br.analyses.Project
 
 /*
 *   Standalone configuration explorer
@@ -20,16 +21,19 @@ object ce {
         val conf = this.LoadConfig()
 
         val locator = new FileLocator(conf)
-        val filepaths = locator.SearchFiles
+        val filepaths = locator.getConfigurationPaths
 
         // Bulk Imports all the configs
         val CPW = new CommentParserWrapper
         val configs = CPW.IterateConfigs(filepaths)
 
         val HE = new HTMLExporter(configs, Paths.get(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.template")))
-        // Join File Paths for export
 
+        // Join File Paths for export
         HE.exportHTML(new File(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.export")), conf.getString("org.opalj.ce.html.headline"),conf.getString("org.opalj.ce.html.content"))
+
+        //implicit val p = Project
+
     }
 
     /**
