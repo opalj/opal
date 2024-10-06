@@ -87,11 +87,13 @@ class Comment {
         comment.commitComments()
 
         // Merge comments
-        this.label = comment.label + "." + this.label
-        this.description += comment.description
+        if(this.label != "" || comment.label != "") {
+            this.label = comment.label + "." + this.label
+        }
         this.brief = comment.brief + "   " + this.brief
         this.brief = this.brief.trim
-        this.constraints += comment.constraints
+        this.description.addAll(comment.description)
+        this.constraints.addAll(comment.constraints)
     }
 
     /**
