@@ -58,6 +58,9 @@ class CommentParserWrapper {
      * @return returns the parsed config as a ConfigNode
      */
     def ParseComments(filepath: Path): ConfigObject = {
+        // This prevents the Parser from parsing a file without valid syntax
+        com.typesafe.config.ConfigFactory.load(filepath.toString)
+
         val CP = new CommentParser
         CP.parseComments(filepath)
     }
