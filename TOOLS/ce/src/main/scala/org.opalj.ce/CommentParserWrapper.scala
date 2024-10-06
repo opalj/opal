@@ -39,6 +39,8 @@ class CommentParserWrapper {
                     conf.merge(MergingConfigs(i))
                 }
             }
+            conf.comment.label = "reference.conf"
+            conf.comment.brief = "Aggregated standard configuration of merged reference.conf files"
             CommentedConfigs.addOne(conf)
         }
 
