@@ -90,7 +90,7 @@ case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comme
                 if(value_object.entries.size == 1){
                     // Merge Keys
                     val (childkey,childvalue) = value_object.entries.head
-                    val newkey = key + "." + childkey
+                    val newkey = key.trim + "." + childkey.trim
 
                     // Merge comments
                     childvalue.comment.mergeComment(value_object.comment)
@@ -125,12 +125,13 @@ case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comme
             val (key,value) = entry
             value.expand()
 
-            if(key.contains("\\.")) {
+            if(key.contains(".")) {
                 // Create expanded object
-                val newkey = key.split("\\.",2)
-                val new_entry = mutable.Map[String, ConfigNode](newkey(1) -> value)
+                val newkey = key.trim.split("\\.",2)
+                val new_entry = mutable.Map[String, ConfigNode](newkey(1).trim -> value)
                 val new_object = ConfigObject(new_entry, new Comment)
-                this.entries += (newkey(0) -> new_object)
+                new_object.expand()
+                this.entries += (newkey(0).trim -> new_object)
 
                 // Delete old entry from the map to avoid duplicates
                 this.entries -= key

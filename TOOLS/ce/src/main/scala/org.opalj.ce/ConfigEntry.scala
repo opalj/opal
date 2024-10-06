@@ -44,7 +44,7 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
      * @return true if both the value and the comment are empty
      */
     override def isEmpty(): Boolean = {
-        if(value.isEmpty() && comment.isEmpty()) return true
+        if(value.isEmpty && comment.isEmpty()) return true
         false
     }
 

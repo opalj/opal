@@ -15,20 +15,48 @@ class CommentParserWrapper {
      * @param filepaths accepts a list of full paths to the HOCON config files that shall be parsed
      * @return is a list of the parsed configuration files, paired with the path they originate from
      */
-    def IterateConfigs(filepaths: mutable.Buffer[Path]): ListBuffer[ConfigNode]  = {
-        val CommentedConfigs = new ListBuffer[ConfigNode]
+    def IterateConfigs(filepaths: mutable.Buffer[Path]): ListBuffer[ConfigObject]  = {
+        val CommentedConfigs = new ListBuffer[ConfigObject]
         for (filepath <- filepaths) {
             CommentedConfigs += this.ParseComments(filepath)
         }
+
+        // Merge all config files named "reference.conf"
+        val MergingConfigs = new ListBuffer[ConfigObject]
+        for (i <- CommentedConfigs.indices.reverse) {
+            val config = CommentedConfigs(i)
+            if (config.comment.label.endsWith("reference.conf")) {
+                MergingConfigs.addOne(config)
+                CommentedConfigs.remove(i)
+            } else {
+                CommentedConfigs(i).expand()
+                println("t")
+            }
+        }
+        if(MergingConfigs.size > 0) {
+            val conf = MergingConfigs(0)
+            for (i <- MergingConfigs.indices) {
+                if (i != 0) {
+                    conf.merge(MergingConfigs(i))
+                }
+            }
+            CommentedConfigs.addOne(conf)
+        }
+
+        for(config <- CommentedConfigs){
+            config.collapse()
+        }
+
         CommentedConfigs
     }
 
     /**
      * Handles the frame around parsing the configuration file
+     *
      * @param filepath accepts the full path to a valid HOCON config file
      * @return returns the parsed config as a ConfigNode
      */
-    def ParseComments(filepath: Path) : ConfigNode = {
+    def ParseComments(filepath: Path): ConfigObject = {
         val CP = new CommentParser
         CP.parseComments(filepath)
     }

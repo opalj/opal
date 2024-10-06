@@ -4,8 +4,10 @@ package ce
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
+
 import java.io.File
 import java.nio.file.Paths
+import scala.collection.mutable.ListBuffer
 // import org.opalj.br.analyses.Project
 
 /*
@@ -27,7 +29,7 @@ object ce {
         val CPW = new CommentParserWrapper
         val configs = CPW.IterateConfigs(filepaths)
 
-        val HE = new HTMLExporter(configs, Paths.get(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.template")))
+        val HE = new HTMLExporter(configs.asInstanceOf[ListBuffer[ConfigNode]], Paths.get(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.template")))
 
         // Join File Paths for export
         HE.exportHTML(new File(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.export")), conf.getString("org.opalj.ce.html.headline"),conf.getString("org.opalj.ce.html.content"))
