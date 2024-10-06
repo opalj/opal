@@ -62,7 +62,7 @@ class CommentParserWrapper {
         com.typesafe.config.ConfigFactory.load(filepath.toString)
 
         val CP = new CommentParser
-        CP.parseComments(filepath)
+        CP.parseFile(filepath)
     }
 
 }
