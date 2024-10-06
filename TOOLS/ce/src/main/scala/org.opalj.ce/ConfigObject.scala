@@ -73,7 +73,7 @@ case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comme
                     throw new Exception("Unable to merge incompatible types:" + value.getClass + " & " + conflicting_entry.getClass)
                 }
             } else {
-                println("No conflict detected. Inserting " + key)
+                println("No conflict detected. Inserting " + key.trim)
                 this.entries += kvpair
             }
         }
