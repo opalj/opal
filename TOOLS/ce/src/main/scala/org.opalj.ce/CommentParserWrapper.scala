@@ -30,7 +30,6 @@ class CommentParserWrapper {
                 CommentedConfigs.remove(i)
             } else {
                 CommentedConfigs(i).expand()
-                println("t")
             }
         }
         if(MergingConfigs.size > 0) {
