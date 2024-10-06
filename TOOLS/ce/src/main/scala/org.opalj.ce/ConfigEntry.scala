@@ -26,7 +26,7 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
         content += this.comment.toHTML()
 
         // If there is no brief preview, put the value into it
-        if(comment.isEmpty()){
+        if(comment.brief.isEmpty){
             brief = "<b>Value: </b><code>" + value.replace("<","&lt").replace(">","&gt") + "</code>"
         }
 
