@@ -54,14 +54,14 @@ $body
     document.querySelectorAll('.header').forEach(header => {
         header.addEventListener('click', () => {
             const content = header.nextElementSibling;
-            const bottomText = header.querySelector('.expandBox');
+            const expandBox = header.querySelector('.expandBox');
 
             if (content.style.display === 'none' || content.style.display === '') {
                 content.style.display = 'block';
-                bottomText.textContent = 'Hide';
+                expandBox.textContent = 'Hide';
             } else {
                 content.style.display = 'none';
-                bottomText.textContent = 'Show';
+                expandBox.textContent = 'Show';
             }
         });
     });
