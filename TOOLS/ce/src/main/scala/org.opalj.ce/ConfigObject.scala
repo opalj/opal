@@ -55,19 +55,25 @@ case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comme
      * @param insertingObject Is the object that is supposed to be merged into the executing one
      */
     def merge(insertingObject : ConfigObject): Unit = {
+
+        // Expanding both objects guarantees compatible key naming syntax
         this.expand()
         insertingObject.expand()
+
+        // Insert object
         for(kvpair <- insertingObject.entries){
             val (key,value) = kvpair
             if(this.entries.contains(key)){
-                val conflicting_entry = this.entries.getOrElse(key,null).asInstanceOf[ConfigObject]
+                val conflicting_entry = this.entries.getOrElse(key,null)
                 if(conflicting_entry.isInstanceOf[ConfigObject] && value.isInstanceOf[ConfigObject]){
-                    val conflicting_child_object = conflicting_entry
+                    val conflicting_child_object = conflicting_entry.asInstanceOf[ConfigObject]
                     conflicting_child_object.merge(value.asInstanceOf[ConfigObject])
                 } else {
+                    println("Info on incompatible keys: " + key.trim)
                     throw new Exception("Unable to merge incompatible types:" + value.getClass + " & " + conflicting_entry.getClass)
                 }
             } else {
+                println("No conflict detected. Inserting " + key)
                 this.entries += kvpair
             }
         }
