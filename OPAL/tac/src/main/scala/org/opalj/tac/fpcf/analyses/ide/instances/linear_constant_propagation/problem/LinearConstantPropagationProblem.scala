@@ -10,6 +10,7 @@ import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyStore
+import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.MeetLattice
@@ -503,4 +504,40 @@ class LinearConstantPropagationProblem(project: SomeProject)
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = identityEdgeFunction
+
+    override def hasPrecomputedFlowAndSummaryFunction(
+        callSite:     JavaStatement,
+        callSiteFact: LinearConstantPropagationFact,
+        callee:       Method
+    )(implicit propertyStore: PropertyStore): Boolean = {
+        if (callee.isNative) {
+            return true
+        }
+
+        super.hasPrecomputedFlowAndSummaryFunction(callSite, callSiteFact, callee)
+    }
+
+    override def getPrecomputedFlowFunction(callSite: JavaStatement, callee: Method, returnSite: JavaStatement)(
+        implicit propertyStore: PropertyStore
+    ): FlowFunction[LinearConstantPropagationFact] = {
+        if (callee.isNative) {
+            return emptyFlowFunction
+        }
+
+        super.getPrecomputedFlowFunction(callSite, callee, returnSite)
+    }
+
+    override def getPrecomputedSummaryFunction(
+        callSite:       JavaStatement,
+        callSiteFact:   LinearConstantPropagationFact,
+        callee:         Method,
+        returnSite:     JavaStatement,
+        returnSiteFact: LinearConstantPropagationFact
+    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = {
+        if (callee.isNative) {
+            return identityEdgeFunction
+        }
+
+        super.getPrecomputedSummaryFunction(callSite, callSiteFact, callee, returnSite, returnSiteFact)
+    }
 }
