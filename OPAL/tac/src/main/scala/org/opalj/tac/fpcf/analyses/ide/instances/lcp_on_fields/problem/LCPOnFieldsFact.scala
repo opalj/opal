@@ -25,6 +25,8 @@ trait AbstractEntityFact extends LCPOnFieldsFact {
      * Where the variable is defined (used to uniquely identify a variable/variable fact)
      */
     val definedAtIndex: Int
+
+    def toObjectOrArrayFact: AbstractEntityFact
 }
 
 /**
@@ -32,6 +34,8 @@ trait AbstractEntityFact extends LCPOnFieldsFact {
  */
 trait AbstractObjectFact extends AbstractEntityFact {
     def toObjectFact: ObjectFact = ObjectFact(name, definedAtIndex)
+
+    override def toObjectOrArrayFact: AbstractEntityFact = toObjectFact
 }
 
 /**
@@ -63,6 +67,8 @@ case class PutFieldFact(name: String, definedAtIndex: Int, fieldName: String) ex
  */
 trait AbstractArrayFact extends AbstractEntityFact {
     def toArrayFact: ArrayFact = ArrayFact(name, definedAtIndex)
+
+    override def toObjectOrArrayFact: AbstractEntityFact = toArrayFact
 }
 
 /**

@@ -94,10 +94,7 @@ class LCPOnFieldsProblem(project: SomeProject)
 
                     case (_, f: AbstractEntityFact) =>
                         /* Specialized facts only live for one step and are turned back into basic ones afterwards */
-                        immutable.Set(f match {
-                            case f: AbstractObjectFact => f.toObjectFact
-                            case f: AbstractArrayFact  => f.toArrayFact
-                        })
+                        immutable.Set(f.toObjectOrArrayFact)
 
                     case _ => immutable.Set(sourceFact)
                 }
@@ -224,10 +221,7 @@ class LCPOnFieldsProblem(project: SomeProject)
                         if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
                             immutable.Set.empty
                         } else {
-                            immutable.Set(f match {
-                                case f: AbstractObjectFact => f.toObjectFact
-                                case f: AbstractArrayFact  => f.toArrayFact
-                            })
+                            immutable.Set(f.toObjectOrArrayFact)
                         }
                 }
             }
@@ -397,10 +391,7 @@ class LCPOnFieldsProblem(project: SomeProject)
                     case f: AbstractEntityFact =>
                         /* Check whether fact corresponds to one of the parameters */
                         if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
-                            immutable.Set(f match {
-                                case f: AbstractObjectFact => f.toObjectFact
-                                case f: AbstractArrayFact  => f.toArrayFact
-                            })
+                            immutable.Set(f.toObjectOrArrayFact)
                         } else {
                             immutable.Set.empty
                         }
