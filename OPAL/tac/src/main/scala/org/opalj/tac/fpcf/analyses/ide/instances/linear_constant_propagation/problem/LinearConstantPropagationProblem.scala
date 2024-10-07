@@ -52,8 +52,8 @@ class LinearConstantPropagationProblem(project: SomeProject)
         source: JavaStatement,
         target: JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
-        (sourceFact: LinearConstantPropagationFact) =>
-            {
+        new FlowFunction[LinearConstantPropagationFact] {
+            override def compute(sourceFact: LinearConstantPropagationFact): collection.Set[LinearConstantPropagationFact] = {
                 source.stmt.astID match {
                     case Assignment.ASTID =>
                         val assignment = source.stmt.asAssignment
@@ -68,6 +68,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
                     case _ => immutable.Set(sourceFact)
                 }
             }
+        }
     }
 
     private def isExpressionGeneratedByFact(
@@ -217,8 +218,8 @@ class LinearConstantPropagationProblem(project: SomeProject)
         calleeEntry: JavaStatement,
         callee:      Method
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
-        (sourceFact: LinearConstantPropagationFact) =>
-            {
+        new FlowFunction[LinearConstantPropagationFact] {
+            override def compute(sourceFact: LinearConstantPropagationFact): collection.Set[LinearConstantPropagationFact] = {
                 /* Only propagate to callees that return integers */
                 if (!callee.returnType.isIntegerType) {
                     immutable.Set.empty
@@ -249,6 +250,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
                     }
                 }
             }
+        }
     }
 
     override def getReturnFlowFunction(
@@ -256,8 +258,8 @@ class LinearConstantPropagationProblem(project: SomeProject)
         callee:     Method,
         returnSite: JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
-        (sourceFact: LinearConstantPropagationFact) =>
-            {
+        new FlowFunction[LinearConstantPropagationFact] {
+            override def compute(sourceFact: LinearConstantPropagationFact): collection.Set[LinearConstantPropagationFact] = {
                 /* Only propagate to return site if callee returns an integer */
                 if (!callee.returnType.isIntegerType) {
                     immutable.Set.empty
@@ -286,6 +288,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
                     }
                 }
             }
+        }
     }
 
     override def getCallToReturnFlowFunction(

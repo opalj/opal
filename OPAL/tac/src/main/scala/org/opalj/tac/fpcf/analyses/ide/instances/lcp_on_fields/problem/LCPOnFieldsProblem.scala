@@ -46,8 +46,8 @@ class LCPOnFieldsProblem(project: SomeProject)
     override def getNormalFlowFunction(source: JavaStatement, target: JavaStatement)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[LCPOnFieldsFact] = {
-        (sourceFact: LCPOnFieldsFact) =>
-            {
+        new FlowFunction[LCPOnFieldsFact] {
+            override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
                 (source.stmt.astID, sourceFact) match {
                     case (Assignment.ASTID, NullFact) =>
                         val assignment = source.stmt.asAssignment
@@ -99,6 +99,7 @@ class LCPOnFieldsProblem(project: SomeProject)
                     case _ => immutable.Set(sourceFact)
                 }
             }
+        }
     }
 
     override def getCallFlowFunction(
@@ -106,8 +107,8 @@ class LCPOnFieldsProblem(project: SomeProject)
         calleeEntry: JavaStatement,
         callee:      Method
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
-        (sourceFact: LCPOnFieldsFact) =>
-            {
+        new FlowFunction[LCPOnFieldsFact] {
+            override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
                 sourceFact match {
                     case NullFact =>
                         /* Only propagate null fact if function returns an object or an array of integers */
@@ -143,6 +144,7 @@ class LCPOnFieldsProblem(project: SomeProject)
                             .toSet
                 }
             }
+        }
     }
 
     override def getReturnFlowFunction(
@@ -150,8 +152,8 @@ class LCPOnFieldsProblem(project: SomeProject)
         callee:     Method,
         returnSite: JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
-        (sourceFact: LCPOnFieldsFact) =>
-            {
+        new FlowFunction[LCPOnFieldsFact] {
+            override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
                 sourceFact match {
                     case NullFact =>
                         /* Always propagate null fact */
@@ -199,6 +201,7 @@ class LCPOnFieldsProblem(project: SomeProject)
                         }
                 }
             }
+        }
     }
 
     override def getCallToReturnFlowFunction(
@@ -206,8 +209,8 @@ class LCPOnFieldsProblem(project: SomeProject)
         callee:     Method,
         returnSite: JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
-        (sourceFact: LCPOnFieldsFact) =>
-            {
+        new FlowFunction[LCPOnFieldsFact] {
+            override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
                 val callStmt = returnSite.stmt.asCall()
 
                 sourceFact match {
@@ -225,6 +228,7 @@ class LCPOnFieldsProblem(project: SomeProject)
                         }
                 }
             }
+        }
     }
 
     override def getNormalEdgeFunction(
@@ -375,26 +379,28 @@ class LCPOnFieldsProblem(project: SomeProject)
         propertyStore: PropertyStore
     ): FlowFunction[LCPOnFieldsFact] = {
         if (callee.isNative) {
-            return (sourceFact: LCPOnFieldsFact) => {
-                val callStmt = callSite.stmt.asCall()
+            return new FlowFunction[LCPOnFieldsFact] {
+                override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
+                    val callStmt = callSite.stmt.asCall()
 
-                sourceFact match {
-                    case NullFact =>
-                        returnSite.stmt.astID match {
-                            case Assignment.ASTID =>
-                                val assignment = returnSite.stmt.asAssignment
-                                immutable.Set(NewObjectFact(assignment.targetVar.name, returnSite.pc))
+                    sourceFact match {
+                        case NullFact =>
+                            returnSite.stmt.astID match {
+                                case Assignment.ASTID =>
+                                    val assignment = returnSite.stmt.asAssignment
+                                    immutable.Set(NewObjectFact(assignment.targetVar.name, returnSite.pc))
 
-                            case _ => immutable.Set.empty
-                        }
+                                case _ => immutable.Set.empty
+                            }
 
-                    case f: AbstractEntityFact =>
-                        /* Check whether fact corresponds to one of the parameters */
-                        if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
-                            immutable.Set(f.toObjectOrArrayFact)
-                        } else {
-                            immutable.Set.empty
-                        }
+                        case f: AbstractEntityFact =>
+                            /* Check whether fact corresponds to one of the parameters */
+                            if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
+                                immutable.Set(f.toObjectOrArrayFact)
+                            } else {
+                                immutable.Set.empty
+                            }
+                    }
                 }
             }
         }

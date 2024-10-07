@@ -30,19 +30,19 @@ object FlowRecorderModes extends Enumeration {
  * @param recordEdgeFunctions whether to record edge functions too or just stick with the flow
  */
 class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
-        val baseProblem:         IDEProblem[Fact, Value, Statement, Callable],
-        val recorderMode:        FlowRecorderModes.FlowRecorderMode = FlowRecorderModes.NODE_AS_STMT,
-        val uniqueFlowsOnly:     Boolean                            = true,
-        val recordEdgeFunctions: Boolean                            = false
+    val baseProblem:         IDEProblem[Fact, Value, Statement, Callable],
+    val recorderMode:        FlowRecorderModes.FlowRecorderMode = FlowRecorderModes.NODE_AS_STMT,
+    val uniqueFlowsOnly:     Boolean                            = true,
+    val recordEdgeFunctions: Boolean                            = false
 ) extends IDEProblem[Fact, Value, Statement, Callable](baseProblem.icfg) {
     /**
      * Wrapper class for flow functions doing the actual recording
      */
     private class RecordingFlowFunction(
-            baseFlowFunction: FlowFunction[Fact],
-            val source:       Statement,
-            val target:       Statement,
-            val flowType:     String
+        baseFlowFunction: FlowFunction[Fact],
+        val source:       Statement,
+        val target:       Statement,
+        val flowType:     String
     ) extends FlowFunction[Fact] {
         override def compute(sourceFact: Fact): collection.Set[Fact] = {
             val facts = baseFlowFunction.compute(sourceFact)
