@@ -845,11 +845,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             if (!problem.hasPrecomputedFlowAndSummaryFunction(n, d, q)) {
                 val sqs = icfg.getStartStatements(q)
                 sqs.foreach { sq =>
-                    val dPrimes = extractFlowFunctionResult(problem.getCallFlowFunction(n, sq, q).compute(d))
+                    val dPrimes = extractFlowFunctionFromResult(problem.getCallFlowFunction(n, sq, q).compute(d))
                     dPrimes.foreach { dPrime =>
                         propagateValue(
                             (sq, dPrime),
-                            enforceFinalEdgeFunction(problem.getCallEdgeFunction(n, d, sq, dPrime, q))
+                            extractEdgeFunctionFromResult(problem.getCallEdgeFunction(n, d, sq, dPrime, q))
                                 .compute(s.getValue(node))
                         )
                     }
@@ -876,24 +876,24 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
-     * Extract flow function result while ignoring the dependees
+     * Extract facts from flow function result while ignoring the dependees
      */
-    private def extractFlowFunctionResult(
+    private def extractFlowFunctionFromResult(
         factsAndDependees: FlowFunction.FactsAndDependees[Fact]
     ): collection.Set[Fact] = {
-        val (facts, dependees) = factsAndDependees
+        val (facts, _) = factsAndDependees
         facts
     }
 
-    // TODO (IDE) THIS WILL NOT BE POSSIBLE ANY LONGER IF RETURNING AN INTERIM RESULT INVOLVES EXECUTING PHASE 2
-    private def enforceFinalEdgeFunction(edgeFunctionResult: EdgeFunctionResult[Value]): EdgeFunction[Value] = {
+    /**
+     * Extract edge function from result ignoring the dependees
+     */
+    private def extractEdgeFunctionFromResult(edgeFunctionResult: EdgeFunctionResult[Value]): EdgeFunction[Value] = {
         edgeFunctionResult match {
             case FinalEdgeFunction(edgeFunction) =>
                 edgeFunction
-            case _ =>
-                throw new IllegalStateException(
-                    s"All edge functions should be final in phase 2 but got $edgeFunctionResult!"
-                )
+            case InterimEdgeFunction(interimEdgeFunction, _) =>
+                interimEdgeFunction
         }
     }
 }
