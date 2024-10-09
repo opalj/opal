@@ -53,7 +53,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         target: JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         new FlowFunction[LinearConstantPropagationFact] {
-            override def compute(sourceFact: LinearConstantPropagationFact): collection.Set[LinearConstantPropagationFact] = {
+            override def compute(sourceFact: LinearConstantPropagationFact): FactsAndDependees = {
                 source.stmt.astID match {
                     case Assignment.ASTID =>
                         val assignment = source.stmt.asAssignment
@@ -219,7 +219,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         callee:      Method
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         new FlowFunction[LinearConstantPropagationFact] {
-            override def compute(sourceFact: LinearConstantPropagationFact): collection.Set[LinearConstantPropagationFact] = {
+            override def compute(sourceFact: LinearConstantPropagationFact): FactsAndDependees = {
                 /* Only propagate to callees that return integers */
                 if (!callee.returnType.isIntegerType) {
                     immutable.Set.empty
@@ -259,7 +259,7 @@ class LinearConstantPropagationProblem(project: SomeProject)
         returnSite: JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         new FlowFunction[LinearConstantPropagationFact] {
-            override def compute(sourceFact: LinearConstantPropagationFact): collection.Set[LinearConstantPropagationFact] = {
+            override def compute(sourceFact: LinearConstantPropagationFact): FactsAndDependees = {
                 /* Only propagate to return site if callee returns an integer */
                 if (!callee.returnType.isIntegerType) {
                     immutable.Set.empty

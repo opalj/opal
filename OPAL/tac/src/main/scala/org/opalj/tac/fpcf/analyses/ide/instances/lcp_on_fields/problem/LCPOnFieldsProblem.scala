@@ -47,7 +47,7 @@ class LCPOnFieldsProblem(project: SomeProject)
         implicit propertyStore: PropertyStore
     ): FlowFunction[LCPOnFieldsFact] = {
         new FlowFunction[LCPOnFieldsFact] {
-            override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
+            override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
                 (source.stmt.astID, sourceFact) match {
                     case (Assignment.ASTID, NullFact) =>
                         val assignment = source.stmt.asAssignment
@@ -108,7 +108,7 @@ class LCPOnFieldsProblem(project: SomeProject)
         callee:      Method
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
         new FlowFunction[LCPOnFieldsFact] {
-            override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
+            override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
                 sourceFact match {
                     case NullFact =>
                         /* Only propagate null fact if function returns an object or an array of integers */
@@ -153,7 +153,7 @@ class LCPOnFieldsProblem(project: SomeProject)
         returnSite: JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
         new FlowFunction[LCPOnFieldsFact] {
-            override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
+            override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
                 sourceFact match {
                     case NullFact =>
                         /* Always propagate null fact */
@@ -210,7 +210,7 @@ class LCPOnFieldsProblem(project: SomeProject)
         returnSite: JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
         new FlowFunction[LCPOnFieldsFact] {
-            override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
+            override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
                 val callStmt = returnSite.stmt.asCall()
 
                 sourceFact match {
@@ -380,7 +380,7 @@ class LCPOnFieldsProblem(project: SomeProject)
     ): FlowFunction[LCPOnFieldsFact] = {
         if (callee.isNative) {
             return new FlowFunction[LCPOnFieldsFact] {
-                override def compute(sourceFact: LCPOnFieldsFact): collection.Set[LCPOnFieldsFact] = {
+                override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
                     val callStmt = callSite.stmt.asCall()
 
                     sourceFact match {

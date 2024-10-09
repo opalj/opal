@@ -44,10 +44,10 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         val target:       Statement,
         val flowType:     String
     ) extends FlowFunction[Fact] {
-        override def compute(sourceFact: Fact): collection.Set[Fact] = {
-            val facts = baseFlowFunction.compute(sourceFact)
+        override def compute(sourceFact: Fact): FactsAndDependees = {
+            val (facts, dependees) = baseFlowFunction.compute(sourceFact)
             facts.foreach { fact => collectedFlows.addOne(createDotEdge(source, sourceFact, target, fact, flowType)) }
-            facts
+            (facts, dependees)
         }
     }
 
