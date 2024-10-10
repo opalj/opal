@@ -70,7 +70,7 @@ class CommentParser() {
                 val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars,line)
 
                 // Splitting the key from the string (while splitting of the ':' or '=' as they are not needed anymore
-                currentKey = line.substring(0,terminatingIndex -1)
+                currentKey = line.substring(0,terminatingIndex -1).trim
                 line = line.substring(terminatingIndex).trim.stripPrefix(":").stripPrefix("=")
 
                 // Evaluating the type of value
