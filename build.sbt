@@ -319,7 +319,8 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
       .title("OPAL - Three Address Code") ++ Seq("-groups", "-implicits")),
     assembly / assemblyJarName := "OPALTACDisassembler.jar",
     assembly / mainClass := Some("org.opalj.tac.TAC"),
-    run / fork := true
+    run / fork := true,
+    libraryDependencies ++= Dependencies.tac
   )
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
