@@ -72,8 +72,10 @@ class DoPrivilegedMethodAnalysis private[cg] (
         if (params.nonEmpty && params.head.isDefined) {
             val param = params.head.get.asVar
 
-            implicit val state: CGState[ContextType] =
-                new CGState[ContextType](callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
+            implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
+                callerContext,
+                FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+            )
 
             val thisActual = persistentUVar(param)(state.tac.stmts)
 
@@ -93,8 +95,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
         thisVar:    V,
         thisActual: Some[(ValueInformation, IntTrieSet)],
         calls:      IndirectCalls
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val partialResults = calls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -127,7 +128,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
     }
 
     def c(
-        state:      CGState[ContextType],
+        state:      TACAIBasedCGState[ContextType],
         thisVar:    V,
         thisActual: Some[(ValueInformation, IntTrieSet)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {

@@ -26,13 +26,13 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.UBP
 import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
+import org.opalj.tac.fpcf.analyses.cg.DefinedBodyReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
 class SystemPropertiesAnalysisScheduler private[analyses] (
     final val project: SomeProject
-) extends ReachableMethodAnalysis {
+) extends DefinedBodyReachableMethodAnalysis {
 
     def processMethod(
         callContext: ContextType,

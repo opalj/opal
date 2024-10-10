@@ -26,12 +26,10 @@ trait TACAIBasedAnalysisState[TheContextType <: Context]
     def callContext: ContextType
 
     protected[this] var _tacDependee: EOptionP[Method, TACAI]
-    assert((_tacDependee eq null) || (_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined))
+    assert(_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined)
 
-    abstract override def hasOpenDependencies: Boolean = {
-        (_tacDependee ne null) && _tacDependee.isRefinable || super.hasOpenDependencies
-    }
-    final def hasTACDependee: Boolean = _tacDependee.isRefinable
+    abstract override def hasOpenDependencies: Boolean = _tacDependee.isRefinable || super.hasOpenDependencies
+    final def isTACDependeeRefinable: Boolean = _tacDependee.isRefinable
 
     /**
      * Inherited classes that introduce new dependencies must override this method and call add a
@@ -39,7 +37,7 @@ trait TACAIBasedAnalysisState[TheContextType <: Context]
      */
     abstract override def dependees: Set[SomeEOptionP] = {
         val otherDependees = super.dependees
-        if ((_tacDependee ne null) && _tacDependee.isRefinable)
+        if (_tacDependee.isRefinable)
             otherDependees + _tacDependee
         else
             otherDependees
@@ -49,12 +47,7 @@ trait TACAIBasedAnalysisState[TheContextType <: Context]
         _tacDependee = tacDependee
     }
 
-    final def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
-        _tacDependee.ub.tac.get
-    }
+    final def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _tacDependee.ub.tac.get
 
-    final def tacDependee: EOptionP[Method, TACAI] = {
-        _tacDependee
-    }
-
+    final def tacDependee: EOptionP[Method, TACAI] = _tacDependee
 }

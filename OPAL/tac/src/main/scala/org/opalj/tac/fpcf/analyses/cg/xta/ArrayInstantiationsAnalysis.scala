@@ -43,7 +43,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 final class ArrayInstantiationsAnalysis(
     val project:     SomeProject,
     selectSetEntity: TypeSetEntitySelector
-) extends ReachableMethodAnalysis {
+) extends DefinedBodyReachableMethodAnalysis {
 
     override def processMethod(
         callContext: ContextType,

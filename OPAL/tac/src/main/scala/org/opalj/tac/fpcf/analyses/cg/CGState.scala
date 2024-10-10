@@ -16,10 +16,11 @@ import org.opalj.tac.fpcf.properties.TACAI
 /**
  * @author Florian Kuebler
  */
-class CGState[ContextType <: Context](
-    override val callContext:                  ContextType,
-    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends BaseAnalysisState with TypeIteratorState with TACAIBasedAnalysisState[ContextType] {
+class CGState[TheContextType <: Context](
+    val callContext: TheContextType
+) extends BaseAnalysisState with TypeIteratorState with ContextualAnalysis {
+
+    override type ContextType = TheContextType
 
     // maps a definition site to the receiver var
     private[this] val _virtualCallSites: mutable.Map[CallSite, (V, Set[ReferenceType])] =
@@ -38,3 +39,11 @@ class CGState[ContextType <: Context](
 
     def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty
 }
+
+/**
+ * @author Maximilian Rüsch
+ */
+class TACAIBasedCGState[ContextType <: Context](
+    callContext:                               ContextType,
+    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+) extends CGState[ContextType](callContext) with TACAIBasedAnalysisState[ContextType]
