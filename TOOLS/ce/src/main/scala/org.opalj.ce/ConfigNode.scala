@@ -7,7 +7,7 @@ package ce
  */
 trait ConfigNode {
     val comment : Comment
-    def toHTML(label : String, HTMLHeadline: String, HTMLContent: String): String
+    def toHTML(label : String, HTMLHeadline: String, HTMLContent: String, sorted : Boolean): String
     def isEmpty(): Boolean
     def expand() : Unit
     def collapse() : Unit

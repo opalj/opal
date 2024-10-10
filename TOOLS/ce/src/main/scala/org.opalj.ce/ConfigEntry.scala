@@ -14,7 +14,7 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $content flag for correct rendering
      * @return returns the Config Entry as HTML code
      */
-    override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String): String = {
+    override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String, sorted : Boolean): String = {
         var HTMLString = ""
         var head = label
         var brief = this.comment.brief

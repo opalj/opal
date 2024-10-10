@@ -16,7 +16,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $content flag for correct rendering
      * @return returns the Config List as HTML code
      */
-    override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String): String = {
+    override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String, sorted : Boolean): String = {
         var HTMLString = ""
         var head = label
         if(this.comment.label.nonEmpty) head = this.comment.label
@@ -24,7 +24,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML() + "</p>"
         for(entry <- entries){
-            content += entry.toHTML("", HTMLHeadline, HTMLContent)
+            content += entry.toHTML("", HTMLHeadline, HTMLContent, sorted)
         }
 
         // Adds Header line with collapse + expand options

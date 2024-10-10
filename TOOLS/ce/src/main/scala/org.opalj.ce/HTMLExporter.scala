@@ -20,7 +20,7 @@ class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
      * @param HTMLHeadline Accepts the Headline HTML structure that gets passed on to the ConfigNodes
      * @param HTMLContent Accepts the Content HTML structure that gets passed on to the ConfigNodes
      */
-    def exportHTML(exportFile : File, HTMLHeadline : String, HTMLContent : String): Unit = {
+    def exportHTML(exportFile : File, HTMLHeadline : String, HTMLContent : String, sort_alphabetically : Boolean): Unit = {
 
         // Generate HTML
         var fileContent = ""
@@ -29,7 +29,7 @@ class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
         for(config <- ConfigList)
         {
             if(config.isEmpty() == false) {
-                body += config.toHTML("", HTMLHeadline, HTMLContent)
+                body += config.toHTML("", HTMLHeadline, HTMLContent, sort_alphabetically)
                 body += "<hr>"
             }
         }

@@ -32,7 +32,7 @@ object ce {
         val HE = new HTMLExporter(configs.asInstanceOf[ListBuffer[ConfigNode]], Paths.get(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.template")))
 
         // Join File Paths for export
-        HE.exportHTML(new File(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.export")), conf.getString("org.opalj.ce.html.headline"),conf.getString("org.opalj.ce.html.content"))
+        HE.exportHTML(new File(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.export")), conf.getString("org.opalj.ce.html.headline"),conf.getString("org.opalj.ce.html.content"), conf.getBoolean("org.opalj.ce.html.sort_alphabetically"))
 
         //implicit val p = Project
 

@@ -9,7 +9,7 @@ import scala.collection.mutable
  * @param entries contains a K,V Map of ConfigNodes
  * @param comment are all the comments associated with the Object
  */
-case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comment) extends ConfigNode {
+case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: Comment) extends ConfigNode {
     /**
      * Formats the entry into HTML code
      * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object.
@@ -17,15 +17,24 @@ case class ConfigObject(entries: mutable.Map[String, ConfigNode], comment: Comme
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $content flag for correct rendering
      * @return returns the Config Object as HTML code
      */
-    override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String): String = {
+    override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String, sorted: Boolean): String = {
         var HTMLString = ""
         var head = label
         if(!this.comment.label.isEmpty) head = this.comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML() + "</p>"
-        for((key,node) <- entries){
-            content += node.toHTML(key, HTMLHeadline, HTMLContent)
+
+        if(sorted){
+            val sortedKeys = entries.keys.toSeq.sorted
+
+            for(key <- sortedKeys){
+                content += entries(key).toHTML(key, HTMLHeadline, HTMLContent, sorted)
+            }
+        } else {
+            for ((key, node) <- entries) {
+                content += node.toHTML(key, HTMLHeadline, HTMLContent, sorted)
+            }
         }
 
         // Adds Header line with collapse + expand options
