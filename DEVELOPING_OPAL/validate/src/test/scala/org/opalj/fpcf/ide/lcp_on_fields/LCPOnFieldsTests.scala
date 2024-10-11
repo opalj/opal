@@ -2,11 +2,16 @@
 package org.opalj.fpcf.ide.lcp_on_fields
 
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.lcp_on_fields.LCPOnFieldsProperty
 import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
 import org.opalj.ide.integration.LazyIDEAnalysisProxyScheduler
+import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 
 class LCPOnFieldsTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
@@ -29,7 +34,12 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
                         )
                     }
                 }
-            }
+            },
+            LazyFieldImmutabilityAnalysis,
+            LazyL2FieldAssignabilityAnalysis,
+            LazyTypeImmutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            EagerFieldAccessInformationAnalysis
         ))
 
         testContext.propertyStore.shutdown()

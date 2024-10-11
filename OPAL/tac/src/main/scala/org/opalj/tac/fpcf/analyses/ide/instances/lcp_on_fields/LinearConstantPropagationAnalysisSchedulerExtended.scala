@@ -5,6 +5,7 @@ import scala.collection.immutable
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.ide.problem.IDEProblem
@@ -36,6 +37,7 @@ abstract class LinearConstantPropagationAnalysisSchedulerExtended
 
     override def uses: Set[PropertyBounds] =
         super.uses.union(immutable.Set(
+            PropertyBounds.ub(FieldImmutability),
             PropertyBounds.ub(LCPOnFieldsPropertyMetaInformation)
         ))
 }

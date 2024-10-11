@@ -2,9 +2,14 @@
 package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem
 
 import scala.collection.immutable
+import scala.collection.mutable
 
 import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
+import org.opalj.br.Field
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.Property
@@ -14,6 +19,8 @@ import org.opalj.ide.problem.FinalEdgeFunction
 import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.GetField
+import org.opalj.tac.GetStatic
+import org.opalj.tac.PutStatic
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.ConstantValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearCombinationEdgeFunction
@@ -192,5 +199,101 @@ class LinearConstantPropagationProblemExtended(project: SomeProject) extends Lin
                 case (value, ObjectValue(values)) =>
                     lattice.meet(value, values(fieldName))
             }
+    }
+
+    override def getNormalEdgeFunctionForGetStatic(
+        getStaticExpr: GetStatic
+    )(
+        source:     JavaStatement,
+        sourceFact: LinearConstantPropagationFact,
+        target:     JavaStatement,
+        targetFact: LinearConstantPropagationFact
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
+        val field =
+            project.get(DeclaredFieldsKey)(
+                getStaticExpr.declaringClass,
+                getStaticExpr.name,
+                getStaticExpr.declaredFieldType
+            ).definedField
+
+        /* We enhance the analysis with immutability information. When a static field is immutable and we have knowledge
+         * of an assignment site, then this will always be the value of the field. This way we can make this analysis
+         * more precise without the need to add precise handling of static initializers. */
+        val fieldImmutabilityEOptionP = propertyStore(field, FieldImmutability.key)
+
+        fieldImmutabilityEOptionP match {
+            case FinalP(fieldImmutability) =>
+                fieldImmutability match {
+                    case TransitivelyImmutableField =>
+                        getValueForGetStaticExpr(getStaticExpr, field) match {
+                            case ConstantValue(c) => FinalEdgeFunction(LinearCombinationEdgeFunction(0, c, lattice.top))
+                            case _                => FinalEdgeFunction(VariableValueEdgeFunction)
+                        }
+                    case _ => FinalEdgeFunction(VariableValueEdgeFunction)
+                }
+
+            case InterimUBP(fieldImmutability) =>
+                fieldImmutability match {
+                    case TransitivelyImmutableField =>
+                        getValueForGetStaticExpr(getStaticExpr, field) match {
+                            case ConstantValue(c) =>
+                                InterimEdgeFunction(
+                                    LinearCombinationEdgeFunction(0, c, lattice.top),
+                                    immutable.Set(fieldImmutabilityEOptionP)
+                                )
+                            case _ => FinalEdgeFunction(VariableValueEdgeFunction)
+                        }
+                    case _ => FinalEdgeFunction(VariableValueEdgeFunction)
+                }
+
+            case _ =>
+                InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(fieldImmutabilityEOptionP))
+        }
+    }
+
+    private def getValueForGetStaticExpr(getStaticExpr: GetStatic, field: Field): LinearConstantPropagationValue = {
+        var value: LinearConstantPropagationValue = UnknownValue
+
+        /* Search for statements that write the field in static initializer of the class belonging to the field. */
+        field.classFile.staticInitializer match {
+            case Some(method) =>
+                var workingStmts: mutable.Set[JavaStatement] = mutable.Set.from(icfg.getStartStatements(method))
+                val seenStmts = mutable.Set.empty[JavaStatement]
+
+                while (workingStmts.nonEmpty) {
+                    workingStmts.foreach { stmt =>
+                        stmt.stmt.astID match {
+                            case PutStatic.ASTID =>
+                                val putStatic = stmt.stmt.asPutStatic
+                                if (getStaticExpr.declaringClass == putStatic.declaringClass &&
+                                    getStaticExpr.name == putStatic.name
+                                ) {
+                                    stmt.stmt.asPutStatic.value.asVar.value match {
+                                        case intRange: DefaultIntegerRangeValues#IntegerRange =>
+                                            if (intRange.lowerBound == intRange.upperBound) {
+                                                value = lattice.meet(value, ConstantValue(intRange.upperBound))
+                                            } else {
+                                                return VariableValue
+                                            }
+
+                                        case _ =>
+                                            return VariableValue
+                                    }
+                                }
+
+                            case _ =>
+                        }
+                    }
+
+                    seenStmts.addAll(workingStmts)
+                    workingStmts = workingStmts.foldLeft(mutable.Set.empty[JavaStatement]) { (nextStmts, stmt) =>
+                        nextStmts.addAll(icfg.getNextStatements(stmt))
+                    }.diff(seenStmts)
+                }
+
+            case _ =>
+        }
+
+        value
     }
 }
