@@ -146,7 +146,15 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
                 val new_entry = mutable.Map[String, ConfigNode](newkey(1).trim -> value)
                 val new_object = ConfigObject(new_entry, new Comment)
                 new_object.expand()
-                this.entries += (newkey(0).trim -> new_object)
+                if(this.entries.contains(newkey(0).trim)) {
+                    if(this.entries(newkey(0).trim).isInstanceOf[ConfigObject]) {
+                        this.entries(newkey(0).trim).asInstanceOf[ConfigObject].merge(new_object)
+                    } else {
+                        throw new Exception("Unable to Merge " + newkey(0).trim + "due to incompatible types: " + this.entries(newkey(0).trim).getClass)
+                    }
+                } else {
+                    this.entries += (newkey(0).trim -> new_object)
+                }
 
                 // Delete old entry from the map to avoid duplicates
                 this.entries -= key
