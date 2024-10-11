@@ -184,6 +184,7 @@ lazy val `OPAL` = (project in file("."))
     //  bp, (just temporarily...)
     tools,
     hermes,
+    ce,
     validate, // Not deployed to maven central
     demos // Not deployed to maven central
   )
@@ -450,7 +451,15 @@ lazy val ce = (project in file("TOOLS/ce"))
     name := "ce",
     libraryDependencies ++= Dependencies.ce,
     libraryDependencies += "com.typesafe" % "config" % "1.4.2",
+    Compile / doc := {
+        // Overrides doc method to include config documentation at doc
+        val originalDoc = (Compile / doc).value
+        (Compile / compile).value
+        (Compile / run).toTask("").value
+        originalDoc
+    },
     Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer"),
+
   )
     .dependsOn(br % "compile->compile")
 
