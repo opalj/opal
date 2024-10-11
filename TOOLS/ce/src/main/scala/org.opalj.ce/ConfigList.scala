@@ -28,7 +28,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label",head).replace("$brief",this.comment.brief)
+        HTMLString += HTMLHeadline.replace("$label",head).replace("$brief",this.comment.getBrief())
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
