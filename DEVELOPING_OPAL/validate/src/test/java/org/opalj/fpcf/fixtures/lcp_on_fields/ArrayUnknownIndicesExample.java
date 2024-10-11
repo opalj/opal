@@ -4,6 +4,7 @@ package org.opalj.fpcf.fixtures.lcp_on_fields;
 import org.opalj.fpcf.properties.lcp_on_fields.ArrayValue;
 import org.opalj.fpcf.properties.lcp_on_fields.ConstantArrayElement;
 import org.opalj.fpcf.properties.lcp_on_fields.VariableArrayElement;
+import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 
 public class ArrayUnknownIndicesExample {
@@ -19,7 +20,8 @@ public class ArrayUnknownIndicesExample {
     }, constantElements = {
             @ConstantArrayElement(index = 50, value = 99)
     })
-    @VariableValue(variable = "lv9")
+    @ConstantValue(variable = "lv9", value = 0)
+    @VariableValue(variable = "lvf")
     public static void main(String[] args) {
         int[] arr = new int[100];
 
@@ -33,10 +35,13 @@ public class ArrayUnknownIndicesExample {
             j = 12;
         }
 
-        int a = arr[i];
+        int a1 = arr[i];
+
         arr[j] = 13;
         arr[50] = 99;
 
-        System.out.println("a" + a);
+        int a2 = arr[i];
+
+        System.out.println("a1: " + a1 + ", a2: " + a2);
     }
 }

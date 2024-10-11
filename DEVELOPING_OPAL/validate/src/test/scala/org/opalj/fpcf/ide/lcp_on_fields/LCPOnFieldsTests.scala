@@ -5,6 +5,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.lcp_on_fields.LCPOnFieldsProperty
+import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
 import org.opalj.ide.integration.LazyIDEAnalysisProxyScheduler
 
 class LCPOnFieldsTests extends IDEPropertiesTest {
@@ -22,6 +23,10 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
                     val entryPoints = methodsWithAnnotations(analysis.project)
                     entryPoints.foreach { case (method, _, _) =>
                         propertyStore.force(method, LCPOnFieldsAnalysisScheduler.propertyMetaInformation.key)
+                        propertyStore.force(
+                            method,
+                            LinearConstantPropagationAnalysisSchedulerExtended.propertyMetaInformation.key
+                        )
                     }
                 }
             }
@@ -32,7 +37,7 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
         validateProperties(
             testContext,
             methodsWithAnnotations(testContext.project),
-            Set(LCPOnFieldsProperty.KEY)
+            Set(LCPOnFieldsProperty.KEY, LinearConstantPropagationProperty.KEY)
         )
     }
 }
