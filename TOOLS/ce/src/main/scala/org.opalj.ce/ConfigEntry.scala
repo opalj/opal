@@ -50,4 +50,8 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
 
     override def collapse(): Unit = {}
     override def expand() : Unit ={}
+
+    override def replaceClasses(se: SubclassExtractor): Unit = {
+        this.comment.replaceClasses(se)
+    }
 }

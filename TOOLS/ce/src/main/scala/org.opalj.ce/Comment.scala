@@ -7,7 +7,7 @@ import scala.collection.mutable.ListBuffer
  */
 class Comment {
     val commentBuffer: ListBuffer[String] = ListBuffer[String]()
-    val constraints : ListBuffer[String] = ListBuffer[String]()
+    var constraints : ListBuffer[String] = ListBuffer[String]()
     val description : ListBuffer[String] = ListBuffer[String]()
     var label = ""
     var brief = ""
@@ -67,7 +67,11 @@ class Comment {
             }
             if(datatype.nonEmpty) HTMLString += "<p><b> Type: </b>" + datatype + "<br></p>"
             if(constraints.nonEmpty) {
-                HTMLString += "<p><b> Constraints: </b><br>"
+                if(datatype.equals("enum")){
+                    HTMLString += "<p><b> Allowed Values: </b><br>"
+                } else {
+                    HTMLString += "<p><b> Constraints: </b><br>"
+                }
                 for (line <- constraints) {
                     HTMLString += line + "<br>"
                 }
@@ -107,6 +111,25 @@ class Comment {
         false
     }
 
+    def getBrief() : String = {
+        if(this.brief.isEmpty){
+            if(!this.description.isEmpty) {
+                return this.description(0).substring(0,this.description(0).size.min(70)) + "..."
+            }
+        }
+        this.brief
+    }
+
+    def replaceClasses(se : SubclassExtractor) : Unit = {
+        if(this.datatype.trim.equals("subclass")){
+            // Get a Set of all subclasses
+            val root = this.constraints(0)
+
+            // Replace Types
+            this.datatype = "enum"
+            this.constraints = ListBuffer(se.extractSubclasses(root).toSeq: _*)
+        }
+    }
     /**
      * Prints the Comment object to the console
      * Debug purposes

@@ -49,7 +49,7 @@ class FileLocator(var config: Config)  {
      */
     def getConfigurationPaths : mutable.Buffer[Path] = {
         val projectNames = this.getConfigurationFilenames
-        return this.SearchFiles(projectNames)
+        this.SearchFiles(projectNames)
     }
 
     /**
@@ -62,7 +62,7 @@ class FileLocator(var config: Config)  {
 
         Files.walkFileTree(projectRoot, new java.nio.file.SimpleFileVisitor[Path]() {
             override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {
-                if (Filenames.contains(file.getFileName.toString) && (file.toAbsolutePath.toString.contains("target\\scala-2.13") == false) && (file.toAbsolutePath.toString.contains("target/scala-2.13") == false)) {
+                if (Filenames.contains(file.getFileName.toString) && !file.toAbsolutePath.toString.contains("target\\scala-2.13") && !file.toAbsolutePath.toString.contains("target/scala-2.13")) {
                     foundFiles += file
                     println(s"Found file: ${file.toString}")
                 }
@@ -71,5 +71,21 @@ class FileLocator(var config: Config)  {
         })
     println()
     foundFiles
+    }
+
+    def FindJarArchives() : mutable.Buffer[Path] = {
+        val projectRoot = Paths.get(this.getProjectRoot)
+        val foundFiles = ListBuffer[Path]()
+        Files.walkFileTree(projectRoot, new java.nio.file.SimpleFileVisitor[Path]() {
+            override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {
+                if (file.getFileName.toString.contains(".jar") && file.getFileName.toString.contains("SNAPSHOT")) {
+                    foundFiles += file
+                    println(s"Found file: ${file.toString}")
+                }
+                java.nio.file.FileVisitResult.CONTINUE
+            }
+        })
+        println()
+        foundFiles
     }
 }

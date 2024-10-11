@@ -67,5 +67,11 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
             entry.expand()
         }
     }
+
+    override def replaceClasses(se: SubclassExtractor): Unit = {
+        for(entry <- entries){
+            entry.replaceClasses(se)
+        }
+    }
 }
 

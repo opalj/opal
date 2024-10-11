@@ -11,4 +11,5 @@ trait ConfigNode {
     def isEmpty(): Boolean
     def expand() : Unit
     def collapse() : Unit
+    def replaceClasses(se : SubclassExtractor): Unit
 }

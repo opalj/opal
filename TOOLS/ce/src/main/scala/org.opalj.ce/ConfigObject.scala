@@ -38,7 +38,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label",head).replace("$brief",this.comment.brief)
+        HTMLString += HTMLHeadline.replace("$label",head).replace("$brief",this.comment.getBrief())
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
@@ -159,6 +159,12 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
                 // Delete old entry from the map to avoid duplicates
                 this.entries -= key
             }
+        }
+    }
+
+    override def replaceClasses(se: SubclassExtractor): Unit = {
+        for((key,value) <- entries){
+            value.replaceClasses(se)
         }
     }
 }

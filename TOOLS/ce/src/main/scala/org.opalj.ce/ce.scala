@@ -4,11 +4,9 @@ package ce
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
-
 import java.io.File
 import java.nio.file.Paths
 import scala.collection.mutable.ListBuffer
-//import org.opalj.br.analyses.Project
 
 /*
 *   Standalone configuration explorer
@@ -29,12 +27,18 @@ object ce {
         val CPW = new CommentParserWrapper
         val configs = CPW.IterateConfigs(filepaths)
 
-        val HE = new HTMLExporter(configs.asInstanceOf[ListBuffer[ConfigNode]], Paths.get(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.template")))
+        // Replace class type values
+        if(conf.getBoolean("org.opalj.ce.replaceSubclasses")) {
+            val se = new SubclassExtractor(locator)
+            for(config <- configs){
+                config.replaceClasses(se)
+            }
+        }
 
-        // Join File Paths for export
+        // Export
+        val HE = new HTMLExporter(configs.asInstanceOf[ListBuffer[ConfigNode]], Paths.get(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.template")))
         HE.exportHTML(new File(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.export")), conf.getString("org.opalj.ce.html.headline"),conf.getString("org.opalj.ce.html.content"), conf.getBoolean("org.opalj.ce.html.sort_alphabetically"))
 
-        //implicit val p = Project
     }
 
     /**
