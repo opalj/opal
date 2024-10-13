@@ -78,7 +78,7 @@ class FileLocator(var config: Config)  {
         val foundFiles = ListBuffer[Path]()
         Files.walkFileTree(projectRoot, new java.nio.file.SimpleFileVisitor[Path]() {
             override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {
-                if (file.getFileName.toString.contains(".jar") && file.getFileName.toString.contains("SNAPSHOT")) {
+                if (file.getFileName.toString.trim.endsWith(".jar") && file.getFileName.toString.contains("SNAPSHOT")) {
                     foundFiles += file
                     println(s"Found file: ${file.toString}")
                 }
