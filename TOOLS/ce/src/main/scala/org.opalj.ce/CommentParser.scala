@@ -27,6 +27,7 @@ class CommentParser() {
      */
     def parseFile(filePath: Path): ConfigObject = {
         // Initialize iterator
+        println("Parsing :" + filePath.toString)
         val lines = Source.fromFile(filePath.toString).getLines().toList
         iterator = lines.iterator
 
@@ -50,7 +51,7 @@ class CommentParser() {
         var currentvalue : ConfigNode = null
 
         // Using a breakable while loop to interrupt as soon as the object ends
-        breakable { while(iterator.hasNext){
+        breakable { while(iterator.hasNext || !line.isEmpty){
             this.parseComments(nextComment)
             if (line.trim.startsWith("}")) {
                 // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
@@ -192,7 +193,7 @@ class CommentParser() {
         val value = new ListBuffer[ConfigNode]
         var nextComment = new Comment
 
-        breakable { while(iterator.hasNext){
+        breakable { while(iterator.hasNext || !line.isEmpty){
             this.parseComments(nextComment)
             if(line.trim.startsWith("{")){
                 // Case: The following symbol opens an object
