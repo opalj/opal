@@ -33,11 +33,9 @@ class CommentParserWrapper {
             }
         }
         if(MergingConfigs.size > 0) {
-            val conf = MergingConfigs(0)
+            val conf = ConfigObject(mutable.Map[String, ConfigNode](), new Comment)
             for (i <- MergingConfigs.indices) {
-                if (i != 0) {
-                    conf.merge(MergingConfigs(i))
-                }
+                conf.merge(MergingConfigs(i))
             }
             conf.comment.label = "reference.conf"
             conf.comment.brief = "Aggregated standard configuration of merged reference.conf files"
