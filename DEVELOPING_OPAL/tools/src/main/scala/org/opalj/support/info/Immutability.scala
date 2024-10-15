@@ -155,11 +155,9 @@ object Immutability {
                 LazySimpleEscapeAnalysis
             )
 
-        project.get(callgraphKey)
-
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
-                Set[Class[_ <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
+                Set[Class[_ <: AnyRef]](classOf[domain.l0.PrimitiveTACAIDomain])
             else if (level == 1)
                 Set[Class[_ <: AnyRef]](classOf[domain.l1.DefaultDomainWithCFGAndDefUse[URL]])
             else if (level == 2)
@@ -183,6 +181,8 @@ object Immutability {
 
         val propertyStore = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
+
+        project.get(callgraphKey)
 
         time {
             analysesManager.runAll(
@@ -537,10 +537,9 @@ object Immutability {
                 | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
                 | Fields: ${allFieldsInProjectClassFiles.size}
                 | Fields with primitive Types / java.lang.String: ${
-                        allFieldsInProjectClassFiles
-                            .filter(field =>
-                                !field.fieldType.isReferenceType || field.fieldType == ObjectType.String
-                            ).size
+                        allFieldsInProjectClassFiles.count(field =>
+                            !field.fieldType.isReferenceType || field.fieldType == ObjectType.String
+                        )
                     }
                 |""".stripMargin
             )
@@ -626,7 +625,7 @@ object Immutability {
 
             val calender = Calendar.getInstance()
             calender.add(Calendar.ALL_STYLES, 1)
-            val date = calender.getTime()
+            val date = calender.getTime
             val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
 
             val file = new File(
@@ -699,8 +698,6 @@ object Immutability {
         var cp: File = null
         var resultFolder: Path = null
         var numThreads = 0
-        // var timeEvaluation: Boolean = false
-        // var threadEvaluation: Boolean = false
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var withoutJDK: Boolean = false
