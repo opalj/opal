@@ -3,10 +3,13 @@ package org.opalj
 package fpcf
 package analyses
 
+import com.typesafe.config.ConfigValueFactory
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.{BasicReport, Project, ProjectAnalysisApplication}
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.cg.CFA_1_0_CallGraphKey
 import org.opalj.tac.cg.android.AndroidManifestKey
@@ -14,14 +17,13 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
 import java.net.URL
-import java.nio.file.Paths
 import scala.xml.XML
 
 object AndroidAnalysisDemo extends ProjectAnalysisApplication {
 
     override def title: String = "Generate Callgraph for Android App"
 
-    override def description: String = "Parses AndroidManifest.xml to precisely determine entry points"
+    override def description: String = "Parses AndroidManifest.xml to determine entry points"
 
     override def doAnalyze(
                             project:       Project[URL],
@@ -33,7 +35,13 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
         }
         if (manifestPath.isEmpty)
             throw new IllegalArgumentException("Pass path to (non-binary) manifest with -manifest=path/to/AndroidManifest.xml")
-        val result = analyze(project, manifestPath.get)
+        var newConfig = project.config
+        newConfig = newConfig.withValue(
+            InitialEntryPointsKey.ConfigKey,
+            ConfigValueFactory.fromAnyRef("org.opalj.tac.cg.android.AndroidEntryPointsFinder")
+        )
+        val newProject = Project.recreate(project, newConfig)
+        val result = analyze(newProject, manifestPath.get)
         BasicReport(result)
     }
 
@@ -47,9 +55,8 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
 
     def analyze(project: Project[URL],
                 manifestPath: String): String = {
-        if (project.config.getString(InitialEntryPointsKey.ConfigKey) != "org.opalj.tac.cg.android.AndroidEntryPointsFinder"){
-            throw new IllegalArgumentException("Aborting. Set initial entry point finder to AndroidEntryPointsFinder to analyze android apps!")
-        }
+
+
         var propertyStoreTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
@@ -57,14 +64,7 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
         }
 
         project.updateProjectInformationKeyInitializationData(AndroidManifestKey) {
-            _ =>
-                val url = project.allMethodsWithBodyWithContext.map(_.source)(0)
-                val jarPath = url.getPath
-                val jarFilePath = jarPath.substring("file:".length, jarPath.indexOf("!"))
-                val jarDirectory = Paths.get(jarFilePath).getParent
-                val manifestPath = jarDirectory.resolve("../AndroidManifest.xml")
-                val xml = XML.loadFile(manifestPath.toString)
-                xml
+            _ => XML.loadFile(manifestPath)
         }
 
         implicit val ps: PropertyStore = time { project.get(PropertyStoreKey) } { t => propertyStoreTime = t.toSeconds }
