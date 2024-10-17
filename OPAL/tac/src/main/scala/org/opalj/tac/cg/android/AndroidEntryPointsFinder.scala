@@ -17,23 +17,25 @@ import org.opalj.br.ObjectType
 
 /**
  * The AndroidEntryPointFinder considers specific methods of app components as entry points.
- * It does not work for androidx
+ * Requires Android Manifest to be loaded.
  *
  * @author Tom Nikisch
+ *         Julius Naeumann
  */
 object AndroidEntryPointsFinder extends EntryPointFinder {
-
+    val configKey = "org.opalj.tac.cg.android.AndroidEntryPointsFinder"
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val entryPoints = ArrayBuffer.empty[Method]
         val defaultEntryPoints = mutable.Map.empty[String, List[(String, Option[MethodDescriptor])]]
-        val defaultEntry = project.config.getConfig("org.opalj.tac.cg.android.AndroidEntryPointsFinder")
+
+        val defaultEntry = project.config.getConfig(configKey)
         defaultEntry.root().entrySet().forEach { entry =>
             val d = entry.getKey
             val entryMethods = defaultEntry.getConfigList(d).asScala.map {
                 entry =>
                     (
-                        entry.getString("name"),
-                        allCatch.opt(entry.getString("descriptor")).map(MethodDescriptor(_))
+                      entry.getString("name"),
+                      allCatch.opt(entry.getString("descriptor")).map(MethodDescriptor(_))
                     )
             }.toList
             defaultEntryPoints += (d -> entryMethods)
@@ -46,26 +48,26 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
     }
 
     def findEntryPoints(
-        objectType:          ObjectType,
-        possibleEntryPoints: List[(String, Option[MethodDescriptor])],
-        project:             SomeProject
-    ): Set[Method] = {
+                         objectType:          ObjectType,
+                         possibleEntryPoints: List[(String, Option[MethodDescriptor])],
+                         project:             SomeProject
+                       ): Set[Method] = {
         var entryPoints = Set.empty[Method]
         val classHierarchy = project.classHierarchy
         classHierarchy.allSubclassTypes(objectType, reflexive = true).flatMap(project.classFile).
-            foreach { subclassType =>
-                for (possibleEntryPoint <- possibleEntryPoints) {
-                    if (possibleEntryPoint._2.isEmpty) {
-                        for (method <- subclassType.findMethod(possibleEntryPoint._1) if method.body.isDefined) {
-                            entryPoints += method
-                        }
-                    } else {
-                        for (method <- subclassType.findMethod(possibleEntryPoint._1, possibleEntryPoint._2.get) if method.body.isDefined) {
-                            entryPoints += method
-                        }
-                    }
-                }
-            }
+          foreach { subclassType =>
+              for (possibleEntryPoint <- possibleEntryPoints) {
+                  if (possibleEntryPoint._2.isEmpty) {
+                      for (method <- subclassType.findMethod(possibleEntryPoint._1) if method.body.isDefined) {
+                          entryPoints += method
+                      }
+                  } else {
+                      for (method <- subclassType.findMethod(possibleEntryPoint._1, possibleEntryPoint._2.get) if method.body.isDefined) {
+                          entryPoints += method
+                      }
+                  }
+              }
+          }
         entryPoints
     }
 }
