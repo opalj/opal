@@ -4,7 +4,7 @@ The configuration explorer uses a custom parser to parse flags into a browsable 
 This makes every element of your config documentable. 
 This guide is about to teach you how to utilize these flags to create a comprehensible documentation
 
-### How do I create a browsable configuration
+### How do I create a browsable configuration?
 1. Start up your sbt shell
 2. run the doc command
 3. Open the generated commentedconfigs.html in your source directory
