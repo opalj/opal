@@ -18,8 +18,7 @@ import org.opalj.br.analyses.SomeProject
  * a ListBuffer of all IntentFilters defined in the manifest.
  * The AndroidManifest.xml can be set as initialization data.
  *
- * @author Tom Nikisch
- *         Julius Naeumann
+ * @author Julius Naeumann
  */
 object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest], Elem] {
     // Constants for the IntentFilter
@@ -45,56 +44,28 @@ object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest],
         }
 
         // Function to parse AndroidComponent elements (Activity, Service, etc.)
-        def parseComponent(node: Node, componentType: String): Option[AndroidComponent] = {
+        def parseComponent[T <: AndroidComponent](
+                                                   node: Node,
+                                                   createComponent: (ClassFile, Seq[IntentFilter]) => T
+                                                 ): Option[T] = {
             val name = (node \ s"@{$androidURI}name").text
             var ot = name.replaceAll("\\.", "/")
             if (ot.startsWith("/")) {
                 ot = packageName + ot
             }
             val intentFilters = (node \ "intent-filter").map(parseIntentFilter)
-            project.classFile(ObjectType(ot)).map(cls =>
-                componentType match {
-                    case "activity" => Activity(cls, intentFilters)
-                    case "service"  => Service(cls, intentFilters)
-                    case "receiver" => BroadcastReceiver(cls, intentFilters)
-                    case "provider" => ContentProvider(cls, intentFilters)
-                }
-            )
+            project.classFile(ObjectType(ot)).map(cls => createComponent(cls, intentFilters))
         }
 
-        // Parse the different component types
-        val activities = (xml \ "application" \ "activity").flatMap(parseComponent(_, "activity"))
-        val services = (xml \ "application" \ "service").flatMap(parseComponent(_, "service"))
-        val receivers = (xml \ "application" \ "receiver").flatMap(parseComponent(_, "receiver"))
-        val providers = (xml \ "application" \ "provider").flatMap(parseComponent(_, "provider"))
+        // Parse the different component types using specific lambdas
+        val activities = (xml \ "application" \ "activity").flatMap(parseComponent(_, (cls, filters) => Activity(cls, filters)))
+        val services = (xml \ "application" \ "service").flatMap(parseComponent(_, (cls, filters) => Service(cls, filters)))
+        val receivers = (xml \ "application" \ "receiver").flatMap(parseComponent(_, (cls, filters) => BroadcastReceiver(cls, filters)))
+        val providers = (xml \ "application" \ "provider").flatMap(parseComponent(_, (cls, filters) => ContentProvider(cls, filters)))
+
+        // Collec
 
         // Collect all components
-        AndroidManifest(packageName, activities ++ services ++ receivers ++ providers)
+        AndroidManifest(packageName, activities, services, receivers, providers)
     }
 }
-
-sealed abstract class AndroidComponent(val cls: ClassFile, val intentFilters: Seq[IntentFilter])
-
-case class AndroidManifest(
-    packageName: String,
-    components:  Seq[AndroidComponent]
-)
-
-case class IntentFilter(actions: Seq[String], categories: Seq[String])
-
-case class Activity(override val cls: ClassFile, override val intentFilters: Seq[IntentFilter])
-    extends AndroidComponent(cls, intentFilters) {
-    def isLauncherActivity = intentFilters.exists(filter =>
-        filter.actions.contains(AndroidManifestKey.ACTION_MAIN)
-            && filter.categories.contains(AndroidManifestKey.CATEGORY_LAUNCHER)
-    )
-}
-
-case class Service(override val cls: ClassFile, override val intentFilters: Seq[IntentFilter])
-    extends AndroidComponent(cls, intentFilters)
-
-case class BroadcastReceiver(override val cls: ClassFile, override val intentFilters: Seq[IntentFilter])
-    extends AndroidComponent(cls, intentFilters)
-
-case class ContentProvider(override val cls: ClassFile, override val intentFilters: Seq[IntentFilter])
-    extends AndroidComponent(cls, intentFilters)
