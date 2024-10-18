@@ -22,13 +22,13 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
         if (this.comment.label.nonEmpty) head = this.comment.label
 
         // Get HTML data for all child Nodes
-        var content = "<p>" + comment.toHTML() + "</p>"
+        var content = "<p>" + comment.toHTML + "</p>"
         for (entry <- entries) {
             content += entry.toHTML("", HTMLHeadline, HTMLContent, sorted)
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", this.comment.getBrief())
+        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", this.comment.getBrief)
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
@@ -40,11 +40,11 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * Checks if the list is empty
      * @return true if both the List and the comment are empty
      */
-    override def isEmpty(): Boolean = {
+    override def isEmpty: Boolean = {
         for (entry <- entries) {
-            if (!entry.isEmpty()) return false
+            if (!entry.isEmpty) return false
         }
-        if (!comment.isEmpty()) return false
+        if (!comment.isEmpty) return false
         true
     }
 

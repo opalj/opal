@@ -53,10 +53,10 @@ class Comment {
      * Commits the Comments if it has not happened previously
      * @return returns the entire object as HTML code ready for insertion into an HTML file
      */
-    def toHTML(): String = {
+    def toHTML: String = {
         if (!commentsCommitted) commitComments()
         var HTMLString = ""
-        if (isEmpty() == false) {
+        if (!this.isEmpty) {
             if (description.nonEmpty) {
                 HTMLString += "<p><b> Description: </b> <br>"
                 for (line <- description) {
@@ -104,16 +104,16 @@ class Comment {
      * @return returns true if the comment is empty.
      * @return returns true if the comment is empty but the label property (the label property is set automatically for config files.).
      */
-    def isEmpty(): Boolean = {
+    def isEmpty: Boolean = {
         if (commentBuffer.length <= 0) return true
         if (commentBuffer.length <= 1 && label.trim != "") return true
         false
     }
 
-    def getBrief(): String = {
+    def getBrief: String = {
         if (this.brief.isEmpty) {
-            if (!this.description.isEmpty) {
-                return this.description(0).substring(0, this.description(0).size.min(70)) + "..."
+            if (this.description.nonEmpty) {
+                return this.description.head.substring(0, this.description.head.length.min(70)) + "..."
             }
         }
         this.brief
@@ -122,7 +122,7 @@ class Comment {
     def replaceClasses(se: SubclassExtractor): Unit = {
         if (this.datatype.trim.equals("subclass")) {
             // Get a Set of all subclasses
-            val root = this.constraints(0)
+            val root = this.constraints.head
 
             // Replace Types
             this.datatype = "enum"

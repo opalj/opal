@@ -1,6 +1,7 @@
 package org.opalj
 package ce
 
+import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -15,7 +16,7 @@ class SubclassExtractor(val f: FileLocator) {
     def extractSubclasses(root: String): mutable.Set[String] = {
         val results = mutable.Set[String]()
         for (classHierarchy <- this.classHierarchies) {
-            val unformattedresult = classHierarchy.subtypeInformation(ObjectType(root.replace(".", "/"))).getOrElse(null)
+            val unformattedresult = classHierarchy.subtypeInformation(ObjectType(root.replace(".", "/"))).orNull
             if (unformattedresult != null) {
                 for (entry <- unformattedresult.classTypes) {
                     results += unapply(entry).getOrElse("").replace("/", ".")
@@ -28,7 +29,7 @@ class SubclassExtractor(val f: FileLocator) {
     def initialize(): Unit = {
         val files = f.FindJarArchives()
         for (file <- files) {
-            implicit val p = Project(file.toFile, org.opalj.bytecode.RTJar)
+            val p: Project[URL] = Project(file.toFile, org.opalj.bytecode.RTJar)
             this.classHierarchies += p.classHierarchy
         }
         this.classHierarchies = classHierarchies

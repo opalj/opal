@@ -6,6 +6,7 @@ import java.io.PrintWriter
 import java.nio.file.Path
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
+import scala.util.Using
 
 /**
  * Exports the Config structure into an HTML file
@@ -24,10 +25,12 @@ class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
 
         // Generate HTML
         var fileContent = ""
-        val template = Source.fromFile(templatePath.toString).getLines().mkString("\n")
+        val template = Using(Source.fromFile(templatePath.toString)) { source =>
+            source.getLines().mkString("\n")
+        }.getOrElse("")
         var body = ""
         for (config <- ConfigList) {
-            if (config.isEmpty() == false) {
+            if (!config.isEmpty) {
                 body += config.toHTML("", HTMLHeadline, HTMLContent, sort_alphabetically)
                 body += "<hr>"
             }
@@ -37,7 +40,7 @@ class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
         // Write to file
         val printWriter = new PrintWriter(exportFile)
         printWriter.write(fileContent)
-        printWriter.close
+        printWriter.close()
     }
 
 }

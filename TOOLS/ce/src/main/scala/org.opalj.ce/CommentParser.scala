@@ -5,6 +5,7 @@ import java.nio.file.Path
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
+import scala.util.Using
 import scala.util.control.Breaks.break
 import scala.util.control.Breaks.breakable
 
@@ -28,7 +29,9 @@ class CommentParser() {
     def parseFile(filePath: Path): ConfigObject = {
         // Initialize iterator
         println("Parsing :" + filePath.toString)
-        val lines = Source.fromFile(filePath.toString).getLines().toList
+
+        val lines =
+            Using(Source.fromFile(filePath.toString)) { source => source.getLines().toList }.getOrElse(List.empty[String])
         iterator = lines.iterator
 
         // Parse initial Comments
@@ -52,7 +55,7 @@ class CommentParser() {
 
         // Using a breakable while loop to interrupt as soon as the object ends
         breakable {
-            while (iterator.hasNext || !line.isEmpty) {
+            while (iterator.hasNext || line.nonEmpty) {
                 this.parseComments(nextComment)
                 if (line.trim.startsWith("}")) {
                     // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
@@ -131,9 +134,7 @@ class CommentParser() {
         if (line.trim.startsWith("\"\"\"")) {
             // Case: line starts with a triple quoted string (These allow for multi-line values, so the line end does not necessarily terminate the value
             line = line.trim.stripPrefix("\"\"\"")
-            val (newline, newvalue) = this.extractValue("\"\"\"")
-            line = newline
-            value = newvalue
+            value = this.extractValue("\"\"\"")
         } else if (line.trim.startsWith("\"")) {
             // Case: line starts with a double quoted string
             line = line.trim.stripPrefix("\"").trim
@@ -196,7 +197,7 @@ class CommentParser() {
         var nextComment = new Comment
 
         breakable {
-            while (iterator.hasNext || !line.isEmpty) {
+            while (iterator.hasNext || line.nonEmpty) {
                 this.parseComments(nextComment)
                 if (line.trim.startsWith("{")) {
                     // Case: The following symbol opens an object
@@ -243,12 +244,10 @@ class CommentParser() {
 
     /**
      * Internal method for finding the end of a multi line value
-     * @param iterator accepts the iterator that currently iterates over the config file
-     * @param line accepts the substring of the line that has not been parsed yet
      * @param terminatingSymbol is the string that terminates the value
      * @return returns a tuple of the parsed value and the substring of the line that has not been parsed yet
      */
-    private def extractValue(terminatingSymbol: String): (String, String) = {
+    private def extractValue(terminatingSymbol: String): String = {
         // creating necessary variables
         var value = ""
         var remainingLine = ""
@@ -276,7 +275,8 @@ class CommentParser() {
                 }
             }
         }
-        (value, remainingLine)
+        line = remainingLine
+        value
     }
 
     /**

@@ -23,7 +23,7 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
 
         // Write value into HTML code
         var content = "<b>Value: </b><code>" + value.replace("<", "&lt").replace(">", "&gt") + "</code><br>"
-        content += this.comment.toHTML()
+        content += this.comment.toHTML
 
         // If there is no brief preview, put the value into it
         if (comment.brief.isEmpty) {
@@ -43,8 +43,8 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
      * Checks if the value object is empty
      * @return true if both the value and the comment are empty
      */
-    override def isEmpty(): Boolean = {
-        if (value.isEmpty && comment.isEmpty()) return true
+    override def isEmpty: Boolean = {
+        if (value.isEmpty && comment.isEmpty) return true
         false
     }
 

@@ -20,10 +20,10 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
     override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
         var HTMLString = ""
         var head = label
-        if (!this.comment.label.isEmpty) head = this.comment.label
+        if (this.comment.label.nonEmpty) head = this.comment.label
 
         // Get HTML data for all child Nodes
-        var content = "<p>" + comment.toHTML() + "</p>"
+        var content = "<p>" + comment.toHTML + "</p>"
 
         if (sorted) {
             val sortedKeys = entries.keys.toSeq.sorted
@@ -38,7 +38,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", this.comment.getBrief())
+        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", this.comment.getBrief)
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
@@ -50,10 +50,10 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
      * Checks if the object is empty
      * @return true if both the Object and the comment are empty
      */
-    override def isEmpty(): Boolean = {
-        if (!comment.isEmpty()) return false
+    override def isEmpty: Boolean = {
+        if (!comment.isEmpty) return false
         for ((key, value) <- entries) {
-            if (!value.isEmpty()) return false
+            if (!value.isEmpty) return false
         }
         true
     }
@@ -121,9 +121,9 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
             }
         }
         if (this.entries.size == 1) {
-            if (this.comment.isEmpty()) {} else {
+            if (this.comment.isEmpty) {} else {
                 val (key, value) = this.entries.head
-                if (value.comment.isEmpty()) {}
+                if (value.comment.isEmpty) {}
             }
         }
     }
