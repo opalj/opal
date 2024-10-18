@@ -12,6 +12,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.EntryPointFinder
+import org.opalj.br.android.AndroidManifest
+import org.opalj.br.android.AndroidManifestKey
 import org.opalj.tac.fpcf.analyses.MethodDescription
 
 /**
