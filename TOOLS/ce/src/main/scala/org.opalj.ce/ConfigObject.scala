@@ -11,11 +11,11 @@ import scala.collection.mutable
  */
 case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: Comment) extends ConfigNode {
     /**
-     * Formats the entry into HTML code
+     * Formats the entry into HTML code.
      * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object.
-     * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $label and $brief flags for filling with content
-     * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $content flag for correct rendering
-     * @return returns the Config Object as HTML code
+     * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $ label and $ brief flags for filling with content.
+     * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering.
+     * @return returns the Config Object as HTML code.
      */
     override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
         var HTMLString = ""

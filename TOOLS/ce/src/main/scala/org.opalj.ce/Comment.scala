@@ -3,7 +3,7 @@ package org.opalj.ce
 import scala.collection.mutable.ListBuffer
 
 /**
- * Container for the comments of a config node
+ * Container for the comments of a config node.
  */
 class Comment {
     val commentBuffer: ListBuffer[String] = ListBuffer[String]()
@@ -15,9 +15,9 @@ class Comment {
     var commentsCommitted = false
 
     /**
-     * Adds a comment to the comment buffer. If a comment has multiple lines, this method will be called multiple times
-     * If the Comment is already commited, nothing happens
-     * @param comment is the string that is added to the comment
+     * Adds a comment to the comment buffer. If a comment has multiple lines, this method will be called multiple times.
+     * If the Comment is already commited, nothing happens.
+     * @param comment is the string that is added to the comment.
      */
     def addComment(comment: String): Unit = {
         if (!commentsCommitted) this.commentBuffer += comment
@@ -49,9 +49,9 @@ class Comment {
     }
 
     /**
-     * Converts the Comment object into HTML syntax
-     * Commits the Comments if it has not happened previously
-     * @return returns the entire object as HTML code ready for insertion into an HTML file
+     * Converts the Comment object into HTML syntax.
+     * Commits the Comments if it has not happened previously.
+     * @return returns the entire object as HTML code ready for insertion into an HTML file.
      */
     def toHTML: String = {
         if (!commentsCommitted) commitComments()
@@ -101,7 +101,6 @@ class Comment {
 
     /**
      * Checks if the comment is empty.
-     * @return returns true if the comment is empty.
      * @return returns true if the comment is empty but the label property (the label property is set automatically for config files.).
      */
     def isEmpty: Boolean = {

@@ -12,8 +12,8 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
     /**
      * Formats the entry into HTML code
      * @param label required if the List is part of an object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object.
-     * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $label and $brief flags for filling with content
-     * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $content flag for correct rendering
+     * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $ label and $ brief flags for filling with content.
+     * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering.
      * @return returns the Config List as HTML code
      */
     override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
