@@ -7,10 +7,8 @@ package android
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.EntryPointFinder
