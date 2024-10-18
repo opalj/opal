@@ -25,6 +25,7 @@ object Dependencies {
     val jacksonDF = "2.12.2"
     val fastutil = "8.5.4"
     val apkparser = "2.6.10"
+    val typesafeconfig = "1.4.2"
 
     val openjfx = "16"
 
@@ -56,6 +57,7 @@ object Dependencies {
     val fastutil = "it.unimi.dsi"                           % "fastutil"                    % version.fastutil withSources () withJavadoc ()
     val javafxBase = "org.openjfx"                          % "javafx-base"                 % version.openjfx classifier osName
     val apkparser = "net.dongliu"                           % "apk-parser"                  % version.apkparser
+    val typesafeconfig = "com.typesafe"                     % "config"                      % version.typesafeconfig
 
     val javacpp = "org.bytedeco" % "javacpp" % version.javacpp
     val javacpp_llvm =  "org.bytedeco" % "llvm-platform" % (version.javacpp_llvm + "-" + version.javacpp)
@@ -82,5 +84,5 @@ object Dependencies {
   val apk = Seq(apkparser, scalaxml)
 
   val llvm = Seq(javacpp, javacpp_llvm)
-  val ce = Seq()
+  val ce = Seq(typesafeconfig)
 }
