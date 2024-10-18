@@ -3,93 +3,91 @@ package org.opalj
 package fpcf
 package analyses
 
+import java.net.URL
+import scala.xml.XML
+
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.cg.CFA_1_0_CallGraphKey
 import org.opalj.tac.cg.android.AndroidManifestKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
-import java.net.URL
-import scala.xml.XML
-
 object AndroidAnalysisDemo extends ProjectAnalysisApplication {
 
-  override def title: String = "Generate Callgraph for Android App"
+    override def title: String = "Generate Callgraph for Android App"
 
-  override def description: String = "Parses AndroidManifest.xml to determine entry points"
+    override def description: String = "Parses AndroidManifest.xml to determine entry points"
 
-  override def doAnalyze(
-                          project: Project[URL],
-                          parameters: Seq[String],
-                          isInterrupted: () => Boolean
-                        ): BasicReport = {
-    val manifestPath = parameters.collectFirst {
-      case param if param.startsWith("-manifest=") => param.split("=")(1)
-    }
-    if (manifestPath.isEmpty)
-      throw new IllegalArgumentException("Pass path to (non-binary) manifest with -manifest=path/to/AndroidManifest.xml")
-    var newConfig = project.config
-    newConfig = newConfig.withValue(
-      InitialEntryPointsKey.ConfigKey,
-      ConfigValueFactory.fromAnyRef("org.opalj.tac.cg.android.AndroidEntryPointsFinder")
-    )
-    val newProject = Project.recreate(project, newConfig)
-    val result = analyze(newProject, manifestPath.get)
-    BasicReport(result)
-  }
-
-  override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
-    val remainingParameters =
-      parameters.filter { p =>
-        !p.startsWith("-manifest=")
-      }
-    super.checkAnalysisSpecificParameters(remainingParameters)
-  }
-
-  def analyze(project: Project[URL],
-              manifestPath: String): String = {
-
-
-    var propertyStoreTime: Seconds = Seconds.None
-    var callGraphTime: Seconds = Seconds.None
-    project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-      Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
+    override def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean
+    ): BasicReport = {
+        val manifestPath = parameters.collectFirst {
+            case param if param.startsWith("-manifest=") => param.split("=")(1)
+        }
+        if (manifestPath.isEmpty)
+            throw new IllegalArgumentException(
+                "Pass path to (non-binary) manifest with -manifest=path/to/AndroidManifest.xml"
+            )
+        var newConfig = project.config
+        newConfig = newConfig.withValue(
+            InitialEntryPointsKey.ConfigKey,
+            ConfigValueFactory.fromAnyRef("org.opalj.tac.cg.android.AndroidEntryPointsFinder")
+        )
+        val newProject = Project.recreate(project, newConfig)
+        val result = analyze(newProject, manifestPath.get)
+        BasicReport(result)
     }
 
-    project.updateProjectInformationKeyInitializationData(AndroidManifestKey) {
-      _ => XML.loadFile(manifestPath)
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
+        val remainingParameters =
+            parameters.filter { p => !p.startsWith("-manifest=") }
+        super.checkAnalysisSpecificParameters(remainingParameters)
     }
 
-    implicit val ps: PropertyStore = time {
-      project.get(PropertyStoreKey)
-    } { t => propertyStoreTime = t.toSeconds }
+    def analyze(project: Project[URL], manifestPath: String): String = {
 
-    val cg = time {
-      project.get(CFA_1_0_CallGraphKey)
-    } { t => callGraphTime = t.toSeconds }
+        var propertyStoreTime: Seconds = Seconds.None
+        var callGraphTime: Seconds = Seconds.None
+        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
+            Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
+        }
 
-    try {
-      ps.shutdown()
-    } catch {
-      case t: Throwable =>
-        Console.err.println("PropertyStore shutdown failed: ")
-        t.printStackTrace()
-    }
+        project.updateProjectInformationKeyInitializationData(AndroidManifestKey) {
+            _ => XML.loadFile(manifestPath)
+        }
 
+        implicit val ps: PropertyStore = time {
+            project.get(PropertyStoreKey)
+        } { t => propertyStoreTime = t.toSeconds }
 
-    val reachableContexts = cg.reachableMethods().to(Iterable)
-    val reachableMethods = reachableContexts.map(_.method).toSet
+        val cg = time {
+            project.get(CFA_1_0_CallGraphKey)
+        } { t => callGraphTime = t.toSeconds }
 
-    val numEdges = cg.numEdges
+        try {
+            ps.shutdown()
+        } catch {
+            case t: Throwable =>
+                Console.err.println("PropertyStore shutdown failed: ")
+                t.printStackTrace()
+        }
 
-    s"""
+        val reachableContexts = cg.reachableMethods().to(Iterable)
+        val reachableMethods = reachableContexts.map(_.method).toSet
+
+        val numEdges = cg.numEdges
+
+        s"""
        | Num Reachable Methods: ${reachableMethods.size}
        | Num Edges: ${numEdges}
        |
@@ -99,5 +97,5 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
        | propertyStore: ${ps.getClass}
        |
        |""".stripMargin
-  }
+    }
 }
