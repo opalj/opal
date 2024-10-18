@@ -148,8 +148,12 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val writes = state.fieldWriteAccessDependee.get.ub.accesses
         val writesInMethod = writes.filter { w => contextProvider.contextFromId(w._1).method eq definedMethod }.toSeq
 
-        if (writesInMethod.distinctBy(_._2).size > 1)
-            return true; // Field is written in multiple locations, thus must be assignable
+        if (writesInMethod.distinctBy(_._2).size > 1) {
+            // There can be multiple assignments in the constructor
+            // in different branches to final fields
+            if(!definedMethod.definedMethod.isConstructor)
+                return true
+        }; // Field is written in multiple locations, thus must be assignable
 
         // If we have no information about the receiver, we soundly return true
         // However, a static field has no receiver
@@ -159,6 +163,8 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val assignedValueObject =
             if (index > 0 && stmts(index).isPutStatic) {
                 stmts(index).asPutStatic.value.asVar
+            } else if (index > 0 && stmts(index).isPutField && stmts(index).asPutField.value.asVar.value.isArrayValue.isYes) {
+                stmts(index).asPutField.value.asVar
             } else
                 receiverVar.get
 
@@ -192,7 +198,8 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     //  stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
                     stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
                     // CHECK do we really need the taCode here?
-                    dominates(fieldWriteInMethodIndex, index, taCode)
+                    !dominates(index, fieldWriteInMethodIndex, taCode) || stmt.isArrayStore //TODO check
+
             }
         )
             return true;
