@@ -5,9 +5,10 @@ import java.net.URL
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import org.opalj.br._
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.ObjectType
 import org.opalj.br.ObjectType.unapply
-import org.opalj.br.analyses._
+import org.opalj.br.analyses.Project
 
 class SubclassExtractor(val f: FileLocator) {
     var classHierarchies: ListBuffer[ClassHierarchy] = new ListBuffer[ClassHierarchy]
