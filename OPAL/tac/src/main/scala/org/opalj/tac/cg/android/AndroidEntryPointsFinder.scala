@@ -4,70 +4,48 @@ package tac
 package cg
 package android
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.jdk.CollectionConverters._
-import scala.util.control.Exception.allCatch
-
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.EntryPointFinder
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
+import org.opalj.br.{ClassFile, Method, MethodDescriptor, ObjectType, ReferenceType}
+import org.opalj.tac.fpcf.analyses.MethodDescription
+
+import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 
 /**
- * The AndroidEntryPointFinder considers specific methods of app components as entry points.
- * Requires Android Manifest to be loaded.
+ * The AndroidEntryPointFinder considers specific methods of launcher Activity Clases as entry points.
+ * An activity is a launcher activity if it contains an intent filter with action "android.intent.action.MAIN"
+ * and category "android.intent.category.LAUNCHER". Requires Android Manifest to be loaded.
  *
  * @author Tom Nikisch
  *         Julius Naeumann
  */
 object AndroidEntryPointsFinder extends EntryPointFinder {
-    val configKey = "org.opalj.tac.cg.android.AndroidEntryPointsFinder"
-    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
-        val entryPoints = ArrayBuffer.empty[Method]
-        val defaultEntryPoints = mutable.Map.empty[String, List[(String, Option[MethodDescriptor])]]
+  val configKey = "org.opalj.tac.cg.android.AndroidEntryPointsFinder.entryPoints"
+  override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
+    val entryPointDescriptions = getConfiguredEntryPoints(project)
+    val manifest: AndroidManifest = project.get(AndroidManifestKey).get
+    // get launcher
+    val launchableActivities = manifest.components.collect { case a : Activity => a }.filter(_.isLauncherActivity)
+    val launchableClasses = launchableActivities.map(_.cls)
+    val classHierarchy = project.classHierarchy
+    val entryPoints = ArrayBuffer[Method]()
 
-        val defaultEntry = project.config.getConfig(configKey)
-        defaultEntry.root().entrySet().forEach { entry =>
-            val d = entry.getKey
-            val entryMethods = defaultEntry.getConfigList(d).asScala.map {
-                entry =>
-                    (
-                      entry.getString("name"),
-                      allCatch.opt(entry.getString("descriptor")).map(MethodDescriptor(_))
-                    )
-            }.toList
-            defaultEntryPoints += (d -> entryMethods)
+    // collect entry point methods from launchable activities
+    for (componentClass <- launchableClasses) {
+      for (epd <- entryPointDescriptions) {
+        if (classHierarchy.isASubtypeOf(ReferenceType(componentClass.fqn), ReferenceType(epd.cf)).isYes) {
+          entryPoints ++= componentClass.findMethod(epd.name, MethodDescriptor(epd.desc))
         }
-
-        for ((superClass, methodList) <- defaultEntryPoints) {
-            entryPoints ++= findEntryPoints(ObjectType(superClass), methodList, project)
-        }
-        entryPoints
+      }
     }
+    entryPoints
+  }
 
-    def findEntryPoints(
-                         objectType:          ObjectType,
-                         possibleEntryPoints: List[(String, Option[MethodDescriptor])],
-                         project:             SomeProject
-                       ): Set[Method] = {
-        var entryPoints = Set.empty[Method]
-        val classHierarchy = project.classHierarchy
-        classHierarchy.allSubclassTypes(objectType, reflexive = true).flatMap(project.classFile).
-          foreach { subclassType =>
-              for (possibleEntryPoint <- possibleEntryPoints) {
-                  if (possibleEntryPoint._2.isEmpty) {
-                      for (method <- subclassType.findMethod(possibleEntryPoint._1) if method.body.isDefined) {
-                          entryPoints += method
-                      }
-                  } else {
-                      for (method <- subclassType.findMethod(possibleEntryPoint._1, possibleEntryPoint._2.get) if method.body.isDefined) {
-                          entryPoints += method
-                      }
-                  }
-              }
-          }
-        entryPoints
-    }
+  private def getConfiguredEntryPoints(project: SomeProject) = {
+    val entryPointDescriptionsConfig = project.config.getConfigList(configKey).asScala.toArray
+    val entryPointDescriptions = entryPointDescriptionsConfig.map(c => MethodDescription.reader.read(c, ""))
+    entryPointDescriptions
+  }
 }
