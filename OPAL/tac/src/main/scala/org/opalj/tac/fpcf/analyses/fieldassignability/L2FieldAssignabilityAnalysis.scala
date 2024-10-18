@@ -151,7 +151,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         if (writesInMethod.distinctBy(_._2).size > 1) {
             // There can be multiple assignments in the constructor
             // in different branches to final fields
-            if(!definedMethod.definedMethod.isConstructor)
+            if (!definedMethod.definedMethod.isConstructor)
                 return true
         }; // Field is written in multiple locations, thus must be assignable
 
@@ -163,7 +163,9 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val assignedValueObject =
             if (index > 0 && stmts(index).isPutStatic) {
                 stmts(index).asPutStatic.value.asVar
-            } else if (index > 0 && stmts(index).isPutField && stmts(index).asPutField.value.asVar.value.isArrayValue.isYes) {
+            } else if (
+                index > 0 && stmts(index).isPutField && stmts(index).asPutField.value.asVar.value.isArrayValue.isYes
+            ) {
                 stmts(index).asPutField.value.asVar
             } else
                 receiverVar.get
@@ -198,7 +200,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     //  stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
                     stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
                     // CHECK do we really need the taCode here?
-                    !dominates(index, fieldWriteInMethodIndex, taCode) || stmt.isArrayStore //TODO check
+                    !dominates(index, fieldWriteInMethodIndex, taCode) || stmt.isArrayStore // TODO check
 
             }
         )
