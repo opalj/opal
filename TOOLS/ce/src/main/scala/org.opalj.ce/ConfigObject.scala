@@ -17,18 +17,18 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $content flag for correct rendering
      * @return returns the Config Object as HTML code
      */
-    override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String, sorted: Boolean): String = {
+    override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
         var HTMLString = ""
         var head = label
-        if(!this.comment.label.isEmpty) head = this.comment.label
+        if (!this.comment.label.isEmpty) head = this.comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML() + "</p>"
 
-        if(sorted){
+        if (sorted) {
             val sortedKeys = entries.keys.toSeq.sorted
 
-            for(key <- sortedKeys){
+            for (key <- sortedKeys) {
                 content += entries(key).toHTML(key, HTMLHeadline, HTMLContent, sorted)
             }
         } else {
@@ -38,7 +38,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label",head).replace("$brief",this.comment.getBrief())
+        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", this.comment.getBrief())
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
@@ -51,9 +51,9 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
      * @return true if both the Object and the comment are empty
      */
     override def isEmpty(): Boolean = {
-        if(!comment.isEmpty()) return false
-        for((key,value) <- entries){
-            if(!value.isEmpty()) return false
+        if (!comment.isEmpty()) return false
+        for ((key, value) <- entries) {
+            if (!value.isEmpty()) return false
         }
         true
     }
@@ -63,23 +63,25 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
      * This means that the objects are free of conflicting values and lists. Objects are allowed to overlap as long as there are no conflicts down the tree.
      * @param insertingObject Is the object that is supposed to be merged into the executing one
      */
-    def merge(insertingObject : ConfigObject): Unit = {
+    def merge(insertingObject: ConfigObject): Unit = {
 
         // Expanding both objects guarantees compatible key naming syntax
         this.expand()
         insertingObject.expand()
 
         // Insert object
-        for(kvpair <- insertingObject.entries){
-            val (key,value) = kvpair
-            if(this.entries.contains(key)){
-                val conflicting_entry = this.entries.getOrElse(key,null)
-                if(conflicting_entry.isInstanceOf[ConfigObject] && value.isInstanceOf[ConfigObject]){
+        for (kvpair <- insertingObject.entries) {
+            val (key, value) = kvpair
+            if (this.entries.contains(key)) {
+                val conflicting_entry = this.entries.getOrElse(key, null)
+                if (conflicting_entry.isInstanceOf[ConfigObject] && value.isInstanceOf[ConfigObject]) {
                     val conflicting_child_object = conflicting_entry.asInstanceOf[ConfigObject]
                     conflicting_child_object.merge(value.asInstanceOf[ConfigObject])
                 } else {
                     println("Info on incompatible keys: " + key.trim)
-                    throw new Exception("Unable to merge incompatible types:" + value.getClass + " & " + conflicting_entry.getClass)
+                    throw new Exception(
+                        "Unable to merge incompatible types:" + value.getClass + " & " + conflicting_entry.getClass
+                    )
                 }
             } else {
                 println("No conflict detected. Inserting " + key.trim)
@@ -94,17 +96,17 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
      * This method collapses the object structure by joining inheriting objects containing only one value.
      * Inverse function of expand.
      */
-    def collapse() : Unit = {
-        for(entry <- this.entries){
-            val (key,value) = entry
+    def collapse(): Unit = {
+        for (entry <- this.entries) {
+            val (key, value) = entry
             value.collapse()
 
             // If the entry is a config object with exactly one child -> merge
-            if(value.isInstanceOf[ConfigObject]){
+            if (value.isInstanceOf[ConfigObject]) {
                 val value_object = value.asInstanceOf[ConfigObject]
-                if(value_object.entries.size == 1){
+                if (value_object.entries.size == 1) {
                     // Merge Keys
-                    val (childkey,childvalue) = value_object.entries.head
+                    val (childkey, childvalue) = value_object.entries.head
                     val newkey = key.trim + "." + childkey.trim
 
                     // Merge comments
@@ -118,14 +120,10 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
                 }
             }
         }
-        if(this.entries.size == 1){
-            if(this.comment.isEmpty()){
-
-            } else {
+        if (this.entries.size == 1) {
+            if (this.comment.isEmpty()) {} else {
                 val (key, value) = this.entries.head
-                if(value.comment.isEmpty()){
-
-                }
+                if (value.comment.isEmpty()) {}
             }
         }
     }
@@ -134,23 +132,25 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
      * This method expands the current object to represent all ob-objects within the structure
      * Inverse function of collapse
      */
-    def expand() : Unit = {
-        for(entry <- this.entries){
+    def expand(): Unit = {
+        for (entry <- this.entries) {
             // Expand substructure of monitored object
-            val (key,value) = entry
+            val (key, value) = entry
             value.expand()
 
-            if(key.contains(".")) {
+            if (key.contains(".")) {
                 // Create expanded object
-                val newkey = key.trim.split("\\.",2)
+                val newkey = key.trim.split("\\.", 2)
                 val new_entry = mutable.Map[String, ConfigNode](newkey(1).trim -> value)
                 val new_object = ConfigObject(new_entry, new Comment)
                 new_object.expand()
-                if(this.entries.contains(newkey(0).trim)) {
-                    if(this.entries(newkey(0).trim).isInstanceOf[ConfigObject]) {
+                if (this.entries.contains(newkey(0).trim)) {
+                    if (this.entries(newkey(0).trim).isInstanceOf[ConfigObject]) {
                         this.entries(newkey(0).trim).asInstanceOf[ConfigObject].merge(new_object)
                     } else {
-                        throw new Exception("Unable to Merge " + newkey(0).trim + "due to incompatible types: " + this.entries(newkey(0).trim).getClass)
+                        throw new Exception("Unable to Merge " + newkey(
+                            0
+                        ).trim + "due to incompatible types: " + this.entries(newkey(0).trim).getClass)
                     }
                 } else {
                     this.entries += (newkey(0).trim -> new_object)
@@ -163,7 +163,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
     }
 
     override def replaceClasses(se: SubclassExtractor): Unit = {
-        for((key,value) <- entries){
+        for ((key, value) <- entries) {
             value.replaceClasses(se)
         }
     }

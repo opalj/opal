@@ -20,20 +20,19 @@ class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
      * @param HTMLHeadline Accepts the Headline HTML structure that gets passed on to the ConfigNodes
      * @param HTMLContent Accepts the Content HTML structure that gets passed on to the ConfigNodes
      */
-    def exportHTML(exportFile : File, HTMLHeadline : String, HTMLContent : String, sort_alphabetically : Boolean): Unit = {
+    def exportHTML(exportFile: File, HTMLHeadline: String, HTMLContent: String, sort_alphabetically: Boolean): Unit = {
 
         // Generate HTML
         var fileContent = ""
         val template = Source.fromFile(templatePath.toString).getLines().mkString("\n")
         var body = ""
-        for(config <- ConfigList)
-        {
-            if(config.isEmpty() == false) {
+        for (config <- ConfigList) {
+            if (config.isEmpty() == false) {
                 body += config.toHTML("", HTMLHeadline, HTMLContent, sort_alphabetically)
                 body += "<hr>"
             }
         }
-        fileContent = template.replace("$body",body)
+        fileContent = template.replace("$body", body)
 
         // Write to file
         val printWriter = new PrintWriter(exportFile)

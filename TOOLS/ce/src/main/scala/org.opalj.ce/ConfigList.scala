@@ -16,19 +16,19 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $content flag for correct rendering
      * @return returns the Config List as HTML code
      */
-    override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String, sorted : Boolean): String = {
+    override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
         var HTMLString = ""
         var head = label
-        if(this.comment.label.nonEmpty) head = this.comment.label
+        if (this.comment.label.nonEmpty) head = this.comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML() + "</p>"
-        for(entry <- entries){
+        for (entry <- entries) {
             content += entry.toHTML("", HTMLHeadline, HTMLContent, sorted)
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label",head).replace("$brief",this.comment.getBrief())
+        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", this.comment.getBrief())
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
@@ -41,10 +41,10 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * @return true if both the List and the comment are empty
      */
     override def isEmpty(): Boolean = {
-        for(entry <- entries){
-            if(!entry.isEmpty()) return false
+        for (entry <- entries) {
+            if (!entry.isEmpty()) return false
         }
-        if(!comment.isEmpty()) return false
+        if (!comment.isEmpty()) return false
         true
     }
 
@@ -52,8 +52,8 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * This method collapses the object structure by joining inheriting objects containing only one value
      * Inverse function of expand
      */
-    override def collapse() : Unit = {
-        for(entry <- this.entries){
+    override def collapse(): Unit = {
+        for (entry <- this.entries) {
             entry.collapse()
         }
     }
@@ -62,16 +62,15 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * This method expands the current object to represent all ob-objects within the structure
      * Inverse function of collapse
      */
-    override def expand() : Unit = {
-        for(entry <- this.entries){
+    override def expand(): Unit = {
+        for (entry <- this.entries) {
             entry.expand()
         }
     }
 
     override def replaceClasses(se: SubclassExtractor): Unit = {
-        for(entry <- entries){
+        for (entry <- entries) {
             entry.replaceClasses(se)
         }
     }
 }
-

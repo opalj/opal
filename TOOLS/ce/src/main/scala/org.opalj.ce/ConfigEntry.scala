@@ -14,24 +14,24 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $content flag for correct rendering
      * @return returns the Config Entry as HTML code
      */
-    override def toHTML(label: String, HTMLHeadline : String, HTMLContent : String, sorted : Boolean): String = {
+    override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
         var HTMLString = ""
         var head = label
         var brief = this.comment.brief
-        if(this.comment.label.nonEmpty) head = this.comment.label
+        if (this.comment.label.nonEmpty) head = this.comment.label
         else if (head == "") head = value
 
         // Write value into HTML code
-        var content = "<b>Value: </b><code>" + value.replace("<","&lt").replace(">","&gt") + "</code><br>"
+        var content = "<b>Value: </b><code>" + value.replace("<", "&lt").replace(">", "&gt") + "</code><br>"
         content += this.comment.toHTML()
 
         // If there is no brief preview, put the value into it
-        if(comment.brief.isEmpty){
-            brief = "<b>Value: </b><code>" + value.replace("<","&lt").replace(">","&gt") + "</code>"
+        if (comment.brief.isEmpty) {
+            brief = "<b>Value: </b><code>" + value.replace("<", "&lt").replace(">", "&gt") + "</code>"
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label",head).replace("$brief",brief)
+        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", brief)
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
@@ -44,12 +44,12 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
      * @return true if both the value and the comment are empty
      */
     override def isEmpty(): Boolean = {
-        if(value.isEmpty && comment.isEmpty()) return true
+        if (value.isEmpty && comment.isEmpty()) return true
         false
     }
 
     override def collapse(): Unit = {}
-    override def expand() : Unit ={}
+    override def expand(): Unit = {}
 
     override def replaceClasses(se: SubclassExtractor): Unit = {
         this.comment.replaceClasses(se)

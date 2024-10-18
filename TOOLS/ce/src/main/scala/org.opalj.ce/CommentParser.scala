@@ -42,68 +42,70 @@ class CommentParser() {
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed object
      */
-    private def parseObject(currentComment : Comment) : ConfigObject = {
+    private def parseObject(currentComment: Comment): ConfigObject = {
         this.line = this.line.trim.stripPrefix("{")
         // Creating necessary components
         val entries = mutable.Map[String, ConfigNode]()
         var nextComment = this.parseComments()
         var currentKey = ""
-        var currentvalue : ConfigNode = null
+        var currentvalue: ConfigNode = null
 
         // Using a breakable while loop to interrupt as soon as the object ends
-        breakable { while(iterator.hasNext || !line.isEmpty){
-            this.parseComments(nextComment)
-            if (line.trim.startsWith("}")) {
-                // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
-                line = line.trim.stripPrefix("}")
-                break()
+        breakable {
+            while (iterator.hasNext || !line.isEmpty) {
+                this.parseComments(nextComment)
+                if (line.trim.startsWith("}")) {
+                    // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
+                    line = line.trim.stripPrefix("}")
+                    break()
 
-            } else if(line.trim != ""){
-                // If none of the options above apply and the line is NOT empty (in which case load the next line and ignore this)
-                // What follows now is part of the content of the object
-                // Objects are Key Value pairs, so parsing these is a two stage job: Separating Key and value and then parsing the value
+                } else if (line.trim != "") {
+                    // If none of the options above apply and the line is NOT empty (in which case load the next line and ignore this)
+                    // What follows now is part of the content of the object
+                    // Objects are Key Value pairs, so parsing these is a two stage job: Separating Key and value and then parsing the value
 
-                // 1. Separating Key and value
-                // In JSON, Keys and values are separated with ':'. HOCON allows substituting ':' with '=' and also allows ommitting these symbols when using a '{' or '[' to open an object/list afterwards
-                // Finding first instance of these symbols
-                // TerminatingIndex is the index of the symbol that terminates the key.
-                val terminatingChars = Set(':','=','{','[')
-                val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars,line)
+                    // 1. Separating Key and value
+                    // In JSON, Keys and values are separated with ':'. HOCON allows substituting ':' with '=' and also allows ommitting these symbols when using a '{' or '[' to open an object/list afterwards
+                    // Finding first instance of these symbols
+                    // TerminatingIndex is the index of the symbol that terminates the key.
+                    val terminatingChars = Set(':', '=', '{', '[')
+                    val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars, line)
 
-                // Splitting the key from the string (while splitting of the ':' or '=' as they are not needed anymore
-                currentKey = line.substring(0,terminatingIndex -1).trim.stripPrefix("\"").stripSuffix("\"")
-                line = line.substring(terminatingIndex).trim.stripPrefix(":").stripPrefix("=")
+                    // Splitting the key from the string (while splitting of the ':' or '=' as they are not needed anymore
+                    currentKey = line.substring(0, terminatingIndex - 1).trim.stripPrefix("\"").stripSuffix("\"")
+                    line = line.substring(terminatingIndex).trim.stripPrefix(":").stripPrefix("=")
 
-                // Evaluating the type of value
-                if(line.trim.startsWith("{")){
-                    // Case: Value is an object
-                    currentvalue = this.parseObject(nextComment)
-                } else if(line.trim.startsWith("[")){
-                    // Case: Value is a list
-                    currentvalue = this.parseList(nextComment)
-                } else {
-                    // Case: Value is an entry
-                    currentvalue = this.parseEntry(nextComment)
+                    // Evaluating the type of value
+                    if (line.trim.startsWith("{")) {
+                        // Case: Value is an object
+                        currentvalue = this.parseObject(nextComment)
+                    } else if (line.trim.startsWith("[")) {
+                        // Case: Value is a list
+                        currentvalue = this.parseList(nextComment)
+                    } else {
+                        // Case: Value is an entry
+                        currentvalue = this.parseEntry(nextComment)
+                    }
+
+                    // Reset next comment
+                    nextComment = new Comment
+
+                    // Json Keys are split using a ",". This is not necessary, but tolerated in HOCON syntax
+                    line = line.trim.stripPrefix(",")
+
+                    // Adding the new Key, Value pair to the Map
+                    entries.addOne((currentKey, currentvalue))
                 }
 
-                // Reset next comment
-                nextComment = new Comment
-
-                // Json Keys are split using a ",". This is not necessary, but tolerated in HOCON syntax
-                line = line.trim.stripPrefix(",")
-
-                // Adding the new Key, Value pair to the Map
-                entries.addOne((currentKey,currentvalue))
+                // Proceed with the next line if the current one was fully parsed
+                if (line.trim == "" && iterator.hasNext) {
+                    line = iterator.next()
+                }
             }
-
-            // Proceed with the next line if the current one was fully parsed
-            if(line.trim == "" && iterator.hasNext){
-                line = iterator.next()
-            }
-        }}
+        }
 
         // If there is a comment directly behind the closing bracket of the object, add it to comments too.
-        if(line.trim.startsWith("#") || line.trim.startsWith("//")){
+        if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
             currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
             line = ""
         }
@@ -120,16 +122,16 @@ class CommentParser() {
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed entry
      */
-    private def parseEntry(currentComment : Comment) : ConfigEntry = {
+    private def parseEntry(currentComment: Comment): ConfigEntry = {
         // Creation of necessary values
         var value = ""
 
         this.parseComments(currentComment)
 
-        if (line.trim.startsWith("\"\"\"")){
+        if (line.trim.startsWith("\"\"\"")) {
             // Case: line starts with a triple quoted string (These allow for multi-line values, so the line end does not necessarily terminate the value
             line = line.trim.stripPrefix("\"\"\"")
-            val (newline,newvalue) = this.extractValue("\"\"\"")
+            val (newline, newvalue) = this.extractValue("\"\"\"")
             line = newline
             value = newvalue
         } else if (line.trim.startsWith("\"")) {
@@ -147,22 +149,22 @@ class CommentParser() {
                 i += 1
             })
 
-            value = line.substring(0,terminatingIndex).trim
+            value = line.substring(0, terminatingIndex).trim
             line = line.stripPrefix(value).trim.stripPrefix("\"")
         } else if (line.trim.startsWith("\'")) {
             // Case: line starts with a single quoted string
             line = line.trim.stripPrefix("\'").trim
-            value = line.substring(0,line.indexOf("\'")).trim
+            value = line.substring(0, line.indexOf("\'")).trim
             line = line.stripPrefix(value).trim.stripPrefix("\'")
         } else {
             // Case: Line starts with an unquoted string
             // There are two ways of terminating an unquoted string
             // Option 1: The value is inside of a pattern that has other control structures
             line = line.trim
-            val terminatingChars = Set(',',']','}',' ')
-            val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars,line)
+            val terminatingChars = Set(',', ']', '}', ' ')
+            val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars, line)
 
-            if(terminatingIndex > 0) {
+            if (terminatingIndex > 0) {
                 value = line.trim.substring(0, terminatingIndex).trim
                 line = line.trim.stripPrefix(value).trim
             } else {
@@ -173,13 +175,13 @@ class CommentParser() {
         }
 
         // If a comment is behind the value in the same line, this adds it to the comments too
-        if(line.trim.startsWith("#") || line.trim.startsWith("//")){
+        if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
             currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
             line = ""
         }
 
         currentComment.commitComments()
-        ConfigEntry(value,currentComment)
+        ConfigEntry(value, currentComment)
     }
 
     /**
@@ -187,41 +189,46 @@ class CommentParser() {
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed entry
      */
-    private def parseList(currentComment : Comment) : ConfigList = {
+    private def parseList(currentComment: Comment): ConfigList = {
         line = line.trim.stripPrefix("[")
         // Creating necessary variables
         val value = new ListBuffer[ConfigNode]
         var nextComment = new Comment
 
-        breakable { while(iterator.hasNext || !line.isEmpty){
-            this.parseComments(nextComment)
-            if(line.trim.startsWith("{")){
-                // Case: The following symbol opens an object
-                value += parseObject(nextComment)
-                line = line.trim.stripPrefix(",")
-                nextComment = new Comment
-            } else if (line.trim.startsWith("[")){
-                // Case: The following symbol opens a list
-                value += parseList(nextComment)
-                line = line.trim.stripPrefix(",")
-                nextComment = new Comment
-            } else if(line.trim.startsWith("]") || (line.trim.startsWith(",") && line.trim.stripPrefix(",").trim.startsWith("]"))){
-                // Case: The following symbol closes the list
-                line = line.trim.stripPrefix(",").trim.stripPrefix("]")
-                break()
-            } else if(line.trim != ""){
-                // Case: The following symbol is an entry
-                value += parseEntry(nextComment)
-                nextComment = new Comment
-                line = line.trim.stripPrefix(",")
-            }
+        breakable {
+            while (iterator.hasNext || !line.isEmpty) {
+                this.parseComments(nextComment)
+                if (line.trim.startsWith("{")) {
+                    // Case: The following symbol opens an object
+                    value += parseObject(nextComment)
+                    line = line.trim.stripPrefix(",")
+                    nextComment = new Comment
+                } else if (line.trim.startsWith("[")) {
+                    // Case: The following symbol opens a list
+                    value += parseList(nextComment)
+                    line = line.trim.stripPrefix(",")
+                    nextComment = new Comment
+                } else if (line.trim.startsWith("]") || (line.trim.startsWith(",") && line.trim.stripPrefix(
+                               ","
+                           ).trim.startsWith("]"))
+                ) {
+                    // Case: The following symbol closes the list
+                    line = line.trim.stripPrefix(",").trim.stripPrefix("]")
+                    break()
+                } else if (line.trim != "") {
+                    // Case: The following symbol is an entry
+                    value += parseEntry(nextComment)
+                    nextComment = new Comment
+                    line = line.trim.stripPrefix(",")
+                }
 
-            if(line.trim == "" && iterator.hasNext){
-                // Load next line when done
-                line = iterator.next()
+                if (line.trim == "" && iterator.hasNext) {
+                    // Load next line when done
+                    line = iterator.next()
+                }
             }
-        }}
-        if(line.trim.startsWith("#") || line.trim.startsWith("//")){
+        }
+        if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
             // Add the comment in the same line of the list as well
             currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
             line = ""
@@ -241,30 +248,35 @@ class CommentParser() {
      * @param terminatingSymbol is the string that terminates the value
      * @return returns a tuple of the parsed value and the substring of the line that has not been parsed yet
      */
-    private def extractValue(terminatingSymbol : String): (String,String) = {
+    private def extractValue(terminatingSymbol: String): (String, String) = {
         // creating necessary variables
         var value = ""
         var remainingLine = ""
 
-        if(this.line.contains(terminatingSymbol)) {
+        if (this.line.contains(terminatingSymbol)) {
             // The value is a single line value
-            value = this.line.substring(0,this.line.indexOf(terminatingSymbol))
+            value = this.line.substring(0, this.line.indexOf(terminatingSymbol))
             remainingLine = this.line.substring(this.line.indexOf(terminatingSymbol)).stripPrefix(terminatingSymbol)
         } else {
             // The value is a multi line value
             value = this.line
-            breakable { while(this.iterator.hasNext){
-                remainingLine = this.iterator.next()
-                if(remainingLine.contains(terminatingSymbol)){
-                    value += remainingLine.trim.substring(0,remainingLine.trim.indexOf(terminatingSymbol))
-                    remainingLine = remainingLine.trim.stripPrefix(remainingLine.trim.substring(0,remainingLine.trim.indexOf(terminatingSymbol))).stripPrefix(terminatingSymbol)
-                    break()
-                } else {
-                    value += remainingLine.trim()
+            breakable {
+                while (this.iterator.hasNext) {
+                    remainingLine = this.iterator.next()
+                    if (remainingLine.contains(terminatingSymbol)) {
+                        value += remainingLine.trim.substring(0, remainingLine.trim.indexOf(terminatingSymbol))
+                        remainingLine = remainingLine.trim.stripPrefix(remainingLine.trim.substring(
+                            0,
+                            remainingLine.trim.indexOf(terminatingSymbol)
+                        )).stripPrefix(terminatingSymbol)
+                        break()
+                    } else {
+                        value += remainingLine.trim()
+                    }
                 }
-            }}
+            }
         }
-        (value,remainingLine)
+        (value, remainingLine)
     }
 
     /**
@@ -274,20 +286,20 @@ class CommentParser() {
      * @return returns the lowest index of any character out of the character set that occurs in the string
      * @return returns -1 if none of the characters appear in the string
      */
-    private def findIndexOfCharsetInString(characterSet : Set[Char], string: String): Int = {
+    private def findIndexOfCharsetInString(characterSet: Set[Char], string: String): Int = {
         string.zipWithIndex.collectFirst {
-            case(char,index) if characterSet.contains(char) => index
+            case (char, index) if characterSet.contains(char) => index
         }.getOrElse(-1)
     }
 
-    private def parseComments() : Comment = {
+    private def parseComments(): Comment = {
         val comment = new Comment
         this.parseComments(comment)
     }
 
-    private def parseComments(comment: Comment) : Comment = {
-        while(line.trim.startsWith("#") || line.trim.startsWith("//") || line.trim == ""){
-            if(line.trim != "") comment.addComment(line.trim.stripPrefix("#").stripPrefix("//"))
+    private def parseComments(comment: Comment): Comment = {
+        while (line.trim.startsWith("#") || line.trim.startsWith("//") || line.trim == "") {
+            if (line.trim != "") comment.addComment(line.trim.stripPrefix("#").stripPrefix("//"))
             line = iterator.next()
         }
         comment
