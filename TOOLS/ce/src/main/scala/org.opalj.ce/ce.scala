@@ -31,8 +31,6 @@ object ce extends App {
     val CPW = new CommentParserWrapper
     val configs = CPW.IterateConfigs(filepaths)
 
-    locator.FindJarArchives(buildVersion)
-
     // Replace class type values
     if (conf.getBoolean("org.opalj.ce.replaceSubclasses")) {
         val se = new SubclassExtractor(locator, buildVersion)
@@ -44,10 +42,10 @@ object ce extends App {
     // Export
     val HE = new HTMLExporter(
         configs.asInstanceOf[ListBuffer[ConfigNode]],
-        Paths.get(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.template"))
+        Paths.get(locator.getProjectRoot + conf.getString("org.opalj.ce.html.template"))
     )
     HE.exportHTML(
-        new File(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.export")),
+        new File(locator.getProjectRoot + conf.getString("org.opalj.ce.html.export")),
         conf.getString("org.opalj.ce.html.headline"),
         conf.getString("org.opalj.ce.html.content"),
         conf.getBoolean("org.opalj.ce.html.sort_alphabetically")
