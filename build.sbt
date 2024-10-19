@@ -446,43 +446,30 @@ lazy val `Tools` = (project in file("DEVELOPING_OPAL/tools"))
   .configs(IntegrationTest)
 
 lazy val ce = (project in file("TOOLS/ce"))
+  .dependsOn(br % "compile->compile")
   .settings(buildSettings: _*)
   .settings(
+    fork := true,
+    javaOptions += s"-Dbuild.version=${version.value}",
     name := "ce",
     libraryDependencies ++= Dependencies.ce,
-    libraryDependencies += "com.typesafe" % "config" % "1.4.2",
     Compile / doc := {
-        // Overrides doc method to include config documentation at doc
-        val originalDoc = (Compile / doc).value
-        (Compile / compile).value
-        (Compile / run).toTask("").value
-        originalDoc
+      // Overrides doc method to include config documentation at doc
+      val originalDoc = (Compile / doc).value
+      (Compile / compile).value
+      (Compile / run).toTask("").value
+      originalDoc
     },
-    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer"),
-
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer")
   )
-    .dependsOn(br % "compile->compile")
-    .settings(buildSettings: _*)
-    .settings(
-        name := "ce",
-        libraryDependencies ++= Dependencies.ce,
-        Compile / doc := {
-            // Overrides doc method to include config documentation at doc
-            val originalDoc = (Compile / doc).value
-            (Compile / compile).value
-            (Compile / run).toTask("").value
-            originalDoc
-        },
-        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer")
-    )
-    .dependsOn(
-        br % "compile->compile",
-        apk % "runtime->compile",
-        demos % "runtime->compile",
-        // bp % "runtime->compile",
-        hermes % "runtime->compile"
-    )
-    .configs(IntegrationTest)
+.dependsOn(
+  br % "compile->compile",
+  apk % "runtime->compile",
+  demos % "runtime->compile",
+  // bp % "runtime->compile",
+  hermes % "runtime->compile"
+)
+.configs(IntegrationTest)
 
 /** ***************************************************************************
  *
