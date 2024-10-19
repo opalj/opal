@@ -12,8 +12,9 @@ import org.opalj.br.analyses.Project
 
 /**
  * The class subclassExtractor is a wrapper class around the bytecode representation project.
- * It will fetch all subclasses from the opal project and prepares the bytecode hierarchies for querying
- * @param f accepts any initialized FileLocator
+ * It will fetch all subclasses from the opal project and prepares the bytecode hierarchies for querying.
+ * @param f accepts any initialized FileLocator.
+ * @param pathWildcard accepts a Wildcard that must be present in every .jar files file name in order to be used for hierarchy extraction
  */
 class SubclassExtractor(val f: FileLocator, pathWildcard: String) {
     var classHierarchies: ClassHierarchy = null

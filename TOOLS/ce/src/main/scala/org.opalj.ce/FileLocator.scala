@@ -80,6 +80,11 @@ class FileLocator(var config: Config) {
         foundFiles
     }
 
+    /**
+     * Finds all jar archives in the project, where the file name contains the pathWildcard.
+     * @param pathWildcard accepts a String to filter the filenames of the jar archives. Will only return jar archives that contain the parameter in their file name
+     * @return Will only return jar archives that contain the parameter in their file name and that are not in the bg-jobs folder
+     */
     def FindJarArchives(pathWildcard: String): mutable.Buffer[File] = {
         val projectRoot = Paths.get(this.getProjectRoot)
         val foundFiles = ListBuffer[File]()
