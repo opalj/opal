@@ -14,43 +14,44 @@ import com.typesafe.config.ConfigFactory
  *   This is the main method that runs the configuration explorer
  *   It creates a browsable HTML File out of the configuration files present in the entire OPAL project
  */
-object ce {
-    def main(args: Array[String]): Unit = {
-        println("Configuration Explorer Started")
+object ce extends App {
+    println("Configuration Explorer Started")
+    val buildVersion = System.getProperty("build.version", "unknown")
+    val appHome = System.getProperty("app.home", "not set")
+    println(s"Build Version: $buildVersion")
+    println(s"Application Home: $appHome")
 
-        // Load config with default filename for this application
-        val conf = this.LoadConfig()
+    // Load config with default filename for this application
+    val conf = this.LoadConfig()
 
-        val locator = new FileLocator(conf)
-        val filepaths = locator.getConfigurationPaths
+    val locator = new FileLocator(conf)
+    val filepaths = locator.getConfigurationPaths
 
-        // Bulk Imports all the configs
-        val CPW = new CommentParserWrapper
-        val configs = CPW.IterateConfigs(filepaths)
+    // Bulk Imports all the configs
+    val CPW = new CommentParserWrapper
+    val configs = CPW.IterateConfigs(filepaths)
 
-        locator.FindJarArchives()
+    locator.FindJarArchives(buildVersion)
 
-        // Replace class type values
-        if (conf.getBoolean("org.opalj.ce.replaceSubclasses")) {
-            val se = new SubclassExtractor(locator)
-            for (config <- configs) {
-                config.replaceClasses(se)
-            }
+    // Replace class type values
+    if (conf.getBoolean("org.opalj.ce.replaceSubclasses")) {
+        val se = new SubclassExtractor(locator, buildVersion)
+        for (config <- configs) {
+            config.replaceClasses(se)
         }
-
-        // Export
-        val HE = new HTMLExporter(
-            configs.asInstanceOf[ListBuffer[ConfigNode]],
-            Paths.get(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.template"))
-        )
-        HE.exportHTML(
-            new File(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.export")),
-            conf.getString("org.opalj.ce.html.headline"),
-            conf.getString("org.opalj.ce.html.content"),
-            conf.getBoolean("org.opalj.ce.html.sort_alphabetically")
-        )
-
     }
+
+    // Export
+    val HE = new HTMLExporter(
+        configs.asInstanceOf[ListBuffer[ConfigNode]],
+        Paths.get(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.template"))
+    )
+    HE.exportHTML(
+        new File(conf.getString("user.dir") + conf.getString("org.opalj.ce.html.export")),
+        conf.getString("org.opalj.ce.html.headline"),
+        conf.getString("org.opalj.ce.html.content"),
+        conf.getBoolean("org.opalj.ce.html.sort_alphabetically")
+    )
 
     /**
      * Loads default configuration of the configuration explorer

@@ -2,6 +2,7 @@
 package org.opalj
 package ce
 
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -9,7 +10,6 @@ import java.nio.file.attribute.BasicFileAttributes
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
-
 import com.typesafe.config.Config
 
 /**
@@ -23,7 +23,8 @@ class FileLocator(var config: Config) {
      * @return returns the root directory of the opal project
      */
     def getProjectRoot: String = {
-        val projectRoot = this.config.getString("user.dir")
+        val subprojectDirectory = this.config.getString("user.dir")
+        val projectRoot = Paths.get(subprojectDirectory).getParent.getParent.toString
         println("Searching in the following directory: " + projectRoot)
         projectRoot
     }
@@ -79,17 +80,17 @@ class FileLocator(var config: Config) {
         foundFiles
     }
 
-    def FindJarArchives(): mutable.Buffer[Path] = {
+    def FindJarArchives(pathWildcard: String): mutable.Buffer[File] = {
         val projectRoot = Paths.get(this.getProjectRoot)
-        val foundFiles = ListBuffer[Path]()
+        val foundFiles = ListBuffer[File]()
         Files.walkFileTree(
             projectRoot,
             new java.nio.file.SimpleFileVisitor[Path]() {
                 override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {
                     if (
-                        file.getFileName.toString.trim.endsWith(".jar") && file.getFileName.toString.contains("SNAPSHOT")
+                        file.getFileName.toString.trim.endsWith(".jar") && file.getFileName.toString.contains(pathWildcard) && !file.toString.contains("bg-jobs")
                     ) {
-                        foundFiles += file
+                        foundFiles += file.toFile
                         println(s"Found file: ${file.toString}")
                     }
                     java.nio.file.FileVisitResult.CONTINUE
