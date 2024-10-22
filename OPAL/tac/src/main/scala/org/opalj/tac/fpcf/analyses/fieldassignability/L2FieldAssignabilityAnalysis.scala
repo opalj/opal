@@ -83,7 +83,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
     /**
      * Analyzes field writes for a single method, returning false if the field may still be
-     * effectively final and true otherwise.
+     * effectively non assignable and true otherwise.
      */
     def methodUpdatesField(
         definedMethod: DefinedMethod,
@@ -105,11 +105,11 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             checkWriteDominance(definedMethod, taCode, receiverVar, index)
         } else {
             if (field.isStatic || receiverVar.isDefined && receiverVar.get.definedBy == SelfReferenceParameter) {
-                // We consider lazy initialization if there is only single write
-                // outside an initializer, so we can ignore synchronization
+                // We consider lazy initialization if there is only a single write
+                // outside an initializer, so we can ignore synchronization.
                 state.fieldAssignability == LazilyInitialized ||
                 state.fieldAssignability == UnsafelyLazilyInitialized ||
-                // A field written outside an initializer must be lazily initialized or it is assignable
+                // A field written outside an initializer must be lazily initialized, or it is assignable
                 {
                     if (considerLazyInitialization) {
                         isAssignable(index, getDefaultValues(), method, taCode)
@@ -118,14 +118,13 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 }
             } else if (receiverVar.isDefined && !referenceHasNotEscaped(receiverVar.get, stmts, definedMethod, callers)) {
                 // Here the clone pattern is determined among others
-                //
                 // note that here we assume real three address code (flat hierarchy)
 
                 // for instance fields it is okay if they are written in the
                 // constructor (w.r.t. the currently initialized object!)
 
                 // If the field that is written is not the one referred to by the
-                // self reference, it is not effectively final.
+                // self reference, it is not effectively non assignable.
 
                 // However, a method (e.g. clone) may instantiate a new object and
                 // write the field as long as that new object did not yet escape.
@@ -149,11 +148,11 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val writesInMethod = writes.filter { w => contextProvider.contextFromId(w._1).method eq definedMethod }.toSeq
 
         if (writesInMethod.distinctBy(_._2).size > 1) {
-            // There can be multiple assignments in the constructor
-            // in different branches to final fields
+            // There can be multiple assignments of final fields in the constructor
+            // in different branches
             if (!definedMethod.definedMethod.isConstructor)
                 return true
-        }; // Field is written in multiple locations, thus must be assignable
+        }; // Otherwise: field is written in multiple locations, thus must be assignable
 
         // If we have no information about the receiver, we soundly return true
         // However, a static field has no receiver
@@ -170,7 +169,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             } else
                 receiverVar.get
 
-        // When there are more than 1 definitionsite, we soundly return true
+        // If there is more than 1 definitionsite, we soundly return true
         if (assignedValueObject.definedBy.size != 1)
             return true;
 
@@ -358,7 +357,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             val accessingMethod = contextProvider.contextFromId(w._1).method.definedMethod
             (accessingMethod ne method) && !accessingMethod.isInitializer
         }) ||
-            writes.iterator.distinctBy(_._1).size < writes.size // More than one write per method was detected
+            writes.iterator.distinctBy(_._1).size < writes.size // More than one field write per method was detected
 
         false
     }
