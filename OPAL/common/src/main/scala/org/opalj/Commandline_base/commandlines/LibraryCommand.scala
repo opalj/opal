@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalPlainCommand
-
 object LibraryCommand extends OpalPlainCommand[Boolean] {
     override var name: String = "library"
     override var argName: String = "library"

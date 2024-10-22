@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalPlainCommand
-
 object SchedulingStrategyCommand extends OpalPlainCommand[String] {
     override var name: String = "schedulingStrategy"
     override var argName: String = "schedulingStrategy"

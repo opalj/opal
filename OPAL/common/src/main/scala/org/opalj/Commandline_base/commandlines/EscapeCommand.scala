@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalChoiceCommand
-
 object EscapeCommand extends OpalChoiceCommand{
     override var name: String = "escape"
     override var argName: String = "escape"

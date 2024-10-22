@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalPlainCommand
-
 object PackagesCommand extends OpalPlainCommand[String] {
     override var name: String = "packages"
     override var argName: String = "packages"

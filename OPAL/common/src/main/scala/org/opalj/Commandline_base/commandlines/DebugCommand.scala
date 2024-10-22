@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalPlainCommand
-
 object DebugCommand extends OpalPlainCommand[Boolean] {
     override var name: String = "debug"
     override var argName: String = "debug"

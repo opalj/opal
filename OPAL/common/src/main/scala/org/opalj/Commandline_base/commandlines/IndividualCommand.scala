@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalPlainCommand
-
 object IndividualCommand extends OpalPlainCommand[Boolean] {
     override var name: String = "individual"
     override var argName: String = "individual"

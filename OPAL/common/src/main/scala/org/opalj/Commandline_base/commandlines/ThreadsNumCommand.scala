@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalPlainCommand
-
 object ThreadsNumCommand extends OpalPlainCommand[Int] {
     override var name: String = "num of threads"
     override var argName: String = "threadsNum"

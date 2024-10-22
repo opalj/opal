@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalPlainCommand
-
 object EagerCommand extends OpalPlainCommand[Boolean] {
     override var name: String = "eager"
     override var argName: String = "eager"

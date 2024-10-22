@@ -10,7 +10,7 @@ import java.util.Calendar
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.Commandline_base.commandlines.{AnalysisCommand, CallGraphCommand, ClassPathCommand, DomainCommand, EagerCommand, EscapeCommand, FieldAssignabilityCommand, JDKCommand, LibraryDirectoryCommand, OpalConf, ProjectDirectoryCommand, RaterCommand}
+import org.opalj.Commandline_base.commandlines.{AnalysisCommand, AnalysisNameCommand, CallGraphCommand, ClassPathCommand, CloseWorldCommand, DebugCommand, DomainCommand, EagerCommand, EscapeCommand, EvalDirCommand, FieldAssignabilityCommand, IndividualCommand, JDKCommand, LibraryCommand, LibraryDirectoryCommand, MultiProjectsCommand, OpalConf, PackagesCommand, ProjectDirectoryCommand, RaterCommand, SchedulingStrategyCommand, ThreadsNumCommand}
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -56,6 +56,7 @@ import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
 import org.opalj.support.info.Purity.usage
+import org.opalj.support.parser.{AnalysisCommandParser, CallGraphCommandParser, ClassPathCommandParser, DomainCommandParser, RaterCommandParser}
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -76,6 +77,7 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.rogach.scallop.ScallopConf
+import org.rogach.scallop.exceptions.ScallopException
 
 class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
 
@@ -102,17 +104,21 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     private val analysisNameCommand = getPlainScallopOption(AnalysisNameCommand)
     private val schedulingStrategyCommand = getPlainScallopOption(SchedulingStrategyCommand)
 
-    verify()
+    try {
+        verify()
+    } catch {
+        case se: ScallopException => printHelp()
+    }
 
     // Parsed data
-    var classPathFiles = ClassPathCommand.parse(IndexedSeq(classPathCommand.apply()))
+    var classPathFiles = ClassPathCommandParser.parse(IndexedSeq(classPathCommand.apply()))
     var projectDirectory = ProjectDirectoryCommand.parse(projectDirCommand.apply())
     var libraryDirectory = LibraryDirectoryCommand.parse(libDirCommand.apply())
-    var analysisScheduler = AnalysisCommand.parse(analysisCommand.apply())
+    var analysisScheduler = AnalysisCommandParser.parse(analysisCommand.apply())
     var support = parseArgumentsForSupport(analysisCommand.apply(), fieldAssignability.apply(), escapeCommand.apply(), eagerCommand.apply(), analysisScheduler)
-    var domain = DomainCommand.parse(domainCommand.apply())
-    var rater: DomainSpecificRater = RaterCommand.parse(raterCommand.apply())
-    var callGraph: CallGraphKey = CallGraphCommand.parse(callGraphCommand.apply())
+    var domain = DomainCommandParser.parse(domainCommand.apply())
+    var rater: DomainSpecificRater = RaterCommandParser.parse(raterCommand.apply())
+    var callGraph: CallGraphKey = CallGraphCommandParser.parse(callGraphCommand.apply())
     var jdk: Boolean = jdkCommand.apply()
     var individual: Boolean = individualCommand.apply()
     var closedWorld: Boolean = closedWorldCommand.apply()
@@ -593,8 +599,6 @@ object Purity {
     def main(args: Array[String]): Unit = {
 
         val purityConf = new PurityConf(args)
-
-
 
         val begin = Calendar.getInstance()
         Console.println(begin.getTime)

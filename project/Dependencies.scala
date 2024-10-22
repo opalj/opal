@@ -82,6 +82,5 @@ object Dependencies {
   val tools = Seq(txtmark, jacksonDF, scallop)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
   val apk = Seq(apkparser, scalaxml)
-
   val llvm = Seq(javacpp, javacpp_llvm)
 }

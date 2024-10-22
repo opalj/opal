@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalPlainCommand
-
 object LibraryDirectoryCommand extends OpalPlainCommand[String] {
     override var name: String = "libDir"
     override var argName: String = "libDir"

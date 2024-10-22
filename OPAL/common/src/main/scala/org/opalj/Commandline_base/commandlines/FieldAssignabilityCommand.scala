@@ -1,7 +1,5 @@
 package org.opalj.Commandline_base.commandlines
 
-import commandlinebase.OpalChoiceCommand
-
 object FieldAssignabilityCommand extends OpalChoiceCommand{
     override var name: String = "fieldAssignability"
     override var argName: String = "fieldAssignability"
