@@ -104,11 +104,12 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     private val analysisNameCommand = getPlainScallopOption(AnalysisNameCommand)
     private val schedulingStrategyCommand = getPlainScallopOption(SchedulingStrategyCommand)
 
-    try {
-        verify()
-    } catch {
-        case se: ScallopException => printHelp()
+    override def onError(e: Throwable): Unit = e match {
+        case ScallopException(message) => println(s"Custom error: $message"); printHelp()
+        case _ => super.onError(e)
     }
+
+    verify()
 
     // Parsed data
     var classPathFiles = ClassPathCommandParser.parse(IndexedSeq(classPathCommand.apply()))
