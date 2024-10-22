@@ -196,7 +196,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 fieldWriteInMethodIndex == index || // The value is itself written to another object
                     // IMPROVE: Can we use field access information to care about reflective accesses here?
                     stmt.isPutField && stmt.asPutField.name != state.field.name ||
-                    //  stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
                     stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
                     // CHECK do we really need the taCode here?
                     !dominates(index, fieldWriteInMethodIndex, taCode) || stmt.isArrayStore // TODO check
