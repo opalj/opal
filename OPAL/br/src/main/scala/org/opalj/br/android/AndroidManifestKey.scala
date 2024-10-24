@@ -43,7 +43,7 @@ object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest],
         }
 
         // Function to parse AndroidComponent elements (Activity, Service, etc.)
-        def parseComponent[T <: AndroidComponent](
+        def parseComponentFromXml[T <: AndroidComponent](
             node:            Node,
             createComponent: (ClassFile, Seq[IntentFilter]) => T
         ): Option[T] = {
@@ -57,16 +57,10 @@ object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest],
         }
 
         // Parse the different component types using specific lambdas
-        val activities =
-            (xml \ "application" \ "activity").flatMap(parseComponent(_, (cls, filters) => Activity(cls, filters)))
-        val services =
-            (xml \ "application" \ "service").flatMap(parseComponent(_, (cls, filters) => Service(cls, filters)))
-        val receivers = (xml \ "application" \ "receiver").flatMap(parseComponent(
-            _,
-            (cls, filters) => BroadcastReceiver(cls, filters)
-        ))
-        val providers =
-            (xml \ "application" \ "provider").flatMap(parseComponent(_, (cls, filters) => ContentProvider(cls, filters)))
+        val activities = (xml \ "application" \ "activity").flatMap(parseComponentFromXml(_, Activity))
+        val services = (xml \ "application" \ "service").flatMap(parseComponentFromXml(_, Service))
+        val receivers = (xml \ "application" \ "receiver").flatMap(parseComponentFromXml( _,BroadcastReceiver))
+        val providers = (xml \ "application" \ "provider").flatMap(parseComponentFromXml(_, ContentProvider))
 
         // Collec
 
