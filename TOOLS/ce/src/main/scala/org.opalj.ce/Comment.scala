@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ce
+package org.opalj
+package ce
 
 import scala.collection.mutable.ListBuffer
 
