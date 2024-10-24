@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.android
+package org.opalj
+package br
+package android
 
 import scala.xml.Elem
 import scala.xml.Node
