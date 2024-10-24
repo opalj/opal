@@ -59,7 +59,7 @@ object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest],
         // Parse the different component types using specific lambdas
         val activities = (xml \ "application" \ "activity").flatMap(parseComponentFromXml(_, Activity))
         val services = (xml \ "application" \ "service").flatMap(parseComponentFromXml(_, Service))
-        val receivers = (xml \ "application" \ "receiver").flatMap(parseComponentFromXml( _,BroadcastReceiver))
+        val receivers = (xml \ "application" \ "receiver").flatMap(parseComponentFromXml(_, BroadcastReceiver))
         val providers = (xml \ "application" \ "provider").flatMap(parseComponentFromXml(_, ContentProvider))
 
         // Collec
