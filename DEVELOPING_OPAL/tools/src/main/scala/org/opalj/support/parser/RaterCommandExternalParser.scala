@@ -1,9 +1,12 @@
 package org.opalj.support.parser
 
+import org.opalj.Commandline_base.commandlines.OpalCommandExternalParser
 import org.opalj.tac.fpcf.analyses.purity.{DomainSpecificRater, SystemOutLoggingAllExceptionRater}
 
-object RaterCommandParser {
-    def parse(rater: String) : DomainSpecificRater = {
+object RaterCommandExternalParser extends OpalCommandExternalParser{
+    override def parse[T](arg: T) : DomainSpecificRater = {
+        val rater = arg.asInstanceOf[String]
+
         if (rater == null) {
             SystemOutLoggingAllExceptionRater
         } else {

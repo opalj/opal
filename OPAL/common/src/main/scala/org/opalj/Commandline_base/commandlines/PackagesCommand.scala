@@ -7,7 +7,8 @@ object PackagesCommand extends OpalPlainCommand[String] {
     override var defaultValue: Option[String] = None
     override var noshort: Boolean = true
 
-    def parse(packages: String) :  Option[Array[String]] = {
+    def parse[T](arg: T) :  Option[Array[String]] = {
+        val packages = arg.asInstanceOf[String]
         Some(packages.split(':'))
     }
 }

@@ -7,4 +7,6 @@ object RaterCommand extends OpalPlainCommand[String] {
     override var description: String = "class name of the rater for domain-specific actions"
     override var defaultValue: Option[String] = None
     override var noshort: Boolean = true
+
+    override def parse[T](arg: T): Any = null
 }

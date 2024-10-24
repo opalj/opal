@@ -7,5 +7,5 @@ object DomainCommand extends OpalPlainCommand[String] {
     override var defaultValue: Option[String] = None
     override var noshort: Boolean = true
 
-
+    override def parse[T](arg: T): Any = null
 }

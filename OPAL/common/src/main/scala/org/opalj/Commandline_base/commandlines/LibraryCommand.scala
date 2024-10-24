@@ -6,4 +6,6 @@ object LibraryCommand extends OpalPlainCommand[Boolean] {
     override var description: String = "assumes that the target is a library"
     override var defaultValue: Option[Boolean] = None
     override var noshort: Boolean = true
+
+    override def parse[T](arg: T): Any = null
 }

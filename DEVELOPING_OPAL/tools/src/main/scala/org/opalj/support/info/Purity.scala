@@ -55,8 +55,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
-import org.opalj.support.info.Purity.usage
-import org.opalj.support.parser.{AnalysisCommandParser, CallGraphCommandParser, ClassPathCommandParser, DomainCommandParser, RaterCommandParser}
+import org.opalj.support.parser.{AnalysisCommandExternalParser, CallGraphCommandExternalParser, ClassPathCommandExternalParser, DomainCommandExternalParser, RaterCommandExternalParser}
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -77,7 +76,6 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.rogach.scallop.ScallopConf
-import org.rogach.scallop.exceptions.ScallopException
 
 class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
 
@@ -86,7 +84,7 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     private val projectDirCommand = getPlainScallopOption(ProjectDirectoryCommand)
     private val libDirCommand = getPlainScallopOption(LibraryDirectoryCommand)
     private val analysisCommand = getChoiceScallopOption(AnalysisCommand)
-    private val fieldAssignability = getChoiceScallopOption(FieldAssignabilityCommand)
+    private val fieldAssignabilityCommand = getChoiceScallopOption(FieldAssignabilityCommand)
     private val escapeCommand = getChoiceScallopOption(EscapeCommand)
     private val eagerCommand = getPlainScallopOption(EagerCommand)
     private val domainCommand = getPlainScallopOption(DomainCommand)
@@ -104,36 +102,44 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     private val analysisNameCommand = getPlainScallopOption(AnalysisNameCommand)
     private val schedulingStrategyCommand = getPlainScallopOption(SchedulingStrategyCommand)
 
-    override def onError(e: Throwable): Unit = e match {
-        case ScallopException(message) => println(s"Custom error: $message"); printHelp()
-        case _ => super.onError(e)
-    }
-
     verify()
 
     // Parsed data
-    var classPathFiles = ClassPathCommandParser.parse(IndexedSeq(classPathCommand.apply()))
-    var projectDirectory = ProjectDirectoryCommand.parse(projectDirCommand.apply())
-    var libraryDirectory = LibraryDirectoryCommand.parse(libDirCommand.apply())
-    var analysisScheduler = AnalysisCommandParser.parse(analysisCommand.apply())
-    var support = parseArgumentsForSupport(analysisCommand.apply(), fieldAssignability.apply(), escapeCommand.apply(), eagerCommand.apply(), analysisScheduler)
-    var domain = DomainCommandParser.parse(domainCommand.apply())
-    var rater: DomainSpecificRater = RaterCommandParser.parse(raterCommand.apply())
-    var callGraph: CallGraphKey = CallGraphCommandParser.parse(callGraphCommand.apply())
-    var jdk: Boolean = jdkCommand.apply()
-    var individual: Boolean = individualCommand.apply()
-    var closedWorld: Boolean = closedWorldCommand.apply()
-    var library: Boolean = libraryCommand.apply()
-    var debug: Boolean = debugCommand.apply()
-    var multiProjects: Boolean = multiProjectsCommand.apply()
-    var evaluationDir = EvalDirCommand.parse(evaluationDirCommand.apply())
-    var packages = PackagesCommand.parse(packagesCommand.apply())
-    var threadsNum: Int = threadsNumCommand.apply()
-    var configurationName: String = analysisNameCommand.apply()
-    var schedulingStrategy = schedulingStrategyCommand.apply()
+    var classPathFiles: File = parseCommandWithExternalParser(classPathCommand, ClassPathCommandExternalParser).getOrElse(null)
+    var projectDirectory = parseCommandWithInternalParser(projectDirCommand, ProjectDirectoryCommand).getOrElse(null)
+    var libraryDirectory = parseCommandWithInternalParser(libDirCommand, LibraryDirectoryCommand).getOrElse(null)
+    var analysisScheduler = parseCommandWithExternalParser(analysisCommand, AnalysisCommandExternalParser).getOrElse(null)
+    var support: Option[List[FPCFAnalysisScheduler]] = None
+
+    if (fieldAssignabilityCommand.isDefined && escapeCommand.isDefined && eagerCommand.isDefined && analysisScheduler != null) {
+        support = Some(parseArgumentsForSupport(
+            analysisCommand.apply(),
+            fieldAssignabilityCommand.apply(),
+            escapeCommand.apply(),
+            eagerCommand.apply(),
+            analysisScheduler
+        ))
+    } else {
+        support = None
+    }
+
+    var domain = parseCommandWithExternalParser(domainCommand, DomainCommandExternalParser).getOrElse(null)
+    var rater = parseCommandWithExternalParser(raterCommand, RaterCommandExternalParser).getOrElse(null)
+    var callGraph = parseCommandWithExternalParser(callGraphCommand, CallGraphCommandExternalParser).getOrElse(null)
+    var jdk: Boolean = parseCommand(jdkCommand).getOrElse(false)
+    var individual: Boolean = parseCommand((individualCommand)).getOrElse(false)
+    var closedWorld:Boolean = parseCommand(closedWorldCommand).getOrElse(false)
+    var library: Boolean = parseCommand(libraryCommand).getOrElse(false)
+    var debug: Boolean = parseCommand(debugCommand).getOrElse(false)
+    var multiProjects: Boolean = parseCommand(multiProjectsCommand).getOrElse(false)
+    var evaluationDir = parseCommandWithInternalParser(evaluationDirCommand, EvalDirCommand).getOrElse(null)
+    var packages = parseCommandWithInternalParser(packagesCommand, PackagesCommand).getOrElse(null)
+    var threadsNum: Int = parseCommand(threadsNumCommand).getOrElse(0)
+    var configurationName = parseCommand(analysisNameCommand).getOrElse(null)
+    var schedulingStrategy = parseCommand(schedulingStrategyCommand).getOrElse(null)
 
 
-    private def parseArgumentsForSupport(analysis: String, fieldAssignability: String, escape: String, eager: Boolean, analysisScheduler: FPCFLazyAnalysisScheduler) : List[FPCFAnalysisScheduler] = {
+    private def parseArgumentsForSupport(analysis: String, fieldAssignability: String, escape: String, eager: Boolean, analysisScheduler: Any) : List[FPCFAnalysisScheduler] = {
         var support: List[FPCFAnalysisScheduler] = Nil
 
         if(analysis == "L2") {
@@ -165,7 +171,7 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
 
             case _ =>
                 Console.println(s"unknown escape analysis: $escape")
-                Console.println(usage)
+                printHelp()
         }
 
         fieldAssignability match {
@@ -193,7 +199,7 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
 
             case _ =>
                 Console.println(s"unknown field assignability analysis: $fieldAssignability")
-                Console.println(usage)
+                printHelp()
         }
 
         support
@@ -207,34 +213,6 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
  * @author Dominik Helm
  */
 object Purity {
-
-    // OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
-
-    def usage: String = {
-        "Usage: java …PurityAnalysisEvaluation \n" +
-            "-cp <JAR file/Folder containing class files> OR -JDK\n" +
-            "[-projectDir <directory with project class files relative to cp>]\n" +
-            "[-libDir <directory with library class files relative to cp>]\n" +
-            "[-analysis <L0|L1|L2> (Default: L2, the most precise analysis configuration)]\n" +
-            "[-fieldAssignability <none|L0|L1|L2> (Default: Depends on analysis level)]\n" +
-            "[-escape <none|L0|L1> (Default: L1, the most precise configuration)]\n" +
-            "[-domain <class name of the abstract interpretation domain>]\n" +
-            "[-rater <class name of the rater for domain-specific actions>]\n" +
-            "[-callGraph <CHA|RTA|PointsTo> (Default: RTA)]\n" +
-            "[-eager] (supporting analyses are executed eagerly)\n" +
-            "[-noJDK] (do not analyze any JDK methods)\n" +
-            "[-individual] (reports the purity result for each method)\n" +
-            "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n" +
-            "[-library] (assumes that the target is a library)\n" +
-            "[-debug] (enable debug output from PropertyStore)\n" +
-            "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n" +
-            "[-eval <path to evaluation directory>]\n" +
-            "[-packages <colon separated list of packages, e.g. java/util:javax>]\n" +
-            "[-j <number of threads to be used> (0 for the sequential implementation)]\n" +
-            "[-analysisName <analysisName which defines the analysis within the results file>]\n" +
-            "[-schedulingStrategy <schedulingStrategy which defines the analysis within the results file>]\n" +
-            "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
-    }
 
     val JDKPackages = List(
         "java/",
@@ -606,14 +584,14 @@ object Purity {
 
         time {
             if (purityConf.multiProjects) {
-                for (subp <- purityConf.classPathFiles.apply(0).listFiles().filter(_.isDirectory)) {
+                for (subp <- purityConf.classPathFiles.listFiles().filter(_.isDirectory)) {
                     println(s"${subp.getName}: ${Calendar.getInstance().getTime}")
                     evaluate(
                         subp,
                         purityConf.projectDirectory,
                         purityConf.libraryDirectory,
                         purityConf.analysisScheduler,
-                        purityConf.support,
+                        purityConf.support.get,
                         purityConf.domain,
                         Option(purityConf.configurationName),
                         Option(purityConf.schedulingStrategy),
@@ -631,11 +609,11 @@ object Purity {
                 }
             } else {
                 evaluate(
-                    purityConf.classPathFiles.apply(0),
+                    purityConf.classPathFiles,
                     purityConf.projectDirectory,
                     purityConf.libraryDirectory,
                     purityConf.analysisScheduler,
-                    purityConf.support,
+                    purityConf.support.get,
                     purityConf.domain,
                     Option(purityConf.configurationName),
                     Option(purityConf.schedulingStrategy),
@@ -645,7 +623,7 @@ object Purity {
                     purityConf.individual,
                     purityConf.threadsNum,
                     purityConf.closedWorld,
-                    purityConf.library || (purityConf.classPathFiles.apply(0) eq JRELibraryFolder),
+                    purityConf.library || (purityConf.classPathFiles eq JRELibraryFolder),
                     purityConf.debug,
                     purityConf.evaluationDir,
                     purityConf.packages

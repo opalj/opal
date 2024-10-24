@@ -6,4 +6,6 @@ object SchedulingStrategyCommand extends OpalPlainCommand[String] {
     override var description: String = "schedulingStrategy which defines the analysis within the results file>"
     override var defaultValue: Option[String] = None
     override var noshort: Boolean = true
+
+    override def parse[T](arg: T): Any = null
 }

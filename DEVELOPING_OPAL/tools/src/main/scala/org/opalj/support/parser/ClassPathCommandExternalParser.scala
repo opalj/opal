@@ -1,19 +1,22 @@
 package org.opalj.support.parser
 
+import org.opalj.Commandline_base.commandlines.OpalCommandExternalParser
 import org.opalj.log.OPALLogger.error
 import org.opalj.ba.CODE.logContext
-import java.io.File
-import scala.collection.immutable.ArraySeq
 
-object ClassPathCommandParser {
-    def parse(classPath: IndexedSeq[String]): IndexedSeq[File] = {
+import java.io.File
+
+object ClassPathCommandExternalParser extends OpalCommandExternalParser{
+    override def parse[T](arg: T): Any = {
+        val classPath = arg.asInstanceOf[String]
+
         val effectiveClassPath = if (classPath.isEmpty) {
-            ArraySeq.unsafeWrapArray(Array(System.getProperty("user.dir")))
+            System.getProperty("user.dir")
         } else {
             classPath
         }
 
-        val cpFiles = verifyFiles(effectiveClassPath)
+        val cpFiles = verifyFile(effectiveClassPath)
         if (cpFiles.isEmpty) {
             showError("Nothing to analyze.")
             sys.exit(1)
@@ -21,8 +24,6 @@ object ClassPathCommandParser {
 
         cpFiles
     }
-
-    private def verifyFiles(filenames: IndexedSeq[String]): IndexedSeq[File] = filenames.flatMap(verifyFile)
 
     private def verifyFile(filename: String): Option[File] = {
         val file = new File(filename)

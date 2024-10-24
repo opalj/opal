@@ -6,4 +6,6 @@ object EagerCommand extends OpalPlainCommand[Boolean] {
     override var description: String = "supporting analyses are executed eagerly"
     override var defaultValue: Option[Boolean] = Some(false)
     override var noshort: Boolean = true
+
+    override def parse[T](arg: T): Any = null
 }

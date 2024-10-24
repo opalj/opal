@@ -9,7 +9,8 @@ object EvalDirCommand extends OpalPlainCommand[String] {
     override var defaultValue: Option[String] = None
     override var noshort: Boolean = true
 
-    def parse(evalDir: String) : Some[File] = {
+    def parse[T](arg: T) : Some[File] = {
+        val evalDir: String = arg.asInstanceOf[String]
         val evaluationDir = Some(new File(evalDir))
         if (evaluationDir.isDefined && !evaluationDir.get.exists()) evaluationDir.get.mkdir
 

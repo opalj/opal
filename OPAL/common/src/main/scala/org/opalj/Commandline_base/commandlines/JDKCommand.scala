@@ -6,4 +6,6 @@ object JDKCommand extends OpalPlainCommand[Boolean] {
     override var description: String = "do not analyze any JDK methods"
     override var defaultValue: Option[Boolean] = Some(false)
     override var noshort: Boolean = true
+
+    override def parse[T](arg: T): Any = null
 }
