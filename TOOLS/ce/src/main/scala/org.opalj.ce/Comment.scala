@@ -115,11 +115,11 @@ object Comment {
             } else if (line.trim.startsWith("@brief")) {
                 comment.brief = line.trim.stripPrefix("@brief").trim
             } else if (line.trim.startsWith("@constraint")) {
-                comment.constraints.addOne(line.trim.stripPrefix("@constraint").trim)
+                comment.constraints += line.trim.stripPrefix("@constraint").trim
             } else if (line.trim.startsWith("@type")) {
                 comment.datatype = line.trim.stripPrefix("@type").trim
             } else {
-                comment.description.addOne(line.trim.stripPrefix("@description").trim)
+                comment.description += line.trim.stripPrefix("@description").trim
             }
         }
         comment
