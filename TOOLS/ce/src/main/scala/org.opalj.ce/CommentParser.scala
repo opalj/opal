@@ -36,8 +36,9 @@ class CommentParser() {
         iterator = lines.iterator
 
         // Parse initial Comments
-        val initialComment = this.parseComments()
-        initialComment.addComment("@label " + filePath.toString.substring(filePath.toString.indexOf("opal") + 4))
+        val initialComment = ListBuffer[String]()
+        initialComment += ("@label " + filePath.toString.substring(filePath.toString.indexOf("opal") + 4))
+        initialComment ++= this.parseComments()
         parseObject(initialComment)
     }
 
@@ -46,7 +47,7 @@ class CommentParser() {
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed object
      */
-    private def parseObject(currentComment: Comment): ConfigObject = {
+    private def parseObject(currentComment: ListBuffer[String]): ConfigObject = {
         this.line = this.line.trim.stripPrefix("{")
         // Creating necessary components
         val entries = mutable.Map[String, ConfigNode]()
@@ -92,7 +93,7 @@ class CommentParser() {
                     }
 
                     // Reset next comment
-                    nextComment = new Comment
+                    nextComment = ListBuffer[String]()
 
                     // Json Keys are split using a ",". This is not necessary, but tolerated in HOCON syntax
                     line = line.trim.stripPrefix(",")
@@ -110,15 +111,12 @@ class CommentParser() {
 
         // If there is a comment directly behind the closing bracket of the object, add it to comments too.
         if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
-            currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+            currentComment += line.trim.stripPrefix("#").stripPrefix("//").trim
             line = ""
         }
 
-        // Start the internal parser of the comment
-        currentComment.commitComments()
-
         // Return the finished ConfigObject
-        ConfigObject(entries, currentComment)
+        ConfigObject(entries, Comment.fromString(currentComment))
     }
 
     /**
@@ -126,7 +124,7 @@ class CommentParser() {
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed entry
      */
-    private def parseEntry(currentComment: Comment): ConfigEntry = {
+    private def parseEntry(currentComment: ListBuffer[String]): ConfigEntry = {
         // Creation of necessary values
         var value = ""
 
@@ -178,12 +176,11 @@ class CommentParser() {
 
         // If a comment is behind the value in the same line, this adds it to the comments too
         if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
-            currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+            currentComment += line.trim.stripPrefix("#").stripPrefix("//").trim
             line = ""
         }
 
-        currentComment.commitComments()
-        ConfigEntry(value, currentComment)
+        ConfigEntry(value, Comment.fromString(currentComment))
     }
 
     /**
@@ -191,25 +188,23 @@ class CommentParser() {
      * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed entry
      */
-    private def parseList(currentComment: Comment): ConfigList = {
+    private def parseList(currentComment: ListBuffer[String]): ConfigList = {
         line = line.trim.stripPrefix("[")
         // Creating necessary variables
         val value = new ListBuffer[ConfigNode]
-        var nextComment = new Comment
+        var nextComment = ListBuffer[String]()
 
         breakable {
             while (iterator.hasNext || line.nonEmpty) {
-                this.parseComments(nextComment)
+                nextComment = this.parseComments()
                 if (line.trim.startsWith("{")) {
                     // Case: The following symbol opens an object
                     value += parseObject(nextComment)
                     line = line.trim.stripPrefix(",")
-                    nextComment = new Comment
                 } else if (line.trim.startsWith("[")) {
                     // Case: The following symbol opens a list
                     value += parseList(nextComment)
                     line = line.trim.stripPrefix(",")
-                    nextComment = new Comment
                 } else if (line.trim.startsWith("]") || (line.trim.startsWith(",") && line.trim.stripPrefix(
                                ","
                            ).trim.startsWith("]"))
@@ -220,7 +215,6 @@ class CommentParser() {
                 } else if (line.trim != "") {
                     // Case: The following symbol is an entry
                     value += parseEntry(nextComment)
-                    nextComment = new Comment
                     line = line.trim.stripPrefix(",")
                 }
 
@@ -232,15 +226,12 @@ class CommentParser() {
         }
         if (line.trim.startsWith("#") || line.trim.startsWith("//")) {
             // Add the comment in the same line of the list as well
-            currentComment.addComment(line.trim.stripPrefix("#").stripPrefix("//").trim)
+            currentComment += line.trim.stripPrefix("#").stripPrefix("//").trim
             line = ""
         }
 
-        // Load sub-fields of the comment NOW
-        currentComment.commitComments()
-
         // Finish
-        ConfigList(value, currentComment)
+        ConfigList(value, Comment.fromString(currentComment))
     }
 
     /**
@@ -293,14 +284,14 @@ class CommentParser() {
         }.getOrElse(-1)
     }
 
-    private def parseComments(): Comment = {
-        val comment = new Comment
+    private def parseComments(): ListBuffer[String] = {
+        val comment = new ListBuffer[String]
         this.parseComments(comment)
     }
 
-    private def parseComments(comment: Comment): Comment = {
+    private def parseComments(comment: ListBuffer[String]): ListBuffer[String] = {
         while (line.trim.startsWith("#") || line.trim.startsWith("//") || line.trim == "") {
-            if (line.trim != "") comment.addComment(line.trim.stripPrefix("#").stripPrefix("//"))
+            if (line.trim != "") comment += (line.trim.stripPrefix("#").stripPrefix("//"))
             line = iterator.next()
         }
         comment

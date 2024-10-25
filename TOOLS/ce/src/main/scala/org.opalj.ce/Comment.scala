@@ -8,55 +8,17 @@ import scala.collection.mutable.ListBuffer
  * Container for the comments of a config node.
  */
 class Comment {
-    val commentBuffer: ListBuffer[String] = ListBuffer[String]()
     var constraints: ListBuffer[String] = ListBuffer[String]()
     val description: ListBuffer[String] = ListBuffer[String]()
     var label = ""
     var brief = ""
     var datatype = ""
-    var commentsCommitted = false
-
-    /**
-     * Adds a comment to the comment buffer. If a comment has multiple lines, this method will be called multiple times.
-     * If the Comment is already commited, nothing happens.
-     * @param comment is the string that is added to the comment.
-     */
-    def addComment(comment: String): Unit = {
-        if (!commentsCommitted) this.commentBuffer += comment
-    }
-
-    // Tells the Comment object that no more comments will be added. The comment object then begins parsing the comments into advanced objects
-
-    /**
-     * Starts parsing the flags within the comment. Can only be called once.
-     * After it was called, no new comments can be added.
-     */
-    def commitComments(): Unit = {
-        if (!commentsCommitted) {
-            for (line <- commentBuffer) {
-                if (line.trim.startsWith("@label")) {
-                    this.label = line.trim.stripPrefix("@label").trim
-                } else if (line.trim.startsWith("@brief")) {
-                    brief = line.trim.stripPrefix("@brief").trim
-                } else if (line.trim.startsWith("@constraint")) {
-                    constraints.addOne(line.trim.stripPrefix("@constraint").trim)
-                } else if (line.trim.startsWith("@type")) {
-                    datatype = line.trim.stripPrefix("@type").trim
-                } else {
-                    description.addOne(line.trim.stripPrefix("@description").trim)
-                }
-            }
-            commentsCommitted = true
-        }
-    }
 
     /**
      * Converts the Comment object into HTML syntax.
-     * Commits the Comments if it has not happened previously.
      * @return returns the entire object as HTML code ready for insertion into an HTML file.
      */
     def toHTML: String = {
-        if (!commentsCommitted) commitComments()
         var HTMLString = ""
         if (!this.isEmpty) {
             if (description.nonEmpty) {
@@ -83,14 +45,10 @@ class Comment {
     }
 
     /**
-     * Merges another committed comment into this comment.
+     * Merges another comment into this comment.
      * @param comment accepts the comment that should be merged into this comment.
      */
     def mergeComment(comment: Comment): Unit = {
-        // Make sure every comment is committed
-        this.commitComments()
-        comment.commitComments()
-
         // Merge comments
         if (this.label != "" || comment.label != "") {
             this.label = comment.label + "." + this.label
@@ -106,8 +64,7 @@ class Comment {
      * @return returns true if the comment is empty but the label property (the label property is set automatically for config files.).
      */
     def isEmpty: Boolean = {
-        if (commentBuffer.length <= 0) return true
-        if (commentBuffer.length <= 1 && label.trim != "") return true
+        if (description.isEmpty && constraints.isEmpty && datatype.isEmpty) return true
         false
     }
 
@@ -135,11 +92,36 @@ class Comment {
      * Debug purposes
      */
     def printObject(): Unit = {
-        println("CommentBuffer: " + commentBuffer.toString())
         println("Constraints: " + constraints.toString())
         println("Description: " + description.toString())
         println("Label: " + label)
         println("Brief: " + brief)
         println("Type: " + datatype)
+    }
+}
+
+object Comment {
+    /**
+     *  Factory method for creating a comment.
+     *  @param commentBuffer accepts a ListBuffer that contains the raw content of the comment
+     *  @return is a fully functional Comment
+     */
+    def fromString(commentBuffer: ListBuffer[String]): Comment = {
+        val comment = new Comment()
+        for (line <- commentBuffer) {
+            println(line)
+            if (line.trim.startsWith("@label")) {
+                comment.label = line.trim.stripPrefix("@label").trim
+            } else if (line.trim.startsWith("@brief")) {
+                comment.brief = line.trim.stripPrefix("@brief").trim
+            } else if (line.trim.startsWith("@constraint")) {
+                comment.constraints.addOne(line.trim.stripPrefix("@constraint").trim)
+            } else if (line.trim.startsWith("@type")) {
+                comment.datatype = line.trim.stripPrefix("@type").trim
+            } else {
+                comment.description.addOne(line.trim.stripPrefix("@description").trim)
+            }
+        }
+        comment
     }
 }
