@@ -50,8 +50,10 @@ class Comment {
      */
     def mergeComment(comment: Comment): Unit = {
         // Merge comments
-        if (label != "" || comment.label != "") {
+        if (label != "" && comment.label != "") {
             label = comment.label + "." + label
+        } else {
+            label = comment.label + label
         }
         brief = comment.brief + "   " + brief
         brief = brief.trim
