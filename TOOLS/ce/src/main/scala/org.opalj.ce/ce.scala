@@ -29,7 +29,7 @@ object ce extends App {
 
     // Bulk Imports all the configs
     val CPW = new CommentParserWrapper
-    val configs = CPW.IterateConfigs(filepaths, Paths.get(locator.getProjectRoot))
+    val configs = CPW.iterateConfigs(filepaths, Paths.get(locator.getProjectRoot))
 
     // Replace class type values
     if (conf.getBoolean("org.opalj.ce.replaceSubclasses")) {
