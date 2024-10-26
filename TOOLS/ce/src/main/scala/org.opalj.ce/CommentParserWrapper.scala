@@ -17,37 +17,37 @@ class CommentParserWrapper {
      * @return is a list of the parsed configuration files, paired with the path they originate from
      */
     def iterateConfigs(filepaths: mutable.Buffer[Path], rootDirectory: Path): ListBuffer[ConfigObject] = {
-        val CommentedConfigs = new ListBuffer[ConfigObject]
+        val commentedConfigs = new ListBuffer[ConfigObject]
         for (filepath <- filepaths) {
-            CommentedConfigs += ParseComments(filepath, rootDirectory)
+            commentedConfigs += ParseComments(filepath, rootDirectory)
         }
 
         // Merge all config files named "reference.conf"
-        val MergingConfigs = new ListBuffer[ConfigObject]
-        for (i <- CommentedConfigs.indices.reverse) {
-            val config = CommentedConfigs(i)
+        val mergingConfigs = new ListBuffer[ConfigObject]
+        for (i <- commentedConfigs.indices.reverse) {
+            val config = commentedConfigs(i)
             if (config.comment.label.endsWith("reference.conf")) {
-                MergingConfigs.addOne(config)
-                CommentedConfigs.remove(i)
+                mergingConfigs += config
+                commentedConfigs.remove(i)
             } else {
-                CommentedConfigs(i).expand()
+                commentedConfigs(i).expand()
             }
         }
-        if (MergingConfigs.nonEmpty) {
+        if (mergingConfigs.nonEmpty) {
             val conf = ConfigObject(mutable.Map[String, ConfigNode](), new Comment)
-            for (i <- MergingConfigs.indices) {
-                conf.merge(MergingConfigs(i))
+            for (i <- mergingConfigs.indices) {
+                conf.merge(mergingConfigs(i))
             }
             conf.comment.label = "reference.conf"
             conf.comment.brief = "Aggregated standard configuration of merged reference.conf files"
-            CommentedConfigs.addOne(conf)
+            commentedConfigs.addOne(conf)
         }
 
-        for (config <- CommentedConfigs) {
+        for (config <- commentedConfigs) {
             config.collapse()
         }
 
-        CommentedConfigs
+        commentedConfigs
     }
 
     /**
