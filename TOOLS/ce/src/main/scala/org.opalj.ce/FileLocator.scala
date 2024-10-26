@@ -67,8 +67,8 @@ class FileLocator(var config: Config) {
             new java.nio.file.SimpleFileVisitor[Path]() {
                 override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {
                     if (Filenames.contains(file.getFileName.toString) && !file.toAbsolutePath.toString.contains(
-                            "target\\scala-2.13"
-                        ) && !file.toAbsolutePath.toString.contains("target/scala-2.13")
+                            "target\\scala"
+                        ) && !file.toAbsolutePath.toString.contains("target/scala")
                     ) {
                         foundFiles += file
                         println(s"Found file: ${file.toString}")
