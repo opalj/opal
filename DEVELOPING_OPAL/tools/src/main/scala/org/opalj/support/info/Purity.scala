@@ -77,6 +77,12 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.rogach.scallop.ScallopConf
 
+/**
+ * `PurityConf` is a configuration class for parsing and managing command-line arguments related to purity analysis
+ * in the OPAL framework. It extends `ScallopConf` and mixes in `OpalConf`, providing structured options for various
+ * analysis settings, such as paths, analysis schedulers, and specific analysis configurations.
+ */
+
 class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
 
     // Commands
@@ -105,29 +111,25 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     verify()
 
     // Parsed data
-    var classPathFiles: File = parseCommandWithExternalParser(classPathCommand, ClassPathCommandExternalParser).getOrElse(null)
+    var classPathFiles = parseCommandWithExternalParser(classPathCommand, ClassPathCommandExternalParser).getOrElse(null)
     var projectDirectory = parseCommandWithInternalParser(projectDirCommand, ProjectDirectoryCommand).getOrElse(null)
     var libraryDirectory = parseCommandWithInternalParser(libDirCommand, LibraryDirectoryCommand).getOrElse(null)
     var analysisScheduler = parseCommandWithExternalParser(analysisCommand, AnalysisCommandExternalParser).getOrElse(null)
     var support: Option[List[FPCFAnalysisScheduler]] = None
 
-    if (fieldAssignabilityCommand.isDefined && escapeCommand.isDefined && eagerCommand.isDefined && analysisScheduler != null) {
-        support = Some(parseArgumentsForSupport(
+    if (fieldAssignabilityCommand.isDefined && escapeCommand.isDefined && eagerCommand.isDefined && analysisScheduler != null) support = Some(parseArgumentsForSupport(
             analysisCommand.apply(),
             fieldAssignabilityCommand.apply(),
             escapeCommand.apply(),
             eagerCommand.apply(),
             analysisScheduler
-        ))
-    } else {
-        support = None
-    }
+        )) else support = None
 
     var domain = parseCommandWithExternalParser(domainCommand, DomainCommandExternalParser).getOrElse(null)
     var rater = parseCommandWithExternalParser(raterCommand, RaterCommandExternalParser).getOrElse(null)
     var callGraph = parseCommandWithExternalParser(callGraphCommand, CallGraphCommandExternalParser).getOrElse(null)
     var jdk: Boolean = parseCommand(jdkCommand).getOrElse(false)
-    var individual: Boolean = parseCommand((individualCommand)).getOrElse(false)
+    var individual: Boolean = parseCommand(individualCommand).getOrElse(false)
     var closedWorld:Boolean = parseCommand(closedWorldCommand).getOrElse(false)
     var library: Boolean = parseCommand(libraryCommand).getOrElse(false)
     var debug: Boolean = parseCommand(debugCommand).getOrElse(false)
@@ -139,18 +141,16 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     var schedulingStrategy = parseCommand(schedulingStrategyCommand).getOrElse(null)
 
 
-    private def parseArgumentsForSupport(analysis: String, fieldAssignability: String, escape: String, eager: Boolean, analysisScheduler: Any) : List[FPCFAnalysisScheduler] = {
-        var support: List[FPCFAnalysisScheduler] = Nil
+    private def parseArgumentsForSupport(analysis: String, fieldAssignability: String, escape: String, eager: Boolean, analysisScheduler: Any) = {
+        var support = Nil
 
-        if(analysis == "L2") {
-            support = List(
+        if(analysis == "L2") support = List(
                 LazyFieldImmutabilityAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis
             )
-        }
 
         if (eager) {
             support ::= EagerClassImmutabilityAnalysis
@@ -579,19 +579,23 @@ object Purity {
 
         val purityConf = new PurityConf(args)
 
+        if(args.contains("--help") || args.contains("-h")) {
+            return
+        }
+
         val begin = Calendar.getInstance()
         Console.println(begin.getTime)
 
         time {
             if (purityConf.multiProjects) {
-                for (subp <- purityConf.classPathFiles.listFiles().filter(_.isDirectory)) {
+                for (subp <- purityConf.classPathFiles.head.listFiles().filter(_.isDirectory)) {
                     println(s"${subp.getName}: ${Calendar.getInstance().getTime}")
                     evaluate(
                         subp,
                         purityConf.projectDirectory,
                         purityConf.libraryDirectory,
                         purityConf.analysisScheduler,
-                        purityConf.support.get,
+                        purityConf.support.getOrElse(List()),
                         purityConf.domain,
                         Option(purityConf.configurationName),
                         Option(purityConf.schedulingStrategy),
@@ -609,11 +613,11 @@ object Purity {
                 }
             } else {
                 evaluate(
-                    purityConf.classPathFiles,
+                    purityConf.classPathFiles.head,
                     purityConf.projectDirectory,
                     purityConf.libraryDirectory,
                     purityConf.analysisScheduler,
-                    purityConf.support.get,
+                    purityConf.support.getOrElse(List()),
                     purityConf.domain,
                     Option(purityConf.configurationName),
                     Option(purityConf.schedulingStrategy),
@@ -623,7 +627,7 @@ object Purity {
                     purityConf.individual,
                     purityConf.threadsNum,
                     purityConf.closedWorld,
-                    purityConf.library || (purityConf.classPathFiles eq JRELibraryFolder),
+                    purityConf.library || (purityConf.classPathFiles.head eq JRELibraryFolder),
                     purityConf.debug,
                     purityConf.evaluationDir,
                     purityConf.packages

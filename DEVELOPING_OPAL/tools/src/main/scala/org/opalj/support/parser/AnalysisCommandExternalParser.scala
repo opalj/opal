@@ -1,11 +1,16 @@
 package org.opalj.support.parser
 
 import org.opalj.Commandline_base.commandlines.OpalCommandExternalParser
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.{LazyL1PurityAnalysis, LazyL2PurityAnalysis}
 
-object AnalysisCommandExternalParser extends OpalCommandExternalParser{
-    override def parse[T](arg: T): Any = {
+/**
+ * `AnalysisCommandExternalParser` interprets a command-line argument specifying a purity analysis level
+ * and returns the corresponding `FPCFLazyAnalysisScheduler`.
+ */
+object AnalysisCommandExternalParser extends OpalCommandExternalParser[FPCFLazyAnalysisScheduler]{
+    override def parse[T](arg: T): FPCFLazyAnalysisScheduler = {
         val analysisName = arg.asInstanceOf[String]
 
         analysisName match {

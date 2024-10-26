@@ -1,29 +1,34 @@
 package org.opalj.support.parser
 
 import org.opalj.Commandline_base.commandlines.OpalCommandExternalParser
-import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.{error, info}
 import org.opalj.ba.CODE.logContext
 
 import java.io.File
 
-object ClassPathCommandExternalParser extends OpalCommandExternalParser{
-    override def parse[T](arg: T): Any = {
+/**
+ * `ClassPathCommandExternalParser` parses and validates a class path string.
+ * It processes the class path provided as a command-line argument, splitting it by the system path
+ * separator (":" on UNIX, ";" on Windows), and verifies each entry, returning a sequence of valid
+ * `File` objects.
+ */
+object ClassPathCommandExternalParser extends OpalCommandExternalParser[Seq[File]]{
+    override def parse[T](arg: T): Seq[File] = {
         val classPath = arg.asInstanceOf[String]
+        var cp = IndexedSeq.empty[String]
+        import scala.collection.immutable.ArraySeq
 
-        val effectiveClassPath = if (classPath.isEmpty) {
-            System.getProperty("user.dir")
-        } else {
-            classPath
-        }
+        cp = ArraySeq.unsafeWrapArray(
+            classPath.substring(classPath.indexOf('=') + 1).split(File.pathSeparator)
+        )
 
-        val cpFiles = verifyFile(effectiveClassPath)
-        if (cpFiles.isEmpty) {
-            showError("Nothing to analyze.")
-            sys.exit(1)
-        }
+        if (cp.isEmpty) cp = ArraySeq.unsafeWrapArray(Array(System.getProperty("user.dir")))
 
-        cpFiles
+        info("project configuration", s"the classpath is ${cp.mkString}")
+        verifyFiles(cp)
     }
+
+    private def verifyFiles(filenames: IndexedSeq[String]): Seq[File] = filenames.flatMap(verifyFile)
 
     private def verifyFile(filename: String): Option[File] = {
         val file = new File(filename)
