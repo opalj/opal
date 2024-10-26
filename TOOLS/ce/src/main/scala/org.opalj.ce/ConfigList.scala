@@ -52,9 +52,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * Inverse function of expand
      */
     override def collapse(): Unit = {
-        for (entry <- entries) {
-            entry.collapse()
-        }
+        entries.foreach(entry => entry.collapse())
     }
 
     /**
@@ -62,14 +60,10 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * Inverse function of collapse
      */
     override def expand(): Unit = {
-        for (entry <- entries) {
-            entry.expand()
-        }
+        entries.foreach(entry => entry.expand())
     }
 
     override def replaceClasses(se: SubclassExtractor): Unit = {
-        for (entry <- entries) {
-            entry.replaceClasses(se)
-        }
+        entries.foreach(entry => entry.replaceClasses(se))
     }
 }
