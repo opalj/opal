@@ -4,7 +4,6 @@ package ce
 
 /**
  * Trait for representing the config structure
- * Provides a Hull that the inheriting classes have to implement to function
  */
 trait ConfigNode {
     val comment: Comment
