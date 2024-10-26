@@ -19,7 +19,7 @@ class CommentParserWrapper {
     def IterateConfigs(filepaths: mutable.Buffer[Path]): ListBuffer[ConfigObject] = {
         val CommentedConfigs = new ListBuffer[ConfigObject]
         for (filepath <- filepaths) {
-            CommentedConfigs += this.ParseComments(filepath)
+            CommentedConfigs += ParseComments(filepath)
         }
 
         // Merge all config files named "reference.conf"

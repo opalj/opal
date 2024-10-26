@@ -18,13 +18,13 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
     override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
         var HTMLString = ""
         var head = label
-        var brief = this.comment.brief
-        if (this.comment.label.nonEmpty) head = this.comment.label
+        var brief = comment.brief
+        if (comment.label.nonEmpty) head = comment.label
         else if (head == "") head = value
 
         // Write value into HTML code
         var content = "<b>Value: </b><code>" + value.replace("<", "&lt").replace(">", "&gt") + "</code><br>"
-        content += this.comment.toHTML
+        content += comment.toHTML
 
         // If there is no brief preview, put the value into it
         if (comment.brief.isEmpty) {
@@ -53,6 +53,6 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
     override def expand(): Unit = {}
 
     override def replaceClasses(se: SubclassExtractor): Unit = {
-        this.comment.replaceClasses(se)
+        comment.replaceClasses(se)
     }
 }

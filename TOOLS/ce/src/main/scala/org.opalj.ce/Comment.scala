@@ -20,7 +20,7 @@ class Comment {
      */
     def toHTML: String = {
         var HTMLString = ""
-        if (!this.isEmpty) {
+        if (!isEmpty) {
             if (description.nonEmpty) {
                 HTMLString += "<p><b> Description: </b> <br>"
                 for (line <- description) {
@@ -50,13 +50,13 @@ class Comment {
      */
     def mergeComment(comment: Comment): Unit = {
         // Merge comments
-        if (this.label != "" || comment.label != "") {
-            this.label = comment.label + "." + this.label
+        if (label != "" || comment.label != "") {
+            label = comment.label + "." + label
         }
-        this.brief = comment.brief + "   " + this.brief
-        this.brief = this.brief.trim
-        this.description.addAll(comment.description)
-        this.constraints.addAll(comment.constraints)
+        brief = comment.brief + "   " + brief
+        brief = brief.trim
+        description.addAll(comment.description)
+        constraints.addAll(comment.constraints)
     }
 
     /**
@@ -69,22 +69,22 @@ class Comment {
     }
 
     def getBrief: String = {
-        if (this.brief.isEmpty) {
-            if (this.description.nonEmpty) {
-                return this.description.head.substring(0, this.description.head.length.min(70)) + "..."
+        if (brief.isEmpty) {
+            if (description.nonEmpty) {
+                return description.head.substring(0, description.head.length.min(70)) + "..."
             }
         }
-        this.brief
+        brief
     }
 
     def replaceClasses(se: SubclassExtractor): Unit = {
-        if (this.datatype.trim.equals("subclass")) {
+        if (datatype.trim.equals("subclass")) {
             // Get a Set of all subclasses
-            val root = this.constraints.head
+            val root = constraints.head
 
             // Replace Types
-            this.datatype = "enum"
-            this.constraints = ListBuffer(se.extractSubclasses(root).toSeq: _*)
+            datatype = "enum"
+            constraints = ListBuffer(se.extractSubclasses(root).toSeq: _*)
         }
     }
     /**
@@ -109,7 +109,6 @@ object Comment {
     def fromString(commentBuffer: ListBuffer[String]): Comment = {
         val comment = new Comment()
         for (line <- commentBuffer) {
-            println(line)
             if (line.trim.startsWith("@label")) {
                 comment.label = line.trim.stripPrefix("@label").trim
             } else if (line.trim.startsWith("@brief")) {

@@ -2,6 +2,7 @@
 package org.opalj
 package ce
 
+import java.io.File
 import java.net.URL
 import scala.collection.mutable
 
@@ -17,8 +18,9 @@ import org.opalj.br.analyses.Project
  * @param pathWildcard accepts a Wildcard that must be present in every .jar files file name in order to be used for hierarchy extraction
  */
 class SubclassExtractor(val f: FileLocator, pathWildcard: String) {
-    var classHierarchies: ClassHierarchy = null
-    this.initialize()
+    val files: Array[File] = f.FindJarArchives(pathWildcard).toArray
+    val p: Project[URL] = Project.apply(files, Array(org.opalj.bytecode.RTJar))
+    val classHierarchy: ClassHierarchy = p.classHierarchy
 
     /**
      * This method queries the extracted class hierarchies for a class.
@@ -27,22 +29,12 @@ class SubclassExtractor(val f: FileLocator, pathWildcard: String) {
      */
     def extractSubclasses(root: String): mutable.Set[String] = {
         val results = mutable.Set[String]()
-        val unformattedresult = classHierarchies.subtypeInformation(ObjectType(root.replace(".", "/"))).orNull
+        val unformattedresult = classHierarchy.subtypeInformation(ObjectType(root.replace(".", "/"))).orNull
         if (unformattedresult != null) {
             for (entry <- unformattedresult.classTypes) {
                 results += unapply(entry).getOrElse("").replace("/", ".")
             }
         }
         results
-    }
-
-    /**
-     * Method for fetching the class Hierarchies.
-     * It is run upon initialization and on demand for reloading the class hierarchies.
-     */
-    def initialize(): Unit = {
-        val files = f.FindJarArchives(pathWildcard).toArray
-        val p: Project[URL] = Project.apply(files, Array(org.opalj.bytecode.RTJar))
-        this.classHierarchies = p.classHierarchy
     }
 }

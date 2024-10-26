@@ -22,7 +22,7 @@ object ce extends App {
     println(s"Application Home: $appHome")
 
     // Load config with default filename for this application
-    val conf = this.LoadConfig()
+    val conf = LoadConfig()
 
     val locator = new FileLocator(conf)
     val filepaths = locator.getConfigurationPaths

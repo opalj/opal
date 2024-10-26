@@ -38,7 +38,7 @@ class CommentParser() {
         // Parse initial Comments
         val initialComment = ListBuffer[String]()
         initialComment += ("@label " + filePath.toString.substring(filePath.toString.indexOf("opal") + 4))
-        initialComment ++= this.parseComments()
+        initialComment ++= parseComments()
         parseObject(initialComment)
     }
 
@@ -48,17 +48,17 @@ class CommentParser() {
      * @return returns the fully parsed object
      */
     private def parseObject(currentComment: ListBuffer[String]): ConfigObject = {
-        this.line = this.line.trim.stripPrefix("{")
+        line = line.trim.stripPrefix("{")
         // Creating necessary components
         val entries = mutable.Map[String, ConfigNode]()
-        var nextComment = this.parseComments()
+        var nextComment = parseComments()
         var currentKey = ""
         var currentvalue: ConfigNode = null
 
         // Using a breakable while loop to interrupt as soon as the object ends
         breakable {
             while (iterator.hasNext || line.nonEmpty) {
-                this.parseComments(nextComment)
+                parseComments(nextComment)
                 if (line.trim.startsWith("}")) {
                     // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
                     line = line.trim.stripPrefix("}")
@@ -74,7 +74,7 @@ class CommentParser() {
                     // Finding first instance of these symbols
                     // TerminatingIndex is the index of the symbol that terminates the key.
                     val terminatingChars = Set(':', '=', '{', '[')
-                    val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars, line)
+                    val terminatingIndex = findIndexOfCharsetInString(terminatingChars, line)
 
                     // Splitting the key from the string (while splitting of the ':' or '=' as they are not needed anymore
                     currentKey = line.substring(0, terminatingIndex - 1).trim.stripPrefix("\"").stripSuffix("\"")
@@ -83,13 +83,13 @@ class CommentParser() {
                     // Evaluating the type of value
                     if (line.trim.startsWith("{")) {
                         // Case: Value is an object
-                        currentvalue = this.parseObject(nextComment)
+                        currentvalue = parseObject(nextComment)
                     } else if (line.trim.startsWith("[")) {
                         // Case: Value is a list
-                        currentvalue = this.parseList(nextComment)
+                        currentvalue = parseList(nextComment)
                     } else {
                         // Case: Value is an entry
-                        currentvalue = this.parseEntry(nextComment)
+                        currentvalue = parseEntry(nextComment)
                     }
 
                     // Reset next comment
@@ -128,12 +128,12 @@ class CommentParser() {
         // Creation of necessary values
         var value = ""
 
-        this.parseComments(currentComment)
+        parseComments(currentComment)
 
         if (line.trim.startsWith("\"\"\"")) {
             // Case: line starts with a triple quoted string (These allow for multi-line values, so the line end does not necessarily terminate the value
             line = line.trim.stripPrefix("\"\"\"")
-            value = this.extractValue("\"\"\"")
+            value = extractValue("\"\"\"")
         } else if (line.trim.startsWith("\"")) {
             // Case: line starts with a double quoted string
             line = line.trim.stripPrefix("\"").trim
@@ -162,7 +162,7 @@ class CommentParser() {
             // Option 1: The value is inside of a pattern that has other control structures
             line = line.trim
             val terminatingChars = Set(',', ']', '}', ' ')
-            val terminatingIndex = this.findIndexOfCharsetInString(terminatingChars, line)
+            val terminatingIndex = findIndexOfCharsetInString(terminatingChars, line)
 
             if (terminatingIndex > 0) {
                 value = line.trim.substring(0, terminatingIndex).trim
@@ -196,7 +196,7 @@ class CommentParser() {
 
         breakable {
             while (iterator.hasNext || line.nonEmpty) {
-                nextComment = this.parseComments()
+                nextComment = parseComments()
                 if (line.trim.startsWith("{")) {
                     // Case: The following symbol opens an object
                     value += parseObject(nextComment)
@@ -244,16 +244,16 @@ class CommentParser() {
         var value = ""
         var remainingLine = ""
 
-        if (this.line.contains(terminatingSymbol)) {
+        if (line.contains(terminatingSymbol)) {
             // The value is a single line value
-            value = this.line.substring(0, this.line.indexOf(terminatingSymbol))
-            remainingLine = this.line.substring(this.line.indexOf(terminatingSymbol)).stripPrefix(terminatingSymbol)
+            value = line.substring(0, line.indexOf(terminatingSymbol))
+            remainingLine = line.substring(line.indexOf(terminatingSymbol)).stripPrefix(terminatingSymbol)
         } else {
             // The value is a multi line value
-            value = this.line
+            value = line
             breakable {
-                while (this.iterator.hasNext) {
-                    remainingLine = this.iterator.next()
+                while (iterator.hasNext) {
+                    remainingLine = iterator.next()
                     if (remainingLine.contains(terminatingSymbol)) {
                         value += remainingLine.trim.substring(0, remainingLine.trim.indexOf(terminatingSymbol))
                         remainingLine = remainingLine.trim.stripPrefix(remainingLine.trim.substring(
@@ -286,12 +286,12 @@ class CommentParser() {
 
     private def parseComments(): ListBuffer[String] = {
         val comment = new ListBuffer[String]
-        this.parseComments(comment)
+        parseComments(comment)
     }
 
     private def parseComments(comment: ListBuffer[String]): ListBuffer[String] = {
         while (line.trim.startsWith("#") || line.trim.startsWith("//") || line.trim == "") {
-            if (line.trim != "") comment += (line.trim.stripPrefix("#").stripPrefix("//"))
+            if (line.trim != "") comment += line.trim.stripPrefix("#").stripPrefix("//")
             line = iterator.next()
         }
         comment

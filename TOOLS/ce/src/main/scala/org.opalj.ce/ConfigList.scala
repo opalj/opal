@@ -20,7 +20,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
     override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
         var HTMLString = ""
         var head = label
-        if (this.comment.label.nonEmpty) head = this.comment.label
+        if (comment.label.nonEmpty) head = comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML + "</p>"
@@ -29,7 +29,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", this.comment.getBrief)
+        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", comment.getBrief)
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
@@ -54,7 +54,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * Inverse function of expand
      */
     override def collapse(): Unit = {
-        for (entry <- this.entries) {
+        for (entry <- entries) {
             entry.collapse()
         }
     }
@@ -64,7 +64,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
      * Inverse function of collapse
      */
     override def expand(): Unit = {
-        for (entry <- this.entries) {
+        for (entry <- entries) {
             entry.expand()
         }
     }

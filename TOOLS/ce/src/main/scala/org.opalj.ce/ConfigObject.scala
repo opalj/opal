@@ -21,7 +21,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
     override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
         var HTMLString = ""
         var head = label
-        if (this.comment.label.nonEmpty) head = this.comment.label
+        if (comment.label.nonEmpty) head = comment.label
 
         // Get HTML data for all child Nodes
         var content = "<p>" + comment.toHTML + "</p>"
@@ -39,7 +39,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", this.comment.getBrief)
+        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", comment.getBrief)
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content)
@@ -67,14 +67,14 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
     def merge(insertingObject: ConfigObject): Unit = {
 
         // Expanding both objects guarantees compatible key naming syntax
-        this.expand()
+        expand()
         insertingObject.expand()
 
         // Insert object
         for (kvpair <- insertingObject.entries) {
             val (key, value) = kvpair
-            if (this.entries.contains(key)) {
-                val conflicting_entry = this.entries.getOrElse(key, null)
+            if (entries.contains(key)) {
+                val conflicting_entry = entries.getOrElse(key, null)
                 if (conflicting_entry.isInstanceOf[ConfigObject] && value.isInstanceOf[ConfigObject]) {
                     val conflicting_child_object = conflicting_entry.asInstanceOf[ConfigObject]
                     conflicting_child_object.merge(value.asInstanceOf[ConfigObject])
@@ -86,11 +86,11 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
                 }
             } else {
                 println("No conflict detected. Inserting " + key.trim)
-                this.entries += kvpair
+                entries += kvpair
             }
         }
 
-        this.collapse()
+        collapse()
     }
 
     /**
@@ -98,7 +98,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
      * Inverse function of expand.
      */
     def collapse(): Unit = {
-        for (entry <- this.entries) {
+        for (entry <- entries) {
             val (key, value) = entry
             value.collapse()
 
@@ -114,16 +114,16 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
                     childvalue.comment.mergeComment(value_object.comment)
 
                     // Add new object
-                    this.entries += (newkey -> childvalue)
+                    entries += (newkey -> childvalue)
 
                     // Remove old object
-                    this.entries -= key
+                    entries -= key
                 }
             }
         }
-        if (this.entries.size == 1) {
-            if (this.comment.isEmpty) {} else {
-                val (key, value) = this.entries.head
+        if (entries.size == 1) {
+            if (comment.isEmpty) {} else {
+                val (key, value) = entries.head
                 if (value.comment.isEmpty) {}
             }
         }
@@ -134,7 +134,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
      * Inverse function of collapse
      */
     def expand(): Unit = {
-        for (entry <- this.entries) {
+        for (entry <- entries) {
             // Expand substructure of monitored object
             val (key, value) = entry
             value.expand()
@@ -145,20 +145,20 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
                 val new_entry = mutable.Map[String, ConfigNode](newkey(1).trim -> value)
                 val new_object = ConfigObject(new_entry, new Comment)
                 new_object.expand()
-                if (this.entries.contains(newkey(0).trim)) {
-                    if (this.entries(newkey(0).trim).isInstanceOf[ConfigObject]) {
-                        this.entries(newkey(0).trim).asInstanceOf[ConfigObject].merge(new_object)
+                if (entries.contains(newkey(0).trim)) {
+                    if (entries(newkey(0).trim).isInstanceOf[ConfigObject]) {
+                        entries(newkey(0).trim).asInstanceOf[ConfigObject].merge(new_object)
                     } else {
                         throw new Exception("Unable to Merge " + newkey(
                             0
-                        ).trim + "due to incompatible types: " + this.entries(newkey(0).trim).getClass)
+                        ).trim + "due to incompatible types: " + entries(newkey(0).trim).getClass)
                     }
                 } else {
-                    this.entries += (newkey(0).trim -> new_object)
+                    entries += (newkey(0).trim -> new_object)
                 }
 
                 // Delete old entry from the map to avoid duplicates
-                this.entries -= key
+                entries -= key
             }
         }
     }
