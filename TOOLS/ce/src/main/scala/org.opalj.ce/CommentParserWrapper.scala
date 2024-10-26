@@ -29,8 +29,6 @@ class CommentParserWrapper {
             if (config.comment.label.endsWith("reference.conf")) {
                 mergingConfigs += config
                 commentedConfigs.remove(i)
-            } else {
-                commentedConfigs(i).expand()
             }
         }
         if (mergingConfigs.nonEmpty) {
