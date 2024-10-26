@@ -22,23 +22,23 @@ class Comment {
         var HTMLString = ""
         if (!isEmpty) {
             if (description.nonEmpty) {
-                HTMLString += "<p><b> Description: </b> <br>"
+                HTMLString += "<p><b> Description: </b> <br>\n"
                 for (line <- description) {
-                    HTMLString += line + "<br>"
+                    HTMLString += line + "<br>\n"
                 }
-                HTMLString += "</p>"
+                HTMLString += "</p>\n"
             }
-            if (datatype.nonEmpty) HTMLString += "<p><b> Type: </b>" + datatype + "<br></p>"
+            if (datatype.nonEmpty) HTMLString += "<p><b> Type: </b>" + datatype + "<br></p>\n"
             if (constraints.nonEmpty) {
                 if (datatype.equals("enum")) {
-                    HTMLString += "<p><b> Allowed Values: </b><br>"
+                    HTMLString += "<p><b> Allowed Values: </b><br>\n"
                 } else {
-                    HTMLString += "<p><b> Constraints: </b><br>"
+                    HTMLString += "<p><b> Constraints: </b><br>\n"
                 }
                 for (line <- constraints) {
-                    HTMLString += line + "<br>"
+                    HTMLString += line + "<br>\n"
                 }
-                HTMLString += "</p>"
+                HTMLString += "</p>\n"
             }
         }
         HTMLString

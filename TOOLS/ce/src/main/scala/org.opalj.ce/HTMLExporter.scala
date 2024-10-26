@@ -33,7 +33,7 @@ class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
         for (config <- ConfigList) {
             if (!config.isEmpty) {
                 body += config.toHTML("", HTMLHeadline, HTMLContent, sort_alphabetically)
-                body += "<hr>"
+                body += "<hr>\n"
             }
         }
         fileContent = template.replace("$body", body)

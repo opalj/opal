@@ -23,16 +23,16 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends
         if (comment.label.nonEmpty) head = comment.label
 
         // Get HTML data for all child Nodes
-        var content = "<p>" + comment.toHTML + "</p>"
+        var content = "<p>" + comment.toHTML + "</p>\n"
         for (entry <- entries) {
-            content += entry.toHTML("", HTMLHeadline, HTMLContent, sorted)
+            content += entry.toHTML("", HTMLHeadline, HTMLContent, sorted) + "\n"
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", comment.getBrief)
+        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", comment.getBrief) + "\n"
 
         // Add content below
-        HTMLString += HTMLContent.replace("$content", content)
+        HTMLString += HTMLContent.replace("$content", content) + "\n"
 
         HTMLString
     }

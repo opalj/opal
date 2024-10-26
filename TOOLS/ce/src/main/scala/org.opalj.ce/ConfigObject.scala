@@ -24,25 +24,25 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
         if (comment.label.nonEmpty) head = comment.label
 
         // Get HTML data for all child Nodes
-        var content = "<p>" + comment.toHTML + "</p>"
+        var content = "<p>" + comment.toHTML + "</p>\n"
 
         if (sorted) {
             val sortedKeys = entries.keys.toSeq.sorted
 
             for (key <- sortedKeys) {
-                content += entries(key).toHTML(key, HTMLHeadline, HTMLContent, sorted)
+                content += entries(key).toHTML(key, HTMLHeadline, HTMLContent, sorted) + "\n"
             }
         } else {
             for ((key, node) <- entries) {
-                content += node.toHTML(key, HTMLHeadline, HTMLContent, sorted)
+                content += node.toHTML(key, HTMLHeadline, HTMLContent, sorted) + "\n"
             }
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", comment.getBrief)
+        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", comment.getBrief) + "\n"
 
         // Add content below
-        HTMLString += HTMLContent.replace("$content", content)
+        HTMLString += HTMLContent.replace("$content", content) + "\n"
 
         HTMLString
     }
