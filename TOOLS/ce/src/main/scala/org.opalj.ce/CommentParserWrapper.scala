@@ -16,10 +16,10 @@ class CommentParserWrapper {
      * @param filepaths accepts a list of full paths to the HOCON config files that shall be parsed
      * @return is a list of the parsed configuration files, paired with the path they originate from
      */
-    def IterateConfigs(filepaths: mutable.Buffer[Path]): ListBuffer[ConfigObject] = {
+    def IterateConfigs(filepaths: mutable.Buffer[Path], rootDirectory: Path): ListBuffer[ConfigObject] = {
         val CommentedConfigs = new ListBuffer[ConfigObject]
         for (filepath <- filepaths) {
-            CommentedConfigs += ParseComments(filepath)
+            CommentedConfigs += ParseComments(filepath, rootDirectory)
         }
 
         // Merge all config files named "reference.conf"
@@ -56,12 +56,12 @@ class CommentParserWrapper {
      * @param filepath accepts the full path to a valid HOCON config file
      * @return returns the parsed config as a ConfigNode
      */
-    def ParseComments(filepath: Path): ConfigObject = {
+    def ParseComments(filepath: Path, rootDirectory: Path): ConfigObject = {
         // This prevents the Parser from parsing a file without valid syntax
         com.typesafe.config.ConfigFactory.load(filepath.toString)
 
         val CP = new CommentParser
-        CP.parseFile(filepath)
+        CP.parseFile(filepath, rootDirectory)
     }
 
 }

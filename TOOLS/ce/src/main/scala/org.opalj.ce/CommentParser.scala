@@ -27,7 +27,7 @@ class CommentParser() {
      * @param filePath accepts the path to a valid HOCON file
      * @return returns the fully parsed file as a configObject
      */
-    def parseFile(filePath: Path): ConfigObject = {
+    def parseFile(filePath: Path, rootDirectory: Path): ConfigObject = {
         // Initialize iterator
         println("Parsing :" + filePath.toString)
 
@@ -36,7 +36,9 @@ class CommentParser() {
 
             // Parse initial Comments
             val initialComment = ListBuffer[String]()
-            initialComment += ("@label " + filePath.toString.substring(filePath.toString.indexOf("opal") + 4))
+            initialComment += ("@label " + filePath.toAbsolutePath.toString.stripPrefix(
+                rootDirectory.toAbsolutePath.toString
+            ))
             initialComment ++= parseComments()
             parseObject(initialComment)
         }
