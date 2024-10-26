@@ -31,9 +31,7 @@ class CommentParser() {
         // Initialize iterator
         println("Parsing :" + filePath.toString)
 
-        val lines =
-            Using(Source.fromFile(filePath.toString)) { source => source.getLines().toList }.getOrElse(List.empty[String])
-        iterator = lines.iterator
+        iterator = Using(Source.fromFile(filePath.toString)) { source => source.getLines() }.getOrElse(Iterator.empty)
 
         // Parse initial Comments
         val initialComment = ListBuffer[String]()
