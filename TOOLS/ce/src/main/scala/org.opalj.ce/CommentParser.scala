@@ -101,7 +101,7 @@ class CommentParser() {
                     line = line.trim.stripPrefix(",")
 
                     // Adding the new Key, Value pair to the Map
-                    entries += (currentKey, currentvalue)
+                    entries += ((currentKey, currentvalue))
                 }
 
                 // Proceed with the next line if the current one was fully parsed

@@ -40,7 +40,7 @@ class CommentParserWrapper {
             }
             conf.comment.label = "reference.conf"
             conf.comment.brief = "Aggregated standard configuration of merged reference.conf files"
-            commentedConfigs.addOne(conf)
+            commentedConfigs += conf
         }
 
         for (config <- commentedConfigs) {
