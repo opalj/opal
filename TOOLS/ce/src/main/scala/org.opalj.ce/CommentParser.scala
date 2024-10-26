@@ -15,8 +15,8 @@ import scala.util.control.Breaks.breakable
  * Do NOT use this class directly, use ConfigParserWrapper for safe parsing instead
  */
 class CommentParser() {
-    var iterator: Iterator[String] = null
-    var line = ""
+    private var iterator: Iterator[String] = null
+    private var line = ""
 
     /**
      * parseComments initiates the parsing process
