@@ -8,7 +8,7 @@ import scala.collection.mutable.ListBuffer
  * Container for the comments of a config node.
  */
 class Comment {
-    var constraints: ListBuffer[String] = ListBuffer[String]()
+    val constraints: ListBuffer[String] = ListBuffer[String]()
     val description: ListBuffer[String] = ListBuffer[String]()
     var label = ""
     var brief = ""
@@ -78,13 +78,13 @@ class Comment {
     }
 
     def replaceClasses(se: SubclassExtractor): Unit = {
-        if (datatype.trim.equals("subclass")) {
+        if (datatype.equals("subclass")) {
             // Get a Set of all subclasses
             val root = constraints.head
 
             // Replace Types
             datatype = "enum"
-            constraints = ListBuffer(se.extractSubclasses(root).toSeq: _*)
+            constraints ++= ListBuffer(se.extractSubclasses(root).toSeq: _*)
         }
     }
     /**
