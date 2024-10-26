@@ -46,7 +46,7 @@ class CommentParser() {
 
     /**
      * Method responsible to parse Object-Type Nodes
-     * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
+     * @param currentComment assigns previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
      * @return returns the fully parsed object
      */
     private def parseObject(currentComment: ListBuffer[String]): ConfigObject = {
