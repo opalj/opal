@@ -109,16 +109,17 @@ object Comment {
     def fromString(commentBuffer: ListBuffer[String]): Comment = {
         val comment = new Comment()
         for (line <- commentBuffer) {
-            if (line.trim.startsWith("@label")) {
-                comment.label = line.trim.stripPrefix("@label").trim
-            } else if (line.trim.startsWith("@brief")) {
-                comment.brief = line.trim.stripPrefix("@brief").trim
-            } else if (line.trim.startsWith("@constraint")) {
-                comment.constraints += line.trim.stripPrefix("@constraint").trim
-            } else if (line.trim.startsWith("@type")) {
-                comment.datatype = line.trim.stripPrefix("@type").trim
+            val trimmedLine = line.trim
+            if (trimmedLine.startsWith("@label")) {
+                comment.label = trimmedLine.stripPrefix("@label").trim
+            } else if (trimmedLine.startsWith("@brief")) {
+                comment.brief = trimmedLine.stripPrefix("@brief").trim
+            } else if (trimmedLine.startsWith("@constraint")) {
+                comment.constraints += trimmedLine.stripPrefix("@constraint").trim
+            } else if (trimmedLine.startsWith("@type")) {
+                comment.datatype = trimmedLine.stripPrefix("@type").trim
             } else {
-                comment.description += line.trim.stripPrefix("@description").trim
+                comment.description += trimmedLine.stripPrefix("@description").trim
             }
         }
         comment
