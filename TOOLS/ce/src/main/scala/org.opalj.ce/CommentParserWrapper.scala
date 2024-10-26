@@ -58,8 +58,8 @@ class CommentParserWrapper {
         // This prevents the Parser from parsing a file without valid syntax
         com.typesafe.config.ConfigFactory.load(filepath.toString)
 
-        val CP = new CommentParser
-        CP.parseFile(filepath, rootDirectory)
+        val cp = new CommentParser
+        cp.parseFile(filepath, rootDirectory)
     }
 
 }
