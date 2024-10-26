@@ -28,7 +28,6 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
 
         if (sorted) {
             val sortedKeys = entries.keys.toSeq.sorted
-
             for (key <- sortedKeys) {
                 content += entries(key).toHTML(key, HTMLHeadline, HTMLContent, sorted) + "\n"
             }

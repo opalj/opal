@@ -51,14 +51,14 @@ class FileLocator(var config: Config) {
      */
     def getConfigurationPaths: mutable.Buffer[Path] = {
         val projectNames = getConfigurationFilenames
-        SearchFiles(projectNames)
+        searchFiles(projectNames)
     }
 
     /**
      * Finds all files that match the filename within the
      * @return returns a List of full FilePaths to all found files
      */
-    def SearchFiles(Filenames: mutable.Buffer[String]): mutable.Buffer[Path] = {
+    def searchFiles(Filenames: mutable.Buffer[String]): mutable.Buffer[Path] = {
         val projectRoot = Paths.get(getProjectRoot)
         val foundFiles = ListBuffer[Path]()
 
