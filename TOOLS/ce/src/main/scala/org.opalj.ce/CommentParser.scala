@@ -31,13 +31,15 @@ class CommentParser() {
         // Initialize iterator
         println("Parsing :" + filePath.toString)
 
-        iterator = Using(Source.fromFile(filePath.toString)) { source => source.getLines() }.getOrElse(Iterator.empty)
+        Using.resource(Source.fromFile(filePath.toString)) { source =>
+            iterator = source.getLines()
 
-        // Parse initial Comments
-        val initialComment = ListBuffer[String]()
-        initialComment += ("@label " + filePath.toString.substring(filePath.toString.indexOf("opal") + 4))
-        initialComment ++= parseComments()
-        parseObject(initialComment)
+            // Parse initial Comments
+            val initialComment = ListBuffer[String]()
+            initialComment += ("@label " + filePath.toString.substring(filePath.toString.indexOf("opal") + 4))
+            initialComment ++= parseComments()
+            parseObject(initialComment)
+        }
     }
 
     /**
