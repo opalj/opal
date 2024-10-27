@@ -72,7 +72,7 @@ class Comment {
 
     /**
      * Method used for fetching information of the brief field.
-     * @return Returns the brief field of the DocumentationComment if it exists. If it does not exist, it returns a preview of the description
+     * @return Returns the brief field of the DocumentationComment if it exists. If it does not exist, it returns a preview of the description.
      */
     def getBrief(previewDescriptionLength: Int): String = {
         if (brief.isEmpty) {
@@ -85,7 +85,7 @@ class Comment {
 
     /**
      * This method is responsible for finding all subclasses to a subclass type and adds them to the constraints.
-     * Then, it changes its datatype to enum to show that all allowed values are the listed classes
+     * Then, it changes its datatype to enum to show that all allowed values are the listed classes.
      * @param se Accepts an initialized subclass extractor. It accesses the ClassHierarchy that was extracted by the subclass extractor and finds its subclasses within the structure.
      */
     def replaceClasses(se: SubclassExtractor): Unit = {
@@ -99,8 +99,8 @@ class Comment {
         }
     }
     /**
-     * Prints the Comment object to the console
-     * Debug purposes
+     * Prints the Comment object to the console.
+     * Debug purposes.
      */
     def printObject(): Unit = {
         println("Constraints: " + constraints.toString())
@@ -111,11 +111,14 @@ class Comment {
     }
 }
 
+/**
+ * Factory method for creating a Comment.
+ */
 object Comment {
     /**
      *  Factory method for creating a comment.
-     *  @param commentBuffer accepts a ListBuffer that contains the raw content of the comment
-     *  @return is a fully functional Comment
+     *  @param commentBuffer accepts a ListBuffer that contains the raw content of the comment.
+     *  @return is a fully functional Comment.
      */
     def fromString(commentBuffer: ListBuffer[String]): Comment = {
         val comment = new Comment()

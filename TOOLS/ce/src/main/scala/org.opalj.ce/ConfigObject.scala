@@ -5,18 +5,19 @@ package ce
 import scala.collection.mutable
 
 /**
- * Stores a List structure inside the ConfigNode structure
- *
- * @param entries contains a K,V Map of ConfigNodes
- * @param comment are all the comments associated with the Object
+ * Stores a List structure inside the ConfigNode structure.
+ * @param entries contains a K,V Map of ConfigNodes.
+ * @param comment are all the comments associated with the Object.
  */
 case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: Comment) extends ConfigNode {
     /**
      * Formats the entry into HTML code.
-     * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object.
+     * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object. Supply an empty string if not needed.
      * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $ label and $ brief flags for filling with content.
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering.
-     * @return returns the Config Object as HTML code.
+     * @param sorted accepts a boolean to indicate if the export should sort the keys of the configObjects alphabetically.
+     * @param maximumHeadlinePreviewLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
+     * @return returns the Config Object as HTML string.
      */
     override def toHTML(
         label:                        String,
@@ -62,8 +63,8 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
     }
 
     /**
-     * Checks if the object is empty
-     * @return true if both the Object and the comment are empty
+     * Checks if the object is empty.
+     * @return true if both the Object and the comment are empty.
      */
     override def isEmpty: Boolean = {
         if (!comment.isEmpty) return false
@@ -76,7 +77,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
     /**
      * Merges two type compatible objects.
      * This means that the objects are free of conflicting values and lists. Objects are allowed to overlap as long as there are no conflicts down the tree.
-     * @param insertingObject Is the object that is supposed to be merged into the executing one
+     * @param insertingObject Is the object that is supposed to be merged into the executing one.
      */
     def merge(insertingObject: ConfigObject): Unit = {
 
@@ -144,8 +145,8 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
     }
 
     /**
-     * This method expands the current object to represent all ob-objects within the structure
-     * Inverse function of collapse
+     * This method expands the current object to represent all objects within the structure.
+     * Inverse function of collapse.
      */
     def expand(): Unit = {
         for (entry <- entries) {
@@ -177,6 +178,10 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
         }
     }
 
+    /**
+     * Iterator for replacing subclass types of all members of the Object.
+     * @param se Accepts an initialized SubclassExtractor containing the ClassHierarchy required for a successful replacement.
+     */
     override def replaceClasses(se: SubclassExtractor): Unit = {
         for ((key, value) <- entries) {
             value.replaceClasses(se)

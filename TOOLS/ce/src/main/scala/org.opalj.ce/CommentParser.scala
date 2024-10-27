@@ -11,21 +11,21 @@ import scala.util.control.Breaks.break
 import scala.util.control.Breaks.breakable
 
 /**
- * The Comment Parser is responsible for parsing the HOCON files and its comments
- * Do NOT use this class directly, use ConfigParserWrapper for safe parsing instead
+ * The Comment Parser is responsible for parsing the HOCON files and its comments.
+ * Do NOT use this class directly, use ConfigParserWrapper for safe parsing instead.
  */
 class CommentParser() {
     private var iterator: Iterator[String] = null
     private var line = ""
 
     /**
-     * parseComments initiates the parsing process
-     * A ConfigNode can consist out of 3 possible types that are parsed differently: Objects, Lists and Entries
-     * The source node of a config file always is an object
+     * parseComments initiates the parsing process.
+     * A ConfigNode can consist out of 3 possible types that are parsed differently: Objects, Lists and Entries.
+     * The source node of a config file always is an object.
      * During parsing, the Parser will iterate the file and sort it into the ConfigNode structure.
-     * Since the Nodes can be nested and there can be multiple Nodes in one line, the Parser needs to examine most control structures like a stream and not linewise
-     * @param filePath accepts the path to a valid HOCON file
-     * @return returns the fully parsed file as a configObject
+     * Since the Nodes can be nested and there can be multiple Nodes in one line, the Parser needs to examine most control structures like a stream and not linewise.
+     * @param filePath accepts the path to a valid HOCON file.
+     * @return returns the fully parsed file as a configObject.
      */
     def parseFile(filePath: Path, rootDirectory: Path): ConfigObject = {
         // Initialize iterator
@@ -45,9 +45,9 @@ class CommentParser() {
     }
 
     /**
-     * Method responsible to parse Object-Type Nodes
-     * @param currentComment assigns previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
-     * @return returns the fully parsed object
+     * Method responsible to parse Object-Type Nodes.
+     * @param currentComment assigns previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object).
+     * @return returns the fully parsed object.
      */
     private def parseObject(currentComment: ListBuffer[String]): ConfigObject = {
         line = line.trim.stripPrefix("{")
@@ -122,9 +122,9 @@ class CommentParser() {
     }
 
     /**
-     * Method responsible to parse Entry-Type Nodes
-     * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
-     * @return returns the fully parsed entry
+     * Method responsible to parse Entry-Type Nodes.
+     * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object).
+     * @return returns the fully parsed entry.
      */
     private def parseEntry(currentComment: ListBuffer[String]): ConfigEntry = {
         // Creation of necessary values
@@ -186,9 +186,9 @@ class CommentParser() {
     }
 
     /**
-     * Method responsible to parse List-Type Nodes
-     * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object)
-     * @return returns the fully parsed entry
+     * Method responsible to parse List-Type Nodes.
+     * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object).
+     * @return returns the fully parsed entry.
      */
     private def parseList(currentComment: ListBuffer[String]): ConfigList = {
         line = line.trim.stripPrefix("[")
@@ -237,9 +237,9 @@ class CommentParser() {
     }
 
     /**
-     * Internal method for finding the end of a multi line value
-     * @param terminatingSymbol is the string that terminates the value
-     * @return returns a tuple of the parsed value and the substring of the line that has not been parsed yet
+     * Internal method for finding the end of a multi line value.
+     * @param terminatingSymbol is the string that terminates the value.
+     * @return returns a tuple of the parsed value and the substring of the line that has not been parsed yet.
      */
     private def extractValue(terminatingSymbol: String): String = {
         // creating necessary variables
@@ -274,11 +274,11 @@ class CommentParser() {
     }
 
     /**
-     * Method that finds the first instance of a character out of a character set
-     * @param characterSet accepts the selection of characters that is supposed to be looked for
-     * @param string accepts the string that is to be searched
-     * @return returns the lowest index of any character out of the character set that occurs in the string
-     * @return returns -1 if none of the characters appear in the string
+     * Method that finds the first instance of a character out of a character set.
+     * @param characterSet accepts the selection of characters that is supposed to be looked for.
+     * @param string accepts the string that is to be searched.
+     * @return returns the lowest index of any character out of the character set that occurs in the string.
+     * @return returns -1 if none of the characters appear in the string.
      */
     private def findIndexOfCharsetInString(characterSet: Set[Char], string: String): Int = {
         string.zipWithIndex.collectFirst {
@@ -286,11 +286,20 @@ class CommentParser() {
         }.getOrElse(-1)
     }
 
+    /**
+     * Gets all comments until the next non-comment entry and writes them into a new ListBuffer.
+     * @return Returns a new ListBuffer with the content of the comment.
+     */
     private def parseComments(): ListBuffer[String] = {
         val comment = new ListBuffer[String]
         parseComments(comment)
     }
 
+    /**
+     * Gets all comments all comments until the next non-comment entry and writes them into an existing ListBuffer.
+     * @param comment Accepts the ListBuffer that the following comment should be added to.
+     * @return Returns the existing ListBuffer, but with the content of the comment added to it.
+     */
     private def parseComments(comment: ListBuffer[String]): ListBuffer[String] = {
         while (line.trim.startsWith("#") || line.trim.startsWith("//") || line.trim == "") {
             if (line.trim != "") comment += line.trim.stripPrefix("#").stripPrefix("//")

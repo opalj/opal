@@ -14,14 +14,14 @@ import scala.jdk.CollectionConverters._
 import com.typesafe.config.Config
 
 /**
- * File Locator aids locating the config Files that the configuration Explorer needs to parse
- * @param config accepts the config of the Configuration Explorer
+ * File Locator aids locating the config Files that the configuration Explorer needs to parse.
+ * @param config accepts the config of the Configuration Explorer.
  */
 class FileLocator(var config: Config) {
 
     /**
-     * Small helper method for finding the project root
-     * @return returns the root directory of the opal project
+     * Small helper method for finding the project root.
+     * @return returns the root directory of the opal project.
      */
     def getProjectRoot: String = {
         val subprojectDirectory = config.getString("user.dir")
@@ -31,8 +31,8 @@ class FileLocator(var config: Config) {
     }
 
     /**
-     * Loads the filenames of the configuration files that shall be parsed
-     * @return is a List of the filenames that shall be parsed by the Configuration Explorer
+     * Loads the filenames of the configuration files that shall be parsed.
+     * @return is a List of the filenames that shall be parsed by the Configuration Explorer.
      */
     def getConfigurationFilenames: mutable.Buffer[String] = {
         val projectNames = config.getStringList("org.opalj.ce.configurationFilenames").asScala
@@ -46,8 +46,8 @@ class FileLocator(var config: Config) {
     }
 
     /**
-     * Finds all files that are named after one of the configuration filenames and are NOT within the target folder structure
-     * @return returns a List of full FilePaths to all found config files
+     * Finds all files that are named after one of the configuration filenames and are NOT within the target folder structure.
+     * @return returns a List of full FilePaths to all found config files.
      */
     def getConfigurationPaths: mutable.Buffer[Path] = {
         val projectNames = getConfigurationFilenames
@@ -55,8 +55,9 @@ class FileLocator(var config: Config) {
     }
 
     /**
-     * Finds all files that match the filename within the
-     * @return returns a List of full FilePaths to all found files
+     * Finds all files that match the filename within the.
+     * @param Filenames Accepts a List of all filenames that should be included in the result.
+     * @return returns a List of full FilePaths to all found files.
      */
     def searchFiles(Filenames: mutable.Buffer[String]): mutable.Buffer[Path] = {
         val projectRoot = Paths.get(getProjectRoot)
@@ -83,8 +84,8 @@ class FileLocator(var config: Config) {
 
     /**
      * Finds all jar archives in the project, where the file name contains the pathWildcard.
-     * @param pathWildcard accepts a String to filter the filenames of the jar archives. Will only return jar archives that contain the parameter in their file name
-     * @return Will only return jar archives that contain the parameter in their file name and that are not in the bg-jobs folder
+     * @param pathWildcard accepts a String to filter the filenames of the jar archives. Will only return jar archives that contain the parameter in their file name.
+     * @return Will only return jar archives that contain the parameter in their file name and that are not in the bg-jobs folder.
      */
     def FindJarArchives(pathWildcard: String): mutable.Buffer[File] = {
         val projectRoot = Paths.get(getProjectRoot)

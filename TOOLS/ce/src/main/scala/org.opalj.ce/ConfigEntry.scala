@@ -3,17 +3,17 @@ package org.opalj
 package ce
 
 /**
- * Stores a value inside the structure of the configNode
- * @param value is the value stored in the entry
- * @param comment are all the comments associated with the value
+ * Stores a value inside the structure of the configNode.
+ * @param value is the value stored in the entry.
+ * @param comment are all the comments associated with the value.
  */
 case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
     /**
-     * Formats the entry into HTML code
+     * Formats the entry into HTML code.
      * @param label required if the Entry is part of an object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object.
-     * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $ label and $ brief flags for filling with content
-     * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering
-     * @return returns the Config Entry as HTML code
+     * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $ label and $ brief flags for filling with content.
+     * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering.
+     * @return returns the Config Entry as HTML code.
      */
     override def toHTML(
         label:                        String,
@@ -47,17 +47,28 @@ case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
     }
 
     /**
-     * Checks if the value object is empty
-     * @return true if both the value and the comment are empty
+     * Checks if the value object is empty.
+     * @return true if both the value and the comment are empty.
      */
     override def isEmpty: Boolean = {
         if (value.isEmpty && comment.isEmpty) return true
         false
     }
 
+    /**
+     * Collapse is not needed in config Entry, due to it not having any sub-objects.
+     */
     override def collapse(): Unit = {}
+
+    /**
+     * Expand is not needed in config Entry, due to it not having any sub-objects.
+     */
     override def expand(): Unit = {}
 
+    /**
+     * Iterator for replacing a potential subclass type in the comment of the entry.
+     * @param se Accepts an initialized SubclassExtractor containing the ClassHierarchy required for a successful replacement.
+     */
     override def replaceClasses(se: SubclassExtractor): Unit = {
         comment.replaceClasses(se)
     }

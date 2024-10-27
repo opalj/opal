@@ -12,17 +12,16 @@ import scala.util.Using
 import com.typesafe.config.Config
 
 /**
- * Exports the Config structure into an HTML file
- * @param ConfigList Accepts a List of parsed Configuration Files
- * @param templatePath Accepts a Path to the HTML Template that should be used
+ * Exports the Config structure into an HTML file.
+ * @param ConfigList Accepts a List of parsed Configuration Files.
+ * @param templatePath Accepts a Path to the HTML Template that should be used.
  */
 class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
     /**
-     * Exports the ConfigList into an HTML file
-     * The following parameters are all read from the Configuration Explorer config, however, the CE config was not handed over due to namespace conflicts with the internally used ConfigNode
-     * @param exportFile Accepts a Path to the file that the Config shall be written to
-     * @param HTMLHeadline Accepts the Headline HTML structure that gets passed on to the ConfigNodes
-     * @param HTMLContent Accepts the Content HTML structure that gets passed on to the ConfigNodes
+     * Exports the ConfigList into an HTML file.
+     * The following parameters are all read from the Configuration Explorer config, however, the CE config was not handed over due to namespace conflicts with the internally used ConfigNode.
+     * @param config Accepts the config of the ConfigurationExplorer in order to read necessary values from it directly.
+     * @param exportFile Accepts a Path to the file that the Config shall be written to.
      */
     def exportHTML(config: Config, exportFile: File): Unit = {
         val HTMLHeadline = config.getString("org.opalj.ce.html.headline")

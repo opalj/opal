@@ -7,14 +7,14 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
- * The class CommentParserWrapper is the class that should be used for parsing commented config within the Configuration Explorer
+ * The class CommentParserWrapper is the class that should be used for parsing commented config within the Configuration Explorer.
  */
 class CommentParserWrapper {
     /**
-     * Made to parse multiple Configuration Files in bulk
-     * Used in combination with the file Locator to locate and parse all config files of a project
-     * @param filepaths accepts a list of full paths to the HOCON config files that shall be parsed
-     * @return is a list of the parsed configuration files, paired with the path they originate from
+     * Made to parse multiple Configuration Files in bulk.
+     * Used in combination with the file Locator to locate and parse all config files of a project.
+     * @param filepaths accepts a list of full paths to the HOCON config files that shall be parsed.
+     * @return is a list of the parsed configuration files, paired with the path they originate from.
      */
     def iterateConfigs(filepaths: mutable.Buffer[Path], rootDirectory: Path): ListBuffer[ConfigObject] = {
         val commentedConfigs = new ListBuffer[ConfigObject]
@@ -49,10 +49,10 @@ class CommentParserWrapper {
     }
 
     /**
-     * Handles the frame around parsing the configuration file
-     *
-     * @param filepath accepts the full path to a valid HOCON config file
-     * @return returns the parsed config as a ConfigNode
+     * Handles the frame around parsing the configuration file.
+     * Also checks if the config files are in an allowed HOCON formats to prevent endless loops.
+     * @param filepath accepts the full path to a valid HOCON config file.
+     * @return returns the parsed config as a ConfigNode.
      */
     def ParseComments(filepath: Path, rootDirectory: Path): ConfigObject = {
         // This prevents the Parser from parsing a file without valid syntax

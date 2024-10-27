@@ -10,9 +10,9 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
 /*
- *   Standalone configuration explorer
- *   This is the main method that runs the configuration explorer
- *   It creates a browsable HTML File out of the configuration files present in the entire OPAL project
+ *   Standalone configuration explorer.
+ *   This is the main method that runs the configuration explorer.
+ *   It creates a browsable HTML File out of the configuration files present in the entire OPAL project.
  */
 object ce extends App {
     println("Configuration Explorer Started")
