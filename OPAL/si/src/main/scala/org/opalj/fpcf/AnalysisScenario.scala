@@ -283,6 +283,478 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
         // TODO ....
 
+//                --------------------------------- VERSUCH 1 ---------------------------------
+
+//        def findFirstNode(
+//            graph: Map[ComputationSpecification[A], List[ComputationSpecification[A]]]
+//        ): Set[ComputationSpecification[A]] = {
+//            var possibleFirstNode: Set[ComputationSpecification[A]] = Set.empty
+//            graph foreach { node =>
+//                if (node._1.uses(ps).isEmpty) {
+//                    possibleFirstNode = possibleFirstNode + node._1
+//                }
+//            }
+//            possibleFirstNode
+//        }
+//
+//        def makeAcyclicGraph(
+//            graph: Map[ComputationSpecification[A], List[ComputationSpecification[A]]],
+//            head:  ComputationSpecification[A]
+//        ): Map[List[ComputationSpecification[A]], List[ComputationSpecification[A]]] = {
+//            var groupedGraph: Map[List[ComputationSpecification[A]], List[PropertyBounds]] =
+//                Map.empty
+//            var visited: Set[ComputationSpecification[A]] = Set.empty
+//            var currentGroup = List.empty[ComputationSpecification[A]]
+//
+//            def getAllUses(group: List[ComputationSpecification[A]]): List[ComputationSpecification[A]] = {
+//                var usesList: Set[ComputationSpecification[A]] = Set.empty
+//                group foreach { cs => usesList = usesList ++ graph(cs) }
+//                usesList.toList
+//            }
+//
+//            def processNode(
+//                node: ComputationSpecification[A]
+//            ): Unit = {
+//                if (!visited.contains(node)) {
+//                    visited += node
+//
+//                    val startsNewGroup = if (node.computationType.toString.contains("Eager")) {
+//                        true
+//                    } else {
+//                        false
+//                    }
+//                    if (startsNewGroup) {
+//                        if (currentGroup.nonEmpty) {
+//                            groupedGraph = groupedGraph + (currentGroup -> getAllUses(currentGroup))
+//                        }
+//                        currentGroup = List(node)
+//                    } else {
+//                        currentGroup = currentGroup :+ node
+//                    }
+//                    val connectedNodes = graph.getOrElse(node, List.empty)
+//                    connectedNodes.foreach { nextNode => processNode(nextNode) }
+//                }
+//            }
+//
+//            def howardAlgorithm(input: Set[Set[PropertyBounds]]): Set[Set[PropertyBounds]] = {
+//                var inputSet = input
+//                var output = Set.empty[Set[PropertyBounds]]
+//
+//                while (inputSet.nonEmpty) {
+//                    var first = inputSet.head
+//                    var rest = inputSet.tail
+//                    var lf = -1
+//
+//                    while (first.size > lf) {
+//                        lf = first.size
+//                        var rest2 = Set.empty[Set[PropertyBounds]]
+//
+//                        for (r <- rest) {
+//                            if (first.intersect(r).nonEmpty) {
+//                                first = first ++ r
+//                            } else {
+//                                rest2 = rest2 + r
+//
+//                            }
+//                        }
+//
+//                        rest = rest2
+//                    }
+//
+//                    output = output + first
+//                    inputSet = rest
+//                }
+//
+//                output
+//            }
+//
+//            processNode(head)
+//
+//            if (currentGroup.nonEmpty) {
+//                groupedGraph = groupedGraph + (currentGroup -> getAllUses(currentGroup))
+//            }
+//
+//            groupedGraph
+//
+//        }
+//
+//        // directedGraph: Map[ComputerSpecification, List[Outputs]]
+//        var directedGraph: Map[ComputationSpecification[A], List[ComputationSpecification[A]]] = Map
+//            .empty
+//
+//        allCS foreach { cs =>
+//            var edges: List[ComputationSpecification[A]] = List.empty[ComputationSpecification[A]]
+//
+//            var csOutput: Set[PropertyBounds] = Set.empty
+//            if (cs.derivesCollaboratively.isEmpty) {
+//                csOutput = cs.derivesLazily.toSet
+//            } else if (cs.derivesLazily.toSet.isEmpty) {
+//                csOutput = cs.derivesCollaboratively
+//            }
+//            allCS foreach { tempCS =>
+//                if (tempCS.uses(ps).intersect(csOutput).nonEmpty) {
+//                    edges = edges :+ tempCS
+//                }
+//            }
+//            directedGraph = directedGraph + (cs -> edges)
+//        }
+//
+//        val head = findFirstNode(directedGraph).head
+//
+//        val test = makeAcyclicGraph(directedGraph, head)
+//
+//        println(test)
+//        print("")
+
+//        --------------------------------- VERSUCH 1 ---------------------------------
+
+//        --------------------------------- VERSUCH 2 ---------------------------------
+//        allCS foreach { cs => println(cs.toString() + " - " + computationDependencies(cs)).toString }
+//
+//        collaborativelyDerivedProperties foreach { property =>
+//            println(property.toString() + " - " + propertyComputationsDependencies(property)).toString
+//        }
+//
+//        def howardAlgorithm(input: Set[Set[PropertyBounds]]): Set[Set[PropertyBounds]] = {
+//            var inputSet = input
+//            var output = Set.empty[Set[PropertyBounds]]
+//
+//            while (inputSet.nonEmpty) {
+//                var first = inputSet.head
+//                var rest = inputSet.tail
+//                var lf = -1
+//
+//                while (first.size > lf) {
+//                    lf = first.size
+//                    var rest2 = Set.empty[Set[PropertyBounds]]
+//
+//                    for (r <- rest) {
+//                        if (first.intersect(r).nonEmpty) {
+//                            first = first ++ r
+//                        } else {
+//                            rest2 = rest2 + r
+//
+//                        }
+//                    }
+//
+//                    rest = rest2
+//                }
+//
+//                output = output + first
+//                inputSet = rest
+//            }
+//
+//            output
+//        }
+//
+//        def directedGraph(derivedPropertySets: Set[Set[PropertyBounds]]): Map[
+//            Set[ComputationSpecification[A]],
+//            Set[PropertyBounds]
+//        ] = {
+//
+//            def getAllUses(css: Set[ComputationSpecification[A]]): Set[PropertyBounds] = {
+//                var allUses: Set[PropertyBounds] = Set.empty
+//                css foreach { cs => allUses = allUses ++ cs.uses(ps) }
+//                allUses
+//            }
+//
+//            def getAllDerivedProperties(css: Set[ComputationSpecification[A]]): Set[PropertyBounds] = {
+//                var allDerivedProperties: Set[PropertyBounds] = Set.empty
+//                css foreach { cs =>
+//                    if (cs.derivesEagerly.nonEmpty) {
+//                        allDerivedProperties = allDerivedProperties ++ cs.derivesEagerly
+//                    } else if (cs.derivesLazily.nonEmpty) {
+//                        allDerivedProperties = allDerivedProperties ++ cs.derivesLazily
+//                    } else if (cs.derivesCollaboratively.nonEmpty) {
+//                        allDerivedProperties = allDerivedProperties ++ cs.derivesCollaboratively
+//                    }
+//                }
+//                allDerivedProperties
+//            }
+//
+//            var forwardConnectionDirectedCyclicGraph: Map[
+//                Set[ComputationSpecification[A]],
+//                Set[PropertyBounds]
+//            ] = Map.empty
+//            var backwardConnectionDirectedCyclicGraph: Map[
+//                Set[ComputationSpecification[A]],
+//                Set[PropertyBounds]
+//            ] = Map.empty
+//
+//            var alreadyUsedCS: Set[ComputationSpecification[A]] = Set.empty
+//            derivedPropertySets foreach { set =>
+//                var directedCyclicNode: Set[ComputationSpecification[A]] = Set.empty
+//                set foreach { property =>
+//                    allCS foreach { cs =>
+//                        if (cs.derivesCollaboratively.contains(property) || cs.derivesLazily.contains(property)) {
+//                            directedCyclicNode = directedCyclicNode + cs
+//                            alreadyUsedCS = alreadyUsedCS + cs
+//                        }
+//                    }
+//                }
+//                forwardConnectionDirectedCyclicGraph =
+//                    forwardConnectionDirectedCyclicGraph + (directedCyclicNode -> getAllDerivedProperties(
+//                        directedCyclicNode
+//                    ))
+//                backwardConnectionDirectedCyclicGraph =
+//                    backwardConnectionDirectedCyclicGraph + (directedCyclicNode -> getAllUses(
+//                        directedCyclicNode
+//                    ))
+//            }
+//
+//            val toComputeCS = allCS.diff(alreadyUsedCS)
+//            println(toComputeCS)
+//
+//            forwardConnectionDirectedCyclicGraph
+//
+//        }
+//
+//        var collaborativelyDerivedPropertySet: Set[Set[PropertyBounds]] = Set.empty
+//        collaborativelyDerivedProperties foreach { property =>
+//            collaborativelyDerivedPropertySet =
+//                collaborativelyDerivedPropertySet + propertyComputationsDependencies(property).toSet
+//        }
+//
+//        collaborativelyDerivedPropertySet = collaborativelyDerivedPropertySet
+//
+//        val test = directedGraph(howardAlgorithm(collaborativelyDerivedPropertySet))
+//        println(test)
+//
+//              --------------------------------- VERSUCH 2 ---------------------------------
+
+//              --------------------------------- VERSUCH 3 ---------------------------------
+//        var cSpecification: Map[String, Set[ComputationSpecification[A]]] = Map.empty
+//        var forwardConnection: Map[String, Set[ComputationSpecification[A]]] = Map.empty
+//        var backwardConnection: Map[String, Set[ComputationSpecification[A]]] = Map.empty
+//        var counter: Int = 1
+//
+//        def getAllUsesCS(usesProperties: Set[PropertyBounds]): List[ComputationSpecification[A]] = {
+//            var convertedUsesInCS: List[ComputationSpecification[A]] = List.empty
+//            usesProperties foreach { property =>
+//                allCS foreach { cs =>
+//                    if (cs.derivesLazily.contains(property) || cs.derivesCollaboratively.contains(
+//                            property
+//                        ) || cs.derivesEagerly.contains(property)
+//                    ) {
+//                        convertedUsesInCS = convertedUsesInCS :+ cs
+//                    }
+//                }
+//            }
+//            convertedUsesInCS
+//        }
+//
+//        def getAllDerivedPropertiesCS(derivedPropertiesProperties: Set[PropertyBounds]): List[ComputationSpecification[A]] = {
+//            var convertedDerivedPropertiesInCS: List[ComputationSpecification[A]] = List.empty
+//            derivedPropertiesProperties foreach { property =>
+//                allCS foreach { cs =>
+//                    if (cs.uses(ps).contains(property)) {
+//                        convertedDerivedPropertiesInCS = convertedDerivedPropertiesInCS :+ cs
+//                    }
+//                }
+//            }
+//            convertedDerivedPropertiesInCS
+//        }
+//
+//        def addCSpec(spec: ComputationSpecification[A]): Unit = {
+//            cSpecification += (counter.toString -> Set(spec))
+//            var specBackwardCon: Set[PropertyBounds] = Set.empty
+//            if (spec.derivesCollaboratively.nonEmpty) {
+//                specBackwardCon = spec.derivesCollaboratively
+//            } else if (spec.derivesLazily.nonEmpty) {
+//                specBackwardCon = spec.derivesLazily.toSet
+//            } else if (spec.derivesEagerly.nonEmpty) {
+//                specBackwardCon = spec.derivesEagerly
+//            }
+//            backwardConnection = backwardConnection + (counter.toString -> getAllUsesCS(spec.uses(ps)).toSet)
+//            forwardConnection = forwardConnection + (counter.toString -> getAllDerivedPropertiesCS(specBackwardCon).toSet)
+//            counter = counter + 1
+//        }
+//
+//        def addCSpecSet(
+//            spec:        Set[ComputationSpecification[A]],
+//            backwardCon: List[ComputationSpecification[A]],
+//            forwardCon:  List[ComputationSpecification[A]]
+//        ): Unit = {
+//            cSpecification = cSpecification + (counter.toString -> spec)
+//            backwardConnection = backwardConnection + (counter.toString -> backwardCon.toSet)
+//            forwardConnection = forwardConnection + (counter.toString -> forwardCon.toSet)
+//            counter = counter + 1
+//        }
+//
+//        def howardAlgorithm(input: Set[Set[ComputationSpecification[A]]]): Set[Set[ComputationSpecification[A]]] = {
+//            var inputSet = input
+//            var output = Set.empty[Set[ComputationSpecification[A]]]
+//
+//            while (inputSet.nonEmpty) {
+//                var first = inputSet.head
+//                var rest = inputSet.tail
+//                var lf = -1
+//
+//                while (first.size > lf) {
+//                    lf = first.size
+//                    var rest2 = Set.empty[Set[ComputationSpecification[A]]]
+//
+//                    for (r <- rest) {
+//                        if (first.intersect(r).nonEmpty) {
+//                            first = first ++ r
+//                        } else {
+//                            rest2 = rest2 + r
+//                        }
+//                    }
+//                    rest = rest2
+//                }
+//                output = output + first
+//                inputSet = rest
+//            }
+//            output
+//        }
+//
+//        def connectDerivesCollaborativelyCS(): Set[Set[ComputationSpecification[A]]] = {
+//            var derivesCollaborativelyCS: Set[Set[ComputationSpecification[A]]] = Set.empty
+//            collaborativelyDerivedProperties foreach { property =>
+//                var css: Set[ComputationSpecification[A]] = Set.empty
+//                allCS foreach { cs =>
+//                    if (cs.derivesCollaboratively.contains(property)) {
+//                        css = css + cs
+//                    }
+//                }
+//                derivesCollaborativelyCS = derivesCollaborativelyCS + css
+//            }
+//            howardAlgorithm(derivesCollaborativelyCS)
+//        }
+//
+//        def isAllLazyComputation(specs: Set[ComputationSpecification[A]]): Boolean = {
+//            var isNotEager = true
+//
+//            if (specs.nonEmpty) {
+//                specs foreach (spec =>
+//                    if (spec.computationType.toString.equals("EagerComputation")) {
+//                        isNotEager = false
+//                    }
+//                )
+//            }
+//            isNotEager
+//        }
+//
+//        def getPossibleFirstNode: Set[String] = {
+//            var possibleFirstNodes: Set[String] = Set.empty
+//            backwardConnection foreach { con =>
+//                if (con._2.isEmpty) {
+//                    possibleFirstNodes += con._1
+//                }
+//            }
+//            possibleFirstNodes
+//        }
+//
+//        def getNodesFromCS(css: Set[ComputationSpecification[A]]): Set[String] = {
+//            var connectedNodes: Set[String] = Set.empty
+//            cSpecification foreach { cS =>
+//                if (cS._2.intersect(css).nonEmpty) {
+//                    connectedNodes += cS._1
+//                }
+//            }
+//            connectedNodes
+//        }
+//
+//        var visited: Set[String] = Set.empty
+//        def createACyclicGraph(node: Set[String]): Unit = {
+//            val firstNodes = node
+//            if (firstNodes.nonEmpty) {
+//                firstNodes foreach { firstNode =>
+//                    if (!visited.contains(firstNode)) {
+//                        visited = visited + firstNode
+//                        if (isAllLazyComputation(cSpecification.get(firstNode).head)) {
+//                            val nodesToBeMerged: Set[String] = getNodesFromCS(
+//                                forwardConnection.get(firstNode).head.toSet ++ backwardConnection.get(
+//                                    firstNode
+//                                ).head.toSet
+//                            )
+//                            nodesToBeMerged foreach { node =>
+//                                var newCSpecification = cSpecification.get(node).head
+//                                newCSpecification = newCSpecification ++ cSpecification.get(firstNode).head
+//                                cSpecification = cSpecification.updated(node, newCSpecification)
+//
+//                                var newForwardCon: Set[PropertyBounds] = Set.empty
+//                                cSpecification.get(node).head foreach (cs =>
+//                                    newForwardCon =
+//                                        newForwardCon ++ cs.derivesCollaboratively ++ cs.derivesLazily.toSet ++ cs.derivesEagerly
+//                                )
+//
+//                                forwardConnection =
+//                                    forwardConnection.updated(node, getAllDerivedPropertiesCS(newForwardCon).toSet)
+//
+//                                var newBackwardCon: Set[PropertyBounds] = Set.empty
+//                                cSpecification.get(node).head foreach (cs =>
+//                                    newBackwardCon = newBackwardCon ++ cs.uses(ps)
+//                                )
+//                                backwardConnection = backwardConnection.updated(node, getAllUsesCS(newBackwardCon).toSet)
+//                            }
+//                            cSpecification = cSpecification - firstNode
+//                            forwardConnection = forwardConnection - firstNode
+//                            backwardConnection = backwardConnection - firstNode
+//                            createACyclicGraph(getPossibleFirstNode)
+//                        } else {
+//                            val nextNodesInCS = forwardConnection.get(firstNode).head
+//                            val nextNodes = getNodesFromCS(nextNodesInCS.toSet).diff(visited)
+//                            if (nextNodes.nonEmpty) {
+//                                createACyclicGraph(nextNodes)
+//                            }
+//                        }
+//                    }
+//                }
+//            } else {
+//                var leftNodes: Set[String] = Set.empty
+//                cSpecification.foreach(node => leftNodes = leftNodes + node._1)
+//                val nextNodesToVisit = leftNodes.diff(visited)
+//                if (nextNodesToVisit.nonEmpty) {
+//                    createACyclicGraph(Set(nextNodesToVisit.head))
+//                }
+//            }
+//        }
+//
+//        val derivedCollaborativelyCSS = connectDerivesCollaborativelyCS()
+//        var restCS: Set[ComputationSpecification[A]] = Set.empty
+//        derivedCollaborativelyCSS foreach { css =>
+//            var forwardCon: Set[ComputationSpecification[A]] = Set.empty
+//            var backwardCon: Set[ComputationSpecification[A]] = Set.empty
+//            var usesSet: Set[PropertyBounds] = Set.empty
+//            var derivesPropertySet: Set[PropertyBounds] = Set.empty
+//            css foreach { cs =>
+//                usesSet = usesSet ++ cs.uses(ps)
+//                derivesPropertySet = derivesPropertySet ++ cs.derivesCollaboratively
+//            }
+//            usesSet = usesSet.diff(derivesPropertySet)
+//            backwardCon = getAllUsesCS(usesSet).toSet
+//            forwardCon = getAllDerivedPropertiesCS(derivesPropertySet).toSet
+//            addCSpecSet(css, backwardCon.toList, forwardCon.toList)
+//            restCS = restCS ++ css
+//        }
+//        val test = allCS.diff(restCS)
+//        test foreach { cs => addCSpec(cs) }
+//        println("")
+//        createACyclicGraph(getPossibleFirstNode)
+//
+//        var sortedForwardConnection: Map[String, Set[ComputationSpecification[A]]] = Map.empty
+//        var sortedBackwardConnection: Map[String, Set[ComputationSpecification[A]]] = Map.empty
+//        forwardConnection foreach {cSs =>
+//            println(cSs._2.diff(cSpecification.get(cSs._1).head))
+//            sortedForwardConnection = sortedForwardConnection + (cSs._1 -> cSs._2.diff(cSpecification.get(cSs._1).head))
+//        }
+//        backwardConnection foreach {cSs =>
+//            println(cSs._2.diff(cSpecification.get(cSs._1).head))
+//            sortedBackwardConnection = sortedBackwardConnection + (cSs._1 -> cSs._2.diff(cSpecification.get(cSs._1).head))
+//        }
+//
+//        println("\ncSpecification")
+//        cSpecification foreach { cS => println(cS) }
+//        println("\nforwardConnection")
+//        sortedForwardConnection foreach { cS => println(cS) }
+//        println("\nbackwardConnection")
+//        sortedBackwardConnection foreach { cS => println(cS) }
+
+//              --------------------------------- VERSUCH 3 ---------------------------------
+        println(" ")
+
         Schedule(
             if (allCS.isEmpty) List.empty else List(computePhase(propertyStore)),
             initializationData
