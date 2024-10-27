@@ -70,10 +70,14 @@ class Comment {
         false
     }
 
-    def getBrief: String = {
+    /**
+     * Method used for fetching information of the brief field.
+     * @return Returns the brief field of the DocumentationComment if it exists. If it does not exist, it returns a preview of the description
+     */
+    def getBrief(previewDescriptionLength: Int): String = {
         if (brief.isEmpty) {
             if (description.nonEmpty) {
-                return description.head.substring(0, description.head.length.min(70)) + "..."
+                return description.head.substring(0, description.head.length.min(previewDescriptionLength)) + "..."
             }
         }
         brief

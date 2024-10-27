@@ -44,12 +44,7 @@ object ce extends App {
         configs.asInstanceOf[ListBuffer[ConfigNode]],
         Paths.get(locator.getProjectRoot + conf.getString("org.opalj.ce.html.template"))
     )
-    HE.exportHTML(
-        new File(locator.getProjectRoot + conf.getString("org.opalj.ce.html.export")),
-        conf.getString("org.opalj.ce.html.headline"),
-        conf.getString("org.opalj.ce.html.content"),
-        conf.getBoolean("org.opalj.ce.html.sort_alphabetically")
-    )
+    HE.exportHTML(conf, new File(locator.getProjectRoot + conf.getString("org.opalj.ce.html.export")))
 
     /**
      * Loads default configuration of the configuration explorer

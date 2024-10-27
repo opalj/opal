@@ -18,7 +18,13 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering.
      * @return returns the Config Object as HTML code.
      */
-    override def toHTML(label: String, HTMLHeadline: String, HTMLContent: String, sorted: Boolean): String = {
+    override def toHTML(
+        label:                        String,
+        HTMLHeadline:                 String,
+        HTMLContent:                  String,
+        sorted:                       Boolean,
+        maximumHeadlinePreviewLength: Int
+    ): String = {
         var HTMLString = ""
         var head = label
         if (comment.label.nonEmpty) head = comment.label
@@ -29,16 +35,25 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
         if (sorted) {
             val sortedKeys = entries.keys.toSeq.sorted
             for (key <- sortedKeys) {
-                content += entries(key).toHTML(key, HTMLHeadline, HTMLContent, sorted) + "\n"
+                content += entries(key).toHTML(
+                    key,
+                    HTMLHeadline,
+                    HTMLContent,
+                    sorted,
+                    maximumHeadlinePreviewLength
+                ) + "\n"
             }
         } else {
             for ((key, node) <- entries) {
-                content += node.toHTML(key, HTMLHeadline, HTMLContent, sorted) + "\n"
+                content += node.toHTML(key, HTMLHeadline, HTMLContent, sorted, maximumHeadlinePreviewLength) + "\n"
             }
         }
 
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label", head).replace("$brief", comment.getBrief) + "\n"
+        HTMLString += HTMLHeadline.replace("$label", head).replace(
+            "$brief",
+            comment.getBrief(maximumHeadlinePreviewLength)
+        ) + "\n"
 
         // Add content below
         HTMLString += HTMLContent.replace("$content", content) + "\n"

@@ -9,6 +9,8 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.Using
 
+import com.typesafe.config.Config
+
 /**
  * Exports the Config structure into an HTML file
  * @param ConfigList Accepts a List of parsed Configuration Files
@@ -22,7 +24,11 @@ class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
      * @param HTMLHeadline Accepts the Headline HTML structure that gets passed on to the ConfigNodes
      * @param HTMLContent Accepts the Content HTML structure that gets passed on to the ConfigNodes
      */
-    def exportHTML(exportFile: File, HTMLHeadline: String, HTMLContent: String, sort_alphabetically: Boolean): Unit = {
+    def exportHTML(config: Config, exportFile: File): Unit = {
+        val HTMLHeadline = config.getString("org.opalj.ce.html.headline")
+        val HTMLContent = config.getString("org.opalj.ce.html.content")
+        val sort_alphabetically = config.getBoolean("org.opalj.ce.html.sort_alphabetically")
+        val maximumHeadlinePreviewLength = config.getInt("org.opalj.ce.html.maximum_headline_preview_length")
 
         // Generate HTML
         var fileContent = ""
@@ -32,7 +38,7 @@ class HTMLExporter(ConfigList: ListBuffer[ConfigNode], templatePath: Path) {
         var body = ""
         for (config <- ConfigList) {
             if (!config.isEmpty) {
-                body += config.toHTML("", HTMLHeadline, HTMLContent, sort_alphabetically)
+                body += config.toHTML("", HTMLHeadline, HTMLContent, sort_alphabetically, maximumHeadlinePreviewLength)
                 body += "<hr>\n"
             }
         }
