@@ -83,6 +83,11 @@ class Comment {
         brief
     }
 
+    /**
+     * This method is responsible for finding all subclasses to a subclass type and adds them to the constraints.
+     * Then, it changes its datatype to enum to show that all allowed values are the listed classes
+     * @param se Accepts an initialized subclass extractor. It accesses the ClassHierarchy that was extracted by the subclass extractor and finds its subclasses within the structure.
+     */
     def replaceClasses(se: SubclassExtractor): Unit = {
         if (datatype.equals("subclass")) {
             // Get a Set of all subclasses
