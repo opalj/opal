@@ -2,7 +2,7 @@
 package org.opalj.fpcf.ide.lcp_on_fields
 
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
 
 object LCPOnFieldsAnalysisScheduler
-    extends LCPOnFieldsAnalysisScheduler with JavaIDEAnalysisScheduler.RTACallGraph
+    extends LCPOnFieldsAnalysisScheduler with JavaIDEAnalysisSchedulerBase.RTACallGraph

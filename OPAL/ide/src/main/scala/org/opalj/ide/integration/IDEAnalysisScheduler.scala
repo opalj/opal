@@ -20,15 +20,20 @@ import org.opalj.ide.solver.IDEAnalysis
 /**
  * A base scheduler for IDE analyses adding common default behavior
  */
-abstract class IDEAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity]
-    extends FPCFLazyAnalysisScheduler {
+abstract class IDEAnalysisScheduler[
+    Fact <: IDEFact,
+    Value <: IDEValue,
+    Statement,
+    Callable <: Entity,
+    _ICFG <: ICFG[Statement, Callable]
+] extends FPCFLazyAnalysisScheduler {
     override final type InitializationData = IDEAnalysis[Fact, Value, Statement, Callable]
 
     def propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
 
-    def createProblem(project: SomeProject): IDEProblem[Fact, Value, Statement, Callable]
+    def createProblem(project: SomeProject, icfg: _ICFG): IDEProblem[Fact, Value, Statement, Callable]
 
-    def createICFG(project: SomeProject): ICFG[Statement, Callable]
+    def createICFG(project: SomeProject): _ICFG
 
     override final def derivesLazily: Some[PropertyBounds] =
         Some(PropertyBounds.ub(propertyMetaInformation.backingPropertyMetaInformation))
@@ -42,7 +47,9 @@ abstract class IDEAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue, Statemen
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override final def init(project: SomeProject, ps: PropertyStore): IDEAnalysis[Fact, Value, Statement, Callable] = {
-        new IDEAnalysis(project, createProblem(project), createICFG(project), propertyMetaInformation)
+        val icfg = createICFG(project)
+        val problem = createProblem(project, icfg)
+        new IDEAnalysis(project, problem, icfg, propertyMetaInformation)
     }
 
     override final def register(

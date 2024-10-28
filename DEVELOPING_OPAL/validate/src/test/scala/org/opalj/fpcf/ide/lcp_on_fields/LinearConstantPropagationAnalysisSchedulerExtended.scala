@@ -2,7 +2,7 @@
 package org.opalj.fpcf.ide.lcp_on_fields
 
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LinearConstantPropagationAnalysisSchedulerExtended
-import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
 
 object LinearConstantPropagationAnalysisSchedulerExtended
-    extends LinearConstantPropagationAnalysisSchedulerExtended with JavaIDEAnalysisScheduler.RTACallGraph
+    extends LinearConstantPropagationAnalysisSchedulerExtended with JavaIDEAnalysisSchedulerBase.RTACallGraph

@@ -37,21 +37,28 @@ import org.opalj.ide.util.Logging
  * @param uniqueFlowsOnly whether to drop or to keep duplicated flows
  * @param recordEdgeFunctions whether to record edge functions too or just stick with the flow
  */
-class FlowRecordingAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
-    ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable],
+class FlowRecordingAnalysisScheduler[
+    Fact <: IDEFact,
+    Value <: IDEValue,
+    Statement,
+    Callable <: Entity,
+    _ICFG <: ICFG[Statement, Callable]
+](
+    ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable, _ICFG],
     path:                 Option[Path]     = Some(Paths.get("target/flow-recordings")),
     recorderMode:         FlowRecorderMode = FlowRecorderModes.NODE_AS_STMT_AND_FACT,
     uniqueFlowsOnly:      Boolean          = true,
     recordEdgeFunctions:  Boolean          = true
-) extends IDEAnalysisScheduler[Fact, Value, Statement, Callable] with Logging.EnableAll with Logging.GlobalLogContext {
+) extends IDEAnalysisScheduler[Fact, Value, Statement, Callable, _ICFG]
+    with Logging.EnableAll with Logging.GlobalLogContext {
     override def propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value] = {
         ideAnalysisScheduler.propertyMetaInformation
     }
 
-    override def createProblem(project: SomeProject): IDEProblem[Fact, Value, Statement, Callable] = {
+    override def createProblem(project: SomeProject, icfg: _ICFG): IDEProblem[Fact, Value, Statement, Callable] = {
         val flowRecordingProblem = new FlowRecordingIDEProblem(
-            ideAnalysisScheduler.createProblem(project),
-            createICFG(project),
+            ideAnalysisScheduler.createProblem(project, icfg),
+            icfg,
             recorderMode,
             uniqueFlowsOnly,
             recordEdgeFunctions
@@ -60,13 +67,8 @@ class FlowRecordingAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue, Stateme
         flowRecordingProblem
     }
 
-    private var icfg: ICFG[Statement, Callable] = _
-
-    override def createICFG(project: SomeProject): ICFG[Statement, Callable] = {
-        if (icfg == null) {
-            icfg = ideAnalysisScheduler.createICFG(project)
-        }
-        icfg
+    override def createICFG(project: SomeProject): _ICFG = {
+        ideAnalysisScheduler.createICFG(project)
     }
 
     override def requiredProjectInformation: ProjectInformationKeys = {

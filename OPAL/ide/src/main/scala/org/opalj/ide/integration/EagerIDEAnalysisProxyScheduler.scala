@@ -20,12 +20,12 @@ class EagerIDEAnalysisProxyScheduler[Fact <: IDEFact, Value <: IDEValue, Stateme
     val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value],
     methodProvider:              SomeProject => Iterable[Method] = { project => project.allMethodsWithBody }
 ) extends BaseIDEAnalysisProxyScheduler[Fact, Value, Statement, Callable] with FPCFEagerAnalysisScheduler {
-    def this(ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable]) = {
+    def this(ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable, ?]) = {
         this(ideAnalysisScheduler.propertyMetaInformation)
     }
 
     def this(
-        ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable],
+        ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable, ?],
         methodProvider:       SomeProject => Iterable[Method]
     ) = {
         this(ideAnalysisScheduler.propertyMetaInformation, methodProvider)
