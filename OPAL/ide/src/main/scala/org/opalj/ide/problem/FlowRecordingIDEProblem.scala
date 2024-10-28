@@ -6,6 +6,7 @@ import scala.collection.mutable
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
+import org.opalj.ide.solver.ICFG
 
 object FlowRecorderModes extends Enumeration {
     type FlowRecorderMode = Value
@@ -31,10 +32,11 @@ object FlowRecorderModes extends Enumeration {
  */
 class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
     val baseProblem:         IDEProblem[Fact, Value, Statement, Callable],
+    val icfg:                ICFG[Statement, Callable],
     val recorderMode:        FlowRecorderModes.FlowRecorderMode = FlowRecorderModes.NODE_AS_STMT,
     val uniqueFlowsOnly:     Boolean                            = true,
     val recordEdgeFunctions: Boolean                            = false
-) extends IDEProblem[Fact, Value, Statement, Callable](baseProblem.icfg) {
+) extends IDEProblem[Fact, Value, Statement, Callable] {
     /**
      * Wrapper class for flow functions doing the actual recording
      */
@@ -57,7 +59,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
 
     private val collectedEdgeFunctions = mutable.Map.empty[DotEdge, EdgeFunction[Value]]
 
-    private var writer: Writer = null
+    private var writer: Writer = _
 
     override val nullFact: Fact = baseProblem.nullFact
 

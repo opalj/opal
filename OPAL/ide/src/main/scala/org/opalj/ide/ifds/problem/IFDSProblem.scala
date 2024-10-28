@@ -8,14 +8,12 @@ import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.MeetLattice
-import org.opalj.ide.solver.ICFG
 
 /**
  * Interface for modeling IFDS problems based on an IDE problem
  */
-abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity](
-    icfg: ICFG[Statement, Callable]
-) extends IDEProblem[Fact, IFDSValue, Statement, Callable](icfg) {
+abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
+    extends IDEProblem[Fact, IFDSValue, Statement, Callable] {
     override final val lattice: MeetLattice[IFDSValue] = IFDSLattice
 
     override final def getNormalEdgeFunction(

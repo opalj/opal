@@ -4,7 +4,6 @@ package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem
 import scala.collection.immutable
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.Property
@@ -24,7 +23,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
-import org.opalj.tac.fpcf.analyses.ide.problem.JavaForwardIDEProblem
+import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
 
@@ -35,8 +34,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
  * resolved if the index is a constant literal.
  * This implementation is mainly intended to be an example of a cyclic IDE analysis.
  */
-class LCPOnFieldsProblem(project: SomeProject)
-    extends JavaForwardIDEProblem[LCPOnFieldsFact, LCPOnFieldsValue](project) {
+class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValue] {
     override val nullFact: LCPOnFieldsFact =
         NullFact
 

@@ -38,6 +38,7 @@ import org.opalj.ide.util.Logging
 class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
     val project:                 SomeProject,
     val problem:                 IDEProblem[Fact, Value, Statement, Callable],
+    val icfg:                    ICFG[Statement, Callable],
     val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
 ) extends FPCFAnalysis with Logging.ByProjectConfig {
     private type Node = (Statement, Fact)
@@ -284,8 +285,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             dependees.remove(eOptionP.toEPK).map(_._2).getOrElse(immutable.Set.empty).toSet
         }
     }
-
-    private val icfg: ICFG[Statement, Callable] = problem.icfg
 
     private def nodeToString(node: Node, indent: String = ""): String = {
         s"Node(\n$indent\t${icfg.stringifyStatement(node._1, s"$indent\t")},\n$indent\t${node._2}\n$indent)"

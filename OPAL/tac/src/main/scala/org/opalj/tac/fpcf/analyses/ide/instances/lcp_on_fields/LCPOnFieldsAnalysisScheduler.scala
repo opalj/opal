@@ -19,7 +19,8 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
  * Linear constant propagation on fields as IDE analysis. This implementation is mainly intended to be an example of a
  * cyclic IDE analysis (see [[LCPOnFieldsProblem]]).
  */
-abstract class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCPOnFieldsFact, LCPOnFieldsValue] {
+abstract class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCPOnFieldsFact, LCPOnFieldsValue]
+    with JavaIDEAnalysisScheduler.ForwardICFG {
     override def propertyMetaInformation: IDEPropertyMetaInformation[LCPOnFieldsFact, LCPOnFieldsValue] =
         LCPOnFieldsPropertyMetaInformation
 
@@ -29,7 +30,7 @@ abstract class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCP
         JavaStatement,
         Method
     ] = {
-        new LCPOnFieldsProblem(project)
+        new LCPOnFieldsProblem
     }
 
     override def uses: Set[PropertyBounds] =

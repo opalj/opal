@@ -6,6 +6,7 @@ import scala.collection.immutable
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.ide.integration.IDEAnalysisScheduler
@@ -14,6 +15,9 @@ import org.opalj.ide.problem.IDEValue
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaBackwardICFG
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaForwardICFG
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -26,6 +30,8 @@ abstract class JavaIDEAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue]
      * Key indicating which call graph should be used
      */
     val callGraphKey: CallGraphKey
+
+    override def createICFG(project: SomeProject): JavaICFG
 
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation ++ Seq(
@@ -47,5 +53,23 @@ object JavaIDEAnalysisScheduler {
      */
     trait RTACallGraph {
         val callGraphKey: CallGraphKey = RTACallGraphKey
+    }
+
+    /**
+     * Trait to drop-in [[JavaForwardICFG]] for [[createICFG]]
+     */
+    trait ForwardICFG {
+        def createICFG(project: SomeProject): JavaICFG = {
+            new JavaForwardICFG(project)
+        }
+    }
+
+    /**
+     * Trait to drop-in [[JavaBackwardICFG]] for [[createICFG]]
+     */
+    trait BackwardICFG {
+        def createICFG(project: SomeProject): JavaICFG = {
+            new JavaBackwardICFG(project)
+        }
     }
 }

@@ -20,7 +20,8 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
  * Extended linear constant propagation as IDE analysis
  */
 abstract class LinearConstantPropagationAnalysisSchedulerExtended
-    extends JavaIDEAnalysisScheduler[LinearConstantPropagationFact, LinearConstantPropagationValue] {
+    extends JavaIDEAnalysisScheduler[LinearConstantPropagationFact, LinearConstantPropagationValue]
+    with JavaIDEAnalysisScheduler.ForwardICFG {
     override def propertyMetaInformation: IDEPropertyMetaInformation[
         LinearConstantPropagationFact,
         LinearConstantPropagationValue
@@ -32,7 +33,7 @@ abstract class LinearConstantPropagationAnalysisSchedulerExtended
         JavaStatement,
         Method
     ] = {
-        new LinearConstantPropagationProblemExtended(project)
+        new LinearConstantPropagationProblemExtended(project, createICFG(project))
     }
 
     override def uses: Set[PropertyBounds] =

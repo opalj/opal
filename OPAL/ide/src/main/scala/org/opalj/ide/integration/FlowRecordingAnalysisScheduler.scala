@@ -24,6 +24,7 @@ import org.opalj.ide.problem.FlowRecordingIDEProblem
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.IDEValue
+import org.opalj.ide.solver.ICFG
 import org.opalj.ide.solver.IDEAnalysis
 import org.opalj.ide.util.Logging
 
@@ -50,12 +51,22 @@ class FlowRecordingAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue, Stateme
     override def createProblem(project: SomeProject): IDEProblem[Fact, Value, Statement, Callable] = {
         val flowRecordingProblem = new FlowRecordingIDEProblem(
             ideAnalysisScheduler.createProblem(project),
+            createICFG(project),
             recorderMode,
             uniqueFlowsOnly,
             recordEdgeFunctions
         )
         startRecording(project, flowRecordingProblem)
         flowRecordingProblem
+    }
+
+    private var icfg: ICFG[Statement, Callable] = _
+
+    override def createICFG(project: SomeProject): ICFG[Statement, Callable] = {
+        if (icfg == null) {
+            icfg = ideAnalysisScheduler.createICFG(project)
+        }
+        icfg
     }
 
     override def requiredProjectInformation: ProjectInformationKeys = {

@@ -8,14 +8,11 @@ import scala.collection.immutable
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
-import org.opalj.ide.solver.ICFG
 
 /**
  * Interface for modeling IDE problems
  */
-abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
-    val icfg: ICFG[Statement, Callable]
-) {
+abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity] {
     implicit def edgeFunctionToFinalEdgeFunction(edgeFunction: EdgeFunction[Value]): EdgeFunctionResult[Value] = {
         FinalEdgeFunction(edgeFunction)
     }

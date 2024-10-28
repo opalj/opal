@@ -33,6 +33,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.VariableFact
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.VariableValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.VariableValueEdgeFunction
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.V
 
@@ -40,7 +41,10 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.V
  * Extended definition of the linear constant propagation problem, trying to resolve field accesses with the LCP on
  * fields analysis.
  */
-class LinearConstantPropagationProblemExtended(project: SomeProject) extends LinearConstantPropagationProblem(project) {
+class LinearConstantPropagationProblemExtended(
+    project: SomeProject,
+    icfg:    JavaICFG
+) extends LinearConstantPropagationProblem {
     override def isArrayLoadExpressionGeneratedByFact(
         arrayLoadExpr: ArrayLoad[V]
     )(

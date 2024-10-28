@@ -14,6 +14,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.IDEValue
+import org.opalj.ide.solver.ICFG
 import org.opalj.ide.solver.IDEAnalysis
 
 /**
@@ -27,6 +28,8 @@ abstract class IDEAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue, Statemen
 
     def createProblem(project: SomeProject): IDEProblem[Fact, Value, Statement, Callable]
 
+    def createICFG(project: SomeProject): ICFG[Statement, Callable]
+
     override final def derivesLazily: Some[PropertyBounds] =
         Some(PropertyBounds.ub(propertyMetaInformation.backingPropertyMetaInformation))
 
@@ -39,7 +42,7 @@ abstract class IDEAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue, Statemen
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override final def init(project: SomeProject, ps: PropertyStore): IDEAnalysis[Fact, Value, Statement, Callable] = {
-        new IDEAnalysis(project, createProblem(project), propertyMetaInformation)
+        new IDEAnalysis(project, createProblem(project), createICFG(project), propertyMetaInformation)
     }
 
     override final def register(

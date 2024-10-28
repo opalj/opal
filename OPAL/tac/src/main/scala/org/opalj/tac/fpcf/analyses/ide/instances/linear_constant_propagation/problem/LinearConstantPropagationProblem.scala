@@ -8,7 +8,6 @@ import scala.collection.immutable
 import org.opalj.BinaryArithmeticOperators
 import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
@@ -23,15 +22,15 @@ import org.opalj.tac.GetField
 import org.opalj.tac.GetStatic
 import org.opalj.tac.IntConst
 import org.opalj.tac.Var
-import org.opalj.tac.fpcf.analyses.ide.problem.JavaForwardIDEProblem
+import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
 
 /**
  * Definition of the linear constant propagation problem
  */
-class LinearConstantPropagationProblem(project: SomeProject)
-    extends JavaForwardIDEProblem[LinearConstantPropagationFact, LinearConstantPropagationValue](project) {
+class LinearConstantPropagationProblem
+    extends JavaIDEProblem[LinearConstantPropagationFact, LinearConstantPropagationValue] {
     override val nullFact: LinearConstantPropagationFact =
         NullFact
 
