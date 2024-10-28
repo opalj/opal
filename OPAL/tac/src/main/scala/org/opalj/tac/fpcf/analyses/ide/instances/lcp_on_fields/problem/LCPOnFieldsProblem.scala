@@ -41,11 +41,13 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
     override val lattice: MeetLattice[LCPOnFieldsValue] =
         LCPOnFieldsLattice
 
-    override def getNormalFlowFunction(source: JavaStatement, target: JavaStatement)(
-        implicit propertyStore: PropertyStore
-    ): FlowFunction[LCPOnFieldsFact] = {
+    override def getNormalFlowFunction(
+        source:     JavaStatement,
+        sourceFact: LCPOnFieldsFact,
+        target:     JavaStatement
+    )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
         new FlowFunction[LCPOnFieldsFact] {
-            override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
+            override def compute(): FactsAndDependees = {
                 (source.stmt.astID, sourceFact) match {
                     case (Assignment.ASTID, NullFact) =>
                         val assignment = source.stmt.asAssignment
@@ -101,21 +103,22 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
     }
 
     override def getCallFlowFunction(
-        callSite:    JavaStatement,
-        calleeEntry: JavaStatement,
-        callee:      Method
+        callSite:     JavaStatement,
+        callSiteFact: LCPOnFieldsFact,
+        calleeEntry:  JavaStatement,
+        callee:       Method
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
         new FlowFunction[LCPOnFieldsFact] {
-            override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
-                sourceFact match {
+            override def compute(): FactsAndDependees = {
+                callSiteFact match {
                     case NullFact =>
                         /* Only propagate null fact if function returns an object or an array of integers */
                         if (callee.returnType.isObjectType) {
-                            immutable.Set(sourceFact)
+                            immutable.Set(callSiteFact)
                         } else if (callee.returnType.isArrayType &&
                                    callee.returnType.asArrayType.componentType.isIntegerType
                         ) {
-                            immutable.Set(sourceFact)
+                            immutable.Set(callSiteFact)
                         } else {
                             immutable.Set.empty
                         }
@@ -146,16 +149,17 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
     }
 
     override def getReturnFlowFunction(
-        calleeExit: JavaStatement,
-        callee:     Method,
-        returnSite: JavaStatement
+        calleeExit:     JavaStatement,
+        calleeExitFact: LCPOnFieldsFact,
+        callee:         Method,
+        returnSite:     JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
         new FlowFunction[LCPOnFieldsFact] {
-            override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
-                sourceFact match {
+            override def compute(): FactsAndDependees = {
+                calleeExitFact match {
                     case NullFact =>
                         /* Always propagate null fact */
-                        immutable.Set(sourceFact)
+                        immutable.Set(calleeExitFact)
 
                     case f: AbstractEntityFact =>
                         val definedAtIndex = f.definedAtIndex
@@ -203,18 +207,19 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
     }
 
     override def getCallToReturnFlowFunction(
-        callSite:   JavaStatement,
-        callee:     Method,
-        returnSite: JavaStatement
+        callSite:     JavaStatement,
+        callSiteFact: LCPOnFieldsFact,
+        callee:       Method,
+        returnSite:   JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
         new FlowFunction[LCPOnFieldsFact] {
-            override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
+            override def compute(): FactsAndDependees = {
                 val callStmt = returnSite.stmt.asCall()
 
-                sourceFact match {
+                callSiteFact match {
                     case NullFact =>
                         /* Always propagate null fact */
-                        immutable.Set(sourceFact)
+                        immutable.Set(callSiteFact)
 
                     case f: AbstractEntityFact =>
                         /* Only propagate if the variable represented by the source fact is no initializer of one of the
@@ -373,15 +378,18 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
         super.hasPrecomputedFlowAndSummaryFunction(callSite, callSiteFact, callee)
     }
 
-    override def getPrecomputedFlowFunction(callSite: JavaStatement, callee: Method, returnSite: JavaStatement)(implicit
-        propertyStore: PropertyStore
-    ): FlowFunction[LCPOnFieldsFact] = {
+    override def getPrecomputedFlowFunction(
+        callSite:     JavaStatement,
+        callSiteFact: LCPOnFieldsFact,
+        callee:       Method,
+        returnSite:   JavaStatement
+    )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
         if (callee.isNative) {
             return new FlowFunction[LCPOnFieldsFact] {
-                override def compute(sourceFact: LCPOnFieldsFact): FactsAndDependees = {
+                override def compute(): FactsAndDependees = {
                     val callStmt = callSite.stmt.asCall()
 
-                    sourceFact match {
+                    callSiteFact match {
                         case NullFact =>
                             returnSite.stmt.astID match {
                                 case Assignment.ASTID =>
@@ -403,7 +411,7 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
             }
         }
 
-        super.getPrecomputedFlowFunction(callSite, callee, returnSite)
+        super.getPrecomputedFlowFunction(callSite, callSiteFact, callee, returnSite)
     }
 
     override def getPrecomputedSummaryFunction(

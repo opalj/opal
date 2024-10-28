@@ -18,10 +18,6 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     }
 
     /**
-     * Identity flow function that can be used when implementing problems
-     */
-    protected val identityFlowFunction = new IdentityFlowFunction[Fact]
-    /**
      * Empty flow function that can be used when implementing problems
      */
     protected val emptyFlowFunction = new EmptyFlowFunction[Fact]
@@ -55,39 +51,43 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     /**
      * Generate a flow function for a normal flow
      * @param source where the normal flow starts
+     * @param sourceFact the fact the flow starts with
      * @param target where the normal flow ends
      */
-    def getNormalFlowFunction(source: Statement, target: Statement)(
+    def getNormalFlowFunction(source: Statement, sourceFact: Fact, target: Statement)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact]
 
     /**
      * Generate a flow function for a call flow
      * @param callSite where the call flow starts (always a call statement)
+     * @param callSiteFact the fact the flow starts with
      * @param calleeEntry where the callable starts (the statement which the callable is started with)
      * @param callee the callable that is called
      */
-    def getCallFlowFunction(callSite: Statement, calleeEntry: Statement, callee: Callable)(
+    def getCallFlowFunction(callSite: Statement, callSiteFact: Fact, calleeEntry: Statement, callee: Callable)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact]
 
     /**
      * Generate a flow function for a return flow
      * @param calleeExit where the return flow starts (the statement the callable is exited with)
+     * @param calleeExitFact the fact the flow starts with
      * @param callee the callable that is returned from
      * @param returnSite where the return flow ends (e.g. the next statement after the call in the callers code)
      */
-    def getReturnFlowFunction(calleeExit: Statement, callee: Callable, returnSite: Statement)(
+    def getReturnFlowFunction(calleeExit: Statement, calleeExitFact: Fact, callee: Callable, returnSite: Statement)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact]
 
     /**
      * Generate a flow function for a call-to-return flow
      * @param callSite where the call-to-return flow starts (always a call statement)
+     * @param callSiteFact the fact the flow starts with
      * @param callee the callable this flow is about
      * @param returnSite where the call-to-return flow ends (e.g. the next statement after the call)
      */
-    def getCallToReturnFlowFunction(callSite: Statement, callee: Callable, returnSite: Statement)(
+    def getCallToReturnFlowFunction(callSite: Statement, callSiteFact: Fact, callee: Callable, returnSite: Statement)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact]
 
@@ -171,10 +171,11 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * return site. Similar to a call-to-return flow (cfg. [[getCallToReturnFlowFunction]]) but capturing the effects
      * that flow through the callable.
      * @param callSite where the flow starts (always a call statement)
+     * @param callSiteFact the fact the flow starts with
      * @param callee the callable this flow is about
      * @param returnSite where the flow ends (e.g. the next statement after the call)
      */
-    def getPrecomputedFlowFunction(callSite: Statement, callee: Callable, returnSite: Statement)(
+    def getPrecomputedFlowFunction(callSite: Statement, callSiteFact: Fact, callee: Callable, returnSite: Statement)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact] = {
         throw new IllegalArgumentException(

@@ -497,7 +497,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
                 /* Handling for precomputed summaries */
                 rs.foreach { r =>
-                    val d5s = handleFlowFunctionResult(problem.getPrecomputedFlowFunction(n, q, r).compute(d2), path)
+                    val d5s = handleFlowFunctionResult(problem.getPrecomputedFlowFunction(n, d2, q, r).compute(), path)
 
                     logTrace(s"generated the following d5s=$d5s for return statement r=${icfg.stringifyStatement(r)}")
 
@@ -521,7 +521,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 val sqs = icfg.getStartStatements(q)
                 sqs.foreach { sq =>
                     // IDE P1 lines 12 - 13
-                    val d3s = handleFlowFunctionResult(problem.getCallFlowFunction(n, sq, q).compute(d2), path)
+                    val d3s = handleFlowFunctionResult(problem.getCallFlowFunction(n, d2, sq, q).compute(), path)
 
                     logTrace(s"generated the following d3s=$d3s for start statement sq=${icfg.stringifyStatement(sq)}")
 
@@ -535,7 +535,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                 val f4 = handleEdgeFunctionResult(problem.getCallEdgeFunction(n, d2, sq, d3, q), path)
                                 rs.foreach { r =>
                                     val d5s = handleFlowFunctionResult(
-                                        problem.getReturnFlowFunction(eq, q, r).compute(d4),
+                                        problem.getReturnFlowFunction(eq, d4, q, r).compute(),
                                         path
                                     )
                                     d5s.foreach { d5 =>
@@ -565,7 +565,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             }
 
             rs.foreach { r =>
-                val d3s = handleFlowFunctionResult(problem.getCallToReturnFlowFunction(n, q, r).compute(d2), path)
+                val d3s = handleFlowFunctionResult(problem.getCallToReturnFlowFunction(n, d2, q, r).compute(), path)
 
                 logTrace(s"generated the following d3s=$d3s for return-site statement r=${icfg.stringifyStatement(r)}")
 
@@ -609,7 +609,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     logDebug(s"handling calling statement c=${icfg.stringifyStatement(c)}, d4=$d4 and return-site statement r=${icfg.stringifyStatement(r)}")
 
                     // IDE P1 line 21
-                    val d5s = handleFlowFunctionResult(problem.getReturnFlowFunction(n, p, r).compute(d2), path)
+                    val d5s = handleFlowFunctionResult(problem.getReturnFlowFunction(n, d2, p, r).compute(), path)
 
                     logDebug(s"generated the following d5s=$d5s")
 
@@ -649,7 +649,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         // IDE P1 lines 31 - 32
         icfg.getNextStatements(n).foreach { m =>
-            val d3s = handleFlowFunctionResult(problem.getNormalFlowFunction(n, m).compute(d2), path)
+            val d3s = handleFlowFunctionResult(problem.getNormalFlowFunction(n, d2, m).compute(), path)
 
             logTrace(s"generated the following d3s=$d3s for next statement m=${icfg.stringifyStatement(m)}")
 
@@ -844,7 +844,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             if (!problem.hasPrecomputedFlowAndSummaryFunction(n, d, q)) {
                 val sqs = icfg.getStartStatements(q)
                 sqs.foreach { sq =>
-                    val dPrimes = extractFlowFunctionFromResult(problem.getCallFlowFunction(n, sq, q).compute(d))
+                    val dPrimes = extractFlowFunctionFromResult(problem.getCallFlowFunction(n, d, sq, q).compute())
                     dPrimes.foreach { dPrime =>
                         propagateValue(
                             (sq, dPrime),

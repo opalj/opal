@@ -43,11 +43,12 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
     private class RecordingFlowFunction(
         baseFlowFunction: FlowFunction[Fact],
         val source:       Statement,
+        val sourceFact:   Fact,
         val target:       Statement,
         val flowType:     String
     ) extends FlowFunction[Fact] {
-        override def compute(sourceFact: Fact): FactsAndDependees = {
-            val (facts, dependees) = baseFlowFunction.compute(sourceFact)
+        override def compute(): FactsAndDependees = {
+            val (facts, dependees) = baseFlowFunction.compute()
             facts.foreach { fact => collectedFlows.addOne(createDotEdge(source, sourceFact, target, fact, flowType)) }
             (facts, dependees)
         }
@@ -71,44 +72,60 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         baseProblem.getAdditionalSeeds(stmt, callee)
     }
 
-    override def getNormalFlowFunction(source: Statement, target: Statement)(
-        implicit propertyStore: PropertyStore
-    ): FlowFunction[Fact] = {
-        new RecordingFlowFunction(baseProblem.getNormalFlowFunction(source, target), source, target, "normal flow")
+    override def getNormalFlowFunction(
+        source:     Statement,
+        sourceFact: Fact,
+        target:     Statement
+    )(implicit propertyStore: PropertyStore): FlowFunction[Fact] = {
+        new RecordingFlowFunction(
+            baseProblem.getNormalFlowFunction(source, sourceFact, target),
+            source,
+            sourceFact,
+            target,
+            "normal flow"
+        )
     }
 
     override def getCallFlowFunction(
-        callSite:    Statement,
-        calleeEntry: Statement,
-        callee:      Callable
+        callSite:     Statement,
+        callSiteFact: Fact,
+        calleeEntry:  Statement,
+        callee:       Callable
     )(implicit propertyStore: PropertyStore): FlowFunction[Fact] = {
         new RecordingFlowFunction(
-            baseProblem.getCallFlowFunction(callSite, calleeEntry, callee),
+            baseProblem.getCallFlowFunction(callSite, callSiteFact, calleeEntry, callee),
             callSite,
+            callSiteFact,
             calleeEntry,
             "call flow"
         )
     }
 
     override def getReturnFlowFunction(
-        calleeExit: Statement,
-        callee:     Callable,
-        returnSite: Statement
+        calleeExit:     Statement,
+        calleeExitFact: Fact,
+        callee:         Callable,
+        returnSite:     Statement
     )(implicit propertyStore: PropertyStore): FlowFunction[Fact] = {
         new RecordingFlowFunction(
-            baseProblem.getReturnFlowFunction(calleeExit, callee, returnSite),
+            baseProblem.getReturnFlowFunction(calleeExit, calleeExitFact, callee, returnSite),
             calleeExit,
+            calleeExitFact,
             returnSite,
             "return flow"
         )
     }
 
-    override def getCallToReturnFlowFunction(callSite: Statement, callee: Callable, returnSite: Statement)(
-        implicit propertyStore: PropertyStore
-    ): FlowFunction[Fact] = {
+    override def getCallToReturnFlowFunction(
+        callSite:     Statement,
+        callSiteFact: Fact,
+        callee:       Callable,
+        returnSite:   Statement
+    )(implicit propertyStore: PropertyStore): FlowFunction[Fact] = {
         new RecordingFlowFunction(
-            baseProblem.getCallToReturnFlowFunction(callSite, callee, returnSite),
+            baseProblem.getCallToReturnFlowFunction(callSite, callSiteFact, callee, returnSite),
             callSite,
+            callSiteFact,
             returnSite,
             "call-to-return flow"
         )
@@ -184,12 +201,16 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         baseProblem.hasPrecomputedFlowAndSummaryFunction(callSite, callSiteFact, callee)
     }
 
-    override def getPrecomputedFlowFunction(callSite: Statement, callee: Callable, returnSite: Statement)(
-        implicit propertyStore: PropertyStore
-    ): FlowFunction[Fact] = {
+    override def getPrecomputedFlowFunction(
+        callSite:     Statement,
+        callSiteFact: Fact,
+        callee:       Callable,
+        returnSite:   Statement
+    )(implicit propertyStore: PropertyStore): FlowFunction[Fact] = {
         new RecordingFlowFunction(
-            baseProblem.getPrecomputedFlowFunction(callSite, callee, returnSite),
+            baseProblem.getPrecomputedFlowFunction(callSite, callSiteFact, callee, returnSite),
             callSite,
+            callSiteFact,
             returnSite,
             "precomputed flow"
         )

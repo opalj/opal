@@ -12,6 +12,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FlowFunction
+import org.opalj.ide.problem.IdentityFlowFunction
 import org.opalj.ide.problem.MeetLattice
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
@@ -48,11 +49,12 @@ class LinearConstantPropagationProblem
     }
 
     override def getNormalFlowFunction(
-        source: JavaStatement,
-        target: JavaStatement
+        source:     JavaStatement,
+        sourceFact: LinearConstantPropagationFact,
+        target:     JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         new FlowFunction[LinearConstantPropagationFact] {
-            override def compute(sourceFact: LinearConstantPropagationFact): FactsAndDependees = {
+            override def compute(): FactsAndDependees = {
                 source.stmt.astID match {
                     case Assignment.ASTID =>
                         val assignment = source.stmt.asAssignment
@@ -213,20 +215,21 @@ class LinearConstantPropagationProblem
     }
 
     override def getCallFlowFunction(
-        callSite:    JavaStatement,
-        calleeEntry: JavaStatement,
-        callee:      Method
+        callSite:     JavaStatement,
+        callSiteFact: LinearConstantPropagationFact,
+        calleeEntry:  JavaStatement,
+        callee:       Method
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         new FlowFunction[LinearConstantPropagationFact] {
-            override def compute(sourceFact: LinearConstantPropagationFact): FactsAndDependees = {
+            override def compute(): FactsAndDependees = {
                 /* Only propagate to callees that return integers */
                 if (!callee.returnType.isIntegerType) {
                     immutable.Set.empty
                 } else {
-                    sourceFact match {
+                    callSiteFact match {
                         case NullFact =>
                             /* Always propagate null facts */
-                            immutable.Set(sourceFact)
+                            immutable.Set(callSiteFact)
 
                         case VariableFact(_, definedAtIndex) =>
                             val callStmt = callSite.stmt.asCall()
@@ -253,20 +256,21 @@ class LinearConstantPropagationProblem
     }
 
     override def getReturnFlowFunction(
-        calleeExit: JavaStatement,
-        callee:     Method,
-        returnSite: JavaStatement
+        calleeExit:     JavaStatement,
+        calleeExitFact: LinearConstantPropagationFact,
+        callee:         Method,
+        returnSite:     JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         new FlowFunction[LinearConstantPropagationFact] {
-            override def compute(sourceFact: LinearConstantPropagationFact): FactsAndDependees = {
+            override def compute(): FactsAndDependees = {
                 /* Only propagate to return site if callee returns an integer */
                 if (!callee.returnType.isIntegerType) {
                     immutable.Set.empty
                 } else {
-                    sourceFact match {
+                    calleeExitFact match {
                         case NullFact =>
                             /* Always propagate null fact */
-                            immutable.Set(sourceFact)
+                            immutable.Set(calleeExitFact)
 
                         case VariableFact(_, definedAtIndex) =>
                             returnSite.stmt.astID match {
@@ -291,11 +295,12 @@ class LinearConstantPropagationProblem
     }
 
     override def getCallToReturnFlowFunction(
-        callSite:   JavaStatement,
-        callee:     Method,
-        returnSite: JavaStatement
+        callSite:     JavaStatement,
+        callSiteFact: LinearConstantPropagationFact,
+        callee:       Method,
+        returnSite:   JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
-        identityFlowFunction
+        IdentityFlowFunction[LinearConstantPropagationFact](callSiteFact)
     }
 
     override def getNormalEdgeFunction(
@@ -519,14 +524,17 @@ class LinearConstantPropagationProblem
         super.hasPrecomputedFlowAndSummaryFunction(callSite, callSiteFact, callee)
     }
 
-    override def getPrecomputedFlowFunction(callSite: JavaStatement, callee: Method, returnSite: JavaStatement)(
-        implicit propertyStore: PropertyStore
-    ): FlowFunction[LinearConstantPropagationFact] = {
+    override def getPrecomputedFlowFunction(
+        callSite:     JavaStatement,
+        callSiteFact: LinearConstantPropagationFact,
+        callee:       Method,
+        returnSite:   JavaStatement
+    )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         if (callee.isNative) {
             return emptyFlowFunction
         }
 
-        super.getPrecomputedFlowFunction(callSite, callee, returnSite)
+        super.getPrecomputedFlowFunction(callSite, callSiteFact, callee, returnSite)
     }
 
     override def getPrecomputedSummaryFunction(
