@@ -188,7 +188,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
     override def equals(other: Any): Boolean = {
         other match {
             case that: DVar[_] => this.origin == that.origin && this.useSites == that.useSites
-            case _ => false
+            case _             => false
         }
     }
 
