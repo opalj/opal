@@ -62,8 +62,6 @@ object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest],
         val receivers = (xml \ "application" \ "receiver").flatMap(parseComponentFromXml(_, BroadcastReceiver))
         val providers = (xml \ "application" \ "provider").flatMap(parseComponentFromXml(_, ContentProvider))
 
-        // Collec
-
         // Collect all components
         AndroidManifest(packageName, activities, services, receivers, providers)
     }
