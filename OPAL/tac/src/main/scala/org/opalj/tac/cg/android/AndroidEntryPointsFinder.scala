@@ -28,6 +28,7 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val entryPointDescriptions = getConfiguredEntryPoints(project)
         val manifest: AndroidManifest = project.get(AndroidManifestKey).get
+
         // get launcher activities
         val launchableActivities = manifest.activities.filter(_.isLauncherActivity)
         val launchableClasses = launchableActivities.map(_.cls)
@@ -42,6 +43,7 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
                 }
             }
         }
+
         entryPoints
     }
 
