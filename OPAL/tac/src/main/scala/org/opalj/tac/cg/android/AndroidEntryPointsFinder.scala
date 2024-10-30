@@ -30,8 +30,7 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
         val manifest: AndroidManifest = project.get(AndroidManifestKey).get
 
         // get launcher activities
-        val launchableActivities = manifest.activities.filter(_.isLauncherActivity)
-        val launchableClasses = launchableActivities.map(_.cls)
+        val launchableClasses = manifest.activities.filter(_.isLauncherActivity).map(_.cls)
         val classHierarchy = project.classHierarchy
         val entryPoints = ArrayBuffer[Method]()
 
