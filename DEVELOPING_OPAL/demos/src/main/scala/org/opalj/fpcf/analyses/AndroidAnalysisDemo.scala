@@ -34,15 +34,18 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
         val manifestPath = parameters.collectFirst {
             case param if param.startsWith("-manifest=") => param.split("=")(1)
         }
+
         if (manifestPath.isEmpty)
             throw new IllegalArgumentException(
                 "Pass path to (non-binary) manifest with -manifest=path/to/AndroidManifest.xml"
             )
+
         var newConfig = project.config
         newConfig = newConfig.withValue(
             InitialEntryPointsKey.ConfigKey,
             ConfigValueFactory.fromAnyRef("org.opalj.tac.cg.android.AndroidEntryPointsFinder")
         )
+
         val newProject = Project.recreate(project, newConfig)
         val result = analyze(newProject, manifestPath.get)
         BasicReport(result)
