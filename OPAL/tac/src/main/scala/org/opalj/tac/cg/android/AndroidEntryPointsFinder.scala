@@ -21,8 +21,7 @@ import org.opalj.tac.fpcf.analyses.MethodDescription
  * An activity is a launcher activity if it contains an intent filter with action "android.intent.action.MAIN"
  * and category "android.intent.category.LAUNCHER". Requires Android Manifest to be loaded.
  *
- * @author Tom Nikisch
- *         Julius Naeumann
+ * @author Julius Naeumann
  */
 object AndroidEntryPointsFinder extends EntryPointFinder {
     val configKey = "org.opalj.tac.cg.android.AndroidEntryPointsFinder.entryPoints"
