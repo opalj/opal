@@ -54,9 +54,7 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: DocumentationCom
      * @return true if both the List and the comment are empty.
      */
     override def isEmpty: Boolean = {
-        if (!comment.isEmpty) return false
-        if (entries.forall(entry => !entry.isEmpty)) return false
-        true
+        comment.isEmpty && entries.forall(_.isEmpty)
     }
 
     /**
