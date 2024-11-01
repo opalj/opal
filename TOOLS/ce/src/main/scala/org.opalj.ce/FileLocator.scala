@@ -18,7 +18,8 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 /**
- * File Locator aids locating the config Files that the configuration Explorer needs to parse.
+ * File Locator aids locating the Files that the configuration Explorer needs to parse.
+ * It can locate a range of files, but its internal usage by Configuration Explorer is locating configuration Files and Jar Archives containing the current build number.
  * @param config accepts the config of the Configuration Explorer.
  */
 class FileLocator(config: Config) {
