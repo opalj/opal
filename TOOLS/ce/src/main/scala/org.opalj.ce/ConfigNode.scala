@@ -42,5 +42,10 @@ trait ConfigNode {
      * Inverse function of expand.
      */
     def collapse(): Unit
+
+    /**
+     * Method for replacing a potential subclass type in the comment of the Node.
+     * @param se Accepts an initialized SubclassExtractor containing the ClassHierarchy required for a successful replacement.
+     */
     def replaceClasses(se: SubclassExtractor): Unit
 }

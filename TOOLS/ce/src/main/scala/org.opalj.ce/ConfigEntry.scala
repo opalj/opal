@@ -66,7 +66,7 @@ case class ConfigEntry(value: String, comment: DocumentationComment) extends Con
     override def expand(): Unit = {}
 
     /**
-     * Iterator for replacing a potential subclass type in the comment of the entry.
+     * Method for replacing a potential subclass type in the comment of the entry.
      * @param se Accepts an initialized SubclassExtractor containing the ClassHierarchy required for a successful replacement.
      */
     override def replaceClasses(se: SubclassExtractor): Unit = {
