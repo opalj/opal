@@ -3,6 +3,7 @@ package org.opalj
 package ce
 
 import java.nio.file.Path
+import scala.collection.immutable
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -18,7 +19,7 @@ class CommentParserWrapper {
      * @param filepaths accepts a list of full paths to the HOCON config files that shall be parsed.
      * @return is a list of the parsed configuration files, paired with the path they originate from.
      */
-    def iterateConfigs(filepaths: mutable.Buffer[Path], rootDirectory: Path): ListBuffer[ConfigObject] = {
+    def iterateConfigs(filepaths: Iterable[Path], rootDirectory: Path): immutable.Seq[ConfigObject] = {
         val commentedConfigs = new ListBuffer[ConfigObject]
         for (filepath <- filepaths) {
             commentedConfigs += ParseComments(filepath, rootDirectory)
@@ -47,7 +48,7 @@ class CommentParserWrapper {
             config.collapse()
         }
 
-        commentedConfigs
+        commentedConfigs.toSeq
     }
 
     /**

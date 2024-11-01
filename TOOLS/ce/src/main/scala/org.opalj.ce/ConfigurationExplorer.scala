@@ -4,7 +4,6 @@ package ce
 
 import java.io.File
 import java.nio.file.Paths
-import scala.collection.mutable.ListBuffer
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -36,7 +35,7 @@ object ConfigurationExplorer extends App {
 
     // Replace class type values
     if (conf.getBoolean("org.opalj.ce.replaceSubclasses")) {
-        val se = new SubclassExtractor(locator, buildVersion)
+        val se = new SubclassExtractor(locator.FindJarArchives(buildVersion).toArray)
         for (config <- configs) {
             config.replaceClasses(se)
         }
@@ -44,7 +43,7 @@ object ConfigurationExplorer extends App {
 
     // Export
     val HE = new HTMLExporter(
-        configs.asInstanceOf[ListBuffer[ConfigNode]],
+        configs,
         Paths.get(locator.getProjectRoot + conf.getString("org.opalj.ce.html.template"))
     )
     HE.exportHTML(conf, new File(locator.getProjectRoot + conf.getString("org.opalj.ce.html.export")))

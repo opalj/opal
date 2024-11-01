@@ -7,7 +7,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
-import scala.collection.mutable
+import scala.collection.immutable.Seq
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
@@ -39,21 +39,21 @@ class FileLocator(var config: Config) {
      * Loads the filenames of the configuration files that shall be parsed.
      * @return is a List of the filenames that shall be parsed by the Configuration Explorer.
      */
-    def getConfigurationFilenames: mutable.Buffer[String] = {
+    def getConfigurationFilenames: Seq[String] = {
         val projectNames = config.getStringList("org.opalj.ce.configurationFilenames").asScala
 
         OPALLogger.info("Configuration Explorer", "Loaded the following Filenames: ")
         for (filename <- projectNames) {
             OPALLogger.info("Configuration Explorer", filename)
         }
-        projectNames
+        projectNames.toSeq
     }
 
     /**
      * Finds all files that are named after one of the configuration filenames and are NOT within the target folder structure.
      * @return returns a List of full FilePaths to all found config files.
      */
-    def getConfigurationPaths: mutable.Buffer[Path] = {
+    def getConfigurationPaths: Seq[Path] = {
         val projectNames = getConfigurationFilenames
         searchFiles(projectNames)
     }
@@ -63,7 +63,7 @@ class FileLocator(var config: Config) {
      * @param Filenames Accepts a List of all filenames that should be included in the result.
      * @return returns a List of full FilePaths to all found files.
      */
-    def searchFiles(Filenames: mutable.Buffer[String]): mutable.Buffer[Path] = {
+    def searchFiles(Filenames: Seq[String]): Seq[Path] = {
         val projectRoot = Paths.get(getProjectRoot)
         val foundFiles = ListBuffer[Path]()
 
@@ -82,7 +82,7 @@ class FileLocator(var config: Config) {
                 }
             }
         )
-        foundFiles
+        foundFiles.toSeq
     }
 
     /**
@@ -90,7 +90,7 @@ class FileLocator(var config: Config) {
      * @param pathWildcard accepts a String to filter the filenames of the jar archives. Will only return jar archives that contain the parameter in their file name.
      * @return Will only return jar archives that contain the parameter in their file name and that are not in the bg-jobs folder.
      */
-    def FindJarArchives(pathWildcard: String): mutable.Buffer[File] = {
+    def FindJarArchives(pathWildcard: String): Seq[File] = {
         val projectRoot = Paths.get(getProjectRoot)
         val foundFiles = ListBuffer[File]()
         Files.walkFileTree(
@@ -108,6 +108,6 @@ class FileLocator(var config: Config) {
                 }
             }
         )
-        foundFiles
+        foundFiles.toSeq
     }
 }

@@ -17,8 +17,7 @@ import org.opalj.br.analyses.Project
  * @param f accepts any initialized FileLocator.
  * @param pathWildcard accepts a Wildcard that must be present in every .jar files file name in order to be used for hierarchy extraction.
  */
-class SubclassExtractor(val f: FileLocator, pathWildcard: String) {
-    val files: Array[File] = f.FindJarArchives(pathWildcard).toArray
+class SubclassExtractor(files: Array[File]) {
     val p: Project[URL] = Project.apply(files, Array(org.opalj.bytecode.RTJar))
     val classHierarchy: ClassHierarchy = p.classHierarchy
 
