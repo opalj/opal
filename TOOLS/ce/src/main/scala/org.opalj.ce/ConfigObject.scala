@@ -4,6 +4,10 @@ package ce
 
 import scala.collection.mutable
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+
 /**
  * Stores a List structure inside the ConfigNode structure.
  * @param entries contains a K,V Map of ConfigNodes.
@@ -11,6 +15,7 @@ import scala.collection.mutable
  */
 case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: DocumentationComment)
     extends ConfigNode {
+    implicit val logContext: LogContext = GlobalLogContext
     /**
      * Formats the entry into HTML code.
      * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object. Supply an empty string if not needed.
@@ -95,13 +100,13 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: D
                     val conflicting_child_object = conflicting_entry.asInstanceOf[ConfigObject]
                     conflicting_child_object.merge(value.asInstanceOf[ConfigObject])
                 } else {
-                    println("Info on incompatible keys: " + key.trim)
+                    OPALLogger.error("Configuration Explorer", s"Info on incompatible keys: ${key.trim}")
                     throw new Exception(
-                        "Unable to merge incompatible types:" + value.getClass + " & " + conflicting_entry.getClass
+                        s"Unable to merge incompatible types: ${value.getClass} & ${conflicting_entry.getClass}"
                     )
                 }
             } else {
-                println("No conflict detected. Inserting " + key.trim)
+                OPALLogger.info("Configuration Explorer", s"No conflict detected. Inserting ${key.trim}")
                 entries += kvpair
             }
         }

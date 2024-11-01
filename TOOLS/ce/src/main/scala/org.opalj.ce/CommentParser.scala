@@ -10,6 +10,10 @@ import scala.util.Using
 import scala.util.control.Breaks.break
 import scala.util.control.Breaks.breakable
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+
 /**
  * The Comment Parser is responsible for parsing the HOCON files and its comments.
  * Do NOT use this class directly, use ConfigParserWrapper for safe parsing instead.
@@ -17,6 +21,7 @@ import scala.util.control.Breaks.breakable
 class CommentParser() {
     private var iterator: Iterator[String] = Iterator.empty
     private var line = ""
+    implicit val logContext: LogContext = GlobalLogContext
 
     /**
      * parseComments initiates the parsing process.
@@ -29,7 +34,7 @@ class CommentParser() {
      */
     def parseFile(filePath: Path, rootDirectory: Path): ConfigObject = {
         // Initialize iterator
-        println("Parsing :" + filePath.toString)
+        OPALLogger.info("Configuration Explorer", s"Parsing: ${filePath.toString}")
 
         Using.resource(Source.fromFile(filePath.toString)) { source =>
             iterator = source.getLines()

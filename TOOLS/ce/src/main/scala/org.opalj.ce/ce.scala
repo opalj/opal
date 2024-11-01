@@ -9,17 +9,20 @@ import scala.collection.mutable.ListBuffer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+
 /*
  *   Standalone configuration explorer.
  *   This is the main method that runs the configuration explorer.
  *   It creates a browsable HTML File out of the configuration files present in the entire OPAL project.
  */
 object ce extends App {
-    println("Configuration Explorer Started")
+    implicit val logContext: LogContext = GlobalLogContext
+
+    OPALLogger.info("Configuration Explorer", "Configuration Explorer Started")
     val buildVersion = System.getProperty("build.version", "unknown")
-    val appHome = System.getProperty("app.home", "not set")
-    println(s"Build Version: $buildVersion")
-    println(s"Application Home: $appHome")
 
     // Load config with default filename for this application
     val conf = LoadConfig()
@@ -51,9 +54,8 @@ object ce extends App {
      * @return returns the configuration of the configuration explorer
      */
     def LoadConfig(): Config = {
-        println("Loading configuration")
+        OPALLogger.info("Configuration Explorer", "Loading configuration")
         val conf = ConfigFactory.load("ce")
-        println(conf.getClass)
 
         conf
     }

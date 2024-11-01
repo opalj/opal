@@ -13,11 +13,16 @@ import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+
 /**
  * File Locator aids locating the config Files that the configuration Explorer needs to parse.
  * @param config accepts the config of the Configuration Explorer.
  */
 class FileLocator(var config: Config) {
+    implicit val logContext: LogContext = GlobalLogContext
 
     /**
      * Small helper method for finding the project root.
@@ -26,7 +31,7 @@ class FileLocator(var config: Config) {
     def getProjectRoot: String = {
         val subprojectDirectory = config.getString("user.dir")
         val projectRoot = Paths.get(subprojectDirectory).getParent.getParent.toString
-        println("Searching in the following directory: " + projectRoot)
+        OPALLogger.info("Configuration Explorer", s"Searching in the following directory: $projectRoot")
         projectRoot
     }
 
@@ -37,11 +42,10 @@ class FileLocator(var config: Config) {
     def getConfigurationFilenames: mutable.Buffer[String] = {
         val projectNames = config.getStringList("org.opalj.ce.configurationFilenames").asScala
 
-        println("Loaded the following Filenames: ")
+        OPALLogger.info("Configuration Explorer", "Loaded the following Filenames: ")
         for (filename <- projectNames) {
-            println(filename)
+            OPALLogger.info("Configuration Explorer", filename)
         }
-        println()
         projectNames
     }
 
@@ -72,13 +76,12 @@ class FileLocator(var config: Config) {
                         ) && !file.toAbsolutePath.toString.contains("target/scala")
                     ) {
                         foundFiles += file
-                        println(s"Found file: ${file.toString}")
+                        OPALLogger.info("Configuration Explorer", s"Found file: ${file.toString}")
                     }
                     java.nio.file.FileVisitResult.CONTINUE
                 }
             }
         )
-        println()
         foundFiles
     }
 
@@ -99,13 +102,12 @@ class FileLocator(var config: Config) {
                         ) && !file.toString.contains("bg-jobs")
                     ) {
                         foundFiles += file.toFile
-                        println(s"Found file: ${file.toString}")
+                        OPALLogger.info("Configuration Explorer", s"Found file: ${file.toString}")
                     }
                     java.nio.file.FileVisitResult.CONTINUE
                 }
             }
         )
-        println()
         foundFiles
     }
 }
