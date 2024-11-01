@@ -245,21 +245,23 @@ class CommentParser() {
         // creating necessary variables
         var value = ""
 
-        if (line.contains(terminatingSymbol)) {
+        var index = line.indexOf(terminatingSymbol)
+        if (index >= 0) {
             // The value is a single line value
-            value = line.substring(0, line.indexOf(terminatingSymbol))
-            line = line.substring(line.indexOf(terminatingSymbol)).stripPrefix(terminatingSymbol).trim
+            value = line.substring(0, index)
+            line = line.substring(index).stripPrefix(terminatingSymbol).trim
         } else {
             // The value is a multi line value
             value = s"$line \n"
             breakable {
                 while (iterator.hasNext) {
                     line = iterator.next().trim
-                    if (line.contains(terminatingSymbol)) {
-                        value += s"${line.substring(0, line.indexOf(terminatingSymbol))} \n"
+                    index = line.indexOf(terminatingSymbol)
+                    if (index >= 0) {
+                        value += s"${line.substring(0, index)} \n"
                         line = line.stripPrefix(line.trim.substring(
                             0,
-                            line.indexOf(terminatingSymbol)
+                            index
                         )).stripPrefix(terminatingSymbol).trim
                         break()
                     } else {
