@@ -21,7 +21,7 @@ import org.opalj.log.OPALLogger
  * File Locator aids locating the config Files that the configuration Explorer needs to parse.
  * @param config accepts the config of the Configuration Explorer.
  */
-class FileLocator(var config: Config) {
+class FileLocator(config: Config) {
     implicit val logContext: LogContext = GlobalLogContext
 
     /**
