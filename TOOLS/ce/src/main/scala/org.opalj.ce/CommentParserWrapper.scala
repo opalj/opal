@@ -6,6 +6,8 @@ import java.nio.file.Path
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import com.typesafe.config.ConfigFactory
+
 /**
  * The class CommentParserWrapper is the class that should be used for parsing commented config within the Configuration Explorer.
  */
@@ -56,7 +58,7 @@ class CommentParserWrapper {
      */
     def ParseComments(filepath: Path, rootDirectory: Path): ConfigObject = {
         // This prevents the Parser from parsing a file without valid syntax
-        com.typesafe.config.ConfigFactory.load(filepath.toString)
+        ConfigFactory.load(filepath.toString)
 
         val cp = new CommentParser
         cp.parseFile(filepath, rootDirectory)
