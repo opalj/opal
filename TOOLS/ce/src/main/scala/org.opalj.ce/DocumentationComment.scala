@@ -7,7 +7,7 @@ import scala.collection.mutable.ListBuffer
 /**
  * Container for the comments of a config node.
  */
-class Comment {
+class DocumentationComment {
     val constraints: ListBuffer[String] = ListBuffer[String]()
     val description: ListBuffer[String] = ListBuffer[String]()
     var label = ""
@@ -42,7 +42,7 @@ class Comment {
      * Merges another comment into this comment.
      * @param comment accepts the comment that should be merged into this comment.
      */
-    def mergeComment(comment: Comment): Unit = {
+    def mergeComment(comment: DocumentationComment): Unit = {
         // Merge comments
         if (label != "" && comment.label != "") {
             label = comment.label + "." + label
@@ -108,14 +108,14 @@ class Comment {
 /**
  * Factory method for creating a Comment.
  */
-object Comment {
+object DocumentationComment {
     /**
      *  Factory method for creating a comment.
      *  @param commentBuffer accepts a ListBuffer that contains the raw content of the comment.
      *  @return is a fully functional Comment.
      */
-    def fromString(commentBuffer: ListBuffer[String]): Comment = {
-        val comment = new Comment()
+    def fromString(commentBuffer: ListBuffer[String]): DocumentationComment = {
+        val comment = new DocumentationComment()
         for (line <- commentBuffer) {
             val trimmedLine = line.trim
             if (trimmedLine.startsWith("@label")) {

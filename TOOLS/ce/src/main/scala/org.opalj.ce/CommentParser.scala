@@ -118,7 +118,7 @@ class CommentParser() {
         }
 
         // Return the finished ConfigObject
-        ConfigObject(entries, Comment.fromString(currentComment))
+        ConfigObject(entries, DocumentationComment.fromString(currentComment))
     }
 
     /**
@@ -182,7 +182,7 @@ class CommentParser() {
             line = ""
         }
 
-        ConfigEntry(value, Comment.fromString(currentComment))
+        ConfigEntry(value, DocumentationComment.fromString(currentComment))
     }
 
     /**
@@ -233,7 +233,7 @@ class CommentParser() {
         }
 
         // Finish
-        ConfigList(value, Comment.fromString(currentComment))
+        ConfigList(value, DocumentationComment.fromString(currentComment))
     }
 
     /**

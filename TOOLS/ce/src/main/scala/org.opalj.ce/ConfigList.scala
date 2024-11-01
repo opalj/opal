@@ -9,7 +9,7 @@ import scala.collection.mutable.ListBuffer
  * @param entries contains a List of ConfigNodes.
  * @param comment are all the comments associated with the List.
  */
-case class ConfigList(entries: ListBuffer[ConfigNode], comment: Comment) extends ConfigNode {
+case class ConfigList(entries: ListBuffer[ConfigNode], comment: DocumentationComment) extends ConfigNode {
     /**
      * Formats the entry into HTML code.
      * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object. Supply an empty string if not needed.

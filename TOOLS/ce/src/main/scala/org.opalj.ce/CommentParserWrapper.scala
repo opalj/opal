@@ -34,7 +34,7 @@ class CommentParserWrapper {
             }
         }
         if (mergingConfigs.nonEmpty) {
-            val conf = ConfigObject(mutable.Map[String, ConfigNode](), new Comment)
+            val conf = ConfigObject(mutable.Map[String, ConfigNode](), new DocumentationComment)
             for (i <- mergingConfigs.indices) {
                 conf.merge(mergingConfigs(i))
             }

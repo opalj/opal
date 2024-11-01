@@ -9,7 +9,8 @@ import scala.collection.mutable
  * @param entries contains a K,V Map of ConfigNodes.
  * @param comment are all the comments associated with the Object.
  */
-case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: Comment) extends ConfigNode {
+case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: DocumentationComment)
+    extends ConfigNode {
     /**
      * Formats the entry into HTML code.
      * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object. Supply an empty string if not needed.
@@ -158,7 +159,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: C
                 // Create expanded object
                 val newkey = key.trim.split("\\.", 2)
                 val new_entry = mutable.Map[String, ConfigNode](newkey(1).trim -> value)
-                val new_object = ConfigObject(new_entry, new Comment)
+                val new_object = ConfigObject(new_entry, new DocumentationComment)
                 new_object.expand()
                 if (entries.contains(newkey(0).trim)) {
                     if (entries(newkey(0).trim).isInstanceOf[ConfigObject]) {

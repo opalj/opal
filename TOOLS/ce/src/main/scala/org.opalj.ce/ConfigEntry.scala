@@ -7,7 +7,7 @@ package ce
  * @param value is the value stored in the entry.
  * @param comment are all the comments associated with the value.
  */
-case class ConfigEntry(value: String, comment: Comment) extends ConfigNode {
+case class ConfigEntry(value: String, comment: DocumentationComment) extends ConfigNode {
     /**
      * Formats the entry into HTML code.
      * @param label required if the Entry is part of an object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object.
