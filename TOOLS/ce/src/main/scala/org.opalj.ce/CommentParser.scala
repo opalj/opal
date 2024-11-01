@@ -140,7 +140,33 @@ class CommentParser() {
         if (line.startsWith("\"\"\"")) {
             // Case: line starts with a triple quoted string (These allow for multi-line values, so the line end does not necessarily terminate the value
             line = line.stripPrefix("\"\"\"").trim
-            value = extractValue("\"\"\"")
+            val valueBuilder = new StringBuilder
+            var index = line.indexOf("\"\"\"")
+            if (index >= 0) {
+                // The value is a single line value
+                valueBuilder ++= line.substring(0, index)
+                line = line.substring(index).stripPrefix("\"\"\"").trim
+            } else {
+                // The value is a multi line value
+                valueBuilder ++= s"$line \n"
+                breakable {
+                    while (iterator.hasNext) {
+                        line = iterator.next().trim
+                        index = line.indexOf("\"\"\"")
+                        if (index >= 0) {
+                            valueBuilder ++= s"${line.substring(0, index)} \n"
+                            line = line.stripPrefix(line.trim.substring(
+                                0,
+                                index
+                            )).stripPrefix("\"\"\"").trim
+                            break()
+                        } else {
+                            valueBuilder ++= s"$line \n"
+                        }
+                    }
+                }
+            }
+            value = valueBuilder.toString
         } else if (line.startsWith("\"")) {
             // Case: line starts with a double quoted string
             line = line.stripPrefix("\"").trim
@@ -234,43 +260,6 @@ class CommentParser() {
 
         // Finish
         ConfigList(value, DocumentationComment.fromString(currentComment))
-    }
-
-    /**
-     * Internal method for finding the end of a multi line value.
-     * @param terminatingSymbol is the string that terminates the value.
-     * @return returns a tuple of the parsed value and the substring of the line that has not been parsed yet.
-     */
-    private def extractValue(terminatingSymbol: String): String = {
-        // creating necessary variables
-        var value = ""
-
-        var index = line.indexOf(terminatingSymbol)
-        if (index >= 0) {
-            // The value is a single line value
-            value = line.substring(0, index)
-            line = line.substring(index).stripPrefix(terminatingSymbol).trim
-        } else {
-            // The value is a multi line value
-            value = s"$line \n"
-            breakable {
-                while (iterator.hasNext) {
-                    line = iterator.next().trim
-                    index = line.indexOf(terminatingSymbol)
-                    if (index >= 0) {
-                        value += s"${line.substring(0, index)} \n"
-                        line = line.stripPrefix(line.trim.substring(
-                            0,
-                            index
-                        )).stripPrefix(terminatingSymbol).trim
-                        break()
-                    } else {
-                        value += s"line \n"
-                    }
-                }
-            }
-        }
-        value
     }
 
     /**
