@@ -35,7 +35,7 @@ object ConfigurationExplorer extends App {
 
     // Replace class type values
     if (conf.getBoolean("org.opalj.ce.replaceSubclasses")) {
-        val se = new SubclassExtractor(locator.FindJarArchives(buildVersion).toArray)
+        val se = new SubclassExtractor(locator.findJarArchives(buildVersion).toArray)
         for (config <- configs) {
             config.replaceClasses(se)
         }

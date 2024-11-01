@@ -90,7 +90,7 @@ class FileLocator(config: Config) {
      * @param pathWildcard accepts a String to filter the filenames of the jar archives. Will only return jar archives that contain the parameter in their file name.
      * @return Will only return jar archives that contain the parameter in their file name and that are not in the bg-jobs folder.
      */
-    def FindJarArchives(pathWildcard: String): Seq[File] = {
+    def findJarArchives(pathWildcard: String): Seq[File] = {
         val projectRoot = Paths.get(getProjectRoot)
         val foundFiles = ListBuffer[File]()
         Files.walkFileTree(
