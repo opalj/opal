@@ -140,7 +140,7 @@ class CommentParserWrapper {
                         // Finding first instance of these symbols
                         // TerminatingIndex is the index of the symbol that terminates the key.
                         val terminatingChars = Set(':', '=', '{', '[')
-                        val terminatingIndex = findFirstIndexOfAnyChar(terminatingChars, line)
+                        val terminatingIndex = line.indexWhere(terminatingChars.contains)
 
                         // Splitting the key from the string (while splitting of the ':' or '=' as they are not needed anymore
                         currentKey = line.substring(0, terminatingIndex - 1).trim.stripPrefix("\"").stripSuffix("\"")
@@ -261,7 +261,7 @@ class CommentParserWrapper {
                 // There are two ways of terminating an unquoted string
                 // Option 1: The value is inside of a pattern that has other control structures
                 val terminatingChars = Set(',', ']', '}', ' ')
-                val terminatingIndex = findFirstIndexOfAnyChar(terminatingChars, line)
+                val terminatingIndex = line.indexWhere(terminatingChars.contains)
 
                 if (terminatingIndex > 0) {
                     value = line.substring(0, terminatingIndex).trim
@@ -321,17 +321,6 @@ class CommentParserWrapper {
 
             // Finish
             ConfigList(value, DocumentationComment.fromString(currentComment))
-        }
-
-        /**
-         * Method that finds the first instance of a character out of a character set.
-         * @param characters accepts the selection of characters that is supposed to be looked for.
-         * @param string accepts the string that is to be searched.
-         * @return returns the lowest index of any character out of the character set that occurs in the string.
-         * @return returns -1 if none of the characters appear in the string.
-         */
-        private def findFirstIndexOfAnyChar(characters: Set[Char], string: String): Int = {
-            string.indexWhere(characters.contains)
         }
 
         /**
