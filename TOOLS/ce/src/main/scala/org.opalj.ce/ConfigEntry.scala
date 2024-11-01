@@ -26,10 +26,11 @@ case class ConfigEntry(value: String, comment: DocumentationComment) extends Con
         maximumHeadlinePreviewLength: Int
     ): String = {
         val HTMLStringBuilder = new StringBuilder()
-        var head = label
         var brief = StringEscapeUtils.escapeHtml4(comment.brief)
-        if (comment.label.nonEmpty) head = comment.label
-        else if (head == "") head = value
+        val head =
+            if (comment.label.nonEmpty) comment.label
+            else if (label.nonEmpty) label
+            else value
 
         // If there is no brief preview, put the value into it
         if (comment.brief.isEmpty) {
