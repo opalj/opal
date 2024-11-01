@@ -18,7 +18,7 @@ import org.opalj.log.OPALLogger
  *   This is the main method that runs the configuration explorer.
  *   It creates a browsable HTML File out of the configuration files present in the entire OPAL project.
  */
-object ce extends App {
+object ConfigurationExplorer extends App {
     implicit val logContext: LogContext = GlobalLogContext
 
     OPALLogger.info("Configuration Explorer", "Configuration Explorer Started")
