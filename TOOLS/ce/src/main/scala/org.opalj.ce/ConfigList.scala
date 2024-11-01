@@ -4,6 +4,8 @@ package ce
 
 import scala.collection.mutable.ListBuffer
 
+import org.apache.commons.text.StringEscapeUtils
+
 /**
  * Stores a List structure inside the ConfigNode structure.
  * @param entries contains a List of ConfigNodes.
@@ -31,9 +33,9 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: DocumentationCom
         if (comment.label.nonEmpty) head = comment.label
 
         // Adds Header line with collapse + expand options
-        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", head).replace(
+        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace(
                 "$brief",
-                comment.getBrief(maximumHeadlinePreviewLength)
+                StringEscapeUtils.escapeHtml4(comment.getBrief(maximumHeadlinePreviewLength))
             )} \n"
 
         // Add content below

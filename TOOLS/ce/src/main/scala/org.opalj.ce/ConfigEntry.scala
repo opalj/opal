@@ -2,8 +2,11 @@
 package org.opalj
 package ce
 
+import org.apache.commons.text.StringEscapeUtils
+
 /**
  * Stores a value inside the structure of the configNode.
+ *
  * @param value is the value stored in the entry.
  * @param comment are all the comments associated with the value.
  */
@@ -24,20 +27,20 @@ case class ConfigEntry(value: String, comment: DocumentationComment) extends Con
     ): String = {
         val HTMLStringBuilder = new StringBuilder()
         var head = label
-        var brief = comment.brief
+        var brief = StringEscapeUtils.escapeHtml4(comment.brief)
         if (comment.label.nonEmpty) head = comment.label
         else if (head == "") head = value
 
         // If there is no brief preview, put the value into it
         if (comment.brief.isEmpty) {
-            brief = s"<b>Value: </b><code> ${value.replace("<", "&lt").replace(">", "&gt")} </code>\n"
+            brief = s"<b>Value: </b><code> ${StringEscapeUtils.escapeHtml4(value)} </code>\n"
         }
 
         // Adds Header line with collapse + expand options
-        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", head).replace("$brief", brief)} \n"
+        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace("$brief", brief)} \n"
 
         // Write value into HTML code
-        var content = s"<b>Value: </b><code> ${value.replace("<", "&lt").replace(">", "&gt")} </code><br>\n"
+        var content = s"<b>Value: </b><code> ${StringEscapeUtils.escapeHtml4(value)} </code><br>\n"
         content += comment.toHTML
 
         // Add content below

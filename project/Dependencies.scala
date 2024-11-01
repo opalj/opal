@@ -82,5 +82,5 @@ object Dependencies {
   val apk = Seq(apkparser, scalaxml)
 
   val llvm = Seq(javacpp, javacpp_llvm)
-  val ce = Seq()
+  val ce = Seq(commonstext)
 }

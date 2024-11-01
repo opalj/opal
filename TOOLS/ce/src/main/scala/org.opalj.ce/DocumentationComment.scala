@@ -4,6 +4,8 @@ package ce
 
 import scala.collection.mutable.ListBuffer
 
+import org.apache.commons.text.StringEscapeUtils
+
 /**
  * Container for the comments of a config node.
  */
@@ -21,18 +23,19 @@ class DocumentationComment {
     def toHTML: String = {
         val HTMLString = new StringBuilder()
         if (!isEmpty) {
-            if (description.nonEmpty) {
+            if (description.mkString("").trim.nonEmpty) {
                 HTMLString ++= "<p><b> Description: </b> <br>\n"
-                HTMLString ++= s"${description.mkString("<br>\n")} <br>\n </p>\n"
+                HTMLString ++= s"${StringEscapeUtils.escapeHtml4(description.mkString("\n")).replace("\n", "<br>\n")} <br> </p>\n"
             }
-            if (datatype.nonEmpty) HTMLString ++= s"<p><b> Type: </b>$datatype<br></p>\n"
+            if (datatype.nonEmpty)
+                HTMLString ++= s"<p><b> Type: </b>${StringEscapeUtils.escapeHtml4(datatype)}<br></p>\n"
             if (constraints.nonEmpty) {
                 if (datatype.equals("enum")) {
                     HTMLString ++= "<p><b> Allowed Values: </b><br>\n"
                 } else {
                     HTMLString ++= "<p><b> Constraints: </b><br>\n"
                 }
-                HTMLString ++= s"${constraints.mkString("<br>\n")} <br>\n </p>\n"
+                HTMLString ++= s"${StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).mkString("<br>\n")} <br>\n </p>\n"
             }
         }
         HTMLString.toString

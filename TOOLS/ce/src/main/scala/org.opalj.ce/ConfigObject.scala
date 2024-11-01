@@ -8,6 +8,8 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
+import org.apache.commons.text.StringEscapeUtils
+
 /**
  * Stores a List structure inside the ConfigNode structure.
  * @param entries contains a K,V Map of ConfigNodes.
@@ -37,10 +39,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: D
         if (comment.label.nonEmpty) head = comment.label
 
         // Adds Header line with collapse + expand options
-        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", head).replace(
-                "$brief",
-                comment.getBrief(maximumHeadlinePreviewLength)
-            )} \n"
+        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace("$brief", StringEscapeUtils.escapeHtml4(comment.getBrief(maximumHeadlinePreviewLength)))} \n"
 
         // Get HTML data for all child Nodes
         var content = s"<p> ${comment.toHTML} </p>\n"
