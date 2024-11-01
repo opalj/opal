@@ -353,9 +353,10 @@ class CommentParserWrapper {
                 // Add the comment in the same line of the list as well
                 val currentComment = line.stripPrefix("#").stripPrefix("//").trim
                 line = ""
-                return currentComment
+                currentComment
+            } else {
+                ""
             }
-            ""
         }
     }
 }
