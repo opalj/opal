@@ -358,16 +358,16 @@ class CommentParserWrapper {
 
         /**
          * Adds a single line of Comment to the raw Comment string if the line has the comment flags
-         * @return
+         * @return returns an empty string if the next line is not a Comment. Returns the Comment without the comment flags if the line is a comment.
          */
         private def getSingleLineComment: String = {
-            var currentComment = ""
             if (line.startsWith("#") || line.startsWith("//")) {
                 // Add the comment in the same line of the list as well
-                currentComment = line.stripPrefix("#").stripPrefix("//").trim
+                val currentComment = line.stripPrefix("#").stripPrefix("//").trim
                 line = ""
+                return currentComment
             }
-            currentComment
+            ""
         }
     }
 }
