@@ -145,35 +145,31 @@ class CommentParser() {
             // Case: line starts with a double quoted string
             line = line.stripPrefix("\"").trim
             // A '\' can escape a quote. Thus we need to exclude that from the terminating Index
-            var terminatingIndex = line.length
-            var i = 0
-            breakable(while (i < line.length) {
-                if (line(i) == '\"' && (i == 0 || line(i - 1) != '\\')) {
-                    terminatingIndex = i
-                    // Loop ends as soon as the first unescaped double quote is found
+            var index = line.indexOf('\"')
+            breakable(while (index != -1) {
+                if (index == 0 || line(index - 1) != '\\') {
                     break()
+                } else {
+                    index = line.indexOf('\"', index + 1)
                 }
-                i += 1
             })
 
-            value = line.substring(0, terminatingIndex).trim
+            value = line.substring(0, index).trim
             line = line.stripPrefix(value).trim.stripPrefix("\"").trim
         } else if (line.startsWith("\'")) {
             // Case: line starts with a single quoted string
             line = line.stripPrefix("\'").trim
             // A '\' can escape a quote. Thus we need to exclude that from the terminating Index
-            var terminatingIndex = line.length
-            var i = 0
-            breakable(while (i < line.length) {
-                if (line(i) == '\'' && (i == 0 || line(i - 1) != '\\')) {
-                    terminatingIndex = i
-                    // Loop ends as soon as the first unescaped double quote is found
+            var index = line.indexOf('\'')
+            breakable(while (index != -1) {
+                if (index == 0 || line(index - 1) != '\\') {
                     break()
+                } else {
+                    index = line.indexOf('\'', index + 1)
                 }
-                i += 1
             })
 
-            value = line.substring(0, terminatingIndex).trim
+            value = line.substring(0, index).trim
             line = line.stripPrefix(value).trim.stripPrefix("\'").trim
         } else {
             // Case: Line starts with an unquoted string
