@@ -101,7 +101,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: D
                     conflicting_child_object.merge(value.asInstanceOf[ConfigObject])
                 } else {
                     OPALLogger.error("Configuration Explorer", s"Info on incompatible keys: ${key.trim}")
-                    throw new Exception(
+                    throw new IllegalArgumentException(
                         s"Unable to merge incompatible types: ${value.getClass} & ${conflicting_entry.getClass}"
                     )
                 }
