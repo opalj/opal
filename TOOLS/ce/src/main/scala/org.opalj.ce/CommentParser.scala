@@ -188,12 +188,7 @@ class CommentParser() {
             }
         }
 
-        // If a comment is behind the value in the same line, this adds it to the comments too
-        if (line.startsWith("#") || line.startsWith("//")) {
-            currentComment += line.stripPrefix("#").stripPrefix("//").trim
-            line = ""
-        }
-
+        currentComment += getSingleLineComment
         ConfigEntry(value, DocumentationComment.fromString(currentComment))
     }
 
@@ -235,11 +230,7 @@ class CommentParser() {
                 }
             }
         }
-        if (line.startsWith("#") || line.startsWith("//")) {
-            // Add the comment in the same line of the list as well
-            currentComment += line.stripPrefix("#").stripPrefix("//").trim
-            line = ""
-        }
+        currentComment += getSingleLineComment
 
         // Finish
         ConfigList(value, DocumentationComment.fromString(currentComment))
@@ -309,9 +300,23 @@ class CommentParser() {
      */
     private def parseComments(comment: ListBuffer[String]): ListBuffer[String] = {
         while (line.startsWith("#") || line.startsWith("//") || line == "") {
-            if (line != "") comment += line.stripPrefix("#").stripPrefix("//")
+            if (line != "") comment += getSingleLineComment
             line = iterator.next().trim
         }
         comment
+    }
+
+    /**
+     * Adds a single line of Comment to the raw Comment string if the line has the comment flags
+     * @return
+     */
+    private def getSingleLineComment: String = {
+        var currentComment = ""
+        if (line.startsWith("#") || line.startsWith("//")) {
+            // Add the comment in the same line of the list as well
+            currentComment = line.stripPrefix("#").stripPrefix("//").trim
+            line = ""
+        }
+        currentComment
     }
 }
