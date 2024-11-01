@@ -26,26 +26,27 @@ case class ConfigList(entries: ListBuffer[ConfigNode], comment: DocumentationCom
         sorted:                       Boolean,
         maximumHeadlinePreviewLength: Int
     ): String = {
-        var HTMLString = ""
+        val HTMLStringBuilder = new StringBuilder()
         var head = label
         if (comment.label.nonEmpty) head = comment.label
 
-        // Get HTML data for all child Nodes
-        var content = "<p>" + comment.toHTML + "</p>\n"
-        for (entry <- entries) {
-            content += entry.toHTML("", HTMLHeadline, HTMLContent, sorted, maximumHeadlinePreviewLength) + "\n"
-        }
-
         // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label", head).replace(
-            "$brief",
-            comment.getBrief(maximumHeadlinePreviewLength)
-        ) + "\n"
+        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", head).replace(
+                "$brief",
+                comment.getBrief(maximumHeadlinePreviewLength)
+            )} \n"
 
         // Add content below
-        HTMLString += HTMLContent.replace("$content", content) + "\n"
+        // Get HTML data for all child Nodes
+        var content = s"<p> ${comment.toHTML} </p>\n"
+        for (entry <- entries) {
+            content += s"${entry.toHTML("", HTMLHeadline, HTMLContent, sorted, maximumHeadlinePreviewLength)} \n"
+        }
 
-        HTMLString
+        // Add Content Block to HTML String
+        HTMLStringBuilder ++= s"${HTMLContent.replace("$content", content)} \n"
+
+        HTMLStringBuilder.toString
     }
 
     /**

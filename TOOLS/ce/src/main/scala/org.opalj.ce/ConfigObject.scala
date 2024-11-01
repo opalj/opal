@@ -32,12 +32,18 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: D
         sorted:                       Boolean,
         maximumHeadlinePreviewLength: Int
     ): String = {
-        var HTMLString = ""
+        val HTMLStringBuilder = new StringBuilder()
         var head = label
         if (comment.label.nonEmpty) head = comment.label
 
+        // Adds Header line with collapse + expand options
+        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", head).replace(
+                "$brief",
+                comment.getBrief(maximumHeadlinePreviewLength)
+            )} \n"
+
         // Get HTML data for all child Nodes
-        var content = "<p>" + comment.toHTML + "</p>\n"
+        var content = s"<p> ${comment.toHTML} </p>\n"
 
         if (sorted) {
             val sortedKeys = entries.keys.toSeq.sorted
@@ -52,20 +58,14 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: D
             }
         } else {
             for ((key, node) <- entries) {
-                content += node.toHTML(key, HTMLHeadline, HTMLContent, sorted, maximumHeadlinePreviewLength) + "\n"
+                content += s"${node.toHTML(key, HTMLHeadline, HTMLContent, sorted, maximumHeadlinePreviewLength)} \n"
             }
         }
 
-        // Adds Header line with collapse + expand options
-        HTMLString += HTMLHeadline.replace("$label", head).replace(
-            "$brief",
-            comment.getBrief(maximumHeadlinePreviewLength)
-        ) + "\n"
-
         // Add content below
-        HTMLString += HTMLContent.replace("$content", content) + "\n"
+        HTMLStringBuilder ++= s"${HTMLContent.replace("$content", content)} \n"
 
-        HTMLString
+        HTMLStringBuilder.toString
     }
 
     /**
