@@ -81,7 +81,7 @@ class CommentParser() {
                     // Finding first instance of these symbols
                     // TerminatingIndex is the index of the symbol that terminates the key.
                     val terminatingChars = Set(':', '=', '{', '[')
-                    val terminatingIndex = findIndexOfCharsetInString(terminatingChars, line)
+                    val terminatingIndex = findFirstIndexOfAnyChar(terminatingChars, line)
 
                     // Splitting the key from the string (while splitting of the ':' or '=' as they are not needed anymore
                     currentKey = line.substring(0, terminatingIndex - 1).trim.stripPrefix("\"").stripSuffix("\"")
@@ -202,7 +202,7 @@ class CommentParser() {
             // There are two ways of terminating an unquoted string
             // Option 1: The value is inside of a pattern that has other control structures
             val terminatingChars = Set(',', ']', '}', ' ')
-            val terminatingIndex = findIndexOfCharsetInString(terminatingChars, line)
+            val terminatingIndex = findFirstIndexOfAnyChar(terminatingChars, line)
 
             if (terminatingIndex > 0) {
                 value = line.substring(0, terminatingIndex).trim
@@ -264,14 +264,14 @@ class CommentParser() {
 
     /**
      * Method that finds the first instance of a character out of a character set.
-     * @param characterSet accepts the selection of characters that is supposed to be looked for.
+     * @param characters accepts the selection of characters that is supposed to be looked for.
      * @param string accepts the string that is to be searched.
      * @return returns the lowest index of any character out of the character set that occurs in the string.
      * @return returns -1 if none of the characters appear in the string.
      */
-    private def findIndexOfCharsetInString(characterSet: Set[Char], string: String): Int = {
+    private def findFirstIndexOfAnyChar(characters: Set[Char], string: String): Int = {
         string.zipWithIndex.collectFirst {
-            case (char, index) if characterSet.contains(char) => index
+            case (char, index) if characters.contains(char) => index
         }.getOrElse(-1)
     }
 
