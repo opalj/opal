@@ -270,9 +270,7 @@ class CommentParser() {
      * @return returns -1 if none of the characters appear in the string.
      */
     private def findFirstIndexOfAnyChar(characters: Set[Char], string: String): Int = {
-        string.zipWithIndex.collectFirst {
-            case (char, index) if characters.contains(char) => index
-        }.getOrElse(-1)
+        string.indexWhere(characters.contains)
     }
 
     /**
