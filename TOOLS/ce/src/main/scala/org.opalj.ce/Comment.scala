@@ -19,29 +19,23 @@ class Comment {
      * @return returns the entire object as HTML code ready for insertion into an HTML file.
      */
     def toHTML: String = {
-        var HTMLString = ""
+        val HTMLString = new StringBuilder()
         if (!isEmpty) {
             if (description.nonEmpty) {
-                HTMLString += "<p><b> Description: </b> <br>\n"
-                for (line <- description) {
-                    HTMLString += line + "<br>\n"
-                }
-                HTMLString += "</p>\n"
+                HTMLString ++= "<p><b> Description: </b> <br>\n"
+                HTMLString ++= s"${description.mkString("<br>\n")} <br>\n </p>\n"
             }
-            if (datatype.nonEmpty) HTMLString += "<p><b> Type: </b>" + datatype + "<br></p>\n"
+            if (datatype.nonEmpty) HTMLString ++= s"<p><b> Type: </b>$datatype<br></p>\n"
             if (constraints.nonEmpty) {
                 if (datatype.equals("enum")) {
-                    HTMLString += "<p><b> Allowed Values: </b><br>\n"
+                    HTMLString ++= "<p><b> Allowed Values: </b><br>\n"
                 } else {
-                    HTMLString += "<p><b> Constraints: </b><br>\n"
+                    HTMLString ++= "<p><b> Constraints: </b><br>\n"
                 }
-                for (line <- constraints) {
-                    HTMLString += line + "<br>\n"
-                }
-                HTMLString += "</p>\n"
+                HTMLString ++= s"${constraints.mkString("<br>\n")} <br>\n </p>\n"
             }
         }
-        HTMLString
+        HTMLString.toString
     }
 
     /**
