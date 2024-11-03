@@ -15,7 +15,7 @@ import org.apache.commons.text.StringEscapeUtils
  * @param entries contains a K,V Map of ConfigNodes.
  * @param comment are all the comments associated with the Object.
  */
-case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: DocumentationComment)
+case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var comment: DocumentationComment)
     extends ConfigNode {
     implicit val logContext: LogContext = GlobalLogContext
     /**
@@ -131,7 +131,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: D
                     val newkey = key.trim + "." + childkey.trim
 
                     // Merge comments
-                    childvalue.comment.mergeComment(value_object.comment)
+                    childvalue.comment = childvalue.comment.mergeComment(value_object.comment)
 
                     // Add new object
                     entries += (newkey -> childvalue)
@@ -163,15 +163,14 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], comment: D
                 // Create expanded object
                 val newkey = key.trim.split("\\.", 2)
                 val new_entry = mutable.Map[String, ConfigNode](newkey(1).trim -> value)
-                val new_object = ConfigObject(new_entry, new DocumentationComment)
+                val new_object = ConfigObject(new_entry, new DocumentationComment("", "", Seq(), "", Seq()))
                 new_object.expand()
                 if (entries.contains(newkey(0).trim)) {
                     if (entries(newkey(0).trim).isInstanceOf[ConfigObject]) {
                         entries(newkey(0).trim).asInstanceOf[ConfigObject].merge(new_object)
                     } else {
-                        throw new Exception("Unable to Merge " + newkey(
-                            0
-                        ).trim + "due to incompatible types: " + entries(newkey(0).trim).getClass)
+                        // If the child object already exists and is NOT a config object, the config structure has a label conflict (Problem!)
+                        throw new IllegalArgumentException(s"Unable to Merge ${newkey(0).trim} due to incompatible types: ${entries(newkey(0).trim).getClass}")
                     }
                 } else {
                     entries += (newkey(0).trim -> new_object)

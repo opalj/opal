@@ -6,7 +6,7 @@ package ce
  * Trait for representing the config structure
  */
 trait ConfigNode {
-    val comment: DocumentationComment
+    var comment: DocumentationComment
 
     /**
      * Method for handling the export of the configuration structure into an HTML file.

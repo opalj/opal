@@ -9,12 +9,7 @@ import org.apache.commons.text.StringEscapeUtils
 /**
  * Container for the comments of a config node.
  */
-class DocumentationComment {
-    val constraints: ListBuffer[String] = ListBuffer[String]()
-    val description: ListBuffer[String] = ListBuffer[String]()
-    var label = ""
-    var brief = ""
-    var datatype = ""
+class DocumentationComment(val label: String, val brief: String, val description: Seq[String], val datatype: String, val constraints: Seq[String]) {
 
     /**
      * Converts the Comment object into HTML syntax.
@@ -35,7 +30,7 @@ class DocumentationComment {
                 } else {
                     HTMLString ++= "<p><b> Constraints: </b><br>\n"
                 }
-                HTMLString ++= s"${StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).mkString("<br>\n")} <br>\n </p>\n"
+                HTMLString ++= s"${StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).replace("\n","<br>\n")} <br>\n </p>\n"
             }
         }
         HTMLString.toString
@@ -43,19 +38,21 @@ class DocumentationComment {
 
     /**
      * Merges another comment into this comment.
+     * The datatype flag will not be merged. Reason for this is that datatypes are only used to describe entries, which cannot be merged anyways.
+     *
      * @param comment accepts the comment that should be merged into this comment.
      */
-    def mergeComment(comment: DocumentationComment): Unit = {
-        // Merge comments
-        if (label != "" && comment.label != "") {
-            label = comment.label + "." + label
+    def mergeComment(comment: DocumentationComment): DocumentationComment = {
+        val mergedLabel = if (label != "" && comment.label != "") {
+            s"${comment.label}.$label"
         } else {
-            label = comment.label + label
+            s"${comment.label}$label"
         }
-        brief = comment.brief + "   " + brief
-        brief = brief.trim
-        description.addAll(comment.description)
-        constraints.addAll(comment.constraints)
+        val mergedBrief = s"${comment.brief} $brief".trim
+        val mergedDescription = description ++ comment.description
+        val mergedConstraints = constraints ++ comment.constraints
+
+        new DocumentationComment(mergedLabel, mergedBrief, mergedDescription, "", mergedConstraints)
     }
 
     /**
@@ -85,14 +82,17 @@ class DocumentationComment {
      * Then, it changes its datatype to enum to show that all allowed values are the listed classes.
      * @param se Accepts an initialized subclass extractor. It accesses the ClassHierarchy that was extracted by the subclass extractor and finds its subclasses within the structure.
      */
-    def replaceClasses(se: SubclassExtractor): Unit = {
+    def replaceClasses(se: SubclassExtractor): DocumentationComment = {
         if (datatype.equals("subclass")) {
             // Get a Set of all subclasses
             val root = constraints.head
 
             // Replace Types
-            datatype = "enum"
-            constraints ++= ListBuffer(se.extractSubclasses(root).toSeq: _*)
+            val updatedConstraints = constraints ++ se.extractSubclasses(root)
+
+            new DocumentationComment(label, brief, description, "enum", updatedConstraints)
+        } else {
+            this
         }
     }
     /**
@@ -118,21 +118,25 @@ object DocumentationComment {
      *  @return is a fully functional Comment.
      */
     def fromString(commentBuffer: ListBuffer[String]): DocumentationComment = {
-        val comment = new DocumentationComment()
+        var label = ""
+        var brief = ""
+        val description = ListBuffer[String]()
+        var datatype = ""
+        val constraints = ListBuffer[String]()
         for (line <- commentBuffer) {
             val trimmedLine = line.trim
             if (trimmedLine.startsWith("@label")) {
-                comment.label = trimmedLine.stripPrefix("@label").trim
+                label = trimmedLine.stripPrefix("@label").trim
             } else if (trimmedLine.startsWith("@brief")) {
-                comment.brief = trimmedLine.stripPrefix("@brief").trim
+                brief = trimmedLine.stripPrefix("@brief").trim
             } else if (trimmedLine.startsWith("@constraint")) {
-                comment.constraints += trimmedLine.stripPrefix("@constraint").trim
+                constraints += trimmedLine.stripPrefix("@constraint").trim
             } else if (trimmedLine.startsWith("@type")) {
-                comment.datatype = trimmedLine.stripPrefix("@type").trim
+                datatype = trimmedLine.stripPrefix("@type").trim
             } else {
-                comment.description += trimmedLine.stripPrefix("@description").trim
+                description += trimmedLine.stripPrefix("@description").trim
             }
         }
-        comment
+        new DocumentationComment(label, brief, description.toSeq, datatype, constraints.toSeq)
     }
 }
