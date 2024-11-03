@@ -9,7 +9,13 @@ import org.apache.commons.text.StringEscapeUtils
 /**
  * Container for the comments of a config node.
  */
-class DocumentationComment(val label: String, val brief: String, val description: Seq[String], val datatype: String, val constraints: Seq[String]) {
+class DocumentationComment(
+    val label:       String,
+    val brief:       String,
+    val description: Seq[String],
+    val datatype:    String,
+    val constraints: Seq[String]
+) {
 
     /**
      * Converts the Comment object into HTML syntax.
@@ -30,7 +36,7 @@ class DocumentationComment(val label: String, val brief: String, val description
                 } else {
                     HTMLString ++= "<p><b> Constraints: </b><br>\n"
                 }
-                HTMLString ++= s"${StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).replace("\n","<br>\n")} <br>\n </p>\n"
+                HTMLString ++= s"${StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).replace("\n", "<br>\n")} <br>\n </p>\n"
             }
         }
         HTMLString.toString

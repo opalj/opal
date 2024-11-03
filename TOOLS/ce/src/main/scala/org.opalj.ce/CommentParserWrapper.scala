@@ -34,7 +34,16 @@ class CommentParserWrapper {
 
         val mergedReferenceConfOpt = if (mergingConfigs.nonEmpty) {
             val mergedConfig =
-                mergingConfigs.foldLeft(ConfigObject(mutable.Map[String, ConfigNode](), new DocumentationComment("reference.conf", "Aggregated standard configuration of merged reference.conf files", Seq(), "", Seq()))) {
+                mergingConfigs.foldLeft(ConfigObject(
+                    mutable.Map[String, ConfigNode](),
+                    new DocumentationComment(
+                        "reference.conf",
+                        "Aggregated standard configuration of merged reference.conf files",
+                        Seq(),
+                        "",
+                        Seq()
+                    )
+                )) {
                     (accumulatedConfig, mergingConfig) => accumulatedConfig.merge(mergingConfig); accumulatedConfig
                 }
             Some(mergedConfig)
