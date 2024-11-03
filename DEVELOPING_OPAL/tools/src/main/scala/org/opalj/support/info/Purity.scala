@@ -88,6 +88,7 @@ import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
@@ -187,6 +188,8 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
             LazyReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis
         )
+
+        support ::= EagerFieldAccessInformationAnalysis
 
         if (eager) {
             support ::= EagerClassImmutabilityAnalysis
