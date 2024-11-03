@@ -446,7 +446,6 @@ lazy val `Tools` = (project in file("DEVELOPING_OPAL/tools"))
   .configs(IntegrationTest)
 
 lazy val ce = (project in file("TOOLS/ce"))
-  .dependsOn(br % "compile->compile")
   .settings(buildSettings: _*)
   .settings(
     fork := true,
