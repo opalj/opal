@@ -24,38 +24,30 @@ class CommentParserWrapper {
      * Made to parse multiple Configuration Files in bulk.
      * Used in combination with the file Locator to locate and parse all config files of a project.
      * @param filepaths accepts a list of full paths to the HOCON config files that shall be parsed.
-     * @return is a list of the parsed configuration files, paired with the path they originate from.
+     * @return is a Seq of the parsed configuration files, paired with the path they originate from.
      */
     def iterateConfigs(filepaths: Iterable[Path], rootDirectory: Path): Seq[ConfigObject] = {
-        val commentedConfigs = new ListBuffer[ConfigObject]
-        for (filepath <- filepaths) {
-            commentedConfigs += ParseComments(filepath, rootDirectory)
-        }
+        val commentedConfigs = filepaths.map(filepath => ParseComments(filepath, rootDirectory)).toList
 
         // Merge all config files named "reference.conf"
-        val mergingConfigs = new ListBuffer[ConfigObject]
-        for (i <- commentedConfigs.indices.reverse) {
-            val config = commentedConfigs(i)
-            if (config.comment.label.endsWith("reference.conf")) {
-                mergingConfigs += config
-                commentedConfigs.remove(i)
-            }
-        }
-        if (mergingConfigs.nonEmpty) {
-            val conf = ConfigObject(mutable.Map[String, ConfigNode](), new DocumentationComment)
-            for (i <- mergingConfigs.indices) {
-                conf.merge(mergingConfigs(i))
-            }
-            conf.comment.label = "reference.conf"
-            conf.comment.brief = "Aggregated standard configuration of merged reference.conf files"
-            commentedConfigs += conf
+        val (mergingConfigs, otherConfigs) = commentedConfigs.partition(_.comment.label.endsWith("reference.conf"))
+
+        val mergedReferenceConfOpt = if (mergingConfigs.nonEmpty) {
+            val mergedConfig =
+                mergingConfigs.foldLeft(ConfigObject(mutable.Map[String, ConfigNode](), new DocumentationComment)) {
+                    (accumulatedConfig, mergingConfig) => accumulatedConfig.merge(mergingConfig); accumulatedConfig
+                }
+            mergedConfig.comment.label = "reference.conf"
+            mergedConfig.comment.brief = "Aggregated standard configuration of merged reference.conf files"
+            Some(mergedConfig)
+        } else {
+            None
         }
 
-        for (config <- commentedConfigs) {
-            config.collapse()
-        }
+        val finalConfigs = otherConfigs ++ mergedReferenceConfOpt.toSeq
+        finalConfigs.foreach(config => config.collapse())
 
-        commentedConfigs.toSeq
+        finalConfigs
     }
 
     /**
