@@ -25,6 +25,7 @@ class HTMLExporter(ConfigList: Iterable[ConfigNode], templatePath: Path) {
     def exportHTML(config: Config, exportFile: File): Unit = {
         val HTMLHeadline = config.getString("org.opalj.ce.html.headline")
         val HTMLContent = config.getString("org.opalj.ce.html.content")
+        val HTMLStringBuilder = new StringBuilder()
         val sort_alphabetically = config.getBoolean("org.opalj.ce.html.sort_alphabetically")
         val maximumHeadlinePreviewLength = config.getInt("org.opalj.ce.html.maximum_headline_preview_length")
 
@@ -33,14 +34,20 @@ class HTMLExporter(ConfigList: Iterable[ConfigNode], templatePath: Path) {
         val template = Using(Source.fromFile(templatePath.toString)) { source =>
             source.getLines().mkString("\n")
         }.getOrElse("")
-        var body = ""
         for (config <- ConfigList) {
             if (!config.isEmpty) {
-                body += config.toHTML("", HTMLHeadline, HTMLContent, sort_alphabetically, maximumHeadlinePreviewLength)
-                body += "<hr>\n"
+                config.toHTML(
+                    "",
+                    HTMLHeadline,
+                    HTMLContent,
+                    HTMLStringBuilder,
+                    sort_alphabetically,
+                    maximumHeadlinePreviewLength
+                )
+                HTMLStringBuilder ++= "<hr>\n"
             }
         }
-        fileContent = template.replace("$body", body)
+        fileContent = template.replace("$body", HTMLStringBuilder.toString())
 
         // Write to file
         val printWriter = new PrintWriter(exportFile)

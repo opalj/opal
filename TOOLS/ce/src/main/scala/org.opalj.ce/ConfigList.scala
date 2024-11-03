@@ -25,30 +25,35 @@ case class ConfigList(entries: ListBuffer[ConfigNode], var comment: Documentatio
         label:                        String,
         HTMLHeadline:                 String,
         HTMLContent:                  String,
+        HTMLStringBuilder:            StringBuilder,
         sorted:                       Boolean,
         maximumHeadlinePreviewLength: Int
-    ): String = {
-        val HTMLStringBuilder = new StringBuilder()
-        var head = label
-        if (comment.label.nonEmpty) head = comment.label
-
-        // Adds Header line with collapse + expand options
-        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace(
-                "$brief",
-                StringEscapeUtils.escapeHtml4(comment.getBrief(maximumHeadlinePreviewLength))
-            )} \n"
-
-        // Add content below
-        // Get HTML data for all child Nodes
-        var content = s"<p> ${comment.toHTML} </p>\n"
-        for (entry <- entries) {
-            content += s"${entry.toHTML("", HTMLHeadline, HTMLContent, sorted, maximumHeadlinePreviewLength)} \n"
+    ): Unit = {
+        val head = if (comment.label.nonEmpty) {
+            comment.label
+        } else {
+            label
         }
 
-        // Add Content Block to HTML String
-        HTMLStringBuilder ++= s"${HTMLContent.replace("$content", content)} \n"
+        val brief = comment.getBrief(maximumHeadlinePreviewLength)
 
-        HTMLStringBuilder.toString
+        // Adds Header line with collapse + expand options
+        HTMLStringBuilder ++= HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace(
+            "$brief",
+            StringEscapeUtils.escapeHtml4(brief)
+        )
+        HTMLStringBuilder ++= "\n"
+
+        // Write value into HTML code
+        val splitContent = HTMLContent.split("\\$content")
+        HTMLStringBuilder ++= splitContent(0)
+        comment.toHTML(HTMLStringBuilder)
+        for (entry <- entries) {
+            entry.toHTML("", HTMLHeadline, HTMLContent, HTMLStringBuilder, sorted, maximumHeadlinePreviewLength)
+            HTMLStringBuilder ++= "\n"
+        }
+        HTMLStringBuilder ++= "<br>\n"
+        HTMLStringBuilder ++= splitContent(1)
     }
 
     /**

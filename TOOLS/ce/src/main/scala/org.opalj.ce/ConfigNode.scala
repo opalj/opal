@@ -21,9 +21,10 @@ trait ConfigNode {
         label:                        String,
         HTMLHeadline:                 String,
         HTMLContent:                  String,
+        HTMLStringBuilder:            StringBuilder,
         sorted:                       Boolean,
         maximumHeadlinePreviewLength: Int
-    ): String
+    ): Unit
 
     /**
      * Checks if the configNode (and its potential child objects are empty.

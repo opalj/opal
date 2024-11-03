@@ -22,32 +22,38 @@ case class ConfigEntry(value: String, var comment: DocumentationComment) extends
         label:                        String,
         HTMLHeadline:                 String,
         HTMLContent:                  String,
+        HTMLStringBuilder:            StringBuilder,
         sorted:                       Boolean,
         maximumHeadlinePreviewLength: Int
-    ): String = {
-        val HTMLStringBuilder = new StringBuilder()
-        var brief = StringEscapeUtils.escapeHtml4(comment.brief)
+    ): Unit = {
+        // Set headline text
         val head =
             if (comment.label.nonEmpty) comment.label
             else if (label.nonEmpty) label
             else value
 
         // If there is no brief preview, put the value into it
-        if (comment.brief.isEmpty) {
-            brief = s"<b>Value: </b><code> ${StringEscapeUtils.escapeHtml4(value)} </code>\n"
+        val brief = if (comment.brief.isEmpty) {
+            s"<b>Value: </b><code> ${StringEscapeUtils.escapeHtml4(value)} </code>\n"
+        } else {
+            StringEscapeUtils.escapeHtml4(comment.brief)
         }
 
         // Adds Header line with collapse + expand options
-        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace("$brief", brief)} \n"
+        HTMLStringBuilder ++= HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace(
+            "$brief",
+            brief
+        )
+        HTMLStringBuilder ++= "\n"
 
         // Write value into HTML code
-        var content = s"<b>Value: </b><code> ${StringEscapeUtils.escapeHtml4(value)} </code><br>\n"
-        content += comment.toHTML
-
-        // Add content below
-        HTMLStringBuilder ++= s"${HTMLContent.replace("$content", content)} \n"
-
-        HTMLStringBuilder.toString
+        val splitContent = HTMLContent.split("\\$content")
+        HTMLStringBuilder ++= splitContent(0)
+        comment.toHTML(HTMLStringBuilder)
+        HTMLStringBuilder ++= "<b>Value: </b><code> "
+        HTMLStringBuilder ++= StringEscapeUtils.escapeHtml4(value)
+        HTMLStringBuilder ++= "</code><br>\n"
+        HTMLStringBuilder ++= splitContent(1)
     }
 
     /**

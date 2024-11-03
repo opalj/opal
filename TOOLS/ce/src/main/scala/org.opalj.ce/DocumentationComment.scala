@@ -21,25 +21,28 @@ class DocumentationComment(
      * Converts the Comment object into HTML syntax.
      * @return returns the entire object as HTML code ready for insertion into an HTML file.
      */
-    def toHTML: String = {
-        val HTMLString = new StringBuilder()
+    def toHTML(HTMLStringBuilder: StringBuilder): Unit = {
         if (!isEmpty) {
             if (description.mkString("").trim.nonEmpty) {
-                HTMLString ++= "<p><b> Description: </b> <br>\n"
-                HTMLString ++= s"${StringEscapeUtils.escapeHtml4(description.mkString("\n")).replace("\n", "<br>\n")} <br> </p>\n"
+                HTMLStringBuilder ++= "<p><b> Description: </b> <br>\n"
+                HTMLStringBuilder ++= StringEscapeUtils.escapeHtml4(description.mkString("\n")).replace("\n", "<br>\n")
+                HTMLStringBuilder ++= "<br> </p>\n"
             }
-            if (datatype.nonEmpty)
-                HTMLString ++= s"<p><b> Type: </b>${StringEscapeUtils.escapeHtml4(datatype)}<br></p>\n"
+            if (datatype.nonEmpty) {
+                HTMLStringBuilder ++= s"<p><b> Type: </b>"
+                HTMLStringBuilder ++= StringEscapeUtils.escapeHtml4(datatype)
+                HTMLStringBuilder ++= "<br></p>\n"
+            }
             if (constraints.nonEmpty) {
                 if (datatype.equals("enum")) {
-                    HTMLString ++= "<p><b> Allowed Values: </b><br>\n"
+                    HTMLStringBuilder ++= "<p><b> Allowed Values: </b><br>\n"
                 } else {
-                    HTMLString ++= "<p><b> Constraints: </b><br>\n"
+                    HTMLStringBuilder ++= "<p><b> Constraints: </b><br>\n"
                 }
-                HTMLString ++= s"${StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).replace("\n", "<br>\n")} <br>\n </p>\n"
+                HTMLStringBuilder ++= StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).replace("\n", "<br>\n")
+                HTMLStringBuilder ++= "<br>\n </p>\n"
             }
         }
-        HTMLString.toString
     }
 
     /**

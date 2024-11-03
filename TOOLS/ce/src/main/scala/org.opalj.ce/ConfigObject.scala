@@ -31,38 +31,50 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
         label:                        String,
         HTMLHeadline:                 String,
         HTMLContent:                  String,
+        HTMLStringBuilder:            StringBuilder,
         sorted:                       Boolean,
         maximumHeadlinePreviewLength: Int
-    ): String = {
-        val HTMLStringBuilder = new StringBuilder()
-        var head = label
-        if (comment.label.nonEmpty) head = comment.label
+    ): Unit = {
+        val head = if (comment.label.nonEmpty) {
+            comment.label
+        } else {
+            label
+        }
+
+        val brief = comment.getBrief(maximumHeadlinePreviewLength)
 
         // Adds Header line with collapse + expand options
-        HTMLStringBuilder ++= s"${HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace("$brief", StringEscapeUtils.escapeHtml4(comment.getBrief(maximumHeadlinePreviewLength)))} \n"
+        HTMLStringBuilder ++= HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace(
+            "$brief",
+            StringEscapeUtils.escapeHtml4(brief)
+        )
+        HTMLStringBuilder ++= "\n"
 
-        // Get HTML data for all child Nodes
-        var content = s"<p> ${comment.toHTML} </p>\n"
-
+        // Write value into HTML code
+        val splitContent = HTMLContent.split("\\$content")
+        HTMLStringBuilder ++= splitContent(0)
+        comment.toHTML(HTMLStringBuilder)
         if (sorted) {
             val sortedKeys = entries.keys.toSeq.sorted
             for (key <- sortedKeys) {
-                content += entries(key).toHTML(
+                entries(key).toHTML(
                     key,
                     HTMLHeadline,
                     HTMLContent,
+                    HTMLStringBuilder,
                     sorted,
                     maximumHeadlinePreviewLength
-                ) + "\n"
+                )
+                HTMLStringBuilder ++= "\n"
             }
         } else {
             for ((key, node) <- entries) {
-                content += s"${node.toHTML(key, HTMLHeadline, HTMLContent, sorted, maximumHeadlinePreviewLength)} \n"
+                node.toHTML(key, HTMLHeadline, HTMLContent, HTMLStringBuilder, sorted, maximumHeadlinePreviewLength)
+                HTMLStringBuilder ++= "\n"
             }
         }
-
-        // Add content below
-        HTMLStringBuilder ++= s"${HTMLContent.replace("$content", content)} \n"
+        HTMLStringBuilder ++= "<br>\n"
+        HTMLStringBuilder ++= splitContent(1)
 
         HTMLStringBuilder.toString
     }
@@ -170,7 +182,9 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
                         entries(newkey(0).trim).asInstanceOf[ConfigObject].merge(new_object)
                     } else {
                         // If the child object already exists and is NOT a config object, the config structure has a label conflict (Problem!)
-                        throw new IllegalArgumentException(s"Unable to Merge ${newkey(0).trim} due to incompatible types: ${entries(newkey(0).trim).getClass}")
+                        throw new IllegalArgumentException(
+                            s"Unable to Merge ${newkey(0).trim} due to incompatible types: ${entries(newkey(0).trim).getClass}"
+                        )
                     }
                 } else {
                     entries += (newkey(0).trim -> new_object)
