@@ -79,7 +79,7 @@ object Dependencies {
   val bi = Seq(commonstext)
   val br = Seq(scalaparsercombinators, scalaxml)
   val ifds = Seq()
-  val tools = Seq(txtmark, jacksonDF, scallop)
+  val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
   val apk = Seq(apkparser, scalaxml)
   val llvm = Seq(javacpp, javacpp_llvm)

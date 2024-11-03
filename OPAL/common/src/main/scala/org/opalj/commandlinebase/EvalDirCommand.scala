@@ -1,4 +1,5 @@
-package org.opalj.Commandline_base.commandlines
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.commandlinebase
 
 import java.io.File
 
@@ -9,7 +10,7 @@ object EvalDirCommand extends OpalPlainCommand[String] {
     override var defaultValue: Option[String] = None
     override var noshort: Boolean = true
 
-    def parse[T](arg: T) : Some[File] = {
+    def parse[T](arg: T): Some[File] = {
         val evalDir: String = arg.asInstanceOf[String]
         val evaluationDir = Some(new File(evalDir))
         if (evaluationDir.isDefined && !evaluationDir.get.exists()) evaluationDir.get.mkdir

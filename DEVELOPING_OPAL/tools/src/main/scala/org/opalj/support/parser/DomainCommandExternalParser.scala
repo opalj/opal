@@ -1,9 +1,12 @@
-package org.opalj.support.parser
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj
+package support
+package parser
 
-import org.opalj.Commandline_base.commandlines.OpalCommandExternalParser
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
+import org.opalj.commandlinebase.OpalCommandExternalParser
 
 /**
  * `DomainCommandExternalParser` is a parser used to resolve and load a specified domain class.
@@ -11,11 +14,16 @@ import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
  * selection of a domain type for AI analysis configurations.
  */
 
-object DomainCommandExternalParser extends OpalCommandExternalParser[Class[_ >: DefaultPerformInvocationsDomainWithCFGAndDefUse[_] <: Domain with RecordDefUse]] {
-    override def parse[T](arg: T) :  Class[_ >: DefaultPerformInvocationsDomainWithCFGAndDefUse[_] <: Domain with RecordDefUse] = {
-        val domain = arg.asInstanceOf[String]
-        if (domain == null)
+object DomainCommandExternalParser
+    extends OpalCommandExternalParser[
+        String,
+        Class[_ >: DefaultPerformInvocationsDomainWithCFGAndDefUse[_] <: Domain with RecordDefUse]
+    ] {
+    override def parse(
+        arg: String
+    ): Class[_ >: DefaultPerformInvocationsDomainWithCFGAndDefUse[_] <: Domain with RecordDefUse] = {
+        if (arg == null)
             classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
-        else Class.forName(domain).asInstanceOf[Class[Domain with RecordDefUse]]
+        else Class.forName(arg).asInstanceOf[Class[Domain with RecordDefUse]]
     }
 }

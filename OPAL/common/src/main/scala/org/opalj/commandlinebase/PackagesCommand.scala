@@ -1,4 +1,5 @@
-package org.opalj.Commandline_base.commandlines
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.commandlinebase
 
 object PackagesCommand extends OpalPlainCommand[String] {
     override var name: String = "packages"
@@ -7,7 +8,7 @@ object PackagesCommand extends OpalPlainCommand[String] {
     override var defaultValue: Option[String] = None
     override var noshort: Boolean = true
 
-    def parse[T](arg: T) :  Option[Array[String]] = {
+    def parse[T](arg: T): Option[Array[String]] = {
         val packages = arg.asInstanceOf[String]
         Some(packages.split(':'))
     }

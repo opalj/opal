@@ -7,10 +7,10 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.util.Calendar
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-import org.opalj.Commandline_base.commandlines.{AnalysisCommand, AnalysisNameCommand, CallGraphCommand, ClassPathCommand, CloseWorldCommand, DebugCommand, DomainCommand, EagerCommand, EscapeCommand, EvalDirCommand, FieldAssignabilityCommand, IndividualCommand, JDKCommand, LibraryCommand, LibraryDirectoryCommand, MultiProjectsCommand, OpalConf, PackagesCommand, ProjectDirectoryCommand, RaterCommand, SchedulingStrategyCommand, ThreadsNumCommand}
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -48,6 +48,28 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.commandlinebase.AnalysisCommand
+import org.opalj.commandlinebase.AnalysisNameCommand
+import org.opalj.commandlinebase.CallGraphCommand
+import org.opalj.commandlinebase.ClassPathCommand
+import org.opalj.commandlinebase.CloseWorldCommand
+import org.opalj.commandlinebase.DebugCommand
+import org.opalj.commandlinebase.DomainCommand
+import org.opalj.commandlinebase.EagerCommand
+import org.opalj.commandlinebase.EscapeCommand
+import org.opalj.commandlinebase.EvalDirCommand
+import org.opalj.commandlinebase.FieldAssignabilityCommand
+import org.opalj.commandlinebase.IndividualCommand
+import org.opalj.commandlinebase.JDKCommand
+import org.opalj.commandlinebase.LibraryCommand
+import org.opalj.commandlinebase.LibraryDirectoryCommand
+import org.opalj.commandlinebase.MultiProjectsCommand
+import org.opalj.commandlinebase.OpalConf
+import org.opalj.commandlinebase.PackagesCommand
+import org.opalj.commandlinebase.ProjectDirectoryCommand
+import org.opalj.commandlinebase.RaterCommand
+import org.opalj.commandlinebase.SchedulingStrategyCommand
+import org.opalj.commandlinebase.ThreadsNumCommand
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -55,7 +77,11 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
-import org.opalj.support.parser.{AnalysisCommandExternalParser, CallGraphCommandExternalParser, ClassPathCommandExternalParser, DomainCommandExternalParser, RaterCommandExternalParser}
+import org.opalj.support.parser.AnalysisCommandExternalParser
+import org.opalj.support.parser.CallGraphCommandExternalParser
+import org.opalj.support.parser.ClassPathCommandExternalParser
+import org.opalj.support.parser.DomainCommandExternalParser
+import org.opalj.support.parser.RaterCommandExternalParser
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -75,6 +101,7 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
+
 import org.rogach.scallop.ScallopConf
 
 /**
@@ -111,46 +138,55 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     verify()
 
     // Parsed data
-    var classPathFiles = parseCommandWithExternalParser(classPathCommand, ClassPathCommandExternalParser).getOrElse(null)
-    var projectDirectory = parseCommandWithInternalParser(projectDirCommand, ProjectDirectoryCommand).getOrElse(null)
-    var libraryDirectory = parseCommandWithInternalParser(libDirCommand, LibraryDirectoryCommand).getOrElse(null)
-    var analysisScheduler = parseCommandWithExternalParser(analysisCommand, AnalysisCommandExternalParser).getOrElse(null)
+    val classPathFiles = parseCommandWithExternalParser(classPathCommand, ClassPathCommandExternalParser).getOrElse(null)
+    val projectDirectory = parseCommandWithInternalParser(projectDirCommand, ProjectDirectoryCommand).getOrElse(null)
+    val libraryDirectory = parseCommandWithInternalParser(libDirCommand, LibraryDirectoryCommand).getOrElse(null)
+    val analysisScheduler =
+        parseCommandWithExternalParser(analysisCommand, AnalysisCommandExternalParser).getOrElse(null)
     var support: Option[List[FPCFAnalysisScheduler]] = None
 
-    if (fieldAssignabilityCommand.isDefined && escapeCommand.isDefined && eagerCommand.isDefined && analysisScheduler != null) support = Some(parseArgumentsForSupport(
+    if (fieldAssignabilityCommand.isDefined && escapeCommand.isDefined && eagerCommand.isDefined && analysisScheduler != null)
+        support = Some(parseArgumentsForSupport(
             analysisCommand.apply(),
             fieldAssignabilityCommand.apply(),
             escapeCommand.apply(),
             eagerCommand.apply(),
             analysisScheduler
-        )) else support = None
+        ))
+    else
+        support = None
 
-    var domain = parseCommandWithExternalParser(domainCommand, DomainCommandExternalParser).getOrElse(null)
-    var rater = parseCommandWithExternalParser(raterCommand, RaterCommandExternalParser).getOrElse(null)
-    var callGraph = parseCommandWithExternalParser(callGraphCommand, CallGraphCommandExternalParser).getOrElse(null)
-    var jdk: Boolean = parseCommand(jdkCommand).getOrElse(false)
-    var individual: Boolean = parseCommand(individualCommand).getOrElse(false)
-    var closedWorld:Boolean = parseCommand(closedWorldCommand).getOrElse(false)
-    var library: Boolean = parseCommand(libraryCommand).getOrElse(false)
-    var debug: Boolean = parseCommand(debugCommand).getOrElse(false)
-    var multiProjects: Boolean = parseCommand(multiProjectsCommand).getOrElse(false)
-    var evaluationDir = parseCommandWithInternalParser(evaluationDirCommand, EvalDirCommand).getOrElse(null)
-    var packages = parseCommandWithInternalParser(packagesCommand, PackagesCommand).getOrElse(null)
-    var threadsNum: Int = parseCommand(threadsNumCommand).getOrElse(0)
-    var configurationName = parseCommand(analysisNameCommand).getOrElse(null)
-    var schedulingStrategy = parseCommand(schedulingStrategyCommand).getOrElse(null)
+    val domain = parseCommandWithExternalParser(domainCommand, DomainCommandExternalParser).getOrElse(null)
+    val rater = parseCommandWithExternalParser(raterCommand, RaterCommandExternalParser).getOrElse(null)
+    val callGraph = parseCommandWithExternalParser(callGraphCommand, CallGraphCommandExternalParser).getOrElse(null)
+    val jdk: Boolean = parseCommand(jdkCommand).getOrElse(false)
+    val individual: Boolean = parseCommand(individualCommand).getOrElse(false)
+    val closedWorld: Boolean = parseCommand(closedWorldCommand).getOrElse(false)
+    val library: Boolean = parseCommand(libraryCommand).getOrElse(false)
+    val debug: Boolean = parseCommand(debugCommand).getOrElse(false)
+    val multiProjects: Boolean = parseCommand(multiProjectsCommand).getOrElse(false)
+    val evaluationDir = parseCommandWithInternalParser(evaluationDirCommand, EvalDirCommand).getOrElse(null)
+    val packages = parseCommandWithInternalParser(packagesCommand, PackagesCommand).getOrElse(null)
+    val threadsNum: Int = parseCommand(threadsNumCommand).getOrElse(0)
+    val configurationName = parseCommand(analysisNameCommand).getOrElse(null)
+    val schedulingStrategy = parseCommand(schedulingStrategyCommand).getOrElse(null)
 
+    private def parseArgumentsForSupport(
+        analysis:           String,
+        fieldAssignability: String,
+        escape:             String,
+        eager:              Boolean,
+        analysisScheduler:  Any
+    ) = {
+        var support = List()
 
-    private def parseArgumentsForSupport(analysis: String, fieldAssignability: String, escape: String, eager: Boolean, analysisScheduler: Any) = {
-        var support = Nil
-
-        if(analysis == "L2") support = List(
-                LazyFieldImmutabilityAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis
-            )
+        if (analysis == "L2") support = List(
+            LazyFieldImmutabilityAnalysis,
+            LazyL0CompileTimeConstancyAnalysis,
+            LazyStaticDataUsageAnalysis,
+            LazyReturnValueFreshnessAnalysis,
+            LazyFieldLocalityAnalysis
+        )
 
         if (eager) {
             support ::= EagerClassImmutabilityAnalysis
@@ -192,10 +228,10 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
             case "none" =>
 
             case null => analysisScheduler match {
-                case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
-                case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
-                case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
-            }
+                    case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
+                    case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                    case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                }
 
             case _ =>
                 Console.println(s"unknown field assignability analysis: $fieldAssignability")
@@ -205,7 +241,6 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
         support
     }
 }
-
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -241,7 +276,7 @@ object Purity {
         schedulingStrategy:    Option[String],
         rater:                 DomainSpecificRater,
         callGraphKey:          CallGraphKey,
-        jdk:            Boolean,
+        jdk:                   Boolean,
         individual:            Boolean,
         numThreads:            Int,
         closedWorldAssumption: Boolean,
@@ -579,7 +614,7 @@ object Purity {
 
         val purityConf = new PurityConf(args)
 
-        if(args.contains("--help") || args.contains("-h")) {
+        if (args.contains("--help") || args.contains("-h")) {
             return
         }
 

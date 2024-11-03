@@ -1,10 +1,13 @@
-package org.opalj.support.parser
-
-import org.opalj.Commandline_base.commandlines.OpalCommandExternalParser
-import org.opalj.log.OPALLogger.{error, info}
-import org.opalj.ba.CODE.logContext
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj
+package support
+package parser
 
 import java.io.File
+import org.opalj.ba.CODE.logContext
+import org.opalj.commandlinebase.OpalCommandExternalParser
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 
 /**
  * `ClassPathCommandExternalParser` parses and validates a class path string.
@@ -12,17 +15,13 @@ import java.io.File
  * separator (":" on UNIX, ";" on Windows), and verifies each entry, returning a sequence of valid
  * `File` objects.
  */
-object ClassPathCommandExternalParser extends OpalCommandExternalParser[Seq[File]]{
-    override def parse[T](arg: T): Seq[File] = {
-        val classPath = arg.asInstanceOf[String]
+object ClassPathCommandExternalParser extends OpalCommandExternalParser[String, Seq[File]] {
+    override def parse(arg: String): Seq[File] = {
         var cp = IndexedSeq.empty[String]
-        import scala.collection.immutable.ArraySeq
 
-        cp = ArraySeq.unsafeWrapArray(
-            classPath.substring(classPath.indexOf('=') + 1).split(File.pathSeparator)
-        )
+        cp = arg.substring(arg.indexOf('=') + 1).split(File.pathSeparator).toIndexedSeq
 
-        if (cp.isEmpty) cp = ArraySeq.unsafeWrapArray(Array(System.getProperty("user.dir")))
+        if (cp.isEmpty) cp = IndexedSeq(System.getProperty("user.dir"))
 
         info("project configuration", s"the classpath is ${cp.mkString}")
         verifyFiles(cp)
@@ -44,12 +43,12 @@ object ClassPathCommandExternalParser extends OpalCommandExternalParser[Seq[File
             showError(s"Cannot read: $file $workingDirectory.")
             None
         } else if (!file.isDirectory &&
-            !filename.endsWith(".jar") &&
-            !filename.endsWith(".ear") &&
-            !filename.endsWith(".war") &&
-            !filename.endsWith(".zip") &&
-            !filename.endsWith(".jmod") &&
-            !filename.endsWith(".class")
+                   !filename.endsWith(".jar") &&
+                   !filename.endsWith(".ear") &&
+                   !filename.endsWith(".war") &&
+                   !filename.endsWith(".zip") &&
+                   !filename.endsWith(".jmod") &&
+                   !filename.endsWith(".class")
         ) {
             showError(s"Input file is neither a directory nor a class or JAR/JMod file: $file.")
             None

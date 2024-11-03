@@ -1,6 +1,7 @@
-package org.opalj.Commandline_base.commandlines
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.commandlinebase
 
-object EscapeCommand extends OpalChoiceCommand{
+object EscapeCommand extends OpalChoiceCommand {
     override var name: String = "escape"
     override var argName: String = "escape"
     override var description: String = "<none|L0|L1> (Default: L1, the most precise configuration)"

@@ -1,20 +1,23 @@
-package org.opalj.support.parser
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj
+package support
+package parser
 
-import org.opalj.Commandline_base.commandlines.OpalCommandExternalParser
-import org.opalj.tac.fpcf.analyses.purity.{DomainSpecificRater, SystemOutLoggingAllExceptionRater}
+import org.opalj.commandlinebase.OpalCommandExternalParser
+import org.opalj.tac.fpcf.analyses.purity.DomainSpecificRater
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
 /**
  * `RaterCommandExternalParser` is a parser responsible for resolving and loading a specified `DomainSpecificRater`.
  * It interprets a command-line argument to load a rater class.
  */
-object RaterCommandExternalParser extends OpalCommandExternalParser[DomainSpecificRater] {
-    override def parse[T](arg: T) : DomainSpecificRater = {
-        val rater = arg.asInstanceOf[String]
-
-        if (rater == null) SystemOutLoggingAllExceptionRater else {
+object RaterCommandExternalParser extends OpalCommandExternalParser[String, DomainSpecificRater] {
+    override def parse(arg: String): DomainSpecificRater = {
+        if (arg == null) SystemOutLoggingAllExceptionRater
+        else {
             import scala.reflect.runtime.universe.runtimeMirror
             val mirror = runtimeMirror(getClass.getClassLoader)
-            val module = mirror.staticModule(rater)
+            val module = mirror.staticModule(arg)
             mirror.reflectModule(module).instance.asInstanceOf[DomainSpecificRater]
         }
     }

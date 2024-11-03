@@ -56,10 +56,6 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
-class CallGraphConf(args: Array[String]) {
-
-}
-
 /**
  * Computes a call graph and reports its size.
  *

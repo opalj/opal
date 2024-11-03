@@ -1,6 +1,7 @@
-package org.opalj.Commandline_base.commandlines
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.commandlinebase
 
-object AnalysisCommand extends OpalChoiceCommand{
+object AnalysisCommand extends OpalChoiceCommand {
     override var name: String = "analysis"
     override var argName: String = "analysis"
     override var description: String = "<L0|L1|L2> (Default: L2, the most precise analysis configuration)"

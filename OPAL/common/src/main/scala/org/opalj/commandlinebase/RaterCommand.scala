@@ -1,5 +1,5 @@
-package org.opalj.Commandline_base.commandlines
-
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.commandlinebase
 
 object RaterCommand extends OpalPlainCommand[String] {
     override var name: String = "rater"

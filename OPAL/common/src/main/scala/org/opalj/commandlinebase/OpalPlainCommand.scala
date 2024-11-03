@@ -1,4 +1,5 @@
-package org.opalj.Commandline_base.commandlines
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.commandlinebase
 
 trait OpalPlainCommand[T] extends OpalCommand {
     var name: String
