@@ -19,7 +19,7 @@ import org.opalj.log.OPALLogger
 /**
  * The class CommentParserWrapper is the class that should be used for parsing commented config within the Configuration Explorer.
  */
-class CommentParserWrapper {
+class CommentParser {
     /**
      * Made to parse multiple Configuration Files in bulk.
      * Used in combination with the file Locator to locate and parse all config files of a project.
@@ -67,7 +67,7 @@ class CommentParserWrapper {
         // This prevents the Parser from parsing a file without valid syntax
         ConfigFactory.load(filepath.toString)
 
-        val cp = new CommentParser
+        val cp = new HOCONParser
         cp.parseFile(filepath, rootDirectory)
     }
 
@@ -75,7 +75,7 @@ class CommentParserWrapper {
      * Inner class of the Comment parser Wrapper
      * This class handles the parsing process itself
      */
-    private class CommentParser {
+    private class HOCONParser {
         private var iterator: Iterator[String] = Iterator.empty
         private var line = ""
         implicit val logContext: LogContext = GlobalLogContext

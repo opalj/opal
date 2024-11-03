@@ -30,7 +30,7 @@ object ConfigurationExplorer extends App {
     val filepaths = locator.getConfigurationPaths
 
     // Bulk Imports all the configs
-    val CPW = new CommentParserWrapper
+    val CPW = new CommentParser
     val configs = CPW.iterateConfigs(filepaths, Paths.get(locator.getProjectRoot))
 
     // Replace class type values
