@@ -16,7 +16,9 @@ case class ConfigEntry(value: String, var comment: DocumentationComment) extends
      * @param label required if the Entry is part of an object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object.
      * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $ label and $ brief flags for filling with content.
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering.
-     * @return returns the Config Entry as HTML code.
+     * @param HTMLStringBuilder accepts a StringBuilder. The method adds the HTML String to this StringBuilder.
+     * @param sorted actually does nothing in this method, but is required for the whole structure.
+     * @param maximumHeadlinePreviewLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
      */
     override def toHTML(
         label:                        String,

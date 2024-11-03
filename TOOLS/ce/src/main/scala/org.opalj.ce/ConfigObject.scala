@@ -23,9 +23,9 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
      * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object. Supply an empty string if not needed.
      * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $ label and $ brief flags for filling with content.
      * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering.
+     * @param HTMLStringBuilder accepts a StringBuilder. The method adds the HTML String to this StringBuilder.
      * @param sorted accepts a boolean to indicate if the export should sort the keys of the configObjects alphabetically.
      * @param maximumHeadlinePreviewLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
-     * @return returns the Config Object as HTML string.
      */
     override def toHTML(
         label:                        String,

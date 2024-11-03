@@ -19,7 +19,7 @@ class DocumentationComment(
 
     /**
      * Converts the Comment object into HTML syntax.
-     * @return returns the entire object as HTML code ready for insertion into an HTML file.
+     * @param HTMLStringBuilder accepts a String builder. The method will add the export to this StringBuilder.
      */
     def toHTML(HTMLStringBuilder: StringBuilder): Unit = {
         if (!isEmpty) {
@@ -48,8 +48,8 @@ class DocumentationComment(
     /**
      * Merges another comment into this comment.
      * The datatype flag will not be merged. Reason for this is that datatypes are only used to describe entries, which cannot be merged anyways.
-     *
      * @param comment accepts the comment that should be merged into this comment.
+     * @return returns a merged DocumentationComment.
      */
     def mergeComment(comment: DocumentationComment): DocumentationComment = {
         val mergedLabel = if (label != "" && comment.label != "") {
@@ -75,6 +75,7 @@ class DocumentationComment(
 
     /**
      * Method used for fetching information of the brief field.
+     * @param previewDescriptionLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
      * @return Returns the brief field of the DocumentationComment if it exists. If it does not exist, it returns a preview of the description.
      */
     def getBrief(previewDescriptionLength: Int): String = {
@@ -90,6 +91,7 @@ class DocumentationComment(
      * This method is responsible for finding all subclasses to a subclass type and adds them to the constraints.
      * Then, it changes its datatype to enum to show that all allowed values are the listed classes.
      * @param se Accepts an initialized subclass extractor. It accesses the ClassHierarchy that was extracted by the subclass extractor and finds its subclasses within the structure.
+     * @return Returns an Updated DocumentationComment if there were classes to replace. Returns itself otherwise.
      */
     def replaceClasses(se: SubclassExtractor): DocumentationComment = {
         if (datatype.equals("subclass")) {
