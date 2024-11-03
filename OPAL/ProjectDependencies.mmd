@@ -27,6 +27,8 @@ flowchart BT
     bp[BugPicker\n bp]
     hermes[Hermes\n hermes]
 
+    ce[ConfigurationExplorer \n ce]
+
     style common fill:#9cbecc,color:black
     style framework fill:#c0ffc0
     style bp fill:#ffd7cf
@@ -69,3 +71,9 @@ flowchart BT
     demos --> framework
     bp --> framework
     hermes --> framework
+
+    ce --> br
+    ce --> apk
+    ce --> demos
+    ce --> hermes
+    ce --> bp
