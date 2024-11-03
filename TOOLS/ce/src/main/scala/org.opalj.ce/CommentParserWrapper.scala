@@ -51,7 +51,7 @@ class CommentParserWrapper {
             None
         }
 
-        val finalConfigs = otherConfigs ++ mergedReferenceConfOpt.toSeq
+        val finalConfigs = otherConfigs ++ mergedReferenceConfOpt
         finalConfigs.foreach(config => config.collapse())
 
         finalConfigs
