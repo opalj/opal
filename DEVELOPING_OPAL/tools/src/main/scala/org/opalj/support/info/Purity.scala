@@ -139,11 +139,10 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     verify()
 
     // Parsed data
-    val classPathFiles = parseCommandWithExternalParser(classPathCommand, ClassPathCommandExternalParser).getOrElse(null)
-    val projectDirectory = parseCommandWithInternalParser(projectDirCommand, ProjectDirectoryCommand).getOrElse(null)
-    val libraryDirectory = parseCommandWithInternalParser(libDirCommand, LibraryDirectoryCommand).getOrElse(null)
-    val analysisScheduler =
-        parseCommandWithExternalParser(analysisCommand, AnalysisCommandExternalParser).getOrElse(null)
+    val classPathFiles = parseCommandWithExternalParser(classPathCommand, ClassPathCommandExternalParser)
+    val projectDirectory = parseCommandWithInternalParser(projectDirCommand, ProjectDirectoryCommand)
+    val libraryDirectory = parseCommandWithInternalParser(libDirCommand, LibraryDirectoryCommand)
+    val analysisScheduler = parseCommandWithExternalParser(analysisCommand, AnalysisCommandExternalParser)
     var support: Option[List[FPCFAnalysisScheduler]] = None
 
     if (fieldAssignabilityCommand.isDefined && escapeCommand.isDefined && eagerCommand.isDefined && analysisScheduler != null)
@@ -157,20 +156,20 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     else
         support = None
 
-    val domain = parseCommandWithExternalParser(domainCommand, DomainCommandExternalParser).getOrElse(null)
-    val rater = parseCommandWithExternalParser(raterCommand, RaterCommandExternalParser).getOrElse(null)
-    val callGraph = parseCommandWithExternalParser(callGraphCommand, CallGraphCommandExternalParser).getOrElse(null)
-    val jdk: Boolean = parseCommand(jdkCommand).getOrElse(false)
-    val individual: Boolean = parseCommand(individualCommand).getOrElse(false)
-    val closedWorld: Boolean = parseCommand(closedWorldCommand).getOrElse(false)
-    val library: Boolean = parseCommand(libraryCommand).getOrElse(false)
-    val debug: Boolean = parseCommand(debugCommand).getOrElse(false)
-    val multiProjects: Boolean = parseCommand(multiProjectsCommand).getOrElse(false)
-    val evaluationDir = parseCommandWithInternalParser(evaluationDirCommand, EvalDirCommand).getOrElse(null)
-    val packages = parseCommandWithInternalParser(packagesCommand, PackagesCommand).getOrElse(null)
-    val threadsNum: Int = parseCommand(threadsNumCommand).getOrElse(0)
-    val configurationName = parseCommand(analysisNameCommand).getOrElse(null)
-    val schedulingStrategy = parseCommand(schedulingStrategyCommand).getOrElse(null)
+    val domain = parseCommandWithExternalParser(domainCommand, DomainCommandExternalParser)
+    val rater = parseCommandWithExternalParser(raterCommand, RaterCommandExternalParser)
+    val callGraph = parseCommandWithExternalParser(callGraphCommand, CallGraphCommandExternalParser)
+    val jdk = parseCommand(jdkCommand)
+    val individual = parseCommand(individualCommand)
+    val closedWorld = parseCommand(closedWorldCommand)
+    val library = parseCommand(libraryCommand)
+    val debug = parseCommand(debugCommand)
+    val multiProjects = parseCommand(multiProjectsCommand)
+    val evaluationDir = parseCommandWithInternalParser(evaluationDirCommand, EvalDirCommand)
+    val packages = parseCommandWithInternalParser(packagesCommand, PackagesCommand)
+    val threadsNum = parseCommand(threadsNumCommand)
+    val configurationName = parseCommand(analysisNameCommand)
+    val schedulingStrategy = parseCommand(schedulingStrategyCommand)
 
     private def parseArgumentsForSupport(
         analysis:           String,
@@ -179,7 +178,7 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
         eager:              Boolean,
         analysisScheduler:  Any
     ) = {
-        var support = List()
+        var support: List[FPCFAnalysisScheduler] = Nil
 
         if (analysis == "L2") support = List(
             LazyFieldImmutabilityAnalysis,
@@ -625,48 +624,48 @@ object Purity {
         Console.println(begin.getTime)
 
         time {
-            if (purityConf.multiProjects) {
-                for (subp <- purityConf.classPathFiles.head.listFiles().filter(_.isDirectory)) {
+            if (purityConf.multiProjects.get) {
+                for (subp <- purityConf.classPathFiles.get.head.listFiles().filter(_.isDirectory)) {
                     println(s"${subp.getName}: ${Calendar.getInstance().getTime}")
                     evaluate(
                         subp,
                         purityConf.projectDirectory,
                         purityConf.libraryDirectory,
-                        purityConf.analysisScheduler,
+                        purityConf.analysisScheduler.get,
                         purityConf.support.getOrElse(List()),
-                        purityConf.domain,
-                        Option(purityConf.configurationName),
-                        Option(purityConf.schedulingStrategy),
-                        purityConf.rater,
-                        purityConf.callGraph,
-                        purityConf.jdk,
-                        purityConf.individual,
-                        purityConf.threadsNum,
-                        purityConf.closedWorld,
-                        purityConf.library || (subp eq JRELibraryFolder),
-                        purityConf.debug,
+                        purityConf.domain.get,
+                        purityConf.configurationName,
+                        purityConf.schedulingStrategy,
+                        purityConf.rater.get,
+                        purityConf.callGraph.get,
+                        purityConf.jdk.get,
+                        purityConf.individual.get,
+                        purityConf.threadsNum.get,
+                        purityConf.closedWorld.get,
+                        purityConf.library.get || (subp eq JRELibraryFolder),
+                        purityConf.debug.get,
                         purityConf.evaluationDir,
                         purityConf.packages
                     )
                 }
             } else {
                 evaluate(
-                    purityConf.classPathFiles.head,
+                    purityConf.classPathFiles.get.head,
                     purityConf.projectDirectory,
                     purityConf.libraryDirectory,
-                    purityConf.analysisScheduler,
+                    purityConf.analysisScheduler.get,
                     purityConf.support.getOrElse(List()),
-                    purityConf.domain,
-                    Option(purityConf.configurationName),
-                    Option(purityConf.schedulingStrategy),
-                    purityConf.rater,
-                    purityConf.callGraph,
-                    purityConf.jdk,
-                    purityConf.individual,
-                    purityConf.threadsNum,
-                    purityConf.closedWorld,
-                    purityConf.library || (purityConf.classPathFiles.head eq JRELibraryFolder),
-                    purityConf.debug,
+                    purityConf.domain.get,
+                    purityConf.configurationName,
+                    purityConf.schedulingStrategy,
+                    purityConf.rater.get,
+                    purityConf.callGraph.get,
+                    purityConf.jdk.get,
+                    purityConf.individual.get,
+                    purityConf.threadsNum.get,
+                    purityConf.closedWorld.get,
+                    purityConf.library.get || (purityConf.classPathFiles.head eq JRELibraryFolder),
+                    purityConf.debug.get,
                     purityConf.evaluationDir,
                     purityConf.packages
                 )

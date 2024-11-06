@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.commandlinebase
 
-import org.opalj.log.OPALLogger
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.ScallopOption
 import org.rogach.scallop.ValueConverter
