@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.commandlinebase
+package org.opalj
+package commandlinebase
 
 object FieldAssignabilityCommand extends OpalChoiceCommand {
     override var name: String = "fieldAssignability"

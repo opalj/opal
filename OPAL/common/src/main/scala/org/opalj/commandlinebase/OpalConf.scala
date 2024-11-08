@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.commandlinebase
+package org.opalj
+package commandlinebase
 
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.ScallopOption
@@ -24,14 +25,15 @@ trait OpalConf {
             noshort = command.noshort
         )
 
-    def getChoiceScallopOption(command: OpalChoiceCommand): ScallopOption[String] = choice(
-        name = command.name,
-        argName = command.argName,
-        descr = command.description,
-        default = command.defaultValue,
-        noshort = command.noshort,
-        choices = command.choices
-    )
+    def getChoiceScallopOption(command: OpalChoiceCommand): ScallopOption[String] =
+        choice(
+            name = command.name,
+            argName = command.argName,
+            descr = command.description,
+            default = command.defaultValue,
+            noshort = command.noshort,
+            choices = command.choices
+        )
 
     def parseCommand[T](command: ScallopOption[T]): Option[T] = if (!command.isDefined) None else Some(command.apply())
 
@@ -44,7 +46,12 @@ trait OpalConf {
     ): Option[R] = if (!command.isDefined) None else Some(externalParser.parse(command.apply()).asInstanceOf[R])
 
     override def onError(e: Throwable): Unit = e match {
-        case Help("") => printHelp()
+        case Help("") =>
+            printHelp()
+            sys.exit(0)
+        case Help(_) =>
+            subcommand.foreach(_.printHelp())
+            sys.exit(0)
         case ScallopException(message) =>
             println(s"Error: $message")
             printHelp()

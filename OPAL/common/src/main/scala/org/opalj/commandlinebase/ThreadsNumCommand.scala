@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.commandlinebase
+package org.opalj
+package commandlinebase
 
 object ThreadsNumCommand extends OpalPlainCommand[Int] {
     override var name: String = "num of threads"

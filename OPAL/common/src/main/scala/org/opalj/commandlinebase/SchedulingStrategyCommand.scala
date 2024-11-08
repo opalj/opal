@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.commandlinebase
+package org.opalj
+package commandlinebase
 
 object SchedulingStrategyCommand extends OpalPlainCommand[String] {
     override var name: String = "schedulingStrategy"

@@ -11,6 +11,7 @@ import java.util.Calendar
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -48,7 +49,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.commandlinebase.AnalysisCommand
+import org.opalj.commandlinebase.AnalysisLevelCommand
 import org.opalj.commandlinebase.AnalysisNameCommand
 import org.opalj.commandlinebase.CallGraphCommand
 import org.opalj.commandlinebase.ClassPathCommand
@@ -68,6 +69,7 @@ import org.opalj.commandlinebase.OpalConf
 import org.opalj.commandlinebase.PackagesCommand
 import org.opalj.commandlinebase.ProjectDirectoryCommand
 import org.opalj.commandlinebase.RaterCommand
+import org.opalj.commandlinebase.RunnerCommand
 import org.opalj.commandlinebase.SchedulingStrategyCommand
 import org.opalj.commandlinebase.ThreadsNumCommand
 import org.opalj.fpcf.ComputationSpecification
@@ -77,7 +79,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
-import org.opalj.support.parser.AnalysisCommandExternalParser
+import org.opalj.support.parser.AnalysisCommandParser
 import org.opalj.support.parser.CallGraphCommandExternalParser
 import org.opalj.support.parser.ClassPathCommandExternalParser
 import org.opalj.support.parser.DomainCommandExternalParser
@@ -104,6 +106,7 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
 import org.rogach.scallop.ScallopConf
+import org.rogach.scallop.Subcommand
 
 /**
  * `PurityConf` is a configuration class for parsing and managing command-line arguments related to purity analysis
@@ -113,11 +116,30 @@ import org.rogach.scallop.ScallopConf
 
 class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
 
+    private object analysis extends Subcommand("analysis") {
+        val runnerCommand = opt[String](
+            name = RunnerCommand.name,
+            descr = RunnerCommand.description,
+            argName = RunnerCommand.argName,
+            default = RunnerCommand.defaultValue,
+            noshort = RunnerCommand.noshort
+        )
+
+        val analysisLevelCommand = choice(
+            name = AnalysisLevelCommand.name,
+            descr = AnalysisLevelCommand.description,
+            argName = AnalysisLevelCommand.argName,
+            default = AnalysisLevelCommand.defaultValue,
+            noshort = AnalysisLevelCommand.noshort,
+            choices = AnalysisLevelCommand.choices
+        )
+    }
+    addSubcommand(analysis)
+
     // Commands
     private val classPathCommand = getPlainScallopOption(ClassPathCommand)
     private val projectDirCommand = getPlainScallopOption(ProjectDirectoryCommand)
     private val libDirCommand = getPlainScallopOption(LibraryDirectoryCommand)
-    private val analysisCommand = getChoiceScallopOption(AnalysisCommand)
     private val fieldAssignabilityCommand = getChoiceScallopOption(FieldAssignabilityCommand)
     private val escapeCommand = getChoiceScallopOption(EscapeCommand)
     private val eagerCommand = getPlainScallopOption(EagerCommand)
@@ -142,12 +164,13 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     val classPathFiles = parseCommandWithExternalParser(classPathCommand, ClassPathCommandExternalParser)
     val projectDirectory = parseCommandWithInternalParser(projectDirCommand, ProjectDirectoryCommand)
     val libraryDirectory = parseCommandWithInternalParser(libDirCommand, LibraryDirectoryCommand)
-    val analysisScheduler = parseCommandWithExternalParser(analysisCommand, AnalysisCommandExternalParser)
+    val analysisScheduler =
+        AnalysisCommandParser.parse(parseCommand(analysis.runnerCommand), parseCommand(analysis.analysisLevelCommand))
     var support: Option[List[FPCFAnalysisScheduler]] = None
 
     if (fieldAssignabilityCommand.isDefined && escapeCommand.isDefined && eagerCommand.isDefined && analysisScheduler != null)
         support = Some(parseArgumentsForSupport(
-            analysisCommand.apply(),
+            analysis.analysisLevelCommand.apply(),
             fieldAssignabilityCommand.apply(),
             escapeCommand.apply(),
             eagerCommand.apply(),
@@ -616,16 +639,12 @@ object Purity {
 
         val purityConf = new PurityConf(args)
 
-        if (args.contains("--help") || args.contains("-h")) {
-            return
-        }
-
         val begin = Calendar.getInstance()
         Console.println(begin.getTime)
 
         time {
             if (purityConf.multiProjects.get) {
-                for (subp <- purityConf.classPathFiles.get.head.listFiles().filter(_.isDirectory)) {
+                for (subp <- purityConf.classPathFiles.get.flatMap(_.listFiles).filter(_.isDirectory)) {
                     println(s"${subp.getName}: ${Calendar.getInstance().getTime}")
                     evaluate(
                         subp,
@@ -664,7 +683,7 @@ object Purity {
                     purityConf.individual.get,
                     purityConf.threadsNum.get,
                     purityConf.closedWorld.get,
-                    purityConf.library.get || (purityConf.classPathFiles.head eq JRELibraryFolder),
+                    purityConf.library.get || (purityConf.classPathFiles.get.head eq JRELibraryFolder),
                     purityConf.debug.get,
                     purityConf.evaluationDir,
                     purityConf.packages

@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.commandlinebase
+package org.opalj
+package commandlinebase
 
 object CloseWorldCommand extends OpalPlainCommand[Boolean] {
     override var name: String = "closeWordAssumption"

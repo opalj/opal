@@ -4,6 +4,7 @@ package support
 package parser
 
 import java.io.File
+
 import org.opalj.ba.CODE.logContext
 import org.opalj.commandlinebase.OpalCommandExternalParser
 import org.opalj.log.OPALLogger.error
