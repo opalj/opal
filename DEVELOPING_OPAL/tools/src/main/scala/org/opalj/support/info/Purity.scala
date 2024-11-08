@@ -49,7 +49,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.commandlinebase.AnalysisLevelCommand
+import org.opalj.commandlinebase.AnalysisCommand
 import org.opalj.commandlinebase.AnalysisNameCommand
 import org.opalj.commandlinebase.CallGraphCommand
 import org.opalj.commandlinebase.ClassPathCommand
@@ -69,7 +69,6 @@ import org.opalj.commandlinebase.OpalConf
 import org.opalj.commandlinebase.PackagesCommand
 import org.opalj.commandlinebase.ProjectDirectoryCommand
 import org.opalj.commandlinebase.RaterCommand
-import org.opalj.commandlinebase.RunnerCommand
 import org.opalj.commandlinebase.SchedulingStrategyCommand
 import org.opalj.commandlinebase.ThreadsNumCommand
 import org.opalj.fpcf.ComputationSpecification
@@ -116,22 +115,22 @@ import org.rogach.scallop.Subcommand
 
 class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
 
-    private object analysis extends Subcommand("analysis") {
+    private object analysis extends Subcommand(AnalysisCommand.name) {
         val runnerCommand = opt[String](
-            name = RunnerCommand.name,
-            descr = RunnerCommand.description,
-            argName = RunnerCommand.argName,
-            default = RunnerCommand.defaultValue,
-            noshort = RunnerCommand.noshort
+            name = AnalysisCommand.getRunnerCommand().name,
+            descr = AnalysisCommand.getRunnerCommand().description,
+            argName = AnalysisCommand.getRunnerCommand().argName,
+            default = AnalysisCommand.getRunnerCommand().defaultValue,
+            noshort = AnalysisCommand.getRunnerCommand().noshort
         )
 
         val analysisLevelCommand = choice(
-            name = AnalysisLevelCommand.name,
-            descr = AnalysisLevelCommand.description,
-            argName = AnalysisLevelCommand.argName,
-            default = AnalysisLevelCommand.defaultValue,
-            noshort = AnalysisLevelCommand.noshort,
-            choices = AnalysisLevelCommand.choices
+            name = AnalysisCommand.getAnalysisLevelCommand().name,
+            descr = AnalysisCommand.getAnalysisLevelCommand().description,
+            argName = AnalysisCommand.getAnalysisLevelCommand().argName,
+            default = AnalysisCommand.getAnalysisLevelCommand().defaultValue,
+            noshort = AnalysisCommand.getAnalysisLevelCommand().noshort,
+            choices = AnalysisCommand.getAnalysisLevelCommand().choices
         )
     }
     addSubcommand(analysis)
