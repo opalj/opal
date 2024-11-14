@@ -5,6 +5,7 @@ package android
 
 import scala.xml.Elem
 import scala.xml.Node
+import scala.xml.XML
 
 import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
@@ -19,7 +20,7 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Julius Naeumann
  */
-object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest], Elem] {
+object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest], String] {
     // Constants for the IntentFilter
     val ACTION_MAIN = "android.intent.action.MAIN"
     val CATEGORY_LAUNCHER = "android.intent.category.LAUNCHER"
@@ -31,7 +32,8 @@ object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest],
         manifest.map(parseManifest(project, _))
     }
 
-    def parseManifest(project: SomeProject, xml: Elem): AndroidManifest = {
+    def parseManifest(project: SomeProject, manifestPath: String): AndroidManifest = {
+        val xml: Elem = XML.loadFile(manifestPath)
         val androidURI = "http://schemas.android.com/apk/res/android"
         val packageName = xml.attribute("package").get.toString().replaceAll("\\.", "/")
 

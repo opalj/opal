@@ -4,7 +4,6 @@ package fpcf
 package analyses
 
 import java.net.URL
-import scala.xml.XML
 
 import com.typesafe.config.ConfigValueFactory
 
@@ -66,7 +65,7 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
         }
 
         project.updateProjectInformationKeyInitializationData(AndroidManifestKey) {
-            _ => XML.loadFile(manifestPath)
+            _ => manifestPath
         }
 
         implicit val ps: PropertyStore = time {
