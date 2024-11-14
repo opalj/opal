@@ -36,7 +36,7 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
         val classHierarchy = project.classHierarchy
         val entryPoints = ArrayBuffer[Method]()
 
-        // collect entry point methods from launchable activities
+        // iterate over launchable classes, collect their respective entry point methods according to config
         for (componentClass <- launchableClasses) {
             for (epd <- entryPointDescriptions) {
                 if (classHierarchy.isASubtypeOf(ReferenceType(componentClass.fqn), ReferenceType(epd.cf)).isYes) {
