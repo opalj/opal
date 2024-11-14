@@ -8,7 +8,14 @@ jobs:
   build:
     runs-on: [self-hosted, it_test]
 
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/it:test') && github.event.comment.author_association == 'COLLABORATOR'
+    if: |
+      github.event.issue.pull_request && contains(github.event.comment.body, '/it:test') &&
+      (
+        (github.event.issue.author_association == 'OWNER') ||
+        (github.event.issue.author_association == 'COLLABORATOR') ||
+        (github.event.issue.author_association == 'CONTRIBUTOR') ||
+        (github.event.issue.author_association == 'MEMBER')
+      )
 
     steps:
       - name: Get Repo
