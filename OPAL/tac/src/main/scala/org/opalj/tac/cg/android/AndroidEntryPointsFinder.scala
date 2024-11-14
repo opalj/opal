@@ -24,7 +24,9 @@ import org.opalj.tac.fpcf.analyses.MethodDescription
  * @author Julius Naeumann
  */
 object AndroidEntryPointsFinder extends EntryPointFinder {
+
     val configKey = "org.opalj.tac.cg.android.AndroidEntryPointsFinder.entryPoints"
+
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val entryPointDescriptions = getConfiguredEntryPoints(project)
         val manifest: AndroidManifest = project.get(AndroidManifestKey).get
