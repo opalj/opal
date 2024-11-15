@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ide.solver
 
+import scala.collection.mutable
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -29,13 +31,19 @@ import org.opalj.value.ValueInformation
  * [[org.opalj.tac.fpcf.analyses.ifds.JavaICFG]] from IFDS.
  */
 abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
-    protected val tacProvider: Method => AITACode[TACMethodParameter, ValueInformation] = {
-        // TODO (IDE) DOCS SAY, THAT LazyDetachedTACAIKey DOES NOT CACHE ANYTHING
+    private val lazyTacProvider: Method => AITACode[TACMethodParameter, ValueInformation] = {
         project.get(LazyDetachedTACAIKey)
     }
+
     protected implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
     protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
     protected val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+
+    private val tacProviderCache = mutable.Map.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
+
+    def tacProvider(callable: Method): AITACode[TACMethodParameter, ValueInformation] = {
+        tacProviderCache.getOrElseUpdate(callable, { lazyTacProvider(callable) })
+    }
 
     override def isCallStatement(javaStmt: JavaStatement): Boolean = {
         if (javaStmt.isReturnNode) {
