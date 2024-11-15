@@ -390,8 +390,6 @@ class LinearConstantPropagationProblem
                                 /* If boundaries are equal, the value is constant */
                                 Some(intRange.lowerBound)
                             } else if (var0.definedBy.size > 1) {
-                                // TODO (IDE) ADD TESTS FOR THIS (CAN WE REFACTOR THIS/DOES THIS REDUCE THE
-                                //  ACCURACY)
                                 return VariableValueEdgeFunction
                             } else {
                                 None

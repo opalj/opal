@@ -19,17 +19,13 @@ import org.opalj.value.ValueInformation
  */
 case class JavaStatement(
     method:       Method,
-    pc:        Int,
+    pc:           Int,
     isReturnNode: Boolean = false,
-    stmts:         Array[Stmt[JavaStatement.V]],
+    stmts:        Array[Stmt[JavaStatement.V]],
     cfg:          CFG[Stmt[JavaStatement.V], TACStmts[JavaStatement.V]]
 ) {
-    // TODO (IDE) DOES THIS GET REEVALUATED EACH CALL? DO WE ALWAYS CALL IT AT LEAST ONCE? MAYBE MAKE IT A (LAZY)
-    //  PROPERTY
     def stmt: Stmt[JavaStatement.V] = stmts(pc)
 
-    // TODO (IDE) DOES THIS GET REEVALUATED EACH CALL? DO WE ALWAYS CALL IT AT LEAST ONCE? MAYBE MAKE IT A (LAZY)
-    //  PROPERTY
     def basicBlock: BasicBlock = cfg.bb(pc)
 
     override def hashCode(): Int = method.hashCode() * 31 + pc
