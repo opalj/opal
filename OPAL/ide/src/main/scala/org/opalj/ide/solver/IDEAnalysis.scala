@@ -97,11 +97,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         private val endSummaries = mutable.Map.empty[Node, mutable.Set[(Node, JumpFunction)]]
 
         /**
-         * Collection of all callables that were visited in P1
-         */
-        private val seenCallables = mutable.Set.empty[Callable]
-
-        /**
          * Map call targets to all seen call sources (similar to a call graph but reversed; needed for endSummaries
          * extension)
          */
@@ -179,14 +174,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         def getEndSummaries(start: Node): collection.Set[(Node, JumpFunction)] = {
             endSummaries.getOrElse(start, immutable.Set.empty)
-        }
-
-        def rememberCallable(callable: Callable): Unit = {
-            seenCallables.add(callable)
-        }
-
-        def getAllSeenCallables: collection.Set[Callable] = {
-            seenCallables
         }
 
         def rememberCallEdge(path: Path): Unit = {
@@ -441,8 +428,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def seedPhase1()(implicit s: State): Unit = {
         val callable = s.targetCallable
 
-        s.rememberCallable(callable)
-
         // IDE P1 lines 5 - 6
         icfg.getStartStatements(callable).foreach { stmt =>
             val path = ((stmt, problem.nullFact), (stmt, problem.nullFact))
@@ -516,9 +501,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     }
                 }
             } else {
-                // TODO (IDE) ALSO COLLECTS JRE METHODS -> P2 part (ii) MAY GET VERY SLOW
-                s.rememberCallable(q)
-
                 val sqs = icfg.getStartStatements(q)
                 sqs.foreach { sq =>
                     // IDE P1 lines 12 - 13
@@ -735,8 +717,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         logDebug(s"seeded with ${s.getNodeWorkListSize} node(s)")
     }
 
-    // TODO (IDE) TO SPEEDUP THE ANALYSIS WE SHOULD ONLY CALCULATE THE VALUES, WE ARE INTERESTED IN/THE USER REQUESTED.
-    //  ESPECIALLY THE VALUES CALCULATED BY P2 part (ii) ARE NEVER USED CURRENTLY
     private def computeValues()(implicit s: State): Unit = {
         logDebug("starting phase 2 (i)")
 
@@ -763,26 +743,26 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         // IDE P2 part (ii)
         // IDE P2 lines 15 - 17
-        s.getAllSeenCallables.foreach { p =>
-            val sps = icfg.getStartStatements(p)
-            val ns = collectReachableStmts(sps, stmt => !icfg.isCallStatement(stmt))
+        // Reduced to the one callable, results are created for
+        val p = s.targetCallable
+        val sps = icfg.getStartStatements(p)
+        val ns = collectReachableStmts(sps, stmt => !icfg.isCallStatement(stmt))
 
-            // IDE P2 line 16 - 17
-            sps.foreach { sp =>
-                ns.foreach { n =>
-                    val jumpFunctionsMatchingTarget = s.lookupJumpFunctions(source = Some(sp), target = Some(n))
-                    jumpFunctionsMatchingTarget.foreach {
-                        case (((_, dPrime), (_, d)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
-                            val nSharp = (n, d)
-                            val vPrime = problem.lattice.meet(
-                                s.getValue((n, d)),
-                                fPrime.compute(s.getValue((sp, dPrime)))
-                            )
+        // IDE P2 line 16 - 17
+        sps.foreach { sp =>
+            ns.foreach { n =>
+                val jumpFunctionsMatchingTarget = s.lookupJumpFunctions(source = Some(sp), target = Some(n))
+                jumpFunctionsMatchingTarget.foreach {
+                    case (((_, dPrime), (_, d)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
+                        val nSharp = (n, d)
+                        val vPrime = problem.lattice.meet(
+                            s.getValue((n, d)),
+                            fPrime.compute(s.getValue((sp, dPrime)))
+                        )
 
-                            logTrace(s"setting value of nSharp=${nodeToString(nSharp)} to vPrime=$vPrime")
+                        logTrace(s"setting value of nSharp=${nodeToString(nSharp)} to vPrime=$vPrime")
 
-                            s.setValue(nSharp, vPrime)
-                    }
+                        s.setValue(nSharp, vPrime)
                 }
             }
         }
