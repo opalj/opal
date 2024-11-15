@@ -253,7 +253,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
             val resultsForExit = resultsByStatement
                 .filter { case (n, _) => icfg.isNormalExitStatement(n) }
-                .flatMap(_._2.toList)
+                .map(_._2.toList)
+                .flatten
                 .groupMapReduce(_._1)(_._2) {
                     (value1, value2) => problem.lattice.meet(value1, value2)
                 }
@@ -706,9 +707,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def handleEdgeFunctionResult(
         edgeFunctionResult: EdgeFunctionResult[Value],
         path:               Path
-    )(
-        implicit s: State
-    ): EdgeFunction[Value] = {
+    )(implicit s: State): EdgeFunction[Value] = {
         edgeFunctionResult match {
             case FinalEdgeFunction(edgeFunction) =>
                 edgeFunction

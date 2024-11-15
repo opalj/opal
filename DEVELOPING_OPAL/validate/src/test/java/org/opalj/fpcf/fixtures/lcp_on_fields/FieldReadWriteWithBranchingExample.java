@@ -9,6 +9,18 @@ import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 public class FieldReadWriteWithBranchingExample {
     private int a = -1;
 
+    @ObjectValue(variable = "lv0", variableValues = {@VariableValue(variable = "a")})
+    public static FieldReadWriteWithBranchingExample multipleReturns(int y) {
+        FieldReadWriteWithBranchingExample e = new FieldReadWriteWithBranchingExample();
+        if (y > 0) {
+            e.a = 42;
+            return e;
+        } else {
+            e.a = 23;
+            return e;
+        }
+    }
+
     @ObjectValues({
             @ObjectValue(variable = "lv0", constantValues = {@ConstantValue(variable = "a", value = 42)}),
             @ObjectValue(variable = "lv2", variableValues = {@VariableValue(variable = "a")}),
