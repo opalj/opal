@@ -19,7 +19,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.TriggeredFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 
 /**
@@ -62,7 +62,7 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
             new ArrayInstantiationsAnalysisScheduler(theTypeSetEntitySelector),
             new TypePropagationAnalysisScheduler(theTypeSetEntitySelector),
             ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler,
-            EagerFieldAccessInformationAnalysis,
+            TriggeredFieldAccessInformationAnalysis,
             ReflectionRelatedFieldAccessesAnalysisScheduler
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }

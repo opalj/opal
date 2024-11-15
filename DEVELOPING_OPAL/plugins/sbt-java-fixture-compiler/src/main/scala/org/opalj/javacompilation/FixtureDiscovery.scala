@@ -78,7 +78,7 @@ object FixtureDiscovery {
                         requires
                             .map(librarySpec => librarySpec.substring(librarySpec.indexOf('=') + 1))
                             . /* support library name */
-                            map(libraryName => supportDir / libraryName)
+                            map(libraryName => s""""${supportDir / libraryName}"""")
                             . /* support library folder */
                             mkString(" "),
                         configurationOptions
