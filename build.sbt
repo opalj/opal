@@ -33,6 +33,7 @@ ScalacConfiguration.globalScalacOptions
 ThisBuild / resolvers += Resolver.jcenterRepo
 ThisBuild / resolvers += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/"
 ThisBuild / resolvers += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
+ThisBuild / resolvers += Resolver.mavenLocal
 
 // OPAL already parallelizes most tests/analyses internally!
 ThisBuild / parallelExecution := false
@@ -177,6 +178,7 @@ lazy val `OPAL` = (project in file("."))
     ai,
     ifds,
     tac,
+    xl,
     de,
     av,
     apk,
@@ -216,16 +218,16 @@ lazy val `StaticAnalysisInfrastructure` = (project in file("OPAL/si"))
 
 lazy val bi = `BytecodeInfrastructure`
 lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
-  .settings(buildSettings: _*)
-  .settings(
-    name := "Bytecode Infrastructure",
-    libraryDependencies ++= Dependencies.bi,
-    Compile / doc / scalacOptions := Opts.doc.title("OPAL - Bytecode Infrastructure"),
-    // Test / publishArtifact := true, // Needed to get access to class TestResources
-    /*
-      The following settings relate to the java-fixture-compiler plugin, which
-      compiles the java fixture projects in the BytecodeInfrastructure project for testing.
-      For information about the java fixtures, see: OPAL/bi/src/test/fixtures-java/Readme.md
+    .settings(buildSettings: _*)
+    .settings(
+        name := "Bytecode Infrastructure",
+        libraryDependencies ++= Dependencies.bi,
+        Compile / doc / scalacOptions := Opts.doc.title("OPAL - Bytecode Infrastructure"),
+        // Test / publishArtifact := true, // Needed to get access to class TestResources
+        /*
+          The following settings relate to the java-fixture-compiler plugin, which
+          compiles the java fixture projects in the BytecodeInfrastructure project for testing.
+          For information about the java fixtures, see: OPAL/bi/src/test/fixtures-java/Readme.md
 
       The default settings for the fixture compilations are used.
       For details on the plugin and how to change its settings, see:
@@ -325,6 +327,20 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
   .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
+lazy val xl = `XLanguage`
+lazy val `XLanguage` = (project in file("OPAL/xl"))
+    .settings(buildSettings: _*)
+    .settings(
+        name := "Cross Language",
+        libraryDependencies += "tud" % "xltajs" % "1.0.0-SNAPSHOT",
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Cross Language"),
+        libraryDependencies += "tud" % "svf_xl" % "1.0.0-SNAPSHOT",
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Cross Language"),
+        run / fork := true
+    )
+    .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
+    .configs(IntegrationTest)
+
 lazy val ba = `BytecodeAssembler`
 lazy val `BytecodeAssembler` = (project in file("OPAL/ba"))
   .settings(buildSettings: _*)
@@ -399,7 +415,8 @@ lazy val `Framework` = (project in file("OPAL/framework"))
   .dependsOn(
     ba  % "it->it;it->test;test->test;compile->compile",
     av  % "it->it;it->test;test->test;compile->compile",
-    tac % "it->it;it->test;test->test;compile->compile"
+    tac % "it->it;it->test;test->test;compile->compile",
+    xl % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 

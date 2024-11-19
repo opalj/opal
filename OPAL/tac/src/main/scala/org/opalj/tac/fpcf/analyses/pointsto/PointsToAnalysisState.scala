@@ -134,7 +134,7 @@ class PointsToAnalysisState[
         _sharedPointsToSets.iterator
     }
 
-    private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
+    val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
         mutable.Map.empty
     }
 

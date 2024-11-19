@@ -154,7 +154,7 @@ trait Calls extends CalleesAndCallers {
     private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, Callers]] =
         List.empty
 
-    def addCall(
+    protected[this] def addCallImpl(
         callerContext: Context,
         pc:            Int,
         calleeContext: Context
@@ -185,6 +185,12 @@ trait DirectCallsBase extends Calls {
     override protected def directCallees: IntMap[IntTrieSet] = _callees
 
     override val isDirect: Boolean = true
+
+    def addCall(
+        callerContext: Context,
+        pc:            Int,
+        calleeContext: Context
+    ): Unit = addCallImpl(callerContext, pc, calleeContext)
 }
 
 trait IndirectCallsBase extends Calls {
@@ -205,6 +211,15 @@ trait IndirectCallsBase extends Calls {
 
     override protected def indirectCallees: IntMap[IntTrieSet] = _callees
 
+    def addCall(callerContext: Context, pc: UByte, calleeContext: Context)(implicit
+        contextProvider: ContextProvider,
+        classHierarchy:  ClassHierarchy
+    ): Unit = {
+        val paramSize = calleeContext.method.descriptor.parameterTypes.size
+        val params = Seq.fill(paramSize)(None)
+        addCall(callerContext, pc, calleeContext.method, params, None)
+    }
+
     def addCall(
         callerContext: Context,
         pc:            Int,
@@ -219,7 +234,7 @@ trait IndirectCallsBase extends Calls {
                     }
                 ) {
                     val calleeContext = contextProvider.expandContext(callerContext, callee, pc)
-                    addCall(callerContext, pc, calleeContext)
+                    addCallImpl(callerContext, pc, calleeContext)
                     _parameters = _parameters.updated(
                         pc,
                         _parameters.getOrElse(pc, IntMap.empty).updated(calleeContext.id, params)
