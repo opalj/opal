@@ -121,8 +121,8 @@ final case class ComputedValue[+V](result: V) extends Computation[V, Nothing] {
  * or threw an exception.
  */
 final case class ComputedValueOrException[+V, +E](
-        result:     V,
-        exceptions: E
+    result:     V,
+    exceptions: E
 ) extends Computation[V, E] {
 
     def returnsNormally: Boolean = true
@@ -169,7 +169,7 @@ final case class ThrowsException[+E](exceptions: E) extends Computation[Nothing,
  * did not return some value) or that threw an exception/multiple exceptions.
  */
 final case class ComputationWithSideEffectOrException[+E](
-        exceptions: E
+    exceptions: E
 ) extends Computation[Nothing, E] {
 
     def returnsNormally: Boolean = true

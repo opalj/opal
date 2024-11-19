@@ -54,8 +54,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Andreas Bauer
  */
 final class TypePropagationAnalysis private[analyses] (
-        val project:         SomeProject,
-        selectTypeSetEntity: TypeSetEntitySelector
+    val project:         SomeProject,
+    selectTypeSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
     private[this] val debug = false
@@ -574,7 +574,7 @@ final class TypePropagationAnalysis private[analyses] (
 }
 
 final class TypePropagationAnalysisScheduler(
-        val selectSetEntity: TypeSetEntitySelector
+    val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey, DeclaredFieldsKey)

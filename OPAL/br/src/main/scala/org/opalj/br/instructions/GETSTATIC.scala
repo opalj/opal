@@ -11,9 +11,9 @@ package instructions
  * @author Michael Eichberg
  */
 case class GETSTATIC(
-        declaringClass: ObjectType,
-        name:           String,
-        fieldType:      FieldType
+    declaringClass: ObjectType,
+    name:           String,
+    fieldType:      FieldType
 ) extends FieldReadAccess {
 
     final def opcode: Opcode = GETSTATIC.opcode

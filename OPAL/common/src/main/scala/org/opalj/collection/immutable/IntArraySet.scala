@@ -335,7 +335,7 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
 }
 
 case class IntArraySetN private[immutable] (
-        private[immutable] val is: Array[Int]
+    private[immutable] val is: Array[Int]
 ) extends IntArraySet {
 
     assert(is.length > 3)
@@ -509,8 +509,8 @@ case class IntArraySetN private[immutable] (
 
 // TODO Reduce to "FilterMonadic" methods.
 private[immutable] class FilteredIntArraySet(
-        p:     Int => Boolean,
-        origS: IntArraySetN
+    p:     Int => Boolean,
+    origS: IntArraySetN
 ) extends IntArraySet {
 
     @volatile private[this] var filteredS: IntArraySet = _
@@ -616,8 +616,8 @@ private[immutable] class FilteredIntArraySet(
 }
 
 class IntArraySetBuilder private[immutable] (
-        private[this] var is:   Array[Int],
-        private[this] var size: Int
+    private[this] var is:   Array[Int],
+    private[this] var size: Int
 ) extends Builder[Int, IntArraySet] {
 
     require(size <= is.length)

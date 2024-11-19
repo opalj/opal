@@ -12,8 +12,8 @@ package ai
  * @author Michael Eichberg
  */
 class AIException(
-        message:            String    = null,
-        cause:              Throwable = null,
-        enableSuppression:  Boolean   = false,
-        writableStackTrace: Boolean   = true
+    message:            String    = null,
+    cause:              Throwable = null,
+    enableSuppression:  Boolean   = false,
+    writableStackTrace: Boolean   = true
 ) extends RuntimeException(message, cause, enableSuppression, writableStackTrace)

@@ -13,8 +13,8 @@ import scala.xml.Text
  * @author Andre Pacak
  */
 case class ElementValuePair(
-        element_name_index: Constant_Pool_Index,
-        element_value:      ElementValue
+    element_name_index: Constant_Pool_Index,
+    element_value:      ElementValue
 ) {
 
     final def attribute_length: Int = 2 + element_value.attribute_length

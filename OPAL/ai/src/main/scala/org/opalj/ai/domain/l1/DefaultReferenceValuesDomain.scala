@@ -16,8 +16,8 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultReferenceValuesDomain[Source](
-        val project: Project[Source],
-        val method:  Method
+    val project: Project[Source],
+    val method:  Method
 ) extends CorrelationalDomain
     with TheProject
     with TheMethod
@@ -37,7 +37,7 @@ class DefaultReferenceValuesDomain[Source](
     with l0.TypeLevelLongValuesShiftOperators
 
 class DefaultReferenceValuesDomainWithCFGAndDefUse[Source](
-        project: Project[Source],
-        method:  Method
+    project: Project[Source],
+    method:  Method
 ) extends DefaultReferenceValuesDomain(project, method)
     with RefineDefUseUsingOrigins

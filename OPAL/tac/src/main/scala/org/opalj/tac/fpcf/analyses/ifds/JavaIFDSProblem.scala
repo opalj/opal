@@ -34,10 +34,10 @@ import org.opalj.value.ValueInformation
  * @author Marc Clement
  */
 case class JavaStatement(
-        method: Method,
-        index:  Int,
-        code:   Array[Stmt[V]],
-        cfg:    CFG[Stmt[V], TACStmts[V]]
+    method: Method,
+    index:  Int,
+    code:   Array[Stmt[V]],
+    cfg:    CFG[Stmt[V], TACStmts[V]]
 ) extends Statement[Method, CFGNode] {
 
     override def hashCode(): Int = method.hashCode() * 31 + index

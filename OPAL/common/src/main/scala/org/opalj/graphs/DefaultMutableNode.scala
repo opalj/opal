@@ -13,10 +13,10 @@ import scala.collection.immutable
  * @author Michael Eichberg
  */
 class DefaultMutableNode[I](
-        theIdentifier:       I,
-        identifierToString:  I => String                   = (_: Any).toString,
-        theVisualProperties: immutable.Map[String, String] = immutable.Map.empty,
-        theChildren:         List[DefaultMutableNode[I]]   = List.empty
+    theIdentifier:       I,
+    identifierToString:  I => String                   = (_: Any).toString,
+    theVisualProperties: immutable.Map[String, String] = immutable.Map.empty,
+    theChildren:         List[DefaultMutableNode[I]]   = List.empty
 ) extends MutableNodeLike[I, DefaultMutableNode[I]](
         theIdentifier,
         identifierToString,
@@ -25,9 +25,9 @@ class DefaultMutableNode[I](
     ) with MutableNode[I, DefaultMutableNode[I]] {
 
     def this(
-            identifier:         I,
-            identifierToString: I => String,
-            fillcolor:          Option[String]
+        identifier:         I,
+        identifierToString: I => String,
+        fillcolor:          Option[String]
     ) =
         this(
             identifier,

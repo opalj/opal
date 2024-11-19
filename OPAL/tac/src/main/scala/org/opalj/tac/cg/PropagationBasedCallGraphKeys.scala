@@ -19,7 +19,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.TriggeredFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 
 /**
@@ -48,7 +48,7 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
 
     def typeSetEntitySelector(): TypeSetEntitySelector
 
-    override protected def callGraphSchedulers(
+    override protected[cg] def callGraphSchedulers(
         project: SomeProject
     ): Iterable[FPCFAnalysisScheduler] = {
         val theTypeSetEntitySelector = typeSetEntitySelector()
@@ -62,7 +62,7 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
             new ArrayInstantiationsAnalysisScheduler(theTypeSetEntitySelector),
             new TypePropagationAnalysisScheduler(theTypeSetEntitySelector),
             ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler,
-            EagerFieldAccessInformationAnalysis,
+            TriggeredFieldAccessInformationAnalysis,
             ReflectionRelatedFieldAccessesAnalysisScheduler
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }

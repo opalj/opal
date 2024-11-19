@@ -30,9 +30,9 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
 
     class AnalysisDomain(
-            override val project: Project[java.net.URL],
-            val ai:               InterruptableAI[_],
-            val method:           Method
+        override val project: Project[java.net.URL],
+        val ai:               InterruptableAI[_],
+        val method:           Method
     ) extends CorrelationalDomain
         with domain.DefaultSpecialDomainValuesBinding
         with domain.ThrowAllPotentialExceptionsConfiguration

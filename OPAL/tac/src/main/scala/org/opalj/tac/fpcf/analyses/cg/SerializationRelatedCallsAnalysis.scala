@@ -49,7 +49,7 @@ import org.opalj.value.ValueInformation
  * @author Dominik Helm
  */
 class OOSWriteObjectAnalysis private[analyses] (
-        override val project: SomeProject
+    override val project: SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -241,7 +241,7 @@ class OOSWriteObjectAnalysis private[analyses] (
  * @author Florian Kuebler
  */
 class OISReadObjectAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     final val ObjectInputValidationType = ObjectType("java/io/ObjectInputValidation")
@@ -444,7 +444,7 @@ class OISReadObjectAnalysis private[analyses] (
  * @author Dominik Helm
  */
 class SerializationRelatedCallsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {

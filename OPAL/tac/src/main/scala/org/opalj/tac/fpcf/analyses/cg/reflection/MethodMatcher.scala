@@ -45,8 +45,8 @@ final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends Metho
 }
 
 class ClassBasedMethodMatcher(
-        val possibleClasses:           Set[ObjectType],
-        val onlyMethodsExactlyInClass: Boolean
+    val possibleClasses:           Set[ObjectType],
+    val onlyMethodsExactlyInClass: Boolean
 ) extends MethodMatcher {
 
     // TODO use a ProjectInformationKey or WeakHashMap to cache methods per project
@@ -69,7 +69,7 @@ class ClassBasedMethodMatcher(
 }
 
 class DescriptorBasedMethodMatcher(
-        val possibleDescriptors: Set[MethodDescriptor]
+    val possibleDescriptors: Set[MethodDescriptor]
 ) extends MethodMatcher {
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = {

@@ -12,8 +12,8 @@ import org.opalj.bi.ConstantPoolTag
  * @author Michael Eichberg
  */
 case class CONSTANT_NameAndType_info(
-        name_index:       Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index
+    name_index:       Constant_Pool_Index,
+    descriptor_index: Constant_Pool_Index
 ) extends Constant_Pool_Entry {
 
     override final def size: Int = 1 + 2 + 2

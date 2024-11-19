@@ -26,7 +26,7 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
     final val SomePC = 100000
 
     class LongSetsTestDomain(
-            override val maxCardinalityOfLongSets: Int = Int.MaxValue
+        override val maxCardinalityOfLongSets: Int = Int.MaxValue
     ) extends CorrelationalDomain
         with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration

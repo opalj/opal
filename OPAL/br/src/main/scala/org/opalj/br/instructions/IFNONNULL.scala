@@ -49,7 +49,7 @@ object IFNONNULL extends InstructionMetaInformation {
 }
 
 case class LabeledIFNONNULL(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IFNONNULLLike {
 

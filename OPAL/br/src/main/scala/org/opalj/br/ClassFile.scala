@@ -73,14 +73,14 @@ import org.opalj.log.OPALLogger
  * @author  Michael Eichberg
  */
 final class ClassFile private (
-        val version:        UShortPair,
-        val accessFlags:    Int,
-        val thisType:       ObjectType,
-        val superclassType: Option[ObjectType],
-        val interfaceTypes: ObjectTypes,
-        val fields:         Fields,
-        val methods:        Methods,
-        val attributes:     Attributes
+    val version:        UShortPair,
+    val accessFlags:    Int,
+    val thisType:       ObjectType,
+    val superclassType: Option[ObjectType],
+    val interfaceTypes: ObjectTypes,
+    val fields:         Fields,
+    val methods:        Methods,
+    val attributes:     Attributes
 ) extends ConcreteSourceElement {
 
     methods.foreach { m => assert(m.declaringClassFile == null); m.declaringClassFile = this }
@@ -702,7 +702,7 @@ final class ClassFile private (
                 (majorVersion < 51 || method.isStatic)
             )
                 return Some(method);
-            else if (methodNameComparison < 0)
+            else if (methodNameComparison > 0)
                 return None;
 
             i += 1

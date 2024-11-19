@@ -20,9 +20,9 @@ trait DefaultStringValuesBinding extends DefaultReferenceValuesBinding with Stri
     //
 
     protected case class DefaultStringValue(
-            origin: ValueOrigin,
-            value:  String,
-            refId:  RefId
+        origin: ValueOrigin,
+        value:  String,
+        refId:  RefId
     ) extends StringValue
 
     override def StringValue(

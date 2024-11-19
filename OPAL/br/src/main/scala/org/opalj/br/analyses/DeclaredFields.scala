@@ -11,13 +11,13 @@ import org.opalj.br.instructions.FieldAccess
 import org.opalj.log.OPALLogger.info
 
 class DeclaredFields(
-        private[this] val project:          SomeProject,
-        private[this] var id2declaredField: Array[DeclaredField],
-        private[this] val declaredInformation2id: ConcurrentHashMap[
-            ObjectType,
-            ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]
-        ],
-        private[this] val nextId: AtomicInteger
+    private[this] val project:          SomeProject,
+    private[this] var id2declaredField: Array[DeclaredField],
+    private[this] val declaredInformation2id: ConcurrentHashMap[
+        ObjectType,
+        ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]
+    ],
+    private[this] val nextId: AtomicInteger
 ) {
     private var extensionSize = 1000
     private val rwLock = new ReentrantReadWriteLock()

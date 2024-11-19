@@ -206,11 +206,11 @@ sealed trait MethodFieldAccessInformation[S <: MethodFieldAccessInformation[S]] 
 }
 
 case class MethodFieldReadAccessInformation(
-        protected val _incompleteAccessSites:            IntMap[PCs],
-        protected val _directAccessedFields:             IntMap[IntMap[IntList]],
-        protected val _directAccessedReceiversByField:   IntMap[IntMap[IntMap[AccessReceiver]]],
-        protected val _indirectAccessedFields:           IntMap[IntMap[IntList]],
-        protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]]
+    protected val _incompleteAccessSites:            IntMap[PCs],
+    protected val _directAccessedFields:             IntMap[IntMap[IntList]],
+    protected val _directAccessedReceiversByField:   IntMap[IntMap[IntMap[AccessReceiver]]],
+    protected val _indirectAccessedFields:           IntMap[IntMap[IntList]],
+    protected val _indirectAccessedReceiversByField: IntMap[IntMap[IntMap[AccessReceiver]]]
 ) extends MethodFieldAccessInformation[MethodFieldReadAccessInformation]
     with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldReadAccessInformation] {
 
@@ -252,13 +252,13 @@ case class MethodFieldReadAccessInformation(
 }
 
 case class MethodFieldWriteAccessInformation(
-        protected val _incompleteAccessSites:             IntMap[PCs],
-        protected val _directAccessedFields:              IntMap[IntMap[IntList]],
-        protected val _directAccessedReceiversByField:    IntMap[IntMap[IntMap[AccessReceiver]]],
-        protected val _directAccessedParametersByField:   IntMap[IntMap[IntMap[AccessParameter]]],
-        protected val _indirectAccessedFields:            IntMap[IntMap[IntList]],
-        protected val _indirectAccessedReceiversByField:  IntMap[IntMap[IntMap[AccessReceiver]]],
-        protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]]
+    protected val _incompleteAccessSites:             IntMap[PCs],
+    protected val _directAccessedFields:              IntMap[IntMap[IntList]],
+    protected val _directAccessedReceiversByField:    IntMap[IntMap[IntMap[AccessReceiver]]],
+    protected val _directAccessedParametersByField:   IntMap[IntMap[IntMap[AccessParameter]]],
+    protected val _indirectAccessedFields:            IntMap[IntMap[IntList]],
+    protected val _indirectAccessedReceiversByField:  IntMap[IntMap[IntMap[AccessReceiver]]],
+    protected val _indirectAccessedParametersByField: IntMap[IntMap[IntMap[AccessParameter]]]
 ) extends MethodFieldAccessInformation[MethodFieldWriteAccessInformation]
     with MethodFieldAccessInformationPropertyMetaInformation[MethodFieldWriteAccessInformation] {
 

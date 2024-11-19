@@ -15,10 +15,10 @@ import org.opalj.bi.AccessFlagsContexts.FIELD
  * @author Andre Pacak
  */
 case class Field_Info(
-        access_flags:     Int,
-        name_index:       Constant_Pool_Index,
-        descriptor_index: Constant_Pool_Index,
-        attributes:       Attributes = NoAttributes
+    access_flags:     Int,
+    name_index:       Constant_Pool_Index,
+    descriptor_index: Constant_Pool_Index,
+    attributes:       Attributes = NoAttributes
 ) extends ClassMember {
 
     def size: Int = 2 + 2 + 2 + 2 /* attributes_count*/ + attributes.view.map(_.size).sum

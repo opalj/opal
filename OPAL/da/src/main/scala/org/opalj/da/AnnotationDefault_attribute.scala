@@ -11,8 +11,8 @@ import scala.xml.Node
  * @author Noorulla Sharief
  */
 case class AnnotationDefault_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        element_value:        ElementValue
+    attribute_name_index: Constant_Pool_Index,
+    element_value:        ElementValue
 ) extends Attribute {
 
     final def attribute_length: Int = element_value.attribute_length

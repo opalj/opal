@@ -12,10 +12,10 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class TypeAnnotation(
-        target_type:         TypeAnnotationTarget,
-        target_path:         TypeAnnotationPath,
-        type_index:          Constant_Pool_Index,
-        element_value_pairs: ElementValuePairs
+    target_type:         TypeAnnotationTarget,
+    target_path:         TypeAnnotationPath,
+    type_index:          Constant_Pool_Index,
+    element_value_pairs: ElementValuePairs
 ) extends AbstractAnnotation {
 
     final def attribute_length: Int = {

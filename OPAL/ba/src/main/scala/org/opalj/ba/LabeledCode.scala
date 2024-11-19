@@ -29,8 +29,8 @@ import it.unimi.dsi.fastutil.ints.Int2IntAVLTreeMap
  * @param originalCode The original code.
  */
 class LabeledCode(
-        val originalCode:         Code,
-        private var instructions: ArrayBuffer[CodeElement[AnyRef]]
+    val originalCode:         Code,
+    private var instructions: ArrayBuffer[CodeElement[AnyRef]]
 ) {
 
     /**

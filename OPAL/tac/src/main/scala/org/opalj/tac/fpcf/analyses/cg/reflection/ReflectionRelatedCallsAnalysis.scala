@@ -70,9 +70,9 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
                 if (key == "all") {
                     Set("class", "method")
                 } else {
-                    val options = key.split(',').toSet
+                    val options = key.split(',').toSet - ""
 
-                    val unrecognizedOptions = options -- Set("", "class", "method")
+                    val unrecognizedOptions = options -- Set("class", "method")
                     if (unrecognizedOptions.nonEmpty) {
                         logOnce(Warn(
                             "analysis configuration - reflection analysis",
@@ -129,16 +129,16 @@ sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
 }
 
 class ClassForNameAnalysis private[analyses] (
-        final val project:            SomeProject,
-        override final val apiMethod: DeclaredMethod,
-        final val classNameIndex:     Int = 0
+    final val project:            SomeProject,
+    override final val apiMethod: DeclaredMethod,
+    final val classNameIndex:     Int = 0
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     private class State(
-            val stmts:       Array[Stmt[V]],
-            loadedClassesUB: UIDSet[ObjectType],
-            callContext:     ContextType,
-            val callPC:      Int
+        val stmts:       Array[Stmt[V]],
+        loadedClassesUB: UIDSet[ObjectType],
+        callContext:     ContextType,
+        val callPC:      Int
     ) extends CGState[ContextType](callContext, null) {
         var hasFailed = false
 
@@ -311,7 +311,7 @@ class ClassForNameAnalysis private[analyses] (
 }
 
 class ClassNewInstanceAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod =
@@ -464,7 +464,7 @@ class ClassNewInstanceAnalysis private[analyses] (
 }
 
 class ConstructorNewInstanceAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     private[this] val ConstructorT = ObjectType("java/lang/reflect/Constructor")
@@ -713,7 +713,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
 }
 
 class MethodInvokeAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
@@ -1035,9 +1035,9 @@ class MethodInvokeAnalysis private[analyses] (
 }
 
 class MethodHandleInvokeAnalysis private[analyses] (
-        final val project:                SomeProject,
-        override final val apiMethod:     DeclaredMethod,
-        final val isSignaturePolymorphic: Boolean
+    final val project:                SomeProject,
+    override final val apiMethod:     DeclaredMethod,
+    final val isSignaturePolymorphic: Boolean
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(
@@ -1532,7 +1532,7 @@ object ReflectionRelatedCallsAnalysis {
  * @author Dominik Helm
  */
 class ReflectionRelatedCallsAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {

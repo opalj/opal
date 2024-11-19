@@ -12,8 +12,8 @@ import org.opalj.br.analyses.SomeProject
  * @author Marco Torsello
  */
 case class PackageMatcher(
-        namePredicate: NamePredicate,
-        classMatcher:  ClassMatcher
+    namePredicate: NamePredicate,
+    classMatcher:  ClassMatcher
 ) extends ClassLevelMatcher {
 
     def doesMatch(classFile: ClassFile)(implicit project: SomeProject): Boolean = {
@@ -73,7 +73,7 @@ object PackageMatcher {
         packageName:      String,
         matchSubpackages: Boolean
     ): PackageMatcher = {
-        apply(packageName.replace('.', '/'), AllClasses, matchSubpackages)
+        apply(packageName, AllClasses, matchSubpackages)
     }
 
 }

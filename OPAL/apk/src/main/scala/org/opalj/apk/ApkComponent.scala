@@ -23,10 +23,10 @@ import org.opalj.apk.ApkComponentType.ApkComponentType
  * @author Nicolas Gross
  */
 class ApkComponent(
-        val componentType:    ApkComponentType,
-        val clazz:            String,
-        val intentActions:    Seq[String],
-        val intentCategories: Seq[String]
+    val componentType:    ApkComponentType,
+    val clazz:            String,
+    val intentActions:    Seq[String],
+    val intentCategories: Seq[String]
 )(implicit config: Config) {
 
     private val ActivityEntryPoints = Seq.from(

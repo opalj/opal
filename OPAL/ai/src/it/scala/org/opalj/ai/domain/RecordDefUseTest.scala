@@ -35,8 +35,8 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
     protected[this] object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
     protected[this] class DefUseDomain(
-            val method:  Method,
-            val project: Project[URL]
+        val method:  Method,
+        val project: Project[URL]
     ) extends CorrelationalDomain
         with TheProject
         with TheMethod
@@ -57,8 +57,8 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
         with RecordDefUse // <=== we are going to test!
 
     protected[this] class RefinedDefUseDomain(
-            method:  Method,
-            project: Project[URL]
+        method:  Method,
+        project: Project[URL]
     ) extends DefUseDomain(method, project)
         with RefineDefUseUsingOrigins // this should not really affect the results...
 

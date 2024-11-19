@@ -106,8 +106,8 @@ sealed abstract class IntTrieSet
 
 // TODO Reduce to FilterMonadic
 final class FilteredIntTrieSet(
-        private val s: IntTrieSet,
-        private val p: Int => Boolean
+    private val s: IntTrieSet,
+    private val p: Int => Boolean
 ) extends IntTrieSet {
 
     override def iterator: IntIterator = s.iterator.withFilter(p)
@@ -355,8 +355,8 @@ object IntTrieSet1 {
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
 private[immutable] final class IntTrieSet2 private[immutable] (
-        val i1: Int,
-        val i2: Int
+    val i1: Int,
+    val i2: Int
 ) extends IntTrieSetL {
 
     override def isEmpty: Boolean = false
@@ -482,9 +482,9 @@ private[immutable] final class IntTrieSet2 private[immutable] (
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
 private[immutable] final class IntTrieSet3 private[immutable] (
-        val i1: Int,
-        val i2: Int,
-        val i3: Int
+    val i1: Int,
+    val i2: Int,
+    val i3: Int
 ) extends IntTrieSetL {
 
     override def isEmpty: Boolean = false
@@ -654,9 +654,9 @@ abstract private[immutable] class IntTrieSetNN extends IntTrieSet {
 }
 
 private[immutable] final class IntTrieSetN private[immutable] (
-        private[immutable] var left:  IntTrieSet, // can be empty, but never null!
-        private[immutable] var right: IntTrieSet, // can be empty, but never null!
-        var size:                     Int
+    private[immutable] var left:  IntTrieSet, // can be empty, but never null!
+    private[immutable] var right: IntTrieSet, // can be empty, but never null!
+    var size:                     Int
 ) extends IntTrieSetNN { intSet =>
 
     assert(left.size + right.size == size)
@@ -914,7 +914,7 @@ private[immutable] object IntTrieSetN {
 }
 
 private[immutable] final class IntTrieSetNJustRight private[immutable] (
-        private[immutable] var right: IntTrieSet // can't be empty, left is already empty
+    private[immutable] var right: IntTrieSet // can't be empty, left is already empty
 ) extends IntTrieSetNN { intSet =>
 
     assert(size > 0) // <= can be "one" at construction time
@@ -1044,7 +1044,7 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
 }
 
 private[immutable] final class IntTrieSetNJustLeft private[immutable] (
-        private[immutable] var left: IntTrieSet // cannot be empty; right is empty
+    private[immutable] var left: IntTrieSet // cannot be empty; right is empty
 ) extends IntTrieSetNN { intSet =>
 
     assert(size > 0) // <= can be "one" at construction time

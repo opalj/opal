@@ -35,8 +35,8 @@ trait SharedValuesDomain[Source]
  * @author Michael Eichberg
  */
 class SharedDefaultDomain[Source](
-        val project: Project[Source],
-        val method:  Method
+    val project: Project[Source],
+    val method:  Method
 ) extends TheMethod
     with ThrowAllPotentialExceptionsConfiguration
     with IgnoreSynchronization

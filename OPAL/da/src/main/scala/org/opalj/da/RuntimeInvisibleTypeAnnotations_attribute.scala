@@ -12,8 +12,8 @@ import scala.xml.Node
  * @author Andre Pacak
  */
 case class RuntimeInvisibleTypeAnnotations_attribute(
-        attribute_name_index: Constant_Pool_Index,
-        typeAnnotations:      TypeAnnotations
+    attribute_name_index: Constant_Pool_Index,
+    typeAnnotations:      TypeAnnotations
 ) extends TypeAnnotations_attribute {
 
     override final def toXHTML(implicit cp: Constant_Pool): Node = {

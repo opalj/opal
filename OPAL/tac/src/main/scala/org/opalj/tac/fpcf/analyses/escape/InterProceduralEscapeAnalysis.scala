@@ -45,13 +45,13 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
 class InterProceduralEscapeAnalysisContext(
-        val entity:                  (Context, Entity),
-        val targetMethod:            Method,
-        val declaredMethods:         DeclaredMethods,
-        val virtualFormalParameters: VirtualFormalParameters,
-        val project:                 SomeProject,
-        val propertyStore:           PropertyStore,
-        val isMethodOverridable:     Method => Answer
+    val entity:                  (Context, Entity),
+    val targetMethod:            Method,
+    val declaredMethods:         DeclaredMethods,
+    val virtualFormalParameters: VirtualFormalParameters,
+    val project:                 SomeProject,
+    val propertyStore:           PropertyStore,
+    val isMethodOverridable:     Method => Answer
 ) extends AbstractEscapeAnalysisContext
     with PropertyStoreContainer
     with IsMethodOverridableContainer
@@ -67,7 +67,7 @@ class InterProceduralEscapeAnalysisState
  * @author Florian Kübler
  */
 class InterProceduralEscapeAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends DefaultEscapeAnalysis
     with AbstractInterProceduralEscapeAnalysis
     with ConstructorSensitiveEscapeAnalysis

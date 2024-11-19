@@ -38,11 +38,11 @@ object LocalVariableTypeTable {
 }
 
 case class LocalVariableType(
-        startPC:   PC,
-        length:    Int,
-        name:      String,
-        signature: FieldTypeSignature,
-        index:     Int
+    startPC:   PC,
+    length:    Int,
+    name:      String,
+    signature: FieldTypeSignature,
+    index:     Int
 ) {
     def remapPCs(codeSize: Int, f: PC => PC): Option[LocalVariableType] = {
         val newStartPC = f(startPC)

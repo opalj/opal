@@ -49,7 +49,7 @@ object IFNE extends InstructionMetaInformation {
 }
 
 case class LabeledIFNE(
-        branchTarget: InstructionLabel
+    branchTarget: InstructionLabel
 ) extends LabeledSimpleConditionalBranchInstruction
     with IFNELike {
 

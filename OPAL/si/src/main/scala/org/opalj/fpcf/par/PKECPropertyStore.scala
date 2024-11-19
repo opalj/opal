@@ -28,17 +28,17 @@ import org.opalj.log.LogContext
  * @author Dominik Helm
  */
 class PKECPropertyStore(
-        final val ctx:                   Map[Class[_], AnyRef],
-        val taskManager:                 PKECTaskManager,
-        val THREAD_COUNT:                Int,
-        override val MaxEvaluationDepth: Int
+    final val ctx:                   Map[Class[_], AnyRef],
+    val taskManager:                 PKECTaskManager,
+    val THREAD_COUNT:                Int,
+    override val MaxEvaluationDepth: Int
 )(
-        implicit val logContext: LogContext
+    implicit val logContext: LogContext
 ) extends ParallelPropertyStore {
 
     implicit val propertyStore: PKECPropertyStore = this
 
-    var evaluationDepth: Int = 0
+    val evaluationDepth: ThreadLocal[Int] = ThreadLocal.withInitial[Int](() => 0)
 
     val ps: Array[ConcurrentHashMap[Entity, EPKState]] =
         Array.fill(PropertyKind.SupportedPropertyKinds) { new ConcurrentHashMap() }
@@ -402,10 +402,11 @@ class PKECPropertyStore(
                        synchronization overhead, but we restrict ourselves to at most
                        MaxEvaluationDepth levels of recursion before scheduling a task for a
                        different thread instead. */
-                    if (evaluationDepth < MaxEvaluationDepth) {
-                        evaluationDepth += 1
+                    val currentEvaluationDepth = evaluationDepth.get()
+                    if (currentEvaluationDepth < MaxEvaluationDepth) {
+                        evaluationDepth.set(currentEvaluationDepth + 1)
                         handleResult(lazyComputation(e))
-                        evaluationDepth -= 1
+                        evaluationDepth.set(currentEvaluationDepth)
                         ps(pkId).get(e).eOptP.asInstanceOf[EOptionP[E, P]]
                     } else {
                         scheduleTask(
@@ -708,7 +709,7 @@ class PKECPropertyStore(
     }
 
     class SetTask[E <: Entity, P <: Property](
-            finalEP: FinalEP[E, P]
+        finalEP: FinalEP[E, P]
     ) extends QualifiedTask {
         val priority = 0
 
@@ -718,8 +719,8 @@ class PKECPropertyStore(
     }
 
     class PropertyComputationTask[E <: Entity](
-            e:  E,
-            pc: PropertyComputation[E]
+        e:  E,
+        pc: PropertyComputation[E]
     ) extends QualifiedTask {
         val priority = 0
 
@@ -729,9 +730,9 @@ class PKECPropertyStore(
     }
 
     class LazyComputationTask[E <: Entity](
-            e:    E,
-            pc:   PropertyComputation[E],
-            pkId: Int
+        e:    E,
+        pc:   PropertyComputation[E],
+        pkId: Int
     ) extends QualifiedTask {
         val priority = 0
 
@@ -745,9 +746,9 @@ class PKECPropertyStore(
     }
 
     class ContinuationTask(
-            depender:    EPKState,
-            oldDependee: SomeEOptionP,
-            dependee:    EPKState
+        depender:    EPKState,
+        oldDependee: SomeEOptionP,
+        dependee:    EPKState
     ) extends QualifiedTask {
         scheduledOnUpdateComputations.incrementAndGet()
 
@@ -764,12 +765,12 @@ class PKECPropertyStore(
 }
 
 case class EPKState(
-        var eOptP:     SomeEOptionP,
-        var c:         OnUpdateContinuation,
-        var dependees: Set[SomeEOptionP],
-        // Use Java's HashSet here, this is internal implementiton only and they are *way* faster
-        dependers:           java.util.HashSet[EPKState] = new java.util.HashSet(),
-        suppressedDependers: java.util.HashSet[EPKState] = new java.util.HashSet()
+    var eOptP:     SomeEOptionP,
+    var c:         OnUpdateContinuation,
+    var dependees: Set[SomeEOptionP],
+    // Use Java's HashSet here, this is internal implementiton only and they are *way* faster
+    dependers:           java.util.HashSet[EPKState] = new java.util.HashSet(),
+    suppressedDependers: java.util.HashSet[EPKState] = new java.util.HashSet()
 ) {
 
     override lazy val hashCode: Int = eOptP.hashCode()

@@ -235,9 +235,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 }
 
 case class AllocationSitePointsToSetN private[pointsto] (
-        override val elements:                     LongLinkedSet,
-        override val types:                        UIDSet[ReferenceType],
-        override protected[this] val orderedTypes: List[ReferenceType]
+    override val elements:                     LongLinkedSet,
+    override val types:                        UIDSet[ReferenceType],
+    override protected[this] val orderedTypes: List[ReferenceType]
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = types.size
@@ -317,8 +317,8 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 }
 
 case class AllocationSitePointsToSet1(
-        allocationSite: AllocationSite,
-        allocatedType:  ReferenceType
+    allocationSite: AllocationSite,
+    allocatedType:  ReferenceType
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = 1

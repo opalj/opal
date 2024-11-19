@@ -14,8 +14,8 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 class DefaultSetValuesDomain[Source](
-        val project: Project[Source],
-        val method:  Method
+    val project: Project[Source],
+    val method:  Method
 ) extends CorrelationalDomain
     with TheProject
     with TheMethod

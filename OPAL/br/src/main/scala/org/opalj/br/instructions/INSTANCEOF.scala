@@ -9,7 +9,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INSTANCEOF(
-        referenceType: ReferenceType
+    referenceType: ReferenceType
 ) extends ConstantLengthInstruction with NoLabels {
 
     final def opcode: Opcode = INSTANCEOF.opcode

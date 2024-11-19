@@ -22,12 +22,12 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
     implicit val logContext: GlobalLogContext.type = GlobalLogContext
 
     case class BasicComputationSpecification(
-            override val name:      String,
-            computationType:        ComputationType,
-            uses:                   Set[PropertyBounds]    = Set.empty,
-            derivesLazily:          Option[PropertyBounds] = None,
-            derivesEagerly:         Set[PropertyBounds]    = Set.empty,
-            derivesCollaboratively: Set[PropertyBounds]    = Set.empty
+        override val name:      String,
+        computationType:        ComputationType,
+        uses:                   Set[PropertyBounds]    = Set.empty,
+        derivesLazily:          Option[PropertyBounds] = None,
+        derivesEagerly:         Set[PropertyBounds]    = Set.empty,
+        derivesCollaboratively: Set[PropertyBounds]    = Set.empty
     ) extends SimpleComputationSpecification[Unit] {
         override def schedule(ps: PropertyStore, unused: Null): Unit = {}
 

@@ -12,8 +12,8 @@ import org.opalj.bi.ConstantPoolTags
  * @author Andre Pacak
  */
 case class CONSTANT_Methodref_info(
-        class_index:         Constant_Pool_Index,
-        name_and_type_index: Constant_Pool_Index
+    class_index:         Constant_Pool_Index,
+    name_and_type_index: Constant_Pool_Index
 ) extends AsMethodref {
 
     override final def tag: Int = ConstantPoolTags.CONSTANT_Methodref_ID

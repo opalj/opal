@@ -116,46 +116,46 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Marco Torsello
  */
 class Project[Source] private (
-        private[this] val projectModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
-        private[this] val projectClassFiles:          Array[ClassFile], // contains no "module-info" class files
-        private[this] val libraryModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
-        private[this] val libraryClassFiles:          Array[ClassFile],
-        final val libraryClassFilesAreInterfacesOnly: Boolean,
-        private[this] val methodsWithBody:            Array[Method], // methods with bodies sorted by size
-        private[this] val methodsWithBodyAndContext:  Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
-        private[this] val projectTypes:               Set[ObjectType], // the types defined by the class files belonging to the project's code
-        private[this] val objectTypeToClassFile:      Map[ObjectType, ClassFile],
-        private[this] val sources:                    Map[ObjectType, Source],
-        final val projectClassFilesCount:             Int,
-        final val projectMethodsCount:                Int,
-        final val projectFieldsCount:                 Int,
-        final val libraryClassFilesCount:             Int,
-        final val libraryMethodsCount:                Int,
-        final val libraryFieldsCount:                 Int,
-        final val codeSize:                           Long,
-        final val MethodHandleSubtypes:               Set[ObjectType],
-        final val VarHandleSubtypes:                  Set[ObjectType],
-        final val classFilesCount:                    Int,
-        final val methodsCount:                       Int,
-        final val fieldsCount:                        Int,
-        final val allProjectClassFiles:               ArraySeq[ClassFile],
-        final val allLibraryClassFiles:               ArraySeq[ClassFile],
-        final val allClassFiles:                      Iterable[ClassFile],
-        final val allMethods:                         Iterable[Method],
-        final val allFields:                          Iterable[Field],
-        final val allSourceElements:                  Iterable[SourceElement],
-        final val virtualMethodsCount:                Int,
-        final val classHierarchy:                     ClassHierarchy,
-        final val instanceMethods:                    Map[ObjectType, ArraySeq[MethodDeclarationContext]],
-        final val overridingMethods:                  Map[Method, immutable.Set[Method]],
-        final val nests:                              Map[ObjectType, ObjectType],
-        // Note that the referenced array will never shrink!
-        @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] =
-            new AtomicReferenceArray[AnyRef](32)
+    private[this] val projectModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
+    private[this] val projectClassFiles:          Array[ClassFile], // contains no "module-info" class files
+    private[this] val libraryModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
+    private[this] val libraryClassFiles:          Array[ClassFile],
+    final val libraryClassFilesAreInterfacesOnly: Boolean,
+    private[this] val methodsWithBody:            Array[Method], // methods with bodies sorted by size
+    private[this] val methodsWithBodyAndContext:  Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
+    private[this] val projectTypes:               Set[ObjectType], // the types defined by the class files belonging to the project's code
+    private[this] val objectTypeToClassFile:      Map[ObjectType, ClassFile],
+    private[this] val sources:                    Map[ObjectType, Source],
+    final val projectClassFilesCount:             Int,
+    final val projectMethodsCount:                Int,
+    final val projectFieldsCount:                 Int,
+    final val libraryClassFilesCount:             Int,
+    final val libraryMethodsCount:                Int,
+    final val libraryFieldsCount:                 Int,
+    final val codeSize:                           Long,
+    final val MethodHandleSubtypes:               Set[ObjectType],
+    final val VarHandleSubtypes:                  Set[ObjectType],
+    final val classFilesCount:                    Int,
+    final val methodsCount:                       Int,
+    final val fieldsCount:                        Int,
+    final val allProjectClassFiles:               ArraySeq[ClassFile],
+    final val allLibraryClassFiles:               ArraySeq[ClassFile],
+    final val allClassFiles:                      Iterable[ClassFile],
+    final val allMethods:                         Iterable[Method],
+    final val allFields:                          Iterable[Field],
+    final val allSourceElements:                  Iterable[SourceElement],
+    final val virtualMethodsCount:                Int,
+    final val classHierarchy:                     ClassHierarchy,
+    final val instanceMethods:                    Map[ObjectType, ArraySeq[MethodDeclarationContext]],
+    final val overridingMethods:                  Map[Method, immutable.Set[Method]],
+    final val nests:                              Map[ObjectType, ObjectType],
+    // Note that the referenced array will never shrink!
+    @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] =
+        new AtomicReferenceArray[AnyRef](32)
 )(
-        implicit
-        final val logContext: LogContext,
-        final val config:     Config
+    implicit
+    final val logContext: LogContext,
+    final val config:     Config
 ) extends ProjectLike {
 
     /**
@@ -1365,10 +1365,8 @@ object Project {
                     definedMethod.name == inheritedInterfaceMethod.name
                 } match {
                     case Some(mdc) =>
-                        // If there is already a method and it is from an interface, then it is not
-                        // maximally specific and must be replaced. If it is from a class however, we
-                        // must keep it.
-
+                        // If there is already a method and it is from an interface, then it might not be maximally
+                        // specific and must be replaced. If the method is from a class however, we must always keep it.
                         if (mdc.method.classFile.isInterfaceDeclaration) {
                             definedMethods = definedMethods filterNot { definedMethod =>
                                 definedMethod.descriptor == inheritedInterfaceMethod.descriptor &&
@@ -1405,28 +1403,41 @@ object Project {
                 }
             }
 
-            uniqueInterfaceMethods foreach { m => processMaximallySpecificSuperinterfaceMethod(m) }
+            // Methods already defined must be scrutinized under the 'maximally specific interface method' rules
+            if (uniqueInterfaceMethods.nonEmpty) {
+                definedMethods foreach { definedMethod =>
+                    val signature = MethodSignature(definedMethod.name, definedMethod.descriptor)
+                    if (uniqueInterfaceMethodSignatures.contains(signature)) {
+                        uniqueInterfaceMethodSignatures -= signature
+                        uniqueInterfaceMethods = uniqueInterfaceMethods.filterNot { m => m.signature == signature }
+                    }
+                }
+            }
 
-            // let's keep the contexts related to the maximally specific methods.
-            /* OLD
-            interfaceMethods.iterator.filterNot { ms =>
-                uniqueInterfaceMethodSignatures.contains(ms)
-            } foreach { interfaceMethod =>
-             */
+            uniqueInterfaceMethods foreach { m =>
+                if (!m.isAbstract)
+                    definedMethods ::= MethodDeclarationContext(m)
+            }
+
             interfaceMethods foreach { interfaceMethod =>
                 if (!uniqueInterfaceMethodSignatures.contains(interfaceMethod)) {
-                    val (_, maximallySpecificSuperiniterfaceMethod) =
+                    val (_, maximallySpecificSuperinterfaceMethod) =
                         findMaximallySpecificSuperinterfaceMethods(
                             superinterfaceTypes,
                             interfaceMethod.name,
                             interfaceMethod.descriptor,
                             UIDSet.empty[ObjectType]
                         )(objectTypeToClassFile, classHierarchy, logContext)
-                    if (maximallySpecificSuperiniterfaceMethod.size == 1) {
+                    if (maximallySpecificSuperinterfaceMethod.size == 1) {
                         // A maximally specific interface method can only be invoked if it is unique!
                         processMaximallySpecificSuperinterfaceMethod(
-                            maximallySpecificSuperiniterfaceMethod.head
+                            maximallySpecificSuperinterfaceMethod.head
                         )
+                    } else {
+                        definedMethods = definedMethods filterNot { definedMethod =>
+                            definedMethod.descriptor == interfaceMethod.descriptor &&
+                            definedMethod.name == interfaceMethod.name
+                        }
                     }
                 }
             }

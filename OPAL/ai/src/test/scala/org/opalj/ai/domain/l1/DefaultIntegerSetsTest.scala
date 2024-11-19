@@ -36,7 +36,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
     final val SomePC = 100000
 
     class IntegerSetsTestDomain(
-            override val maxCardinalityOfIntegerSets: Int = 126 // <= MAX SUPPORTED VALUE
+        override val maxCardinalityOfIntegerSets: Int = 126 // <= MAX SUPPORTED VALUE
     ) extends CorrelationalDomain
         with DefaultSpecialDomainValuesBinding
         with ThrowAllPotentialExceptionsConfiguration

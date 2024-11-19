@@ -141,7 +141,7 @@ object ConstantFloat {
 }
 
 final case class ConstantString(
-        value: String
+    value: String
 ) extends ConstantFieldValue[String]
     with IsStringValue {
 
