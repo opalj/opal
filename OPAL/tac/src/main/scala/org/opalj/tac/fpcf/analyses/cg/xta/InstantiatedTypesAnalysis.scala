@@ -322,10 +322,32 @@ class InstantiatedTypesAnalysisScheduler(
             }
         }
 
+        // Marks the field of class java/lang/System with the given name as instantiated by default
+        // This only works if the RTJar is loaded - otherwise, the initial instantiated types being
+        // set for 'ExternalWorld' should take care of making these types accessible.
+        def initializeSystemField(fieldName: String): Unit = {
+            p.classFile(ObjectType.System).foreach { systemCf =>
+              systemCf.findField(fieldName).foreach { systemField =>
+                  if(systemField.fieldType.isReferenceType) {
+                    val declaredField = declaredFields(systemField)
+                    initialize(selectSetEntity(declaredField), UIDSet(systemField.fieldType.asReferenceType))
+                  }
+              }
+            }
+        }
+
         // Some cooperative analyses originally meant for RTA may require the global type set
         // to be pre-initialized. Strings and classes can be introduced via constants anywhere.
         // TODO Only introduce these types to the per-entity type sets where constants are used
         initialize(p, UIDSet(ObjectType.String, ObjectType.Class))
+        initialize(ExternalWorld, initialInstantiatedTypes)
+
+        // During system initialization, some native methods are called to set certain fields in
+        // the java/lang/System class, namely "PrintStream out", "InputStream in" and "PrintStream
+        // err" - since we can't detect those native calls, we manually mark them as instantiated.
+        initializeSystemField("out")
+        initializeSystemField("in")
+        initializeSystemField("err")
 
         def isRelevantArrayType(rt: Type): Boolean =
             rt.isArrayType && rt.asArrayType.elementType.isObjectType
