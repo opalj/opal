@@ -327,12 +327,12 @@ class InstantiatedTypesAnalysisScheduler(
         // set for 'ExternalWorld' should take care of making these types accessible.
         def initializeSystemField(fieldName: String): Unit = {
             p.classFile(ObjectType.System).foreach { systemCf =>
-              systemCf.findField(fieldName).foreach { systemField =>
-                  if(systemField.fieldType.isReferenceType) {
-                    val declaredField = declaredFields(systemField)
-                    initialize(selectSetEntity(declaredField), UIDSet(systemField.fieldType.asReferenceType))
-                  }
-              }
+                systemCf.findField(fieldName).foreach { systemField =>
+                    if (systemField.fieldType.isReferenceType) {
+                        val declaredField = declaredFields(systemField)
+                        initialize(selectSetEntity(declaredField), UIDSet(systemField.fieldType.asReferenceType))
+                    }
+                }
             }
         }
 
