@@ -688,6 +688,17 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         edgeFunctionResult: EdgeFunctionResult[Value],
         path:               Path
     )(implicit s: State): EdgeFunction[Value] = {
+        handleEdgeFunctionResult(edgeFunctionResult, () => s.enqueuePath(path))
+    }
+
+    /**
+     * @param continuation the continuation to execute when the dependee changes (in case of an interim edge function)
+     * @return the (interim) edge function from the result
+     */
+    private def handleEdgeFunctionResult(
+        edgeFunctionResult: EdgeFunctionResult[Value],
+        continuation:       () => Unit
+    )(implicit s: State): EdgeFunction[Value] = {
         edgeFunctionResult match {
             case FinalEdgeFunction(edgeFunction) =>
                 edgeFunction
@@ -695,7 +706,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 dependees.foreach { dependee =>
                     s.addDependee(
                         dependee,
-                        () => s.enqueuePath(path)
+                        continuation
                     )
                 }
                 intermediateEdgeFunction
