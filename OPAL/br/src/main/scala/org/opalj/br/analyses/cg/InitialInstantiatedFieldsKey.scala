@@ -1,11 +1,20 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.analyses.cg
 
-import net.ceedubs.ficus.Ficus._
-import org.opalj.br.{Field, ReferenceType}
-import org.opalj.br.analyses.{ProjectInformationKey, ProjectInformationKeys, SomeProject}
+import org.opalj.br.Field
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
 
-object InitialInstantiatedFieldsKey extends ProjectInformationKey[Iterable[(Field, UIDSet[ReferenceType])], Nothing]{
+import net.ceedubs.ficus.Ficus._
+
+/**
+ * The ProjectInformationKey to iterate all fields that shall be considered to be instantiated by default. Each field
+ * is associated with a set of ReferenceTypes to be considered instantiated for this field.
+ */
+object InitialInstantiatedFieldsKey extends ProjectInformationKey[Iterable[(Field, UIDSet[ReferenceType])], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialInstantiatedFieldsKey."
 
@@ -14,7 +23,7 @@ object InitialInstantiatedFieldsKey extends ProjectInformationKey[Iterable[(Fiel
     override def compute(project: SomeProject): Iterable[(Field, UIDSet[ReferenceType])] = {
         val key = ConfigKeyPrefix + "analysis"
         val configuredAnalysis = project.config.as[Option[String]](key)
-        if(configuredAnalysis.isEmpty) {
+        if (configuredAnalysis.isEmpty) {
             throw new IllegalArgumentException(
                 "No InitialInstantiatedFieldsKey configuration available; Instantiated fields cannot be computed!"
             )

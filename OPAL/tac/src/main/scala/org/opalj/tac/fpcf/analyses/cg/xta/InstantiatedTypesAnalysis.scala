@@ -7,6 +7,7 @@ package cg
 package xta
 
 import scala.collection.mutable.ArrayBuffer
+
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
@@ -18,7 +19,10 @@ import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.{ClosedPackagesKey, InitialEntryPointsKey, InitialInstantiatedFieldsKey, InitialInstantiatedTypesKey}
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedFieldsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -335,7 +339,7 @@ class InstantiatedTypesAnalysisScheduler(
 
         // During system initialization, some native methods are called to set certain fields.
         // These fields can be set as instantiated via the configuration, see InitialFieldsFinder.
-        initialInstantiatedFields.foreach{ case (f: Field, t: UIDSet[ReferenceType]) => initializeField(f, t) }
+        initialInstantiatedFields.foreach { case (f: Field, t: UIDSet[ReferenceType]) => initializeField(f, t) }
 
         def isRelevantArrayType(rt: Type): Boolean =
             rt.isArrayType && rt.asArrayType.elementType.isObjectType
