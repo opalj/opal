@@ -14,7 +14,7 @@ import com.typesafe.config.Config
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.{debug => trace}
+import org.opalj.log.OPALLogger.debug as trace
 import org.opalj.log.OPALLogger.info
 
 /**
@@ -677,7 +677,9 @@ final class PKESequentialPropertyStore protected (
         }
     }
 
-    override def isIdle: Boolean = tasksManager.isEmpty
+    var idle: Boolean = true
+
+    override def isIdle: Boolean = idle
 
     protected[this] def processTasks(): Unit = {
         while (!tasksManager.isEmpty) {
@@ -691,6 +693,7 @@ final class PKESequentialPropertyStore protected (
     }
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
+        idle = false
         require(subPhaseId == 0, "unpaired waitOnPhaseCompletion call")
 
         if (triggeredComputations.exists(_.nonEmpty)) {
@@ -822,7 +825,7 @@ final class PKESequentialPropertyStore protected (
                 )
             }
         } while (continueComputation)
-
+        idle = true
         if (exception != null) throw exception;
     }
 

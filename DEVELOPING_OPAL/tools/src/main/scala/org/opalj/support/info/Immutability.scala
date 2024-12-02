@@ -66,6 +66,7 @@ import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+//import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
@@ -147,6 +148,7 @@ object Immutability {
 
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
+                // EagerL2FieldAssignabilityAnalysis,
                 LazyL2FieldAssignabilityAnalysis,
                 LazyFieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
