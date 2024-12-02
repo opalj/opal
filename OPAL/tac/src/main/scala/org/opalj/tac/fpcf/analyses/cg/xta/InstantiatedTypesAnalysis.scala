@@ -7,7 +7,6 @@ package cg
 package xta
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
@@ -19,9 +18,7 @@ import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.analyses.cg.{ClosedPackagesKey, InitialEntryPointsKey, InitialInstantiatedFieldsKey, InitialInstantiatedTypesKey}
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -302,6 +299,7 @@ class InstantiatedTypesAnalysisScheduler(
         val declaredFields = p.get(DeclaredFieldsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
         val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
+        val initialInstantiatedFields = p.get(InitialInstantiatedFieldsKey)
 
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
@@ -322,18 +320,11 @@ class InstantiatedTypesAnalysisScheduler(
             }
         }
 
-        // Marks the field of class java/lang/System with the given name as instantiated by default
-        // This only works if the RTJar is loaded - otherwise, the initial instantiated types being
-        // set for 'ExternalWorld' should take care of making these types accessible.
-        def initializeSystemField(fieldName: String): Unit = {
-            p.classFile(ObjectType.System).foreach { systemCf =>
-                systemCf.findField(fieldName).foreach { systemField =>
-                    if (systemField.fieldType.isReferenceType) {
-                        val declaredField = declaredFields(systemField)
-                        initialize(selectSetEntity(declaredField), UIDSet(systemField.fieldType.asReferenceType))
-                    }
-                }
-            }
+        // Marks a given field as having its declared field type instantiated by default - only if field is of a
+        // reference type
+        def initializeField(field: Field, typesToConsider: UIDSet[ReferenceType]): Unit = {
+            val fieldSetEntity = selectSetEntity(declaredFields(field))
+            initialize(fieldSetEntity, typesToConsider)
         }
 
         // Some cooperative analyses originally meant for RTA may require the global type set
@@ -342,12 +333,9 @@ class InstantiatedTypesAnalysisScheduler(
         initialize(p, UIDSet(ObjectType.String, ObjectType.Class))
         initialize(ExternalWorld, initialInstantiatedTypes)
 
-        // During system initialization, some native methods are called to set certain fields in
-        // the java/lang/System class, namely "PrintStream out", "InputStream in" and "PrintStream
-        // err" - since we can't detect those native calls, we manually mark them as instantiated.
-        initializeSystemField("out")
-        initializeSystemField("in")
-        initializeSystemField("err")
+        // During system initialization, some native methods are called to set certain fields.
+        // These fields can be set as instantiated via the configuration, see InitialFieldsFinder.
+        initialInstantiatedFields.foreach{ case (f: Field, t: UIDSet[ReferenceType]) => initializeField(f, t) }
 
         def isRelevantArrayType(rt: Type): Boolean =
             rt.isArrayType && rt.asArrayType.elementType.isObjectType

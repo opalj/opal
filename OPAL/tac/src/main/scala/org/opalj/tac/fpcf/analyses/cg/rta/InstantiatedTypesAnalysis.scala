@@ -7,13 +7,12 @@ package cg
 package rta
 
 import scala.language.existentials
-
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.analyses.cg.{InitialInstantiatedFieldsKey, InitialInstantiatedTypesKey}
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -237,7 +236,10 @@ object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSche
     }
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
-        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
+        // Initialize with the initial instantiated types and fields
+        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*) ++
+            p.get(InitialInstantiatedFieldsKey).flatMap(_._2)
+
 
         ps.preInitialize[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key) {
             case _: EPK[_, _] => InterimEUBP(p, InstantiatedTypes(initialInstantiatedTypes))
