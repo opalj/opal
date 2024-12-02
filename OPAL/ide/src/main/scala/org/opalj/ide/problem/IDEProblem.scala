@@ -49,6 +49,16 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     ): collection.Set[Fact] = immutable.Set.empty
 
     /**
+     * Generate an edge function for a flow starting with an additional seeds
+     * @param stmt the start statement
+     * @param fact the start fact
+     * @param callee the analyzed callable
+     */
+    def getAdditionalSeedsEdgeFunction(stmt: Statement, fact: Fact, callee: Callable)(
+        implicit @unused propertyStore: PropertyStore
+    ): EdgeFunctionResult[Value] = identityEdgeFunction
+
+    /**
      * Generate a flow function for a normal flow
      * @param source where the normal flow starts
      * @param sourceFact the fact the flow starts with

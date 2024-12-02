@@ -72,6 +72,12 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         baseProblem.getAdditionalSeeds(stmt, callee)
     }
 
+    override def getAdditionalSeedsEdgeFunction(stmt: Statement, fact: Fact, callee: Callable)(
+        implicit propertyStore: PropertyStore
+    ): EdgeFunctionResult[Value] = {
+        baseProblem.getAdditionalSeedsEdgeFunction(stmt, fact, callee)
+    }
+
     override def getNormalFlowFunction(
         source:     Statement,
         sourceFact: Fact,

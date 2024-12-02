@@ -434,8 +434,17 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
             problem.getAdditionalSeeds(stmt, callable).foreach { fact =>
                 val path = ((stmt, problem.nullFact), (stmt, fact))
-                s.enqueuePath(path)
                 s.setJumpFunction(path, identityEdgeFunction)
+                def processAdditionalSeed(): Unit = {
+                    val edgeFunction =
+                        handleEdgeFunctionResult(
+                            problem.getAdditionalSeedsEdgeFunction(stmt, fact, callable),
+                            processAdditionalSeed _
+                        )
+                    s.setJumpFunction(path, s.getJumpFunction(path).meetWith(edgeFunction))
+                    s.enqueuePath(path)
+                }
+                processAdditionalSeed()
             }
         }
 
