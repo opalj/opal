@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.analyses.cg
+package org.opalj
+package br
+package analyses
+package cg
 
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
