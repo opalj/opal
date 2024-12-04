@@ -2,9 +2,11 @@
 package org.opalj.fpcf.properties.lcp_on_fields
 
 import org.opalj.br.AnnotationLike
+import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.fpcf.properties.AbstractRepeatablePropertyMatcher
 import org.opalj.ide.integration.BasicIDEProperty
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields
@@ -226,6 +228,127 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher {
                     .toMap
             Some(
                 s"Result should contain (${lcp_on_fields.problem.ArrayFact(expectedVariableName, 0)}, ArrayValue(?, $expectedElements)"
+            )
+        }
+    }
+}
+
+/**
+ * Matcher for [[StaticValues]] annotations
+ */
+class StaticValuesMatcher extends AbstractPropertyMatcher {
+    private val annotationType: ObjectType =
+        ObjectType("org/opalj/fpcf/properties/lcp_on_fields/ObjectValue")
+
+    private val constantValueType = ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/ConstantValue")
+    private val variableValueType = ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/VariableValue")
+    private val unknownValueType = ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/UnknownValue")
+
+    override def validateProperty(
+        p:          Project[?],
+        as:         Set[ObjectType],
+        entity:     Any,
+        a:          AnnotationLike,
+        properties: Iterable[Property]
+    ): Option[String] = {
+        val entityObjectType = entity.asInstanceOf[Method].classFile.thisType
+
+        val expectedConstantValues =
+            getValue(p, annotationType, a.elementValuePairs, "constantValues").asArrayValue.values
+                .map { a =>
+                    val annotation = a.asAnnotationValue.annotation
+                    val expectedFieldName =
+                        getValue(p, constantValueType, annotation.elementValuePairs, "variable").asStringValue.value
+                    val expectedValue =
+                        getValue(p, constantValueType, annotation.elementValuePairs, "value").asIntValue.value
+
+                    (expectedFieldName, expectedValue)
+                }
+
+        val expectedVariableValues =
+            getValue(p, annotationType, a.elementValuePairs, "variableValues").asArrayValue.values
+                .map { a =>
+                    val annotation = a.asAnnotationValue.annotation
+                    val expectedFieldName =
+                        getValue(p, variableValueType, annotation.elementValuePairs, "variable").asStringValue.value
+
+                    expectedFieldName
+                }
+
+        val expectedUnknownValues =
+            getValue(p, annotationType, a.elementValuePairs, "unknownValues").asArrayValue.values
+                .map { a =>
+                    val annotation = a.asAnnotationValue.annotation
+                    val expectedFieldName =
+                        getValue(p, unknownValueType, annotation.elementValuePairs, "variable").asStringValue.value
+
+                    expectedFieldName
+                }
+
+        if (properties.exists {
+                case property: BasicIDEProperty[?, ?] =>
+                    expectedConstantValues.forall {
+                        case (fieldName, value) =>
+                            property.results.exists {
+                                case (
+                                        f: lcp_on_fields.problem.AbstractStaticFieldFact,
+                                        lcp_on_fields.problem.StaticFieldValue(v)
+                                    ) =>
+                                    f.objectType == entityObjectType && f.fieldName == fieldName &&
+                                        (v match {
+                                            case linear_constant_propagation.problem.ConstantValue(c) => value == c
+                                            case _                                                    => false
+                                        })
+
+                                case _ => false
+                            }
+                    } &&
+                        expectedVariableValues.forall { fieldName =>
+                            property.results.exists {
+                                case (
+                                        f: lcp_on_fields.problem.AbstractStaticFieldFact,
+                                        lcp_on_fields.problem.StaticFieldValue(v)
+                                    ) =>
+                                    f.objectType == entityObjectType && f.fieldName == fieldName &&
+                                        v == linear_constant_propagation.problem.VariableValue
+
+                                case _ => false
+                            }
+                        } &&
+                        expectedUnknownValues.forall { fieldName =>
+                            property.results.exists {
+                                case (
+                                        f: lcp_on_fields.problem.AbstractStaticFieldFact,
+                                        lcp_on_fields.problem.StaticFieldValue(v)
+                                    ) =>
+                                    f.objectType == entityObjectType && f.fieldName == fieldName &&
+                                        v == linear_constant_propagation.problem.UnknownValue
+
+                                case _ => false
+                            }
+                        }
+
+                case _ => false
+            }
+        ) {
+            None
+        } else {
+            val expectedValues =
+                expectedConstantValues
+                    .map { case (fieldName, c) => fieldName -> linear_constant_propagation.problem.ConstantValue(c) }
+                    .concat(expectedVariableValues.map { fieldName =>
+                        fieldName -> linear_constant_propagation.problem.VariableValue
+                    })
+                    .concat(expectedUnknownValues.map { fieldName =>
+                        fieldName -> linear_constant_propagation.problem.UnknownValue
+                    })
+                    .toMap
+            Some(
+                s"Result should contain ${expectedValues.map {
+                        case (fieldName, value) =>
+                            s"(${lcp_on_fields.problem.StaticFieldFact(entityObjectType, fieldName)}, ${lcp_on_fields.problem.StaticFieldValue(value)})"
+
+                    }}"
             )
         }
     }

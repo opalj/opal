@@ -1,32 +1,32 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.lcp_on_fields;
 
+import org.opalj.fpcf.properties.lcp_on_fields.StaticValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValues;
 
 public class StaticFieldNonImmutableExample {
-    private static int a = 11;
-    static int b = 42;
-    protected static int c = 23;
+    static int a = 42;
+    protected static int b = 23;
 
+    @StaticValues(variableValues = {
+            @VariableValue(variable = "a"),
+            @VariableValue(variable = "b")
+    })
     @VariableValues({
-            @VariableValue(variable = "lv2"),
-            @VariableValue(variable = "lv3"),
-            @VariableValue(variable = "lv4")
+            @VariableValue(variable = "lv0"),
+            @VariableValue(variable = "lv1")
     })
     public static void main(String[] args) {
-        a = 12;
-
         int a = StaticFieldNonImmutableExample.a;
         int b = StaticFieldNonImmutableExample.b;
-        int c = StaticFieldNonImmutableExample.c;
 
-        System.out.println("a: " + a + ", b: " + b + ", c: " + c);
+        System.out.println("a: " + a + ", b: " + b);
     }
 }
 
 class StaticFieldNonImmutable2Example {
     void foobar() {
-        StaticFieldNonImmutableExample.b = 23;
+        StaticFieldNonImmutableExample.a = 23;
     }
 }

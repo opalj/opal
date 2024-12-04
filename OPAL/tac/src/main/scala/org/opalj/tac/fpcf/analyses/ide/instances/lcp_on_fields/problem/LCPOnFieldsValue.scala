@@ -34,6 +34,15 @@ case class ArrayValue(
 }
 
 /**
+ * Value representing the value of a static field
+ */
+case class StaticFieldValue(
+    value: LinearConstantPropagationValue
+) extends LCPOnFieldsValue {
+    override def toString: String = s"StaticFieldValue($value)"
+}
+
+/**
  * Value is variable (not really used currently, mainly for completeness)
  */
 case object VariableValue extends LCPOnFieldsValue

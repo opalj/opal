@@ -313,6 +313,53 @@ case class PutElementEdgeFunction(
 }
 
 /**
+ * Edge function modeling the effect of when a static field gets written
+ */
+case class PutStaticFieldEdgeFunction(
+    value: LinearConstantPropagationValue
+) extends EdgeFunction[LCPOnFieldsValue] {
+    override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue = {
+        StaticFieldValue(value)
+    }
+
+    override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+        secondEdgeFunction match {
+            case PutStaticFieldEdgeFunction(_) => secondEdgeFunction
+
+            case IdentityEdgeFunction()   => this
+            case AllTopEdgeFunction(_)    => secondEdgeFunction
+            case AllBottomEdgeFunction(_) => secondEdgeFunction
+
+            case _ =>
+                throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
+        }
+    }
+
+    override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+        otherEdgeFunction match {
+            case PutStaticFieldEdgeFunction(value2) =>
+                PutStaticFieldEdgeFunction(
+                    LinearConstantPropagationLattice.meet(value, value2)
+                )
+
+            case IdentityEdgeFunction()   => this
+            case AllTopEdgeFunction(_)    => this
+            case AllBottomEdgeFunction(_) => otherEdgeFunction
+
+            case _ =>
+                throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
+        }
+    }
+
+    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+        (otherEdgeFunction eq this) ||
+            (otherEdgeFunction match {
+                case PutStaticFieldEdgeFunction(value2) => value == value2
+                case _                                  => false
+            })
+}
+
+/**
  * Edge function for cases where a value is unknown
  */
 object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](UnknownValue) {
@@ -321,6 +368,9 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
     ): EdgeFunction[LCPOnFieldsValue] = {
         this
     }
+
+    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+        otherEdgeFunction eq this
 
     override def toString: String = "UnknownValueEdgeFunction()"
 }

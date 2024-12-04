@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem
 
+import org.opalj.br.ObjectType
 import org.opalj.ide.problem.IDEFact
 
 /**
@@ -92,4 +93,37 @@ case class NewArrayFact(name: String, definedAtIndex: Int) extends AbstractArray
  */
 case class PutElementFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
     override def toString: String = s"PutElementFact($name)"
+}
+
+/**
+ * Type for facts for static fields
+ */
+trait AbstractStaticFieldFact extends LCPOnFieldsFact {
+    /**
+     * The object type the field belongs to
+     */
+    val objectType: ObjectType
+
+    /**
+     * The name of the field
+     */
+    val fieldName: String
+
+    def toStaticFieldFact: AbstractStaticFieldFact = StaticFieldFact(objectType, fieldName)
+}
+
+/**
+ * Fact representing a seen static field
+ */
+case class StaticFieldFact(objectType: ObjectType, fieldName: String) extends AbstractStaticFieldFact {
+    override def toStaticFieldFact: StaticFieldFact = this
+
+    override def toString: String = s"StaticFieldFact(${objectType.simpleName}, $fieldName)"
+}
+
+/**
+ * Fact representing a seen static field and modeling that it gets written
+ */
+case class PutStaticFieldFact(objectType: ObjectType, fieldName: String) extends AbstractStaticFieldFact {
+    override def toString: String = s"PutStaticFieldFact(${objectType.simpleName}, $fieldName)"
 }

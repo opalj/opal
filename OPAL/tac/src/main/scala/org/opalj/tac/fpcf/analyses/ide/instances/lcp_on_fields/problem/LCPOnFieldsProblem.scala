@@ -2,8 +2,16 @@
 package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem
 
 import scala.collection.immutable
+import scala.collection.mutable
 
+import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
+import org.opalj.br.Field
+import org.opalj.br.IntegerType
 import org.opalj.br.Method
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
+import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.Property
@@ -19,11 +27,13 @@ import org.opalj.tac.Assignment
 import org.opalj.tac.New
 import org.opalj.tac.NewArray
 import org.opalj.tac.PutField
+import org.opalj.tac.PutStatic
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
 import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
 
@@ -31,15 +41,135 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
  * Definition of linear constant propagation on fields problem. This implementation detects basic cases of linear
  * constant propagation involving fields. It detects direct field assignments but fails to detect assignments done in a
  * method where the value is passed as an argument (e.g. a classical setter). Similar, array read accesses can only be
- * resolved if the index is a constant literal.
+ * resolved if the index is a constant literal. There also is just minimal support for static fields.
  * This implementation is mainly intended to be an example of a cyclic IDE analysis.
  */
-class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValue] {
+class LCPOnFieldsProblem(
+    project: SomeProject,
+    icfg:    JavaICFG
+) extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValue] {
+    private val declaredFields = project.get(DeclaredFieldsKey)
+
     override val nullFact: LCPOnFieldsFact =
         NullFact
 
     override val lattice: MeetLattice[LCPOnFieldsValue] =
         LCPOnFieldsLattice
+
+    override def getAdditionalSeeds(stmt: JavaStatement, callee: Method)(
+        implicit propertyStore: PropertyStore
+    ): collection.Set[LCPOnFieldsFact] = {
+        callee.classFile.fields.filter(_.isStatic).map { field =>
+            StaticFieldFact(field.classFile.thisType, field.name)
+        }.toSet
+    }
+
+    override def getAdditionalSeedsEdgeFunction(stmt: JavaStatement, fact: LCPOnFieldsFact, callee: Method)(
+        implicit propertyStore: PropertyStore
+    ): EdgeFunctionResult[LCPOnFieldsValue] = {
+        fact match {
+            case f @ StaticFieldFact(_, _) => getEdgeFunctionForStaticFieldFactByImmutability(f)
+            case _                         => super.getAdditionalSeedsEdgeFunction(stmt, fact, callee)
+        }
+    }
+
+    private def getEdgeFunctionForStaticFieldFactByImmutability(staticFieldFact: StaticFieldFact)(
+        implicit propertyStore: PropertyStore
+    ): EdgeFunctionResult[LCPOnFieldsValue] = {
+        val declaredField =
+            declaredFields(
+                staticFieldFact.objectType,
+                staticFieldFact.fieldName,
+                IntegerType
+            )
+        if (!declaredField.isDefinedField) {
+            return identityEdgeFunction
+        }
+        val field = declaredField.definedField
+
+        /* We enhance the analysis with immutability information. When a static field is immutable and we have knowledge
+         * of an assignment site, then this will always be the value of the field. This way we can make this analysis
+         * more precise without the need to add precise handling of static initializers. */
+        val fieldImmutabilityEOptionP = propertyStore(field, FieldImmutability.key)
+
+        fieldImmutabilityEOptionP match {
+            case FinalP(fieldImmutability) =>
+                fieldImmutability match {
+                    case TransitivelyImmutableField =>
+                        val value = getValueForGetStaticExprByStaticInitializer(field)
+                        FinalEdgeFunction(PutStaticFieldEdgeFunction(value))
+                    case _ =>
+                        FinalEdgeFunction(PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue))
+                }
+
+            case InterimUBP(fieldImmutability) =>
+                fieldImmutability match {
+                    case TransitivelyImmutableField =>
+                        val value = getValueForGetStaticExprByStaticInitializer(field)
+                        InterimEdgeFunction(PutStaticFieldEdgeFunction(value), immutable.Set(fieldImmutabilityEOptionP))
+                    case _ =>
+                        FinalEdgeFunction(PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue))
+                }
+
+            case _ =>
+                InterimEdgeFunction(
+                    PutStaticFieldEdgeFunction(linear_constant_propagation.problem.UnknownValue),
+                    immutable.Set(fieldImmutabilityEOptionP)
+                )
+        }
+    }
+
+    private def getValueForGetStaticExprByStaticInitializer(field: Field): LinearConstantPropagationValue = {
+        var value: LinearConstantPropagationValue = linear_constant_propagation.problem.UnknownValue
+
+        /* Search for statements that write the field in static initializer of the class belonging to the field. */
+        field.classFile.staticInitializer match {
+            case Some(method) =>
+                var workingStmts: mutable.Set[JavaStatement] = mutable.Set.from(icfg.getStartStatements(method))
+                val seenStmts = mutable.Set.empty[JavaStatement]
+
+                while (workingStmts.nonEmpty) {
+                    workingStmts.foreach { stmt =>
+                        stmt.stmt.astID match {
+                            case PutStatic.ASTID =>
+                                val putStatic = stmt.stmt.asPutStatic
+                                if (field.classFile.thisType == putStatic.declaringClass &&
+                                    field.name == putStatic.name
+                                ) {
+                                    stmt.stmt.asPutStatic.value.asVar.value match {
+                                        case intRange: DefaultIntegerRangeValues#IntegerRange =>
+                                            if (intRange.lowerBound == intRange.upperBound) {
+                                                value = LinearConstantPropagationLattice.meet(
+                                                    value,
+                                                    linear_constant_propagation.problem.ConstantValue(intRange.upperBound)
+                                                )
+                                            } else {
+                                                return linear_constant_propagation.problem.VariableValue
+                                            }
+
+                                        case _ =>
+                                            return linear_constant_propagation.problem.VariableValue
+                                    }
+                                }
+
+                            case _ =>
+                        }
+                    }
+
+                    seenStmts.addAll(workingStmts)
+                    workingStmts = workingStmts.foldLeft(mutable.Set.empty[JavaStatement]) { (nextStmts, stmt) =>
+                        nextStmts.addAll(icfg.getNextStatements(stmt))
+                    }.diff(seenStmts)
+                }
+
+            case _ =>
+        }
+
+        value match {
+            case linear_constant_propagation.problem.UnknownValue => linear_constant_propagation.problem.ConstantValue(0)
+            case _                                                => value
+        }
+    }
 
     override def getNormalFlowFunction(
         source:     JavaStatement,
@@ -96,6 +226,48 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
                         /* Specialized facts only live for one step and are turned back into basic ones afterwards */
                         immutable.Set(f.toObjectOrArrayFact)
 
+                    /* Static fields are modeled such that statements that change their value can always originate from
+                     * the null fact */
+                    case (PutStatic.ASTID, NullFact) =>
+                        val putStatic = source.stmt.asPutStatic
+
+                        /* Only fields of type integer */
+                        if (putStatic.declaredFieldType.isIntegerType) {
+                            val declaredField =
+                                declaredFields(
+                                    putStatic.declaringClass,
+                                    putStatic.name,
+                                    putStatic.declaredFieldType
+                                )
+                            if (!declaredField.isDefinedField) {
+                                return immutable.Set(sourceFact)
+                            }
+                            val field = declaredField.definedField
+
+                            /* Only private fields (as they cannot be influenced by other static initializers) */
+                            if (field.isPrivate) {
+                                immutable.Set(sourceFact, PutStaticFieldFact(putStatic.declaringClass, putStatic.name))
+                            } else {
+                                immutable.Set(sourceFact)
+                            }
+                        } else {
+                            immutable.Set(sourceFact)
+                        }
+
+                    case (PutStatic.ASTID, f: AbstractStaticFieldFact) =>
+                        val putStatic = source.stmt.asPutStatic
+
+                        /* Drop existing fact if for the same static field */
+                        if (f.objectType == putStatic.declaringClass && f.fieldName == putStatic.name) {
+                            immutable.Set.empty
+                        } else {
+                            immutable.Set(f.toStaticFieldFact)
+                        }
+
+                    case (_, f: AbstractStaticFieldFact) =>
+                        /* Specialized facts only live for one step and are turned back into basic ones afterwards */
+                        immutable.Set(f.toStaticFieldFact)
+
                     case _ => immutable.Set(sourceFact)
                 }
             }
@@ -118,6 +290,12 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
                         } else if (callee.returnType.isArrayType &&
                                    callee.returnType.asArrayType.componentType.isIntegerType
                         ) {
+                            immutable.Set(callSiteFact)
+                        } else if (callee.classFile.fields.exists { field => field.isStatic } &&
+                                   !callee.classFile.fqn.startsWith("java/") &&
+                                   !callee.classFile.fqn.startsWith("sun/")
+                        ) {
+                            /* The null fact is needed for writing static fields */
                             immutable.Set(callSiteFact)
                         } else {
                             immutable.Set.empty
@@ -143,6 +321,14 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
                                 }
                             }
                             .toSet
+
+                    case f: AbstractStaticFieldFact =>
+                        /* Only propagate fact if the callee can access the corresponding static field */
+                        if (callee.classFile.thisType == f.objectType) {
+                            immutable.Set(f.toStaticFieldFact)
+                        } else {
+                            immutable.Set.empty
+                        }
                 }
             }
         }
@@ -201,6 +387,9 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
                                 case _ => immutable.Set.empty
                             }
                         }
+
+                    case f: AbstractStaticFieldFact =>
+                        immutable.Set(f.toStaticFieldFact)
                 }
             }
         }
@@ -228,6 +417,14 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
                             immutable.Set.empty
                         } else {
                             immutable.Set(f.toObjectOrArrayFact)
+                        }
+
+                    case f: AbstractStaticFieldFact =>
+                        /* Propagate facts that are not propagated via the call flow */
+                        if (callee.classFile.thisType == f.objectType) {
+                            immutable.Set.empty
+                        } else {
+                            immutable.Set(f.toStaticFieldFact)
                         }
                 }
             }
@@ -316,6 +513,36 @@ class LCPOnFieldsProblem extends JavaIDEProblem[LCPOnFieldsFact, LCPOnFieldsValu
                                 linear_constant_propagation.problem.UnknownValue,
                                 linear_constant_propagation.problem.UnknownValue
                             ),
+                            immutable.Set(lcpEOptionP)
+                        )
+                }
+
+            case PutStaticFieldFact(_, _) =>
+                val valueVar = source.stmt.asPutStatic.value.asVar
+
+                val lcpEOptionP =
+                    propertyStore((source.method, source), LinearConstantPropagationPropertyMetaInformation.key)
+
+                /* Decide based on the current result of the linear constant propagation analysis */
+                lcpEOptionP match {
+                    case FinalP(property) =>
+                        val value = getVariableFromProperty(valueVar)(property)
+                        FinalEdgeFunction(PutStaticFieldEdgeFunction(value))
+
+                    case InterimUBP(property) =>
+                        val value = getVariableFromProperty(valueVar)(property)
+                        value match {
+                            case linear_constant_propagation.problem.UnknownValue =>
+                                InterimEdgeFunction(PutStaticFieldEdgeFunction(value), immutable.Set(lcpEOptionP))
+                            case linear_constant_propagation.problem.ConstantValue(_) =>
+                                InterimEdgeFunction(PutStaticFieldEdgeFunction(value), immutable.Set(lcpEOptionP))
+                            case linear_constant_propagation.problem.VariableValue =>
+                                FinalEdgeFunction(PutStaticFieldEdgeFunction(value))
+                        }
+
+                    case _ =>
+                        InterimEdgeFunction(
+                            PutStaticFieldEdgeFunction(linear_constant_propagation.problem.UnknownValue),
                             immutable.Set(lcpEOptionP)
                         )
                 }

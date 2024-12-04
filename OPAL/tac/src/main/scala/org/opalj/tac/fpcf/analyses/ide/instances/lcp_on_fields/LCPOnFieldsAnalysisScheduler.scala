@@ -3,7 +3,10 @@ package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields
 
 import scala.collection.immutable
 
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LCPOnFieldsFact
@@ -28,11 +31,17 @@ abstract class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCP
         LCPOnFieldsFact,
         LCPOnFieldsValue
     ] = {
-        new LCPOnFieldsProblem
+        new LCPOnFieldsProblem(project, icfg)
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation ++ Seq(
+            DeclaredFieldsKey
+        )
 
     override def uses: Set[PropertyBounds] =
         super.uses.union(immutable.Set(
+            PropertyBounds.ub(FieldImmutability),
             PropertyBounds.ub(LinearConstantPropagationPropertyMetaInformation)
         ))
 }
