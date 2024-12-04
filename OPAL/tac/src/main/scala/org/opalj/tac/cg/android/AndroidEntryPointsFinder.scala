@@ -39,7 +39,9 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
         // iterate over launchable classes, collect their respective entry point methods according to config
         for (componentClass <- launchableClasses) {
             for (epd <- entryPointDescriptions) {
-                if (classHierarchy.isASubtypeOf(ReferenceType(componentClass.fqn), ReferenceType(epd.cf)).isYesOrUnknown) {
+                if (
+                    classHierarchy.isASubtypeOf(ReferenceType(componentClass.fqn), ReferenceType(epd.cf)).isYesOrUnknown
+                ) {
                     entryPoints ++= componentClass.findMethod(epd.name, MethodDescriptor(epd.desc))
                 }
             }
