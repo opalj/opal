@@ -633,6 +633,9 @@ class LCPOnFieldsProblem(
                             } else {
                                 immutable.Set.empty
                             }
+
+                        case _: AbstractStaticFieldFact =>
+                            immutable.Set.empty
                     }
                 }
             }
@@ -655,6 +658,9 @@ class LCPOnFieldsProblem(
 
                 case _: AbstractArrayFact =>
                     NewArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
+
+                case _: AbstractStaticFieldFact =>
+                    VariableValueEdgeFunction
 
                 case _ => identityEdgeFunction
             }
