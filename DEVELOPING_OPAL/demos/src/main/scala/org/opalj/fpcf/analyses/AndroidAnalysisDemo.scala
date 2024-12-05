@@ -25,6 +25,11 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
 
     override def description: String = "Parses AndroidManifest.xml to determine entry points"
 
+    override def analysisSpecificParametersDescription: String = {
+        "[-manifest=\"<Path to AndroidManifest.xml " +
+          "(e.g., -manifest=path/to/AndroidManifest.xml) ]"
+    }
+
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
