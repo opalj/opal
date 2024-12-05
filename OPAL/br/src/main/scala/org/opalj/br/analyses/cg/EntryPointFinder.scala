@@ -33,8 +33,7 @@ trait EntryPointFinder {
      * Returns ProjectInformationKeys required by this EntryPointFinder
      * If no extra keys are required, `Nil` can be returned.
      */
-    /*ABSTRACT*/
-    def requirements(project: SomeProject): ProjectInformationKeys = { Nil }
+    def requirements(project: SomeProject): ProjectInformationKeys = Nil
 }
 
 /**
