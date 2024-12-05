@@ -27,7 +27,7 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
 
     override def analysisSpecificParametersDescription: String = {
         "[-manifest=\"<Path to AndroidManifest.xml " +
-          "(e.g., -manifest=path/to/AndroidManifest.xml) ]"
+            "(e.g., -manifest=path/to/AndroidManifest.xml) ]"
     }
 
     override def doAnalyze(
@@ -96,7 +96,7 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
 
         s"""
        | Num Reachable Methods: ${reachableMethods.size}
-       | Num Edges: ${numEdges}
+       | Num Edges: $numEdges
        |
        | CG Analysis took : $callGraphTime seconds
        |
