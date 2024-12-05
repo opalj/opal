@@ -64,6 +64,11 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
 
         val fqn = entryPointFinder.get
         val epFinder = instantiateEntryPointFinder(fqn)
+
+        for (requiredProjectInformationKey <- epFinder.requirements(project)) {
+            project.get(requiredProjectInformationKey)
+        }
+
         epFinder.collectEntryPoints(project)
     }
 
