@@ -28,7 +28,7 @@ object AndroidManifestKey extends ProjectInformationKey[AndroidManifest, String]
     override def requirements(project: SomeProject): ProjectInformationKeys = Nil
 
     override def compute(project: SomeProject): AndroidManifest = {
-        val manifestPath = project.getProjectInformationKeyInitializationData(AndroidManifestKey).getOrElse(
+        val manifestPath: String = project.getProjectInformationKeyInitializationData(AndroidManifestKey).getOrElse(
             throw new IllegalArgumentException("No AndroidManifestKey configured; AndroidManifest can't be parsed")
         )
         parseManifest(project, manifestPath)
