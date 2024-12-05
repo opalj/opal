@@ -31,6 +31,7 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
     override def requirements(project: SomeProject): ProjectInformationKeys = {
         super.requirements(project) ++ Seq(AndroidManifestKey)
     }
+
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val entryPointDescriptions = getConfiguredEntryPoints(project)
         val manifest: AndroidManifest = project.get(AndroidManifestKey)
