@@ -56,8 +56,7 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
-        val remainingParameters =
-            parameters.filter { p => !p.startsWith("-manifest=") }
+        val remainingParameters = parameters.filter { p => !p.startsWith("-manifest=") }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
 
