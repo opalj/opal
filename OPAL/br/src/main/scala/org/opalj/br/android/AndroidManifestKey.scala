@@ -20,17 +20,18 @@ import org.opalj.br.analyses.SomeProject
  *
  * @author Julius Naeumann
  */
-object AndroidManifestKey extends ProjectInformationKey[Option[AndroidManifest], String] {
+object AndroidManifestKey extends ProjectInformationKey[AndroidManifest, String] {
     // Constants for the IntentFilter
     val ACTION_MAIN = "android.intent.action.MAIN"
     val CATEGORY_LAUNCHER = "android.intent.category.LAUNCHER"
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Nil
 
-    override def compute(project: SomeProject): Option[AndroidManifest] = {
-        project.getProjectInformationKeyInitializationData(AndroidManifestKey).map(
-            manifestPath => parseManifest(project, manifestPath)
+    override def compute(project: SomeProject): AndroidManifest = {
+        val manifestPath = project.getProjectInformationKeyInitializationData(AndroidManifestKey).getOrElse(
+            throw new IllegalArgumentException("No AndroidManifestKey configured; AndroidManifest can't be parsed")
         )
+        parseManifest(project, manifestPath)
     }
 
     def parseManifest(project: SomeProject, manifestPath: String): AndroidManifest = {

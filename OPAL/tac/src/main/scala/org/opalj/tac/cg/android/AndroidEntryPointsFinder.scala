@@ -10,6 +10,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.EntryPointFinder
 import org.opalj.br.android.AndroidManifest
@@ -27,9 +28,10 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
 
     val configKey = "org.opalj.tac.cg.android.AndroidEntryPointsFinder.entryPoints"
 
+    override def requirements(project: SomeProject): ProjectInformationKeys = { super.requirements(project) ++ Seq(AndroidManifestKey) }
     override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val entryPointDescriptions = getConfiguredEntryPoints(project)
-        val manifest: AndroidManifest = project.get(AndroidManifestKey).get
+        val manifest: AndroidManifest = project.get(AndroidManifestKey)
 
         // get launcher activities
         val launchableClasses = manifest.activities.filter(_.isLauncherActivity).map(_.cls)
