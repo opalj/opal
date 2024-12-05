@@ -76,6 +76,7 @@ object AndroidAnalysisDemo extends ProjectAnalysisApplication {
             project.get(PropertyStoreKey)
         } { t => propertyStoreTime = t.toSeconds }
 
+        // TODO: make CG analysis configurable once PR226 (improve argument parsing) is merged
         val cg = time {
             project.get(CFA_1_0_CallGraphKey)
         } { t => callGraphTime = t.toSeconds }
