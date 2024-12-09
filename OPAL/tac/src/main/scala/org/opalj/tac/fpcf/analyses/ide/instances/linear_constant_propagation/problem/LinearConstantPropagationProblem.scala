@@ -427,6 +427,14 @@ class LinearConstantPropagationProblem
             case (None, Some(r), BinaryArithmeticOperators.Multiply) =>
                 LinearCombinationEdgeFunction(r, 0)
 
+            case (Some(l), Some(r), BinaryArithmeticOperators.Divide) =>
+                LinearCombinationEdgeFunction(0, l / r)
+            case (_, _, BinaryArithmeticOperators.Divide) =>
+                VariableValueEdgeFunction
+
+            case (_, _, BinaryArithmeticOperators.Modulo) =>
+                VariableValueEdgeFunction
+
             case (None, None, _) =>
                 VariableValueEdgeFunction
 
@@ -435,6 +443,12 @@ class LinearConstantPropagationProblem
             case (_, _, BinaryArithmeticOperators.Or) =>
                 VariableValueEdgeFunction
             case (_, _, BinaryArithmeticOperators.XOr) =>
+                VariableValueEdgeFunction
+            case (_, _, BinaryArithmeticOperators.ShiftLeft) =>
+                VariableValueEdgeFunction
+            case (_, _, BinaryArithmeticOperators.ShiftRight) =>
+                VariableValueEdgeFunction
+            case (_, _, BinaryArithmeticOperators.UnsignedShiftRight) =>
                 VariableValueEdgeFunction
 
             case (_, _, op) =>

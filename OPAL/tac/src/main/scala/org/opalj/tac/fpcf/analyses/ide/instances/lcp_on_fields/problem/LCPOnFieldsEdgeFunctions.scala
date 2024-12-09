@@ -117,13 +117,22 @@ case class PutFieldEdgeFunction(
 
     override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
         otherEdgeFunction match {
-            case ObjectEdgeFunction(_) =>
-                throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
+            case ObjectEdgeFunction(values2) =>
+                ObjectEdgeFunction(
+                    (values2 - fieldName) +
+                        (fieldName -> values2.getOrElse(
+                            fieldName,
+                            linear_constant_propagation.problem.VariableValue
+                        ))
+                )
 
             case PutFieldEdgeFunction(fieldName2, value2) if fieldName == fieldName2 =>
                 PutFieldEdgeFunction(fieldName, LinearConstantPropagationLattice.meet(value, value2))
-            case PutFieldEdgeFunction(_, _) =>
-                throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
+            case PutFieldEdgeFunction(fieldName2, _) =>
+                ObjectEdgeFunction(immutable.Map(
+                    fieldName -> linear_constant_propagation.problem.VariableValue,
+                    fieldName2 -> linear_constant_propagation.problem.VariableValue
+                ))
 
             case IdentityEdgeFunction()   => this
             case AllTopEdgeFunction(_)    => this

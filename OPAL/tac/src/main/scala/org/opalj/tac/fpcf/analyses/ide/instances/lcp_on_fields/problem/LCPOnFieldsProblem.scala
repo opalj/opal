@@ -166,8 +166,13 @@ class LCPOnFieldsProblem(
         }
 
         value match {
-            case linear_constant_propagation.problem.UnknownValue => linear_constant_propagation.problem.ConstantValue(0)
-            case _                                                => value
+            case linear_constant_propagation.problem.UnknownValue =>
+                if (field.isFinal) {
+                    linear_constant_propagation.problem.VariableValue
+                } else {
+                    linear_constant_propagation.problem.ConstantValue(0)
+                }
+            case _ => value
         }
     }
 

@@ -11,6 +11,7 @@ public final class StaticFieldImmutableExample {
     static int b;
     private static int c;
     private static int d;
+    static final int e = 2;
 
     static {
         b = 23;
@@ -27,12 +28,14 @@ public final class StaticFieldImmutableExample {
             @ConstantValue(variable = "b", value = 23),
             @ConstantValue(variable = "d", value = 0)
     }, variableValues = {
-            @VariableValue(variable = "c")
+            @VariableValue(variable = "c"),
+            @VariableValue(variable = "e")
     })
     @ConstantValues({
             @ConstantValue(variable = "lv0", value = 42),
             @ConstantValue(variable = "lv1", value = 23),
-            @ConstantValue(variable = "lv3", value = 0)
+            @ConstantValue(variable = "lv3", value = 0),
+            @ConstantValue(variable = "lv4", value = 2)
     })
     @VariableValue(variable = "lv2")
     public static void main(String[] args) {
@@ -40,7 +43,8 @@ public final class StaticFieldImmutableExample {
         int b = StaticFieldImmutableExample.b;
         int c = StaticFieldImmutableExample.c;
         int d = StaticFieldImmutableExample.d;
+        int e = StaticFieldImmutableExample.e;
 
-        System.out.println("a: " + a + ", b: " + b + ", c: " + c + ", d: " + d);
+        System.out.println("a: " + a + ", b: " + b + ", c: " + c + ", d: " + d + ", e: " + e);
     }
 }
