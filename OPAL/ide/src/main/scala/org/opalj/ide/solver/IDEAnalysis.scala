@@ -290,7 +290,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
      */
     // TODO (IDE) WHAT HAPPENS WHEN ANALYZING MULTIPLE CALLABLES? CAN WE CACHE E.G. JUMP/SUMMARY FUNCTIONS?
     def performAnalysis(callable: Callable): ProperPropertyComputationResult = {
-        logDebug(s"performing ${getClass.getSimpleName} for $callable")
+        logInfo(s"performing ${getClass.getSimpleName} for $callable")
 
         implicit val state: State = new State(callable)
 
