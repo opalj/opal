@@ -28,6 +28,12 @@ sealed trait EntryPointFinder {
      * This method must be implemented by any subtype.
      */
     def collectEntryPoints(project: SomeProject): Iterable[Method] = Set.empty[Method]
+
+    /**
+     * Returns ProjectInformationKeys required by this EntryPointFinder
+     * If no extra keys are required, `Nil` can be returned.
+     */
+    def requirements(project: SomeProject): ProjectInformationKeys = Nil
 }
 
 /**
