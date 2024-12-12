@@ -2,8 +2,12 @@
 package org.opalj
 package fpcf
 
+import scala.annotation.tailrec
+
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
+import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatches
+import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleStrategy
 import org.opalj.graphs.Graph
 import org.opalj.graphs.sccs
 import org.opalj.log.LogContext
@@ -289,153 +293,220 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
             // TODO ....
 
-            var computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
+            val scheduleStrategy = BaseConfig.getInt(AnalysisScheduleStrategy)
+            val scheduleLazyTransformerInAllenBatches =
+                BaseConfig.getBoolean(AnalysisScheduleLazyTransformerInMultipleBatches)
 
-            var scheduleGraph: Map[Int, Set[Int]] = Map.empty
+            if (scheduleStrategy == 1) {
+                // computed in Later Phase und in this phase richtig imp
+                this.scheduleBatches = List(computePhase(ps, allCS, Set.empty))
+            } else if (scheduleStrategy == 2 || scheduleStrategy == 3) {
+                val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
+                var scheduleGraph: Map[Int, Set[Int]] = Map.empty
 
-            def getAllCSFromPropertyBounds(properties: Set[PropertyBounds]): Set[ComputationSpecification[A]] = {
-                def containsProperty(cs: ComputationSpecification[A], property: PropertyBounds): Boolean =
-                    cs.derivesLazily.contains(property) ||
-                        cs.derivesCollaboratively.contains(property) ||
-                        cs.derivesEagerly.contains(property)
+                def getAllCSFromPropertyBounds(properties: Set[PropertyBounds]): Set[ComputationSpecification[A]] = {
+                    def containsProperty(cs: ComputationSpecification[A], property: PropertyBounds): Boolean =
+                        cs.derivesLazily.contains(property) ||
+                            cs.derivesCollaboratively.contains(property) ||
+                            cs.derivesEagerly.contains(property)
 
-                allCS.filter(cs => properties.exists(containsProperty(cs, _)))
-            }
-
-            def mapCSToNum(specifications: Set[ComputationSpecification[A]]): Set[Int] = {
-                specifications.flatMap(computationSpecificationMap.get)
-            }
-
-            def edgeFunctionForSCCS(node: Int): IntIterator = {
-                val edges = scheduleGraph.getOrElse(node, Set.empty).iterator
-                new IntIterator {
-                    def hasNext: Boolean = edges.hasNext
-                    def next(): Int = edges.next()
-                }
-            }
-
-            def allSingleSize(components: List[List[_]]): Boolean = {
-                components.forall(_.size == 1)
-            }
-
-            def searchSCCS(createNewGraph: Boolean): List[List[Int]] = {
-                if (createNewGraph) {
-                    val newGraph = computationSpecificationMap
-                        .groupBy(_._2)
-                        .map { case (num, specs) =>
-                            val nextNodes = specs.flatMap { case (spec, _) =>
-                                val specUses = spec.uses(ps)
-                                val specUsesComputations = getAllCSFromPropertyBounds(specUses)
-                                mapCSToNum(specUsesComputations)
-                            }.toSet
-                            num -> nextNodes
-                        }
-                    scheduleGraph = newGraph
-                }
-                sccs(scheduleGraph.size, edgeFunctionForSCCS)
-            }
-
-            def getAllSccs(componentToCheck: List[List[Int]]): Unit = {
-                val newSpecificationMap = componentToCheck.zipWithIndex.flatMap { case (component, groupIndex) =>
-                    component.map { cs =>
-                        computationSpecificationMap
-                            .find(_._2 == cs)
-                            .map(_._1 -> groupIndex)
-                            .getOrElse(throw new IllegalStateException(s"Unable to find specification for cs: $cs"))
-                    }
-                }.toMap
-                computationSpecificationMap = newSpecificationMap
-
-                val components = searchSCCS(true)
-                if (!allSingleSize(components)) {
-                    getAllSccs(components)
-                }
-            }
-
-            def topologicalSort(graph: Map[Int, Set[Int]]): List[Int] = {
-                var sortedNodes: List[Int] = List.empty
-                var permanent: Set[Int] = Set.empty
-                var temporary: Set[Int] = Set.empty
-
-                val preparedGraph = graph.map { case (node, deps) =>
-                    node -> deps.filter(_ != node)
+                    allCS.filter(cs => properties.exists(containsProperty(cs, _)))
                 }
 
-                def visit(node: Int): Unit = {
-                    if (!permanent.contains(node)) {
-                        temporary = temporary + node
-
-                        preparedGraph.get(node).head.foreach { otherNode => visit(otherNode) }
-
-                        permanent = permanent + node
-                        temporary = temporary - node
-
-                        sortedNodes = sortedNodes :+ node
-                    }
-                    if (temporary.contains(node)) {
-                        throw new IllegalStateException("Graph contains a cycle")
-                    }
-
+                def mapCSToNum(specifications: Set[ComputationSpecification[A]]): Set[Int] = {
+                    specifications.flatMap(computationSpecificationMap.get)
                 }
 
-                for (node <- preparedGraph.keys) {
-                    visit(node)
+                computationSpecificationMap.foreach { csID =>
+                    scheduleGraph += (csID._2 -> mapCSToNum(getAllCSFromPropertyBounds(csID._1.uses(ps))))
                 }
 
-                sortedNodes
-            }
-
-            getAllSccs(searchSCCS(true))
-
-            computationSpecificationMap.groupBy(_._2).foreach {
-                case (num, specs) =>
-                    scheduleGraph.get(num).toList.flatten.foreach { dependency =>
-                        computationSpecificationMap.groupBy(_._2).get(dependency).foreach { depSpecs =>
-                            if (depSpecs.forall(_._1.derivesLazily.nonEmpty)) {
-                                scheduleGraph = scheduleGraph.updated(
-                                    dependency,
-                                    scheduleGraph.get(dependency).head + num
-                                )
+                if (!scheduleLazyTransformerInAllenBatches) {
+                    scheduleGraph.foreach { node =>
+                        if (computationSpecificationMap.find(_._2 == node._1).map(
+                                _._1
+                            ).head.computationType.toString.contains("Lazy") || computationSpecificationMap.find(
+                                _._2 == node._1
+                            ).map(
+                                _._1
+                            ).head.computationType.toString.contains("Transformer")
+                        ) {
+                            scheduleGraph.foreach { subNode =>
+                                if (subNode._2.contains(node._1)) {
+                                    scheduleGraph =
+                                        scheduleGraph +
+                                            (node._1 -> (scheduleGraph.get(node._1).head ++ Set(subNode._1)))
+                                }
                             }
                         }
                     }
-            }
-
-            computationSpecificationMap = searchSCCS(false).zipWithIndex.flatMap { case (component, index) =>
-                computationSpecificationMap
-                    .groupBy(_._2)
-                    .filter { case (num, _) => component.contains(num) }
-                    .flatMap { case (_, specs) =>
-                        specs.map { case (spec, _) => spec -> index }
-                    }
-            }.toMap
-
-            searchSCCS(true)
-
-            val finishedAnalysisMap = computationSpecificationMap
-                .groupBy(_._2)
-                .map { case (num, specs) =>
-                    num -> specs.keySet
                 }
 
-            this.scheduleBatches = topologicalSort(scheduleGraph).foldLeft(
-                (Set.empty[Int], List.empty[PhaseConfiguration[A]])
-            ) { case ((computedProps, batches), currentNode) =>
-                val nextPhaseSchedule = finishedAnalysisMap
-                    .filterNot { case (phaseNum, _) =>
-                        computedProps.contains(phaseNum)
+                def edgeFunctionForSCCS(node: Int): IntIterator = {
+                    val edges = scheduleGraph.getOrElse(node, Set.empty).iterator
+                    new IntIterator {
+                        def hasNext: Boolean = edges.hasNext
+                        def next(): Int = edges.next()
                     }
-                    .values
-                    .flatten
-                    .toSet
+                }
 
-                val currentPhase = computePhase(
-                    ps,
-                    finishedAnalysisMap(currentNode),
-                    nextPhaseSchedule
-                )
-                (computedProps + currentNode, batches :+ currentPhase)
-            }._2
+                def getAllUses(css: List[Int]): Set[PropertyBounds] = {
+                    var allUses: Set[PropertyBounds] = Set.empty
+                    css.foreach { cs =>
+                        allUses = allUses ++ computationSpecificationMap.find(_._2 == cs).map(_._1).head.uses(ps)
+                    }
+                    allUses
+                }
+
+                var aCyclicGraph = sccs(scheduleGraph.size, edgeFunctionForSCCS)
+                    .map(batch => batch -> mapCSToNum(getAllCSFromPropertyBounds(getAllUses(batch))))
+                    .toMap
+
+                var visited: List[List[Int]] = List.empty
+                @tailrec
+                def setLazyInAllBatches(map: Map[List[Int], Set[Int]], firstElement: List[Int]): Unit = {
+                    if (firstElement.forall(csID =>
+                            computationSpecificationMap.find(_._2 == csID).map(
+                                _._1
+                            ).head.computationType.toString.contains("Lazy") ||
+                                computationSpecificationMap.find(_._2 == csID).map(
+                                    _._1
+                                ).head.computationType.toString.contains("Transformer")
+                        )
+                    ) {
+                        var existInSomeBatch = false
+                        map.foreach { batch =>
+                            if (batch._2.toList.intersect(firstElement).nonEmpty && batch._1 != firstElement) {
+                                aCyclicGraph = aCyclicGraph + ((batch._1 ++ firstElement) -> mapCSToNum(
+                                    getAllCSFromPropertyBounds(getAllUses((batch._1 ++ firstElement)))
+                                ).diff((batch._1 ++ firstElement).toSet))
+                                aCyclicGraph = aCyclicGraph - batch._1
+                                existInSomeBatch = true
+                            }
+                        }
+                        if (existInSomeBatch) {
+                            aCyclicGraph = aCyclicGraph - firstElement
+                            setLazyInAllBatches(aCyclicGraph, aCyclicGraph.head._1)
+                        } else {
+                            visited = visited :+ firstElement
+                            val keyList = aCyclicGraph.keys.toSet -- visited
+                            if (keyList.nonEmpty) {
+                                setLazyInAllBatches(aCyclicGraph, keyList.head)
+                            }
+                        }
+                    } else {
+                        visited = visited :+ firstElement
+                        val keyList = aCyclicGraph.keys.toSet -- visited
+                        if (keyList.nonEmpty) {
+                            setLazyInAllBatches(aCyclicGraph, keyList.head)
+                        }
+                    }
+                }
+
+                if (scheduleLazyTransformerInAllenBatches) {
+                    setLazyInAllBatches(aCyclicGraph, aCyclicGraph.head._1)
+                }
+
+                val preparedGraph = aCyclicGraph.map { case (nodes, deps) =>
+                    nodes -> (deps -- nodes).toList
+                }
+
+                var transformingMap: Map[Int, List[Int]] = Map.empty
+                var counter = 0
+                preparedGraph.foreach { node =>
+                    transformingMap = transformingMap + (counter -> node._1)
+                    counter = counter + 1
+                }
+
+                val preparedGraph2 = preparedGraph.map { case (node, deps) =>
+                    var dependencies: List[Int] = List.empty
+
+                    transformingMap.foreach { tuple =>
+                        if (tuple._2.intersect(deps.toList).nonEmpty) {
+                            dependencies = dependencies :+ tuple._1
+                        }
+                    }
+
+                    transformingMap.find(_._2 == node).map(_._1).head -> dependencies
+                }
+
+//                if (scheduleStrategy == 3) {
+//                    def mergeIndependentBatches() {
+//                        var allUses: Set[Int] = Set.empty
+//                        def getUses(batch: Int): Set[Int] = {
+//
+//                            val uses = preparedGraph2.get(batch).head
+//                            allUses = allUses ++ uses
+//
+//                            uses.foreach { otherBatch => getUses(otherBatch) }
+//
+//                            val returnUses = allUses
+//                            returnUses
+//                        }
+//
+//                        var map: Map[Int, Set[Int]] = Map.empty
+//                        preparedGraph2.foreach { batch =>
+//                            val tempUses = getUses(batch._1)
+//                            map = map + (batch._1 -> tempUses)
+//                            allUses = Set.empty
+//                        }
+//                    }
+//                    print("§")
+//                }
+
+                print("")
+
+                def topologicalSort(graph: Map[Int, List[Int]]): List[Int] = {
+                    var sortedNodes: List[Int] = List.empty
+                    var permanent: Set[Int] = Set.empty
+                    var temporary: Set[Int] = Set.empty
+
+                    val preparedGraph = graph.map { case (node, deps) =>
+                        node -> deps.filter(_ != node)
+                    }
+
+                    def visit(node: Int): Unit = {
+                        if (!permanent.contains(node)) {
+                            if (temporary.contains(node)) {
+                                throw new IllegalStateException("Graph contains a cycle")
+                            }
+                            temporary = temporary + node
+
+                            preparedGraph.get(node).head.foreach { otherNode => visit(otherNode) }
+
+                            permanent = permanent + node
+                            temporary = temporary - node
+
+                            sortedNodes = sortedNodes :+ node
+                        }
+
+                    }
+
+                    for (node <- preparedGraph.keys) {
+                        visit(node)
+                    }
+
+                    sortedNodes
+                }
+
+                val batchOrder = topologicalSort(preparedGraph2)
+
+                var alreadyScheduledCS: Set[ComputationSpecification[A]] = Set.empty
+                batchOrder.foreach { batch =>
+                    var scheduledInThisPhase: Set[ComputationSpecification[A]] = Set.empty
+                    transformingMap.get(batch).head.foreach { csID =>
+                        scheduledInThisPhase =
+                            scheduledInThisPhase + computationSpecificationMap.find(_._2 == csID).map(_._1).head
+                    }
+                    this.scheduleBatches = this.scheduleBatches :+ computePhase(
+                        ps,
+                        scheduledInThisPhase,
+                        (allCS -- scheduledInThisPhase -- alreadyScheduledCS)
+                    )
+                    alreadyScheduledCS = alreadyScheduledCS ++ scheduledInThisPhase
+                }
+
+            }
 
         } { t => OPALLogger.info("scheduler", s"initialization of Scheduler took ${t.toSeconds}") }
 
@@ -502,6 +573,9 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 object AnalysisScenario {
 
     final val AnalysisAutoConfigKey = "org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfig"
+    final val AnalysisScheduleStrategy = "org.opalj.fpcf.AnalysisScenario.ScheduleStrategy"
+    final val AnalysisScheduleLazyTransformerInMultipleBatches =
+        "org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatches"
 
     /**
      * @param analyses The set of analyses that should be executed as part of this analysis scenario.

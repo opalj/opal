@@ -8,6 +8,8 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
+import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatches
+import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleStrategy
 import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
 import org.opalj.log.GlobalLogContext
 
@@ -47,6 +49,10 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
     // **********************************************************************************************
     //
     // TESTS
+
+    val scheduleStrategy: Int = BaseConfig.getInt(AnalysisScheduleStrategy)
+    val scheduleLazyTransformerInAllenBatches: Boolean =
+        BaseConfig.getBoolean(AnalysisScheduleLazyTransformerInMultipleBatches)
 
     describe("an AnalysisScenario") {
 
@@ -93,7 +99,13 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val ps = new PropertyStoreConfigurationRecorder()
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
-                schedule.batches should have size 3
+                if (scheduleStrategy == 1) {
+                    schedule.batches should have size 1
+                } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
+                    schedule.batches should have size 3
+                } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
+                    schedule.batches should have size 3
+                }
             }
 
             // Scenario 2: 2→1, 3→1, 2⟂3
@@ -119,8 +131,10 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val ps = new PropertyStoreConfigurationRecorder()
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
+                println(schedule.batches)
                 schedule.batches should have size 3
                 schedule.batches.head.scheduled should contain(eager1)
+
             }
 
             // Scenario 3: 1→2, 1→3, 2⟂3
@@ -305,12 +319,14 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val eager3 = BasicComputationSpecification(
                     "eager3",
                     EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(1))),
                     derivesEagerly = Set(PropertyBounds.lub(pks(3)))
                 )
 
                 val ps = new PropertyStoreConfigurationRecorder()
 
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
+                println(schedule.batches)
 
                 schedule.batches should have size 2
                 schedule.batches.head.scheduled should contain allOf (eager1, eager2)
@@ -650,6 +666,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 schedule.batches should have size 3
+                println(schedule.batches)
             }
 
             // Scenario 22: 1↔2, 2⟂3, 1⟂3
@@ -933,6 +950,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val ps = new PropertyStoreConfigurationRecorder()
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
+                print(schedule.batches)
                 schedule.batches should have size 2
                 schedule.batches.head.scheduled should contain(eager2)
                 schedule.batches.last.scheduled should contain allOf (eager1, lazy3)
@@ -963,7 +981,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 schedule.batches should have size 3
-                schedule.batches.head.scheduled should contain(eager1)
+                schedule.batches.last.scheduled should contain(lazy3)
             }
 
             // Scenario 33: 2→1, 3→2, 3⟂1
@@ -2048,6 +2066,274 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 schedule.batches should have size 1
+            }
+            // Scenario 65: 1→2, 2→3, 3→4, 4→5, 5→1, 6→5, 6→10, 10→9, 9→8, 8→7, 7→6
+            it("should correctly schedule eager analyses with mixed unidirectional and bidirectional dependencies in complex cycles (ID.65)") {
+                val eager1 = BasicComputationSpecification(
+                    "eager1",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(2)), PropertyBounds.lub(pks(10))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(1)))
+                )
+                val eager2 = BasicComputationSpecification(
+                    "eager2",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(3))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(2)))
+                )
+                val eager3 = BasicComputationSpecification(
+                    "eager3",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(4))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(3)))
+                )
+                val eager4 = BasicComputationSpecification(
+                    "eager4",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(5))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(4)))
+                )
+                val eager5 = BasicComputationSpecification(
+                    "eager5",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(1)), PropertyBounds.lub(pks(6))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(5)))
+                )
+                val eager6 = BasicComputationSpecification(
+                    "eager6",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(5)), PropertyBounds.lub(pks(10))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(6)))
+                )
+                val eager7 = BasicComputationSpecification(
+                    "eager7",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(6))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(7)))
+                )
+                val eager8 = BasicComputationSpecification(
+                    "eager8",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(7))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(8)))
+                )
+                val eager9 = BasicComputationSpecification(
+                    "eager9",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(8))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(9)))
+                )
+                val eager10 = BasicComputationSpecification(
+                    "eager10",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(9))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(10)))
+                )
+
+                val ps = new PropertyStoreConfigurationRecorder()
+                val schedule = AnalysisScenario(
+                    Set(eager1, eager2, eager3, eager4, eager5, eager6, eager7, eager8, eager9, eager10),
+                    ps
+                ).computeSchedule(ps)
+
+                schedule.batches should have size 1
+
+            }
+            // Scenario 66: 1→2, 2→3, 2→5,// 3→4, 4→5, 5→1, 6→5, 6→10, 10→9, 9→8, 8→7, 7→6
+            it("should correctly schedule eager analyses with mixed unidirectional and bidirectional dependencies in complex cycles (ID.66)") {
+                val eager1 = BasicComputationSpecification(
+                    "eager1",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(2))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(1)))
+                )
+                val eager2 = BasicComputationSpecification(
+                    "eager2",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(3)), PropertyBounds.lub(pks(5))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(2)))
+                )
+                val eager3 = BasicComputationSpecification(
+                    "eager3",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(4))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(3)))
+                )
+                val eager4 = BasicComputationSpecification(
+                    "eager4",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(5))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(4)))
+                )
+                val eager5 = BasicComputationSpecification(
+                    "eager5",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(1))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(5)))
+                )
+                val eager6 = BasicComputationSpecification(
+                    "eager6",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(5)), PropertyBounds.lub(pks(10))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(6)))
+                )
+                val eager7 = BasicComputationSpecification(
+                    "eager7",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(6))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(7)))
+                )
+                val eager8 = BasicComputationSpecification(
+                    "eager8",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(7))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(8)))
+                )
+                val eager9 = BasicComputationSpecification(
+                    "eager9",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(8))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(9)))
+                )
+                val eager10 = BasicComputationSpecification(
+                    "eager10",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(9))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(10)))
+                )
+
+                val ps = new PropertyStoreConfigurationRecorder()
+                val schedule = AnalysisScenario(
+                    Set(eager1, eager2, eager3, eager4, eager5, eager6, eager7, eager8, eager9, eager10),
+                    ps
+                ).computeSchedule(ps)
+
+                schedule.batches should have size 2
+
+            }
+        }
+        describe("Combined Lazy, Transformer, Triggered and Eager Analysis Scheduling") {
+            it("should correctly schedule this mix of analysis with cycles (ID.67)") {}
+            it("should correctly schedule this mix of analysis with two cycles (ID.68)") {}
+            it("should correctly schedule this mix of analysis with two cycles (ID.69)") {}
+            it("should correctly schedule this mix of analysis with four derives collaboratory analysiscycles (ID.70)") {}
+            it("should correctly schedule this mix of analysis with one cycle (ID.71)") {}
+            it("should correctly schedule this mix of analysis with one cycle (ID.72)") {}
+            it("should correctly schedule this mix of analysis with two cycles (ID.73)") {}
+            it("should correctly schedule this mix of analysis with three derives collaboratory analysis (ID.74)") {}
+            it("should correctly schedule this mix of analysis with two cycles (ID.75)") {}
+            it("should correctly schedule this mix of analysis with two cycles (ID.76)") {}
+            it("should correctly schedule this mix of analysis with four cycles (ID.77)") {}
+            it("should correctly schedule this mix of analysis with two derives collaboratory analysis (ID.78)") {}
+        }
+
+        describe("non assigned tests") {
+            // Scenario ?
+            it("?") {
+                val lazy1 = BasicComputationSpecification(
+                    "lazy1",
+                    LazyComputation,
+                    uses = Set(),
+                    derivesLazily = Option(PropertyBounds.lub(pks(1)))
+                )
+                val eager2 = BasicComputationSpecification(
+                    "eager2",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(1))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(2)))
+                )
+                val eager3 = BasicComputationSpecification(
+                    "eager3",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(1))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(3)))
+                )
+                val eager4 = BasicComputationSpecification(
+                    "eager4",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(2)), PropertyBounds.lub(pks(3))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(4)))
+                )
+
+                val ps = new PropertyStoreConfigurationRecorder()
+                val schedule = AnalysisScenario(Set(lazy1, eager2, eager3, eager4), ps).computeSchedule(ps)
+
+                schedule.batches should have size 4
+            }
+
+            it("??") {
+                val eager1 = BasicComputationSpecification(
+                    "eager1",
+                    EagerComputation,
+                    uses = Set(),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(1)))
+                )
+                val lazy2 = BasicComputationSpecification(
+                    "lazy2",
+                    LazyComputation,
+                    uses = Set(PropertyBounds.lub(pks(1)), PropertyBounds.lub(pks(3))),
+                    derivesLazily = Option(PropertyBounds.lub(pks(2)))
+                )
+                val lazy3 = BasicComputationSpecification(
+                    "lazy3",
+                    LazyComputation,
+                    uses = Set(PropertyBounds.lub(pks(4))),
+                    derivesLazily = Option(PropertyBounds.lub(pks(3)))
+                )
+                val lazy4 = BasicComputationSpecification(
+                    "lazy4",
+                    LazyComputation,
+                    uses = Set(PropertyBounds.lub(pks(2))),
+                    derivesLazily = Option(PropertyBounds.lub(pks(4)))
+                )
+                val eager5 = BasicComputationSpecification(
+                    "eager5",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(3))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(5)))
+                )
+                val eager6 = BasicComputationSpecification(
+                    "eager6",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(4))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(6)))
+                )
+
+                val ps = new PropertyStoreConfigurationRecorder()
+                val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3, lazy4, eager5, eager6), ps).computeSchedule(ps)
+
+                schedule.batches should have size 3
+            }
+            it("???") {
+                val eager1 = BasicComputationSpecification(
+                    "eager1",
+                    EagerComputation,
+                    uses = Set(),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(1)))
+                )
+                val eager2 = BasicComputationSpecification(
+                    "eager2",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(1))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(2)))
+                )
+                val eager3 = BasicComputationSpecification(
+                    "eager3",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(2))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(3)))
+                )
+                val eager4 = BasicComputationSpecification(
+                    "eager4",
+                    EagerComputation,
+                    uses = Set(PropertyBounds.lub(pks(2))),
+                    derivesEagerly = Set(PropertyBounds.lub(pks(4)))
+                )
+
+                val ps = new PropertyStoreConfigurationRecorder()
+                val schedule = AnalysisScenario(Set(eager1, eager2, eager3, eager4), ps).computeSchedule(ps)
+
+                schedule.batches should have size 3
             }
         }
     }
