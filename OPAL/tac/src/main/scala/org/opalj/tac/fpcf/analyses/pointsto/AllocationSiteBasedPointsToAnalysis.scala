@@ -18,5 +18,4 @@ object AllocationSiteBasedPointsToAnalysisScheduler extends AbstractPointsToAnal
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject => AllocationSiteBasedPointsToAnalysis =
         new AllocationSiteBasedPointsToAnalysis(_)
-
 }
