@@ -5,17 +5,42 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br.{DeclaredMethod, FieldType, Method, ObjectType, ReferenceType}
-import org.opalj.br.analyses.{DeclaredFields, DeclaredFieldsKey, DeclaredMethodsKey, ProjectInformationKeys, SomeProject, VirtualFormalParametersKey}
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.properties.cg.{Callees, Callers, InstantiatedTypes}
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.{EPS, EUBP, InterimPartialResult, PartialResult, ProperPropertyComputationResult, PropertyBounds, PropertyKind, PropertyStore, Results, SomeEPS, SomePartialResult}
-import org.opalj.log.OPALLogger
-import org.opalj.tac.fpcf.analyses.{AllocationSiteDescription, ConfiguredMethods, MethodDescription, PointsToRelation, StaticFieldDescription}
-import org.opalj.tac.fpcf.properties.TACAI
-
 import scala.collection.mutable.ArrayBuffer
+
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.FieldType
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredFields
+import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomePartialResult
+import org.opalj.log.OPALLogger
+import org.opalj.tac.fpcf.analyses.AllocationSiteDescription
+import org.opalj.tac.fpcf.analyses.ConfiguredMethods
+import org.opalj.tac.fpcf.analyses.MethodDescription
+import org.opalj.tac.fpcf.analyses.PointsToRelation
+import org.opalj.tac.fpcf.analyses.StaticFieldDescription
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Handles the effect of certain (configured native methods) to the set of instantiated types.
@@ -23,15 +48,14 @@ import scala.collection.mutable.ArrayBuffer
  * @author Johannes Düsing
  */
 class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
-                                                                             final val project: SomeProject,
-                                                                             final val typeSetEntitySelector: TypeSetEntitySelector,
-                                                                         ) extends ReachableMethodAnalysis {
+    final val project:               SomeProject,
+    final val typeSetEntitySelector: TypeSetEntitySelector
+) extends ReachableMethodAnalysis {
 
     private[this] val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
     private[this] val virtualFormalParameters = project.get(VirtualFormalParametersKey)
 
     private type State = ConfiguredNativeMethodsTypePropagationState[ContextType]
-
 
     // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Array[PointsToRelation]] =
@@ -46,7 +70,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     override final val processesMethodsWithoutBody: Boolean = true
 
     override def processMethod(callContext: ContextType, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
-        if(!nativeMethodData.contains(callContext.method)) {
+        if (!nativeMethodData.contains(callContext.method)) {
             // We have nothing to contribute to this method
             return Results()
         }
@@ -56,18 +80,18 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         val typeSetEntity = typeSetEntitySelector(callContext.method)
         val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
 
-        implicit val state: ConfiguredNativeMethodsTypePropagationState[ContextType] = new ConfiguredNativeMethodsTypePropagationState(
-            callContext,
-            configuredData,
-            typeSetEntity,
-            instantiatedTypesEOptP
-        )
+        implicit val state: ConfiguredNativeMethodsTypePropagationState[ContextType] =
+            new ConfiguredNativeMethodsTypePropagationState(
+                callContext,
+                configuredData,
+                typeSetEntity,
+                instantiatedTypesEOptP
+            )
 
         implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
 
         processParameterAssignments(state.ownInstantiatedTypes)
         processStaticConfigurations
-
 
         returnResults(partialResults)
     }
@@ -80,27 +104,40 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
                 val fieldSetEntity = typeSetEntitySelector(theField)
 
-                if(allocatedType.isReferenceType && theField.fieldType.isReferenceType &&
-                    candidateMatchesTypeFilter(allocatedType.asReferenceType, theField.fieldType.asReferenceType)){
+                if (allocatedType.isReferenceType && theField.fieldType.isReferenceType &&
+                    candidateMatchesTypeFilter(allocatedType.asReferenceType, theField.fieldType.asReferenceType)
+                ) {
                     partialResults += PartialResult[TypeSetEntity, InstantiatedTypes](
-                        fieldSetEntity, InstantiatedTypes.key, InstantiatedTypes.update(fieldSetEntity, UIDSet(allocatedType.asReferenceType))
+                        fieldSetEntity,
+                        InstantiatedTypes.key,
+                        InstantiatedTypes.update(fieldSetEntity, UIDSet(allocatedType.asReferenceType))
                     )
                 } else {
-                    OPALLogger.warn("project configuration", s"configured points to data is invalid for ${state.callContext.method.toJava}")
+                    OPALLogger.warn(
+                        "project configuration",
+                        s"configured points to data is invalid for ${state.callContext.method.toJava}"
+                    )
                 }
 
             case PointsToRelation(MethodDescription(cf, name, desc), asd: AllocationSiteDescription) =>
                 val theMethod = state.callContext.method
 
-                if(theMethod.declaringClassType.fqn != cf || theMethod.name != name || theMethod.descriptor.toJVMDescriptor != desc){
-                    OPALLogger.warn("project configuration", s"configured points to data is invalid for ${state.callContext.method.toJava}")
+                if (
+                    theMethod.declaringClassType.fqn != cf || theMethod.name != name || theMethod.descriptor.toJVMDescriptor != desc
+                ) {
+                    OPALLogger.warn(
+                        "project configuration",
+                        s"configured points to data is invalid for ${state.callContext.method.toJava}"
+                    )
                 } else {
                     val allocatedType = FieldType(asd.instantiatedType)
                     val methodSetEntity = state.typeSetEntity
 
-                    if(allocatedType.isReferenceType){
+                    if (allocatedType.isReferenceType) {
                         partialResults += PartialResult[TypeSetEntity, InstantiatedTypes](
-                            methodSetEntity, InstantiatedTypes.key, InstantiatedTypes.update(methodSetEntity, UIDSet(allocatedType.asReferenceType))
+                            methodSetEntity,
+                            InstantiatedTypes.key,
+                            InstantiatedTypes.update(methodSetEntity, UIDSet(allocatedType.asReferenceType))
                         )
                     }
                 }
@@ -109,7 +146,10 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         }
     }
 
-    private def processParameterAssignments(typesToConsider: UIDSet[ReferenceType])(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
+    private def processParameterAssignments(typesToConsider: UIDSet[ReferenceType])(implicit
+        state:          State,
+        partialResults: ArrayBuffer[SomePartialResult]
+    ): Unit = {
         state.configurationData.foreach {
 
             case PointsToRelation(StaticFieldDescription(cf, name, fieldType), pd: ParameterDescription) =>
@@ -117,33 +157,42 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
                 val fieldSetEntity = typeSetEntitySelector(theField)
                 val theParameter = pd.fp(state.callContext.method, virtualFormalParameters)
 
-                val theParameterType = if(theParameter.origin == -1) {
+                val theParameterType = if (theParameter.origin == -1) {
                     ObjectType(pd.cf)
                 } else {
                     val paramIdx = -theParameter.origin - 2
                     state.callContext.method.descriptor.parameterType(paramIdx)
                 }
 
-                if(theField.fieldType.isReferenceType && theParameterType.isReferenceType &&
-                    candidateMatchesTypeFilter(theParameterType.asReferenceType, theField.fieldType.asReferenceType)){
-                    val filteredTypes = typesToConsider.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, newType) =>
-                        if(candidateMatchesTypeFilter(newType, theParameterType.asReferenceType)){
-                            builder += newType
-                        }
-                        builder
-                    }.result()
+                if (theField.fieldType.isReferenceType && theParameterType.isReferenceType &&
+                    candidateMatchesTypeFilter(theParameterType.asReferenceType, theField.fieldType.asReferenceType)
+                ) {
+                    val filteredTypes =
+                        typesToConsider.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, newType) =>
+                            if (candidateMatchesTypeFilter(newType, theParameterType.asReferenceType)) {
+                                builder += newType
+                            }
+                            builder
+                        }.result()
 
                     partialResults += PartialResult[TypeSetEntity, InstantiatedTypes](
-                        fieldSetEntity, InstantiatedTypes.key, InstantiatedTypes.update(fieldSetEntity, filteredTypes)
+                        fieldSetEntity,
+                        InstantiatedTypes.key,
+                        InstantiatedTypes.update(fieldSetEntity, filteredTypes)
                     )
                 } else {
-                    OPALLogger.warn("project configuration", s"configured points to data is invalid for ${state.callContext.method.toJava}")
+                    OPALLogger.warn(
+                        "project configuration",
+                        s"configured points to data is invalid for ${state.callContext.method.toJava}"
+                    )
                 }
             case _ =>
         }
     }
 
-    private def returnResults(partialResults: IterableOnce[SomePartialResult])(implicit state: State): ProperPropertyComputationResult = {
+    private def returnResults(partialResults: IterableOnce[SomePartialResult])(implicit
+        state: State
+    ): ProperPropertyComputationResult = {
         // Always re-register the continuation. It is impossible for all dependees to be final in XTA/...
         Results(
             InterimPartialResult(state.dependees, c(state)),
@@ -208,10 +257,11 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     }
 }
 
+class ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler(setEntitySelector: TypeSetEntitySelector)
+    extends BasicFPCFTriggeredAnalysisScheduler {
 
-class ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler(setEntitySelector: TypeSetEntitySelector) extends BasicFPCFTriggeredAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, DeclaredFieldsKey, VirtualFormalParametersKey)
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, DeclaredFieldsKey, VirtualFormalParametersKey)
 
     override def uses: Set[PropertyBounds] =
         PropertyBounds.ubs(Callees, TACAI, InstantiatedTypes)
@@ -222,10 +272,10 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler(setEntitySelecto
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def register(
-                             p:      SomeProject,
-                             ps:     PropertyStore,
-                             unused: Null
-                         ): ConfiguredNativeMethodsInstantiatedTypesAnalysis = {
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
+    ): ConfiguredNativeMethodsInstantiatedTypesAnalysis = {
         val analysis = new ConfiguredNativeMethodsInstantiatedTypesAnalysis(p, setEntitySelector)
 
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)

@@ -9,15 +9,15 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.{EOptionP, SomeEOptionP}
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.SomeEOptionP
 
 final class ConfiguredNativeMethodsTypePropagationState[ContextType <: Context](
-    val callContext: ContextType,
-    val configurationData: Array[PointsToRelation],
-    val typeSetEntity: TypeSetEntity,
-    private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
-   ) extends BaseAnalysisState {
-
+    val callContext:                                 ContextType,
+    val configurationData:                           Array[PointsToRelation],
+    val typeSetEntity:                               TypeSetEntity,
+    private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes]
+) extends BaseAnalysisState {
 
     /////////////////////////////////////////////
     //                                         //
@@ -43,7 +43,6 @@ final class ConfiguredNativeMethodsTypePropagationState[ContextType <: Context](
             UIDSet.empty
         }
     }
-
 
     /////////////////////////////////////////////
     //                                         //
