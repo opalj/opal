@@ -21,7 +21,6 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.cg.InitialInstantiatedFieldsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.ContextProviderKey
@@ -303,7 +302,6 @@ class InstantiatedTypesAnalysisScheduler(
         val declaredFields = p.get(DeclaredFieldsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
         val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
-        val initialInstantiatedFields = p.get(InitialInstantiatedFieldsKey)
 
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
@@ -324,22 +322,11 @@ class InstantiatedTypesAnalysisScheduler(
             }
         }
 
-        // Marks a given field as having its declared field type instantiated by default - only if field is of a
-        // reference type
-        def initializeField(field: Field, typesToConsider: UIDSet[ReferenceType]): Unit = {
-            val fieldSetEntity = selectSetEntity(declaredFields(field))
-            initialize(fieldSetEntity, typesToConsider)
-        }
-
         // Some cooperative analyses originally meant for RTA may require the global type set
         // to be pre-initialized. Strings and classes can be introduced via constants anywhere.
         // TODO Only introduce these types to the per-entity type sets where constants are used
         initialize(p, UIDSet(ObjectType.String, ObjectType.Class))
         initialize(ExternalWorld, initialInstantiatedTypes)
-
-        // During system initialization, some native methods are called to set certain fields.
-        // These fields can be set as instantiated via the configuration, see InitialFieldsFinder.
-        initialInstantiatedFields.foreach { case (f: Field, t: UIDSet[ReferenceType]) => initializeField(f, t) }
 
         def isRelevantArrayType(rt: Type): Boolean =
             rt.isArrayType && rt.asArrayType.elementType.isObjectType

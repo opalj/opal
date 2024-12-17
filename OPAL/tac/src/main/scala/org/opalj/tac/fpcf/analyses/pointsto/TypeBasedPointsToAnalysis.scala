@@ -5,14 +5,9 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialInstantiatedFieldsKey
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
 
 /**
  * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.
@@ -40,19 +35,4 @@ object TypeBasedPointsToAnalysisScheduler extends AbstractPointsToAnalysisSchedu
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject => TypeBasedPointsToAnalysis =
         new TypeBasedPointsToAnalysis(_)
-
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        val declFields = p.get(DeclaredFieldsKey)
-
-        p
-            .get(InitialInstantiatedFieldsKey)
-            .foreach { case (field, types) =>
-                val declField = declFields(field)
-                ps.preInitialize(declField, TypeBasedPointsToSet.key) {
-                    case _: EPK[_, _] => InterimEUBP(declField, TypeBasedPointsToSet(types))
-                    case eps          => throw new IllegalStateException(s"unexpected property: $eps")
-                }
-            }
-        super.init(p, ps)
-    }
 }
