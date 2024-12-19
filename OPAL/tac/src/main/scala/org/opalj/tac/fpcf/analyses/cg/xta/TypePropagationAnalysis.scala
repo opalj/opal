@@ -12,7 +12,6 @@ import scala.jdk.CollectionConverters._
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedField
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -65,21 +64,25 @@ final class TypePropagationAnalysis private[analyses] (
 
     private[this] implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
+    // We need to also propagate types if the method has no body, e.g. for native methods with configured data
+    override protected val processesMethodsWithoutBody: Boolean = true
+
     override def processMethod(
         callContext: ContextType,
         tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
 
-        val definedMethod = callContext.method.asDefinedMethod
-        val method = definedMethod.definedMethod
+        val methodOpt = if (callContext.method.hasSingleDefinedMethod) {
+            Some(callContext.method.definedMethod)
+        } else None
 
-        val typeSetEntity = selectTypeSetEntity(definedMethod)
+        val typeSetEntity = selectTypeSetEntity(callContext.method)
         val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
-        val calleesEOptP = propertyStore(definedMethod, Callees.key)
-        val readAccessEOptP = propertyStore(method, MethodFieldReadAccessInformation.key)
-        val writeAccessEOptP = propertyStore(method, MethodFieldWriteAccessInformation.key)
+        val calleesEOptP = propertyStore(callContext.method, Callees.key)
+        val readAccessEOptP = methodOpt.map(m => propertyStore(m, MethodFieldReadAccessInformation.key)).orNull
+        val writeAccessEOptP = methodOpt.map(m => propertyStore(m, MethodFieldWriteAccessInformation.key)).orNull
 
-        if (debug) _trace.traceInit(definedMethod)
+        if (debug) _trace.traceInit(callContext.method)
 
         implicit val state: TypePropagationState[ContextType] = new TypePropagationState(
             callContext,
@@ -94,12 +97,15 @@ final class TypePropagationAnalysis private[analyses] (
 
         if (calleesEOptP.hasUBP)
             processCallees(calleesEOptP.ub)
-        if (readAccessEOptP.hasUBP)
+        if (readAccessEOptP != null && readAccessEOptP.hasUBP)
             processReadAccesses(readAccessEOptP.ub)
-        if (writeAccessEOptP.hasUBP)
+        if (writeAccessEOptP != null && writeAccessEOptP.hasUBP)
             processWriteAccesses(writeAccessEOptP.ub)
-        processTACStatements
-        processArrayTypes(state.ownInstantiatedTypes)
+
+        if (state.methodHasBody) {
+            processTACStatements
+            processArrayTypes(state.ownInstantiatedTypes)
+        }
 
         returnResults(partialResults.iterator)
     }
@@ -122,7 +128,7 @@ final class TypePropagationAnalysis private[analyses] (
 
     private def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
 
-        case EUBP(e: DefinedMethod, _: Callees) =>
+        case EUBP(e: DeclaredMethod, _: Callees) =>
             if (debug) {
                 assert(e == state.callContext.method)
                 _trace.traceCalleesUpdate(e)
@@ -255,7 +261,7 @@ final class TypePropagationAnalysis private[analyses] (
         state:          State,
         partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
-        val bytecode = state.callContext.method.definedMethod.body.get
+        val bytecodeOpt = if (state.methodHasBody) Some(state.callContext.method.definedMethod.body.get) else None
         for {
             pc <- callees.callSitePCs(state.callContext)
             calleeContext <- callees.callees(state.callContext, pc)
@@ -273,16 +279,16 @@ final class TypePropagationAnalysis private[analyses] (
             // Remember callee (with PC) so we don't have to process it again later.
             state.addSeenCallee(pc, callee)
 
-            maybeRegisterMethodForForwardPropagation(callee, pc, bytecode)
+            maybeRegisterMethodForForwardPropagation(callee, pc, bytecodeOpt)
 
-            maybeRegisterMethodForBackwardPropagation(callee, pc, bytecode)
+            maybeRegisterMethodForBackwardPropagation(callee, pc, bytecodeOpt)
         }
     }
 
     private def processReadAccesses(
         readAccesses: MethodFieldReadAccessInformation
     )(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
-        val bytecode = state.callContext.method.definedMethod.body.get
+        val bytecodeOpt = if (state.methodHasBody) Some(state.callContext.method.definedMethod.body.get) else None
         for {
             pc <- readAccesses.getAccessSites(state.callContext)
             numDirectAccess = readAccesses.numDirectAccesses(state.callContext, pc)
@@ -298,10 +304,11 @@ final class TypePropagationAnalysis private[analyses] (
                 // Internally, generic fields have type "Object" due to type erasure. In many cases
                 // (but not all!), the Java compiler will place the "actual" return type within a checkcast
                 // instruction right after the field read instruction.
-                val nextInstruction = bytecode.instructions(bytecode.pcOfNextInstruction(pc))
+                val nextInstructionOpt =
+                    bytecodeOpt.map(bytecode => bytecode.instructions(bytecode.pcOfNextInstruction(pc)))
                 val mostPreciseFieldType =
-                    if (nextInstruction.isCheckcast)
-                        nextInstruction.asInstanceOf[CHECKCAST].referenceType
+                    if (nextInstructionOpt.isDefined && nextInstructionOpt.get.isCheckcast)
+                        nextInstructionOpt.get.asInstanceOf[CHECKCAST].referenceType
                     else
                         declaredField.fieldType.asReferenceType
 
@@ -353,9 +360,9 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def maybeRegisterMethodForForwardPropagation(
-        callee:   DeclaredMethod,
-        pc:       Int,
-        bytecode: Code
+        callee:      DeclaredMethod,
+        pc:          Int,
+        bytecodeOpt: Option[Code]
     )(
         implicit
         state:          State,
@@ -371,7 +378,9 @@ final class TypePropagationAnalysis private[analyses] (
 
         // If the call is not static, we need to take the implicit "this" parameter into account.
         if (callee.hasSingleDefinedMethod && !callee.definedMethod.isStatic ||
-            !callee.hasSingleDefinedMethod && !bytecode.instructions(pc).isInvokeStatic
+            // If we can't ask the target if it is static, we look in the bytecode. If we do not have any bytecode,
+            // we soundly assume that the call might be virtual, and we need to add "this".
+            !callee.hasSingleDefinedMethod && !bytecodeOpt.exists(_.instructions(pc).isInvokeStatic)
         ) {
             params += callee.declaringClassType
         }
@@ -386,15 +395,17 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def maybeRegisterMethodForBackwardPropagation(
-        callee:   DeclaredMethod,
-        pc:       Int,
-        bytecode: Code
+        callee:      DeclaredMethod,
+        pc:          Int,
+        bytecodeOpt: Option[Code]
     )(
         implicit
         state:          State,
         partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
-        val returnValueIsUsed = {
+        // If the method body is not available, we have to assume the return value might be used
+        val returnValueIsUsed = if (!state.methodHasBody) true
+        else {
             val tacIndex = state.tac.properStmtIndexForPC(pc)
             val tacInstr = state.tac.instructions(tacIndex)
             tacInstr.isAssignment
@@ -405,10 +416,13 @@ final class TypePropagationAnalysis private[analyses] (
             // (but not all!), the Java compiler will place the "actual" return type within a checkcast
             // instruction right after the call.
             val mostPreciseReturnType = {
-                val nextPc = bytecode.pcOfNextInstruction(pc)
-                val nextInstruction = bytecode.instructions(nextPc)
-                if (nextInstruction.isCheckcast) {
-                    nextInstruction.asInstanceOf[CHECKCAST].referenceType
+                val nextInstructionOpt = bytecodeOpt.map { bytecode =>
+                    val nextPc = bytecode.pcOfNextInstruction(pc)
+                    bytecode.instructions(nextPc)
+                }
+                // If method body is not available, we will assume the callee descriptor return type as well
+                if (nextInstructionOpt.exists(_.isCheckcast)) {
+                    nextInstructionOpt.get.asInstanceOf[CHECKCAST].referenceType
                 } else {
                     callee.descriptor.returnType
                 }

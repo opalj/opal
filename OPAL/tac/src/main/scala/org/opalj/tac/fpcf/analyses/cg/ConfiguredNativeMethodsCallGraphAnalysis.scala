@@ -82,9 +82,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
         // we only allow defined methods
         if (!dm.hasSingleDefinedMethod) return NoResult
 
-        val method = dm.definedMethod
-
-        if (!method.isNative || !nativeMethodData.contains(dm)) {
+        if (!nativeMethodData.contains(dm)) {
             return NoResult;
         }
 

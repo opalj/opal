@@ -50,6 +50,9 @@ final class TypePropagationState[ContextType <: Context](
     var methodWritesArrays: Boolean = false
     var methodReadsArrays: Boolean = false
 
+    def methodHasBody: Boolean =
+        callContext.method.hasSingleDefinedMethod && callContext.method.definedMethod.body.isDefined
+
     /////////////////////////////////////////////
     //                                         //
     //           own types (method)            //
@@ -114,7 +117,7 @@ final class TypePropagationState[ContextType <: Context](
     var seenIndirectWriteAccesses: IntMap[Int] = IntMap.empty
 
     def readAccessDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] = {
-        if (_readAccessDependee.isRefinable) Some(_readAccessDependee) else None
+        if (_readAccessDependee != null && _readAccessDependee.isRefinable) Some(_readAccessDependee) else None
     }
 
     def updateReadAccessDependee(readAccessDependee: EOptionP[Method, MethodFieldReadAccessInformation]): Unit = {
@@ -122,7 +125,7 @@ final class TypePropagationState[ContextType <: Context](
     }
 
     def writeAccessDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] = {
-        if (_writeAccessDependee.isRefinable) Some(_writeAccessDependee) else None
+        if (_writeAccessDependee != null && _writeAccessDependee.isRefinable) Some(_writeAccessDependee) else None
     }
 
     def updateWriteAccessDependee(writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation]): Unit = {
