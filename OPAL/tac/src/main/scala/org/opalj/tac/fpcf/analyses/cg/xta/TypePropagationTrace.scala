@@ -15,7 +15,6 @@ import java.time.Instant
 import scala.collection.mutable
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
@@ -60,9 +59,9 @@ private[xta] class TypePropagationTrace {
 
     private def simplifiedName(e: Any): String = e match {
         case defM: DeclaredMethod => s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
-        case m: Method           => s"${simplifiedName(m.classFile.thisType)}.${m.name}(...)"
-        case rt: ReferenceType   => rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
-        case _                   => e.toString
+        case m: Method            => s"${simplifiedName(m.classFile.thisType)}.${m.name}(...)"
+        case rt: ReferenceType    => rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
+        case _                    => e.toString
     }
 
     @elidable(elidable.ASSERTION)
@@ -81,7 +80,9 @@ private[xta] class TypePropagationTrace {
             else Iterator.empty[Context]
         }
         traceMsg(
-            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(c => simplifiedName(c)).mkString(", ")}})"
+            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(
+                    ", "
+                )}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
         )
         _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
     }
