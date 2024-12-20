@@ -418,7 +418,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     counter = counter + 1
                 }
 
-                val preparedGraph2 = preparedGraph.map { case (node, deps) =>
+                var preparedGraph2 = preparedGraph.map { case (node, deps) =>
                     var dependencies: List[Int] = List.empty
 
                     transformingMap.foreach { tuple =>
@@ -430,31 +430,119 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     transformingMap.find(_._2 == node).map(_._1).head -> dependencies
                 }
 
-//                if (scheduleStrategy == 3) {
-//                    def mergeIndependentBatches() {
-//                        var allUses: Set[Int] = Set.empty
-//                        def getUses(batch: Int): Set[Int] = {
-//
-//                            val uses = preparedGraph2.get(batch).head
-//                            allUses = allUses ++ uses
-//
-//                            uses.foreach { otherBatch => getUses(otherBatch) }
-//
-//                            val returnUses = allUses
-//                            returnUses
-//                        }
-//
-//                        var map: Map[Int, Set[Int]] = Map.empty
-//                        preparedGraph2.foreach { batch =>
-//                            val tempUses = getUses(batch._1)
-//                            map = map + (batch._1 -> tempUses)
-//                            allUses = Set.empty
-//                        }
-//                    }
-//                    print("§")
-//                }
+                if (scheduleStrategy == 3) {
+                    def mergeIndependentBatches(graph: Map[Int, List[Int]]): Map[Int, List[Int]] = {
+                        var allUses: Set[Int] = Set.empty
+                        def getUses(batch: Int): Set[Int] = {
 
-                print("")
+                            val uses = graph.get(batch).head
+                            allUses = allUses ++ uses
+
+                            uses.foreach { otherBatch => getUses(otherBatch) }
+
+                            val returnUses = allUses
+                            returnUses
+                        }
+
+                        var map: Map[Int, Set[Int]] = Map.empty
+                        graph.foreach { batch =>
+                            val tempUses = getUses(batch._1)
+                            map = map + (batch._1 -> tempUses)
+                            allUses = Set.empty
+                        }
+                        var couldBeMerged: List[(Int, Int)] = List.empty
+                        map.foreach { batch =>
+                            map.foreach { subBatch =>
+                                if (subBatch != batch) {
+                                    if ((!subBatch._2.contains(batch._1)) && (!batch._2.contains(subBatch._1))) {
+                                        if (!couldBeMerged.contains((subBatch._1, batch._1))) {
+                                            couldBeMerged = couldBeMerged :+ (batch._1, subBatch._1)
+                                        }
+
+                                    }
+                                }
+
+                            }
+
+                        }
+
+                        val strategy3auswahl = 1
+
+                        var updatedGraph: Map[Int, List[Int]] = graph
+                        if (couldBeMerged.nonEmpty && strategy3auswahl == 1) {
+                            val tempTransformation_2: List[Int] = (transformingMap.get(couldBeMerged.head._1).head ++
+                                transformingMap.get(couldBeMerged.head._2).head).distinct
+                            transformingMap =
+                                transformingMap - couldBeMerged.head._1 - couldBeMerged.head._2
+                            transformingMap = transformingMap + (counter -> tempTransformation_2)
+
+                            val tempGraph_2: List[Int] = (graph.get(couldBeMerged.head._1).head ++
+                                graph.get(couldBeMerged.head._2).head).distinct
+                            updatedGraph = updatedGraph - couldBeMerged.head._1 - couldBeMerged.head._2
+                            updatedGraph = updatedGraph + (counter -> tempGraph_2)
+
+                            def replaceIdInMap(oldId: Int, newId: Int): Unit = {
+                                updatedGraph = updatedGraph.map { case (key, values) =>
+                                    key -> values.map(v => if (v == oldId) newId else v)
+                                }
+                            }
+
+                            replaceIdInMap(couldBeMerged.head._1, counter)
+                            replaceIdInMap(couldBeMerged.head._2, counter)
+                            counter = counter + 1
+                            updatedGraph = mergeIndependentBatches(updatedGraph)
+                        } else if (couldBeMerged.nonEmpty && strategy3auswahl == 2) {
+                            def checkForLeastAmountOfAnalysis(): (Int, Int) = {
+                                var twoBatchesWithLeastAmountOfAnalysis = (0, 0)
+                                var otherSize = 0
+                                couldBeMerged.foreach { tuple =>
+                                    if (otherSize == 0) {
+                                        twoBatchesWithLeastAmountOfAnalysis = tuple
+                                        otherSize = transformingMap.get(tuple._1).head.size + transformingMap.get(
+                                            tuple._1
+                                        ).head.size
+                                    } else if (transformingMap.get(tuple._1).head.size + transformingMap.get(
+                                                   tuple._1
+                                               ).head.size < otherSize
+                                    ) {
+                                        twoBatchesWithLeastAmountOfAnalysis = tuple
+                                        otherSize = transformingMap.get(tuple._1).head.size + transformingMap.get(
+                                            tuple._1
+                                        ).head.size
+                                    }
+
+                                }
+                                twoBatchesWithLeastAmountOfAnalysis
+                            }
+
+                            val toBeMerged = checkForLeastAmountOfAnalysis()
+
+                            val tempTransformation_2: List[Int] = (transformingMap.get(toBeMerged._1).head ++
+                                transformingMap.get(toBeMerged._2).head).distinct
+                            transformingMap =
+                                transformingMap - toBeMerged._1 - toBeMerged._2
+                            transformingMap = transformingMap + (counter -> tempTransformation_2)
+
+                            val tempGraph_2: List[Int] = (graph.get(toBeMerged._1).head ++
+                                graph.get(toBeMerged._2).head).distinct
+                            updatedGraph = updatedGraph - toBeMerged._1 - toBeMerged._2
+                            updatedGraph = updatedGraph + (counter -> tempGraph_2)
+
+                            def replaceIdInMap(oldId: Int, newId: Int): Unit = {
+                                updatedGraph = updatedGraph.map { case (key, values) =>
+                                    key -> values.map(v => if (v == oldId) newId else v)
+                                }
+                            }
+
+                            replaceIdInMap(toBeMerged._1, counter)
+                            replaceIdInMap(toBeMerged._2, counter)
+                            counter = counter + 1
+                            updatedGraph = mergeIndependentBatches(updatedGraph)
+                        }
+                        updatedGraph
+                    }
+                    preparedGraph2 = mergeIndependentBatches(preparedGraph2)
+                }
 
                 def topologicalSort(graph: Map[Int, List[Int]]): List[Int] = {
                     var sortedNodes: List[Int] = List.empty
@@ -505,7 +593,6 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     )
                     alreadyScheduledCS = alreadyScheduledCS ++ scheduledInThisPhase
                 }
-
             }
 
         } { t => OPALLogger.info("scheduler", s"initialization of Scheduler took ${t.toSeconds}") }

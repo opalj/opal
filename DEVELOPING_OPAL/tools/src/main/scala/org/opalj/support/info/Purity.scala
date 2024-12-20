@@ -23,7 +23,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
+//import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -50,7 +50,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.ComputationSpecification
+//import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
@@ -66,6 +66,7 @@ import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
@@ -173,7 +174,7 @@ object Purity {
         var projectTime: Seconds = Seconds.None
         var propertyStoreTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
-        var callGraphTime: Seconds = Seconds.None
+        val callGraphTime: Seconds = Seconds.None
 
         // TODO: use variables for the constants
         implicit var config: Config =
@@ -250,31 +251,29 @@ object Purity {
 
         val manager = project.get(FPCFAnalysesManagerKey)
 
+//        time {
+//            project.get(callGraphKey)
+//        } { t => callGraphTime = t.toSeconds }
+
         time {
-            project.get(callGraphKey)
-        } { t => callGraphTime = t.toSeconds }
+            val analyses = ((analysis :: support) :+ EagerFieldAccessInformationAnalysis) ++ callGraphKey.allCallGraphAnalyses(project)
+
+            manager.runAll(
+                analyses
+//                (css: List[ComputationSpecification[FPCFAnalysis]]) =>
+//                    if (css.contains(analysis)) {
+//                        analyzedContexts.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
+//                    }
+            )
+        } { t => analysisTime = t.toSeconds }
+        ps.shutdown()
 
         val reachableMethods =
             ps.entities(Callers.key).collect {
                 case FinalEP(m: DeclaredMethod, c: Callers) if c ne NoCallers => m
             }.toSet
-
         val contextProvider = project.get(ContextProviderKey)
         val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
-
-        time {
-            val analyses = analysis :: support
-
-            manager.runAll(
-                analyses,
-                (css: List[ComputationSpecification[FPCFAnalysis]]) =>
-                    if (css.contains(analysis)) {
-                        analyzedContexts.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
-                    }
-            )
-        } { t => analysisTime = t.toSeconds }
-        ps.shutdown()
-
         val entitiesWithPurity = ps(analyzedContexts, br.fpcf.properties.Purity.key).filter {
             case FinalP(p) => p ne ImpureByLackOfInformation
             case ep        => throw new RuntimeException(s"non final purity result $ep")
