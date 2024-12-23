@@ -157,7 +157,7 @@ object Immutability {
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
-                Set[Class[_ <: AnyRef]](classOf[domain.l0.PrimitiveTACAIDomain])
+                Set[Class[_ <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
             else if (level == 1)
                 Set[Class[_ <: AnyRef]](classOf[domain.l1.DefaultDomainWithCFGAndDefUse[URL]])
             else if (level == 2)
@@ -179,14 +179,19 @@ object Immutability {
             }
         )
 
+
+
         val propertyStore = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
+        callgraphKey.requirements(project)
         project.get(callgraphKey)
+
+        val allDependencies = callgraphKey.allCallGraphAnalyses(project) ++ dependencies
 
         time {
             analysesManager.runAll(
-                dependencies,
+                allDependencies,
                 {
                     (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                         analysis match {
@@ -698,6 +703,8 @@ object Immutability {
         var cp: File = null
         var resultFolder: Path = null
         var numThreads = 0
+        // var timeEvaluation: Boolean = false
+        // var threadEvaluation: Boolean = false
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var withoutJDK: Boolean = false

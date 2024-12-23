@@ -2,10 +2,17 @@
 package org.opalj
 package fpcf
 
+import scala.annotation.tailrec
+
+import org.opalj.collection.IntIterator
 import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
+import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatches
+import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleStrategy
 import org.opalj.graphs.Graph
+import org.opalj.graphs.sccs
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
  * Provides functionality to determine whether a set of analyses is compatible and to compute
@@ -32,6 +39,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
     private[this] var lazyCS: Set[ComputationSpecification[A]] = Set.empty
     private[this] var triggeredCS: Set[ComputationSpecification[A]] = Set.empty
     private[this] var transformersCS: Set[ComputationSpecification[A]] = Set.empty
+
+    private[this] var scheduleBatches: List[PhaseConfiguration[A]] = List.empty
 
     private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = {
         Map.empty
@@ -225,66 +234,369 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             scheduleComputed = true
         }
 
-        allCS.foreach(processCS)
+        time {
+            allCS.foreach(processCS)
 
-        val alreadyComputedPropertyKinds = propertyStore.alreadyComputedPropertyKindIds.toSet
+            val alreadyComputedPropertyKinds = propertyStore.alreadyComputedPropertyKindIds.toSet
 
-        // 0. check that a property was not already derived
-        allCS.foreach { cs =>
-            cs.derives foreach { derivedProperty =>
-                if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {
-                    val pkName = PropertyKey.name(derivedProperty.pk.id)
-                    val m = s"can not register $cs: $pkName was computed in a previous phase"
-                    throw new SpecificationViolation(m)
-                }
-            }
-        }
-
-        // 1. check for properties that are not derived (and which require an analysis)
-        def useFallback(underivedProperty: PropertyBounds, propertyName: String) = {
-            if (PropertyKey.hasFallback(underivedProperty.pk)) {
-                val message = s"no analyses scheduled for: $propertyName; using fallback"
-                OPALLogger.warn("analysis configuration", message)
-            } else {
-                throw new IllegalStateException(s"no analysis scheduled for $propertyName")
-            }
-        }
-
-        val analysisAutoConfig = BaseConfig.getBoolean(AnalysisAutoConfigKey)
-        val underivedProperties = usedProperties -- derivedProperties
-        underivedProperties
-            .filterNot { underivedProperty => alreadyComputedPropertyKinds.contains(underivedProperty.pk.id) }
-            .foreach { underivedProperty =>
-                if (!derivedProperties.contains(underivedProperty)) {
-                    val propertyName = PropertyKey.name(underivedProperty.pk.id)
-                    val defaultCSOpt =
-                        if (analysisAutoConfig) defaultAnalysis(underivedProperty) else None
-                    if (defaultCSOpt.isDefined) {
-                        val defaultCS = defaultCSOpt.get
-                        try {
-                            processCS(defaultCS)
-                            val message = s"no analyses scheduled for: $propertyName; using ${defaultCS.name}"
-                            OPALLogger.info("analysis configuration", message)
-                        } catch {
-                            case _: SpecificationViolation =>
-                                useFallback(underivedProperty, propertyName)
-                        }
-                    } else {
-                        useFallback(underivedProperty, propertyName)
+            // 0. check that a property was not already derived
+            allCS.foreach { cs =>
+                cs.derives foreach { derivedProperty =>
+                    if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {
+                        val pkName = PropertyKey.name(derivedProperty.pk.id)
+                        val m = s"can not register $cs: $pkName was computed in a previous phase"
+                        throw new SpecificationViolation(m)
                     }
                 }
             }
 
-        // TODO check all further constraints (in particular those related to cyclic dependencies between analysis...)
+            // 1. check for properties that are not derived (and which require an analysis)
+            def useFallback(underivedProperty: PropertyBounds, propertyName: String) = {
+                if (PropertyKey.hasFallback(underivedProperty.pk)) {
+                    val message = s"no analyses scheduled for: $propertyName; using fallback"
+                    OPALLogger.warn("analysis configuration", message)
+                } else {
+                    throw new IllegalStateException(s"no analysis scheduled for $propertyName")
+                }
+            }
 
-        // 2. assign analyses to different batches if an analysis can only process
-        //    final properties (unless it is a transformer, the latter have special paths and
-        //    constraints and can always be scheduled in the same batch!)
+            val analysisAutoConfig = BaseConfig.getBoolean(AnalysisAutoConfigKey)
+            val underivedProperties = usedProperties -- derivedProperties
+            underivedProperties
+                .filterNot { underivedProperty => alreadyComputedPropertyKinds.contains(underivedProperty.pk.id) }
+                .foreach { underivedProperty =>
+                    if (!derivedProperties.contains(underivedProperty)) {
+                        val propertyName = PropertyKey.name(underivedProperty.pk.id)
+                        val defaultCSOpt =
+                            if (analysisAutoConfig) defaultAnalysis(underivedProperty) else None
+                        if (defaultCSOpt.isDefined) {
+                            val defaultCS = defaultCSOpt.get
+                            try {
+                                processCS(defaultCS)
+                                val message = s"no analyses scheduled for: $propertyName; using ${defaultCS.name}"
+                                OPALLogger.info("analysis configuration", message)
+                            } catch {
+                                case _: SpecificationViolation =>
+                                    useFallback(underivedProperty, propertyName)
+                            }
+                        } else {
+                            useFallback(underivedProperty, propertyName)
+                        }
+                    }
+                }
 
-        // TODO ....
+            // TODO check all further constraints (in particular those related to cyclic dependencies between analysis...)
+
+            // 2. assign analyses to different batches if an analysis can only process
+            //    final properties (unless it is a transformer, the latter have special paths and
+            //    constraints and can always be scheduled in the same batch!)
+
+            // TODO ....
+
+            val scheduleStrategy = BaseConfig.getInt(AnalysisScheduleStrategy)
+            val scheduleLazyTransformerInAllenBatches =
+                BaseConfig.getBoolean(AnalysisScheduleLazyTransformerInMultipleBatches)
+
+            if (scheduleStrategy == 1) {
+                // computed in Later Phase und in this phase richtig imp
+                this.scheduleBatches = List(computePhase(ps, allCS, Set.empty))
+            } else if (scheduleStrategy == 2 || scheduleStrategy == 3 || scheduleStrategy == 4) {
+                val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
+                var scheduleGraph: Map[Int, Set[Int]] = Map.empty
+
+                def getAllCSFromPropertyBounds(properties: Set[PropertyBounds]): Set[ComputationSpecification[A]] = {
+                    def containsProperty(cs: ComputationSpecification[A], property: PropertyBounds): Boolean =
+                        cs.derivesLazily.contains(property) ||
+                            cs.derivesCollaboratively.contains(property) ||
+                            cs.derivesEagerly.contains(property)
+
+                    allCS.filter(cs => properties.exists(containsProperty(cs, _)))
+                }
+
+                def mapCSToNum(specifications: Set[ComputationSpecification[A]]): Set[Int] = {
+                    specifications.flatMap(computationSpecificationMap.get)
+                }
+
+                computationSpecificationMap.foreach { csID =>
+                    scheduleGraph += (csID._2 -> mapCSToNum(getAllCSFromPropertyBounds(csID._1.uses(ps))))
+                }
+
+                if (!scheduleLazyTransformerInAllenBatches) {
+                    scheduleGraph.foreach { node =>
+                        if (computationSpecificationMap.find(_._2 == node._1).map(
+                                _._1
+                            ).head.computationType.toString.contains("Lazy") || computationSpecificationMap.find(
+                                _._2 == node._1
+                            ).map(
+                                _._1
+                            ).head.computationType.toString.contains("Transformer")
+                        ) {
+                            scheduleGraph.foreach { subNode =>
+                                if (subNode._2.contains(node._1)) {
+                                    scheduleGraph =
+                                        scheduleGraph +
+                                            (node._1 -> (scheduleGraph.get(node._1).head ++ Set(subNode._1)))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                def edgeFunctionForSCCS(node: Int): IntIterator = {
+                    val edges = scheduleGraph.getOrElse(node, Set.empty).iterator
+                    new IntIterator {
+                        def hasNext: Boolean = edges.hasNext
+                        def next(): Int = edges.next()
+                    }
+                }
+
+                def getAllUses(css: List[Int]): Set[PropertyBounds] = {
+                    var allUses: Set[PropertyBounds] = Set.empty
+                    css.foreach { cs =>
+                        allUses = allUses ++ computationSpecificationMap.find(_._2 == cs).map(_._1).head.uses(ps)
+                    }
+                    allUses
+                }
+
+                var aCyclicGraph = sccs(scheduleGraph.size, edgeFunctionForSCCS)
+                    .map(batch => batch -> mapCSToNum(getAllCSFromPropertyBounds(getAllUses(batch))))
+                    .toMap
+
+                var visited: List[List[Int]] = List.empty
+                @tailrec
+                def setLazyInAllBatches(map: Map[List[Int], Set[Int]], firstElement: List[Int]): Unit = {
+                    if (firstElement.forall(csID =>
+                            computationSpecificationMap.find(_._2 == csID).map(
+                                _._1
+                            ).head.computationType.toString.contains("Lazy") ||
+                                computationSpecificationMap.find(_._2 == csID).map(
+                                    _._1
+                                ).head.computationType.toString.contains("Transformer")
+                        )
+                    ) {
+                        var existInSomeBatch = false
+                        map.foreach { batch =>
+                            if (batch._2.toList.intersect(firstElement).nonEmpty && batch._1 != firstElement) {
+                                aCyclicGraph = aCyclicGraph + ((batch._1 ++ firstElement) -> mapCSToNum(
+                                    getAllCSFromPropertyBounds(getAllUses((batch._1 ++ firstElement)))
+                                ).diff((batch._1 ++ firstElement).toSet))
+                                aCyclicGraph = aCyclicGraph - batch._1
+                                existInSomeBatch = true
+                            }
+                        }
+                        if (existInSomeBatch) {
+                            aCyclicGraph = aCyclicGraph - firstElement
+                            setLazyInAllBatches(aCyclicGraph, aCyclicGraph.head._1)
+                        } else {
+                            visited = visited :+ firstElement
+                            val keyList = aCyclicGraph.keys.toSet -- visited
+                            if (keyList.nonEmpty) {
+                                setLazyInAllBatches(aCyclicGraph, keyList.head)
+                            }
+                        }
+                    } else {
+                        visited = visited :+ firstElement
+                        val keyList = aCyclicGraph.keys.toSet -- visited
+                        if (keyList.nonEmpty) {
+                            setLazyInAllBatches(aCyclicGraph, keyList.head)
+                        }
+                    }
+                }
+
+                if (scheduleLazyTransformerInAllenBatches) {
+                    setLazyInAllBatches(aCyclicGraph, aCyclicGraph.head._1)
+                }
+
+                val preparedGraph = aCyclicGraph.map { case (nodes, deps) =>
+                    nodes -> (deps -- nodes).toList
+                }
+
+                var transformingMap: Map[Int, List[Int]] = Map.empty
+                var counter = 0
+                preparedGraph.foreach { node =>
+                    transformingMap = transformingMap + (counter -> node._1)
+                    counter = counter + 1
+                }
+
+                var preparedGraph2 = preparedGraph.map { case (node, deps) =>
+                    var dependencies: List[Int] = List.empty
+
+                    transformingMap.foreach { tuple =>
+                        if (tuple._2.intersect(deps.toList).nonEmpty) {
+                            dependencies = dependencies :+ tuple._1
+                        }
+                    }
+
+                    transformingMap.find(_._2 == node).map(_._1).head -> dependencies
+                }
+
+                if (scheduleStrategy == 3 || scheduleStrategy == 4) {
+                    def mergeIndependentBatches(graph: Map[Int, List[Int]]): Map[Int, List[Int]] = {
+                        var allUses: Set[Int] = Set.empty
+                        def getUses(batch: Int): Set[Int] = {
+
+                            val uses = graph.get(batch).head
+                            allUses = allUses ++ uses
+
+                            uses.foreach { otherBatch => getUses(otherBatch) }
+
+                            val returnUses = allUses
+                            returnUses
+                        }
+
+                        var map: Map[Int, Set[Int]] = Map.empty
+                        graph.foreach { batch =>
+                            val tempUses = getUses(batch._1)
+                            map = map + (batch._1 -> tempUses)
+                            allUses = Set.empty
+                        }
+                        var couldBeMerged: List[(Int, Int)] = List.empty
+                        map.foreach { batch =>
+                            map.foreach { subBatch =>
+                                if (subBatch != batch) {
+                                    if ((!subBatch._2.contains(batch._1)) && (!batch._2.contains(subBatch._1))) {
+                                        if (!couldBeMerged.contains((subBatch._1, batch._1))) {
+                                            couldBeMerged = couldBeMerged :+ (batch._1, subBatch._1)
+                                        }
+
+                                    }
+                                }
+
+                            }
+
+                        }
+
+                        var updatedGraph: Map[Int, List[Int]] = graph
+                        if (couldBeMerged.nonEmpty && scheduleStrategy == 3) {
+                            val tempTransformation_2: List[Int] = (transformingMap.get(couldBeMerged.head._1).head ++
+                                transformingMap.get(couldBeMerged.head._2).head).distinct
+                            transformingMap =
+                                transformingMap - couldBeMerged.head._1 - couldBeMerged.head._2
+                            transformingMap = transformingMap + (counter -> tempTransformation_2)
+
+                            val tempGraph_2: List[Int] = (graph.get(couldBeMerged.head._1).head ++
+                                graph.get(couldBeMerged.head._2).head).distinct
+                            updatedGraph = updatedGraph - couldBeMerged.head._1 - couldBeMerged.head._2
+                            updatedGraph = updatedGraph + (counter -> tempGraph_2)
+
+                            def replaceIdInMap(oldId: Int, newId: Int): Unit = {
+                                updatedGraph = updatedGraph.map { case (key, values) =>
+                                    key -> values.map(v => if (v == oldId) newId else v)
+                                }
+                            }
+
+                            replaceIdInMap(couldBeMerged.head._1, counter)
+                            replaceIdInMap(couldBeMerged.head._2, counter)
+                            counter = counter + 1
+                            updatedGraph = mergeIndependentBatches(updatedGraph)
+                        } else if (couldBeMerged.nonEmpty && scheduleStrategy == 4) {
+                            def checkForLeastAmountOfAnalysis(): (Int, Int) = {
+                                var twoBatchesWithLeastAmountOfAnalysis = (0, 0)
+                                var otherSize = 0
+                                couldBeMerged.foreach { tuple =>
+                                    if (otherSize == 0) {
+                                        twoBatchesWithLeastAmountOfAnalysis = tuple
+                                        otherSize = transformingMap.get(tuple._1).head.size + transformingMap.get(
+                                            tuple._1
+                                        ).head.size
+                                    } else if (transformingMap.get(tuple._1).head.size + transformingMap.get(
+                                                   tuple._1
+                                               ).head.size < otherSize
+                                    ) {
+                                        twoBatchesWithLeastAmountOfAnalysis = tuple
+                                        otherSize = transformingMap.get(tuple._1).head.size + transformingMap.get(
+                                            tuple._1
+                                        ).head.size
+                                    }
+
+                                }
+                                twoBatchesWithLeastAmountOfAnalysis
+                            }
+
+                            val toBeMerged = checkForLeastAmountOfAnalysis()
+
+                            val tempTransformation_2: List[Int] = (transformingMap.get(toBeMerged._1).head ++
+                                transformingMap.get(toBeMerged._2).head).distinct
+                            transformingMap =
+                                transformingMap - toBeMerged._1 - toBeMerged._2
+                            transformingMap = transformingMap + (counter -> tempTransformation_2)
+
+                            val tempGraph_2: List[Int] = (graph.get(toBeMerged._1).head ++
+                                graph.get(toBeMerged._2).head).distinct
+                            updatedGraph = updatedGraph - toBeMerged._1 - toBeMerged._2
+                            updatedGraph = updatedGraph + (counter -> tempGraph_2)
+
+                            def replaceIdInMap(oldId: Int, newId: Int): Unit = {
+                                updatedGraph = updatedGraph.map { case (key, values) =>
+                                    key -> values.map(v => if (v == oldId) newId else v)
+                                }
+                            }
+
+                            replaceIdInMap(toBeMerged._1, counter)
+                            replaceIdInMap(toBeMerged._2, counter)
+                            counter = counter + 1
+                            updatedGraph = mergeIndependentBatches(updatedGraph)
+                        }
+                        updatedGraph
+                    }
+                    preparedGraph2 = mergeIndependentBatches(preparedGraph2)
+                }
+
+                def topologicalSort(graph: Map[Int, List[Int]]): List[Int] = {
+                    var sortedNodes: List[Int] = List.empty
+                    var permanent: Set[Int] = Set.empty
+                    var temporary: Set[Int] = Set.empty
+
+                    val preparedGraph = graph.map { case (node, deps) =>
+                        node -> deps.filter(_ != node)
+                    }
+
+                    def visit(node: Int): Unit = {
+                        if (!permanent.contains(node)) {
+                            if (temporary.contains(node)) {
+                                throw new IllegalStateException("Graph contains a cycle")
+                            }
+                            temporary = temporary + node
+
+                            preparedGraph.get(node).head.foreach { otherNode => visit(otherNode) }
+
+                            permanent = permanent + node
+                            temporary = temporary - node
+
+                            sortedNodes = sortedNodes :+ node
+                        }
+
+                    }
+
+                    for (node <- preparedGraph.keys) {
+                        visit(node)
+                    }
+
+                    sortedNodes
+                }
+
+                val batchOrder = topologicalSort(preparedGraph2)
+
+                var alreadyScheduledCS: Set[ComputationSpecification[A]] = Set.empty
+                batchOrder.foreach { batch =>
+                    var scheduledInThisPhase: Set[ComputationSpecification[A]] = Set.empty
+                    transformingMap.get(batch).head.foreach { csID =>
+                        scheduledInThisPhase =
+                            scheduledInThisPhase + computationSpecificationMap.find(_._2 == csID).map(_._1).head
+                    }
+                    this.scheduleBatches = this.scheduleBatches :+ computePhase(
+                        ps,
+                        scheduledInThisPhase,
+                        (allCS -- scheduledInThisPhase -- alreadyScheduledCS)
+                    )
+                    alreadyScheduledCS = alreadyScheduledCS ++ scheduledInThisPhase
+                }
+            }
+            OPALLogger.info("scheduler", s"scheduling strategy ${scheduleStrategy} is selected")
+        } { t => OPALLogger.info("scheduler", s"initialization of Scheduler took ${t.toSeconds}") }
 
         Schedule(
-            if (allCS.isEmpty) List.empty else List(computePhase(propertyStore)),
+            scheduleBatches,
             initializationData
         )
     }
@@ -293,7 +605,11 @@ class AnalysisScenario[A](val ps: PropertyStore) {
      * Computes the configuration for a specific batch; this method can only handle the situation
      * where all analyses can be executed in the same phase.
      */
-    private def computePhase(propertyStore: PropertyStore): PhaseConfiguration[A] = {
+    private def computePhase(
+        propertyStore:     PropertyStore,
+        phaseAnalysis:     Set[ComputationSpecification[A]],
+        nextPhaseAnalysis: Set[ComputationSpecification[A]]
+    ): PhaseConfiguration[A] = {
 
         // 1. compute the phase configuration; i.e., find those properties for which we must
         //    suppress interim updates.
@@ -302,12 +618,22 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         // the wrong bounds/not enough bounds are computed.
         transformersCS foreach { cs => suppressInterimUpdates += (cs.derivesLazily.get.pk -> cs.uses(ps).map(_.pk)) }
 
+        def extractPropertyKinds(analyses: Set[ComputationSpecification[A]]): Set[PropertyKind] = {
+            analyses.flatMap { analysis =>
+                (analysis.derivesLazily.toSet ++
+                    analysis.derivesEagerly ++
+                    analysis.derivesCollaboratively ++
+                    analysis.derives.toSet)
+                    .map(_.pk)
+            }
+        }
+
+        val propertyKindsFromPhaseAnalysis = extractPropertyKinds(phaseAnalysis)
+        val propertyKindsFromNextPhaseAnalysis = extractPropertyKinds(nextPhaseAnalysis)
+
         // 3. create the batch
         val batchBuilder = List.newBuilder[ComputationSpecification[A]]
-        batchBuilder ++= lazyCS
-        batchBuilder ++= transformersCS
-        batchBuilder ++= triggeredCS
-        batchBuilder ++= eagerCS
+        batchBuilder ++= phaseAnalysis
 
         // FIXME...
 
@@ -317,8 +643,9 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         // advantageous.
 
         val phase1Configuration = PropertyKindsConfiguration(
-            propertyKindsComputedInThisPhase = derivedProperties.map(_.pk),
-            suppressInterimUpdates = suppressInterimUpdates
+            propertyKindsComputedInThisPhase = propertyKindsFromPhaseAnalysis,
+            suppressInterimUpdates = suppressInterimUpdates,
+            propertyKindsComputedInLaterPhase = propertyKindsFromNextPhaseAnalysis
         )
 
         PhaseConfiguration(phase1Configuration, batchBuilder.result())
@@ -331,6 +658,9 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 object AnalysisScenario {
 
     final val AnalysisAutoConfigKey = "org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfig"
+    final val AnalysisScheduleStrategy = "org.opalj.fpcf.AnalysisScenario.ScheduleStrategy"
+    final val AnalysisScheduleLazyTransformerInMultipleBatches =
+        "org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatches"
 
     /**
      * @param analyses The set of analyses that should be executed as part of this analysis scenario.
