@@ -300,7 +300,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             if (scheduleStrategy == 1) {
                 // computed in Later Phase und in this phase richtig imp
                 this.scheduleBatches = List(computePhase(ps, allCS, Set.empty))
-            } else if (scheduleStrategy == 2 || scheduleStrategy == 3) {
+            } else if (scheduleStrategy == 2 || scheduleStrategy == 3 || scheduleStrategy == 4) {
                 val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
                 var scheduleGraph: Map[Int, Set[Int]] = Map.empty
 
@@ -430,7 +430,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     transformingMap.find(_._2 == node).map(_._1).head -> dependencies
                 }
 
-                if (scheduleStrategy == 3) {
+                if (scheduleStrategy == 3 || scheduleStrategy == 4) {
                     def mergeIndependentBatches(graph: Map[Int, List[Int]]): Map[Int, List[Int]] = {
                         var allUses: Set[Int] = Set.empty
                         def getUses(batch: Int): Set[Int] = {
@@ -466,10 +466,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
                         }
 
-                        val strategy3auswahl = 1
-
                         var updatedGraph: Map[Int, List[Int]] = graph
-                        if (couldBeMerged.nonEmpty && strategy3auswahl == 1) {
+                        if (couldBeMerged.nonEmpty && scheduleStrategy == 3) {
                             val tempTransformation_2: List[Int] = (transformingMap.get(couldBeMerged.head._1).head ++
                                 transformingMap.get(couldBeMerged.head._2).head).distinct
                             transformingMap =
@@ -491,7 +489,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                             replaceIdInMap(couldBeMerged.head._2, counter)
                             counter = counter + 1
                             updatedGraph = mergeIndependentBatches(updatedGraph)
-                        } else if (couldBeMerged.nonEmpty && strategy3auswahl == 2) {
+                        } else if (couldBeMerged.nonEmpty && scheduleStrategy == 4) {
                             def checkForLeastAmountOfAnalysis(): (Int, Int) = {
                                 var twoBatchesWithLeastAmountOfAnalysis = (0, 0)
                                 var otherSize = 0
@@ -594,7 +592,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     alreadyScheduledCS = alreadyScheduledCS ++ scheduledInThisPhase
                 }
             }
-
+            OPALLogger.info("scheduler", s"scheduling strategy ${scheduleStrategy} is selected")
         } { t => OPALLogger.info("scheduler", s"initialization of Scheduler took ${t.toSeconds}") }
 
         Schedule(
