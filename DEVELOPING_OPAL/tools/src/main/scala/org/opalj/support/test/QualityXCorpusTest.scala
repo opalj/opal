@@ -9,10 +9,8 @@ import org.opalj.support.info.Immutability
 
 object QualityXCorpusTest {
     def findBinDirectory(systemDir: File): Option[File] = {
-        // First level - get all subdirectories
         val subDirs = systemDir.listFiles().filter(_.isDirectory)
 
-        // For each subdirectory, look for a bin folder
         subDirs.flatMap { subDir =>
             val binDir = new File(subDir, "bin")
             if (binDir.exists() && binDir.isDirectory) {
@@ -24,50 +22,43 @@ object QualityXCorpusTest {
     }
 
     def main(args: Array[String]): Unit = {
-        // Configuration
-         val systemsRootPath = "C:/Users/vwysl/Desktop/Bachelorarbeit/Evaluation/QualitasCorpus/Systems"  // Path to the Systems directory
-         val resultsFolderPath = "C:/Users/vwysl/Desktop/Bachelorarbeit/Evaluation/results" // Where to store results
+        val systemsRootPath = "C:/Users/vwysl/Desktop/Bachelorarbeit/Evaluation/QualitasCorpus/Systems" // Path to the Systems directory
+        val resultsFolderPath = "C:/Users/vwysl/Desktop/Bachelorarbeit/Evaluation/results" // Where to store results
 
-        // Create results directory if it doesn't exist
         val resultsDir = new File(resultsFolderPath)
         if (!resultsDir.exists()) {
             resultsDir.mkdir()
         }
 
-        // Get all system directories
         val systemsRoot = new File(systemsRootPath)
         val systemDirs = systemsRoot.listFiles().filter(_.isDirectory)
 
         println(s"Found ${systemDirs.length} systems to analyze")
 
-        // Process each system
         systemDirs.foreach { systemDir =>
             try {
                 val systemName = systemDir.getName
                 println(s"\nAnalyzing system: $systemName")
 
-                // Find the bin directory
                 findBinDirectory(systemDir) match {
                     case Some(binPath) => {
                         println(s"Found bin directory at: ${binPath.getAbsolutePath}")
 
-                        // Configure analysis parameters
                         val analysisParams = Array(
                             "-cp",
                             binPath.getAbsolutePath,
                             "-resultFolder",
                             resultsDir.getAbsolutePath,
                             "-analysis",
-                            "All", // Run all analyses
+                            "All",
                             "-threads",
-                            "12", // Use 12 threads
+                            "12",
                             "-level",
-                            "2", // Use level 2 analysis
+                            "2",
                             "-analysisName",
-                            systemName // Use system name for output files
+                            systemName
                         )
 
-                        // Run the analysis
                         println(s"Running analysis on ${binPath.getAbsolutePath}")
                         Immutability.main(analysisParams)
 
