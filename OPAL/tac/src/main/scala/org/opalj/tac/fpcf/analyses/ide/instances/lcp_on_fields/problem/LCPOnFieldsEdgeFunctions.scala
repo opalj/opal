@@ -55,8 +55,14 @@ case class ObjectEdgeFunction(
                         .toMap
                 )
 
-            case PutFieldEdgeFunction(_, _) =>
-                throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
+            case PutFieldEdgeFunction(fieldName, value) =>
+                ObjectEdgeFunction(
+                    (values - fieldName) +
+                        (fieldName -> LinearConstantPropagationLattice.meet(
+                            value,
+                            values.getOrElse(fieldName, linear_constant_propagation.problem.VariableValue)
+                        ))
+                )
 
             case IdentityEdgeFunction()   => this
             case AllTopEdgeFunction(_)    => this
@@ -98,7 +104,8 @@ case class PutFieldEdgeFunction(
 
     override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
         secondEdgeFunction match {
-            case ObjectEdgeFunction(values) if values.contains(fieldName) => secondEdgeFunction
+            case ObjectEdgeFunction(values) if values.contains(fieldName) =>
+                ObjectEdgeFunction((values - fieldName) + (fieldName -> value))
             case ObjectEdgeFunction(values) =>
                 ObjectEdgeFunction(values + (fieldName -> value))
 
@@ -120,9 +127,12 @@ case class PutFieldEdgeFunction(
             case ObjectEdgeFunction(values2) =>
                 ObjectEdgeFunction(
                     (values2 - fieldName) +
-                        (fieldName -> values2.getOrElse(
-                            fieldName,
-                            linear_constant_propagation.problem.VariableValue
+                        (fieldName -> LinearConstantPropagationLattice.meet(
+                            value,
+                            values2.getOrElse(
+                                fieldName,
+                                linear_constant_propagation.problem.VariableValue
+                            )
                         ))
                 )
 
@@ -175,8 +185,8 @@ class ArrayEdgeFunction(
         secondEdgeFunction match {
             case NewArrayEdgeFunction(_) => secondEdgeFunction
 
-            case ArrayEdgeFunction(_, _) =>
-                throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
+            case ArrayEdgeFunction(initValue2, elements2) =>
+                new ArrayEdgeFunction(initValue2, (elements -- elements2.keys) ++ elements2)
 
             case PutElementEdgeFunction(index, value) =>
                 index match {
@@ -213,8 +223,21 @@ class ArrayEdgeFunction(
                         .toMap
                 )
 
-            case PutElementEdgeFunction(_, _) =>
-                throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
+            case PutElementEdgeFunction(index, value) =>
+                index match {
+                    case linear_constant_propagation.problem.UnknownValue =>
+                        UnknownValueEdgeFunction
+                    case linear_constant_propagation.problem.ConstantValue(i) =>
+                        new ArrayEdgeFunction(
+                            initValue,
+                            (elements - i) + (i -> LinearConstantPropagationLattice.meet(
+                                value,
+                                elements.getOrElse(i, initValue)
+                            ))
+                        )
+                    case linear_constant_propagation.problem.VariableValue =>
+                        new ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue, immutable.Map.empty)
+                }
 
             case IdentityEdgeFunction()   => this
             case AllTopEdgeFunction(_)    => this
@@ -276,8 +299,21 @@ case class PutElementEdgeFunction(
         secondEdgeFunction match {
             case NewArrayEdgeFunction(_) => secondEdgeFunction
 
-            case ArrayEdgeFunction(_, _) =>
-                throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
+            case ArrayEdgeFunction(initValue, elements) =>
+                index match {
+                    case linear_constant_propagation.problem.UnknownValue =>
+                        UnknownValueEdgeFunction
+                    case linear_constant_propagation.problem.ConstantValue(i) =>
+                        new ArrayEdgeFunction(
+                            initValue,
+                            (elements - i) + (i -> LinearConstantPropagationLattice.meet(
+                                value,
+                                elements.getOrElse(i, initValue)
+                            ))
+                        )
+                    case linear_constant_propagation.problem.VariableValue =>
+                        new ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue, immutable.Map.empty)
+                }
 
             case PutElementEdgeFunction(index2, _) if index == index2 => secondEdgeFunction
             case PutElementEdgeFunction(_, _) =>
@@ -295,8 +331,21 @@ case class PutElementEdgeFunction(
 
     override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
         otherEdgeFunction match {
-            case ArrayEdgeFunction(_, _) =>
-                throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
+            case ArrayEdgeFunction(initValue, elements) =>
+                index match {
+                    case linear_constant_propagation.problem.UnknownValue =>
+                        UnknownValueEdgeFunction
+                    case linear_constant_propagation.problem.ConstantValue(i) =>
+                        new ArrayEdgeFunction(
+                            initValue,
+                            (elements - i) + (i -> LinearConstantPropagationLattice.meet(
+                                value,
+                                elements.getOrElse(i, initValue)
+                            ))
+                        )
+                    case linear_constant_propagation.problem.VariableValue =>
+                        new ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue, immutable.Map.empty)
+                }
 
             case PutElementEdgeFunction(index2, value2) =>
                 PutElementEdgeFunction(
