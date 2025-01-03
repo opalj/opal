@@ -312,6 +312,9 @@ class LCPOnFieldsProblem(
 
                         /* All parameters (including the implicit 'this' reference) */
                         val allParams = callStmt.allParams
+                        val staticCallIndexOffset =
+                            if (callStmt.receiverOption.isEmpty) { 1 }
+                            else { 0 }
 
                         allParams
                             .zipWithIndex
@@ -321,9 +324,12 @@ class LCPOnFieldsProblem(
                                 param.asVar.definedBy.contains(f.definedAtIndex)
                             }
                             .map { case (_, index) =>
+                                val adjustedIndex = index + staticCallIndexOffset
                                 f match {
-                                    case _: AbstractObjectFact => ObjectFact(s"param$index", -(index + 1))
-                                    case _: AbstractArrayFact  => ArrayFact(s"param$index", -(index + 1))
+                                    case _: AbstractObjectFact =>
+                                        ObjectFact(s"param$adjustedIndex", -(adjustedIndex + 1))
+                                    case _: AbstractArrayFact =>
+                                        ArrayFact(s"param$adjustedIndex", -(adjustedIndex + 1))
                                 }
                             }
                             .toSet
@@ -363,10 +369,13 @@ class LCPOnFieldsProblem(
                         val callStmt = returnSite.stmt.asCall()
 
                         val allParams = callStmt.allParams
+                        val staticCallIndexOffset =
+                            if (callStmt.receiverOption.isEmpty) { 1 }
+                            else { 0 }
 
                         /* Distinguish parameters and local variables */
                         if (definedAtIndex < 0) {
-                            val paramIndex = -(definedAtIndex + 1)
+                            val paramIndex = -definedAtIndex - 1 - staticCallIndexOffset
                             val param = allParams(paramIndex)
                             val paramName = param.asVar.name.substring(1, param.asVar.name.length - 1)
                             param.asVar.definedBy.map { dAI =>
