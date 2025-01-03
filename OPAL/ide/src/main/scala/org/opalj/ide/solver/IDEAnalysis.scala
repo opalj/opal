@@ -11,6 +11,7 @@ import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
@@ -290,7 +291,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
      */
     // TODO (IDE) WHAT HAPPENS WHEN ANALYZING MULTIPLE CALLABLES? CAN WE CACHE E.G. JUMP/SUMMARY FUNCTIONS?
     def performAnalysis(callable: Callable): ProperPropertyComputationResult = {
-        logInfo(s"performing ${getClass.getSimpleName} for $callable")
+        logInfo(s"performing ${PropertyKey.name(propertyMetaInformation.key)} for $callable")
 
         implicit val state: State = new State(callable)
 

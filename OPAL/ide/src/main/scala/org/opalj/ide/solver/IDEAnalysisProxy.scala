@@ -33,7 +33,7 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
      *               is given, the result for all exit statements is calculated)
      */
     def proxyAnalysis(entity: Entity): ProperPropertyComputationResult = {
-        logInfo(s"Proxying request to ${PropertyKey.name(propertyMetaInformation.key)} for $entity")
+        logInfo(s"proxying request to ${PropertyKey.name(propertyMetaInformation.key)} for $entity")
 
         val (callable, stmt) = entity match {
             case (c: Entity, s: Entity) => (c.asInstanceOf[Callable], Some(s.asInstanceOf[Statement]))
