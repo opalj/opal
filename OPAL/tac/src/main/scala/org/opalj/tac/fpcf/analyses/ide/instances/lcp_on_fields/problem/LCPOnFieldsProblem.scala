@@ -5,6 +5,7 @@ import scala.collection.immutable
 import scala.collection.mutable
 
 import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
+import org.opalj.ai.isImplicitOrExternalException
 import org.opalj.br.Field
 import org.opalj.br.IntegerType
 import org.opalj.br.Method
@@ -354,6 +355,10 @@ class LCPOnFieldsProblem(
 
                     case f: AbstractEntityFact =>
                         val definedAtIndex = f.definedAtIndex
+
+                        if (isImplicitOrExternalException(definedAtIndex)) {
+                            return immutable.Set.empty
+                        }
 
                         val callStmt = returnSite.stmt.asCall()
 
