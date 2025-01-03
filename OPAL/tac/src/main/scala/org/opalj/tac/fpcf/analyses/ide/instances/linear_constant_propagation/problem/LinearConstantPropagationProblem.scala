@@ -529,7 +529,7 @@ class LinearConstantPropagationProblem
         callSiteFact: LinearConstantPropagationFact,
         callee:       Method
     )(implicit propertyStore: PropertyStore): Boolean = {
-        if (callee.isNative) {
+        if (callee.isNative || callee.body.isEmpty) {
             return true
         }
 
@@ -542,7 +542,7 @@ class LinearConstantPropagationProblem
         callee:       Method,
         returnSite:   JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
-        if (callee.isNative) {
+        if (callee.isNative || callee.body.isEmpty) {
             return emptyFlowFunction
         }
 
@@ -556,7 +556,7 @@ class LinearConstantPropagationProblem
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
     )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = {
-        if (callee.isNative) {
+        if (callee.isNative || callee.body.isEmpty) {
             return identityEdgeFunction
         }
 

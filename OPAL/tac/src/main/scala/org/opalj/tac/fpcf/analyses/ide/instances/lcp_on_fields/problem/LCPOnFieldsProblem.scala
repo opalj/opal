@@ -603,7 +603,7 @@ class LCPOnFieldsProblem(
         callSiteFact: LCPOnFieldsFact,
         callee:       Method
     )(implicit propertyStore: PropertyStore): Boolean = {
-        if (callee.isNative) {
+        if (callee.isNative || callee.body.isEmpty) {
             return true
         }
 
@@ -616,7 +616,7 @@ class LCPOnFieldsProblem(
         callee:       Method,
         returnSite:   JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
-        if (callee.isNative) {
+        if (callee.isNative || callee.body.isEmpty) {
             return new FlowFunction[LCPOnFieldsFact] {
                 override def compute(): FactsAndDependees = {
                     val callStmt = callSite.stmt.asCall()
@@ -656,7 +656,7 @@ class LCPOnFieldsProblem(
         returnSite:     JavaStatement,
         returnSiteFact: LCPOnFieldsFact
     )(implicit propertyStore: PropertyStore): EdgeFunction[LCPOnFieldsValue] = {
-        if (callee.isNative) {
+        if (callee.isNative || callee.body.isEmpty) {
             return returnSiteFact match {
                 case _: AbstractObjectFact =>
                     VariableValueEdgeFunction
