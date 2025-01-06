@@ -86,6 +86,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
          * The jump functions (incrementally calculated) in P1
          */
         private val jumpFunctions: JumpFunctions = mutable.Map.empty
+        /**
+         * Index-like structure for faster access of jump functions map
+         */
+        private val jumpFunctionSFTFByST = mutable.Map.empty[(Statement, Statement), mutable.Set[(Fact, Fact)]]
 
         /**
          * The summary functions (incrementally calculated) in P1
@@ -137,6 +141,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         def setJumpFunction(path: Path, jumpFunction: JumpFunction): Unit = {
             jumpFunctions.put(path, jumpFunction)
+
+            val ((source, sourceFact), (target, targetFact)) = path
+            jumpFunctionSFTFByST
+                .getOrElseUpdate((source, target), { mutable.Set.empty })
+                .add((sourceFact, targetFact))
         }
 
         def getJumpFunction(path: Path): JumpFunction = {
@@ -149,13 +158,41 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             target:     Option[Statement] = None,
             targetFact: Option[Fact]      = None
         ): collection.Map[Path, JumpFunction] = {
-            // TODO (IDE) THIS COULD BE OPTIMIZED TO SPEEDUP THE ANALYSIS
-            jumpFunctions.filter {
-                case (((s, sf), (t, tf)), _) =>
-                    source.forall { source => s == source } &&
-                        sourceFact.forall { sourceFact => sf == sourceFact } &&
-                        target.forall { target => t == target } &&
-                        targetFact.forall { targetFact => tf == targetFact }
+            ((source, sourceFact), (target, targetFact)) match {
+                case ((Some(s), None), (Some(t), None)) =>
+                    jumpFunctionSFTFByST.getOrElse((s, t), immutable.Set.empty[(Fact, Fact)])
+                        .map { case (sF, tF) =>
+                            val path = ((s, sF), (t, tF))
+                            path -> jumpFunctions(path)
+                        }
+                        .toMap
+
+                case ((Some(s), None), (Some(t), Some(tF))) =>
+                    jumpFunctionSFTFByST.getOrElse((s, t), immutable.Set.empty[(Fact, Fact)])
+                        .filter { case (_, tF2) => tF2 == tF }
+                        .map { case (sF, _) =>
+                            val path = ((s, sF), (t, tF))
+                            path -> jumpFunctions(path)
+                        }
+                        .toMap
+
+                case ((Some(s), Some(sF)), (Some(t), None)) =>
+                    jumpFunctionSFTFByST.getOrElse((s, t), immutable.Set.empty[(Fact, Fact)])
+                        .filter { case (sF2, _) => sF2 == sF }
+                        .map { case (_, tF) =>
+                            val path = ((s, sF), (t, tF))
+                            path -> jumpFunctions(path)
+                        }
+                        .toMap
+
+                case _ =>
+                    jumpFunctions.filter {
+                        case (((s, sf), (t, tf)), _) =>
+                            source.forall { source => s == source } &&
+                                sourceFact.forall { sourceFact => sf == sourceFact } &&
+                                target.forall { target => t == target } &&
+                                targetFact.forall { targetFact => tf == targetFact }
+                    }
             }
         }
 
