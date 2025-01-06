@@ -72,6 +72,8 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                 } else {
                     None
                 }
+            case _ =>
+                None
         }
 
         val lcpOnFieldsEOptionP =
