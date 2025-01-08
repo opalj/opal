@@ -2,14 +2,14 @@
 package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields
 
 import org.opalj.fpcf.PropertyKey
-import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LCPOnFieldsFact
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LCPOnFieldsValue
+import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEPropertyMetaInformation
 
 /**
  * Meta information for linear constant propagation on fields
  */
 object LCPOnFieldsPropertyMetaInformation
-    extends IDEPropertyMetaInformation[LCPOnFieldsFact, LCPOnFieldsValue] {
+    extends JavaIDEPropertyMetaInformation[LCPOnFieldsFact, LCPOnFieldsValue] {
     final val key: PropertyKey[Self] = PropertyKey.create("opalj.ide.LinearConstantPropagationOnFields")
 }

@@ -7,17 +7,13 @@ import scala.collection.mutable
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.Result
-import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomePartialResult
 import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.ide.integration.IDERawProperty
 import org.opalj.ide.problem.AllTopEdgeFunction
@@ -40,7 +36,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     val project:                 SomeProject,
     val problem:                 IDEProblem[Fact, Value, Statement, Callable],
     val icfg:                    ICFG[Statement, Callable],
-    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
+    val propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value]
 ) extends FPCFAnalysis with Logging.ByProjectConfig {
     private type Node = (Statement, Fact)
     /**
@@ -400,34 +396,20 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         val callable = s.targetCallable
 
         val (resultsByStatement, resultsForExit) = s.collectResults(callable)
-        val propertiesByStatement = resultsByStatement.map { case (stmt, results) =>
-            (stmt, new IDERawProperty(propertyMetaInformation.backingPropertyMetaInformation.key, results))
-        }
-        val propertyForExit =
-            new IDERawProperty(propertyMetaInformation.backingPropertyMetaInformation.key, resultsForExit)
+        val ideRawProperty = new IDERawProperty(
+            propertyMetaInformation.backingPropertyMetaInformation.key,
+            resultsByStatement,
+            resultsForExit
+        )
 
         logDebug("finished creation of properties")
 
         if (s.areDependeesEmpty) {
             logDebug("creating final results")
-            Results(
-                propertiesByStatement.map { case (stmt, property) =>
-                    Result((callable, stmt), property)
-                } ++ Iterable(
-                    Result(callable, propertyForExit)
-                )
-            )
+            Result(callable, ideRawProperty)
         } else {
             logDebug("creating interim results")
-            InterimPartialResult(
-                propertiesByStatement.map {
-                    case (stmt, property) => createPartialResult((callable, stmt), property)
-                } ++ Iterable(
-                    createPartialResult(callable, propertyForExit)
-                ),
-                s.getDependees.toSet,
-                onDependeeUpdateContinuation
-            )
+            InterimResult.forUB(callable, ideRawProperty, s.getDependees.toSet, onDependeeUpdateContinuation)
         }
     }
 
@@ -445,20 +427,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         performPhase2()
 
         createResult()
-    }
-
-    private def createPartialResult(entity: Entity, property: IDERawProperty[Fact, Value]): SomePartialResult = {
-        PartialResult(
-            entity,
-            propertyMetaInformation.backingPropertyMetaInformation.key,
-            { (eOptionP: SomeEOptionP) =>
-                if (eOptionP.hasUBP && eOptionP.ub == property) {
-                    None
-                } else {
-                    Some(InterimEUBP(entity, property))
-                }
-            }
-        )
     }
 
     private def seedPhase1()(implicit s: State): Unit = {

@@ -17,7 +17,7 @@ import org.opalj.ide.solver.IDEAnalysisProxy
  * @param methodProvider for which methods the results should be computed eagerly
  */
 class EagerIDEAnalysisProxyScheduler[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
-    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value],
+    val propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value],
     methodProvider:              SomeProject => Iterable[Method] = { project => project.allMethodsWithBody }
 ) extends BaseIDEAnalysisProxyScheduler[Fact, Value, Statement, Callable] with FPCFEagerAnalysisScheduler {
     def this(ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable, ?]) = {

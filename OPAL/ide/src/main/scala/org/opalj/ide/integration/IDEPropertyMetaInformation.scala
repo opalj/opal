@@ -8,14 +8,14 @@ import org.opalj.ide.problem.IDEValue
 /**
  * Base interface of property meta information of IDE analyses. Creates [[BasicIDEProperty]] by default.
  */
-trait IDEPropertyMetaInformation[Fact <: IDEFact, Value <: IDEValue] extends PropertyMetaInformation {
+trait IDEPropertyMetaInformation[Statement, Fact <: IDEFact, Value <: IDEValue] extends PropertyMetaInformation {
     override type Self = BasicIDEProperty[Fact, Value]
 
     /**
      * A property meta information corresponding to this one but used for the actual/underlying IDE analysis
      */
-    private[ide] val backingPropertyMetaInformation: IDERawPropertyMetaInformation[Fact, Value] =
-        new IDERawPropertyMetaInformation[Fact, Value](this)
+    private[ide] val backingPropertyMetaInformation: IDERawPropertyMetaInformation[Statement, Fact, Value] =
+        new IDERawPropertyMetaInformation[Statement, Fact, Value](this)
 
     /**
      * Create a property

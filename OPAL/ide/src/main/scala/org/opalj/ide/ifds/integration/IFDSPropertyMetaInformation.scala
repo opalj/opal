@@ -8,4 +8,5 @@ import org.opalj.ide.problem.IDEFact
 /**
  * Interface for property meta information for IFDS problems based on an IDE problem
  */
-trait IFDSPropertyMetaInformation[Fact <: IDEFact] extends IDEPropertyMetaInformation[Fact, IFDSValue]
+trait IFDSPropertyMetaInformation[Statement, Fact <: IDEFact]
+    extends IDEPropertyMetaInformation[Statement, Fact, IFDSValue]

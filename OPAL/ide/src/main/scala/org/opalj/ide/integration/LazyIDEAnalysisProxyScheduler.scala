@@ -15,7 +15,7 @@ import org.opalj.ide.solver.IDEAnalysisProxy
  * A scheduler to (lazily) schedule the proxy analysis that is used to access the IDE analysis results
  */
 class LazyIDEAnalysisProxyScheduler[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
-    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value]
+    val propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value]
 ) extends BaseIDEAnalysisProxyScheduler[Fact, Value, Statement, Callable] with FPCFLazyAnalysisScheduler {
     def this(ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable, ?]) = {
         this(ideAnalysisScheduler.propertyMetaInformation)

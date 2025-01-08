@@ -8,13 +8,13 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LCPOnFieldsFact
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LCPOnFieldsProblem
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LCPOnFieldsValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
+import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 
@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
  */
 abstract class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCPOnFieldsFact, LCPOnFieldsValue]
     with JavaIDEAnalysisSchedulerBase.ForwardICFG {
-    override def propertyMetaInformation: IDEPropertyMetaInformation[LCPOnFieldsFact, LCPOnFieldsValue] =
+    override def propertyMetaInformation: JavaIDEPropertyMetaInformation[LCPOnFieldsFact, LCPOnFieldsValue] =
         LCPOnFieldsPropertyMetaInformation
 
     override def createProblem(project: SomeProject, icfg: JavaICFG): JavaIDEProblem[
