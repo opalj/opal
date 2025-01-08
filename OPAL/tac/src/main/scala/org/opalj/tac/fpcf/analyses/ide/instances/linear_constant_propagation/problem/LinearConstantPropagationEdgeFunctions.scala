@@ -133,10 +133,6 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
         }
     }
 
-    override def meetWith(
-        otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
-    ): EdgeFunction[LinearConstantPropagationValue] = this
-
     override def equalTo(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean =
         otherEdgeFunction eq this
 
