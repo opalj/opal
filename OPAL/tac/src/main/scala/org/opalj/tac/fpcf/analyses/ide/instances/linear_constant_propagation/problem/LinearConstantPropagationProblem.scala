@@ -576,4 +576,46 @@ class LinearConstantPropagationProblem
 
         super.getPrecomputedSummaryFunction(callSite, callSiteFact, callee, returnSite, returnSiteFact)
     }
+
+    override def getPrecomputedFlowFunction(
+        callSite:     JavaStatement,
+        callSiteFact: LinearConstantPropagationFact,
+        returnSite:   JavaStatement
+    )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
+        new FlowFunction[LinearConstantPropagationFact] {
+            override def compute(): FactsAndDependees = {
+                if (!callSite.stmt.asCall().descriptor.returnType.isIntegerType) {
+                    callSiteFact match {
+                        case NullFact =>
+                            returnSite.stmt.astID match {
+                                case Assignment.ASTID =>
+                                    val assignment = returnSite.stmt.asAssignment
+                                    immutable.Set(callSiteFact, VariableFact(assignment.targetVar.name, returnSite.pc))
+
+                                case _ => immutable.Set(callSiteFact)
+                            }
+
+                        case VariableFact(_, _) => immutable.Set(callSiteFact)
+                    }
+                } else {
+                    immutable.Set(callSiteFact)
+                }
+            }
+        }
+    }
+
+    override def getPrecomputedSummaryFunction(
+        callSite:       JavaStatement,
+        callSiteFact:   LinearConstantPropagationFact,
+        returnSite:     JavaStatement,
+        returnSiteFact: LinearConstantPropagationFact
+    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = {
+        (callSiteFact, returnSiteFact) match {
+            case (NullFact, VariableFact(_, _)) =>
+                VariableValueEdgeFunction
+
+            case _ =>
+                identityEdgeFunction
+        }
+    }
 }

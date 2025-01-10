@@ -699,4 +699,71 @@ class LCPOnFieldsProblem(
 
         super.getPrecomputedSummaryFunction(callSite, callSiteFact, callee, returnSite, returnSiteFact)
     }
+
+    override def getPrecomputedFlowFunction(
+        callSite:     JavaStatement,
+        callSiteFact: LCPOnFieldsFact,
+        returnSite:   JavaStatement
+    )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
+        new FlowFunction[LCPOnFieldsFact] {
+            override def compute(): FactsAndDependees = {
+                callSiteFact match {
+                    case NullFact =>
+                        returnSite.stmt.astID match {
+                            case Assignment.ASTID =>
+                                val callStmt = callSite.stmt.asCall()
+                                val assignment = returnSite.stmt.asAssignment
+
+                                if (callStmt.descriptor.returnType.isObjectType) {
+                                    immutable.Set(callSiteFact, NewObjectFact(assignment.targetVar.name, returnSite.pc))
+                                } else if (callStmt.descriptor.returnType.isArrayType &&
+                                           callStmt.descriptor.returnType.asArrayType.componentType.isIntegerType
+                                ) {
+                                    immutable.Set(callSiteFact, NewArrayFact(assignment.targetVar.name, returnSite.pc))
+                                } else {
+                                    immutable.Set(callSiteFact)
+                                }
+
+                            case _ => immutable.Set(callSiteFact)
+                        }
+
+                    case f: AbstractEntityFact =>
+                        immutable.Set(f.toObjectOrArrayFact)
+
+                    case f: AbstractStaticFieldFact =>
+                        immutable.Set(f.toStaticFieldFact)
+                }
+            }
+        }
+    }
+
+    override def getPrecomputedSummaryFunction(
+        callSite:       JavaStatement,
+        callSiteFact:   LCPOnFieldsFact,
+        returnSite:     JavaStatement,
+        returnSiteFact: LCPOnFieldsFact
+    )(implicit propertyStore: PropertyStore): EdgeFunction[LCPOnFieldsValue] = {
+        (callSiteFact, returnSiteFact) match {
+            case (NullFact, _: AbstractObjectFact) =>
+                VariableValueEdgeFunction
+
+            case (NullFact, _: AbstractArrayFact) =>
+                NewArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
+
+            case (_: AbstractEntityFact, f: AbstractEntityFact) =>
+                val callStmt = callSite.stmt.asCall()
+
+                /* Check whether fact corresponds to one of the parameters */
+                if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
+                    VariableValueEdgeFunction
+                } else {
+                    identityEdgeFunction
+                }
+
+            case (_, _: AbstractStaticFieldFact) =>
+                VariableValueEdgeFunction
+
+            case _ => identityEdgeFunction
+        }
+    }
 }
