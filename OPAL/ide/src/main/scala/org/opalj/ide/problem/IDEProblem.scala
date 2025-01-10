@@ -184,12 +184,15 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * @param callSiteFact the fact the flow starts with
      * @param callee the callable this flow is about
      * @param returnSite where the flow ends (e.g. the next statement after the call)
+     * @note In this type of precomputed flow the callable is known. Thus, the call-to-return flow can be applied
+     *       normally and does not need to be integrated in this flow.
      */
     def getPrecomputedFlowFunction(callSite: Statement, callSiteFact: Fact, callee: Callable, returnSite: Statement)(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact] = {
         throw new IllegalArgumentException(
-            s"No precomputed flow function for callSite=$callSite, callee=$callee and returnSite=$returnSite exists!"
+            s"No precomputed flow function for callSite=$callSite, callSiteFact=$callSiteFact, callee=$callee and " +
+                s"returnSite=$returnSite exists!"
         )
     }
 
@@ -201,6 +204,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * @param callee the callable the flow is about
      * @param returnSite where the flow ends (e.g. the next statement after the call)
      * @param returnSiteFact the fact the flow ends with
+     * @note In this type of precomputed flow the callable is known. Thus, the call-to-return flow can be applied
+     *       normally and does not need to be integrated in this flow.
      */
     def getPrecomputedSummaryFunction(
         callSite:       Statement,
@@ -212,6 +217,47 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         throw new IllegalArgumentException(
             s"No precomputed summary function for callSite=$callSite, callSiteFact=$callSiteFact, " +
                 s"callee=$callee, returnSite=$returnSite and returnSiteFact=$returnSiteFact exists!"
+        )
+    }
+
+    /**
+     * Generate a flow function that yields the facts that are valid when going through the unknown callable and
+     * reaching the return site. Similar to a call-to-return flow (cfg. [[getCallToReturnFlowFunction]]) but capturing
+     * the effects that flow through the possible callables.
+     * @param callSite where the flow starts (always a call statement)
+     * @param callSiteFact the fact the flow starts with
+     * @param returnSite where the flow ends (e.g. the next statement after the call)
+     * @note In this type of precomputed flow the callable is unknown. Thus, the call-to-return flow is not applied and
+     *       needs to be integrated into this flow.
+     */
+    def getPrecomputedFlowFunction(callSite: Statement, callSiteFact: Fact, returnSite: Statement)(
+        implicit propertyStore: PropertyStore
+    ): FlowFunction[Fact] = {
+        throw new IllegalArgumentException(
+            s"No precomputed flow function for callSite=$callSite, callSiteFact=$callSiteFact and " +
+                s"returnSite=$returnSite exists!"
+        )
+    }
+
+    /**
+     * Generate a summary function from a call-site node up to a return-site node (just what summary functions are in
+     * the foundation paper, but in one step and for all callables that are possible call targets).
+     * @param callSite where the flow starts (always a call statement)
+     * @param callSiteFact the fact the flow starts with
+     * @param returnSite where the flow ends (e.g. the next statement after the call)
+     * @param returnSiteFact the fact the flow ends with
+     * @note In this type of precomputed flow the callable is unknown. Thus, the call-to-return flow is not applied and
+     *       needs to be integrated into this flow.
+     */
+    def getPrecomputedSummaryFunction(
+        callSite:       Statement,
+        callSiteFact:   Fact,
+        returnSite:     Statement,
+        returnSiteFact: Fact
+    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
+        throw new IllegalArgumentException(
+            s"No precomputed summary function for callSite=$callSite, callSiteFact=$callSiteFact, " +
+                s"returnSite=$returnSite and returnSiteFact=$returnSiteFact exists!"
         )
     }
 }

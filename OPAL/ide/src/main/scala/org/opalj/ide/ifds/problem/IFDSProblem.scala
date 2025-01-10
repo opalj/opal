@@ -105,4 +105,17 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
             identityEdgeFunction
         }
     }
+
+    override final def getPrecomputedSummaryFunction(
+        callSite:       Statement,
+        callSiteFact:   Fact,
+        returnSite:     Statement,
+        returnSiteFact: Fact
+    )(implicit propertyStore: PropertyStore): EdgeFunction[IFDSValue] = {
+        if (callSiteFact == nullFact) {
+            AllBottomEdgeFunction
+        } else {
+            identityEdgeFunction
+        }
+    }
 }

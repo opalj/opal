@@ -238,6 +238,32 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         edgeFunction
     }
 
+    override def getPrecomputedFlowFunction(callSite: Statement, callSiteFact: Fact, returnSite: Statement)(
+        implicit propertyStore: PropertyStore
+    ): FlowFunction[Fact] = {
+        new RecordingFlowFunction(
+            baseProblem.getPrecomputedFlowFunction(callSite, callSiteFact, returnSite),
+            callSite,
+            callSiteFact,
+            returnSite,
+            "precomputed flow"
+        )
+    }
+
+    override def getPrecomputedSummaryFunction(
+        callSite:       Statement,
+        callSiteFact:   Fact,
+        returnSite:     Statement,
+        returnSiteFact: Fact
+    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
+        val edgeFunction = baseProblem.getPrecomputedSummaryFunction(callSite, callSiteFact, returnSite, returnSiteFact)
+        collectedEdgeFunctions.put(
+            createDotEdge(callSite, callSiteFact, returnSite, returnSiteFact, "precomputed flow"),
+            edgeFunction
+        )
+        edgeFunction
+    }
+
     private def createDotEdge(
         source:     Statement,
         sourceFact: Fact,

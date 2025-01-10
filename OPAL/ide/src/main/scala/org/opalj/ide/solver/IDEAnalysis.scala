@@ -468,7 +468,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             logTrace(s"current jumpFunction=$f")
 
             if (icfg.isCallStatement(n)) { // IDE P1 line 11
-                processCallFlow(path, f, icfg.getCalleesNonEmpty(n))
+                processCallFlow(path, f, icfg.getCallees(n))
             } else if (icfg.isNormalExitStatement(n)) { // IDE P1 line 19
                 processExitFlow(path, f)
             } else { // IDE P1 line 30
@@ -488,99 +488,125 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         val rs = icfg.getNextStatements(n) // IDE P1 line 14
 
-        qs.foreach { q =>
-            logDebug(s"handling call target q=$q")
-
-            if (problem.hasPrecomputedFlowAndSummaryFunction(n, d2, q)) {
-                logDebug(s"handling path with precomputed information")
-
-                /* Handling for precomputed summaries */
-                rs.foreach { r =>
-                    val d5s = handleFlowFunctionResult(problem.getPrecomputedFlowFunction(n, d2, q, r).compute(), path)
-
-                    logTrace(s"generated the following d5s=$d5s for return statement r=${icfg.stringifyStatement(r)}")
-
-                    d5s.foreach { d5 =>
-                        val summaryFunction = problem.getPrecomputedSummaryFunction(n, d2, q, r, d5)
-                        val callToReturnPath = ((n, d2), (r, d5))
-                        val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
-                        val fPrime = summaryFunction.meetWith(oldSummaryFunction)
-
-                        if (!fPrime.equalTo(oldSummaryFunction)) {
-                            s.setSummaryFunction(callToReturnPath, fPrime)
-                        }
-
-                        propagate(((sp, d1), (r, d5)), f.composeWith(fPrime))
-                    }
-                }
-            } else {
-                val sqs = icfg.getStartStatements(q)
-                sqs.foreach { sq =>
-                    // IDE P1 lines 12 - 13
-                    val d3s = handleFlowFunctionResult(problem.getCallFlowFunction(n, d2, sq, q).compute(), path)
-
-                    logTrace(s"generated the following d3s=$d3s for start statement sq=${icfg.stringifyStatement(sq)}")
-
-                    d3s.foreach { d3 =>
-                        s.rememberCallEdge(((n, d2), (sq, d3)))
-
-                        val endSummaries = s.getEndSummaries((sq, d3))
-                        // Handling for end summaries extension
-                        if (endSummaries.nonEmpty) {
-                            endSummaries.foreach { case ((eq, d4), fEndSummary) =>
-                                val f4 = handleEdgeFunctionResult(problem.getCallEdgeFunction(n, d2, sq, d3, q), path)
-                                rs.foreach { r =>
-                                    val d5s = handleFlowFunctionResult(
-                                        problem.getReturnFlowFunction(eq, d4, q, r).compute(),
-                                        path
-                                    )
-                                    d5s.foreach { d5 =>
-                                        val f5 = handleEdgeFunctionResult(
-                                            problem.getReturnEdgeFunction(eq, d4, q, r, d5),
-                                            path
-                                        )
-                                        val callToReturnPath = ((n, d2), (r, d5))
-                                        val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
-                                        val fPrime =
-                                            f4.composeWith(fEndSummary).composeWith(f5).meetWith(oldSummaryFunction)
-
-                                        if (!fPrime.equalTo(oldSummaryFunction)) {
-                                            s.setSummaryFunction(callToReturnPath, fPrime)
-                                        }
-
-                                        propagate(((sp, d1), (r, d5)), f.composeWith(fPrime))
-                                    }
-                                }
-                            }
-                        } else {
-                            // Default algorithm behavior
-                            propagate(((sq, d3), (sq, d3)), identityEdgeFunction)
-                        }
-                    }
-                }
-            }
+        if (qs.isEmpty) {
+            logDebug(s"handling path with precomputed information as qs=$qs")
 
             rs.foreach { r =>
-                val d3s = handleFlowFunctionResult(problem.getCallToReturnFlowFunction(n, d2, q, r).compute(), path)
+                val d5s = handleFlowFunctionResult(problem.getPrecomputedFlowFunction(n, d2, r).compute(), path)
 
-                logTrace(s"generated the following d3s=$d3s for return-site statement r=${icfg.stringifyStatement(r)}")
+                logTrace(s"generated the following d5s=$d5s for return statement r=${icfg.stringifyStatement(r)}")
 
-                // IDE P1 lines 15 - 16
-                d3s.foreach { d3 =>
-                    propagate(
-                        ((sp, d1), (r, d3)),
-                        f.composeWith(handleEdgeFunctionResult(
-                            problem.getCallToReturnEdgeFunction(n, d2, q, r, d3),
-                            path
-                        ))
-                    )
+                d5s.foreach { d5 =>
+                    val summaryFunction = problem.getPrecomputedSummaryFunction(n, d2, r, d5)
+                    val callToReturnPath = ((n, d2), (r, d5))
+                    val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
+                    val fPrime = summaryFunction.meetWith(oldSummaryFunction)
+
+                    if (!fPrime.equalTo(oldSummaryFunction)) {
+                        s.setSummaryFunction(callToReturnPath, fPrime)
+                    }
+
+                    propagate(((sp, d1), (r, d5)), f.composeWith(fPrime))
+                }
+            }
+        } else {
+
+            qs.foreach { q =>
+                logDebug(s"handling call target q=$q")
+
+                if (problem.hasPrecomputedFlowAndSummaryFunction(n, d2, q)) {
+                    logDebug(s"handling path with precomputed information")
+
+                    /* Handling for precomputed summaries */
+                    rs.foreach { r =>
+                        val d5s =
+                            handleFlowFunctionResult(problem.getPrecomputedFlowFunction(n, d2, q, r).compute(), path)
+
+                        logTrace(s"generated the following d5s=$d5s for return statement r=${icfg.stringifyStatement(r)}")
+
+                        d5s.foreach { d5 =>
+                            val summaryFunction = problem.getPrecomputedSummaryFunction(n, d2, q, r, d5)
+                            val callToReturnPath = ((n, d2), (r, d5))
+                            val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
+                            val fPrime = summaryFunction.meetWith(oldSummaryFunction)
+
+                            if (!fPrime.equalTo(oldSummaryFunction)) {
+                                s.setSummaryFunction(callToReturnPath, fPrime)
+                            }
+
+                            propagate(((sp, d1), (r, d5)), f.composeWith(fPrime))
+                        }
+                    }
+                } else {
+                    val sqs = icfg.getStartStatements(q)
+                    sqs.foreach { sq =>
+                        // IDE P1 lines 12 - 13
+                        val d3s = handleFlowFunctionResult(problem.getCallFlowFunction(n, d2, sq, q).compute(), path)
+
+                        logTrace(s"generated the following d3s=$d3s for start statement sq=${icfg.stringifyStatement(sq)}")
+
+                        d3s.foreach { d3 =>
+                            s.rememberCallEdge(((n, d2), (sq, d3)))
+
+                            val endSummaries = s.getEndSummaries((sq, d3))
+                            // Handling for end summaries extension
+                            if (endSummaries.nonEmpty) {
+                                endSummaries.foreach { case ((eq, d4), fEndSummary) =>
+                                    val f4 =
+                                        handleEdgeFunctionResult(problem.getCallEdgeFunction(n, d2, sq, d3, q), path)
+                                    rs.foreach { r =>
+                                        val d5s = handleFlowFunctionResult(
+                                            problem.getReturnFlowFunction(eq, d4, q, r).compute(),
+                                            path
+                                        )
+                                        d5s.foreach { d5 =>
+                                            val f5 = handleEdgeFunctionResult(
+                                                problem.getReturnEdgeFunction(eq, d4, q, r, d5),
+                                                path
+                                            )
+                                            val callToReturnPath = ((n, d2), (r, d5))
+                                            val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
+                                            val fPrime =
+                                                f4.composeWith(fEndSummary).composeWith(f5).meetWith(oldSummaryFunction)
+
+                                            if (!fPrime.equalTo(oldSummaryFunction)) {
+                                                s.setSummaryFunction(callToReturnPath, fPrime)
+                                            }
+
+                                            propagate(((sp, d1), (r, d5)), f.composeWith(fPrime))
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Default algorithm behavior
+                                propagate(((sq, d3), (sq, d3)), identityEdgeFunction)
+                            }
+                        }
+                    }
                 }
 
-                // IDE P1 lines 17 - 18
-                d3s.foreach { d3 =>
-                    val f3 = s.getSummaryFunction(((n, d2), (r, d3)))
-                    if (!f3.equalTo(allTopEdgeFunction)) {
-                        propagate(((sp, d1), (r, d3)), f.composeWith(f3))
+                rs.foreach { r =>
+                    val d3s = handleFlowFunctionResult(problem.getCallToReturnFlowFunction(n, d2, q, r).compute(), path)
+
+                    logTrace(s"generated the following d3s=$d3s for return-site statement r=${icfg.stringifyStatement(r)}")
+
+                    // IDE P1 lines 15 - 16
+                    d3s.foreach { d3 =>
+                        propagate(
+                            ((sp, d1), (r, d3)),
+                            f.composeWith(handleEdgeFunctionResult(
+                                problem.getCallToReturnEdgeFunction(n, d2, q, r, d3),
+                                path
+                            ))
+                        )
+                    }
+
+                    // IDE P1 lines 17 - 18
+                    d3s.foreach { d3 =>
+                        val f3 = s.getSummaryFunction(((n, d2), (r, d3)))
+                        if (!f3.equalTo(allTopEdgeFunction)) {
+                            propagate(((sp, d1), (r, d3)), f.composeWith(f3))
+                        }
                     }
                 }
             }
@@ -754,7 +780,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             val (n, _) = node
 
             if (icfg.isCallStatement(n)) { // IDE P2 line 11
-                processCallNode(node, icfg.getCalleesNonEmpty(n))
+                processCallNode(node, icfg.getCallees(n))
             } else { // IDE P2 line 7
                 processStartNode(node)
             }
