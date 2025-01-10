@@ -543,7 +543,21 @@ class LinearConstantPropagationProblem
         returnSite:   JavaStatement
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         if (callee.isNative || callee.body.isEmpty) {
-            return emptyFlowFunction
+            return new FlowFunction[LinearConstantPropagationFact] {
+                override def compute(): FactsAndDependees = {
+                    if (callee.returnType.isIntegerType) {
+                        returnSite.stmt.astID match {
+                            case Assignment.ASTID =>
+                                val assignment = returnSite.stmt.asAssignment
+                                immutable.Set(VariableFact(assignment.targetVar.name, returnSite.pc))
+
+                            case _ => immutable.Set.empty
+                        }
+                    } else {
+                        immutable.Set.empty
+                    }
+                }
+            }
         }
 
         super.getPrecomputedFlowFunction(callSite, callSiteFact, callee, returnSite)
@@ -557,7 +571,7 @@ class LinearConstantPropagationProblem
         returnSiteFact: LinearConstantPropagationFact
     )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = {
         if (callee.isNative || callee.body.isEmpty) {
-            return identityEdgeFunction
+            return VariableValueEdgeFunction
         }
 
         super.getPrecomputedSummaryFunction(callSite, callSiteFact, callee, returnSite, returnSiteFact)

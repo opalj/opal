@@ -633,19 +633,27 @@ class LCPOnFieldsProblem(
         if (callee.isNative || callee.body.isEmpty) {
             return new FlowFunction[LCPOnFieldsFact] {
                 override def compute(): FactsAndDependees = {
-                    val callStmt = callSite.stmt.asCall()
-
                     callSiteFact match {
                         case NullFact =>
                             returnSite.stmt.astID match {
                                 case Assignment.ASTID =>
                                     val assignment = returnSite.stmt.asAssignment
-                                    immutable.Set(NewObjectFact(assignment.targetVar.name, returnSite.pc))
+                                    if (callee.returnType.isObjectType) {
+                                        immutable.Set(NewObjectFact(assignment.targetVar.name, returnSite.pc))
+                                    } else if (callee.returnType.isArrayType &&
+                                               callee.returnType.asArrayType.componentType.isIntegerType
+                                    ) {
+                                        immutable.Set(NewArrayFact(assignment.targetVar.name, returnSite.pc))
+                                    } else {
+                                        immutable.Set.empty
+                                    }
 
                                 case _ => immutable.Set.empty
                             }
 
                         case f: AbstractEntityFact =>
+                            val callStmt = callSite.stmt.asCall()
+
                             /* Check whether fact corresponds to one of the parameters */
                             if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
                                 immutable.Set(f.toObjectOrArrayFact)
@@ -653,8 +661,12 @@ class LCPOnFieldsProblem(
                                 immutable.Set.empty
                             }
 
-                        case _: AbstractStaticFieldFact =>
-                            immutable.Set.empty
+                        case f: AbstractStaticFieldFact =>
+                            if (callee.classFile.thisType == f.objectType) {
+                                immutable.Set(f.toStaticFieldFact)
+                            } else {
+                                immutable.Set.empty
+                            }
                     }
                 }
             }
