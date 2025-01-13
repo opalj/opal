@@ -28,7 +28,12 @@ case class JavaStatement(
 
     def basicBlock: BasicBlock = cfg.bb(pc)
 
-    override def hashCode(): Int = method.hashCode() * 31 + pc
+    override def hashCode(): Int = {
+        (method.hashCode() * 31 + pc) * 31 + (
+            if (isReturnNode) { 1 }
+            else { 0 }
+        )
+    }
 
     override def equals(obj: Any): Boolean = obj match {
         case JavaStatement(method2, pc2, isReturnNode2, _, _) =>
