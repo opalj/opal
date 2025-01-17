@@ -73,7 +73,7 @@ class LCPOnFieldsProblem(
         }
     }
 
-    private def getEdgeFunctionForStaticFieldFactByImmutability(staticFieldFact: StaticFieldFact)(
+    private def getEdgeFunctionForStaticFieldFactByImmutability(staticFieldFact: AbstractStaticFieldFact)(
         implicit propertyStore: PropertyStore
     ): EdgeFunctionResult[LCPOnFieldsValue] = {
         val declaredField = declaredFields(staticFieldFact.objectType, staticFieldFact.fieldName, IntegerType)
@@ -760,8 +760,18 @@ class LCPOnFieldsProblem(
                     identityEdgeFunction
                 }
 
-            case (_, _: AbstractStaticFieldFact) =>
-                VariableValueEdgeFunction
+            case (_, f: AbstractStaticFieldFact) =>
+                val declaredField = declaredFields(f.objectType, f.fieldName, IntegerType)
+                if (!declaredField.isDefinedField) {
+                    return PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue)
+                }
+                val field = declaredField.definedField
+
+                if (callStmt.declaringClass != f.objectType && field.isPrivate) {
+                    identityEdgeFunction
+                } else {
+                    getEdgeFunctionForStaticFieldFactByImmutability(f)
+                }
 
             case _ => identityEdgeFunction
         }
