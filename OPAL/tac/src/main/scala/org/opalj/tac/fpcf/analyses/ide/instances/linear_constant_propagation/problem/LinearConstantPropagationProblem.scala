@@ -583,7 +583,7 @@ class LinearConstantPropagationProblem
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         new FlowFunction[LinearConstantPropagationFact] {
             override def compute(): FactsAndDependees = {
-                if (!callSite.stmt.asCall().descriptor.returnType.isIntegerType) {
+                if (callSite.stmt.asCall().descriptor.returnType.isIntegerType) {
                     callSiteFact match {
                         case NullFact =>
                             returnSite.stmt.astID match {
