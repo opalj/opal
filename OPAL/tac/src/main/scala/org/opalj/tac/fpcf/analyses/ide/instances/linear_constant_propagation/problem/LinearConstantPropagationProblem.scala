@@ -372,8 +372,8 @@ class LinearConstantPropagationProblem
         val leftExpr = binaryExpr.left
         val rightExpr = binaryExpr.right
 
-        if (leftExpr.astID != Var.ASTID && leftExpr.astID != IntConst.ASTID
-            || rightExpr.astID != Var.ASTID && rightExpr.astID != IntConst.ASTID
+        if (leftExpr.astID != Var.ASTID && leftExpr.astID != IntConst.ASTID ||
+            rightExpr.astID != Var.ASTID && rightExpr.astID != IntConst.ASTID
         ) {
             throw new IllegalArgumentException(s"Combination ($leftExpr, $rightExpr) should not occur here!")
         }
