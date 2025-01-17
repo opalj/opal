@@ -16,7 +16,7 @@ import org.opalj.ide.ConfigKeyTraceLog
 import org.opalj.tac.cg.RTACallGraphKey
 
 class IDEPropertiesTest extends PropertiesTest {
-    override def withRT: Boolean = true
+    override def withRT: Boolean = false
 
     override def createConfig(): Config = {
         super.createConfig()
