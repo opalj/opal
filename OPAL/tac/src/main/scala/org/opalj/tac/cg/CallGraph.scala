@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  *
  * @author Florian Kuebler
  */
-class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIterator) {
+class CallGraph()(implicit ps: PropertyStore, typeIterator: TypeIterator) {
     assert(ps.entities(_.pk == Callees.key).forall(ps(_, Callees.key).isFinal))
     assert(ps.entities(_.pk == Callers.key).forall(ps(_, Callers.key).isFinal))
 

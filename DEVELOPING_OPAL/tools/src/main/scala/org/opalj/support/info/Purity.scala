@@ -46,8 +46,6 @@ import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.ComputationSpecification
@@ -251,23 +249,24 @@ object Purity {
 
         val manager = project.get(FPCFAnalysesManagerKey)
 
+        val callGraphAnalyses = callGraphKey.allCallGraphAnalyses(project)
+        val allAnalyses = callGraphAnalyses.toList ++ (analysis :: support)
+
         time {
-            project.get(callGraphKey)
+            callGraphKey.requirements(project)
         } { t => callGraphTime = t.toSeconds }
 
-        val reachableMethods =
-            ps.entities(Callers.key).collect {
-                case FinalEP(m: DeclaredMethod, c: Callers) if c ne NoCallers => m
-            }.toSet
-
+        val reachableMethods: Set[DeclaredMethod] = declaredMethods.declaredMethods.toSet
         val contextProvider = project.get(ContextProviderKey)
+        project.updateProjectInformationKeyInitializationData(ContextProviderKey)(_ =>
+            callGraphKey.getTypeIterator(project)
+        )
+
         val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
 
         time {
-            val analyses = analysis :: support
-
             manager.runAll(
-                analyses,
+                allAnalyses,
                 (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                     if (css.contains(analysis)) {
                         analyzedContexts.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
