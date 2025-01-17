@@ -76,14 +76,9 @@ class LCPOnFieldsProblem(
     private def getEdgeFunctionForStaticFieldFactByImmutability(staticFieldFact: StaticFieldFact)(
         implicit propertyStore: PropertyStore
     ): EdgeFunctionResult[LCPOnFieldsValue] = {
-        val declaredField =
-            declaredFields(
-                staticFieldFact.objectType,
-                staticFieldFact.fieldName,
-                IntegerType
-            )
+        val declaredField = declaredFields(staticFieldFact.objectType, staticFieldFact.fieldName, IntegerType)
         if (!declaredField.isDefinedField) {
-            return identityEdgeFunction
+            return PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue)
         }
         val field = declaredField.definedField
 
@@ -238,12 +233,7 @@ class LCPOnFieldsProblem(
 
                         /* Only fields of type integer */
                         if (putStatic.declaredFieldType.isIntegerType) {
-                            val declaredField =
-                                declaredFields(
-                                    putStatic.declaringClass,
-                                    putStatic.name,
-                                    putStatic.declaredFieldType
-                                )
+                            val declaredField = declaredFields(putStatic.declaringClass, putStatic.name, IntegerType)
                             if (!declaredField.isDefinedField) {
                                 return immutable.Set(sourceFact)
                             }
@@ -683,6 +673,9 @@ class LCPOnFieldsProblem(
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = {
         if (callee.isNative || callee.body.isEmpty) {
             return returnSiteFact match {
+                case NullFact =>
+                    identityEdgeFunction
+
                 case _: AbstractObjectFact =>
                     VariableValueEdgeFunction
 
@@ -690,9 +683,7 @@ class LCPOnFieldsProblem(
                     NewArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
 
                 case _: AbstractStaticFieldFact =>
-                    VariableValueEdgeFunction
-
-                case _ => identityEdgeFunction
+                    PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue)
             }
         }
 
