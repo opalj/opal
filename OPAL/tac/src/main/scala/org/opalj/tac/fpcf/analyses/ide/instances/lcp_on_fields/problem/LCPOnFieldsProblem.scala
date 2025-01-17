@@ -733,6 +733,8 @@ class LCPOnFieldsProblem(
         returnSite:     JavaStatement,
         returnSiteFact: LCPOnFieldsFact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = {
+        val callStmt = callSite.stmt.asCall()
+
         (callSiteFact, returnSiteFact) match {
             case (NullFact, _: AbstractObjectFact) =>
                 VariableValueEdgeFunction
@@ -741,11 +743,19 @@ class LCPOnFieldsProblem(
                 NewArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
 
             case (_: AbstractEntityFact, f: AbstractEntityFact) =>
-                val callStmt = callSite.stmt.asCall()
-
+                /* Constructor of object class doesn't modify the object */
+                if (callStmt.declaringClass.isObjectType &&
+                    callStmt.declaringClass.asObjectType.fqn == "java/lang/Object" && callStmt.name == "<init>"
+                ) {
+                    identityEdgeFunction
+                }
                 /* Check whether fact corresponds to one of the parameters */
-                if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
-                    VariableValueEdgeFunction
+                else if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
+                    f match {
+                        case _: AbstractObjectFact => VariableValueEdgeFunction
+                        case _: AbstractEntityFact =>
+                            NewArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
+                    }
                 } else {
                     identityEdgeFunction
                 }
