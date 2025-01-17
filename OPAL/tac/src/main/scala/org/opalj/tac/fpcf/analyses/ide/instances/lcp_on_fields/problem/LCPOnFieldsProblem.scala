@@ -17,7 +17,6 @@ import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
-import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FinalEdgeFunction
 import org.opalj.ide.problem.FlowFunction
@@ -681,7 +680,7 @@ class LCPOnFieldsProblem(
         callee:         Method,
         returnSite:     JavaStatement,
         returnSiteFact: LCPOnFieldsFact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[LCPOnFieldsValue] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = {
         if (callee.isNative || callee.body.isEmpty) {
             return returnSiteFact match {
                 case _: AbstractObjectFact =>
@@ -742,7 +741,7 @@ class LCPOnFieldsProblem(
         callSiteFact:   LCPOnFieldsFact,
         returnSite:     JavaStatement,
         returnSiteFact: LCPOnFieldsFact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[LCPOnFieldsValue] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = {
         (callSiteFact, returnSiteFact) match {
             case (NullFact, _: AbstractObjectFact) =>
                 VariableValueEdgeFunction

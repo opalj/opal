@@ -3,7 +3,6 @@ package org.opalj.ide.ifds.problem
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
-import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEProblem
@@ -98,7 +97,7 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
         callee:         Callable,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[IFDSValue] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[IFDSValue] = {
         if (callSiteFact == nullFact) {
             AllBottomEdgeFunction
         } else {
@@ -111,7 +110,7 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
         callSiteFact:   Fact,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[IFDSValue] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[IFDSValue] = {
         if (callSiteFact == nullFact) {
             AllBottomEdgeFunction
         } else {

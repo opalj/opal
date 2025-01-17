@@ -213,7 +213,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         callee:         Callable,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
         throw new IllegalArgumentException(
             s"No precomputed summary function for callSite=$callSite, callSiteFact=$callSiteFact, " +
                 s"callee=$callee, returnSite=$returnSite and returnSiteFact=$returnSiteFact exists!"
@@ -254,7 +254,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
         callSiteFact:   Fact,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
         throw new IllegalArgumentException(
             s"No precomputed summary function for callSite=$callSite, callSiteFact=$callSiteFact, " +
                 s"returnSite=$returnSite and returnSiteFact=$returnSiteFact exists!"

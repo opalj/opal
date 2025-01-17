@@ -497,7 +497,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 logTrace(s"generated the following d5s=$d5s for return statement r=${icfg.stringifyStatement(r)}")
 
                 d5s.foreach { d5 =>
-                    val summaryFunction = problem.getPrecomputedSummaryFunction(n, d2, r, d5)
+                    val summaryFunction =
+                        handleEdgeFunctionResult(problem.getPrecomputedSummaryFunction(n, d2, r, d5), path)
                     val callToReturnPath = ((n, d2), (r, d5))
                     val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
                     val fPrime = summaryFunction.meetWith(oldSummaryFunction)
@@ -525,7 +526,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                         logTrace(s"generated the following d5s=$d5s for return statement r=${icfg.stringifyStatement(r)}")
 
                         d5s.foreach { d5 =>
-                            val summaryFunction = problem.getPrecomputedSummaryFunction(n, d2, q, r, d5)
+                            val summaryFunction =
+                                handleEdgeFunctionResult(problem.getPrecomputedSummaryFunction(n, d2, q, r, d5), path)
                             val callToReturnPath = ((n, d2), (r, d5))
                             val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
                             val fPrime = summaryFunction.meetWith(oldSummaryFunction)

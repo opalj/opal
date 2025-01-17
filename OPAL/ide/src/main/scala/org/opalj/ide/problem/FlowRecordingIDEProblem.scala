@@ -228,14 +228,14 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         callee:         Callable,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
-        val edgeFunction =
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
+        val edgeFunctionResult =
             baseProblem.getPrecomputedSummaryFunction(callSite, callSiteFact, callee, returnSite, returnSiteFact)
         collectedEdgeFunctions.put(
             createDotEdge(callSite, callSiteFact, returnSite, returnSiteFact, "precomputed flow"),
-            edgeFunction
+            getEdgeFunctionFromEdgeFunctionResult(edgeFunctionResult)
         )
-        edgeFunction
+        edgeFunctionResult
     }
 
     override def getPrecomputedFlowFunction(callSite: Statement, callSiteFact: Fact, returnSite: Statement)(
@@ -255,13 +255,14 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         callSiteFact:   Fact,
         returnSite:     Statement,
         returnSiteFact: Fact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[Value] = {
-        val edgeFunction = baseProblem.getPrecomputedSummaryFunction(callSite, callSiteFact, returnSite, returnSiteFact)
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
+        val edgeFunctionResult =
+            baseProblem.getPrecomputedSummaryFunction(callSite, callSiteFact, returnSite, returnSiteFact)
         collectedEdgeFunctions.put(
             createDotEdge(callSite, callSiteFact, returnSite, returnSiteFact, "precomputed flow"),
-            edgeFunction
+            getEdgeFunctionFromEdgeFunctionResult(edgeFunctionResult)
         )
-        edgeFunction
+        edgeFunctionResult
     }
 
     private def createDotEdge(

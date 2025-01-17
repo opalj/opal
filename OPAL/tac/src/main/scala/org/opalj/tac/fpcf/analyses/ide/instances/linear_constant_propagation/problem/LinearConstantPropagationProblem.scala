@@ -9,7 +9,6 @@ import org.opalj.BinaryArithmeticOperators
 import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.br.Method
 import org.opalj.fpcf.PropertyStore
-import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.IdentityFlowFunction
@@ -569,7 +568,7 @@ class LinearConstantPropagationProblem
         callee:         Method,
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
         if (callee.isNative || callee.body.isEmpty) {
             return VariableValueEdgeFunction
         }
@@ -609,7 +608,7 @@ class LinearConstantPropagationProblem
         callSiteFact:   LinearConstantPropagationFact,
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
-    )(implicit propertyStore: PropertyStore): EdgeFunction[LinearConstantPropagationValue] = {
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
         (callSiteFact, returnSiteFact) match {
             case (NullFact, VariableFact(_, _)) =>
                 VariableValueEdgeFunction
