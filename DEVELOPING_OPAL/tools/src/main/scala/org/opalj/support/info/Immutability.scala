@@ -33,45 +33,6 @@ import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.properties.CompileTimeConstancy
-import org.opalj.br.fpcf.properties.CompileTimeConstantField
-import org.opalj.br.fpcf.properties.CompileTimeVaryingField
-import org.opalj.br.fpcf.properties.EscapeInCallee
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn
-import org.opalj.br.fpcf.properties.EscapeViaHeapObject
-import org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn
-import org.opalj.br.fpcf.properties.EscapeViaParameter
-import org.opalj.br.fpcf.properties.EscapeViaParameterAndAbnormalReturn
-import org.opalj.br.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn
-import org.opalj.br.fpcf.properties.EscapeViaParameterAndReturn
-import org.opalj.br.fpcf.properties.EscapeViaReturn
-import org.opalj.br.fpcf.properties.EscapeViaStaticField
-import org.opalj.br.fpcf.properties.GlobalEscape
-import org.opalj.br.fpcf.properties.StaticDataUsage
-import org.opalj.br.fpcf.properties.UsesConstantDataOnly
-import org.opalj.br.fpcf.properties.UsesNoStaticData
-import org.opalj.br.fpcf.properties.UsesVaryingData
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.ForNameClasses
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.LoadedClasses
-import org.opalj.br.fpcf.properties.cg.NoCallees
-import org.opalj.br.fpcf.properties.cg.NoCalleesDueToNotReachableMethod
-import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.properties.cg.NoForNameClasses
-import org.opalj.br.fpcf.properties.cg.NoInstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.NoLoadedClasses
-import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
-import org.opalj.br.fpcf.properties.cg.OnlyVMCallersAndWithUnknownContext
-import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
-import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
-import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
-import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
-import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
-import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
-import org.opalj.br.fpcf.properties.fieldaccess.NoMethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
@@ -100,16 +61,12 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.log.LogContext
-import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CallGraphKey
-import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.properties.NoTACAI
-import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -216,7 +173,6 @@ object Immutability {
                 if (numThreads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-//                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                     org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
@@ -272,123 +228,6 @@ object Immutability {
                 }
             )
         } { t => analysisTime = t.toSeconds }
-
-        println("TEST START")
-
-        val cg = new CallGraph()(propertyStore, project.get(TypeIteratorKey))
-
-        println("NoTACAI: " + propertyStore.finalEntities(NoTACAI).toSeq.size)
-        println("TACAI: " + propertyStore.entities(TACAI.key).toSeq.size)
-        println("")
-        println("CallGraph Callers: " + propertyStore.entities(Callers.key).toSeq.size)
-        println("CallGraph edges: " + cg.numEdges)
-        println("CallGraph reachable methods: " + cg.reachableMethods().size)
-        println("NoCallers: " + propertyStore.finalEntities(NoCallers).toSeq.size)
-        println(
-            "OnlyCallersWithUnknownContext: " + propertyStore.finalEntities(OnlyCallersWithUnknownContext).toSeq.size
-        )
-        println("OnlyVMLevelCallers: " + propertyStore.finalEntities(OnlyVMLevelCallers).toSeq.size)
-        println("OnlyVMCallersAndWithUnknownContext: " + propertyStore.finalEntities(
-            OnlyVMCallersAndWithUnknownContext
-        ).toSeq.size)
-        println("")
-        println("CallGraph Callees: " + propertyStore.entities(Callees.key).toSeq.size)
-        println("NoCallees: " + propertyStore.finalEntities(NoCallees).toSeq.size)
-        println("NoCalleesDueToNotReachableMethod: " + propertyStore.finalEntities(
-            NoCalleesDueToNotReachableMethod
-        ).toSeq.size)
-        println("")
-        println("LoadedClasses: " + propertyStore.entities(LoadedClasses.key).toSeq.size)
-        println("NoLoadedClasses: " + propertyStore.finalEntities(NoLoadedClasses).toSeq.size)
-        println("")
-        println("ForNameClasses: " + propertyStore.entities(ForNameClasses.key).toSeq.size)
-        println("NoForNameClasses: " + propertyStore.finalEntities(NoForNameClasses).toSeq.size)
-        println("")
-        println("InstantiatedTypes: " + propertyStore.entities(InstantiatedTypes.key).toSeq.size)
-        println("NoInstantiatedTypes: " + propertyStore.finalEntities(NoInstantiatedTypes).toSeq.size)
-        println("")
-        println("")
-        println("MethodFieldReadAccessInformation: " + propertyStore.entities(
-            MethodFieldReadAccessInformation.key
-        ).toSeq.size)
-        println("NoMethodFieldReadAccessInformation: " + propertyStore.finalEntities(
-            NoMethodFieldReadAccessInformation
-        ).toSeq.size)
-        println("")
-        println("MethodFieldReadAccessInformation: " + propertyStore.entities(
-            MethodFieldReadAccessInformation.key
-        ).toSeq.size)
-        println("NoMethodFieldReadAccessInformation: " + propertyStore.finalEntities(
-            NoMethodFieldReadAccessInformation
-        ).toSeq.size)
-        println("")
-        println("FieldReadAccessInformation: " + propertyStore.entities(FieldReadAccessInformation.key).toSeq.size)
-        println("NoFieldReadAccessInformation: " + propertyStore.finalEntities(NoFieldReadAccessInformation).toSeq.size)
-        println("")
-        println("FieldWriteAccessInformation: " + propertyStore.entities(FieldWriteAccessInformation.key).toSeq.size)
-        println(
-            "NoFieldWriteAccessInformation: " + propertyStore.finalEntities(NoFieldWriteAccessInformation).toSeq.size
-        )
-        println("")
-        println("")
-        println("EscapeProperty: " + propertyStore.entities(EscapeProperty.key).toSeq.size)
-        println("EscapeInCallee: " + propertyStore.finalEntities(EscapeInCallee).toSeq.size)
-        println("EscapeViaParameter: " + propertyStore.finalEntities(EscapeViaParameter).toSeq.size)
-        println("EscapeViaReturn: " + propertyStore.finalEntities(EscapeViaReturn).toSeq.size)
-        println("EscapeViaAbnormalReturn: " + propertyStore.finalEntities(EscapeViaAbnormalReturn).toSeq.size)
-        println("EscapeViaParameterAndReturn: " + propertyStore.finalEntities(EscapeViaParameterAndReturn).toSeq.size)
-        println("EscapeViaParameterAndAbnormalReturn: " + propertyStore.finalEntities(
-            EscapeViaParameterAndAbnormalReturn
-        ).toSeq.size)
-        println("EscapeViaNormalAndAbnormalReturn: " + propertyStore.finalEntities(
-            EscapeViaNormalAndAbnormalReturn
-        ).toSeq.size)
-        println("EscapeViaParameterAndNormalAndAbnormalReturn: " + propertyStore.finalEntities(
-            EscapeViaParameterAndNormalAndAbnormalReturn
-        ).toSeq.size)
-        println("GlobalEscape: " + propertyStore.finalEntities(GlobalEscape).toSeq.size)
-        println("EscapeViaHeapObject: " + propertyStore.finalEntities(EscapeViaHeapObject).toSeq.size)
-        println("EscapeViaStaticField: " + propertyStore.finalEntities(EscapeViaStaticField).toSeq.size)
-        println("")
-        println("")
-        println("FieldAssignability: " + propertyStore.entities(FieldAssignability.key).toSeq.size)
-        println("NonAssignable: " + propertyStore.finalEntities(NonAssignable).toSeq.size)
-        println("EffectivelyNonAssignable: " + propertyStore.finalEntities(EffectivelyNonAssignable).toSeq.size)
-        println("LazilyInitialized: " + propertyStore.finalEntities(LazilyInitialized).toSeq.size)
-        println("UnsafelyLazilyInitialized: " + propertyStore.finalEntities(UnsafelyLazilyInitialized).toSeq.size)
-        println("Assignable: " + propertyStore.finalEntities(Assignable).toSeq.size)
-        println("")
-        println("CompileTimeConstancy: " + propertyStore.entities(CompileTimeConstancy.key).toSeq.size)
-        println("CompileTimeConstantField: " + propertyStore.finalEntities(CompileTimeConstantField).toSeq.size)
-        println("CompileTimeVaryingField: " + propertyStore.finalEntities(CompileTimeVaryingField).toSeq.size)
-        println("")
-        println("StaticDataUsage: " + propertyStore.entities(StaticDataUsage.key).toSeq.size)
-        println("UsesNoStaticData: " + propertyStore.finalEntities(UsesNoStaticData).toSeq.size)
-        println("UsesConstantDataOnly: " + propertyStore.finalEntities(UsesConstantDataOnly).toSeq.size)
-        println("UsesVaryingData: " + propertyStore.finalEntities(UsesVaryingData).toSeq.size)
-        println("")
-        println("")
-        println("FieldImmutability: " + propertyStore.entities(FieldImmutability.key).toSeq.size)
-        println("TransitivelyImmutableField: " + propertyStore.finalEntities(TransitivelyImmutableField).toSeq.size)
-        println(
-            "NonTransitivelyImmutableField: " + propertyStore.finalEntities(NonTransitivelyImmutableField).toSeq.size
-        )
-        println("MutableField: " + propertyStore.finalEntities(MutableField).toSeq.size)
-        println("")
-        println("ClassImmutability: " + propertyStore.entities(ClassImmutability.key).toSeq.size)
-        println("TransitivelyImmutableClass: " + propertyStore.finalEntities(TransitivelyImmutableClass).toSeq.size)
-        println(
-            "NonTransitivelyImmutableClass: " + propertyStore.finalEntities(NonTransitivelyImmutableClass).toSeq.size
-        )
-        println("MutableClass: " + propertyStore.finalEntities(MutableClass).toSeq.size)
-        println("")
-        println("TypeImmutability: " + propertyStore.entities(TypeImmutability.key).toSeq.size)
-        println("TransitivelyImmutableType: " + propertyStore.finalEntities(TransitivelyImmutableType).toSeq.size)
-        println("NonTransitivelyImmutableType: " + propertyStore.finalEntities(NonTransitivelyImmutableType).toSeq.size)
-        println("MutableType: " + propertyStore.finalEntities(MutableType).toSeq.size)
-        println("")
-
-        println("TEST ENDE")
 
         val stringBuilderResults: StringBuilder = new StringBuilder()
 
