@@ -56,8 +56,8 @@ import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.log.LogContext
@@ -156,9 +156,9 @@ object Immutability {
             )
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-            if (level == 0) {
+            if (level == 0)
                 Set[Class[_ <: AnyRef]](classOf[domain.l0.PrimitiveTACAIDomain])
-            } else if (level == 1)
+            else if (level == 1)
                 Set[Class[_ <: AnyRef]](classOf[domain.l1.DefaultDomainWithCFGAndDefUse[URL]])
             else if (level == 2)
                 Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
@@ -699,8 +699,6 @@ object Immutability {
         var cp: File = null
         var resultFolder: Path = null
         var numThreads = 0
-        // var timeEvaluation: Boolean = false
-        // var threadEvaluation: Boolean = false
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var withoutJDK: Boolean = false
