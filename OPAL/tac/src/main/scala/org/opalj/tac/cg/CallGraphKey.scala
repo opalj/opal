@@ -27,7 +27,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
-//import org.opalj.tac.fpcf.analyses.EagerTACAIProvider
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -113,7 +112,6 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val analyses: ArrayBuffer[FPCFAnalysisScheduler] =
             ArrayBuffer(
                 LazyTACAIProvider
-                //EagerTACAIProvider
             )
 
         analyses += CallGraphAnalysisScheduler
