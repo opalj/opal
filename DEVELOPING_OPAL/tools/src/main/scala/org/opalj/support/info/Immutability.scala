@@ -181,6 +181,7 @@ object Immutability {
 
         val propertyStore = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
+
         callgraphKey.requirements(project)
 
         val allDependencies = callgraphKey.allCallGraphAnalyses(project) ++ dependencies

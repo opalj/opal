@@ -172,7 +172,7 @@ object Purity {
         var projectTime: Seconds = Seconds.None
         var propertyStoreTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
-        var callGraphTime: Seconds = Seconds.None
+        val callGraphTime: Seconds = Seconds.None
 
         // TODO: use variables for the constants
         implicit var config: Config =
@@ -252,9 +252,7 @@ object Purity {
         val callGraphAnalyses = callGraphKey.allCallGraphAnalyses(project)
         val allAnalyses = callGraphAnalyses.toList ++ (analysis :: support)
 
-        time {
-            callGraphKey.requirements(project)
-        } { t => callGraphTime = t.toSeconds }
+        callGraphKey.requirements(project)
 
         val reachableMethods: Set[DeclaredMethod] = declaredMethods.declaredMethods.toSet
         val contextProvider = project.get(ContextProviderKey)
