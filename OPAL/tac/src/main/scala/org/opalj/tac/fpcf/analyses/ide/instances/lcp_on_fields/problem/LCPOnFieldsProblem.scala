@@ -677,7 +677,15 @@ class LCPOnFieldsProblem(
                     identityEdgeFunction
 
                 case _: AbstractObjectFact =>
-                    VariableValueEdgeFunction
+                    val callStmt = callSite.stmt.asCall()
+
+                    if (callStmt.declaringClass.isObjectType &&
+                        callStmt.declaringClass.asObjectType.fqn == "java/lang/Object" && callStmt.name == "<init>"
+                    ) {
+                        identityEdgeFunction
+                    } else {
+                        VariableValueEdgeFunction
+                    }
 
                 case _: AbstractArrayFact =>
                     NewArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
