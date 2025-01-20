@@ -255,7 +255,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                     schedule.batches.head.scheduled should contain(eager1)
@@ -296,7 +296,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                     schedule.batches.last.scheduled should contain(eager1)
@@ -338,7 +338,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                     schedule.batches.head.scheduled should contain(eager1)
@@ -384,7 +384,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, eager3)
@@ -426,7 +426,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                     schedule.batches.head.scheduled should contain(eager1)
@@ -468,7 +468,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -512,7 +512,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 analysis1IsScheduledInTheSameBatchAsAnalysis2(schedule, eager1, eager2)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -556,7 +556,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 println(schedule.batches)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2)
@@ -601,7 +601,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, eager3)
@@ -643,7 +643,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager3)
@@ -688,7 +688,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, eager3)
@@ -732,7 +732,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, eager3)
@@ -775,7 +775,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, eager3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, eager3)
@@ -817,7 +817,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -857,7 +857,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -898,7 +898,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -939,7 +939,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -982,7 +982,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -1023,7 +1023,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -1062,7 +1062,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -1103,7 +1103,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -1145,7 +1145,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -1187,7 +1187,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -1230,7 +1230,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -1273,7 +1273,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -1316,7 +1316,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -1360,7 +1360,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (lazy1, lazy2, lazy3)
@@ -1404,7 +1404,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -1445,7 +1445,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -1486,7 +1486,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager2)
@@ -1529,7 +1529,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                     schedule.batches.last.scheduled should contain(lazy3)
@@ -1572,7 +1572,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                     schedule.batches.head.scheduled should contain(eager1)
@@ -1615,7 +1615,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                     schedule.batches.head.scheduled should contain(eager2)
@@ -1657,7 +1657,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val ps = new PropertyStoreConfigurationRecorder()
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -1700,7 +1700,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val ps = new PropertyStoreConfigurationRecorder()
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain allOf (eager2, lazy3)
@@ -1744,7 +1744,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, lazy3)
@@ -1787,7 +1787,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -1831,7 +1831,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -1875,7 +1875,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, lazy3)
@@ -1918,7 +1918,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -1962,7 +1962,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, lazy3)
@@ -2005,7 +2005,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, lazy3)
@@ -2048,7 +2048,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, eager2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, eager2, lazy3)
@@ -2090,7 +2090,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -2132,7 +2132,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -2173,7 +2173,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, lazy2, lazy3)
@@ -2216,7 +2216,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -2260,7 +2260,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -2304,7 +2304,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, lazy2, lazy3)
@@ -2347,7 +2347,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -2391,7 +2391,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, lazy2, lazy3)
@@ -2434,7 +2434,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, lazy2, lazy3)
@@ -2477,7 +2477,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -2521,7 +2521,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -2565,7 +2565,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, lazy2, lazy3)
@@ -2608,7 +2608,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                     schedule.batches.head.scheduled should contain(eager1)
@@ -2652,7 +2652,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, lazy2, lazy3)
@@ -2695,7 +2695,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, lazy2, lazy3)
@@ -2738,7 +2738,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                     schedule.batches.head.scheduled should contain allOf (eager1, lazy2, lazy3)
@@ -2827,7 +2827,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -2914,7 +2914,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3001,7 +3001,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3088,7 +3088,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3173,7 +3173,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3259,7 +3259,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3371,7 +3371,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3480,7 +3480,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 5
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3589,7 +3589,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 5
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3649,7 +3649,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3758,7 +3758,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 7
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3867,7 +3867,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 7
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -3976,7 +3976,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 5
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -4036,7 +4036,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 2
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -4145,7 +4145,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 4
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -4254,7 +4254,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 4
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -4363,7 +4363,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -4423,7 +4423,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -4473,7 +4473,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(lazy1, eager2, eager3, eager4), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 4
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -4531,7 +4531,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager1, lazy2, lazy3, lazy4, eager5, eager6), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -4582,7 +4582,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 val schedule = AnalysisScenario(Set(eager0, eager1, eager2, eager3, eager4), ps).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
@@ -4649,7 +4649,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 ).computeSchedule(ps)
 
                 if (scheduleStrategy == 1) {
-                    // TODO
+                    schedule.batches should have size 1
                 } else if (scheduleStrategy == 2 && !scheduleLazyTransformerInAllenBatches) {
                     schedule.batches should have size 3
                 } else if (scheduleStrategy == 2 && scheduleLazyTransformerInAllenBatches) {
