@@ -76,7 +76,7 @@ import org.opalj.util.Seconds
  *
  * @author Tobias Roth
  */
-object Immutability {
+object ImmutabilityRunner {
 
     sealed trait Analyses
     case object Assignability extends Analyses
@@ -182,11 +182,13 @@ object Immutability {
         val propertyStore = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
-        project.get(callgraphKey)
+        callgraphKey.requirements(project)
+
+        val allDependencies = callgraphKey.allCallGraphAnalyses(project) ++ dependencies
 
         time {
             analysesManager.runAll(
-                dependencies,
+                allDependencies,
                 {
                     (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                         analysis match {

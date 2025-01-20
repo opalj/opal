@@ -710,12 +710,10 @@ class FieldLocalityAnalysis private[analyses] (
         newEP: EOptionP[DeclaredMethod, Callers]
     )(implicit state: FieldLocalityState): Boolean = {
         val definedMethod = newEP.e.asDefinedMethod
-
         val oldEP = state.getCallersDependee(definedMethod)
         state.addCallersDependee(newEP)
 
         val tacDependee = state.getTACDependee(definedMethod.definedMethod)
-
         val oldCallers = oldEP.map(ep => if (ep.hasUBP) ep.ub else null).get
 
         if (newEP.hasUBP && tacDependee.isDefined && tacDependee.get.hasUBP && tacDependee.get.ub.tac.isDefined) {

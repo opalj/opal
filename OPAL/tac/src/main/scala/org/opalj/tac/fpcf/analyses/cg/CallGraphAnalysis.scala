@@ -448,29 +448,6 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
      * ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) to be called from an unknown context.
      * This will trigger the computation of the callees for these methods (see `processMethod`).
      */
-//    override def init(p: SomeProject, ps: PropertyStore): Null = {
-//        val declaredMethods = p.get(DeclaredMethodsKey)
-//        val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
-//
-//        if (entryPoints.isEmpty)
-//            OPALLogger.logOnce(
-//                Error("project configuration", "the project has no entry points")
-//            )(p.logContext)
-//
-//        entryPoints.foreach { ep =>
-//            ps.preInitialize(ep, Callers.key) {
-//                case _: EPK[_, _] =>
-//                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
-//                case InterimUBP(ub: Callers) =>
-//                    InterimEUBP(ep, ub.updatedWithUnknownContext())
-//                case eps =>
-//                    throw new IllegalStateException(s"unexpected: $eps")
-//            }
-//        }
-//
-//        null
-//    }
-
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): CallGraphAnalysis = {
         val declaredMethods = p.get(DeclaredMethodsKey)
         val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
@@ -478,7 +455,7 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
         if (entryPoints.isEmpty)
             OPALLogger.logOnce(
                 Error("project configuration", "the project has no entry points")
-                )(p.logContext)
+            )(p.logContext)
 
         entryPoints.foreach { ep =>
             ps.preInitialize(ep, Callers.key) {

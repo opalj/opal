@@ -46,8 +46,6 @@ import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.ComputationSpecification
@@ -58,8 +56,8 @@ import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
-import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -87,7 +85,7 @@ import org.opalj.util.Seconds
  *
  * @author Dominik Helm
  */
-object Purity {
+object PurityRunner {
 
     // OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
@@ -174,7 +172,7 @@ object Purity {
         var projectTime: Seconds = Seconds.None
         var propertyStoreTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
-        var callGraphTime: Seconds = Seconds.None
+        val callGraphTime: Seconds = Seconds.None
 
         // TODO: use variables for the constants
         implicit var config: Config =
@@ -251,23 +249,22 @@ object Purity {
 
         val manager = project.get(FPCFAnalysesManagerKey)
 
-        time {
-            project.get(callGraphKey)
-        } { t => callGraphTime = t.toSeconds }
+        val callGraphAnalyses = callGraphKey.allCallGraphAnalyses(project)
+        val allAnalyses = callGraphAnalyses.toList ++ (analysis :: support)
 
-        val reachableMethods =
-            ps.entities(Callers.key).collect {
-                case FinalEP(m: DeclaredMethod, c: Callers) if c ne NoCallers => m
-            }.toSet
+        callGraphKey.requirements(project)
 
+        val reachableMethods: Set[DeclaredMethod] = declaredMethods.declaredMethods.toSet
         val contextProvider = project.get(ContextProviderKey)
+        project.updateProjectInformationKeyInitializationData(ContextProviderKey)(_ =>
+            callGraphKey.getTypeIterator(project)
+        )
+
         val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
 
         time {
-            val analyses = analysis :: support
-
             manager.runAll(
-                analyses,
+                allAnalyses,
                 (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                     if (css.contains(analysis)) {
                         analyzedContexts.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
