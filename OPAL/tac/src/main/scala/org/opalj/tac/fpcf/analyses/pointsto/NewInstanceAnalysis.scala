@@ -193,12 +193,12 @@ abstract class NewInstanceMethodAnalysis(
     }
 }
 
-trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => NewInstanceAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
+        super.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callees, propertyKind)
 

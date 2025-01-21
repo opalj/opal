@@ -307,8 +307,8 @@ object DoPrivilegedAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, Callees)
 
-    override def uses(project: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
-        project.get(TypeIteratorKey).usedPropertyKinds
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(Callers, Callees)
 

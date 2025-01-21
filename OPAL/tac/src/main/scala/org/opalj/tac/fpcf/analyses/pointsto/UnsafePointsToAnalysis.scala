@@ -267,7 +267,7 @@ abstract class UnsafePutPointsToAnalysis(
     }
 }
 
-trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => UnsafePointsToAnalysis
@@ -275,7 +275,7 @@ trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
+        super.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 

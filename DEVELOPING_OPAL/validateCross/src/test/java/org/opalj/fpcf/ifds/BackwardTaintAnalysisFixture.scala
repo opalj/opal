@@ -111,7 +111,10 @@ object BackwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[Taint
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
 
-    override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Taint))
-
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey, DeclaredMethodsKey, PropertyStoreKey)
+
+    override val uses: Set[PropertyBounds] = PropertyBounds.ubs(Taint)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
 }
