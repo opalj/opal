@@ -339,8 +339,12 @@ trait FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(FieldImmutability)
     )
 
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
+
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(TypeIteratorKey, DeclaredFieldsKey, TypeExtensibilityKey)
+
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
 }
 

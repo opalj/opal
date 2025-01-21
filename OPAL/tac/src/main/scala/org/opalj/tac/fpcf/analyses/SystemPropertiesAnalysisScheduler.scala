@@ -138,10 +138,10 @@ object SystemPropertiesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSched
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey)
 
-    override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(Callers),
-        PropertyBounds.ub(TACAI)
-    )
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI, Callers)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
 
     override def triggeredBy: PropertyKey[Callers] = Callers.key
 
