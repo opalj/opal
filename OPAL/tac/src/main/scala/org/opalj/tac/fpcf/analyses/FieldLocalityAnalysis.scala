@@ -714,7 +714,10 @@ class FieldLocalityAnalysis private[analyses] (
         state.addCallersDependee(newEP)
 
         val tacDependee = state.getTACDependee(definedMethod.definedMethod)
-        val oldCallers = if (oldEP != null && oldEP.get.hasUBP) oldEP.get.ub else null
+        val oldCallers = oldEP match {
+            case Some(ep) if ep.hasUBP => ep.ub
+            case _                     => null
+        }
 
         if (newEP.hasUBP && tacDependee.isDefined && tacDependee.get.hasUBP && tacDependee.get.ub.tac.isDefined) {
             val callers = newEP.ub
