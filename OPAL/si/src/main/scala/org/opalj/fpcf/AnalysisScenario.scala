@@ -311,12 +311,6 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     }
                 }
 
-            // TODO check all further constraints (in particular those related to cyclic dependencies between analysis...)
-
-            // 2. assign analyses to different batches if an analysis can only process
-            //    final properties (unless it is a transformer, the latter have special paths and
-            //    constraints and can always be scheduled in the same batch!)
-
             // TODO ....
 
             val scheduleStrategy = ScheduleStrategy.fromString(BaseConfig.getString(AnalysisScheduleStrategy))
@@ -526,15 +520,15 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                                         if (otherSize == 0) {
                                             twoBatchesWithLeastAmountOfAnalysis = tuple
                                             otherSize = transformingMap.get(tuple._1).head.size + transformingMap.get(
-                                                tuple._1
+                                                tuple._2
                                             ).head.size
                                         } else if (transformingMap.get(tuple._1).head.size + transformingMap.get(
-                                                       tuple._1
+                                                       tuple._2
                                                    ).head.size < otherSize
                                         ) {
                                             twoBatchesWithLeastAmountOfAnalysis = tuple
                                             otherSize = transformingMap.get(tuple._1).head.size + transformingMap.get(
-                                                tuple._1
+                                                tuple._2
                                             ).head.size
                                         }
 

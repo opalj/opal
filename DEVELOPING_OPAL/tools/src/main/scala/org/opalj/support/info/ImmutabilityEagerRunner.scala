@@ -1,7 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package support
-package info
+package org.opalj.support.info
 
 import java.io.BufferedWriter
 import java.io.File
@@ -29,8 +27,8 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.EagerStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.immutability.Assignable
@@ -56,26 +54,23 @@ import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.log.LogContext
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
+import org.opalj.tac.fpcf.analyses.EagerFieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.EagerTACAIProvider
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
+import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
-/**
- * This ImmutabilityRunner has been adapted for the scheduling strategies. This means that all analyses are transferred to one scheduler,
- * whereby the call graph is transferred to the scheduler with the other analyses in “dependencies”.
- *
- * @author Viktor Wysluch
- */
 
 /**
  * Determines the assignability of fields and the immutability of fields, classes and types and provides several
@@ -83,7 +78,7 @@ import org.opalj.util.Seconds
  *
  * @author Tobias Roth
  */
-object ImmutabilityRunner {
+object ImmutabilityEagerRunner {
 
     sealed trait Analyses
     case object Assignability extends Analyses
@@ -152,15 +147,16 @@ object ImmutabilityRunner {
 
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
+                EagerTACAIProvider,
                 EagerFieldAccessInformationAnalysis,
-                LazyL2FieldAssignabilityAnalysis,
-                LazyFieldImmutabilityAnalysis,
+                LazyL0FieldAssignabilityAnalysis,
+                EagerFieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
-                LazyStaticDataUsageAnalysis,
+                EagerStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazySimpleEscapeAnalysis
-            )
+                EagerInterProceduralEscapeAnalysis
+                )
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
@@ -191,7 +187,7 @@ object ImmutabilityRunner {
 
         callgraphKey.requirements(project)
 
-        val allDependencies = callgraphKey.allCallGraphAnalyses(project) ++ dependencies
+        val allDependencies = callgraphKey.allCallGraphAnalyses(project).toList.diff(List(LazyTACAIProvider)) ++ dependencies
 
         time {
             analysesManager.runAll(
