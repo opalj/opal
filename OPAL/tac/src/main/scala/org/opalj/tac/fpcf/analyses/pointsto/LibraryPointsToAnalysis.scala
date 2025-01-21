@@ -232,13 +232,13 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
 }
 
-trait LibraryPointsToAnalysisScheduler extends FPCFEagerAnalysisScheduler {
+trait LibraryPointsToAnalysisScheduler extends FPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => LibraryPointsToAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :++
+        super.requiredProjectInformation :++
             Seq(DeclaredMethodsKey, ClosedPackagesKey, InitialEntryPointsKey, InitialInstantiatedTypesKey)
 
     override type InitializationData = LibraryPointsToAnalysis

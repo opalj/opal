@@ -599,6 +599,9 @@ final class TypePropagationAnalysisScheduler(
         MethodFieldWriteAccessInformation
     )
 
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
+
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)

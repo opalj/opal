@@ -109,7 +109,11 @@ object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[T
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
+    override def uses: Set[PropertyBounds] = PropertyBounds.finalPs(TACAI, Callers)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
+        p.get(TypeIteratorKey).usedPropertyKinds
+    }
 }
 
 class ForwardClassForNameAnalysisRunnerIFDS extends IFDSEvaluationRunner {
