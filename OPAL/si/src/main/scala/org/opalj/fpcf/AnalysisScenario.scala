@@ -588,7 +588,11 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                 case _ => throw new IllegalStateException(s"Invalid scheduler configuration: $scheduleStrategy");
             }
 
-            OPALLogger.info("scheduler", s"scheduling strategy ${scheduleStrategy} is selected")
+            OPALLogger.info(
+                "scheduler",
+                s"scheduling strategy ${scheduleStrategy} ${if (scheduleLazyTransformerInAllenBatches) "with Lazy/Transformer in multiple phases"
+                    else ""} is selected"
+            )
         } { t => OPALLogger.info("scheduler", s"initialization of Scheduler took ${t.toSeconds}") }
 
         Schedule(
