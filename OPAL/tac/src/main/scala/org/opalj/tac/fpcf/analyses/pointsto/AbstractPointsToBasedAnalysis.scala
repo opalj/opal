@@ -70,10 +70,10 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
     }
 }
 
-trait PointsToBasedAnalysisScheduler { self: FPCFAnalysisScheduler =>
+trait PointsToBasedAnalysisScheduler extends FPCFAnalysisScheduler {
     def requiredProjectInformation: ProjectInformationKeys =
         Seq(TypeIteratorKey, DefinitionSitesKey, VirtualFormalParametersKey, DeclaredFieldsKey)
 
-    def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
-        p.get(TypeIteratorKey).usedPropertyKinds
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        super.uses(p, ps) ++ p.get(TypeIteratorKey).usedPropertyKinds
 }
