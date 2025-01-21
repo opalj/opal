@@ -60,6 +60,8 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.ScheduleConfig
+import org.opalj.fpcf.ScheduleStrategy
 import org.opalj.log.LogContext
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
@@ -193,6 +195,9 @@ object ImmutabilityRunner {
         callgraphKey.requirements(project)
 
         val allDependencies = callgraphKey.allCallGraphAnalyses(project) ++ dependencies
+
+        ScheduleConfig.getConfig.setStrategy(ScheduleStrategy.MPS)
+        ScheduleConfig.getConfig.setLazyTransformerInMultipleBatches(true)
 
         time {
             analysesManager.runAll(
