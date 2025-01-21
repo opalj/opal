@@ -303,7 +303,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     }
 }
 
-trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler with PointsToBasedAnalysisScheduler {
+trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler
+    with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => ConfiguredMethodsPointsToAnalysis
 

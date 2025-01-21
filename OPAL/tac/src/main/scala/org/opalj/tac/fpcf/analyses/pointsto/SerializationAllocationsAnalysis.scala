@@ -143,7 +143,8 @@ abstract class SerializationAllocationsAnalysis(
     }
 }
 
-trait SerializationAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
+trait SerializationAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
+    with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => SerializationAllocationsAnalysis
 

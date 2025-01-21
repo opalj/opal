@@ -284,7 +284,8 @@ class ReflectionMethodAllocationsAnalysis(
     }
 }
 
-object ReflectionAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
+object ReflectionAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
+    with PointsToBasedAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation :+ DeclaredMethodsKey
 
