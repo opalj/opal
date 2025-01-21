@@ -53,6 +53,8 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.ScheduleConfig
+import org.opalj.fpcf.ScheduleStrategy
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
@@ -261,6 +263,9 @@ object PurityRunner {
         )
 
         val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
+
+        ScheduleConfig.getConfig.setStrategy(ScheduleStrategy.MPS)
+        ScheduleConfig.getConfig.setLazyTransformerInMultipleBatches(true)
 
         time {
             manager.runAll(

@@ -6,39 +6,11 @@ import scala.annotation.tailrec
 
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
-import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatches
-import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleStrategy
 import org.opalj.graphs.Graph
 import org.opalj.graphs.sccs
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
-
-sealed trait ScheduleStrategy
-
-object ScheduleStrategy {
-    case object SPS extends ScheduleStrategy // Strategy 1
-    case object MPS extends ScheduleStrategy // Strategy 2
-    case object IPMS extends ScheduleStrategy // Strategy 3
-    case object OPMS extends ScheduleStrategy // Strategy 4
-
-    def fromString(str: String): ScheduleStrategy = str.toUpperCase match {
-        case "SPS"  => SPS
-        case "MPS"  => MPS
-        case "IPMS" => IPMS
-        case "OPMS" => OPMS
-        case _      => throw new IllegalArgumentException(s"Invalid schedule strategy: $str")
-    }
-
-    // For backward compatibility with integer values
-    def fromInt(value: Int): ScheduleStrategy = value match {
-        case 1 => SPS
-        case 2 => MPS
-        case 3 => IPMS
-        case 4 => OPMS
-        case _ => throw new IllegalArgumentException(s"Invalid schedule strategy value: $value")
-    }
-}
 
 /**
  * Provides functionality to determine whether a set of analyses is compatible and to compute
@@ -312,10 +284,10 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                 }
 
             // TODO ....
-
-            val scheduleStrategy = ScheduleStrategy.fromString(BaseConfig.getString(AnalysisScheduleStrategy))
+            val scheduleStrategyConfig = ScheduleConfig.getConfig
+            val scheduleStrategy = scheduleStrategyConfig.getStrategy
             val scheduleLazyTransformerInAllenBatches =
-                BaseConfig.getBoolean(AnalysisScheduleLazyTransformerInMultipleBatches)
+                scheduleStrategyConfig.isLazyTransformerInMultipleBatches
 
             scheduleStrategy match {
                 case ScheduleStrategy.SPS =>
@@ -613,7 +585,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                         )
                         alreadyScheduledCS = alreadyScheduledCS ++ scheduledInThisPhase
                     }
-
+                case _ => throw new IllegalStateException(s"Invalid scheduler configuration: $scheduleStrategy");
             }
 
             OPALLogger.info("scheduler", s"scheduling strategy ${scheduleStrategy} is selected")
