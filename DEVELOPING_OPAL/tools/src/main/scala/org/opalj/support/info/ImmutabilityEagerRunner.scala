@@ -54,8 +54,8 @@ import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.log.LogContext
@@ -73,10 +73,11 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
 /**
- * Determines the assignability of fields and the immutability of fields, classes and types and provides several
- * setting options for evaluation.
+ * This Immutabilityrunner is a specific Immutability with certain EagerAnalyses to create a Scheduler Evaluation.
+ * Modifications have been implemented for the transfer of analyses so that all analyses are transferred to one scheduler.
+ * The original immutability analysis is the "Immutability.scala".
  *
- * @author Tobias Roth
+ * @author Viktor Wysluch
  */
 object ImmutabilityEagerRunner {
 
@@ -156,7 +157,7 @@ object ImmutabilityEagerRunner {
                 EagerStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 EagerInterProceduralEscapeAnalysis
-                )
+            )
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
@@ -187,7 +188,8 @@ object ImmutabilityEagerRunner {
 
         callgraphKey.requirements(project)
 
-        val allDependencies = callgraphKey.allCallGraphAnalyses(project).toList.diff(List(LazyTACAIProvider)) ++ dependencies
+        val allDependencies =
+            callgraphKey.allCallGraphAnalyses(project).toList.diff(List(LazyTACAIProvider)) ++ dependencies
 
         time {
             analysesManager.runAll(

@@ -73,6 +73,7 @@ import org.opalj.util.Seconds
 /**
  * This ImmutabilityRunner has been adapted for the scheduling strategies. This means that all analyses are transferred to one scheduler,
  * whereby the call graph is transferred to the scheduler with the other analyses in “dependencies”.
+ * The original immutability analysis is the "Immutability.scala".
  *
  * @author Viktor Wysluch
  */
