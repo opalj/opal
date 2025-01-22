@@ -2,9 +2,11 @@ package org.opalj.tactobc
 
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.PrintStream
 import java.nio.file.Files
 import java.nio.file.Paths
+import scala.collection.mutable
 import scala.sys.process._
 
 import org.scalatest.funspec.AnyFunSpec
@@ -95,24 +97,29 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
                 classFileName
             )
 
+            val classesToLoad = mutable.ListBuffer[String]()
+            val pathsOfClassesToLoad = mutable.ListBuffer[String]()
+            classesToLoad += classFileName
+            pathsOfClassesToLoad += MutatedClassFileTestCaseEnum.outputDirPath
+
             val extraFile: Option[File] = findExtraFile(classFileName)
             extraFile match {
                 case Some(file) =>
                     println(s"Extra file needed: ${file.getAbsolutePath} \n only name: ${extraFile.get.getName}")
-                    loadClassFromFile(MutatedClassFileTestCaseEnum.inputDirMutatedJavaPath, extraFile.get.getName)
-                case None       =>
+                    classesToLoad += extraFile.get.getName
+                    pathsOfClassesToLoad += MutatedClassFileTestCaseEnum.inputDirMutatedJavaPath
+                case None =>
                     println("No extra file needed.")
             }
 
-
             // (4) Load the original class and the mutated/generated class
             val originalClass =
-                loadClassFromFile(MutatedClassFileTestCaseEnum.inputDirOriginalJavaPath, classFileOfOriginalName)
-            val generatedClass = loadClassFromFile(MutatedClassFileTestCaseEnum.outputDirPath, classFileName)
+                loadClassesFromFile(List(MutatedClassFileTestCaseEnum.inputDirOriginalJavaPath), List(classFileOfOriginalName))
+            val generatedClass = loadClassesFromFile(pathsOfClassesToLoad.toList, classesToLoad.toList)
 
             // (5) Compare the output of the main method in the original and mutated/generated classes
-            val originalOutput = invokeMainMethod(originalClass)
-            val generatedOutput = invokeMainMethod(generatedClass)
+            val originalOutput = invokeMainMethod(originalClass.head)
+            val generatedOutput = invokeMainMethod(generatedClass.head)
 
             // Assert that the outputs are the same
             originalOutput shouldEqual generatedOutput
@@ -168,11 +175,32 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
         }
     }
 
-    private def loadClassFromFile(dirPath: String, classFileName: String): Class[_] = {
-        val className = classFileName.replace(".class", "")
-        val classFile = new File(Paths.get(dirPath, classFileName).toString)
-        val classLoader = new InMemoryClassLoader(Map(className -> Files.readAllBytes(classFile.toPath)))
-        classLoader.findClass(className)
+    private def loadClassesFromFile(
+        dirPaths:       List[String],
+        classFileNames: List[String]
+    ): List[Class[_]] = {
+        val classMap = mutable.Map[String, Array[Byte]]()
+
+        val filePathMap = classFileNames.map { classFileName =>
+            classFileName -> dirPaths.map(dirPath => Paths.get(dirPath, classFileName).toString)
+                .find(path => new File(path).exists())
+                .getOrElse(throw new FileNotFoundException(
+                    s"Class file $classFileName not found in provided directories"
+                ))
+        }.toMap
+
+        filePathMap.foreach { case (classFileName, filePath) =>
+            val className = classFileName.replace(".class", "")
+            val classFile = new File(filePath)
+            classMap(className) = Files.readAllBytes(classFile.toPath)
+        }
+
+        val classLoader = new InMemoryClassLoader(classMap.toMap)
+
+        classFileNames.map { classFileName =>
+            val className = classFileName.replace(".class", "")
+            classLoader.findClass(className)
+        }
     }
 
     private def invokeMainMethod(clazz: Class[_]): String = {
