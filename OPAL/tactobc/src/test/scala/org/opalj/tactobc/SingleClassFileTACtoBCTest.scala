@@ -45,7 +45,7 @@ class SingleClassFileTACtoBCTest extends AnyFunSpec with Matchers {
           println(tac.toString)
           println("\n")
         }
-        val byteCodes = TACtoBC.translateTACtoBC(tacs)
+        val byteCodes = TACtoBC.translateTACStoBC(tacs)
 
         // Generate the new class file using ClassFileGenerator
         ClassFileGenerator.generateClassFiles(byteCodes, project, SingleClassFileTestCaseEnum.inputDirPath, SingleClassFileTestCaseEnum.outputDirPath, classFileName)

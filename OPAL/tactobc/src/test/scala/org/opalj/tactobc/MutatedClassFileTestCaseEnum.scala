@@ -129,5 +129,9 @@ object MutatedClassFileTestCaseEnum extends Enumeration {
   )
 
   // Case class to represent each test case
-  case class TestCase(originalJavaFileName: String, sourceFolder: String, classFileOfOriginalName: String, mutatedJavaFileName: String, generatedClassFileOfMutationName: String)
+  case class TestCase(originalJavaFileName: String,
+                      sourceFolder: String,
+                      classFileOfOriginalName: String,
+                      mutatedJavaFileName: String,
+                      generatedClassFileOfMutationName: String)
 }
