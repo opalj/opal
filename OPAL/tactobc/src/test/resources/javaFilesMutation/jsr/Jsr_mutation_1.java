@@ -2,7 +2,7 @@ public class Jsr_mutation_1 {
 
     public static void main(String[] args) {
         System.out.println("Before subroutine");
-        int[] arr = {3};
+        int[] arr = {3, 6};
         executeSubroutine(arr);
         System.out.println("After subroutine");
     }
