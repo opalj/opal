@@ -4,7 +4,6 @@ package org.opalj.tactobc
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
 import org.opalj.ba.InstructionElement
@@ -27,37 +26,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.PCs
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
-import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.ARETURN
-import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.BASTORE
-import org.opalj.br.instructions.CASTORE
-import org.opalj.br.instructions.CHECKCAST
-import org.opalj.br.instructions.DASTORE
-import org.opalj.br.instructions.DEFAULT_INVOKEDYNAMIC
-import org.opalj.br.instructions.DRETURN
-import org.opalj.br.instructions.FASTORE
-import org.opalj.br.instructions.FRETURN
-import org.opalj.br.instructions.IASTORE
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.IRETURN
-import org.opalj.br.instructions.LabeledGOTO
-import org.opalj.br.instructions.LabeledIF_ACMPEQ
-import org.opalj.br.instructions.LabeledIF_ACMPNE
-import org.opalj.br.instructions.LabeledIF_ICMPEQ
-import org.opalj.br.instructions.LabeledIF_ICMPGE
-import org.opalj.br.instructions.LabeledIF_ICMPGT
-import org.opalj.br.instructions.LabeledIF_ICMPLE
-import org.opalj.br.instructions.LabeledIF_ICMPLT
-import org.opalj.br.instructions.LabeledIF_ICMPNE
-import org.opalj.br.instructions.LabeledIFNONNULL
-import org.opalj.br.instructions.LabeledIFNULL
-import org.opalj.br.instructions.LabeledJSR
-import org.opalj.br.instructions.LabeledLOOKUPSWITCH
-import org.opalj.br.instructions.LabeledTABLESWITCH
+import org.opalj.br.instructions.{AASTORE, ARETURN, ATHROW, BASTORE, CASTORE, CHECKCAST, DASTORE, DEFAULT_INVOKEDYNAMIC, DRETURN, FASTORE, FRETURN, IASTORE, INVOKEINTERFACE, INVOKESPECIAL, INVOKESTATIC, INVOKEVIRTUAL, IRETURN, LabeledGOTO, LabeledIFNONNULL, LabeledIFNULL, LabeledIF_ACMPEQ, LabeledIF_ACMPNE, LabeledIF_ICMPEQ, LabeledIF_ICMPGE, LabeledIF_ICMPGT, LabeledIF_ICMPLE, LabeledIF_ICMPLT, LabeledIF_ICMPNE, LabeledJSR, LabeledLOOKUPSWITCH, LabeledTABLESWITCH}
 //import org.opalj.br.instructions.LabeledGOTO
 import org.opalj.br.instructions.LASTORE
 import org.opalj.br.instructions.LRETURN

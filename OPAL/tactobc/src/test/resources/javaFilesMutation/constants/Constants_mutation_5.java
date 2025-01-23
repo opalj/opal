@@ -1,5 +1,9 @@
 public class Constants_mutation_5 {
 
+    public static class myclass {
+        public int intBig = 0;
+    }
+
     public static void main(String[] args) {
         // Integer constants
         int intMin1 = -1;
@@ -41,8 +45,4 @@ public class Constants_mutation_5 {
         System.out.println("String Constants:");
         System.out.println(stringConst + ", " + stringEmpty);
     }
-}
-
-class myclass {
-    public int intBig = 0;
 }

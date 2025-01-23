@@ -383,6 +383,7 @@ object ExprProcessor {
     }
 
     def handleNewExpr(tpe: ObjectType): List[InstructionElement] = {
+        println(s"hier wird NEW($tpe) erstellt")
         List(
             NEW(tpe)
         )
