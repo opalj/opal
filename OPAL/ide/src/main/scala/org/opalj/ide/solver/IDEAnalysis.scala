@@ -63,6 +63,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
 
+        override def meetWith(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] =
+            otherEdgeFunction
+
         override def equalTo(otherEdgeFunction: EdgeFunction[Value]): Boolean =
             otherEdgeFunction eq this
     }

@@ -427,9 +427,6 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
         this
     }
 
-    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
-        otherEdgeFunction eq this
-
     override def toString: String = "UnknownValueEdgeFunction()"
 }
 

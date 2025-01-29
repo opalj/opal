@@ -62,8 +62,12 @@ abstract case class AllTopEdgeFunction[Value <: IDEValue](private val top: Value
     override def compute(sourceValue: Value): Value =
         top
 
-    override def meetWith(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] =
-        otherEdgeFunction
+    override def meetWith(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] = {
+        otherEdgeFunction match {
+            case AllTopEdgeFunction(_) => this
+            case _                     => otherEdgeFunction
+        }
+    }
 
     override def equalTo(otherEdgeFunction: EdgeFunction[Value]): Boolean =
         (otherEdgeFunction eq this) ||

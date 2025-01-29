@@ -126,15 +126,12 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
             case UnknownValueEdgeFunction  => secondEdgeFunction
 
             case IdentityEdgeFunction() => this
-            case AllTopEdgeFunction(_)  => secondEdgeFunction
+            case AllTopEdgeFunction(_)  => this
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
     }
-
-    override def equalTo(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean =
-        otherEdgeFunction eq this
 
     override def toString: String = "UnknownValueEdgeFunction()"
 }
