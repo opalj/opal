@@ -505,7 +505,12 @@ class LinearConstantPropagationProblem
         calleeEntry:     JavaStatement,
         calleeEntryFact: LinearConstantPropagationFact,
         callee:          Method
-    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
+        callSiteFact match {
+            case NullFact => UnknownValueEdgeFunction
+            case _        => identityEdgeFunction
+        }
+    }
 
     override def getReturnEdgeFunction(
         calleeExit:     JavaStatement,
