@@ -425,20 +425,20 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
         secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]
     ): EdgeFunction[LCPOnFieldsValue] = {
         secondEdgeFunction match {
-            case ObjectEdgeFunction(_) => secondEdgeFunction
-            case PutFieldEdgeFunction(_, _) => secondEdgeFunction
-            case ArrayEdgeFunction(_, _) => secondEdgeFunction
-            case PutElementEdgeFunction(_, _) => secondEdgeFunction
+            case ObjectEdgeFunction(_)         => secondEdgeFunction
+            case PutFieldEdgeFunction(_, _)    => secondEdgeFunction
+            case ArrayEdgeFunction(_, _)       => secondEdgeFunction
+            case PutElementEdgeFunction(_, _)  => secondEdgeFunction
             case PutStaticFieldEdgeFunction(_) => secondEdgeFunction
 
             case VariableValueEdgeFunction => secondEdgeFunction
-            case UnknownValueEdgeFunction => secondEdgeFunction
+            case UnknownValueEdgeFunction  => secondEdgeFunction
 
             case IdentityEdgeFunction() => this
-            case AllTopEdgeFunction(_) => this
+            case AllTopEdgeFunction(_)  => this
 
             case _ =>
-            throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
+                throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
     }
 
