@@ -258,7 +258,9 @@ class LinearConstantPropagationProblem
         calleeExit:     JavaStatement,
         calleeExitFact: LinearConstantPropagationFact,
         callee:         Method,
-        returnSite:     JavaStatement
+        returnSite:     JavaStatement,
+        callSite:       JavaStatement,
+        callSiteFact:   LinearConstantPropagationFact
     )(implicit propertyStore: PropertyStore): FlowFunction[LinearConstantPropagationFact] = {
         new FlowFunction[LinearConstantPropagationFact] {
             override def compute(): FactsAndDependees = {
@@ -517,7 +519,9 @@ class LinearConstantPropagationProblem
         calleeExitFact: LinearConstantPropagationFact,
         callee:         Method,
         returnSite:     JavaStatement,
-        returnSiteFact: LinearConstantPropagationFact
+        returnSiteFact: LinearConstantPropagationFact,
+        callSite:       JavaStatement,
+        callSiteFact:   LinearConstantPropagationFact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = identityEdgeFunction
 
     override def getCallToReturnEdgeFunction(

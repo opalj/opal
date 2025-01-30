@@ -339,7 +339,9 @@ class LCPOnFieldsProblem(
         calleeExit:     JavaStatement,
         calleeExitFact: LCPOnFieldsFact,
         callee:         Method,
-        returnSite:     JavaStatement
+        returnSite:     JavaStatement,
+        callSite:       JavaStatement,
+        callSiteFact:   LCPOnFieldsFact
     )(implicit propertyStore: PropertyStore): FlowFunction[LCPOnFieldsFact] = {
         new FlowFunction[LCPOnFieldsFact] {
             override def compute(): FactsAndDependees = {
@@ -590,7 +592,9 @@ class LCPOnFieldsProblem(
         calleeExitFact: LCPOnFieldsFact,
         callee:         Method,
         returnSite:     JavaStatement,
-        returnSiteFact: LCPOnFieldsFact
+        returnSiteFact: LCPOnFieldsFact,
+        callSite:       JavaStatement,
+        callSiteFact:   LCPOnFieldsFact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = identityEdgeFunction
 
     override def getCallToReturnEdgeFunction(

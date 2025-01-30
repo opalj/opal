@@ -47,7 +47,9 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
         calleeExitFact: Fact,
         callee:         Callable,
         returnSite:     Statement,
-        returnSiteFact: Fact
+        returnSiteFact: Fact,
+        callSite:       Statement,
+        callSiteFact:   Fact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[IFDSValue] = {
         if (calleeExitFact == nullFact) {
             AllBottomEdgeFunction

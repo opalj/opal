@@ -85,8 +85,17 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * @param calleeExitFact the fact the flow starts with
      * @param callee the callable that is returned from
      * @param returnSite where the return flow ends (e.g. the next statement after the call in the callers code)
+     * @param callSite corresponding to the return flow
+     * @param callSiteFact corresponding to the return flow
      */
-    def getReturnFlowFunction(calleeExit: Statement, calleeExitFact: Fact, callee: Callable, returnSite: Statement)(
+    def getReturnFlowFunction(
+        calleeExit:     Statement,
+        calleeExitFact: Fact,
+        callee:         Callable,
+        returnSite:     Statement,
+        callSite:       Statement,
+        callSiteFact:   Fact
+    )(
         implicit propertyStore: PropertyStore
     ): FlowFunction[Fact]
 
@@ -138,13 +147,17 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * @param callee the callable that is returned from
      * @param returnSite where the return flow ends (e.g. the next statement after the call in the callers code)
      * @param returnSiteFact the fact the flow ends with
+     * @param callSite corresponding to the return flow
+     * @param callSiteFact corresponding to the return flow
      */
     def getReturnEdgeFunction(
         calleeExit:     Statement,
         calleeExitFact: Fact,
         callee:         Callable,
         returnSite:     Statement,
-        returnSiteFact: Fact
+        returnSiteFact: Fact,
+        callSite:       Statement,
+        callSiteFact:   Fact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value]
 
     /**

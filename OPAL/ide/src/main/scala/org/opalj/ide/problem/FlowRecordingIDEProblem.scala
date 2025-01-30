@@ -111,10 +111,12 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         calleeExit:     Statement,
         calleeExitFact: Fact,
         callee:         Callable,
-        returnSite:     Statement
+        returnSite:     Statement,
+        callSite:       Statement,
+        callSiteFact:   Fact
     )(implicit propertyStore: PropertyStore): FlowFunction[Fact] = {
         new RecordingFlowFunction(
-            baseProblem.getReturnFlowFunction(calleeExit, calleeExitFact, callee, returnSite),
+            baseProblem.getReturnFlowFunction(calleeExit, calleeExitFact, callee, returnSite, callSite, callSiteFact),
             calleeExit,
             calleeExitFact,
             returnSite,
@@ -172,10 +174,20 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         calleeExitFact: Fact,
         callee:         Callable,
         returnSite:     Statement,
-        returnSiteFact: Fact
+        returnSiteFact: Fact,
+        callSite:       Statement,
+        callSiteFact:   Fact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value] = {
         val edgeFunctionResult =
-            baseProblem.getReturnEdgeFunction(calleeExit, calleeExitFact, callee, returnSite, returnSiteFact)
+            baseProblem.getReturnEdgeFunction(
+                calleeExit,
+                calleeExitFact,
+                callee,
+                returnSite,
+                returnSiteFact,
+                callSite,
+                callSiteFact
+            )
         collectedEdgeFunctions.put(
             createDotEdge(calleeExit, calleeExitFact, returnSite, returnSiteFact, "return flow"),
             getEdgeFunctionFromEdgeFunctionResult(edgeFunctionResult)

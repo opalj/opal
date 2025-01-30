@@ -561,12 +561,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                         handleEdgeFunctionResult(problem.getCallEdgeFunction(n, d2, sq, d3, q), path)
                                     rs.foreach { r =>
                                         val d5s = handleFlowFunctionResult(
-                                            problem.getReturnFlowFunction(eq, d4, q, r).compute(),
+                                            problem.getReturnFlowFunction(eq, d4, q, r, n, d2).compute(),
                                             path
                                         )
                                         d5s.foreach { d5 =>
                                             val f5 = handleEdgeFunctionResult(
-                                                problem.getReturnEdgeFunction(eq, d4, q, r, d5),
+                                                problem.getReturnEdgeFunction(eq, d4, q, r, d5, n, d2),
                                                 path
                                             )
                                             val callToReturnPath = ((n, d2), (r, d5))
@@ -636,14 +636,14 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     logDebug(s"handling calling statement c=${icfg.stringifyStatement(c)}, d4=$d4 and return-site statement r=${icfg.stringifyStatement(r)}")
 
                     // IDE P1 line 21
-                    val d5s = handleFlowFunctionResult(problem.getReturnFlowFunction(n, d2, p, r).compute(), path)
+                    val d5s = handleFlowFunctionResult(problem.getReturnFlowFunction(n, d2, p, r, c, d4).compute(), path)
 
                     logDebug(s"generated the following d5s=$d5s")
 
                     d5s.foreach { d5 =>
                         // IDE P1 lines 22 - 23
                         val f4 = handleEdgeFunctionResult(problem.getCallEdgeFunction(c, d4, sp, d1, p), path)
-                        val f5 = handleEdgeFunctionResult(problem.getReturnEdgeFunction(n, d2, p, r, d5), path)
+                        val f5 = handleEdgeFunctionResult(problem.getReturnEdgeFunction(n, d2, p, r, d5, c, d4), path)
 
                         // IDE P1 line 24
                         val callToReturnPath = ((c, d4), (r, d5))
