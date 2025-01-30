@@ -585,7 +585,12 @@ class LCPOnFieldsProblem(
         calleeEntry:     JavaStatement,
         calleeEntryFact: LCPOnFieldsFact,
         callee:          Method
-    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = {
+        callSiteFact match {
+            case NullFact => UnknownValueEdgeFunction
+            case _        => identityEdgeFunction
+        }
+    }
 
     override def getReturnEdgeFunction(
         calleeExit:     JavaStatement,

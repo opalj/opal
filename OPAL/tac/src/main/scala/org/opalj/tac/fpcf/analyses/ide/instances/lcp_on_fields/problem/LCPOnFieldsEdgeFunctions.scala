@@ -424,7 +424,22 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
     override def composeWith(
         secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]
     ): EdgeFunction[LCPOnFieldsValue] = {
-        this
+        secondEdgeFunction match {
+            case ObjectEdgeFunction(_) => secondEdgeFunction
+            case PutFieldEdgeFunction(_, _) => secondEdgeFunction
+            case ArrayEdgeFunction(_, _) => secondEdgeFunction
+            case PutElementEdgeFunction(_, _) => secondEdgeFunction
+            case PutStaticFieldEdgeFunction(_) => secondEdgeFunction
+
+            case VariableValueEdgeFunction => secondEdgeFunction
+            case UnknownValueEdgeFunction => secondEdgeFunction
+
+            case IdentityEdgeFunction() => this
+            case AllTopEdgeFunction(_) => this
+
+            case _ =>
+            throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
+        }
     }
 
     override def toString: String = "UnknownValueEdgeFunction()"
