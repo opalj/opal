@@ -7,15 +7,21 @@ import scala.collection.mutable
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.ide.integration.IDERawProperty
+import org.opalj.ide.integration.IDETargetCallablesProperty
 import org.opalj.ide.problem.AllTopEdgeFunction
 import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.EdgeFunctionResult
@@ -74,8 +80,25 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
      * Container class for simpler interaction and passing of the 'shared' data
      */
     private class State(
-        val targetCallable: Callable
+        initialTargetCallablesEOptionP: EOptionP[
+            IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
+            IDETargetCallablesProperty[Callable]
+        ]
     ) {
+        private val targetCallables = mutable.Set.empty[Callable]
+
+        private var targetCallablesEOptionP: EOptionP[
+            IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
+            IDETargetCallablesProperty[Callable]
+        ] = initialTargetCallablesEOptionP
+
+        processTargetCallablesEOptionP(initialTargetCallablesEOptionP)
+
+        /**
+         * Remember the callables where a final result has already been produced
+         */
+        private val callablesWithFinalResults = mutable.Set.empty[Callable]
+
         /**
          * The work list for paths used in P1
          */
@@ -121,6 +144,35 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
          * result is available
          */
         private val dependees = mutable.Map.empty[SomeEPK, (SomeEOptionP, mutable.Set[() => Unit])]
+
+        def getTargetCallables: collection.Set[Callable] = {
+            targetCallables
+        }
+
+        def getTargetCallablesWithoutFinalResults: collection.Set[Callable] = {
+            targetCallables.diff(callablesWithFinalResults)
+        }
+
+        def rememberCallableWithFinalResult(callable: Callable): Unit = {
+            callablesWithFinalResults.add(callable)
+        }
+
+        def getTargetCallablesEOptionP: EOptionP[
+            IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
+            IDETargetCallablesProperty[Callable]
+        ] = {
+            targetCallablesEOptionP
+        }
+
+        def processTargetCallablesEOptionP(newTargetCallablesEOptionP: EOptionP[
+            IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
+            IDETargetCallablesProperty[Callable]
+        ]): Unit = {
+            targetCallablesEOptionP = newTargetCallablesEOptionP
+            if (targetCallablesEOptionP.hasUBP) {
+                targetCallables.addAll(targetCallablesEOptionP.ub.targetCallables)
+            }
+        }
 
         def enqueuePath(path: Path): Unit = {
             pathWorkList.enqueue(path)
@@ -253,38 +305,41 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
 
         /**
-         * @return a map from statements to results and the results for the callable in total
+         * @return a map from statements to results and the results for the callable in total (both per requested
+         *         callable)
          */
-        def collectResults(callable: Callable): (
-            collection.Map[Statement, collection.Set[(Fact, Value)]],
-            collection.Set[(Fact, Value)]
-        ) = {
-            val relevantValues = values
+        def collectResults(callables: collection.Set[Callable]): Map[
+            Callable,
+            (collection.Map[Statement, collection.Set[(Fact, Value)]], collection.Set[(Fact, Value)])
+        ] = {
+            val relevantValuesByCallable = values
                 .filter { case ((n, d), _) =>
-                    icfg.getCallable(n) == callable && d != problem.nullFact
-                }
+                    callables.contains(icfg.getCallable(n)) && d != problem.nullFact
+                }.groupBy { case ((n, _), _) => icfg.getCallable(n) }
 
-            val resultsByStatement = relevantValues
-                .groupMap(_._1._1) { case ((_, d), value) => (d, value) }
-                .map { case (n, dValuePairs) =>
-                    (
-                        n,
-                        dValuePairs.groupMapReduce(_._1)(_._2) { (value1, value2) =>
-                            problem.lattice.meet(value1, value2)
-                        }.toSet
-                    )
-                }
+            relevantValuesByCallable.map { case (callable, relevantValues) =>
+                val resultsByStatement = relevantValues
+                    .groupMap(_._1._1) { case ((_, d), value) => (d, value) }
+                    .map { case (n, dValuePairs) =>
+                        (
+                            n,
+                            dValuePairs.groupMapReduce(_._1)(_._2) { (value1, value2) =>
+                                problem.lattice.meet(value1, value2)
+                            }.toSet
+                        )
+                    }
 
-            val resultsForExit = resultsByStatement
-                .filter { case (n, _) => icfg.isNormalExitStatement(n) }
-                .map(_._2.toList)
-                .flatten
-                .groupMapReduce(_._1)(_._2) {
-                    (value1, value2) => problem.lattice.meet(value1, value2)
-                }
-                .toSet
+                val resultsForExit = resultsByStatement
+                    .filter { case (n, _) => icfg.isNormalExitStatement(n) }
+                    .map(_._2.toList)
+                    .flatten
+                    .groupMapReduce(_._1)(_._2) {
+                        (value1, value2) => problem.lattice.meet(value1, value2)
+                    }
+                    .toSet
 
-            (resultsByStatement, resultsForExit)
+                callable -> (resultsByStatement, resultsForExit)
+            }
         }
 
         def addDependee(eOptionP: SomeEOptionP, c: () => Unit): Unit = {
@@ -320,16 +375,30 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
-     * Run the IDE solver and calculate (and return) the result
-     * @param callable the callable that should be analyzed
-     * @return a result for each statement of the callable plus a result for the callable itself (combining the results
-     *         of all exit statements)
+     * Run the IDE solver and calculate (and return) the result. This method should only be triggered in combination
+     * with the IDE proxy!
+     * @param entity Expected to be `None`. Other values do not cause errors but will only return empty (temporary)
+     *               results.
+     * @return a result for each statement of the target callables plus one result for each target callable itself
+     *         (combining the results of all exit statements)
      */
-    // TODO (IDE) WHAT HAPPENS WHEN ANALYZING MULTIPLE CALLABLES? CAN WE CACHE E.G. JUMP/SUMMARY FUNCTIONS?
-    def performAnalysis(callable: Callable): ProperPropertyComputationResult = {
-        logInfo(s"performing ${PropertyKey.name(propertyMetaInformation.key)} for $callable")
+    def performAnalysis(entity: Entity): ProperPropertyComputationResult = {
+        /* If an actual entity reaches here, there was a concrete request to the property store that was faster than
+         * this analysis could answer when being called with `entity == None`. Returning an 'empty' result in this case,
+         * which of course will be updated if the right analysis request completes. */
+        if (entity != None) {
+            return PartialResult(
+                entity,
+                propertyMetaInformation.backingPropertyMetaInformation.key,
+                { (_: SomeEOptionP) => None }
+            )
+        }
 
-        implicit val state: State = new State(callable)
+        val targetCallablesEOptionP =
+            propertyStore(propertyMetaInformation, propertyMetaInformation.targetCallablesPropertyMetaInformation.key)
+        implicit val state: State = new State(targetCallablesEOptionP)
+
+        logInfo(s"performing ${PropertyKey.name(propertyMetaInformation.key)} for ${state.getTargetCallables.size} callables")
 
         performPhase1()
         performPhase2()
@@ -394,26 +463,68 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def createResult()(
         implicit s: State
     ): ProperPropertyComputationResult = {
-        logDebug("starting creation of properties")
+        logDebug("starting creation of properties and results")
 
-        val callable = s.targetCallable
+        val callables = s.getTargetCallablesWithoutFinalResults
+        val collectedResults = s.collectResults(callables)
+        val callableResults = collectedResults.map { case (callable, (resultsByStatement, resultsForExit)) =>
+            val ideRawProperty = new IDERawProperty(
+                propertyMetaInformation.backingPropertyMetaInformation.key,
+                resultsByStatement,
+                resultsForExit
+            )
 
-        val (resultsByStatement, resultsForExit) = s.collectResults(callable)
-        val ideRawProperty = new IDERawProperty(
-            propertyMetaInformation.backingPropertyMetaInformation.key,
-            resultsByStatement,
-            resultsForExit
-        )
-
-        logDebug("finished creation of properties")
-
-        if (s.areDependeesEmpty) {
-            logDebug("creating final results")
-            Result(callable, ideRawProperty)
-        } else {
-            logDebug("creating interim results")
-            InterimResult.forUB(callable, ideRawProperty, s.getDependees.toSet, onDependeeUpdateContinuation)
+            if (s.areDependeesEmpty) {
+                s.rememberCallableWithFinalResult(callable)
+                Result(callable, ideRawProperty)
+            } else {
+                PartialResult(
+                    callable,
+                    propertyMetaInformation.backingPropertyMetaInformation.key,
+                    { (eOptionP: SomeEOptionP) =>
+                        if (eOptionP.hasUBP && eOptionP.ub == ideRawProperty) {
+                            None
+                        } else {
+                            Some(InterimEUBP(callable, ideRawProperty))
+                        }
+                    }
+                )
+            }
         }
+
+        logDebug("finished creation of properties and results")
+
+        Results(
+            Seq(
+                InterimPartialResult(
+                    None,
+                    s.getDependees.toSet ++ immutable.Set(s.getTargetCallablesEOptionP),
+                    { (eps: SomeEPS) =>
+                        if (eps.toEPK == s.getTargetCallablesEOptionP.toEPK) {
+                            onTargetCallablesUpdateContinuation(eps.asInstanceOf[EPS[
+                                IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
+                                IDETargetCallablesProperty[Callable]
+                            ]])
+                        } else {
+                            onDependeeUpdateContinuation(eps)
+                        }
+                    }
+                )
+            ) ++ callableResults
+        )
+    }
+
+    private def onTargetCallablesUpdateContinuation(eps: EPS[
+        IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
+        IDETargetCallablesProperty[Callable]
+    ])(implicit s: State): ProperPropertyComputationResult = {
+        s.processTargetCallablesEOptionP(eps)
+
+        seedPhase1()
+        continuePhase1()
+        performPhase2()
+
+        createResult()
     }
 
     private def onDependeeUpdateContinuation(eps: SomeEPS)(
@@ -433,27 +544,30 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def seedPhase1()(implicit s: State): Unit = {
-        val callable = s.targetCallable
-
-        // IDE P1 lines 5 - 6
-        icfg.getStartStatements(callable).foreach { stmt =>
-            val path = ((stmt, problem.nullFact), (stmt, problem.nullFact))
-            s.enqueuePath(path)
-            s.setJumpFunction(path, identityEdgeFunction)
-
-            problem.getAdditionalSeeds(stmt, callable).foreach { fact =>
-                val path = ((stmt, problem.nullFact), (stmt, fact))
+        val callables = s.getTargetCallablesWithoutFinalResults
+        callables.foreach { callable =>
+            // IDE P1 lines 5 - 6
+            icfg.getStartStatements(callable).foreach { stmt =>
+                val path = ((stmt, problem.nullFact), (stmt, problem.nullFact))
+                s.enqueuePath(path)
                 s.setJumpFunction(path, identityEdgeFunction)
-                def processAdditionalSeed(): Unit = {
-                    val edgeFunction =
-                        handleEdgeFunctionResult(
-                            problem.getAdditionalSeedsEdgeFunction(stmt, fact, callable),
-                            processAdditionalSeed _
-                        )
-                    s.setJumpFunction(path, s.getJumpFunction(path).meetWith(edgeFunction))
-                    s.enqueuePath(path)
+
+                problem.getAdditionalSeeds(stmt, callable).foreach { fact =>
+                    val path = ((stmt, problem.nullFact), (stmt, fact))
+                    s.setJumpFunction(path, identityEdgeFunction)
+
+                    def processAdditionalSeed(): Unit = {
+                        val edgeFunction =
+                            handleEdgeFunctionResult(
+                                problem.getAdditionalSeedsEdgeFunction(stmt, fact, callable),
+                                processAdditionalSeed _
+                            )
+                        s.setJumpFunction(path, s.getJumpFunction(path).meetWith(edgeFunction))
+                        s.enqueuePath(path)
+                    }
+
+                    processAdditionalSeed()
                 }
-                processAdditionalSeed()
             }
         }
 
@@ -760,13 +874,14 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def seedPhase2()(implicit s: State): Unit = {
-        val callable = s.targetCallable
-
-        // IDE P2 lines 2 - 3
-        icfg.getStartStatements(callable).foreach { stmt =>
-            val node = (stmt, problem.nullFact)
-            s.enqueueNode(node)
-            s.setValue(node, problem.lattice.bottom)
+        val callables = s.getTargetCallables
+        callables.foreach { callable =>
+            // IDE P2 lines 2 - 3
+            icfg.getStartStatements(callable).foreach { stmt =>
+                val node = (stmt, problem.nullFact)
+                s.enqueueNode(node)
+                s.setValue(node, problem.lattice.bottom)
+            }
         }
 
         logDebug(s"seeded with ${s.getNodeWorkListSize} node(s)")
@@ -799,8 +914,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         // IDE P2 part (ii)
         // IDE P2 lines 15 - 17
         // Reduced to the one callable, results are created for
-        val p = s.targetCallable
-        val sps = icfg.getStartStatements(p)
+        val ps = s.getTargetCallablesWithoutFinalResults
+        val sps = ps.flatMap { p => icfg.getStartStatements(p) }
         val ns = collectReachableStmts(sps, stmt => !icfg.isCallStatement(stmt))
 
         // IDE P2 line 16 - 17

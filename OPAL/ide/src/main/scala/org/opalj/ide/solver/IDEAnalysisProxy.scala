@@ -6,13 +6,18 @@ import scala.collection.immutable
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.ide.integration.IDEPropertyMetaInformation
+import org.opalj.ide.integration.IDETargetCallablesProperty
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEValue
 import org.opalj.ide.util.Logging
@@ -39,6 +44,9 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
             case c                      => (c.asInstanceOf[Callable], None)
         }
 
+        /* Request to trigger IDE solver such that it listens for changes to set of target callables */
+        propertyStore(None, propertyMetaInformation.backingPropertyMetaInformation.key)
+
         createResult(callable, stmtOption)
     }
 
@@ -54,10 +62,41 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
         }
 
         if (backingEOptionP.isEPK) {
-            // In this case, the analysis has not been called yet
-            InterimPartialResult(
-                immutable.Set(backingEOptionP),
-                onDependeeUpdateContinuation(callable, stmtOption)
+            /* In this case, the analysis has not been called yet */
+            Results(
+                PartialResult(
+                    propertyMetaInformation,
+                    propertyMetaInformation.targetCallablesPropertyMetaInformation.key,
+                    {
+                        (eOptionP: EOptionP[
+                            IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
+                            IDETargetCallablesProperty[Callable]
+                        ]) =>
+                            if (!eOptionP.hasUBP) {
+                                Some(InterimEUBP(
+                                    propertyMetaInformation,
+                                    new IDETargetCallablesProperty(
+                                        propertyMetaInformation.targetCallablesPropertyMetaInformation.key,
+                                        immutable.Set(callable)
+                                    )
+                                ))
+                            } else if (eOptionP.ub.targetCallables.contains(callable)) {
+                                None
+                            } else {
+                                Some(InterimEUBP(
+                                    propertyMetaInformation,
+                                    new IDETargetCallablesProperty(
+                                        propertyMetaInformation.targetCallablesPropertyMetaInformation.key,
+                                        eOptionP.ub.targetCallables ++ immutable.Set(callable)
+                                    )
+                                ))
+                            }
+                    }
+                ),
+                InterimPartialResult(
+                    immutable.Set(backingEOptionP),
+                    onDependeeUpdateContinuation(callable, stmtOption)
+                )
             )
         } else if (backingEOptionP.isFinal) {
             Result(

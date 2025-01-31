@@ -9,8 +9,10 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEValue
 import org.opalj.ide.solver.IDEAnalysisProxy
@@ -38,7 +40,16 @@ trait BaseIDEAnalysisProxyScheduler[Fact <: IDEFact, Value <: IDEValue, Statemen
     override def uses: Set[PropertyBounds] =
         immutable.Set(PropertyBounds.ub(propertyMetaInformation.backingPropertyMetaInformation))
 
-    override def beforeSchedule(project: SomeProject, propertyStore: PropertyStore): Unit = {}
+    override def beforeSchedule(project: SomeProject, propertyStore: PropertyStore): Unit = {
+        /* Add initial result for target callables */
+        propertyStore.handleResult(
+            PartialResult(
+                propertyMetaInformation,
+                propertyMetaInformation.targetCallablesPropertyMetaInformation.key,
+                { (_: SomeEOptionP) => None }
+            )
+        )
+    }
 
     override def afterPhaseScheduling(propertyStore: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
