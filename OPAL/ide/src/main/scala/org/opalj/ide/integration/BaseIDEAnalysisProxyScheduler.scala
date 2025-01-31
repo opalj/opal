@@ -20,7 +20,7 @@ import org.opalj.ide.solver.IDEAnalysisProxy
  */
 trait BaseIDEAnalysisProxyScheduler[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity]
     extends FPCFAnalysisScheduler {
-    val propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value]
+    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable]
 
     override type InitializationData = IDEAnalysisProxy[Fact, Value, Statement, Callable]
 

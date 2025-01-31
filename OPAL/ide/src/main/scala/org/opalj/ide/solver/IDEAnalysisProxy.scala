@@ -25,7 +25,7 @@ import org.opalj.ide.util.Logging
  */
 class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
     val project:                 SomeProject,
-    val propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value]
+    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable]
 ) extends FPCFAnalysis with Logging.ByProjectConfig {
     /**
      * @param entity either only a callable or a pair of callable and statement that should be analyzed (if no statement

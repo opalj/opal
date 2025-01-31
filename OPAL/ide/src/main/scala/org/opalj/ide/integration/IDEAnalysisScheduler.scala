@@ -29,7 +29,7 @@ abstract class IDEAnalysisScheduler[
 ] extends FPCFLazyAnalysisScheduler {
     override final type InitializationData = IDEAnalysis[Fact, Value, Statement, Callable]
 
-    def propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value]
+    def propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable]
 
     def createProblem(project: SomeProject, icfg: _ICFG): IDEProblem[Fact, Value, Statement, Callable]
 

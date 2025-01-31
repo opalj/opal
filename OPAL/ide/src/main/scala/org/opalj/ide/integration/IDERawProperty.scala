@@ -12,12 +12,12 @@ import org.opalj.ide.problem.IDEValue
  * @param stmtResults the raw statement results produced by the analysis
  * @param callableResults the raw callable results produced by the analysis
  */
-class IDERawProperty[Statement, Fact <: IDEFact, Value <: IDEValue](
-    val key:             PropertyKey[IDERawProperty[Statement, Fact, Value]],
+class IDERawProperty[Fact <: IDEFact, Value <: IDEValue, Statement](
+    val key:             PropertyKey[IDERawProperty[Fact, Value, Statement]],
     val stmtResults:     collection.Map[Statement, collection.Set[(Fact, Value)]],
     val callableResults: collection.Set[(Fact, Value)]
 ) extends Property {
-    override type Self = IDERawProperty[Statement, Fact, Value]
+    override type Self = IDERawProperty[Fact, Value, Statement]
 
     override def toString: String = {
         s"IDERawProperty(${PropertyKey.name(key)}, {\n${

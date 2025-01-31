@@ -11,17 +11,17 @@ import org.opalj.ide.problem.IDEValue
  * The property type is fixed to [[IDERawProperty]].
  * @param propertyMetaInformation the property meta information this object should be backing
  */
-final class IDERawPropertyMetaInformation[Statement, Fact <: IDEFact, Value <: IDEValue](
-    propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value]
+final class IDERawPropertyMetaInformation[Fact <: IDEFact, Value <: IDEValue, Statement](
+    propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, ?]
 ) extends PropertyMetaInformation {
-    override type Self = IDERawProperty[Statement, Fact, Value]
+    override type Self = IDERawProperty[Fact, Value, Statement]
 
     /**
      * The used property key, based on [[propertyMetaInformation]]
      */
-    private lazy val backingPropertyKey: PropertyKey[IDERawProperty[Statement, Fact, Value]] = {
+    private lazy val propertyKey: PropertyKey[IDERawProperty[Fact, Value, Statement]] = {
         PropertyKey.create(s"${PropertyKey.name(propertyMetaInformation.key)}_Raw")
     }
 
-    override def key: PropertyKey[IDERawProperty[Statement, Fact, Value]] = backingPropertyKey
+    override def key: PropertyKey[IDERawProperty[Fact, Value, Statement]] = propertyKey
 }

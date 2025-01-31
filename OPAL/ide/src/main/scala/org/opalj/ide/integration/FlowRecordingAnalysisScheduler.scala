@@ -51,7 +51,7 @@ class FlowRecordingAnalysisScheduler[
     recordEdgeFunctions:  Boolean          = true
 ) extends IDEAnalysisScheduler[Fact, Value, Statement, Callable, _ICFG]
     with Logging.EnableAll with Logging.GlobalLogContext {
-    override def propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value] = {
+    override def propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable] = {
         ideAnalysisScheduler.propertyMetaInformation
     }
 

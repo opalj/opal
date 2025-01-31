@@ -36,7 +36,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     val project:                 SomeProject,
     val problem:                 IDEProblem[Fact, Value, Statement, Callable],
     val icfg:                    ICFG[Statement, Callable],
-    val propertyMetaInformation: IDEPropertyMetaInformation[Statement, Fact, Value]
+    val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable]
 ) extends FPCFAnalysis with Logging.ByProjectConfig {
     private type Node = (Statement, Fact)
     /**
