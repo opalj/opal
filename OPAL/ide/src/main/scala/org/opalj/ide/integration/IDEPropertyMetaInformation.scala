@@ -20,6 +20,12 @@ trait IDEPropertyMetaInformation[Fact <: IDEFact, Value <: IDEValue, Statement, 
         new IDERawPropertyMetaInformation[Fact, Value, Statement](this)
 
     /**
+     * A property meta information corresponding to this one but used for target callables
+     */
+    private[ide] val targetCallablesPropertyMetaInformation: IDETargetCallablesPropertyMetaInformation[Callable] =
+        new IDETargetCallablesPropertyMetaInformation[Callable](this)
+
+    /**
      * Create a property
      * @param results the results the property should represent
      */
