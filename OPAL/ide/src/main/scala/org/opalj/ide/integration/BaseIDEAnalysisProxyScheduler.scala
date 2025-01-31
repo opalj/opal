@@ -28,16 +28,23 @@ trait BaseIDEAnalysisProxyScheduler[Fact <: IDEFact, Value <: IDEValue, Statemen
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(PropertyStoreKey)
 
-    override def init(project: SomeProject, ps: PropertyStore): IDEAnalysisProxy[Fact, Value, Statement, Callable] = {
+    override def init(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): IDEAnalysisProxy[Fact, Value, Statement, Callable] = {
         new IDEAnalysisProxy[Fact, Value, Statement, Callable](project, propertyMetaInformation)
     }
 
     override def uses: Set[PropertyBounds] =
         immutable.Set(PropertyBounds.ub(propertyMetaInformation.backingPropertyMetaInformation))
 
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def beforeSchedule(project: SomeProject, propertyStore: PropertyStore): Unit = {}
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+    override def afterPhaseScheduling(propertyStore: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+    override def afterPhaseCompletion(
+        project:       SomeProject,
+        propertyStore: PropertyStore,
+        analysis:      FPCFAnalysis
+    ): Unit = {}
 }

@@ -87,8 +87,8 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
     }
 
     private def onDependeeUpdateContinuation(
-        callable: Callable,
-        stmtOption:     Option[Statement]
+        callable:   Callable,
+        stmtOption: Option[Statement]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         createResult(callable, stmtOption)
     }

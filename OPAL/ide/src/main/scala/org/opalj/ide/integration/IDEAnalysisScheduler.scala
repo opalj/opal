@@ -44,9 +44,12 @@ abstract class IDEAnalysisScheduler[
     override def uses: immutable.Set[PropertyBounds] =
         immutable.Set.empty
 
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def beforeSchedule(project: SomeProject, propertyStore: PropertyStore): Unit = {}
 
-    override final def init(project: SomeProject, ps: PropertyStore): IDEAnalysis[Fact, Value, Statement, Callable] = {
+    override final def init(
+        project:       SomeProject,
+        propertyStore: PropertyStore
+    ): IDEAnalysis[Fact, Value, Statement, Callable] = {
         val icfg = createICFG(project)
         val problem = createProblem(project, icfg)
         new IDEAnalysis(project, problem, icfg, propertyMetaInformation)
@@ -64,7 +67,11 @@ abstract class IDEAnalysisScheduler[
         analysis
     }
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+    override def afterPhaseScheduling(propertyStore: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+    override def afterPhaseCompletion(
+        project:       SomeProject,
+        propertyStore: PropertyStore,
+        analysis:      FPCFAnalysis
+    ): Unit = {}
 }
