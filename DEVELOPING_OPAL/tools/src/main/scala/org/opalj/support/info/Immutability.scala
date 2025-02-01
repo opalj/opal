@@ -128,7 +128,7 @@ object Immutability {
 
         var projectTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
-        val callGraphTime: Seconds = Seconds.None
+        var callGraphTime: Seconds = Seconds.None
 
         val project = time {
             Project(
@@ -182,7 +182,9 @@ object Immutability {
         val propertyStore = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
-        project.get(callgraphKey)
+        time {
+            project.get(callgraphKey)
+        } { t => callGraphTime = t.toSeconds }
 
         time {
             analysesManager.runAll(
