@@ -467,7 +467,16 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         val callables = s.getTargetCallablesWithoutFinalResults
         val collectedResults = s.collectResults(callables)
-        val callableResults = collectedResults.map { case (callable, (resultsByStatement, resultsForExit)) =>
+        val callableResults = callables.map { callable =>
+            val (resultsByStatement, resultsForExit) =
+                collectedResults.getOrElse(
+                    callable, {
+                        (
+                            immutable.Map.empty[Statement, collection.Set[(Fact, Value)]],
+                            immutable.Set.empty[(Fact, Value)]
+                        )
+                    }
+                )
             val ideRawProperty = new IDERawProperty(
                 propertyMetaInformation.backingPropertyMetaInformation.key,
                 resultsByStatement,
