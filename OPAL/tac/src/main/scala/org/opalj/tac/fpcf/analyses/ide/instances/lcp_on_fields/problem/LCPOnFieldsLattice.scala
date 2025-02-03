@@ -42,6 +42,9 @@ object LCPOnFieldsLattice extends MeetLattice[LCPOnFieldsValue] {
                 elements
             )
 
+        case (StaticFieldValue(xValue), StaticFieldValue(yValue)) =>
+            StaticFieldValue(LinearConstantPropagationLattice.meet(xValue, yValue))
+
         case _ => VariableValue
     }
 }
