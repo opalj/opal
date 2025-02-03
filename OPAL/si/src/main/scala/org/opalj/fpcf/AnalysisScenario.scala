@@ -631,6 +631,10 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         val propertyKindsFromPhaseAnalysis = extractPropertyKinds(phaseAnalysis)
         val propertyKindsFromNextPhaseAnalysis = extractPropertyKinds(nextPhaseAnalysis)
 
+        val collabProperties = phaseAnalysis.flatMap { analysis =>
+            analysis.derivesCollaboratively.map(_.pk)
+        }
+
         // 3. create the batch
         val batchBuilder = List.newBuilder[ComputationSpecification[A]]
         batchBuilder ++= phaseAnalysis
@@ -645,7 +649,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         val phase1Configuration = PropertyKindsConfiguration(
             propertyKindsComputedInThisPhase = propertyKindsFromPhaseAnalysis,
             suppressInterimUpdates = suppressInterimUpdates,
-            propertyKindsComputedInLaterPhase = propertyKindsFromNextPhaseAnalysis
+            propertyKindsComputedInLaterPhase = propertyKindsFromNextPhaseAnalysis,
+            collaborativelyComputedPropertyKindsFinalizationOrder = List(collabProperties.toList) // FIXME: Compute actual subphase finalization order
         )
 
         PhaseConfiguration(phase1Configuration, batchBuilder.result())
