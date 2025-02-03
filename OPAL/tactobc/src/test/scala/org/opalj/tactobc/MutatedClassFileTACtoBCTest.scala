@@ -11,7 +11,6 @@ import scala.sys.process._
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks._
 
 import org.opalj.br.analyses.Project
 import org.opalj.util.InMemoryClassLoader
@@ -20,33 +19,37 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
 
     describe("TACtoBC Mutation Testing") {
 
-        val testCases = Table(
-            (
-                "original Java File Name",
-                "source Folder",
-                "Class File Name of Original",
-                "mutated Java File Name",
-                "Class File Name"
-            ),
-            MutatedClassFileTestCaseEnum.testCases.map(tc =>
-                (
-                    tc.originalJavaFileName,
-                    tc.sourceFolder,
-                    tc.classFileOfOriginalName,
-                    tc.mutatedJavaFileName,
-                    tc.generatedClassFileOfMutationName
-                )
-            ): _*
-        )
+        val projectRoot: String = System.getProperty("user.dir")
+        val javaFileDirPath: String = s"$projectRoot/OPAL/tactobc/src/test/resources/javaFilesMutation"
+        val inputDirOriginalJavaPath: String =
+            s"$projectRoot/OPAL/tactobc/src/test/resources/generatedClassFiles/mutation/original"
+        val inputDirMutatedJavaPath: String =
+            s"$projectRoot/OPAL/tactobc/src/test/resources/generatedClassFiles/mutation/mutated"
+        val outputDirPath: String =
+            s"$projectRoot/OPAL/tactobc/src/test/resources/generatedClassFiles/mutation/generated"
 
-        forAll(testCases) {
-            (
-                originalJavaFileName,
-                sourceFolder,
-                classFileOfOriginalName,
-                mutatedJavaFileName,
-                classFileName
-            ) =>
+        val javaFileDir = new File(javaFileDirPath)
+        val mutationFiles: Seq[(String, String)] = Option(javaFileDir.listFiles())
+            .getOrElse(Array.empty[File])
+            .filter(_.isDirectory)
+            .flatMap { subdir =>
+                Option(subdir.listFiles()).getOrElse(Array.empty[File])
+                    .filter(f => f.getName.endsWith(".java") && f.getName.contains("mutation"))
+                    .map(f => (f.getName, subdir.getName))
+            }
+            .toSeq
+
+        mutationFiles.foreach(f => println(f))
+
+        mutationFiles.foreach {
+            case (mutatedJavaFileName, subfolder) =>
+                val originalJavaFileName = s"${subfolder.capitalize}.java"
+                val classFileOfOriginalName = s"${subfolder.capitalize}.class"
+                val sourceFolder = s"/$subfolder"
+                val classFileName = mutatedJavaFileName.replace(".java", ".class")
+
+                println(s"$originalJavaFileName + $classFileOfOriginalName + $sourceFolder + $classFileName")
+
                 it(s"should compile $originalJavaFileName, generate TAC, convert back to bytecode, " +
                     s"and compare with the mutated class file $mutatedJavaFileName") {
                     runTestCase(
@@ -54,29 +57,42 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
                         sourceFolder,
                         classFileOfOriginalName,
                         mutatedJavaFileName,
-                        classFileName
+                        classFileName,
+                        inputDirMutatedJavaPath,
+                        outputDirPath,
+                        inputDirOriginalJavaPath,
+                        javaFileDirPath
                     )
                 }
         }
     }
 
     private def runTestCase(
-        originalJavaFileName:    String,
-        sourceFolder:            String,
-        classFileOfOriginalName: String,
-        mutatedJavaFileName:     String,
-        classFileName:           String
+        originalJavaFileName:     String,
+        sourceFolder:             String,
+        classFileOfOriginalName:  String,
+        mutatedJavaFileName:      String,
+        classFileName:            String,
+        inputDirMutatedJavaPath:  String,
+        outputDirPath:            String,
+        inputDirOriginalJavaPath: String,
+        javaFileDirPath:          String
     ): Unit = {
         try {
             // (1) Compile the original Java file to generate its .class file
-            compileOriginalJavaFile(sourceFolder, originalJavaFileName)
+            compileOriginalJavaFile(
+                sourceFolder,
+                originalJavaFileName,
+                javaFileDirPath,
+                inputDirOriginalJavaPath
+            )
 
             // (2) Compile the mutated Java file to generate its .class file
-            compileMutatedJavaFile(sourceFolder, mutatedJavaFileName)
+            compileMutatedJavaFile(sourceFolder, mutatedJavaFileName, javaFileDirPath, inputDirMutatedJavaPath)
 
             // Load the mutated class file
             val mutatedClassFile = {
-                new File(Paths.get(MutatedClassFileTestCaseEnum.inputDirMutatedJavaPath, classFileName).toString)
+                new File(Paths.get(inputDirMutatedJavaPath, classFileName).toString)
             }
 
             // Create the OPAL project from the original class file
@@ -85,6 +101,8 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
             // (3) Compile TAC from the original class file
             val tacs = TACtoBC.compileTAC(mutatedClassFile)
 
+            tacs.foreach(tac => println(tac._2))
+
             // Convert TAC back to bytecode
             val byteCodes = TACtoBC.translateTACStoBC(tacs)
 
@@ -92,29 +110,34 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
             ClassFileGenerator.generateClassFiles(
                 byteCodes,
                 project,
-                MutatedClassFileTestCaseEnum.inputDirMutatedJavaPath,
-                MutatedClassFileTestCaseEnum.outputDirPath,
+                inputDirMutatedJavaPath,
+                outputDirPath,
                 classFileName
             )
 
             val classesToLoad = mutable.ListBuffer[String]()
             val pathsOfClassesToLoad = mutable.ListBuffer[String]()
             classesToLoad += classFileName
-            pathsOfClassesToLoad += MutatedClassFileTestCaseEnum.outputDirPath
+            pathsOfClassesToLoad += outputDirPath
 
-            val extraFile: Option[File] = findExtraFile(classFileName)
-            extraFile match {
-                case Some(file) =>
-                    println(s"Extra file needed: ${file.getAbsolutePath} \n only name: ${extraFile.get.getName}")
-                    classesToLoad += extraFile.get.getName
-                    pathsOfClassesToLoad += MutatedClassFileTestCaseEnum.inputDirMutatedJavaPath
-                case None =>
-                    println("No extra file needed.")
+            val extraFiles = findExtraFiles(classFileName, inputDirMutatedJavaPath)
+
+            if (extraFiles.nonEmpty) {
+                extraFiles.foreach { file =>
+                    println(s"Extra file needed: ${file.getAbsolutePath} \n only name: ${file.getName}")
+                    classesToLoad += file.getName
+                    pathsOfClassesToLoad += inputDirMutatedJavaPath
+                }
+            } else {
+                println("No extra file needed.")
             }
 
             // (4) Load the original class and the mutated/generated class
             val originalClass =
-                loadClassesFromFile(List(MutatedClassFileTestCaseEnum.inputDirOriginalJavaPath), List(classFileOfOriginalName))
+                loadClassesFromFile(
+                    List(inputDirOriginalJavaPath),
+                    List(classFileOfOriginalName)
+                )
             val generatedClass = loadClassesFromFile(pathsOfClassesToLoad.toList, classesToLoad.toList)
 
             // (5) Compare the output of the main method in the original and mutated/generated classes
@@ -140,20 +163,27 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
         }
     }
 
-    def findExtraFile(classFileName: String): Option[File] = {
+    def findExtraFiles(classFileName: String, inputDirMutatedJavaPath: String): Seq[File] = {
         val baseFileName = classFileName.replace(".class", "$")
-        val directory = new File(MutatedClassFileTestCaseEnum.inputDirMutatedJavaPath)
+        val directory = new File(inputDirMutatedJavaPath)
+
         if (directory.exists && directory.isDirectory) {
             directory.listFiles
-                .find(file => file.getName.startsWith(baseFileName))
+                .filter(file => file.getName.startsWith(baseFileName))
+                .toSeq
         } else {
-            None
+            Seq.empty
         }
     }
 
-    private def compileOriginalJavaFile(sourceFolder: String, javaFileName: String): Unit = {
-        val javaFilePath = Paths.get(MutatedClassFileTestCaseEnum.javaFileDirPath, sourceFolder, javaFileName).toString
-        val command = s"javac -d ${MutatedClassFileTestCaseEnum.inputDirOriginalJavaPath} $javaFilePath"
+    private def compileOriginalJavaFile(
+        sourceFolder:             String,
+        javaFileName:             String,
+        javaFileDirPath:          String,
+        inputDirOriginalJavaPath: String
+    ): Unit = {
+        val javaFilePath = Paths.get(javaFileDirPath, sourceFolder, javaFileName).toString
+        val command = s"javac -d ${inputDirOriginalJavaPath} $javaFilePath"
         val result = command.!
 
         if (result != 0) {
@@ -163,9 +193,14 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
         }
     }
 
-    private def compileMutatedJavaFile(sourceFolder: String, javaFileName: String): Unit = {
-        val javaFilePath = Paths.get(MutatedClassFileTestCaseEnum.javaFileDirPath, sourceFolder, javaFileName).toString
-        val command = s"javac -d ${MutatedClassFileTestCaseEnum.inputDirMutatedJavaPath} $javaFilePath"
+    private def compileMutatedJavaFile(
+        sourceFolder:            String,
+        javaFileName:            String,
+        javaFileDirPath:         String,
+        inputDirMutatedJavaPath: String
+    ): Unit = {
+        val javaFilePath = Paths.get(javaFileDirPath, sourceFolder, javaFileName).toString
+        val command = s"javac -d ${inputDirMutatedJavaPath} $javaFilePath"
         val result = command.!
 
         if (result != 0) {

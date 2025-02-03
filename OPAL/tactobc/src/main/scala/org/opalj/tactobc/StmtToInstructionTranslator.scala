@@ -5,6 +5,8 @@ import scala.collection.mutable
 
 import org.opalj.ba.CodeElement
 import org.opalj.ba.LabelElement
+import org.opalj.br.instructions.POP
+import org.opalj.br.instructions.POP2
 import org.opalj.br.instructions.RewriteLabel
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
@@ -63,6 +65,7 @@ object StmtToInstructionTranslator {
                     listedCodeElements ++= StmtProcessor.processCaughtException(exceptionType, throwingStmts)
                 case ExprStmt(_, expr) =>
                     listedCodeElements ++= ExprProcessor.processExpression(expr, uVarToLVIndex)
+                    listedCodeElements += (if (expr.cTpe.isCategory2) POP2 else POP)
                 case If(_, left, condition, right, target) =>
                     listedCodeElements ++= StmtProcessor.processIf(
                         left,

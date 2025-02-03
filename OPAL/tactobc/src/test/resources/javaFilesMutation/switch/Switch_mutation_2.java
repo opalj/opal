@@ -1,5 +1,9 @@
 public class Switch_mutation_2 {
 
+    static class Myclass {
+        static int field = 5;
+    }
+
     public static void main(String[] args) {
         // Array of fruits to ensure all cases are covered
         String[] fruits = {"Banana", "Brocoli", "Wednesday"};
@@ -25,8 +29,5 @@ public class Switch_mutation_2 {
                 break;
         }
     }
-}
 
-class Myclass {
-    static int field = 5;
 }
