@@ -2,7 +2,7 @@ package org.opalj
 package fpcf
 
 class ScheduleConfig private (
-    private var currentStrategy: ScheduleStrategy,
+    private var currentStrategy:          ScheduleStrategy,
     private var lazyTransformerInBatches: Boolean
 ) {
     def setStrategy(strategy: ScheduleStrategy): Unit = {
@@ -25,8 +25,8 @@ object ScheduleConfig {
         config.getOrElse {
             config = Some(new ScheduleConfig(
                 ScheduleStrategy.SPS, // Default strategy: SPS
-                false                 // Default lazyTransformerInMultipleBatches: false
-                ))
+                false // Default lazyTransformerInMultipleBatches: false
+            ))
             config.get
         }
     }

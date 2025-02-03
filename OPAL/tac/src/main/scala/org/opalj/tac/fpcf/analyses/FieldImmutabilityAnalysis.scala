@@ -114,7 +114,7 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          * Query type iterator for concrete class types.
          * Note: This only works precisely in a closed world assumption!!
          */
-        def queryTypeIterator(implicit state: State, typeIterator: TypeIterator): Unit = {
+        def queryTypeIterator()(implicit state: State, typeIterator: TypeIterator): Unit = {
             val actualTypes = typeIterator.typesProperty(state.field, typeIterator)
 
             typeIterator.foreachType(state.field, actualTypes) { actualType => determineClassImmutability(actualType) }
@@ -173,7 +173,7 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             }
         }
 
-        def determineTypeImmutability(implicit state: State): Unit = {
+        def determineTypeImmutability()(implicit state: State): Unit = {
             if (state.field.fieldType == ObjectType.Object) {
                 // in case of a field with type object: field immutability stays NonTransitivelyImmutable
                 if (state.genericTypeParameters.isEmpty)
@@ -321,9 +321,9 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
         if (field.fieldType.isReferenceType) {
             if (typeExtensibility(ObjectType.Object).isNo)
-                queryTypeIterator
+                queryTypeIterator()
             else
-                determineTypeImmutability
+                determineTypeImmutability()
         }
 
         createResult()
