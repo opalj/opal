@@ -883,7 +883,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def seedPhase2()(implicit s: State): Unit = {
-        val callables = s.getTargetCallables
+        val callables = s.getTargetCallablesWithoutFinalResults
         callables.foreach { callable =>
             // IDE P2 lines 2 - 3
             icfg.getStartStatements(callable).foreach { stmt =>
@@ -942,6 +942,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                         logTrace(s"setting value of nSharp=${nodeToString(nSharp)} to vPrime=$vPrime")
 
                         s.setValue(nSharp, vPrime)
+
+                    case _ =>
                 }
             }
         }
