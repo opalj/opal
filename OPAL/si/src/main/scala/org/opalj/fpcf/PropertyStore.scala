@@ -620,13 +620,12 @@ abstract class PropertyStore {
         // Save the information about the finalization order (of properties which are
         // collaboratively computed).
         val cleanUpSubPhase =
-            (propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet) + AnalysisKey
-        this.subPhaseFinalizationOrder =
-            if (cleanUpSubPhase.isEmpty) {
-                finalizationOrder.toArray
+            (propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet)
+        this.subPhaseFinalizationOrder = (if (cleanUpSubPhase.isEmpty) {
+                finalizationOrder.zipWithIndex.map(x => if(x._2 == 0) x._1 :+ AnalysisKey else x._1)
             } else {
-                (finalizationOrder :+ cleanUpSubPhase.toList).toArray
-            }
+                (finalizationOrder.zipWithIndex.map(x => if(x._2 == 0) x._1 :+ AnalysisKey else x._1) :+ cleanUpSubPhase.toList)
+            }).toArray
 
         subPhaseId = 0
         hasSuppressedNotifications = suppressInterimUpdates.nonEmpty
