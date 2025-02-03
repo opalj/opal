@@ -160,6 +160,12 @@ final class TypeCheckingDomain(
     //
     // --------------------------------------------------------------------------------------------
 
+    protected case class DefaultSObjectValue(
+        override val theUpperTypeBound: ObjectType
+    ) extends SObjectValueLike {
+        override def isNull: Answer = Unknown
+    }
+
     protected case class DefaultMObjectValue(
         upperTypeBound: UIDSet[ObjectType]
     ) extends MObjectValueLike {
@@ -175,19 +181,19 @@ final class TypeCheckingDomain(
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
     override def NewObject(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        new UninitializedObjectValue(objectType, pc)
+        UninitializedObjectValue(objectType, pc)
     }
 
     override def UninitializedThis(objectType: ObjectType): DomainObjectValue = {
-        new UninitializedObjectValue(objectType, -1)
+        UninitializedObjectValue(objectType, -1)
     }
 
     override def InitializedObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        new InitializedObjectValue(objectType)
+        InitializedObjectValue(objectType)
     }
 
     override def ObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainObjectValue = {
-        new InitializedObjectValue(objectType)
+        DefaultSObjectValue(objectType)
     }
 
     override def ObjectValue(
