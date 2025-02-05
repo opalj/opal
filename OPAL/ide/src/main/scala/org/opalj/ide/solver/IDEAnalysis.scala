@@ -784,6 +784,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                 jumpFunctionsMatchingTarget.foreach {
                                     case (((_, d3), (_, _)), f3) if !f3.equalTo(allTopEdgeFunction) =>
                                         propagate(((sq, d3), (r, d5)), f3.composeWith(fPrime))
+                                    case _ =>
                                 }
                             }
                         }
@@ -922,7 +923,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         // IDE P2 part (ii)
         // IDE P2 lines 15 - 17
-        // Reduced to the one callable, results are created for
+        // Reduced to the callables, results are created for
         val ps = s.getTargetCallablesWithoutFinalResults
         val sps = ps.flatMap { p => icfg.getStartStatements(p) }
         val ns = collectReachableStmts(sps, stmt => !icfg.isCallStatement(stmt))
@@ -935,8 +936,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     case (((_, dPrime), (_, d)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
                         val nSharp = (n, d)
                         val vPrime = problem.lattice.meet(
-                            s.getValue((n, d)),
                             fPrime.compute(s.getValue((sp, dPrime)))
+                            s.getValue(nSharp),
                         )
 
                         logTrace(s"setting value of nSharp=${nodeToString(nSharp)} to vPrime=$vPrime")
@@ -990,6 +991,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             jumpFunctionsMatchingTarget.foreach {
                 case (((_, _), (_, dPrime)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
                     propagateValue((c, dPrime), fPrime.compute(s.getValue((n, d))))
+                case _ =>
             }
         }
     }
