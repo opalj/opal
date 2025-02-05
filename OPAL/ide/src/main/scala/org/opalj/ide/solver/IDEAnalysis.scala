@@ -536,17 +536,26 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def seedPhase1()(implicit s: State): Unit = {
+        def propagateSeed(e: Path, f: EdgeFunction[Value]): Unit = {
+            val oldJumpFunction = s.getJumpFunction(e)
+            val fPrime = f.meetWith(oldJumpFunction)
+
+            if (!fPrime.equalTo(oldJumpFunction)) {
+                s.setJumpFunction(e, fPrime)
+                s.enqueuePath(e)
+            }
+        }
+
         val callables = s.getTargetCallables
         callables.foreach { callable =>
             // IDE P1 lines 5 - 6
             icfg.getStartStatements(callable).foreach { stmt =>
                 val path = ((stmt, problem.nullFact), (stmt, problem.nullFact))
-                s.enqueuePath(path)
-                s.setJumpFunction(path, identityEdgeFunction)
+                propagateSeed(path, identityEdgeFunction)
 
                 problem.getAdditionalSeeds(stmt, callable).foreach { fact =>
                     val path = ((stmt, problem.nullFact), (stmt, fact))
-                    s.setJumpFunction(path, identityEdgeFunction)
+                    propagateSeed(path, identityEdgeFunction)
 
                     def processAdditionalSeed(): Unit = {
                         val edgeFunction =
@@ -554,8 +563,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                 problem.getAdditionalSeedsEdgeFunction(stmt, fact, callable),
                                 processAdditionalSeed _
                             )
-                        s.setJumpFunction(path, edgeFunction.meetWith(s.getJumpFunction(path)))
-                        s.enqueuePath(path)
+                        propagateSeed(path, edgeFunction)
                     }
 
                     processAdditionalSeed()
