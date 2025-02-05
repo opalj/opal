@@ -4,6 +4,7 @@ package org.opalj.fpcf.fixtures.lcp_on_fields;
 import org.opalj.fpcf.properties.lcp_on_fields.ObjectValue;
 import org.opalj.fpcf.properties.lcp_on_fields.ObjectValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
+import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 
 public class CreateObjectInMethodExample {
     private int a = 42;
@@ -14,6 +15,7 @@ public class CreateObjectInMethodExample {
         return example;
     }
 
+    @ObjectValue(variable = "lv0", variableValues = {@VariableValue(variable = "a")})
     private CreateObjectInMethodExample createNew2() {
         CreateObjectInMethodExample example = new CreateObjectInMethodExample();
         example.a = a + 2;
@@ -23,7 +25,7 @@ public class CreateObjectInMethodExample {
     @ObjectValues({
             @ObjectValue(variable = "lv0", constantValues = {@ConstantValue(variable = "a", value = 42)}),
             @ObjectValue(variable = "lv2", constantValues = {@ConstantValue(variable = "a", value = 31)}),
-            @ObjectValue(variable = "lv3", constantValues = {@ConstantValue(variable = "a", value = 33)})
+            @ObjectValue(variable = "lv3", variableValues = {@VariableValue(variable = "a")})
     })
     public static void main(String[] args) {
         CreateObjectInMethodExample example1 = new CreateObjectInMethodExample();

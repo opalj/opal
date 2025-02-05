@@ -47,6 +47,17 @@ class LinearConstantPropagationProblem
             .toSet
     }
 
+    override def getAdditionalSeedsEdgeFunction(
+        stmt:   JavaStatement,
+        fact:   LinearConstantPropagationFact,
+        callee: Method
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
+        fact match {
+            case VariableFact(_, _) => UnknownValueEdgeFunction
+            case _                  => super.getAdditionalSeedsEdgeFunction(stmt, fact, callee)
+        }
+    }
+
     override def getNormalFlowFunction(
         source:     JavaStatement,
         sourceFact: LinearConstantPropagationFact,

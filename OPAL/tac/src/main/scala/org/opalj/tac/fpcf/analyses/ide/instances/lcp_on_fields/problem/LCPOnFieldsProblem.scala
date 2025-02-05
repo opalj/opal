@@ -15,7 +15,6 @@ import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FinalEdgeFunction
@@ -59,15 +58,35 @@ class LCPOnFieldsProblem(
     override def getAdditionalSeeds(stmt: JavaStatement, callee: Method)(
         implicit propertyStore: PropertyStore
     ): collection.Set[LCPOnFieldsFact] = {
-        callee.classFile.fields.filter(_.isStatic).map { field =>
-            StaticFieldFact(field.classFile.thisType, field.name)
-        }.toSet
+        (if (callee.isStatic) {
+             immutable.Set.empty
+         } else {
+             immutable.Set(ObjectFact("param0", -1))
+         }) ++
+            callee.parameterTypes
+                .zipWithIndex
+                .filter { case (paramType, _) => paramType.isObjectType || paramType.isArrayType }
+                .map { case (paramType, index) =>
+                    if (paramType.isObjectType) {
+                        ObjectFact(s"param${index + 1}", -(index + 2))
+                    } else {
+                        ArrayFact(s"param${index + 1}", -(index + 2))
+                    }
+                }
+                .toSet ++
+            callee.classFile
+                .fields
+                .filter(_.isStatic)
+                .map { field => StaticFieldFact(field.classFile.thisType, field.name) }
+                .toSet
     }
 
     override def getAdditionalSeedsEdgeFunction(stmt: JavaStatement, fact: LCPOnFieldsFact, callee: Method)(
         implicit propertyStore: PropertyStore
     ): EdgeFunctionResult[LCPOnFieldsValue] = {
         fact match {
+            case ObjectFact(_, _)          => UnknownValueEdgeFunction
+            case ArrayFact(_, _)           => UnknownValueEdgeFunction
             case f @ StaticFieldFact(_, _) => getEdgeFunctionForStaticFieldFactByImmutability(f)
             case _                         => super.getAdditionalSeedsEdgeFunction(stmt, fact, callee)
         }
@@ -561,9 +580,10 @@ class LCPOnFieldsProblem(
         }
     }
 
-    private def getVariableFromProperty(var0: JavaStatement.V)(property: Property): LinearConstantPropagationValue = {
+    private def getVariableFromProperty(var0: JavaStatement.V)(
+        property: LinearConstantPropagationPropertyMetaInformation.Self
+    ): LinearConstantPropagationValue = {
         property
-            .asInstanceOf[LinearConstantPropagationPropertyMetaInformation.Self]
             .results
             .filter {
                 case (linear_constant_propagation.problem.VariableFact(_, definedAtIndex), _) =>

@@ -1,13 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem
 
-import scala.collection.immutable
-
 import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.br.ObjectType
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FinalEdgeFunction
@@ -16,6 +13,7 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.GetField
 import org.opalj.tac.GetStatic
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsPropertyMetaInformation
+import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.VariableValue as LCPVariableValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.ConstantValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearCombinationEdgeFunction
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationFact
@@ -29,6 +27,8 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.VariableValueEdgeFunction
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.V
+
+import scala.collection.immutable
 
 /**
  * Extended definition of the linear constant propagation problem, trying to resolve field accesses with the LCP on
@@ -110,12 +110,13 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     private def getArrayElementFromProperty(
         arrayVar: JavaStatement.V,
         index:    Option[Int]
-    )(property: Property): LinearConstantPropagationValue = {
+    )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
-            .asInstanceOf[LCPOnFieldsPropertyMetaInformation.Self]
             .results
             .filter {
                 case (f: AbstractArrayFact, ArrayValue(_, _)) =>
+                    arrayVar.definedBy.contains(f.definedAtIndex)
+                case (f: AbstractArrayFact, LCPVariableValue) =>
                     arrayVar.definedBy.contains(f.definedAtIndex)
                 case _ => false
             }
@@ -132,6 +133,9 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                             }
                     }
                     lattice.meet(value, arrayValue)
+
+                case (_, LCPVariableValue) =>
+                    VariableValue
             }
     }
 
@@ -181,19 +185,22 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     private def getObjectFieldFromProperty(
         objectVar: JavaStatement.V,
         fieldName: String
-    )(property: Property): LinearConstantPropagationValue = {
+    )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
-            .asInstanceOf[LCPOnFieldsPropertyMetaInformation.Self]
             .results
             .filter {
                 case (f: AbstractObjectFact, ObjectValue(values)) =>
                     objectVar.definedBy.contains(f.definedAtIndex) && values.contains(fieldName)
+                case (f: AbstractObjectFact, LCPVariableValue) =>
+                    objectVar.definedBy.contains(f.definedAtIndex)
                 case _ => false
             }
             .map(_._2)
             .foldLeft(UnknownValue: LinearConstantPropagationValue) {
                 case (value, ObjectValue(values)) =>
                     lattice.meet(value, values(fieldName))
+                case (_, LCPVariableValue) =>
+                    VariableValue
             }
     }
 
@@ -240,12 +247,13 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     private def getStaticFieldFromProperty(
         objectType: ObjectType,
         fieldName:  String
-    )(property: Property): LinearConstantPropagationValue = {
+    )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
-            .asInstanceOf[LCPOnFieldsPropertyMetaInformation.Self]
             .results
             .filter {
                 case (f: AbstractStaticFieldFact, StaticFieldValue(_)) =>
+                    f.objectType == objectType && f.fieldName == fieldName
+                case (f: AbstractStaticFieldFact, LCPVariableValue) =>
                     f.objectType == objectType && f.fieldName == fieldName
                 case _ => false
             }
@@ -253,6 +261,8 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
             .foldLeft(UnknownValue: LinearConstantPropagationValue) {
                 case (value, StaticFieldValue(v)) =>
                     lattice.meet(value, v)
+                case (_, LCPVariableValue) =>
+                    VariableValue
             }
     }
 }
