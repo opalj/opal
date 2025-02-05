@@ -14,7 +14,6 @@ import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
@@ -95,11 +94,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         processTargetCallablesEOptionP(initialTargetCallablesEOptionP)
 
         /**
-         * Remember the callables where a final result has already been produced
-         */
-        private val callablesWithFinalResults = mutable.Set.empty[Callable]
-
-        /**
          * The work list for paths used in P1
          */
         private val pathWorkList: PathWorkList = mutable.Queue.empty
@@ -147,14 +141,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         def getTargetCallables: collection.Set[Callable] = {
             targetCallables
-        }
-
-        def getTargetCallablesWithoutFinalResults: collection.Set[Callable] = {
-            targetCallables.diff(callablesWithFinalResults)
-        }
-
-        def rememberCallableWithFinalResult(callable: Callable): Unit = {
-            callablesWithFinalResults.add(callable)
         }
 
         def getTargetCallablesEOptionP: EOptionP[
@@ -465,7 +451,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     ): ProperPropertyComputationResult = {
         logDebug("starting creation of properties and results")
 
-        val callables = s.getTargetCallablesWithoutFinalResults
+        val callables = s.getTargetCallables
         val collectedResults = s.collectResults(callables)
         val callableResults = callables.map { callable =>
             val (resultsByStatement, resultsForExit) =
@@ -483,22 +469,17 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 resultsForExit
             )
 
-            if (s.areDependeesEmpty) {
-                s.rememberCallableWithFinalResult(callable)
-                Result(callable, ideRawProperty)
-            } else {
-                PartialResult(
-                    callable,
-                    propertyMetaInformation.backingPropertyMetaInformation.key,
-                    { (eOptionP: SomeEOptionP) =>
-                        if (eOptionP.hasUBP && eOptionP.ub == ideRawProperty) {
-                            None
-                        } else {
-                            Some(InterimEUBP(callable, ideRawProperty))
-                        }
+            PartialResult(
+                callable,
+                propertyMetaInformation.backingPropertyMetaInformation.key,
+                { (eOptionP: SomeEOptionP) =>
+                    if (eOptionP.hasUBP && eOptionP.ub == ideRawProperty) {
+                        None
+                    } else {
+                        Some(InterimEUBP(callable, ideRawProperty))
                     }
-                )
-            }
+                }
+            )
         }
 
         logDebug("finished creation of properties and results")
@@ -555,7 +536,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def seedPhase1()(implicit s: State): Unit = {
-        val callables = s.getTargetCallablesWithoutFinalResults
+        val callables = s.getTargetCallables
         callables.foreach { callable =>
             // IDE P1 lines 5 - 6
             icfg.getStartStatements(callable).foreach { stmt =>
@@ -886,7 +867,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def seedPhase2()(implicit s: State): Unit = {
-        val callables = s.getTargetCallablesWithoutFinalResults
+        val callables = s.getTargetCallables
         callables.foreach { callable =>
             // IDE P2 lines 2 - 3
             icfg.getStartStatements(callable).foreach { stmt =>
@@ -926,7 +907,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         // IDE P2 part (ii)
         // IDE P2 lines 15 - 17
         // Reduced to the callables, results are created for
-        val ps = s.getTargetCallablesWithoutFinalResults
+        val ps = s.getTargetCallables
         val sps = ps.flatMap { p => icfg.getStartStatements(p) }
         val ns = collectReachableStmts(sps, stmt => !icfg.isCallStatement(stmt))
 
