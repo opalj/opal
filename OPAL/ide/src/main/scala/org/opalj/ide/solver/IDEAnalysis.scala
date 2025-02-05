@@ -529,6 +529,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     ])(implicit s: State): ProperPropertyComputationResult = {
         s.processTargetCallablesEOptionP(eps)
 
+        logInfo(s"performing ${PropertyKey.name(propertyMetaInformation.key)} for ${s.getTargetCallables.size} callables")
+
         seedPhase1()
         continuePhase1()
         performPhase2()
@@ -936,8 +938,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     case (((_, dPrime), (_, d)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
                         val nSharp = (n, d)
                         val vPrime = problem.lattice.meet(
-                            fPrime.compute(s.getValue((sp, dPrime)))
                             s.getValue(nSharp),
+                            fPrime.compute(s.getValue((sp, dPrime)))
                         )
 
                         logTrace(s"setting value of nSharp=${nodeToString(nSharp)} to vPrime=$vPrime")

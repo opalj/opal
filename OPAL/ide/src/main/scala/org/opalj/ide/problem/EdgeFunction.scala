@@ -41,10 +41,8 @@ case class IdentityEdgeFunction[Value <: IDEValue]() extends EdgeFunction[Value]
         secondEdgeFunction
 
     override def meetWith(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] = {
-        if (otherEdgeFunction.equalTo(this) || otherEdgeFunction.isInstanceOf[AllTopEdgeFunction[Value]]) {
+        if (otherEdgeFunction.equalTo(this)) {
             this
-        } else if (otherEdgeFunction.isInstanceOf[AllBottomEdgeFunction[Value]]) {
-            otherEdgeFunction
         } else {
             otherEdgeFunction.meetWith(this)
         }
