@@ -1,10 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation;
 
-import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValues;
-import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.VariableValues;
+import org.opalj.fpcf.properties.linear_constant_propagation.*;
 
 public class PropagationAcrossMethodsExample {
     @VariableValues({
@@ -21,10 +18,23 @@ public class PropagationAcrossMethodsExample {
         return 12 - 4 * 4 + a;
     }
 
+    @ConstantValue(variable = "lv3", value = 139)
+    public static int linearCalculation3(String msg, int a) {
+        System.out.println(msg);
+        return a + 11;
+    }
+
+    @UnknownValue(variable = "lv3")
+    public static int linearCalculation4(String msg, int a) {
+        System.out.println(msg);
+        return 3 * a;
+    }
+
     @ConstantValues({
             @ConstantValue(variable = "lv5", value = -18),
             @ConstantValue(variable = "lv8", value = 132),
-            @ConstantValue(variable = "lva", value = 128)
+            @ConstantValue(variable = "lva", value = 128),
+            @ConstantValue(variable = "lv12", value = 139)
     })
     @VariableValues({
             @VariableValue(variable = "lvd"),
@@ -41,6 +51,8 @@ public class PropagationAcrossMethodsExample {
 
         int m = example.linearCalculation1("Fifth call", 12, l);
 
-        System.out.println("i: " + i + ", j: " + j + ", k:" + k + ", l: " + l + ", m: " + m);
+        int n = linearCalculation3("Sixth call", k);
+
+        System.out.println("i: " + i + ", j: " + j + ", k:" + k + ", l: " + l + ", m: " + m + ", n: " + n);
     }
 }

@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.lcp_on_fields;
 import org.opalj.fpcf.properties.lcp_on_fields.ObjectValue;
 import org.opalj.fpcf.properties.lcp_on_fields.ObjectValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
+import org.opalj.fpcf.properties.linear_constant_propagation.UnknownValue;
 
 public class FieldReadWriteAcrossMethodsExample {
     private int a = -2;
@@ -22,7 +22,7 @@ public class FieldReadWriteAcrossMethodsExample {
     }
 
     @ObjectValues({
-            @ObjectValue(variable = "lv0", variableValues = {@VariableValue(variable = "a")}),
+            @ObjectValue(variable = "lv0", unknownValues = {@UnknownValue(variable = "a")}),
             @ObjectValue(variable = "lv2", constantValues = {@ConstantValue(variable = "a", value = 42)}),
             @ObjectValue(variable = "lv4", constantValues = {@ConstantValue(variable = "a", value = -2)})
     })

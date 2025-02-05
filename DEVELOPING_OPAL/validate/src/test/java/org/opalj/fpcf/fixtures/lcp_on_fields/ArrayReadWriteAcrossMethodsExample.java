@@ -1,10 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.lcp_on_fields;
 
-import org.opalj.fpcf.properties.lcp_on_fields.ArrayValue;
-import org.opalj.fpcf.properties.lcp_on_fields.ArrayValues;
-import org.opalj.fpcf.properties.lcp_on_fields.ConstantArrayElement;
-import org.opalj.fpcf.properties.lcp_on_fields.VariableArrayElement;
+import org.opalj.fpcf.properties.lcp_on_fields.*;
 
 public class ArrayReadWriteAcrossMethodsExample {
     public void setIndexTo23(int[] arr, int index) {
@@ -16,11 +13,11 @@ public class ArrayReadWriteAcrossMethodsExample {
     }
 
     @ArrayValues({
-            @ArrayValue(variable = "lv3", variableElements = {
-                    @VariableArrayElement(index = 0),
-                    @VariableArrayElement(index = 1),
-                    @VariableArrayElement(index = 2),
-                    @VariableArrayElement(index = 3)
+            @ArrayValue(variable = "lv3", unknownElements = {
+                    @UnknownArrayElement(index = 0),
+                    @UnknownArrayElement(index = 1),
+                    @UnknownArrayElement(index = 2),
+                    @UnknownArrayElement(index = 3)
             }),
             @ArrayValue(variable = "lv5", constantElements = {
                     @ConstantArrayElement(index = 11, value = 42)

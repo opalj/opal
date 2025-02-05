@@ -186,18 +186,18 @@ class ArrayEdgeFunction(
             case NewArrayEdgeFunction(_) => secondEdgeFunction
 
             case ArrayEdgeFunction(initValue2, elements2) =>
-                new ArrayEdgeFunction(initValue2, (elements -- elements2.keys) ++ elements2)
+                ArrayEdgeFunction(initValue2, (elements -- elements2.keys) ++ elements2)
 
             case PutElementEdgeFunction(index, value) =>
                 index match {
                     case linear_constant_propagation.problem.UnknownValue =>
                         /* In this case it is unknown which indices will be affected */
-                        UnknownValueEdgeFunction
+                        ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     case linear_constant_propagation.problem.ConstantValue(i) =>
-                        new ArrayEdgeFunction(initValue, (elements - i) + (i -> value))
+                        ArrayEdgeFunction(initValue, (elements - i) + (i -> value))
                     case linear_constant_propagation.problem.VariableValue =>
                         /* In this case any index could be affected */
-                        new ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue, immutable.Map.empty)
+                        ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
                 }
 
             case IdentityEdgeFunction()   => this
@@ -211,7 +211,7 @@ class ArrayEdgeFunction(
     override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
         otherEdgeFunction match {
             case ArrayEdgeFunction(initValue2, elements2) =>
-                new ArrayEdgeFunction(
+                ArrayEdgeFunction(
                     LinearConstantPropagationLattice.meet(initValue, initValue2),
                     elements.keySet.union(elements2.keySet)
                         .map { index =>
@@ -226,9 +226,9 @@ class ArrayEdgeFunction(
             case PutElementEdgeFunction(index, value) =>
                 index match {
                     case linear_constant_propagation.problem.UnknownValue =>
-                        UnknownValueEdgeFunction
+                        ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     case linear_constant_propagation.problem.ConstantValue(i) =>
-                        new ArrayEdgeFunction(
+                        ArrayEdgeFunction(
                             initValue,
                             (elements - i) + (i -> LinearConstantPropagationLattice.meet(
                                 value,
@@ -236,7 +236,7 @@ class ArrayEdgeFunction(
                             ))
                         )
                     case linear_constant_propagation.problem.VariableValue =>
-                        new ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue, immutable.Map.empty)
+                        ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
                 }
 
             case IdentityEdgeFunction()   => this
@@ -256,6 +256,13 @@ class ArrayEdgeFunction(
 }
 
 object ArrayEdgeFunction {
+    def apply(
+        initValue: LinearConstantPropagationValue,
+        elements:  immutable.Map[Int, LinearConstantPropagationValue] = immutable.Map.empty
+    ): ArrayEdgeFunction = {
+        new ArrayEdgeFunction(initValue, elements)
+    }
+
     def unapply(arrayEdgeFunction: ArrayEdgeFunction): Some[(
         LinearConstantPropagationValue,
         immutable.Map[Int, LinearConstantPropagationValue]
@@ -283,9 +290,11 @@ case class PutElementEdgeFunction(
             case UnknownValue => UnknownValue
             case ArrayValue(initValue, elements) =>
                 index match {
+                    case linear_constant_propagation.problem.UnknownValue =>
+                        ArrayValue(linear_constant_propagation.problem.UnknownValue, immutable.Map.empty)
                     case linear_constant_propagation.problem.ConstantValue(i) =>
                         ArrayValue(initValue, (elements - i) + (i -> value))
-                    case _ =>
+                    case linear_constant_propagation.problem.VariableValue =>
                         ArrayValue(linear_constant_propagation.problem.VariableValue, immutable.Map.empty)
                 }
             case VariableValue => VariableValue
@@ -302,9 +311,9 @@ case class PutElementEdgeFunction(
             case ArrayEdgeFunction(initValue, elements) =>
                 index match {
                     case linear_constant_propagation.problem.UnknownValue =>
-                        UnknownValueEdgeFunction
+                        ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     case linear_constant_propagation.problem.ConstantValue(i) =>
-                        new ArrayEdgeFunction(
+                        ArrayEdgeFunction(
                             initValue,
                             (elements - i) + (i -> LinearConstantPropagationLattice.meet(
                                 value,
@@ -312,12 +321,12 @@ case class PutElementEdgeFunction(
                             ))
                         )
                     case linear_constant_propagation.problem.VariableValue =>
-                        new ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue, immutable.Map.empty)
+                        ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
                 }
 
             case PutElementEdgeFunction(index2, _) if index == index2 => secondEdgeFunction
             case PutElementEdgeFunction(_, _) =>
-                new ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue, immutable.Map.empty)
+                ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     .composeWith(this).composeWith(secondEdgeFunction)
 
             case IdentityEdgeFunction()   => this
@@ -334,9 +343,9 @@ case class PutElementEdgeFunction(
             case ArrayEdgeFunction(initValue, elements) =>
                 index match {
                     case linear_constant_propagation.problem.UnknownValue =>
-                        UnknownValueEdgeFunction
+                        ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     case linear_constant_propagation.problem.ConstantValue(i) =>
-                        new ArrayEdgeFunction(
+                        ArrayEdgeFunction(
                             initValue,
                             (elements - i) + (i -> LinearConstantPropagationLattice.meet(
                                 value,
@@ -344,7 +353,7 @@ case class PutElementEdgeFunction(
                             ))
                         )
                     case linear_constant_propagation.problem.VariableValue =>
-                        new ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue, immutable.Map.empty)
+                        ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
                 }
 
             case PutElementEdgeFunction(index2, value2) =>
@@ -426,9 +435,9 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
     ): EdgeFunction[LCPOnFieldsValue] = {
         secondEdgeFunction match {
             case ObjectEdgeFunction(_)         => secondEdgeFunction
-            case PutFieldEdgeFunction(_, _)    => secondEdgeFunction
+            case PutFieldEdgeFunction(_, _)    => this
             case ArrayEdgeFunction(_, _)       => secondEdgeFunction
-            case PutElementEdgeFunction(_, _)  => secondEdgeFunction
+            case PutElementEdgeFunction(_, _)  => ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
             case PutStaticFieldEdgeFunction(_) => secondEdgeFunction
 
             case VariableValueEdgeFunction => secondEdgeFunction
@@ -440,6 +449,18 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
+    }
+
+    override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+        otherEdgeFunction match {
+            case AllTopEdgeFunction(_)  => this
+            case IdentityEdgeFunction() => this
+            case _                      => otherEdgeFunction
+        }
+    }
+
+    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean = {
+        otherEdgeFunction eq this
     }
 
     override def toString: String = "UnknownValueEdgeFunction()"

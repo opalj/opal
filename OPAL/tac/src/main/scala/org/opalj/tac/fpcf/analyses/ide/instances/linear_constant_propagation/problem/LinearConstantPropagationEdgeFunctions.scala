@@ -94,23 +94,6 @@ case class LinearCombinationEdgeFunction(
 }
 
 /**
- * Edge function for a variable that is definitely not constant
- */
-object VariableValueEdgeFunction extends AllBottomEdgeFunction[LinearConstantPropagationValue](VariableValue) {
-    override def composeWith(
-        secondEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
-    ): EdgeFunction[LinearConstantPropagationValue] = {
-        secondEdgeFunction match {
-            case LinearCombinationEdgeFunction(0, _, _) => secondEdgeFunction
-            case LinearCombinationEdgeFunction(_, _, _) => this
-            case _                                      => this
-        }
-    }
-
-    override def toString: String = "VariableValueEdgeFunction()"
-}
-
-/**
  * Edge function for variables whose value is unknown
  */
 object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropagationValue](UnknownValue) {
@@ -133,5 +116,36 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
         }
     }
 
+    override def meetWith(
+        otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
+    ): EdgeFunction[LinearConstantPropagationValue] = {
+        otherEdgeFunction match {
+            case AllTopEdgeFunction(_)  => this
+            case IdentityEdgeFunction() => this
+            case _                      => otherEdgeFunction
+        }
+    }
+
+    override def equalTo(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean = {
+        otherEdgeFunction eq this
+    }
+
     override def toString: String = "UnknownValueEdgeFunction()"
+}
+
+/**
+ * Edge function for a variable that is definitely not constant
+ */
+object VariableValueEdgeFunction extends AllBottomEdgeFunction[LinearConstantPropagationValue](VariableValue) {
+    override def composeWith(
+        secondEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
+    ): EdgeFunction[LinearConstantPropagationValue] = {
+        secondEdgeFunction match {
+            case LinearCombinationEdgeFunction(0, _, _) => secondEdgeFunction
+            case LinearCombinationEdgeFunction(_, _, _) => this
+            case _                                      => this
+        }
+    }
+
+    override def toString: String = "VariableValueEdgeFunction()"
 }

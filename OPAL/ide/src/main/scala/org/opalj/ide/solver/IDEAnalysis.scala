@@ -571,7 +571,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                 problem.getAdditionalSeedsEdgeFunction(stmt, fact, callable),
                                 processAdditionalSeed _
                             )
-                        s.setJumpFunction(path, s.getJumpFunction(path).meetWith(edgeFunction))
+                        s.setJumpFunction(path, edgeFunction.meetWith(s.getJumpFunction(path)))
                         s.enqueuePath(path)
                     }
 

@@ -86,7 +86,7 @@ class LCPOnFieldsProblem(
     ): EdgeFunctionResult[LCPOnFieldsValue] = {
         fact match {
             case ObjectFact(_, _)          => UnknownValueEdgeFunction
-            case ArrayFact(_, _)           => UnknownValueEdgeFunction
+            case ArrayFact(_, _)           => ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
             case f @ StaticFieldFact(_, _) => getEdgeFunctionForStaticFieldFactByImmutability(f)
             case _                         => super.getAdditionalSeedsEdgeFunction(stmt, fact, callee)
         }
