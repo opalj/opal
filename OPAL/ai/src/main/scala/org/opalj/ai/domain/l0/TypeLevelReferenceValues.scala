@@ -510,7 +510,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     override final def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
         asReferenceValue(value) match {
             case _: NullValueLike => Unknown
-            case otherRefValue => otherRefValue.isValueASubtypeOf(supertype)
+            case otherRefValue    => otherRefValue.isValueASubtypeOf(supertype)
         }
     }
 
@@ -608,7 +608,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         // array. This does not run, but does compile (e.g. in varargs methods). We must allow it during frame table
         // generation, as the compiler also allows it.
         // see here: https://github.com/bcgit/bc-java/blob/0ea89a4388de4f18a2cd3a1801d5bdb2a954644d/util/src/main/java/org/bouncycastle/oer/OERDefinition.java#L638-L675
-        if(arrayref.isArrayValue.isYes)
+        if (arrayref.isArrayValue.isYes)
             asArrayAbstraction(arrayref).load(pc, index)
         else {
             var thrownExceptions: List[ExceptionValue] = Nil
@@ -635,7 +635,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         arrayref: DomainValue
     ): ArrayStoreResult = {
         // We must support array operations on objects that are not actually arrays. See arrayload for explanation.
-        if(arrayref.isArrayValue.isYes)
+        if (arrayref.isArrayValue.isYes)
             asArrayAbstraction(arrayref).store(pc, value, index)
         else {
             var thrownExceptions: List[ExceptionValue] = Nil
