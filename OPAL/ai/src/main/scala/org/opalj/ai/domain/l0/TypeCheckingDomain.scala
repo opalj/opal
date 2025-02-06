@@ -71,7 +71,7 @@ final class TypeCheckingDomain(
     ) extends SObjectValueLike with Value {
         this: DomainObjectValue =>
 
-        override def isNull: Answer = No
+        override def isNull: Answer = Unknown
 
         // WIDENING OPERATION
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
@@ -97,7 +97,7 @@ final class TypeCheckingDomain(
         }
 
         // joins of an uninitialized value with null results in an illegal value
-        override def isNull: Answer = No
+        override def isNull: Answer = Unknown
 
         override final def verificationTypeInfo: VerificationTypeInfo = {
             if (origin == -1)
