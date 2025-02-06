@@ -39,11 +39,24 @@ trait DefaultTypeLevelReferenceValues
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case _: ANullValue         => NoUpdate
-                case _: ReferenceValueLike =>
-                    // THIS domain does not track whether ReferenceValues
-                    // are definitively not null!
-                    StructuralUpdate(other)
+                case _: ANullValue => NoUpdate
+                case otherObj: ReferenceValueLike =>
+                    if (otherObj.isNull.isNotNo) {
+                        // We are null, the other obj is either unknown or also null -> We can use other obj as the join
+                        StructuralUpdate(other)
+                    } else {
+                        // Other obj is not null, but we are null -> Must create an update that has isNull = Unknown
+                        other match {
+                            case SObjectValueLike(upperTypeBound) =>
+                                StructuralUpdate(ObjectValue(pc, upperTypeBound))
+                            case MObjectValueLike(upperTypeBound) =>
+                                StructuralUpdate(ObjectValue(pc, upperTypeBound))
+                            case AnArrayValue(upperTypeBound) =>
+                                StructuralUpdate(ArrayValue(pc, upperTypeBound))
+                            case _ =>
+                                StructuralUpdate(other)
+                        }
+                    }
             }
         }
 
@@ -135,8 +148,8 @@ trait DefaultTypeLevelReferenceValues
             val thisUTB = this.theUpperTypeBound
             other match {
 
-                case otherObj@SObjectValueLike(thatUpperTypeBound) =>
-                    if(abstractsNullness(this, otherObj)){
+                case otherObj @ SObjectValueLike(thatUpperTypeBound) =>
+                    if (abstractsNullness(this, otherObj)) {
                         classHierarchy.joinAnyArrayTypeWithObjectType(thatUpperTypeBound) match {
                             case UIDSet1(newUpperTypeBound) =>
                                 if (newUpperTypeBound eq `thatUpperTypeBound`)
@@ -148,11 +161,14 @@ trait DefaultTypeLevelReferenceValues
                         }
                     } else {
                         // If the two objects are not null-compatible, we need to update regardless of type compatibility
-                        StructuralUpdate(ObjectValue(joinPC, classHierarchy.joinAnyArrayTypeWithObjectType(thatUpperTypeBound) ))
+                        StructuralUpdate(ObjectValue(
+                            joinPC,
+                            classHierarchy.joinAnyArrayTypeWithObjectType(thatUpperTypeBound)
+                        ))
                     }
 
-                case otherObj@MObjectValueLike(thatUpperTypeBound) =>
-                    if(abstractsNullness(this, otherObj)){
+                case otherObj @ MObjectValueLike(thatUpperTypeBound) =>
+                    if (abstractsNullness(this, otherObj)) {
                         classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thatUpperTypeBound) match {
                             case `thatUpperTypeBound` =>
                                 StructuralUpdate(other)
@@ -163,12 +179,14 @@ trait DefaultTypeLevelReferenceValues
                                 StructuralUpdate(ObjectValue(joinPC, newUpperTypeBound))
                         }
                     } else {
-                        StructuralUpdate(ObjectValue(joinPC, classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thatUpperTypeBound)))
+                        StructuralUpdate(ObjectValue(
+                            joinPC,
+                            classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thatUpperTypeBound)
+                        ))
                     }
 
-
-                case otherObj@AnArrayValue(thatUpperTypeBound) =>
-                    if(abstractsNullness(this, otherObj)){
+                case otherObj @ AnArrayValue(thatUpperTypeBound) =>
+                    if (abstractsNullness(this, otherObj)) {
                         classHierarchy.joinArrayTypes(thisUTB, thatUpperTypeBound) match {
                             case Left(`thisUTB`) =>
                                 NoUpdate
@@ -189,9 +207,8 @@ trait DefaultTypeLevelReferenceValues
                         }
                     }
 
-
                 case _: ANullValue =>
-                    if(this.isNull.isNo) {
+                    if (this.isNull.isNo) {
                         // Must make sure new object value is nullable!
                         StructuralUpdate(ArrayValue(joinPC, thisUTB))
                     } else
@@ -251,9 +268,9 @@ trait DefaultTypeLevelReferenceValues
     }
 
     private def abstractsNullness(thisObj: ReferenceValueLike, otherObj: ReferenceValueLike): Boolean = {
-        if(thisObj.isNull eq otherObj.isNull) true
-        else if(thisObj.isNull.isNo && otherObj.isNull.isNotNo) false
-        else if(thisObj.isNull.isYes && otherObj.isNull.isNoOrUnknown) false
+        if (thisObj.isNull eq otherObj.isNull) true
+        else if (thisObj.isNull.isNo && otherObj.isNull.isNotNo) false
+        else if (thisObj.isNull.isYes && otherObj.isNull.isNoOrUnknown) false
         else true
     }
 
@@ -267,8 +284,8 @@ trait DefaultTypeLevelReferenceValues
             val thisUpperTypeBound = this.theUpperTypeBound
             other match {
 
-                case otherObj@SObjectValueLike(thatUpperTypeBound) =>
-                    if(abstractsNullness(this, otherObj)){
+                case otherObj @ SObjectValueLike(thatUpperTypeBound) =>
+                    if (abstractsNullness(this, otherObj)) {
                         classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
                             case UIDSet1(newUpperTypeBound) =>
                                 if (newUpperTypeBound eq `thisUpperTypeBound`)
@@ -283,14 +300,17 @@ trait DefaultTypeLevelReferenceValues
                         }
                     } else {
                         // If the two objects are not null-compatible, we need to update regardless of type compatibility
-                        asStructuralUpdate(pc, classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true))
+                        asStructuralUpdate(
+                            pc,
+                            classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true)
+                        )
                     }
 
-                case otherObj@MObjectValueLike(thatUpperTypeBound) =>
-                    if(abstractsNullness(this, otherObj)){
+                case otherObj @ MObjectValueLike(thatUpperTypeBound) =>
+                    if (abstractsNullness(this, otherObj)) {
                         classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
                             case `thatUpperTypeBound` =>
-                                    StructuralUpdate(other)
+                                StructuralUpdate(other)
                             case UIDSet1(`thisUpperTypeBound`) =>
                                 NoUpdate
                             case newUpperTypeBound =>
@@ -298,11 +318,14 @@ trait DefaultTypeLevelReferenceValues
                         }
                     } else {
                         // If the two objects are not null-compatible, we need to update regardless of type compatibility
-                        asStructuralUpdate(pc, classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true))
+                        asStructuralUpdate(
+                            pc,
+                            classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true)
+                        )
                     }
 
                 case otherObj: AnArrayValue =>
-                    if(abstractsNullness(this, otherObj)){
+                    if (abstractsNullness(this, otherObj)) {
                         classHierarchy.joinAnyArrayTypeWithObjectType(thisUpperTypeBound) match {
                             case UIDSet1(newUpperTypeBound) =>
                                 if (newUpperTypeBound eq `thisUpperTypeBound`)
@@ -317,9 +340,8 @@ trait DefaultTypeLevelReferenceValues
                         asStructuralUpdate(pc, classHierarchy.joinAnyArrayTypeWithObjectType(thisUpperTypeBound))
                     }
 
-
                 case _: ANullValue =>
-                    if(this.isNull.isNo) {
+                    if (this.isNull.isNo) {
                         // Must make sure new object value is nullable!
                         StructuralUpdate(ObjectValue(pc, thisUpperTypeBound))
                     } else
@@ -329,13 +351,13 @@ trait DefaultTypeLevelReferenceValues
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
-                case otherObj@SObjectValueLike(thatUpperTypeBound) =>
+                case otherObj @ SObjectValueLike(thatUpperTypeBound) =>
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound) && abstractsNullness(this, otherObj)
 
-                case otherObj@AnArrayValue(thatUpperTypeBound) =>
+                case otherObj @ AnArrayValue(thatUpperTypeBound) =>
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound) && abstractsNullness(this, otherObj)
 
-                case otherObj@MObjectValueLike(thatUpperTypeBound) =>
+                case otherObj @ MObjectValueLike(thatUpperTypeBound) =>
                     classHierarchy.isSubtypeOf(
                         thatUpperTypeBound.asInstanceOf[UIDSet[ReferenceType]],
                         this.theUpperTypeBound
@@ -366,8 +388,8 @@ trait DefaultTypeLevelReferenceValues
             val thisUTB = this.upperTypeBound
             other match {
 
-                case otherObj@SObjectValueLike(thatUTB) =>
-                    if(abstractsNullness(this, otherObj)){
+                case otherObj @ SObjectValueLike(thatUTB) =>
+                    if (abstractsNullness(this, otherObj)) {
                         classHierarchy.joinObjectTypes(thatUTB, thisUTB, true) match {
                             case `thisUTB`          => NoUpdate
                             case UIDSet1(`thatUTB`) => StructuralUpdate(other)
@@ -378,8 +400,8 @@ trait DefaultTypeLevelReferenceValues
                         asStructuralUpdate(pc, classHierarchy.joinObjectTypes(thatUTB, thisUTB, true))
                     }
 
-                case otherObj@MObjectValueLike(thatUTB) =>
-                    if(abstractsNullness(this, otherObj)){
+                case otherObj @ MObjectValueLike(thatUTB) =>
+                    if (abstractsNullness(this, otherObj)) {
                         classHierarchy.joinUpperTypeBounds(thisUTB, thatUTB, true) match {
                             case `thisUTB` => NoUpdate
                             case `thatUTB` => StructuralUpdate(other)
@@ -390,7 +412,7 @@ trait DefaultTypeLevelReferenceValues
                     }
 
                 case otherObj: AnArrayValue =>
-                    if(abstractsNullness(this, otherObj)){
+                    if (abstractsNullness(this, otherObj)) {
                         classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thisUTB) match {
                             case `thisUTB` => NoUpdate
                             case newUTB    => asStructuralUpdate(pc, newUTB)
@@ -399,9 +421,8 @@ trait DefaultTypeLevelReferenceValues
                         asStructuralUpdate(pc, classHierarchy.joinAnyArrayTypeWithMultipleTypesBound(thisUTB))
                     }
 
-
                 case _: ANullValue =>
-                    if(this.isNull.isNo) {
+                    if (this.isNull.isNo) {
                         // Must make sure new object value is nullable!
                         asStructuralUpdate(pc, thisUTB)
                     } else
