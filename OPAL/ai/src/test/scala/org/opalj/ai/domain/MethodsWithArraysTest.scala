@@ -45,6 +45,38 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
 
         type Id = String
         def id = "MethodsWithArraysTestDomain"
+
+        override def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
+            asReferenceValue(value).isValueASubtypeOf(supertype)(this.classHierarchy)
+        }
+
+        override def refIsNull(pc: Int, value: DomainValue): Answer = {
+            asReferenceValue(value).isNull
+        }
+
+        override def arrayload(
+                                  pc:       Int,
+                                  index:    DomainValue,
+                                  arrayref: DomainValue
+                              ): ArrayLoadResult = {
+            asArrayAbstraction(arrayref).load(pc, index)
+        }
+
+        override def arraystore(
+                                   pc:       Int,
+                                   value:    DomainValue,
+                                   index:    DomainValue,
+                                   arrayref: DomainValue
+                               ): ArrayStoreResult = {
+            asArrayAbstraction(arrayref).store(pc, value, index)
+        }
+
+        override def arraylength(
+                                    pc:       Int,
+                                    arrayref: DomainValue
+                                ): Computation[DomainValue, ExceptionValue] = {
+            asArrayAbstraction(arrayref).length(pc)
+        }
     }
 
     private def evaluateMethod(name: String, f: TestDomain => Unit): Unit = {
