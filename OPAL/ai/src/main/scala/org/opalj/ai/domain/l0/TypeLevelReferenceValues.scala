@@ -507,7 +507,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         }
     }
 
-    override final def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
+    override def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
         asReferenceValue(value) match {
             case _: NullValueLike => Unknown
             case otherRefValue    => otherRefValue.isValueASubtypeOf(supertype)
@@ -519,7 +519,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *
      * @param value A value of type `ReferenceValue`.
      */
-    override final def refIsNull(pc: Int, value: DomainValue): Answer = {
+    override def refIsNull(pc: Int, value: DomainValue): Answer = {
         Unknown
     }
 
