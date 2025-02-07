@@ -23,11 +23,11 @@ class IDERawProperty[Fact <: IDEFact, Value <: IDEValue, Statement](
         s"IDERawProperty(${PropertyKey.name(key)}, {\n${
                 stmtResults.map { case (stmt, results) =>
                     s"\t$stmt\n${
-                            results.map { case (fact, value) => s"\t\t($fact,$value)" }.mkString("\n")
+                            results.map { case (fact, value) => s"\t\t($fact,$value)" }.toList.sorted.mkString("\n")
                         }"
                 }.mkString("\n")
             }\n}, {\n${
-                callableResults.map { case (fact, value) => s"\t($fact,$value)" }.mkString("\n")
+                callableResults.map { case (fact, value) => s"\t($fact,$value)" }.toList.sorted.mkString("\n")
             }\n})"
     }
 

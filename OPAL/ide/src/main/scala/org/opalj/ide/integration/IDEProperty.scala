@@ -24,7 +24,7 @@ class BasicIDEProperty[Fact <: IDEFact, Value <: IDEValue](
 
     override def toString: String = {
         s"BasicIDEProperty(${PropertyKey.name(key)}, {\n${
-                results.map { case (fact, value) => s"\t($fact,$value)" }.mkString("\n")
+                results.map { case (fact, value) => s"\t($fact,$value)" }.toList.sorted.mkString("\n")
             }\n})"
     }
 
