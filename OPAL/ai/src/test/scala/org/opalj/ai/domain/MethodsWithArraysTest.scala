@@ -55,26 +55,26 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
         }
 
         override def arrayload(
-                                  pc:       Int,
-                                  index:    DomainValue,
-                                  arrayref: DomainValue
-                              ): ArrayLoadResult = {
+            pc:       Int,
+            index:    DomainValue,
+            arrayref: DomainValue
+        ): ArrayLoadResult = {
             asArrayAbstraction(arrayref).load(pc, index)
         }
 
         override def arraystore(
-                                   pc:       Int,
-                                   value:    DomainValue,
-                                   index:    DomainValue,
-                                   arrayref: DomainValue
-                               ): ArrayStoreResult = {
+            pc:       Int,
+            value:    DomainValue,
+            index:    DomainValue,
+            arrayref: DomainValue
+        ): ArrayStoreResult = {
             asArrayAbstraction(arrayref).store(pc, value, index)
         }
 
         override def arraylength(
-                                    pc:       Int,
-                                    arrayref: DomainValue
-                                ): Computation[DomainValue, ExceptionValue] = {
+            pc:       Int,
+            arrayref: DomainValue
+        ): Computation[DomainValue, ExceptionValue] = {
             asArrayAbstraction(arrayref).length(pc)
         }
     }
