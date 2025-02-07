@@ -13,7 +13,7 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.GetField
 import org.opalj.tac.GetStatic
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsPropertyMetaInformation
-import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.VariableValue as LCPVariableValue
+import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.{VariableValue => LCPVariableValue}
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.ConstantValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearCombinationEdgeFunction
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationFact
