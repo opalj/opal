@@ -179,14 +179,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         true
     }
 
-    override final def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
-        asReferenceValue(value).isValueASubtypeOf(supertype)
-    }
-
-    override final def refIsNull(pc: Int, value: DomainValue): Answer = {
-        asReferenceValue(value).isNull
-    }
-
     /**
      * Determines the common null-ness property of the given reference values.
      */

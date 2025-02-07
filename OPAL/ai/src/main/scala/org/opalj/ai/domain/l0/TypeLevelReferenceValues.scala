@@ -508,10 +508,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     }
 
     override def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
-        asReferenceValue(value) match {
-            case _: NullValueLike => Unknown
-            case otherRefValue    => otherRefValue.isValueASubtypeOf(supertype)
-        }
+        asReferenceValue(value).isValueASubtypeOf(supertype)
     }
 
     /**
@@ -520,7 +517,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * @param value A value of type `ReferenceValue`.
      */
     override def refIsNull(pc: Int, value: DomainValue): Answer = {
-        Unknown
+        asReferenceValue(value).isNull
     }
 
     // -----------------------------------------------------------------------------------
@@ -604,20 +601,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayLoadResult = {
-        // We might have - due to nonsensical casts on objects - an array load on an object that is not actually an
-        // array. This does not run, but does compile (e.g. in varargs methods). We must allow it during frame table
-        // generation, as the compiler also allows it.
-        // see here: https://github.com/bcgit/bc-java/blob/0ea89a4388de4f18a2cd3a1801d5bdb2a954644d/util/src/main/java/org/bouncycastle/oer/OERDefinition.java#L638-L675
-        if (arrayref.isArrayValue.isYes)
-            asArrayAbstraction(arrayref).load(pc, index)
-        else {
-            var thrownExceptions: List[ExceptionValue] = Nil
-            if (throwNullPointerExceptionOnArrayAccess)
-                thrownExceptions = VMNullPointerException(pc) :: thrownExceptions
-            if (throwArrayIndexOutOfBoundsException)
-                thrownExceptions = VMArrayIndexOutOfBoundsException(pc) :: thrownExceptions
-            ComputedValueOrException(ObjectValue(pc, ObjectType.Object), thrownExceptions)
-        }
+        // if the bytecode is valid, the type cast (asArrayValue) is safe
+        asArrayAbstraction(arrayref).load(pc, index)
     }
 
     /**
@@ -634,18 +619,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         index:    DomainValue,
         arrayref: DomainValue
     ): ArrayStoreResult = {
-        // We must support array operations on objects that are not actually arrays. See arrayload for explanation.
-        if (arrayref.isArrayValue.isYes)
-            asArrayAbstraction(arrayref).store(pc, value, index)
-        else {
-            var thrownExceptions: List[ExceptionValue] = Nil
-            if (throwNullPointerExceptionOnArrayAccess)
-                thrownExceptions = VMNullPointerException(pc) :: thrownExceptions
-            if (throwArrayIndexOutOfBoundsException)
-                thrownExceptions = VMArrayIndexOutOfBoundsException(pc) :: thrownExceptions
-            ComputationWithSideEffectOrException(thrownExceptions)
-        }
-
+        // if the bytecode is valid, the type cast (asArrayValue) is safe
+        asArrayAbstraction(arrayref).store(pc, value, index)
     }
 
     /**
@@ -659,12 +634,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         pc:       Int,
         arrayref: DomainValue
     ): Computation[DomainValue, ExceptionValue] = {
-        // We do not track length in this domain either way, and we do not want to error if "arrayref" is not actually
-        // an array - there are instances of bytecode where people do nonsensical CHECKCASTs and then invoke ARRAYLENGTH
-        // on those objects. Although this will never run successfully, Java allows us to compile this - so we should also
-        // allow this when computing a stack map table using this domain.
-        // See example: https://github.com/bcgit/bc-java/blob/0ea89a4388de4f18a2cd3a1801d5bdb2a954644d/util/src/main/java/org/bouncycastle/oer/OERDefinition.java#L638-L675
-        ComputedValue(IntegerValue(pc))
+        asArrayAbstraction(arrayref).length(pc)
     }
 
     // -----------------------------------------------------------------------------------
