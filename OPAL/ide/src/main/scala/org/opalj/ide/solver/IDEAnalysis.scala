@@ -94,6 +94,13 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         processTargetCallablesEOptionP(initialTargetCallablesEOptionP)
 
         /**
+         * Collection of callables that received changes (compared to the last update) which may affect their final
+         * value, e.g. a changed jump function. Especially used to reduce computation overhead in phase 2 and to reduce
+         * amount of created results.
+         */
+        private val callablesWithChanges = mutable.Set.empty[Callable]
+
+        /**
          * The work list for paths used in P1
          */
         private val pathWorkList: PathWorkList = mutable.Queue.empty
@@ -156,8 +163,23 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         ]): Unit = {
             targetCallablesEOptionP = newTargetCallablesEOptionP
             if (targetCallablesEOptionP.hasUBP) {
-                targetCallables.addAll(targetCallablesEOptionP.ub.targetCallables)
+                val addedTargetCallables = targetCallablesEOptionP.ub.targetCallables.diff(targetCallables)
+                targetCallables.addAll(addedTargetCallables)
+                // Mark new target callables as changed to trigger result creation
+                callablesWithChanges.addAll(addedTargetCallables)
             }
+        }
+
+        def clearCallablesWithChanges(): Unit = {
+            callablesWithChanges.clear()
+        }
+
+        def rememberCallableWithChanges(callable: Callable): Unit = {
+            callablesWithChanges.add(callable)
+        }
+
+        def getCallablesWithChanges: collection.Set[Callable] = {
+            callablesWithChanges
         }
 
         def enqueuePath(path: Path): Unit = {
@@ -436,9 +458,19 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def performPhase2()(implicit s: State): Unit = {
         logDebug("starting phase 2")
 
-        // TODO (IDE) PHASE 2 IS PERFORMED FROM SCRATCH ON EACH UPDATE AT THE MOMENT. CONSIDER IMPLEMENTING AN
-        //  INCREMENTAL SOLUTION (DECIDE WHAT COULD HAVE CHANGED WHILE RUNNING PHASE 1)
         s.clearValues()
+
+        seedPhase2()
+        computeValues()
+
+        logDebug("finished phase 2")
+    }
+
+    /**
+     * Continue phase 2 from based on previous result
+     */
+    private def continuePhase2()(implicit s: State): Unit = {
+        logDebug("continuing phase 2")
 
         seedPhase2()
         computeValues()
@@ -451,7 +483,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     ): ProperPropertyComputationResult = {
         logDebug("starting creation of properties and results")
 
-        val callables = s.getTargetCallables
+        // Only create results for target callables whose values could have changed
+        val callables = s.getCallablesWithChanges.intersect(s.getTargetCallables)
         val collectedResults = s.collectResults(callables)
         val callableResults = callables.map { callable =>
             val (resultsByStatement, resultsForExit) =
@@ -485,7 +518,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         logDebug("finished creation of properties and results")
 
         Results(
-            Seq(
+            callableResults ++ Seq(
                 InterimPartialResult(
                     None,
                     s.getDependees.toSet ++ immutable.Set(s.getTargetCallablesEOptionP),
@@ -500,7 +533,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                         }
                     }
                 )
-            ) ++ callableResults
+            )
         )
     }
 
@@ -508,13 +541,15 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
         IDETargetCallablesProperty[Callable]
     ])(implicit s: State): ProperPropertyComputationResult = {
+        s.clearCallablesWithChanges()
+
         s.processTargetCallablesEOptionP(eps)
 
         logInfo(s"performing ${PropertyKey.name(propertyMetaInformation.key)} for ${s.getTargetCallables.size} callables")
 
         seedPhase1()
         continuePhase1()
-        performPhase2()
+        continuePhase2()
 
         createResult()
     }
@@ -522,6 +557,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def onDependeeUpdateContinuation(eps: SomeEPS)(
         implicit s: State
     ): ProperPropertyComputationResult = {
+        s.clearCallablesWithChanges()
+
         // Get and remove all continuations that are remembered for the EPS
         val cs = s.getAndRemoveDependeeContinuations(eps)
 
@@ -530,19 +567,20 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         // The continuations can have enqueued paths to the path work list
         continuePhase1()
-        performPhase2()
+        continuePhase2()
 
         createResult()
     }
 
     private def seedPhase1()(implicit s: State): Unit = {
-        def propagateSeed(e: Path, f: EdgeFunction[Value]): Unit = {
+        def propagateSeed(e: Path, callable: Callable, f: EdgeFunction[Value]): Unit = {
             val oldJumpFunction = s.getJumpFunction(e)
             val fPrime = f.meetWith(oldJumpFunction)
 
             if (!fPrime.equalTo(oldJumpFunction)) {
                 s.setJumpFunction(e, fPrime)
                 s.enqueuePath(e)
+                s.rememberCallableWithChanges(callable)
             }
         }
 
@@ -551,11 +589,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             // IDE P1 lines 5 - 6
             icfg.getStartStatements(callable).foreach { stmt =>
                 val path = ((stmt, problem.nullFact), (stmt, problem.nullFact))
-                propagateSeed(path, identityEdgeFunction)
+                propagateSeed(path, callable, identityEdgeFunction)
 
                 problem.getAdditionalSeeds(stmt, callable).foreach { fact =>
                     val path = ((stmt, problem.nullFact), (stmt, fact))
-                    propagateSeed(path, identityEdgeFunction)
+                    propagateSeed(path, callable, identityEdgeFunction)
 
                     def processAdditionalSeed(): Unit = {
                         val edgeFunction =
@@ -563,7 +601,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                 problem.getAdditionalSeedsEdgeFunction(stmt, fact, callable),
                                 processAdditionalSeed _
                             )
-                        propagateSeed(path, edgeFunction)
+                        propagateSeed(path, callable, edgeFunction)
                     }
 
                     processAdditionalSeed()
@@ -816,6 +854,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
             s.setJumpFunction(e, fPrime)
             s.enqueuePath(e)
+            s.rememberCallableWithChanges(icfg.getCallable(e._2._1))
         } else {
             logTrace(s"nothing to do as oldJumpFunction=$oldJumpFunction == fPrime=$fPrime")
         }
@@ -875,7 +914,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def seedPhase2()(implicit s: State): Unit = {
-        val callables = s.getTargetCallables
+        val callables = s.getCallablesWithChanges
         callables.foreach { callable =>
             // IDE P2 lines 2 - 3
             icfg.getStartStatements(callable).foreach { stmt =>
@@ -914,8 +953,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         // IDE P2 part (ii)
         // IDE P2 lines 15 - 17
-        // Reduced to the callables, results are created for
-        val ps = s.getTargetCallables
+        // Reduced to the callables whose values could have changed
+        val ps = s.getCallablesWithChanges
         val sps = ps.flatMap { p => icfg.getStartStatements(p) }
         val ns = collectReachableStmts(sps, stmt => !icfg.isCallStatement(stmt))
 
@@ -1022,6 +1061,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
             s.setValue(nSharp, vPrime)
             s.enqueueNode(nSharp)
+            s.rememberCallableWithChanges(icfg.getCallable(nSharp._1))
         } else {
             logTrace(s"nothing to do as oldValue=$oldValue == vPrime=$vPrime")
         }
