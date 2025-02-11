@@ -418,7 +418,12 @@ class LCPOnFieldsProblem(
                         }
 
                     case f: AbstractStaticFieldFact =>
-                        immutable.Set(f.toStaticFieldFact)
+                        /* Only propagate fact if the caller can access the corresponding static field */
+                        if (returnSite.method.classFile.thisType == f.objectType) {
+                            immutable.Set(f.toStaticFieldFact)
+                        } else {
+                            immutable.Set.empty
+                        }
                 }
             }
         }
