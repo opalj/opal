@@ -138,7 +138,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         /**
          * Store all calculated (intermediate) values
          */
-        private val values: Values = mutable.Map.empty
+        private val values: mutable.Map[Callable, Values] = mutable.Map.empty
 
         /**
          * Map outstanding EPKs to the last processed property result and the continuations to be executed when a new
@@ -300,12 +300,20 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             nodeWorkList.size
         }
 
+        def getValue(node: Node, callable: Callable): Value = {
+            values.getOrElse(callable, mutable.Map.empty).getOrElse(node, problem.lattice.top) // else part handles IDE line 1
+        }
+
         def getValue(node: Node): Value = {
-            values.getOrElse(node, problem.lattice.top) // else part handles IDE line 1
+            getValue(node, icfg.getCallable(node._1))
+        }
+
+        def setValue(node: Node, newValue: Value, callable: Callable): Unit = {
+            values.getOrElseUpdate(callable, { mutable.Map.empty }).put(node, newValue)
         }
 
         def setValue(node: Node, newValue: Value): Unit = {
-            values.put(node, newValue)
+            setValue(node, newValue, icfg.getCallable(node._1))
         }
 
         def clearValues(): Unit = {
@@ -320,13 +328,14 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             Callable,
             (collection.Map[Statement, collection.Set[(Fact, Value)]], collection.Set[(Fact, Value)])
         ] = {
-            val relevantValuesByCallable = values
-                .filter { case ((n, d), _) =>
-                    callables.contains(icfg.getCallable(n)) && d != problem.nullFact
-                }.groupBy { case ((n, _), _) => icfg.getCallable(n) }
+            val valuesByCallable = callables.map { callable =>
+                callable -> values.getOrElse(callable, immutable.Map.empty[Node, Value])
+            }.toMap
 
-            relevantValuesByCallable.map { case (callable, relevantValues) =>
-                val resultsByStatement = relevantValues
+            valuesByCallable.map { case (callable, values) =>
+                val resultsByStatement = values
+                    .view
+                    .filterKeys { case (n, d) => d != problem.nullFact }
                     .groupMap(_._1._1) { case ((_, d), value) => (d, value) }
                     .map { case (n, dValuePairs) =>
                         (
@@ -920,7 +929,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             icfg.getStartStatements(callable).foreach { stmt =>
                 val node = (stmt, problem.nullFact)
                 s.enqueueNode(node)
-                s.setValue(node, problem.lattice.bottom)
+                s.setValue(node, problem.lattice.bottom, callable)
             }
         }
 
@@ -967,13 +976,13 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                         case (((_, dPrime), (_, d)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
                             val nSharp = (n, d)
                             val vPrime = problem.lattice.meet(
-                                s.getValue(nSharp),
-                                fPrime.compute(s.getValue((sp, dPrime)))
+                                s.getValue(nSharp, p),
+                                fPrime.compute(s.getValue((sp, dPrime), p))
                             )
 
                             logTrace(s"setting value of nSharp=${nodeToString(nSharp)} to vPrime=$vPrime")
 
-                            s.setValue(nSharp, vPrime)
+                            s.setValue(nSharp, vPrime, p)
 
                         case _ =>
                     }
@@ -1081,16 +1090,18 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def propagateValue(nSharp: Node, v: Value)(implicit s: State): Unit = {
         logTrace(s"handling propagation for nSharp=${nodeToString(nSharp)} and v=$v")
 
+        val callable = icfg.getCallable(nSharp._1)
+
         // IDE P2 lines 18 - 21
-        val oldValue = s.getValue(nSharp)
+        val oldValue = s.getValue(nSharp, callable)
         val vPrime = problem.lattice.meet(v, oldValue)
 
         if (vPrime != oldValue) {
             logTrace(s"updating and re-enqueuing node as oldValue=$oldValue != vPrime=$vPrime")
 
-            s.setValue(nSharp, vPrime)
+            s.setValue(nSharp, vPrime, callable)
             s.enqueueNode(nSharp)
-            s.rememberCallableWithChanges(icfg.getCallable(nSharp._1))
+            s.rememberCallableWithChanges(callable)
         } else {
             logTrace(s"nothing to do as oldValue=$oldValue == vPrime=$vPrime")
         }
