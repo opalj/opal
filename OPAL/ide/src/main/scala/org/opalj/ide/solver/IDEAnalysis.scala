@@ -936,7 +936,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         // IDE P2 part (ii)
         // IDE P2 lines 15 - 17
         // Reduced to the callables whose values could have changed
-        val ps = s.getCallablesWithChanges
+        val ps = s.getCallablesWithChanges.intersect(s.getTargetCallables)
         ps.foreach { p =>
             val sps = icfg.getStartStatements(p)
             val ns = collectReachableStmts(sps, stmt => !icfg.isCallStatement(stmt))
