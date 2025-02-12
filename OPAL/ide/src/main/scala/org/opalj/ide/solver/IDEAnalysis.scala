@@ -52,7 +52,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private type PathWorkList = mutable.Queue[Path]
 
     private type JumpFunction = EdgeFunction[Value]
-    private type JumpFunctions = mutable.Map[Path, JumpFunction]
+    private type JumpFunctions = mutable.Map[(Statement, Statement), mutable.Map[(Fact, Fact), JumpFunction]]
     private type SummaryFunction = EdgeFunction[Value]
     private type SummaryFunctions = mutable.Map[Path, SummaryFunction]
 
@@ -109,10 +109,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
          * The jump functions (incrementally calculated) in P1
          */
         private val jumpFunctions: JumpFunctions = mutable.Map.empty
-        /**
-         * Index-like structure for faster access of jump functions map
-         */
-        private val jumpFunctionSFTFByST = mutable.Map.empty[(Statement, Statement), mutable.Set[(Fact, Fact)]]
 
         /**
          * The summary functions (incrementally calculated) in P1
@@ -199,59 +195,36 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
 
         def setJumpFunction(path: Path, jumpFunction: JumpFunction): Unit = {
-            jumpFunctions.put(path, jumpFunction)
-
             val ((source, sourceFact), (target, targetFact)) = path
-            jumpFunctionSFTFByST
-                .getOrElseUpdate((source, target), { mutable.Set.empty })
-                .add((sourceFact, targetFact))
+            jumpFunctions
+                .getOrElseUpdate((source, target), { mutable.Map.empty })
+                .put((sourceFact, targetFact), jumpFunction)
         }
 
         def getJumpFunction(path: Path): JumpFunction = {
-            jumpFunctions.getOrElse(path, allTopEdgeFunction) // else part handles IDE lines 1 - 2
+            val ((source, sourceFact), (target, targetFact)) = path
+            jumpFunctions
+                .getOrElse((source, target), immutable.Map.empty[(Fact, Fact), JumpFunction])
+                .getOrElse((sourceFact, targetFact), allTopEdgeFunction) // else part handles IDE lines 1 - 2
         }
 
         def lookupJumpFunctions(
-            source:     Option[Statement] = None,
-            sourceFact: Option[Fact]      = None,
-            target:     Option[Statement] = None,
-            targetFact: Option[Fact]      = None
-        ): collection.Map[Path, JumpFunction] = {
-            ((source, sourceFact), (target, targetFact)) match {
-                case ((Some(s), None), (Some(t), None)) =>
-                    jumpFunctionSFTFByST.getOrElse((s, t), immutable.Set.empty[(Fact, Fact)])
-                        .map { case (sF, tF) =>
-                            val path = ((s, sF), (t, tF))
-                            path -> jumpFunctions(path)
-                        }
-                        .toMap
+            source:           Statement,
+            sourceFactOption: Option[Fact] = None,
+            target:           Statement,
+            targetFactOption: Option[Fact] = None
+        ): collection.Map[(Fact, Fact), JumpFunction] = {
+            val subMap = jumpFunctions.getOrElse((source, target), immutable.Map.empty[(Fact, Fact), JumpFunction])
 
-                case ((Some(s), None), (Some(t), Some(tF))) =>
-                    jumpFunctionSFTFByST.getOrElse((s, t), immutable.Set.empty[(Fact, Fact)])
-                        .filter { case (_, tF2) => tF2 == tF }
-                        .map { case (sF, _) =>
-                            val path = ((s, sF), (t, tF))
-                            path -> jumpFunctions(path)
-                        }
-                        .toMap
-
-                case ((Some(s), Some(sF)), (Some(t), None)) =>
-                    jumpFunctionSFTFByST.getOrElse((s, t), immutable.Set.empty[(Fact, Fact)])
-                        .filter { case (sF2, _) => sF2 == sF }
-                        .map { case (_, tF) =>
-                            val path = ((s, sF), (t, tF))
-                            path -> jumpFunctions(path)
-                        }
-                        .toMap
-
+            (sourceFactOption, targetFactOption) match {
+                case (Some(sourceFact), Some(targetFact)) =>
+                    subMap.filter { case ((sF, tF), _) => sF == sourceFact && tF == targetFact }
+                case (Some(sourceFact), None) =>
+                    subMap.filter { case ((sF, _), _) => sF == sourceFact }
+                case (None, Some(targetFact)) =>
+                    subMap.filter { case ((_, tF), _) => tF == targetFact }
                 case _ =>
-                    jumpFunctions.filter {
-                        case (((s, sf), (t, tf)), _) =>
-                            source.forall { source => s == source } &&
-                                sourceFact.forall { sourceFact => sf == sourceFact } &&
-                                target.forall { target => t == target } &&
-                                targetFact.forall { targetFact => tf == targetFact }
-                    }
+                    subMap
             }
         }
 
@@ -818,9 +791,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                             val sqs = icfg.getStartStatements(icfg.getCallable(c))
                             sqs.foreach { sq =>
                                 val jumpFunctionsMatchingTarget =
-                                    s.lookupJumpFunctions(source = Some(sq), target = Some(c), targetFact = Some(d4))
+                                    s.lookupJumpFunctions(source = sq, target = c, targetFactOption = Some(d4))
                                 jumpFunctionsMatchingTarget.foreach {
-                                    case (((_, d3), (_, _)), f3) if !f3.equalTo(allTopEdgeFunction) =>
+                                    case ((d3, _), f3) if !f3.equalTo(allTopEdgeFunction) =>
                                         propagate(((sq, d3), (r, d5)), f3.composeWith(fPrime))
                                     case _ =>
                                 }
@@ -971,9 +944,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             // IDE P2 line 16 - 17
             ns.foreach { n =>
                 sps.foreach { sp =>
-                    val jumpFunctionsMatchingTarget = s.lookupJumpFunctions(source = Some(sp), target = Some(n))
+                    val jumpFunctionsMatchingTarget = s.lookupJumpFunctions(source = sp, target = n)
                     jumpFunctionsMatchingTarget.foreach {
-                        case (((_, dPrime), (_, d)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
+                        case ((dPrime, d), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
                             val nSharp = (n, d)
                             val vPrime = problem.lattice.meet(
                                 s.getValue(nSharp, p),
@@ -1055,9 +1028,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         // IDE P2 lines 9 - 10
         cs.foreach { c =>
             val jumpFunctionsMatchingTarget =
-                s.lookupJumpFunctions(source = Some(n), sourceFact = Some(d), target = Some(c))
+                s.lookupJumpFunctions(source = n, sourceFactOption = Some(d), target = c)
             jumpFunctionsMatchingTarget.foreach {
-                case (((_, _), (_, dPrime)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
+                case ((_, dPrime), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
                     propagateValue((c, dPrime), fPrime.compute(s.getValue((n, d))))
                 case _ =>
             }
