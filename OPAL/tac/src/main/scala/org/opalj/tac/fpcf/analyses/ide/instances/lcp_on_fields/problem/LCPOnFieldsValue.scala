@@ -20,7 +20,8 @@ case object UnknownValue extends LCPOnFieldsValue
  * Value representing the state of an object
  */
 case class ObjectValue(values: immutable.Map[String, LinearConstantPropagationValue]) extends LCPOnFieldsValue {
-    override def toString: String = s"ObjectValue(${values.mkString(", ")})"
+    override def toString: String =
+        s"ObjectValue(${values.toSeq.sortBy(_._1).map { case (fieldName, value) => s"$fieldName -> $value" }.mkString(", ")})"
 }
 
 /**
@@ -30,7 +31,8 @@ case class ArrayValue(
     initValue: LinearConstantPropagationValue,
     elements:  immutable.Map[Int, LinearConstantPropagationValue]
 ) extends LCPOnFieldsValue {
-    override def toString: String = s"ArrayValue($initValue, ${elements.mkString(", ")})"
+    override def toString: String =
+        s"ArrayValue($initValue, ${elements.toSeq.sortBy(_._1).map { case (index, value) => s"$index -> $value" }.mkString(", ")})"
 }
 
 /**
