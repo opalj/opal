@@ -955,26 +955,28 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         // IDE P2 lines 15 - 17
         // Reduced to the callables whose values could have changed
         val ps = s.getCallablesWithChanges
-        val sps = ps.flatMap { p => icfg.getStartStatements(p) }
-        val ns = collectReachableStmts(sps, stmt => !icfg.isCallStatement(stmt))
+        ps.foreach { p =>
+            val sps = icfg.getStartStatements(p)
+            val ns = collectReachableStmts(sps, stmt => !icfg.isCallStatement(stmt))
 
-        // IDE P2 line 16 - 17
-        sps.foreach { sp =>
+            // IDE P2 line 16 - 17
             ns.foreach { n =>
-                val jumpFunctionsMatchingTarget = s.lookupJumpFunctions(source = Some(sp), target = Some(n))
-                jumpFunctionsMatchingTarget.foreach {
-                    case (((_, dPrime), (_, d)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
-                        val nSharp = (n, d)
-                        val vPrime = problem.lattice.meet(
-                            s.getValue(nSharp),
-                            fPrime.compute(s.getValue((sp, dPrime)))
-                        )
+                sps.foreach { sp =>
+                    val jumpFunctionsMatchingTarget = s.lookupJumpFunctions(source = Some(sp), target = Some(n))
+                    jumpFunctionsMatchingTarget.foreach {
+                        case (((_, dPrime), (_, d)), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
+                            val nSharp = (n, d)
+                            val vPrime = problem.lattice.meet(
+                                s.getValue(nSharp),
+                                fPrime.compute(s.getValue((sp, dPrime)))
+                            )
 
-                        logTrace(s"setting value of nSharp=${nodeToString(nSharp)} to vPrime=$vPrime")
+                            logTrace(s"setting value of nSharp=${nodeToString(nSharp)} to vPrime=$vPrime")
 
-                        s.setValue(nSharp, vPrime)
+                            s.setValue(nSharp, vPrime)
 
-                    case _ =>
+                        case _ =>
+                    }
                 }
             }
         }
@@ -990,20 +992,47 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def collectReachableStmts(
         originStmts:     collection.Set[Statement],
         filterPredicate: Statement => Boolean
-    ): collection.Set[Statement] = {
-        val collectedStmts = mutable.Set.empty[Statement]
-        var workingStmts = originStmts
-        val seenStmts = mutable.Set.empty[Statement]
+    ): Iterator[Statement] = {
+        new Iterator[Statement]() {
+            private val collectedStmts = mutable.Set.empty[Statement]
+            private val seenStmts = mutable.Set.empty[Statement]
 
-        while (workingStmts.nonEmpty) {
-            collectedStmts.addAll(workingStmts.filter(filterPredicate))
-            seenStmts.addAll(workingStmts)
-            workingStmts = workingStmts.foldLeft(mutable.Set.empty[Statement]) { (nextStmts, stmt) =>
-                nextStmts.addAll(icfg.getNextStatements(stmt))
-            }.diff(seenStmts)
+            collectedStmts.addAll(originStmts.filter(filterPredicate))
+            seenStmts.addAll(originStmts)
+            originStmts.filterNot(filterPredicate).foreach { stmt => processStatement(stmt) }
+
+            private def processStatement(stmt: Statement): Unit = {
+                val workingStmts = mutable.Queue(stmt)
+
+                while (workingStmts.nonEmpty) {
+                    icfg.getNextStatements(workingStmts.dequeue())
+                        .foreach { followingStmt =>
+                            if (!seenStmts.contains(followingStmt)) {
+                                seenStmts.add(followingStmt)
+
+                                if (filterPredicate(followingStmt)) {
+                                    collectedStmts.add(followingStmt)
+                                } else {
+                                    workingStmts.enqueue(followingStmt)
+                                }
+                            }
+                        }
+                }
+            }
+
+            override def hasNext: Boolean = {
+                collectedStmts.nonEmpty
+            }
+
+            override def next(): Statement = {
+                val stmt = collectedStmts.head
+                collectedStmts.remove(stmt)
+
+                processStatement(stmt)
+
+                stmt
+            }
         }
-
-        collectedStmts
     }
 
     private def processStartNode(node: Node)(implicit s: State): Unit = {
