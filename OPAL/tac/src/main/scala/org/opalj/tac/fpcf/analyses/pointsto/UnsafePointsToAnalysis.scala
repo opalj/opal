@@ -43,7 +43,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
     final val project: SomeProject
 ) extends PointsToAnalysisBase { self =>
 
-    private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
+    private[this] val SunUnsafeT = ObjectType("sun/misc/Unsafe")
+    private[this] val JDKUnsafeT = ObjectType("jdk/internal/misc/Unsafe")
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
@@ -85,8 +86,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
         }
     }
 
-    def process(p: SomeProject): PropertyComputationResult = {
-        val analyses: List[APIBasedAnalysis] = List(
+    def getAnalyses(UnsafeT: ObjectType): List[APIBasedAnalysis] = {
+        List(
             new UnsafeGetPointsToAnalysis(
                 p,
                 declaredMethods(
@@ -95,8 +96,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     UnsafeT,
                     "getObject",
                     MethodDescriptor(ArraySeq(ObjectType.Object, LongType), ObjectType.Object)
-                )
-            ) with PointsToBase,
+                    )
+                ) with PointsToBase,
             new UnsafeGetPointsToAnalysis(
                 p,
                 declaredMethods(
@@ -105,8 +106,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     UnsafeT,
                     "getObject",
                     MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType), ObjectType.Object)
-                )
-            ) with PointsToBase,
+                    )
+                ) with PointsToBase,
             new UnsafeGetPointsToAnalysis(
                 p,
                 declaredMethods(
@@ -115,8 +116,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     UnsafeT,
                     "getObjectVolatile",
                     MethodDescriptor(ArraySeq(ObjectType.Object, LongType), ObjectType.Object)
-                )
-            ) with PointsToBase,
+                    )
+                ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
                 p,
                 2,
@@ -126,8 +127,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     UnsafeT,
                     "putObject",
                     MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), VoidType)
-                )
-            ) with PointsToBase,
+                    )
+                ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
                 p,
                 2,
@@ -137,8 +138,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     UnsafeT,
                     "putObject",
                     MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object), VoidType)
-                )
-            ) with PointsToBase,
+                    )
+                ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
                 p,
                 2,
@@ -148,8 +149,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     UnsafeT,
                     "putObjectVolatile",
                     MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), VoidType)
-                )
-            ) with PointsToBase,
+                    )
+                ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
                 p,
                 2,
@@ -159,8 +160,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     UnsafeT,
                     "putOrderedObject",
                     MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), VoidType)
-                )
-            ) with PointsToBase,
+                    )
+                ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
                 p,
                 3,
@@ -172,9 +173,9 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     MethodDescriptor(
                         ArraySeq(ObjectType.Object, LongType, ObjectType.Object, ObjectType.Object),
                         BooleanType
+                        )
                     )
-                )
-            ) with PointsToBase,
+                ) with PointsToBase,
             new UnsafeGetPointsToAnalysis(
                 p,
                 declaredMethods(
@@ -183,8 +184,8 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     UnsafeT,
                     "getAndSetObject",
                     MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
-                )
-            ) with PointsToBase,
+                    )
+                ) with PointsToBase,
             new UnsafePutPointsToAnalysis(
                 p,
                 2,
@@ -194,9 +195,13 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     UnsafeT,
                     "getAndSetObject",
                     MethodDescriptor(ArraySeq(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
-                )
-            ) with PointsToBase
-        )
+                    )
+                ) with PointsToBase
+            )
+    }
+
+    def process(p: SomeProject): PropertyComputationResult = {
+        val analyses = getAnalyses(SunUnsafeT) ++ getAnalyses(JDKUnsafeT)
 
         Results(analyses.map(_.registerAPIMethod()))
     }
