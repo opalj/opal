@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ide.solver
 
+import scala.collection.immutable
 import scala.collection.mutable
 
 import org.opalj.br.Method
@@ -68,6 +69,9 @@ abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
 
     override def getCallees(javaStmt: JavaStatement): collection.Set[Method] = {
         val caller = declaredMethods(javaStmt.method)
+        if (caller == null) {
+            return immutable.Set.empty
+        }
         val calleesEOptionP = propertyStore(caller, Callees.key)
         calleesEOptionP match {
             case FinalP(callees) =>
