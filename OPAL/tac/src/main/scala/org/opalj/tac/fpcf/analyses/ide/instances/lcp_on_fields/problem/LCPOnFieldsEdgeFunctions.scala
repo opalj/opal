@@ -434,11 +434,11 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
         secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]
     ): EdgeFunction[LCPOnFieldsValue] = {
         secondEdgeFunction match {
-            case ObjectEdgeFunction(_)         => secondEdgeFunction
-            case PutFieldEdgeFunction(_, _)    => this
-            case ArrayEdgeFunction(_, _)       => secondEdgeFunction
-            case PutElementEdgeFunction(_, _)  => ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
-            case PutStaticFieldEdgeFunction(_) => secondEdgeFunction
+            case ObjectEdgeFunction(_)                  => secondEdgeFunction
+            case PutFieldEdgeFunction(fieldName, value) => ObjectEdgeFunction(immutable.Map(fieldName -> value))
+            case ArrayEdgeFunction(_, _)                => secondEdgeFunction
+            case PutElementEdgeFunction(_, _)           => ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
+            case PutStaticFieldEdgeFunction(_)          => secondEdgeFunction
 
             case VariableValueEdgeFunction => secondEdgeFunction
             case UnknownValueEdgeFunction  => secondEdgeFunction
