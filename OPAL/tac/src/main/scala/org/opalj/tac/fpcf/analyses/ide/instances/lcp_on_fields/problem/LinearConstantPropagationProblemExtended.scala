@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem
 
+import scala.collection.immutable
+
 import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.br.ObjectType
 import org.opalj.fpcf.FinalP
@@ -28,8 +30,6 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.V
 
-import scala.collection.immutable
-
 /**
  * Extended definition of the linear constant propagation problem, trying to resolve field accesses with the LCP on
  * fields analysis.
@@ -42,14 +42,16 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
         sourceFact: LinearConstantPropagationFact,
         target:     JavaStatement
     ): Boolean = {
+        val arrayVar = arrayLoadExpr.arrayRef.asVar
+
         /* Generate fact only if the variable represented by the source fact is one possible initializer of the index
          * variable */
         sourceFact match {
-            case NullFact => false
-            case VariableFact(_, definedAtIndex) =>
-                val arrayVar = arrayLoadExpr.arrayRef.asVar
-                val indexVar = arrayLoadExpr.index.asVar
+            case NullFact =>
+                arrayVar.value.asReferenceValue.asReferenceType.asArrayType.componentType.isIntegerType
 
+            case VariableFact(_, definedAtIndex) =>
+                val indexVar = arrayLoadExpr.index.asVar
                 indexVar.definedBy.contains(definedAtIndex) &&
                     arrayVar.value.asReferenceValue.asReferenceType.asArrayType.componentType.isIntegerType
         }
@@ -63,6 +65,10 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
         target:     JavaStatement,
         targetFact: LinearConstantPropagationFact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
+        if (sourceFact == nullFact) {
+            return UnknownValueEdgeFunction
+        }
+
         val arrayVar = arrayLoadExpr.arrayRef.asVar
 
         val index = arrayLoadExpr.index.asVar.value match {
