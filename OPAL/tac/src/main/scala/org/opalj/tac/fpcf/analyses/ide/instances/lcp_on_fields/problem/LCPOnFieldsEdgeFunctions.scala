@@ -48,16 +48,21 @@ case class ObjectEdgeFunction(
             case ObjectEdgeFunction(values2) =>
                 ObjectEdgeFunction(
                     values.keySet
-                        .intersect(values2.keySet)
+                        .union(values2.keySet)
                         .map { fieldName =>
-                            fieldName -> LinearConstantPropagationLattice.meet(values(fieldName), values2(fieldName))
+                            fieldName -> LinearConstantPropagationLattice.meet(
+                                values.getOrElse(fieldName, linear_constant_propagation.problem.VariableValue),
+                                values2.getOrElse(fieldName, linear_constant_propagation.problem.VariableValue)
+                            )
                         }
                         .toMap
                 )
 
             case PutFieldEdgeFunction(fieldName, value) =>
                 ObjectEdgeFunction(
-                    (values - fieldName) +
+                    (values - fieldName).map { case (fieldName2, _) =>
+                        fieldName2 -> linear_constant_propagation.problem.VariableValue
+                    } +
                         (fieldName -> LinearConstantPropagationLattice.meet(
                             value,
                             values.getOrElse(fieldName, linear_constant_propagation.problem.VariableValue)
@@ -126,13 +131,12 @@ case class PutFieldEdgeFunction(
         otherEdgeFunction match {
             case ObjectEdgeFunction(values2) =>
                 ObjectEdgeFunction(
-                    (values2 - fieldName) +
+                    (values2 - fieldName).map { case (fieldName2, _) =>
+                        fieldName2 -> linear_constant_propagation.problem.VariableValue
+                    } +
                         (fieldName -> LinearConstantPropagationLattice.meet(
                             value,
-                            values2.getOrElse(
-                                fieldName,
-                                linear_constant_propagation.problem.VariableValue
-                            )
+                            values2.getOrElse(fieldName, linear_constant_propagation.problem.VariableValue)
                         ))
                 )
 
@@ -229,8 +233,8 @@ class ArrayEdgeFunction(
                         ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     case linear_constant_propagation.problem.ConstantValue(i) =>
                         ArrayEdgeFunction(
-                            initValue,
-                            (elements - i) + (i -> LinearConstantPropagationLattice.meet(
+                            linear_constant_propagation.problem.VariableValue,
+                            immutable.Map(i -> LinearConstantPropagationLattice.meet(
                                 value,
                                 elements.getOrElse(i, initValue)
                             ))
@@ -346,8 +350,8 @@ case class PutElementEdgeFunction(
                         ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     case linear_constant_propagation.problem.ConstantValue(i) =>
                         ArrayEdgeFunction(
-                            initValue,
-                            (elements - i) + (i -> LinearConstantPropagationLattice.meet(
+                            linear_constant_propagation.problem.VariableValue,
+                            immutable.Map(i -> LinearConstantPropagationLattice.meet(
                                 value,
                                 elements.getOrElse(i, initValue)
                             ))
