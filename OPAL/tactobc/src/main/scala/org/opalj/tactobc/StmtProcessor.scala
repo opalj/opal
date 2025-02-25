@@ -7,25 +7,9 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
-import org.opalj.ba.InstructionElement
-import org.opalj.br.BootstrapMethod
-import org.opalj.br.ByteType
-import org.opalj.br.CharType
-import org.opalj.br.ComputationalTypeDouble
-import org.opalj.br.ComputationalTypeFloat
-import org.opalj.br.ComputationalTypeInt
-import org.opalj.br.ComputationalTypeLong
-import org.opalj.br.ComputationalTypeReference
-import org.opalj.br.DoubleType
-import org.opalj.br.FieldType
-import org.opalj.br.FloatType
-import org.opalj.br.IntegerType
-import org.opalj.br.LongType
-import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
-import org.opalj.br.PCs
-import org.opalj.br.ReferenceType
-import org.opalj.br.ShortType
+import org.opalj.ai
+import org.opalj.ba.CodeElement
+import org.opalj.br._
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ARETURN
 import org.opalj.br.instructions.ATHROW
@@ -57,70 +41,70 @@ import org.opalj.br.instructions.LabeledIFNULL
 import org.opalj.br.instructions.LabeledJSR
 import org.opalj.br.instructions.LabeledLOOKUPSWITCH
 import org.opalj.br.instructions.LabeledTABLESWITCH
-//import org.opalj.br.instructions.LabeledGOTO
 import org.opalj.br.instructions.LASTORE
 import org.opalj.br.instructions.LRETURN
 import org.opalj.br.instructions.MONITORENTER
 import org.opalj.br.instructions.MONITOREXIT
 import org.opalj.br.instructions.NOP
-//import org.opalj.br.instructions.PCLabel
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.br.instructions.RET
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.RewriteLabel
 import org.opalj.br.instructions.SASTORE
+import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.Expr
-import org.opalj.tac.UVar
-import org.opalj.tac.Var
+import org.opalj.tac._
 import org.opalj.tactobc.ExprProcessor.inferElementType
 import org.opalj.tactobc.ExprProcessor.storeVariable
+import org.opalj.value.ValueInformation
 
 object StmtProcessor {
 
     // Assignment
     def processAssignment(
-        targetVar:     Var[_],
-        expr:          Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-        instructions ++= ExprProcessor.processExpression(expr, uVarToLVIndex)
-        instructions += ExprProcessor.storeVariable(targetVar, uVarToLVIndex)
-        instructions.toList
+        targetVar:          Var[_],
+        expr:               Expr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        ExprProcessor.processExpression(expr, uVarToLVIndex, listedCodeElements)
+        ExprProcessor.storeVariable(targetVar, uVarToLVIndex, listedCodeElements)
     }
 
     def processSwitch(
-        defaultTarget: RewriteLabel,
-        index:         Expr[_],
-        npairs:        ArraySeq[(Int, RewriteLabel) /*(Case Value, Jump Target)*/ ],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+        defaultTarget:      RewriteLabel,
+        index:              Expr[_],
+        npairs:             ArraySeq[IntIntPair /*(Case Value, Jump Target)*/ ],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]],
+        indexMap:           Array[RewriteLabel]
+    ): Unit = {
+        // Transform nparis to their Labels
+        val labeledNpairs: ArraySeq[(Int, RewriteLabel)] = npairs.map({ case IntIntPair(key, value) =>
+            val label = indexMap(value)
+            (key, label)
+        })
         // Translate the index expression first
-        instructions ++= ExprProcessor.processExpression(index, uVarToLVIndex)
+        ExprProcessor.processExpression(index, uVarToLVIndex, listedCodeElements)
 
         if (isLookupSwitch(index)) {
             // Add LOOKUPSWITCH instruction with placeholders for targets
-            val lookupswitchInstruction = LabeledLOOKUPSWITCH(defaultTarget, npairs)
-            instructions += lookupswitchInstruction
+            listedCodeElements += LabeledLOOKUPSWITCH(defaultTarget, labeledNpairs)
         } else {
             // Add TABLESWITCH instruction with placeholders for targets
             val minValue = npairs.minBy(_._1)._1
             val maxValue = npairs.maxBy(_._1)._1
             val jumpTable = ArrayBuffer.fill(maxValue - minValue + 1)(defaultTarget)
-
             // Set the case values in the jump table
-            npairs.foreach { case (caseValue, target) =>
+            labeledNpairs.foreach { case (caseValue, target) =>
                 jumpTable(caseValue - minValue) = target
             }
-            instructions += LabeledTABLESWITCH(defaultTarget, minValue, maxValue, jumpTable.to(ArraySeq))
+            listedCodeElements += LabeledTABLESWITCH(defaultTarget, minValue, maxValue, jumpTable.to(ArraySeq))
         }
-        instructions.toList
     }
 
-    def isLookupSwitch(index: Expr[_]): Boolean = {
+    private def isLookupSwitch(index: Expr[_]): Boolean = {
         // todo: decision of when to use lookupswtich/tableswitch
         index match {
             case variable: UVar[_] => variable.defSites.size == 1
@@ -128,269 +112,242 @@ object StmtProcessor {
         }
     }
 
-    def processReturn(): List[InstructionElement] = {
-        List(RETURN)
+    def processReturn(listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
+        listedCodeElements += RETURN
     }
 
-    def processReturnValue(expr: Expr[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-        instructions ++= ExprProcessor.processExpression(expr, uVarToLVIndex)
-        val instruction = expr.cTpe match {
-            case ComputationalTypeInt       => IRETURN
-            case ComputationalTypeLong      => LRETURN
-            case ComputationalTypeFloat     => FRETURN
-            case ComputationalTypeDouble    => DRETURN
-            case ComputationalTypeReference => ARETURN
-            case _                          => throw new UnsupportedOperationException("Unsupported computational type:" + expr.cTpe)
+    def processReturnValue(
+        expr:               Expr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        ExprProcessor.processExpression(expr, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += {
+            expr.cTpe match {
+                case ComputationalTypeInt       => IRETURN
+                case ComputationalTypeLong      => LRETURN
+                case ComputationalTypeFloat     => FRETURN
+                case ComputationalTypeDouble    => DRETURN
+                case ComputationalTypeReference => ARETURN
+                case _                          => throw new UnsupportedOperationException("Unsupported computational type:" + expr.cTpe)
+            }
         }
-        instructions += instruction
-        instructions.toList
     }
 
     def processVirtualMethodCall(
-        declaringClass:   ReferenceType,
-        isInterface:      Boolean,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        receiver:         Expr[_],
-        params:           Seq[Expr[_]],
-        uVarToLVIndex:    mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
+        declaringClass:     ReferenceType,
+        isInterface:        Boolean,
+        methodName:         String,
+        methodDescriptor:   MethodDescriptor,
+        receiver:           Expr[_],
+        params:             Seq[Expr[_]],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Process the receiver object (e.g., aload_0 for `this`)
-        instructions ++= ExprProcessor.processExpression(receiver, uVarToLVIndex)
-
-        // Process each parameter and update the PC accordingly
-        for (param <- params) {
-            instructions ++= ExprProcessor.processExpression(param, uVarToLVIndex)
+        ExprProcessor.processExpression(receiver, uVarToLVIndex, listedCodeElements)
+        for (param <- params) ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += {
+            if (isInterface) INVOKEINTERFACE(declaringClass.asObjectType, methodName, methodDescriptor)
+            else INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
         }
-
-        val instruction = {
-            if (isInterface) {
-                INVOKEINTERFACE(declaringClass.asObjectType, methodName, methodDescriptor)
-            } else {
-                INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
-            }
-        }
-        instructions += instruction
-        instructions.toList
     }
 
     def processArrayStore(
-        arrayRef:      Expr[_],
-        index:         Expr[_],
-        value:         Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
+        arrayRef:           Expr[_],
+        index:              Expr[_],
+        value:              Expr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Load the arrayRef onto the stack
-        instructions ++= ExprProcessor.processExpression(arrayRef, uVarToLVIndex)
-
+        ExprProcessor.processExpression(arrayRef, uVarToLVIndex, listedCodeElements)
         // Load the index onto the stack
-        instructions ++= ExprProcessor.processExpression(index, uVarToLVIndex)
-
+        ExprProcessor.processExpression(index, uVarToLVIndex, listedCodeElements)
         // Load the value to be stored onto the stack
-        instructions ++= ExprProcessor.processExpression(value, uVarToLVIndex)
-
+        ExprProcessor.processExpression(value, uVarToLVIndex, listedCodeElements)
         // Infer the element type from the array reference expression
         val elementType = inferElementType(arrayRef)
-
-        val instruction = elementType match {
-            case IntegerType      => IASTORE
-            case LongType         => LASTORE
-            case FloatType        => FASTORE
-            case DoubleType       => DASTORE
-            case ByteType         => BASTORE
-            case CharType         => CASTORE
-            case ShortType        => SASTORE
-            case _: ReferenceType => AASTORE
-            case _                => throw new IllegalArgumentException(s"Unsupported array store type $elementType")
+        listedCodeElements += {
+            elementType match {
+                case IntegerType      => IASTORE
+                case LongType         => LASTORE
+                case FloatType        => FASTORE
+                case DoubleType       => DASTORE
+                case ByteType         => BASTORE
+                case CharType         => CASTORE
+                case ShortType        => SASTORE
+                case _: ReferenceType => AASTORE
+                case _                => throw new IllegalArgumentException(s"Unsupported array store type $elementType")
+            }
         }
-        // Add the store instruction
-        instructions += instruction
-        instructions.toList
     }
 
-    def processNop(): List[InstructionElement] = {
-        List(NOP)
+    def processNop(listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
+        listedCodeElements += NOP
     }
 
     def processInvokeDynamicMethodCall(
-        bootstrapMethod: BootstrapMethod,
-        name:            String,
-        descriptor:      MethodDescriptor,
-        params:          Seq[Expr[_]],
-        uVarToLVIndex:   mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-        for (param <- params) {
-            instructions ++= ExprProcessor.processExpression(param, uVarToLVIndex)
-        }
-        instructions += DEFAULT_INVOKEDYNAMIC(bootstrapMethod, name, descriptor)
-        instructions.toList
+        bootstrapMethod:    BootstrapMethod,
+        name:               String,
+        descriptor:         MethodDescriptor,
+        params:             Seq[Expr[_]],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        for (param <- params) ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += DEFAULT_INVOKEDYNAMIC(bootstrapMethod, name, descriptor)
     }
 
     def processCheckCast(
-        value:         Expr[_],
-        cmpTpe:        ReferenceType,
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-        instructions ++= ExprProcessor.processExpression(value, uVarToLVIndex)
-        instructions += CHECKCAST(cmpTpe)
+        value:              Expr[_],
+        cmpTpe:             ReferenceType,
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        ExprProcessor.processExpression(value, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += CHECKCAST(cmpTpe)
         value match {
-            case variable: Var[_] => instructions += storeVariable(variable, uVarToLVIndex)
-            case _                =>
+            case variable: Var[_] => storeVariable(variable, uVarToLVIndex, listedCodeElements)
+            case _                => throw new UnsupportedOperationException(s"Unsupported Value: $value")
         }
-        instructions.toList
     }
 
-    def processRet(returnAddresses: PCs): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
+    def processRet(returnAddresses: PCs, listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
         // Ensure there is only one return address, as RET can only work with one local variable index
-        if (returnAddresses.size != 1) {
-            throw new IllegalArgumentException(
-                s"RET instruction expects exactly one return address, but got: ${returnAddresses.size}"
-            )
-        }
-
+        if (returnAddresses.size != 1) throw new IllegalArgumentException(
+            s"RET instruction expects exactly one return address, but got: ${returnAddresses.size}"
+        )
         // The RET instruction requires the index of the local variable that holds the return address
-        val localVarIndex = returnAddresses.head
-
         // Create the RET instruction with the correct local variable index
-        instructions += RET(localVarIndex)
-        instructions.toList
-
+        listedCodeElements += RET(returnAddresses.head)
     }
 
     def processCaughtException(
-        exceptionType: Option[ObjectType],
-        throwingStmts: IntTrieSet
-    ): List[InstructionElement] = {
+        exceptionType:      Option[ObjectType],
+        throwingStmts:      IntTrieSet,
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]],
+        tacStmts:           Array[(Stmt[DUVar[ValueInformation]], Int)],
+        indexMap:           Array[RewriteLabel],
+        tacIndex:           Int
+    ): Unit = {
         // todo: handle this correctly
-        List[InstructionElement]()
+        println("DEBUG")
+        var pc = Int.MaxValue
+        throwingStmts.foreach(stmt => {
+            if (ai.isImmediateVMException(stmt)) pc = ai.pcOfImmediateVMException(stmt)
+            else if (ai.isMethodExternalExceptionOrigin(stmt)) pc = ai.pcOfMethodExternalException(stmt)
+            else pc = stmt
+            println(s"pc: $pc, tac: ${tacStmts(pc)}")
+        })
+
     }
 
-    def processThrow(exception: Expr[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-        instructions ++= ExprProcessor.processExpression(exception, uVarToLVIndex)
-        instructions += ATHROW
-        instructions.toList
+    def processThrow(
+        exception:          Expr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        ExprProcessor.processExpression(exception, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += ATHROW
     }
 
     def processPutStatic(
-        declaringClass:    ObjectType,
-        name:              String,
-        declaredFieldType: FieldType,
-        value:             Expr[_],
-        uVarToLVIndex:     mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-        instructions ++= ExprProcessor.processExpression(value, uVarToLVIndex)
-        instructions += PUTSTATIC(declaringClass, name, declaredFieldType)
-        instructions.toList
+        declaringClass:     ObjectType,
+        name:               String,
+        declaredFieldType:  FieldType,
+        value:              Expr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        ExprProcessor.processExpression(value, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += PUTSTATIC(declaringClass, name, declaredFieldType)
     }
 
     def processPutField(
-        declaringClass:    ObjectType,
-        name:              String,
-        declaredFieldType: FieldType,
-        objRef:            Expr[_],
-        value:             Expr[_],
-        uVarToLVIndex:     mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+        declaringClass:     ObjectType,
+        name:               String,
+        declaredFieldType:  FieldType,
+        objRef:             Expr[_],
+        value:              Expr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Load the object reference onto the stack
-        instructions ++= ExprProcessor.processExpression(objRef, uVarToLVIndex)
+        ExprProcessor.processExpression(objRef, uVarToLVIndex, listedCodeElements)
         // Load the value to be stored onto the stack
-        instructions ++= ExprProcessor.processExpression(value, uVarToLVIndex)
-        instructions += PUTFIELD(declaringClass, name, declaredFieldType)
-        instructions.toList
+        ExprProcessor.processExpression(value, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += PUTFIELD(declaringClass, name, declaredFieldType)
     }
 
     def processMonitorEnter(
-        objRef:        Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+        objRef:             Expr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Load the object reference onto the stack
-        instructions ++= ExprProcessor.processExpression(objRef, uVarToLVIndex)
-        instructions += MONITORENTER
-        instructions.toList
+        ExprProcessor.processExpression(objRef, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += MONITORENTER
     }
 
-    def processMonitorExit(objRef: Expr[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+    def processMonitorExit(
+        objRef:             Expr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Load the object reference onto the stack
-        instructions ++= ExprProcessor.processExpression(objRef, uVarToLVIndex)
-        instructions += MONITOREXIT
-        instructions.toList
+        ExprProcessor.processExpression(objRef, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += MONITOREXIT
     }
 
-    def processJSR(target: RewriteLabel): List[InstructionElement] = {
-        List(LabeledJSR(target))
+    def processJSR(target: RewriteLabel, listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
+        listedCodeElements += LabeledJSR(target)
     }
 
     def processNonVirtualMethodCall(
-        declaringClass:   ObjectType,
-        isInterface:      Boolean,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        receiver:         Expr[_],
-        params:           Seq[Expr[_]],
-        uVarToLVIndex:    mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
-        instructions ++= ExprProcessor.processExpression(receiver, uVarToLVIndex)
-
-        // Process each parameter and update the PC accordingly
-        for (param <- params) {
-            instructions ++= ExprProcessor.processExpression(param, uVarToLVIndex)
-        }
-        instructions += INVOKESPECIAL(declaringClass, isInterface, methodName, methodDescriptor)
-        instructions.toList
+        declaringClass:     ObjectType,
+        isInterface:        Boolean,
+        methodName:         String,
+        methodDescriptor:   MethodDescriptor,
+        receiver:           Expr[_],
+        params:             Seq[Expr[_]],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        ExprProcessor.processExpression(receiver, uVarToLVIndex, listedCodeElements)
+        for (param <- params) ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += INVOKESPECIAL(declaringClass, isInterface, methodName, methodDescriptor)
     }
 
     def processStaticMethodCall(
-        declaringClass:   ObjectType,
-        isInterface:      Boolean,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        params:           Seq[Expr[_]],
-        uVarToLVIndex:    mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
-        // Process each parameter and update the PC accordingly
-        for (param <- params) {
-            instructions ++= ExprProcessor.processExpression(param, uVarToLVIndex)
-        }
-        instructions += INVOKESTATIC(declaringClass, isInterface, methodName, methodDescriptor)
-        instructions.toList
+        declaringClass:     ObjectType,
+        isInterface:        Boolean,
+        methodName:         String,
+        methodDescriptor:   MethodDescriptor,
+        params:             Seq[Expr[_]],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        for (param <- params) ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += INVOKESTATIC(declaringClass, isInterface, methodName, methodDescriptor)
     }
 
-    def processGoto(target: RewriteLabel): List[InstructionElement] = {
-        List(LabeledGOTO(target))
+    def processGoto(target: RewriteLabel, listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
+        listedCodeElements += LabeledGOTO(target)
     }
 
     def processIf(
-        left:          Expr[_],
-        condition:     RelationalOperator,
-        right:         Expr[_],
-        target:        RewriteLabel,
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
+        left:               Expr[_],
+        condition:          RelationalOperator,
+        right:              Expr[_],
+        target:             RewriteLabel,
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // process the left expr and save the pc to give in the right expr processing
-        instructions ++= ExprProcessor.processExpression(left, uVarToLVIndex)
+        ExprProcessor.processExpression(left, uVarToLVIndex, listedCodeElements)
         // process the right expr
-        instructions ++= ExprProcessor.processExpression(right, uVarToLVIndex)
+        ExprProcessor.processExpression(right, uVarToLVIndex, listedCodeElements)
 
         val instruction = (left.cTpe, right.cTpe) match {
             // Handle null comparisons
@@ -424,7 +381,6 @@ object StmtProcessor {
             case _ =>
                 throw new UnsupportedOperationException(s"Unsupported types: left = ${left.cTpe}, right = ${right.cTpe}")
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 }

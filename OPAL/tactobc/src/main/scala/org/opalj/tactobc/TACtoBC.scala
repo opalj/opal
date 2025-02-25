@@ -1,68 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tactobc
 
+import java.io.File
+import scala.Console.println
 import org.opalj.ba.CodeElement
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.tac._
 import org.opalj.value.ValueInformation
 
-import java.io.File
-import scala.Console.println
+//import java.nio.file.NotDirectoryException
 
 object TACtoBC {
-
-    def main(args: Array[String]): Unit = {
-        if (args.length != 2) {
-            println("Usage: ListClassFiles <path to input class files directory> <path to output class files directory>")
-            return
-        }
-
-        val inputDirPath = args(0)
-        val outputDirPath = args(1)
-        val inputDir = new File(inputDirPath)
-        if (!inputDir.exists() || !inputDir.isDirectory) {
-            println(s"Directory ${inputDir.getPath} does not exist or is not a directory.")
-            return
-        }
-
-        val outputDir = new File(outputDirPath)
-        if (!outputDir.exists()) {
-            outputDir.mkdirs()
-        }
-
-        val classFiles = listClassFiles(inputDir)
-        classFiles.foreach {
-            classfile =>
-                // todo: figure out how to get the input stream of the file
-                // (1) compile bytecode
-                compileByteCode(classfile)
-                // (2) compile tac
-                val tacs = compileTAC(classfile)
-                // Print out TAC
-                tacs.foreach { case (method, tac) =>
-                    tac.detach()
-                    println(s"Method: ${method.toJava}")
-                    println(tac.toString)
-                    println("\n")
-                }
-                // (3) generate bc from compiled tac
-                // > Print out the translation from TAC to Bytecode
-                val byteCodes = translateTACStoBC(tacs)
-                byteCodes.foreach { case (method, bytecode) =>
-                    println(s"Method: ${method.toJava}")
-                    bytecode.foreach(instr => println(instr.toString))
-                }
-                // (4) generate .class files from translation
-                val p = Project(classfile)
-                ClassFileGenerator.generateClassFiles(byteCodes, p, inputDirPath, outputDirPath, classfile.getName)
-                // println(classfile.getAbsolutePath)))
-        }
-    }
-
-    def listClassFiles(directory: File): List[File] = {
-        directory.listFiles().toList.filter(_.getName.endsWith(".class"))
-    }
 
     /**
      * Compiles the Three-Address Code (TAC) representation for all methods in the given .class file.
@@ -70,7 +19,7 @@ object TACtoBC {
      * @param file A File object representing the .class file to be analyzed and compiled into TAC.
      * @return A Map associating each method in the class file with its corresponding TAC representation.
      */
-    def compileTAC(file: File): Map[Method, AITACode[TACMethodParameter, ValueInformation]] = {
+    def compileTACFromClassFile(file: File): Map[Method, AITACode[TACMethodParameter, ValueInformation]] = {
         val p = Project(file)
         val tacProvider = p.get(LazyDetachedTACAIKey)
 
@@ -95,7 +44,7 @@ object TACtoBC {
      * @param file The .class file or JAR archive to be analyzed.
      * @return A Map associating each method in the class file with its bytecode instructions.
      */
-    def compileByteCode(file: File): Map[Method, Array[String]] = {
+    def compileByteCodeFromClassFile(file: File): Map[Method, Array[String]] = {
         val p = Project(file)
 
         // A map to store the bytecode representation of each method
@@ -113,8 +62,8 @@ object TACtoBC {
             methodByteCodeMap += (method -> instructions.toArray)
 
             // Print the bytecode for each method
-            println(s"Method: ${method.toJava}")
-            instructions.foreach(println)
+//            println(s"Bytecode for Method: ${method.toJava} \n↓")
+//            instructions.foreach(println)
         }
 
         methodByteCodeMap.toMap
@@ -158,7 +107,8 @@ object TACtoBC {
         val tacStmts = tac.stmts.zipWithIndex
 
         // fill uVarToLVIndexMap
-        val uVarToLVIndex = LvIndicesPreparator.prepareLvIndices(method, tacStmts)
+        val uVarToLVIndex = LvIndicesPreparation.prepareLvIndices(method, tacStmts)
+        println(s"--------------------------------lvIndexMap for method $method: \n" + uVarToLVIndex)
         StmtToInstructionTranslator.translateStmtsToInstructions(tacStmts, uVarToLVIndex)
 
     }

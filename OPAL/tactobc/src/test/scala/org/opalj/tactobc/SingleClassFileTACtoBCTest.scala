@@ -11,8 +11,7 @@ import scala.sys.process._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-import org.opalj.br.analyses.Project
-import org.opalj.tactobc.TACtoBC.compileByteCode
+import org.opalj.tactobc.TACtoBC.compileByteCodeFromClassFile
 import org.opalj.util.InMemoryClassLoader
 
 class SingleClassFileTACtoBCTest extends AnyFunSpec with Matchers {
@@ -43,26 +42,23 @@ class SingleClassFileTACtoBCTest extends AnyFunSpec with Matchers {
                     new File(Paths.get(inputDirPath, classFileName).toString)
 
                 // Create the OPAL project from the original class file
-                val project = Project(originalClassFile)
+//                val project = Project(originalClassFile)
 
                 // (1) compile bytecode
-                compileByteCode(originalClassFile)
+                compileByteCodeFromClassFile(originalClassFile)
 
                 // Compile the TAC from the original class file
-                val tacs = TACtoBC.compileTAC(originalClassFile)
+                val tacs = TACtoBC.compileTACFromClassFile(originalClassFile)
                 // Print out TAC
                 tacs.foreach { case (method, tac) =>
                     tac.detach()
-                    println(s"Method: ${method.toJava}")
-                    println(tac.toString)
-                    println("\n")
+                    println(s"TAC for Method: ${method.toJava} \n↓\n $tac")
                 }
                 val byteCodes = TACtoBC.translateTACStoBC(tacs)
 
                 // Generate the new class file using ClassFileGenerator
                 ClassFileGenerator.generateClassFiles(
                     byteCodes,
-                    project,
                     inputDirPath,
                     outputDirPath,
                     classFileName
@@ -89,6 +85,8 @@ class SingleClassFileTACtoBCTest extends AnyFunSpec with Matchers {
 
         if (result != 0) {
             throw new RuntimeException(s"Compilation of $javaFileName failed.")
+        } else {
+            println(s"Compilation of original Java file ($javaFileName) completed successfully.")
         }
     }
 

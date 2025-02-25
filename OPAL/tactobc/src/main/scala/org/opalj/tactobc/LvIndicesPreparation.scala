@@ -46,7 +46,7 @@ import org.opalj.value.ValueInformation
  * - Assign LV indices to method parameters.
  * - Populate a map (`uVarToLVIndex`) with unique LV indices for each variable used in the method.
  */
-object LvIndicesPreparator {
+object LvIndicesPreparation {
 
     /**
      * Prepares local variable (LV) indices for the given method by:
@@ -113,7 +113,6 @@ object LvIndicesPreparator {
         val nextLVIndexAfterParameters =
             mapParametersAndPopulate(method, uVarToLVIndex)
         collectAllUVarsAndPopulateUVarToLVIndexMap(duVars, uVarToLVIndex, nextLVIndexAfterParameters)
-        println(s"--------------------------------lvIndexMap for method $method: \n" + uVarToLVIndex)
         uVarToLVIndex
     }
 
@@ -123,14 +122,14 @@ object LvIndicesPreparator {
      * @param duVars ListBuffer containing all DUVars of the method.
      * @return A map where keys are def-sites of UVars and values are their corresponding LV indices.
      */
-    def collectAllUVarsAndPopulateUVarToLVIndexMap(
+    private def collectAllUVarsAndPopulateUVarToLVIndexMap(
         duVars:         mutable.ListBuffer[DUVar[_]],
         uVarToLVIndex:  mutable.Map[IntTrieSet, Int],
         initialLVIndex: Int
     ): Unit = {
         var nextLVIndex = initialLVIndex
         duVars.toArray.foreach {
-            case uVar: UVar[_] => nextLVIndex = populateUvarToLVIndexMap(uVar, uVarToLVIndex, nextLVIndex)
+            case uVar: UVar[_] => nextLVIndex = populateUVarToLVIndexMap(uVar, uVarToLVIndex, nextLVIndex)
             case _             =>
         }
 
@@ -139,14 +138,13 @@ object LvIndicesPreparator {
     /**
      * Iterates over the parameterTypes of the method and assigns defSites -2, -3, -4, ... to LVIndices starting at 0 or 1 (for static/non-static methods respectively)
      */
-    def mapParametersAndPopulate(
+    private def mapParametersAndPopulate(
         method:        Method,
         uVarToLVIndex: mutable.Map[IntTrieSet, Int]
     ): Int = {
         var nextLVIndex = if (method.isStatic) 0 else 1
 
         method.descriptor.parameterTypes.zipWithIndex.foreach { case (tpe, index) =>
-            println(s"Mapping defSite ${-(index + 2)} to LVIndex $nextLVIndex (type: $tpe)")
             // for some reason defSite -1 is *always* reserved for 'this' so we always start at -2 and then go further down per parameter (-3, -4, etc.)
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(-(index + 2)), nextLVIndex)
             nextLVIndex += (if (tpe.isDoubleType || tpe.isLongType) 2 else 1)
@@ -154,7 +152,6 @@ object LvIndicesPreparator {
         if (!method.isStatic) {
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(-1), 0)
         }
-        println(s"--------------------------------parameters for method $method: \n" + uVarToLVIndex)
         nextLVIndex
     }
 
@@ -163,7 +160,7 @@ object LvIndicesPreparator {
      *
      * @param uVar A variable used in the method.
      */
-    def populateUvarToLVIndexMap(uVar: UVar[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int], initialLVIndex: Int): Int = {
+    private def populateUVarToLVIndexMap(uVar: UVar[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int], initialLVIndex: Int): Int = {
         var nextLVIndex = initialLVIndex
         val existingEntry = uVarToLVIndex.find { case (key, _) => key.intersect(uVar.defSites).nonEmpty }
         existingEntry match {
@@ -184,7 +181,7 @@ object LvIndicesPreparator {
      *
      * @param uVar The UVar for which the LV index is to be incremented.
      */
-    def incrementLVIndex(uVar: UVar[_], initialLVIndex: Int): Int = {
+    private def incrementLVIndex(uVar: UVar[_], initialLVIndex: Int): Int = {
         initialLVIndex + uVar.cTpe.operandSize
     }
 
@@ -194,7 +191,7 @@ object LvIndicesPreparator {
      * @param expr The expression to be traversed
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
-    def collectDUVarFromExpr(expr: Expr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    private def collectDUVarFromExpr(expr: Expr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
         expr match {
             case duVar: DUVar[_]           => duVars += duVar
             case binaryExpr: BinaryExpr[_] => collectDUVarFromBinaryExpr(binaryExpr, duVars)
@@ -217,24 +214,24 @@ object LvIndicesPreparator {
         }
     }
 
-    def collectDUVarFromInstanceOf(instanceOf: InstanceOf[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    private def collectDUVarFromInstanceOf(instanceOf: InstanceOf[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
         collectDUVarFromExpr(instanceOf.value, duVars)
     }
 
-    def collectDUVarFromPrefixExpr(prefixExpr: PrefixExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    private def collectDUVarFromPrefixExpr(prefixExpr: PrefixExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
         collectDUVarFromExpr(prefixExpr.operand, duVars)
     }
 
-    def collectDUVarFromCompare(compare: Compare[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    private def collectDUVarFromCompare(compare: Compare[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
         collectDUVarFromExpr(compare.left, duVars)
         collectDUVarFromExpr(compare.right, duVars)
     }
 
-    def collectDUVarFromGetField(getField: GetField[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    private def collectDUVarFromGetField(getField: GetField[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
         collectDUVarFromExpr(getField.objRef, duVars)
     }
 
-    def collectDUVarFromInvokedynamicFunctionCall(
+    private def collectDUVarFromInvokedynamicFunctionCall(
         invokedynamicFunctionCall: InvokedynamicFunctionCall[_],
         duVars:                    mutable.ListBuffer[DUVar[_]]
     ): Unit = {
@@ -244,7 +241,7 @@ object LvIndicesPreparator {
         }
     }
 
-    def collectDUVarFromNewArrayExpr(newArrayExpr: NewArray[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    private def collectDUVarFromNewArrayExpr(newArrayExpr: NewArray[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
         for (count <- newArrayExpr.counts) {
             collectDUVarFromExpr(count, duVars)
         }
@@ -257,8 +254,7 @@ object LvIndicesPreparator {
      * @param arrayLoadExpr The `ArrayLength` expr to be traversed.
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
-    def collectDUVarFromArrayLoadExpr(arrayLoadExpr: ArrayLoad[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        println(arrayLoadExpr)
+    private def collectDUVarFromArrayLoadExpr(arrayLoadExpr: ArrayLoad[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
         collectDUVarFromExpr(arrayLoadExpr.index, duVars)
         collectDUVarFromExpr(arrayLoadExpr.arrayRef, duVars)
     }
@@ -269,7 +265,7 @@ object LvIndicesPreparator {
      * @param arrayLength The `ArrayLength` expr to be traversed.
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
-    def collectDUVarFromArrayLengthExpr(arrayLength: ArrayLength[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    private def collectDUVarFromArrayLengthExpr(arrayLength: ArrayLength[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
         collectDUVarFromExpr(arrayLength.arrayRef, duVars)
     }
 
@@ -279,7 +275,7 @@ object LvIndicesPreparator {
      * @param primitiveTypecaseExpr The `PrimitiveTypecastExpr` to be traversed.
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
-    def collectDUVarFromPrimitiveTypeCastExpr(
+    private def collectDUVarFromPrimitiveTypeCastExpr(
         primitiveTypecaseExpr: PrimitiveTypecastExpr[_],
         duVars:                mutable.ListBuffer[DUVar[_]]
     ): Unit = {
@@ -292,7 +288,7 @@ object LvIndicesPreparator {
      * @param staticFunctionCallExpr The `StaticFunctionCall` expression to be traversed.
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
-    def collectDUVarFromStaticFunctionCall(
+    private def collectDUVarFromStaticFunctionCall(
         staticFunctionCallExpr: StaticFunctionCall[_],
         duVars:                 mutable.ListBuffer[DUVar[_]]
     ): Unit = {
@@ -308,7 +304,7 @@ object LvIndicesPreparator {
      * @param binaryExpr The `BinaryExpr` to be traversed.
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
-    def collectDUVarFromBinaryExpr(binaryExpr: BinaryExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    private def collectDUVarFromBinaryExpr(binaryExpr: BinaryExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
         collectDUVarFromExpr(binaryExpr.left, duVars)
         collectDUVarFromExpr(binaryExpr.right, duVars)
     }
@@ -319,7 +315,7 @@ object LvIndicesPreparator {
      * @param virtualFunctionCallExpr The `VirtualFunctionCall` expression to be traversed.
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
-    def collectDUVarFromVirtualMethodCall(
+    private def collectDUVarFromVirtualMethodCall(
         virtualFunctionCallExpr: VirtualFunctionCall[_],
         duVars:                  mutable.ListBuffer[DUVar[_]]
     ): Unit = {

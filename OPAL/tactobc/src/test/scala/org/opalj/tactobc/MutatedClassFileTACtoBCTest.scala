@@ -8,12 +8,11 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import scala.collection.mutable
 import scala.sys.process._
-
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-
-import org.opalj.br.analyses.Project
 import org.opalj.util.InMemoryClassLoader
+
+import scala.Console.println
 
 class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
 
@@ -80,7 +79,7 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
     ): Unit = {
         try {
             // (1) Compile the original Java file to generate its .class file
-            compileOriginalJavaFile(
+            compileJavaFile(
                 sourceFolder,
                 originalJavaFileName,
                 javaFileDirPath,
@@ -88,7 +87,7 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
             )
 
             // (2) Compile the mutated Java file to generate its .class file
-            compileMutatedJavaFile(sourceFolder, mutatedJavaFileName, javaFileDirPath, inputDirMutatedJavaPath)
+            compileJavaFile(sourceFolder, mutatedJavaFileName, javaFileDirPath, inputDirMutatedJavaPath)
 
             // Load the mutated class file
             val mutatedClassFile = {
@@ -96,12 +95,16 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
             }
 
             // Create the OPAL project from the original class file
-            val project = Project(mutatedClassFile)
+//            val project = Project(mutatedClassFile)
 
             // (3) Compile TAC from the original class file
-            val tacs = TACtoBC.compileTAC(mutatedClassFile)
+            val tacs = TACtoBC.compileTACFromClassFile(mutatedClassFile)
 
-            tacs.foreach(tac => println(tac._2))
+            // Print out TAC
+//            tacs.foreach { case (method, tac) =>
+//                tac.detach()
+//                println(s"TAC for Method: ${method.toJava} \n↓\n $tac")
+//            }
 
             // Convert TAC back to bytecode
             val byteCodes = TACtoBC.translateTACStoBC(tacs)
@@ -109,7 +112,6 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
             // Generate the new class file using ClassFileGenerator
             ClassFileGenerator.generateClassFiles(
                 byteCodes,
-                project,
                 inputDirMutatedJavaPath,
                 outputDirPath,
                 classFileName
@@ -176,7 +178,7 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
         }
     }
 
-    private def compileOriginalJavaFile(
+    private def compileJavaFile(
         sourceFolder:             String,
         javaFileName:             String,
         javaFileDirPath:          String,
@@ -190,23 +192,6 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers {
             throw new RuntimeException(s"Compilation of original Java file ($javaFileName) failed.")
         } else {
             println(s"Compilation of original Java file ($javaFileName) completed successfully.")
-        }
-    }
-
-    private def compileMutatedJavaFile(
-        sourceFolder:            String,
-        javaFileName:            String,
-        javaFileDirPath:         String,
-        inputDirMutatedJavaPath: String
-    ): Unit = {
-        val javaFilePath = Paths.get(javaFileDirPath, sourceFolder, javaFileName).toString
-        val command = s"javac -d ${inputDirMutatedJavaPath} $javaFilePath"
-        val result = command.!
-
-        if (result != 0) {
-            throw new RuntimeException(s"Compilation of mutated Java file ($javaFileName) failed.")
-        } else {
-            println(s"Compilation of mutated Java file ($javaFileName) completed successfully.")
         }
     }
 

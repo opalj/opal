@@ -18,7 +18,7 @@ import org.opalj.BinaryArithmeticOperators.UnsignedShiftRight
 import org.opalj.BinaryArithmeticOperators.XOr
 import org.opalj.RelationalOperators.CMPG
 import org.opalj.RelationalOperators.CMPL
-import org.opalj.ba.InstructionElement
+import org.opalj.ba.CodeElement
 import org.opalj.br.ArrayType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
@@ -188,51 +188,60 @@ import org.opalj.value.IsSReferenceValue
 
 object ExprProcessor {
 
-    def processExpression(expr: Expr[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): List[InstructionElement] = {
+    /**
+     * @param expr the Expression to be converted into InstructionElements
+     * @param uVarToLVIndex map that holds information for Local Variable Indices
+     *
+     * @return a List of needed InstructionElements for the given expression
+     */
+    def processExpression(
+        expr:               Expr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        // todo: use listedCodeElements instead of defining new list every time
         expr match {
-            case const: Const              => loadConstant(const)
-            case variable: Var[_]          => loadVariable(variable, uVarToLVIndex)
-            case getField: GetField[_]     => handleGetField(getField, uVarToLVIndex)
-            case getStatic: GetStatic      => handleGetStatic(getStatic)
-            case binaryExpr: BinaryExpr[_] => handleBinaryExpr(binaryExpr, uVarToLVIndex)
+            case const: Const              => loadConstant(const, listedCodeElements)
+            case variable: Var[_]          => loadVariable(variable, uVarToLVIndex, listedCodeElements)
+            case getField: GetField[_]     => handleGetField(getField, uVarToLVIndex, listedCodeElements)
+            case getStatic: GetStatic      => handleGetStatic(getStatic, listedCodeElements)
+            case binaryExpr: BinaryExpr[_] => handleBinaryExpr(binaryExpr, uVarToLVIndex, listedCodeElements)
             case virtualFunctionCallExpr: VirtualFunctionCall[_] =>
-                handleVirtualFunctionCall(virtualFunctionCallExpr, uVarToLVIndex)
+                handleVirtualFunctionCall(virtualFunctionCallExpr, uVarToLVIndex, listedCodeElements)
             case staticFunctionCallExpr: StaticFunctionCall[_] =>
-                handleStaticFunctionCall(staticFunctionCallExpr, uVarToLVIndex)
-            case newExpr: New => handleNewExpr(newExpr.tpe)
+                handleStaticFunctionCall(staticFunctionCallExpr, uVarToLVIndex, listedCodeElements)
+            case newExpr: New => handleNewExpr(newExpr.tpe, listedCodeElements)
             case primitiveTypecaseExpr: PrimitiveTypecastExpr[_] =>
-                handlePrimitiveTypeCastExpr(primitiveTypecaseExpr, uVarToLVIndex)
-            case arrayLength: ArrayLength[_] => handleArrayLength(arrayLength, uVarToLVIndex)
-            case arrayLoadExpr: ArrayLoad[_] => handleArrayLoad(arrayLoadExpr, uVarToLVIndex)
-            case newArrayExpr: NewArray[_]   => handleNewArray(newArrayExpr, uVarToLVIndex)
+                handlePrimitiveTypeCastExpr(primitiveTypecaseExpr, uVarToLVIndex, listedCodeElements)
+            case arrayLength: ArrayLength[_] => handleArrayLength(arrayLength, uVarToLVIndex, listedCodeElements)
+            case arrayLoadExpr: ArrayLoad[_] => handleArrayLoad(arrayLoadExpr, uVarToLVIndex, listedCodeElements)
+            case newArrayExpr: NewArray[_]   => handleNewArray(newArrayExpr, uVarToLVIndex, listedCodeElements)
             case invokedynamicFunctionCall: InvokedynamicFunctionCall[_] =>
-                handleInvokedynamicFunctionCall(invokedynamicFunctionCall, uVarToLVIndex)
-            case compare: Compare[_]       => handleCompare(compare, uVarToLVIndex)
-            case prefixExpr: PrefixExpr[_] => handlePrefixExpr(prefixExpr, uVarToLVIndex)
-            case instanceOf: InstanceOf[_] => handleInstanceOf(instanceOf, uVarToLVIndex)
+                handleInvokedynamicFunctionCall(invokedynamicFunctionCall, uVarToLVIndex, listedCodeElements)
+            case compare: Compare[_]       => handleCompare(compare, uVarToLVIndex, listedCodeElements)
+            case prefixExpr: PrefixExpr[_] => handlePrefixExpr(prefixExpr, uVarToLVIndex, listedCodeElements)
+            case instanceOf: InstanceOf[_] => handleInstanceOf(instanceOf, uVarToLVIndex, listedCodeElements)
             case _ =>
                 throw new UnsupportedOperationException("Unsupported expression type" + expr)
         }
     }
 
-    def handleInstanceOf(
-        instanceOf:    InstanceOf[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-        instructions ++= ExprProcessor.processExpression(instanceOf.value, uVarToLVIndex)
-        instructions += INSTANCEOF(instanceOf.cmpTpe)
-        instructions.toList
+    private def handleInstanceOf(
+        instanceOf:         InstanceOf[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        ExprProcessor.processExpression(instanceOf.value, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += INSTANCEOF(instanceOf.cmpTpe)
     }
 
-    def handlePrefixExpr(
-        prefixExpr:    PrefixExpr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
+    private def handlePrefixExpr(
+        prefixExpr:         PrefixExpr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Process the operand (the expression being negated)
-        instructions ++= ExprProcessor.processExpression(prefixExpr.operand, uVarToLVIndex)
+        ExprProcessor.processExpression(prefixExpr.operand, uVarToLVIndex, listedCodeElements)
 
         // Determine the appropriate negation instruction based on the operand type
         val instruction = prefixExpr.operand.cTpe match {
@@ -243,17 +252,19 @@ object ExprProcessor {
             case _ =>
                 throw new UnsupportedOperationException(s"Unsupported type for negation: ${prefixExpr.operand.cTpe}")
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 
-    def handleCompare(compare: Compare[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+    private def handleCompare(
+        compare:            Compare[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Process the left expression and update the PC
-        instructions ++= processExpression(compare.left, uVarToLVIndex)
+        processExpression(compare.left, uVarToLVIndex, listedCodeElements)
 
         // Process the right expression and update the PC
-        instructions ++= processExpression(compare.right, uVarToLVIndex)
+        processExpression(compare.right, uVarToLVIndex, listedCodeElements)
 
         // Determine the appropriate comparison instruction
         val instruction = compare.left.cTpe match {
@@ -273,43 +284,37 @@ object ExprProcessor {
                 LCMP
             case _ => throw new IllegalArgumentException("Unsupported comparison type")
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 
-    def handleInvokedynamicFunctionCall(
+    private def handleInvokedynamicFunctionCall(
         invokedynamicFunctionCall: InvokedynamicFunctionCall[_],
-        uVarToLVIndex:             mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
+        uVarToLVIndex:             mutable.Map[IntTrieSet, Int],
+        listedCodeElements:        mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Process each parameter and update the PC accordingly
         for (param <- invokedynamicFunctionCall.params) {
-            instructions ++= ExprProcessor.processExpression(param, uVarToLVIndex)
+            ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
         }
         val instruction = DEFAULT_INVOKEDYNAMIC(
             invokedynamicFunctionCall.bootstrapMethod,
             invokedynamicFunctionCall.name,
             invokedynamicFunctionCall.descriptor
         )
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 
-    def handleNewArray(newArrayExpr: NewArray[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+    private def handleNewArray(
+        newArrayExpr:       NewArray[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Process each parameter and update the PC accordingly
         for (count <- newArrayExpr.counts.reverse) {
-            instructions ++= ExprProcessor.processExpression(count, uVarToLVIndex)
+            ExprProcessor.processExpression(count, uVarToLVIndex, listedCodeElements)
         }
         if (newArrayExpr.counts.size > 1) {
-            // Construct the array type string for the multi-dimensional array
-            val arrayTypeString = newArrayExpr.tpe match {
-                case arrayType: ArrayType =>
-                    constructArrayTypeString(arrayType)
-                case _ => throw new IllegalArgumentException("Expected an array type for MULTIANEWARRAY")
-            }
-            instructions += MULTIANEWARRAY(arrayTypeString, newArrayExpr.counts.size)
+            listedCodeElements += MULTIANEWARRAY(newArrayExpr.tpe, newArrayExpr.counts.size)
         } else {
             val instruction =
                 if (newArrayExpr.tpe.componentType.isReferenceType) {
@@ -317,32 +322,19 @@ object ExprProcessor {
                 } else {
                     NEWARRAY(newArrayExpr.tpe.componentType.asBaseType.atype)
                 }
-            instructions += instruction
+            listedCodeElements += instruction
         }
-        instructions.toList
     }
 
-    def constructArrayTypeString(arrayType: ArrayType): String = {
-        def loop(tpe: Type, depth: Int): (String, Int) = tpe match {
-            case ArrayType(componentType) =>
-                loop(componentType, depth + 1)
-            case baseType =>
-                (baseType.toString, depth)
-        }
-
-        val (baseTypeString, depth) = loop(arrayType, 0)
-        "[" * depth + baseTypeString
-    }
-
-    def handleArrayLoad(
-        arrayLoadExpr: ArrayLoad[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+    private def handleArrayLoad(
+        arrayLoadExpr:      ArrayLoad[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Load the array reference onto the stack
-        instructions ++= processExpression(arrayLoadExpr.arrayRef, uVarToLVIndex)
+        processExpression(arrayLoadExpr.arrayRef, uVarToLVIndex, listedCodeElements)
         // Load the index onto the stack
-        instructions ++= processExpression(arrayLoadExpr.index, uVarToLVIndex)
+        processExpression(arrayLoadExpr.index, uVarToLVIndex, listedCodeElements)
 
         // Infer the element type from the array reference expression
         val elementType = inferElementType(arrayLoadExpr.arrayRef)
@@ -358,79 +350,75 @@ object ExprProcessor {
             case _: ReferenceType => AALOAD
             case _                => throw new IllegalArgumentException("Unsupported array load type" + elementType)
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 
     // Helper function to infer the element type from the array reference expression
     def inferElementType(expr: Expr[_]): Type = {
         expr.asInstanceOf[UVar[_]].value.asInstanceOf[IsSReferenceValue[_]].theUpperTypeBound.asInstanceOf[ArrayType] match {
             case ArrayType(componentType) =>
-                println(s"ArrayType($componentType)")
                 componentType
             case _ => throw new IllegalArgumentException(s"Expected an array type but found: ${expr.cTpe}")
         }
     }
-    def handleArrayLength(
-        arrayLength:   ArrayLength[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+    private def handleArrayLength(
+        arrayLength:        ArrayLength[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Process the receiver object (e.g., aload_0 for `this`)
-        instructions ++= ExprProcessor.processExpression(arrayLength.arrayRef, uVarToLVIndex)
-        instructions += ARRAYLENGTH
-        instructions.toList
+        ExprProcessor.processExpression(arrayLength.arrayRef, uVarToLVIndex, listedCodeElements)
+        listedCodeElements += ARRAYLENGTH
     }
 
-    def handleNewExpr(tpe: ObjectType): List[InstructionElement] = {
-        println(s"hier wird NEW($tpe) erstellt")
-        List(
-            NEW(tpe)
-        )
+    private def handleNewExpr(
+        tpe:                ObjectType,
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        listedCodeElements += NEW(tpe)
     }
 
-    def handleStaticFunctionCall(
-        expr:          StaticFunctionCall[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+    private def handleStaticFunctionCall(
+        expr:               StaticFunctionCall[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Process each parameter and update the PC accordingly
         for (param <- expr.params) {
-            instructions ++= ExprProcessor.processExpression(param, uVarToLVIndex)
+            ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
         }
         val instruction = if (expr.isInterface) {
             INVOKEINTERFACE(expr.declaringClass, expr.name, expr.descriptor)
         } else {
             INVOKESTATIC(expr.declaringClass, expr.isInterface, expr.name, expr.descriptor)
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 
-    def handleVirtualFunctionCall(
-        expr:          VirtualFunctionCall[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
+    private def handleVirtualFunctionCall(
+        expr:               VirtualFunctionCall[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Process the receiver object (e.g., aload_0 for `this`)
-        instructions ++= ExprProcessor.processExpression(expr.receiver, uVarToLVIndex)
+        ExprProcessor.processExpression(expr.receiver, uVarToLVIndex, listedCodeElements)
 
         // Process each parameter and update the PC accordingly
         for (param <- expr.params) {
-            instructions ++= ExprProcessor.processExpression(param, uVarToLVIndex)
+            ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
         }
         val instruction = if (expr.isInterface) {
             INVOKEINTERFACE(expr.declaringClass.asObjectType, expr.name, expr.descriptor)
         } else {
             INVOKEVIRTUAL(expr.declaringClass, expr.name, expr.descriptor)
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 
-    private def loadConstant(constExpr: Const): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+    private def loadConstant(
+        constExpr:          Const,
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         val instruction = {
             if (constExpr.isNullExpr) {
                 ACONST_NULL
@@ -463,12 +451,11 @@ object ExprProcessor {
                     case _ => throw BytecodeProcessingFailedException("unsupported constant value: " + constExpr)
                 }
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 
     // Method to get LVIndex for a variable
-    def getVariableLvIndex(variable: Var[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): Int = {
+    private def getVariableLvIndex(variable: Var[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): Int = {
         variable match {
             case dVar: DVar[_] =>
                 val uVarDefSites = uVarToLVIndex.find { case (defSites, _) =>
@@ -480,7 +467,7 @@ object ExprProcessor {
                         throw new NoSuchElementException(s"No LVIndex found for DVar with origin ${dVar.origin}")
                 }
             case uVar: UVar[_] =>
-                val defSiteMatch = uVarToLVIndex.find { case (defSites, index) =>
+                val defSiteMatch = uVarToLVIndex.find { case (defSites, _) =>
                     defSites.exists(uVar.defSites.contains)
                 }
                 defSiteMatch match {
@@ -492,9 +479,11 @@ object ExprProcessor {
         }
     }
 
-    def loadVariable(variable: Var[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
+    private def loadVariable(
+        variable:           Var[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         val index = getVariableLvIndex(variable, uVarToLVIndex)
         val instruction = variable.cTpe match {
             case ComputationalTypeInt => ILOAD.canonicalRepresentation(index)
@@ -529,17 +518,16 @@ object ExprProcessor {
             case _ =>
                 throw new UnsupportedOperationException("Unsupported computational type for loading variable" + variable)
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 
     def storeVariable(
-        variable:      Var[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): InstructionElement = {
-//         val variableName = handleDVarName(variable)
+        variable:           Var[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         val index = getVariableLvIndex(variable, uVarToLVIndex)
-        variable.cTpe match {
+        val instruction = variable.cTpe match {
             // The <n> must be an index into the local variable array of the current frame (§2.6).
             // The value on the top of the operand stack must be of type int. It is popped from the operand stack,
             // and the value of the local variable at <n> is set to value.
@@ -551,34 +539,37 @@ object ExprProcessor {
             case _ =>
                 throw new UnsupportedOperationException("Unsupported computational type for storing variable" + variable)
         }
+        listedCodeElements += instruction
     }
 
-    def handleGetField(getField: GetField[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int]): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+    private def handleGetField(
+        getField:           GetField[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // Load the object reference onto the stack
-        instructions ++= processExpression(getField.objRef, uVarToLVIndex)
+        processExpression(getField.objRef, uVarToLVIndex, listedCodeElements)
         // Generate the GETFIELD instruction
-        instructions += GETFIELD(getField.declaringClass, getField.name, getField.declaredFieldType)
-        instructions.toList
+        listedCodeElements += GETFIELD(getField.declaringClass, getField.name, getField.declaredFieldType)
     }
 
-    def handleGetStatic(getStatic: GetStatic): List[InstructionElement] = {
-        List(
-            GETSTATIC(getStatic.declaringClass, getStatic.name, getStatic.declaredFieldType)
-        )
+    private def handleGetStatic(
+        getStatic:          GetStatic,
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
+        listedCodeElements += GETSTATIC(getStatic.declaringClass, getStatic.name, getStatic.declaredFieldType)
+
     }
 
-    def handleBinaryExpr(
-        binaryExpr:    BinaryExpr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-
-        val instructions = mutable.ListBuffer[InstructionElement]()
-
+    private def handleBinaryExpr(
+        binaryExpr:         BinaryExpr[_],
+        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // process the left expr and save the pc to give in the right expr processing
-        instructions ++= processExpression(binaryExpr.left, uVarToLVIndex)
+        processExpression(binaryExpr.left, uVarToLVIndex, listedCodeElements)
         // process the right Expr
-        instructions ++= processExpression(binaryExpr.right, uVarToLVIndex)
+        processExpression(binaryExpr.right, uVarToLVIndex, listedCodeElements)
 
         val instruction = (binaryExpr.cTpe, binaryExpr.op) match {
             // Double
@@ -622,16 +613,15 @@ object ExprProcessor {
                     "Unsupported operation or computational type in BinaryExpr" + binaryExpr
                 )
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
-    def handlePrimitiveTypeCastExpr(
+    private def handlePrimitiveTypeCastExpr(
         primitiveTypecastExpr: PrimitiveTypecastExpr[_],
-        uVarToLVIndex:         mutable.Map[IntTrieSet, Int]
-    ): List[InstructionElement] = {
-        val instructions = mutable.ListBuffer[InstructionElement]()
+        uVarToLVIndex:         mutable.Map[IntTrieSet, Int],
+        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    ): Unit = {
         // First, process the operand expression and add its instructions to the buffer
-        instructions ++= processExpression(primitiveTypecastExpr.operand, uVarToLVIndex)
+        processExpression(primitiveTypecastExpr.operand, uVarToLVIndex, listedCodeElements)
 
         val instruction = (primitiveTypecastExpr.operand.cTpe, primitiveTypecastExpr.targetTpe) match {
             // -> to Float
@@ -661,7 +651,6 @@ object ExprProcessor {
                     "Unsupported operation or computational type in PrimitiveTypecastExpr" + primitiveTypecastExpr
                 )
         }
-        instructions += instruction
-        instructions.toList
+        listedCodeElements += instruction
     }
 }
