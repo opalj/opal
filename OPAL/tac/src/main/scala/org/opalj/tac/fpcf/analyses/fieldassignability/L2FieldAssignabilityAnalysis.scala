@@ -94,8 +94,12 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     )(implicit state: AnalysisState): Boolean = {
 
         val field = state.field
+   //     println(s"field: ${field.name}")
         val method = definedMethod.definedMethod
         val stmts = taCode.stmts
+        // --- xlanguage
+        if(receiver==null)
+            return true;
         val receiverVar = receiver.map(uVarForDefSites(_, taCode.pcToIndex))
 
         val index = taCode.pcToIndex(pc)

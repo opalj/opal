@@ -16,6 +16,7 @@ import scala.collection.immutable.SortedSet
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
+import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
 
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
@@ -62,12 +63,14 @@ import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 
 /**
  * Determines the assignability of fields and the immutability of fields, classes and types and provides several
@@ -115,10 +118,10 @@ object XLImmutability {
             else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         implicit var config: Config =
-            if (isLibrary)
+            //if (isLibrary)
                 ConfigFactory.load("LibraryProject.conf")
-            else
-                ConfigFactory.load("CommandLineProject.conf")
+            //else
+            //    ConfigFactory.load("CommandLineProject.conf")
 
         config = config.withValue(
             "org.opalj.fpcf.analyses.L3FieldAssignabilityAnalysis.considerLazyInitialization",
@@ -151,8 +154,13 @@ object XLImmutability {
                 LazyTypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazySimpleEscapeAnalysis
-            )
+                LazySimpleEscapeAnalysis,
+                LazyFieldLocalityAnalysis,
+              //  AllocationSiteBasedScriptEngineDetectorScheduler,
+              //  AllocationSiteBasedTriggeredTajsConnectorScheduler,
+                AllocationSiteBasedSVFConnectorDetectorScheduler,
+
+            ) ++ AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
@@ -181,7 +189,7 @@ object XLImmutability {
         val propertyStore = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
-        project.get(callgraphKey)
+      //  project.get(callgraphKey)
 
         time {
             analysesManager.runAll(
@@ -647,6 +655,8 @@ object XLImmutability {
                     |
                     | callGraph $CallGraphKey
                     |
+                    | analysis: $analysis
+                    |
                     |""".stripMargin
                 )
 
@@ -662,6 +672,8 @@ object XLImmutability {
         println(s"propertyStore: ${propertyStore.getClass.toString}")
 
         println(s"jdk folder: $JRELibraryFolder")
+
+        println(s"call graph key: $callgraphKey")
 
         BasicReport(stringBuilderNumber.toString())
     }
@@ -756,7 +768,7 @@ object XLImmutability {
                 case "-analysisName"                      => configurationName = Some(readNextArg())
                 case "-JDK" =>
                     cp = JRELibraryFolder
-                    withoutJDK = true
+                    withoutJDK = false
 
                 case unknown =>
                     println(usage)

@@ -9,14 +9,14 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.xl.utility.JavaScriptFunctionCall
-import org.opalj.xl.utility.NativeFunctionCall
 import org.opalj.xl.utility.Language
 import org.opalj.xl.utility.Language.Language
-import org.opalj.xl.Coordinator.ScriptEngineInstance
+//import org.opalj.xl.Coordinator.ScriptEngineInstance
 import org.opalj.xl.Coordinator.V
 
 import org.opalj.fpcf.Property
 import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 sealed trait CrossLanguageInteractionPropertyMetaInformation extends Property with PropertyMetaInformation {
@@ -26,7 +26,7 @@ sealed trait CrossLanguageInteractionPropertyMetaInformation extends Property wi
 sealed trait CrossLanguageInteraction extends CrossLanguageInteractionPropertyMetaInformation { // extends OrderedProperty
     def meet(other: CrossLanguageInteraction): CrossLanguageInteraction = {
         (this, other) match {
-            case (_, _) => ScriptEngineInteraction()
+            case (_, _) => this //ScriptEngineInteraction()
         }
     }
 
@@ -44,14 +44,15 @@ object CrossLanguageInteraction extends CrossLanguageInteractionPropertyMetaInfo
         "CrossLanguageInteraction",
         (_: PropertyStore, _: FallbackReason, e: Entity) => {
             e match {
-                case ScriptEngineInstance => ScriptEngineInteraction()
-                case x                    => throw new IllegalArgumentException(s"$x is not a method")
+                case _ => ScriptEngineInteraction(NoContext)
+               // case x                    => throw new IllegalArgumentException(s"$x is not a method")
             }
         }
     )
 }
 
 case class ScriptEngineInteraction[ContextType, PointsToSet](
+                                                                context: ContextType                        = NoContext.asInstanceOf[ContextType],
         language:                Language                                                                   = Language.Unknown,
         code:                    List[String]                                                               = List.empty,
         javaScriptFunctionCalls: List[JavaScriptFunctionCall[ContextType, PointsToSet]]                     = List.empty[JavaScriptFunctionCall[ContextType, PointsToSet]],
@@ -59,6 +60,7 @@ case class ScriptEngineInteraction[ContextType, PointsToSet](
 ) extends CrossLanguageInteraction {
     def updated(scriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet]): ScriptEngineInteraction[ContextType, PointsToSet] = {
         ScriptEngineInteraction(
+            this.context,
             if (this.language == Language.Unknown) scriptEngineInteraction.language else this.language,
             scriptEngineInteraction.code ::: this.code,
             this.javaScriptFunctionCalls ++ scriptEngineInteraction.javaScriptFunctionCalls,
@@ -66,5 +68,3 @@ case class ScriptEngineInteraction[ContextType, PointsToSet](
         )
     }
 }
-
-case class NativeInteraction(nativeFunctionCalls: List[NativeFunctionCall]) extends CrossLanguageInteraction

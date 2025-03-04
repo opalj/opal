@@ -78,7 +78,7 @@ abstract class ScriptEngineInteractionAnalysisEval(
                        |
                        | """.stripMargin
                 )
-                newEngineInteraction = newEngineInteraction.updated(ScriptEngineInteraction(code = List(newParam.get)))
+                newEngineInteraction = newEngineInteraction.updated(ScriptEngineInteraction(context = context, code = List(newParam.get)))
             }
 
             assert(newEngineInteraction ne engineInteraction)

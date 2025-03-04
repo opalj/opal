@@ -99,7 +99,7 @@ abstract class ScriptEngineAllocationAnalysis(
         engineString: V,
         stmts:        Array[Stmt[V]]
     )(implicit state: TypeIteratorState): ProperPropertyComputationResult = {
-        val engineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](language = language.get)
+        val engineInteraction = ScriptEngineInteraction[ContextType, PointsToSet](context = context, language = language.get)
 
         val partialResult = PartialResult[ScriptEngineInstance[ElementType], CrossLanguageInteraction](
             instance,

@@ -9,8 +9,8 @@ import scala.collection.mutable.ListBuffer
 
 import svfjava.SVFAnalysisListener
 import svfjava.SVFModule
-
 import org.opalj.xl.logger.PointsToInteractionLogger
+
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -40,6 +40,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIteratorState
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.br.DeclaredField
+import org.opalj.br.fpcf.properties.fieldaccess.IndirectFieldAccesses
 
 abstract class NativeAnalysis(
                                final val project:            SomeProject,
@@ -55,7 +56,8 @@ abstract class NativeAnalysis(
                                 var svfModuleName:      String                               = System.getenv("LLVM_LIB_PATH"),
                                 var connectorDependees: Set[EOptionP[Entity, Property]]      = Set.empty,
                                 var connectorResults:   Set[ProperPropertyComputationResult] = Set.empty[ProperPropertyComputationResult],
-                                var mapping: mutable.Map[Long, PointsToSet] = mutable.Map.empty[Long, PointsToSet]
+                                var mapping: mutable.Map[Long, PointsToSet] = mutable.Map.empty[Long, PointsToSet],
+                                var indirectFieldAccesses: IndirectFieldAccesses = new IndirectFieldAccesses()
                               ) extends BaseAnalysisState with TypeIteratorState
 
 
@@ -261,6 +263,10 @@ abstract class NativeAnalysis(
             }
 
             possibleFields.foreach(field => {
+
+              svfConnectorState.
+                  indirectFieldAccesses.addFieldRead(svfConnectorState.calleeContext, 5, field, None)
+
               baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
               {
                 val fieldEntity = (as, field)
@@ -287,7 +293,7 @@ abstract class NativeAnalysis(
             })
           }
 
-          svfConnectorState.connectorResults ++= createResults
+          svfConnectorState.connectorResults ++= createResults ++ svfConnectorState.indirectFieldAccesses.partialResults(svfConnectorState.calleeContext)
         }
           result.foreach(id => assert(id!=0))
           //result = 3 :: result
@@ -325,6 +331,10 @@ abstract class NativeAnalysis(
                 List.empty[DeclaredField]
             }
               possibleDeclardFields.foreach(declaredField => {
+
+               svfConnectorState.
+                   indirectFieldAccesses.addFieldWrite(svfConnectorState.calleeContext, 5, declaredField, None, None)
+
               baseObjectPointsToSet.forNewestNElements(baseObjectPointsToSet.numElements) { as =>
                 val tpe = getTypeOf(as)
                 if (tpe.isObjectType) {
@@ -347,7 +357,7 @@ abstract class NativeAnalysis(
           Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
         svfConnectorState.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-        svfConnectorState.connectorResults ++= createResults
+        svfConnectorState.connectorResults ++= createResults ++ svfConnectorState.indirectFieldAccesses.partialResults(svfConnectorState.calleeContext)
       }
 
       override def getArrayElement(baseLongArray: Array[Long]): Array[Long] = {
@@ -451,7 +461,8 @@ abstract class NativeAnalysis(
       functionSelection = functions.filter(_.startsWith(javaMethodFullName+"__"))
     }
     if (functionSelection.isEmpty) {
-      throw new RuntimeException("native method not found :"+javaMethodFullName)
+      //throw new RuntimeException("native method not found :"+javaMethodFullName)
+      //println(s"native method not found : $javaMethodFullName")
     }
     for (f <- functionSelection) {
       val resultPTS = svfConnectorState.svfModule.processFunction(f, basePTS.toArray, parameterPointsToSets, listener)
@@ -477,7 +488,13 @@ abstract class NativeAnalysis(
     implicit val svfConnectorState = SVFConnectorState(calleeContext, pc, project)
     svfjava.SVFJava.init()
     svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName)
-    runSVF(svfConnectorState)
+    if(calleeContext.method.name.contains("setOut")){
+      println("set out--------->")
+      println(calleeContext.method.name)
+      runSVF(svfConnectorState)
+    }
+
+    else Results()
   }
 
   def svfConnectorContinuation(eps: SomeEPS)(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized{

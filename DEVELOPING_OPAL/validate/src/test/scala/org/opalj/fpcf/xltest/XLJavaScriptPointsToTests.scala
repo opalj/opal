@@ -31,14 +31,14 @@ import org.scalatest.tools.Runner
 import org.opalj.log.LogContext
 import org.opalj.br.fpcf.PropertyStoreKey
 
-object RunXLTests {
+object RunXLJavaScriptPointsToTests {
     def main(args: Array[String]): Unit = {
         //val test = new XLJavaScriptTests()
-        Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporter", "-s", "org.opalj.fpcf.xltest.XLJavaScriptTests"))
+        Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporterPointsTo", "-s", "org.opalj.fpcf.xltest.XLJavaScriptPointsToTests"))
     }
 }
 
-class MyCustomReporter extends Reporter {
+class MyCustomReporterPointsTo extends Reporter {
     override def apply(event: Event): Unit = {
         // testName: "test JavaScript XL points-to-sets xl.js.controlflow.intraprocedural.unidirectional.arithmetic.Div{ public static void main(java.lang.String[]){ @PointsToSet } }"
         event match {
@@ -175,7 +175,7 @@ class MyCustomReporter extends Reporter {
  *
  * @author Julius Naeumann
  */
-class XLJavaScriptTests extends PropertiesTest {
+class XLJavaScriptPointsToTests extends PropertiesTest {
 
     override def withRT = false
 

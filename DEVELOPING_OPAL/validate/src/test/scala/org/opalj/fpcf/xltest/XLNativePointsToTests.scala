@@ -17,10 +17,10 @@ import org.scalatest.tools.Runner
 
 import org.opalj.xl.connector.svf.AllocationSiteBasedSVFConnectorDetectorScheduler
 
-object RunXLNativeTests {
+object RunXLNativePointsToTests {
     def main(args: Array[String]): Unit = {
         //val test = new XLJavaScriptTests()
-        Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporter", "-s", "org.opalj.fpcf.xltest.XLNativeTests"))
+        Runner.run(Array("-C", "org.opalj.fpcf.xltest.MyCustomReporterPointsTo", "-s", "org.opalj.fpcf.xltest.XLNativePointsToTests"))
     }
 }
 
@@ -30,7 +30,7 @@ object RunXLNativeTests {
  * @author Julius Naeumann
  * @author Tobias Roth
  */
-class XLNativeTests extends PropertiesTest {
+class XLNativePointsToTests extends PropertiesTest {
 
     override def withRT = false
 

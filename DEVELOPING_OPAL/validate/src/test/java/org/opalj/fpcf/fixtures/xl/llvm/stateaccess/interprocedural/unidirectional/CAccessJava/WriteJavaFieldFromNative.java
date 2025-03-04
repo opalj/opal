@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.xl.llvm.stateaccess.interprocedural.unidirectional.CAccessJava;
 
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.pts.JavaMethodContextAllocSite;
 import org.opalj.fpcf.properties.pts.PointsToSet;
 
@@ -10,6 +12,8 @@ import javax.script.ScriptException;
  * Native function takes parameter, sets instance field. Interprocedural indirection in both Java and C
  */
 public class WriteJavaFieldFromNative {
+
+    @AssignableField("field is assigned in C")
     Object myfield;
     @PointsToSet(variableDefinition = 28,
             expectedJavaAllocSites = {

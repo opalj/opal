@@ -3,7 +3,7 @@ package org.opalj
 package xl
 
 import java.net.URL
-import java.util.concurrent.TimeUnit
+//import java.util.concurrent.TimeUnit
 
 import org.opalj.xl.logger.PointsToInteractionLogger
 
@@ -67,7 +67,7 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
         isInterrupted: () => Boolean
     ): BasicReport = {
 
-        val start = System.currentTimeMillis
+      //  val start = System.currentTimeMillis
 
         var analyses: List[FPCFAnalysisScheduler] = List(LazyTACAIProvider)
 
@@ -166,8 +166,8 @@ object Coordinator extends AnalysisApplication with OneStepAnalysis[URL, Reporta
         val dependentlyImmutable = fields.filter(ep => ep.asEPS.ub.isInstanceOf[DependentlyImmutableField]).size
         val mutable = fields.filter(ep => ep.asEPS.ub == MutableField).size
 
-        val timeNeeded = System.currentTimeMillis - start;
-        val seconds = TimeUnit.MILLISECONDS.toSeconds(timeNeeded)
+        //val timeNeeded = System.currentTimeMillis - start;
+       // val seconds = TimeUnit.MILLISECONDS.toSeconds(timeNeeded)
 
         var firstRM = true
         var recheableMethods = 0

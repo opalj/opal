@@ -77,6 +77,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.DeclaredField
+import org.opalj.br.fpcf.properties.fieldaccess.IndirectFieldAccesses
 
 abstract class TajsConnector(override val project: SomeProject) extends FPCFAnalysis with PointsToAnalysisBase {
     self =>
@@ -84,13 +85,14 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
     case class TajsConnectorState(
             scriptEngineInstance:        ScriptEngineInstance[ElementType],
             project:                     SomeProject,
-            var tajsAdapter:                TajsAdapter                                 = null,
+            var tajsAdapter:             TajsAdapter                                 = null,
             var code:                    List[String]                                      = List.empty, //for debugging purposes
             var files:                   List[File]                                        = List.empty,
             var scriptEngineInteraction: ScriptEngineInteraction[ContextType, PointsToSet] = null,
             var connectorDependees:      Set[EOptionP[Entity, Property]]                   = Set.empty,
             var puts:                    Map[PKey.StringPKey, Value]                       = Map.empty,
-            var connectorResults:        Set[ProperPropertyComputationResult]              = Set.empty[ProperPropertyComputationResult]
+            var connectorResults:        Set[ProperPropertyComputationResult]              = Set.empty[ProperPropertyComputationResult],
+            var indirectFieldAccesses: IndirectFieldAccesses = new IndirectFieldAccesses()
     ) extends BaseAnalysisState with TypeIteratorState
 
     def analyzeScriptEngineInstance(scriptEngineInstance: ScriptEngineInstance[ElementType]): ProperPropertyComputationResult = {
@@ -115,7 +117,8 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             state.connectorDependees = state.connectorDependees.filter(dependee => dependee.e != eps.e)
 
             eps match {
-                case UBP(ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
+                case UBP(interaction @ ScriptEngineInteraction(context, Language.JavaScript, possibleEmptyCode, _, puts)) =>
+                    state.scriptEngineInteraction = interaction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]]
                     prepareAnalysis(possibleEmptyCode, puts)
                     val analyses = state.files.map(file => {
                       runAnalysis(file.getPath)._1.get
@@ -183,6 +186,10 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
             v.getObjectLabels.forEach(ol => {
 
             val possibleDeclaredFields = getPossibleDeclaredFields(propertyName, ol, v)
+            possibleDeclaredFields.foreach(declaredField=>{
+                if(declaredField.definedField.isPublic && state.scriptEngineInteraction!=null && state.scriptEngineInteraction.context!=NoContext)
+                    state.indirectFieldAccesses.addFieldWrite(state.scriptEngineInteraction.context, 0, declaredField, None, None)
+            })
             if (v.isJavaObject || v.isJSJavaTYPE){
                     rhsFieldValue.getObjectLabels.forEach(rhsOl => {
                         val node = rhsOl.getNode
@@ -233,7 +240,13 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
                     Map.empty[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
 
             state.connectorDependees ++= setPropertyDependeesMap.valuesIterator.map(_._1)
-            state.connectorResults ++= createResults
+            state.connectorResults ++= createResults ++ {
+                if(state.scriptEngineInteraction!=null && state.scriptEngineInteraction.context!=NoContext)
+                    state.indirectFieldAccesses.partialResults(state.scriptEngineInteraction.context)
+                else
+                    Nil
+            }
+
         }
 
         def readPropertyImplementation(v: Value, propertyName: String): Value = {
@@ -464,7 +477,9 @@ abstract class TajsConnector(override val project: SomeProject) extends FPCFAnal
         //start of analysis
         propertyStore(scriptEngineInstance, CrossLanguageInteraction.key) match {
 
-            case ubp @ UBP(interaction @ ScriptEngineInteraction(Language.JavaScript, possibleEmptyCode, _, puts)) =>
+            case ubp @ UBP(interaction @ ScriptEngineInteraction(context, Language.JavaScript, possibleEmptyCode, _, puts)) =>
+                state.scriptEngineInteraction =
+                    interaction.asInstanceOf[ScriptEngineInteraction[ContextType, PointsToSet]]
                 prepareAnalysis(possibleEmptyCode, puts)
                 val analyses = state.files.map(file => {
                     runAnalysis(file.getPath)._1.get
