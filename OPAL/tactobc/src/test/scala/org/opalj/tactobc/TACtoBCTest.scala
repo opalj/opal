@@ -1,9 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tactobc
 
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import scala.Console.println
+import scala.sys.process._
 
 import org.opalj.ba.CODE
 import org.opalj.ba.CodeElement
@@ -12,7 +15,7 @@ import org.opalj.bc.Assembler
 import org.opalj.br.Method
 import org.opalj.br.reader.Java8Framework
 
-object ClassFileGenerator {
+trait TACtoBCTest {
 
     def generateClassFiles(
         byteCodes:     Map[Method, Seq[CodeElement[Nothing]]],
@@ -40,6 +43,8 @@ object ClassFileGenerator {
                                     method.descriptor == methodDescriptor
                         } match {
                             case Some((_, instructions)) =>
+                                //TODO: comment out print stmts
+
                                 // Print out the translation from TAC to Bytecode
                                 println(s"Original Instructions for method $m: \n${originalBody.instructions.mkString("\n ")}")
                                 println(s"New Instructions for method $m: \n${instructions.mkString("\n")}")
@@ -48,8 +53,7 @@ object ClassFileGenerator {
                                 val newBody = codeAttrBuilder(cf.version, m)
                                 m.copy(body = Some(newBody._1))
                             case None =>
-                                println(s"Warning: No bytecode found for method ${m.name}. Keeping original method body.")
-                                m.copy()
+                                throw new RuntimeException(s"Warning: No bytecode found for method ${m.name}")
                         }
                 }
             }
@@ -59,5 +63,31 @@ object ClassFileGenerator {
         Files.createDirectories(outputDir.getParent)
         val newClassFile = Files.write(outputDir, newRawCF)
         println("Created class file: " + newClassFile.toAbsolutePath)
+    }
+
+    def compileJavaFile(
+        sourceFolder:             String,
+        javaFileName:             String,
+        javaFileDirPath:          String,
+        inputDirOriginalJavaPath: String
+    ): Unit = {
+        val javaFilePath = Paths.get(javaFileDirPath, sourceFolder, javaFileName).toString
+        val command = s"javac -d $inputDirOriginalJavaPath $javaFilePath"
+        val result = command.!
+
+        if (result != 0) {
+            throw new RuntimeException(s"Compilation of original Java file ($javaFileName) failed.")
+        } else {
+            println(s"Compilation of original Java file ($javaFileName) completed successfully.")
+        }
+    }
+
+    def invokeMainMethod(clazz: Class[_]): String = {
+        val outputStream = new ByteArrayOutputStream()
+        val printStream = new PrintStream(outputStream)
+        Console.withOut(printStream) {
+            clazz.getMethod("main", classOf[Array[String]]).invoke(null, Array[String]())
+        }
+        outputStream.toString.trim
     }
 }

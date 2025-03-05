@@ -80,32 +80,37 @@ object StmtProcessor {
         listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]],
         indexMap:           Array[RewriteLabel]
     ): Unit = {
+        // Remove Dead Code (cases of the switch statement that are not reachable
+        //                  contain the value -1 and must be removed from the npairs seq)
+        val npairsWithValidJumpTargets: ArraySeq[IntIntPair] = npairs.filter(_.value >= 0)
         // Transform nparis to their Labels
-        val labeledNpairs: ArraySeq[(Int, RewriteLabel)] = npairs.map({ case IntIntPair(key, value) =>
-            val label = indexMap(value)
-            (key, label)
+        val labeledNpairs: ArraySeq[(Int, RewriteLabel)] = npairsWithValidJumpTargets.map({
+            case IntIntPair(key, value) =>
+                val label = indexMap(value)
+                (key, label)
         })
+
         // Translate the index expression first
         ExprProcessor.processExpression(index, uVarToLVIndex, listedCodeElements)
 
-        if (isLookupSwitch(index)) {
-            // Add LOOKUPSWITCH instruction with placeholders for targets
-            listedCodeElements += LabeledLOOKUPSWITCH(defaultTarget, labeledNpairs)
-        } else {
-            // Add TABLESWITCH instruction with placeholders for targets
-            val minValue = npairs.minBy(_._1)._1
-            val maxValue = npairs.maxBy(_._1)._1
-            val jumpTable = ArrayBuffer.fill(maxValue - minValue + 1)(defaultTarget)
-            // Set the case values in the jump table
-            labeledNpairs.foreach { case (caseValue, target) =>
-                jumpTable(caseValue - minValue) = target
+        listedCodeElements += {
+            if (isLookupSwitch(index)) {
+                LabeledLOOKUPSWITCH(defaultTarget, labeledNpairs)
+            } else {
+                val minValue = npairs.minBy(_._1)._1
+                val maxValue = npairs.maxBy(_._1)._1
+                val jumpTable = ArrayBuffer.fill(maxValue - minValue + 1)(defaultTarget)
+                // Set the case values in the jump table
+                labeledNpairs.foreach { case (caseValue, target) =>
+                    jumpTable(caseValue - minValue) = target
+                }
+                LabeledTABLESWITCH(defaultTarget, minValue, maxValue, jumpTable.to(ArraySeq))
             }
-            listedCodeElements += LabeledTABLESWITCH(defaultTarget, minValue, maxValue, jumpTable.to(ArraySeq))
         }
     }
 
     private def isLookupSwitch(index: Expr[_]): Boolean = {
-        // todo: decision of when to use lookupswtich/tableswitch
+        // TODO: decide when to use lookup switch more efficiently
         index match {
             case variable: UVar[_] => variable.defSites.size == 1
             case _                 => false
@@ -209,7 +214,7 @@ object StmtProcessor {
         listedCodeElements += CHECKCAST(cmpTpe)
         value match {
             case variable: Var[_] => storeVariable(variable, uVarToLVIndex, listedCodeElements)
-            case _                => throw new UnsupportedOperationException(s"Unsupported Value: $value")
+            case _                => throw new UnsupportedOperationException(s"Error with CheckCast. Expected a Var but got: $value")
         }
     }
 
@@ -231,15 +236,26 @@ object StmtProcessor {
         indexMap:           Array[RewriteLabel],
         tacIndex:           Int
     ): Unit = {
-        // todo: handle this correctly
+        // TODO: handle CaughtExceptions correctly
+//        throw new UnsupportedOperationException("Caught Exception not yet supported")
         println("DEBUG")
-        var pc = Int.MaxValue
+        var minPC = Int.MaxValue
+        var maxPC = Int.MinValue
+        var pc = 0
         throwingStmts.foreach(stmt => {
             if (ai.isImmediateVMException(stmt)) pc = ai.pcOfImmediateVMException(stmt)
             else if (ai.isMethodExternalExceptionOrigin(stmt)) pc = ai.pcOfMethodExternalException(stmt)
             else pc = stmt
-            println(s"pc: $pc, tac: ${tacStmts(pc)}")
+            if (pc > maxPC) maxPC = pc
+            if (pc < minPC) minPC = pc
+            println(s"pc: $pc, tac: ${tacStmts(pc)} minpc:$minPC maxpc:$maxPC")
         })
+        maxPC = maxPC + 1
+        val minPCLabel = indexMap(minPC)
+        val maxPCLabel = indexMap(maxPC)
+        println(s"$minPCLabel $maxPCLabel")
+
+//        listedCodeElements.indexWhere()
 
     }
 
@@ -314,7 +330,9 @@ object StmtProcessor {
         uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
         listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
+        // process receiver
         ExprProcessor.processExpression(receiver, uVarToLVIndex, listedCodeElements)
+        // process each parameter
         for (param <- params) ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
         listedCodeElements += INVOKESPECIAL(declaringClass, isInterface, methodName, methodDescriptor)
     }
@@ -344,43 +362,46 @@ object StmtProcessor {
         uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
         listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
-        // process the left expr and save the pc to give in the right expr processing
+        // process the left expr
         ExprProcessor.processExpression(left, uVarToLVIndex, listedCodeElements)
         // process the right expr
         ExprProcessor.processExpression(right, uVarToLVIndex, listedCodeElements)
 
-        val instruction = (left.cTpe, right.cTpe) match {
-            // Handle null comparisons
-            case (_, _) if right.isNullExpr || left.isNullExpr =>
-                condition match {
-                    case EQ => LabeledIFNULL(target)
-                    case NE => LabeledIFNONNULL(target)
-                    case _  => throw new UnsupportedOperationException(s"Unsupported condition: $condition")
-                }
+        listedCodeElements += {
+            (left.cTpe, right.cTpe) match {
+                // Handle null comparisons
+                case (_, _) if right.isNullExpr || left.isNullExpr =>
+                    condition match {
+                        case EQ => LabeledIFNULL(target)
+                        case NE => LabeledIFNONNULL(target)
+                        case _  => throw new UnsupportedOperationException(s"Unsupported condition: $condition")
+                    }
 
-            // Handle reference comparisons (object references)
-            case (ComputationalTypeReference, ComputationalTypeReference) =>
-                condition match {
-                    case EQ => LabeledIF_ACMPEQ(target)
-                    case NE => LabeledIF_ACMPNE(target)
-                    case _  => throw new UnsupportedOperationException(s"Unsupported condition: $condition")
-                }
+                // Handle reference comparisons (object references)
+                case (ComputationalTypeReference, ComputationalTypeReference) =>
+                    condition match {
+                        case EQ => LabeledIF_ACMPEQ(target)
+                        case NE => LabeledIF_ACMPNE(target)
+                        case _  => throw new UnsupportedOperationException(s"Unsupported condition: $condition")
+                    }
 
-            // Handle integer comparisons
-            case (ComputationalTypeInt, ComputationalTypeInt) =>
-                condition match {
-                    case EQ => LabeledIF_ICMPEQ(target)
-                    case NE => LabeledIF_ICMPNE(target)
-                    case LT => LabeledIF_ICMPLT(target)
-                    case LE => LabeledIF_ICMPLE(target)
-                    case GT => LabeledIF_ICMPGT(target)
-                    case GE => LabeledIF_ICMPGE(target)
-                    case _  => throw new UnsupportedOperationException(s"Unsupported condition: $condition")
-                }
-            // Handle unsupported types
-            case _ =>
-                throw new UnsupportedOperationException(s"Unsupported types: left = ${left.cTpe}, right = ${right.cTpe}")
+                // Handle integer comparisons
+                case (ComputationalTypeInt, ComputationalTypeInt) =>
+                    condition match {
+                        case EQ => LabeledIF_ICMPEQ(target)
+                        case NE => LabeledIF_ICMPNE(target)
+                        case LT => LabeledIF_ICMPLT(target)
+                        case LE => LabeledIF_ICMPLE(target)
+                        case GT => LabeledIF_ICMPGT(target)
+                        case GE => LabeledIF_ICMPGE(target)
+                        case _  => throw new UnsupportedOperationException(s"Unsupported condition: $condition")
+                    }
+                // Handle unsupported types
+                case _ =>
+                    throw new UnsupportedOperationException(
+                        s"Unsupported types: left = ${left.cTpe}, right = ${right.cTpe}"
+                    )
+            }
         }
-        listedCodeElements += instruction
     }
 }

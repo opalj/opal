@@ -36,7 +36,7 @@ import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.ValueInformation
 
 /**
- * Handles the initial preparation of local variable (LV) indices
+ * Handles the initial preparation of local variable (LV) indicess
  * for translating three-address code (TAC) to bytecode. This involves collecting all
  * defined-use variables (DUVars) in the method, assigning LV indices to parameters,
  * and populating a map that assigns unique LV indices to each unique variable.
@@ -54,6 +54,7 @@ object LvIndicesPreparation {
      * 2. Assigning LV indices to method parameters.
      * 3. Populating the `uVarToLVIndex` map with unique LV indices for each unique variable.
      *
+     * @param method Method which the Array 'tacStmts' belongs to
      * @param tacStmts Array of tuples where each tuple contains a TAC statement and its index.
      */
     def prepareLvIndices(
@@ -74,23 +75,17 @@ object LvIndicesPreparation {
                         collectDUVarFromExpr(right, duVars)
                     case VirtualMethodCall(_, _, _, _, _, receiver, params) =>
                         collectDUVarFromExpr(receiver, duVars)
-                        for (param <- params) {
-                            collectDUVarFromExpr(param, duVars)
-                        }
+                        for (param <- params) collectDUVarFromExpr(param, duVars)
                     case PutField(_, _, _, _, objRef, value) =>
                         collectDUVarFromExpr(objRef, duVars)
                         collectDUVarFromExpr(value, duVars)
                     case PutStatic(_, _, _, _, value) =>
                         collectDUVarFromExpr(value, duVars)
                     case StaticMethodCall(_, _, _, _, _, params) =>
-                        for (param <- params) {
-                            collectDUVarFromExpr(param, duVars)
-                        }
+                        for (param <- params) collectDUVarFromExpr(param, duVars)
                     case NonVirtualMethodCall(_, _, _, _, _, receiver, params) =>
                         collectDUVarFromExpr(receiver, duVars)
-                        for (param <- params) {
-                            collectDUVarFromExpr(param, duVars)
-                        }
+                        for (param <- params) collectDUVarFromExpr(param, duVars)
                     case ReturnValue(_, expr) =>
                         collectDUVarFromExpr(expr, duVars)
                     case ArrayStore(_, arrayRef, index, value) =>
@@ -108,10 +103,8 @@ object LvIndicesPreparation {
                     case _ =>
                 }
         }
-
         val uVarToLVIndex = mutable.Map[IntTrieSet, Int]()
-        val nextLVIndexAfterParameters =
-            mapParametersAndPopulate(method, uVarToLVIndex)
+        val nextLVIndexAfterParameters = mapParametersAndPopulate(method, uVarToLVIndex)
         collectAllUVarsAndPopulateUVarToLVIndexMap(duVars, uVarToLVIndex, nextLVIndexAfterParameters)
         uVarToLVIndex
     }
@@ -120,7 +113,8 @@ object LvIndicesPreparation {
      * Populates the `uVarToLVIndex` map with unique LV indices for each variable in the given DUVars list.
      *
      * @param duVars ListBuffer containing all DUVars of the method.
-     * @return A map where keys are def-sites of UVars and values are their corresponding LV indices.
+     * @param uVarToLVIndex Map to be filled with indices
+     * @param initialLVIndex The initial index after having processed the parameters
      */
     private def collectAllUVarsAndPopulateUVarToLVIndexMap(
         duVars:         mutable.ListBuffer[DUVar[_]],
@@ -129,8 +123,9 @@ object LvIndicesPreparation {
     ): Unit = {
         var nextLVIndex = initialLVIndex
         duVars.toArray.foreach {
-            case uVar: UVar[_] => nextLVIndex = populateUVarToLVIndexMap(uVar, uVarToLVIndex, nextLVIndex)
-            case _             =>
+            case uVar: UVar[_] =>
+                nextLVIndex = populateUVarToLVIndexMap(uVar, uVarToLVIndex, nextLVIndex)
+            case _ =>
         }
 
     }
@@ -160,7 +155,11 @@ object LvIndicesPreparation {
      *
      * @param uVar A variable used in the method.
      */
-    private def populateUVarToLVIndexMap(uVar: UVar[_], uVarToLVIndex: mutable.Map[IntTrieSet, Int], initialLVIndex: Int): Int = {
+    private def populateUVarToLVIndexMap(
+        uVar:           UVar[_],
+        uVarToLVIndex:  mutable.Map[IntTrieSet, Int],
+        initialLVIndex: Int
+    ): Int = {
         var nextLVIndex = initialLVIndex
         val existingEntry = uVarToLVIndex.find { case (key, _) => key.intersect(uVar.defSites).nonEmpty }
         existingEntry match {
@@ -180,6 +179,8 @@ object LvIndicesPreparation {
      * Increments the LV index appropriately based on the type of the UVar.
      *
      * @param uVar The UVar for which the LV index is to be incremented.
+     * @param initialLVIndex current LV index
+     * @return updated LV index based on the type of UVar
      */
     private def incrementLVIndex(uVar: UVar[_], initialLVIndex: Int): Int = {
         initialLVIndex + uVar.cTpe.operandSize
@@ -199,8 +200,8 @@ object LvIndicesPreparation {
                 collectDUVarFromVirtualMethodCall(virtualFunctionCallExpr, duVars)
             case staticFunctionCallExpr: StaticFunctionCall[_] =>
                 collectDUVarFromStaticFunctionCall(staticFunctionCallExpr, duVars)
-            case primitiveTypecaseExpr: PrimitiveTypecastExpr[_] =>
-                collectDUVarFromPrimitiveTypeCastExpr(primitiveTypecaseExpr, duVars)
+            case primitiveTypecastExpr: PrimitiveTypecastExpr[_] =>
+                collectDUVarFromPrimitiveTypeCastExpr(primitiveTypecastExpr, duVars)
             case arrayLengthExpr: ArrayLength[_] => collectDUVarFromArrayLengthExpr(arrayLengthExpr, duVars)
             case arrayLoadExpr: ArrayLoad[_]     => collectDUVarFromArrayLoadExpr(arrayLoadExpr, duVars)
             case newArrayExpr: NewArray[_]       => collectDUVarFromNewArrayExpr(newArrayExpr, duVars)
@@ -236,15 +237,11 @@ object LvIndicesPreparation {
         duVars:                    mutable.ListBuffer[DUVar[_]]
     ): Unit = {
         // Process each parameter and collect from each
-        for (param <- invokedynamicFunctionCall.params) {
-            collectDUVarFromExpr(param, duVars)
-        }
+        for (param <- invokedynamicFunctionCall.params) collectDUVarFromExpr(param, duVars)
     }
 
     private def collectDUVarFromNewArrayExpr(newArrayExpr: NewArray[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        for (count <- newArrayExpr.counts) {
-            collectDUVarFromExpr(count, duVars)
-        }
+        for (count <- newArrayExpr.counts) collectDUVarFromExpr(count, duVars)
         // tpe does not contain any expr
     }
 
@@ -272,14 +269,14 @@ object LvIndicesPreparation {
     /**
      * Traverses a `PrimitiveTypeCastExpr` to collect all DUVars embedded within it.
      *
-     * @param primitiveTypecaseExpr The `PrimitiveTypecastExpr` to be traversed.
+     * @param primitiveTypecastExpr The `PrimitiveTypecastExpr` to be traversed.
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
     private def collectDUVarFromPrimitiveTypeCastExpr(
-        primitiveTypecaseExpr: PrimitiveTypecastExpr[_],
+        primitiveTypecastExpr: PrimitiveTypecastExpr[_],
         duVars:                mutable.ListBuffer[DUVar[_]]
     ): Unit = {
-        collectDUVarFromExpr(primitiveTypecaseExpr.operand, duVars)
+        collectDUVarFromExpr(primitiveTypecastExpr.operand, duVars)
     }
 
     /**
@@ -293,9 +290,7 @@ object LvIndicesPreparation {
         duVars:                 mutable.ListBuffer[DUVar[_]]
     ): Unit = {
         // Process each parameter and collect from each
-        for (param <- staticFunctionCallExpr.params) {
-            collectDUVarFromExpr(param, duVars)
-        }
+        for (param <- staticFunctionCallExpr.params) collectDUVarFromExpr(param, duVars)
     }
 
     /**
@@ -320,8 +315,6 @@ object LvIndicesPreparation {
         duVars:                  mutable.ListBuffer[DUVar[_]]
     ): Unit = {
         collectDUVarFromExpr(virtualFunctionCallExpr.receiver, duVars)
-        for (param <- virtualFunctionCallExpr.params) {
-            collectDUVarFromExpr(param, duVars)
-        }
+        for (param <- virtualFunctionCallExpr.params) collectDUVarFromExpr(param, duVars)
     }
 }

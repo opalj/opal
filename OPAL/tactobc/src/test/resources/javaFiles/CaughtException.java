@@ -1,63 +1,59 @@
-import java.io.IOException;
-import java.lang.reflect.Array;
-
 public class CaughtException {
-
     public static void main(String[] args) {
 
-        //TEST 1 - no exception
+        // 1. Try-catch where no error occurs
         try {
-            System.out.println("test1 - no exception");
+            System.out.println("Test 1: No error occurs");
         } catch (Exception e) {
-            System.out.println("caught test1 exception");
+            System.out.println("This won't be printed since no exception occurs.");
         }
 
-        //TEST 2 - exception using throw
+        // 2. Try-catch where an error occurs
         try {
-            System.out.println("test2 - throwing exception");
-            throw new Exception();
+            System.out.println("Test 2: An error will occur");
+            int result = 10 / 0; // This causes an ArithmeticException
         } catch (Exception e) {
-            System.out.println("caught test2 exception");
+            System.out.println("Caught an exception in Test 2");
         }
 
-        //TEST 3 - exception from variable
-        Exception exc = new Exception();
+        // 3. Try-catch-finally where no error occurs
         try {
-            System.out.println("test3 - throwing exception from var 1/2");
-            throw exc;
+            System.out.println("Test 3: No error, but with finally");
         } catch (Exception e) {
-            System.out.println("caught test3 exception from var 1/2");
-        }
-        //TEST 3.5 exception from variable + finally
-        try {
-            System.out.println("test3.5 - throwing exception local var 2/2");
-            throw exc;
-        } catch (Exception e) {
-            System.out.println("caught test3.5 exception from var 2/2");
+            System.out.println("This won't be printed since no exception occurs.");
         } finally {
-            System.out.println("test3.5 finally executed");
+            System.out.println("Test 3: Finally block executed");
         }
 
-        //TEST 4 - ArrayIndexOutOfBounds
+        // 4. Try-catch-finally where an error occurs
         try {
-            System.out.println("test4 - trying to access outside of array");
-            int[] a = {0, 1, 2};
-            int outOfBounds = a[3];
+            System.out.println("Test 4: An error will occur, with finally");
+            int result = 10 / 0;
         } catch (Exception e) {
-            System.out.println("caught test4 exception");
+            System.out.println("Caught an exception in Test 4");
+        } finally {
+            System.out.println("Test 4: Finally block executed");
         }
 
-        //TEST 5 - NullPointer + Catch Hierarchy + finally
+        // 5. Try-finally without catch (finally always runs)
         try {
-            System.out.println("test5 - nullpointer");
-            int[] a = null;
-            int nullpointer = a.length;
+            System.out.println("Test 5: Try-finally without catch");
+        } finally {
+            System.out.println("Test 5: Finally block executed");
+        }
+
+        // 6. Multiple catch blocks (wrong order test)
+        try {
+            System.out.println("Test 6: Multiple catch blocks with wrong order");
+            int result = 10 / 0; // Causes ArithmeticException
         } catch (NullPointerException e) {
-            System.out.println("caught test5 NullPointerException");
+            System.out.println("Caught NullPointerException in Test 6 (should not be printed)");
+        } catch (ArithmeticException e) {
+            System.out.println("Caught ArithmeticException in Test 6 (correct)");
         } catch (Exception e) {
-            System.out.println("caught test5 exception");
+            System.out.println("Caught general Exception in Test 6 (should not be printed)");
         } finally {
-            System.out.println("test5 finally executed");
+            System.out.println("Test 6: Finally block executed");
         }
     }
 }

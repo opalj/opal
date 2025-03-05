@@ -3,13 +3,13 @@ package org.opalj.tactobc
 
 import java.io.File
 import scala.Console.println
+import scala.collection.mutable
+
 import org.opalj.ba.CodeElement
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.tac._
 import org.opalj.value.ValueInformation
-
-//import java.nio.file.NotDirectoryException
 
 object TACtoBC {
 
@@ -24,7 +24,7 @@ object TACtoBC {
         val tacProvider = p.get(LazyDetachedTACAIKey)
 
         // Store the TAC results in a map
-        val methodTACMap = scala.collection.mutable.Map.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
+        val methodTACMap = mutable.Map.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 
         for {
             cf <- p.allProjectClassFiles
@@ -34,7 +34,6 @@ object TACtoBC {
             val tac = tacProvider(m)
             methodTACMap += (m -> tac)
         }
-
         methodTACMap.toMap
     }
 
@@ -57,13 +56,9 @@ object TACtoBC {
         } {
             // Convert the body's instructions to a human-readable format
             val instructions = method.body.get.instructions.zipWithIndex.map { case (instr, index) =>
-                s"$index: ${instr}"
+                s"$index: $instr"
             }
-            methodByteCodeMap += (method -> instructions.toArray)
-
-            // Print the bytecode for each method
-//            println(s"Bytecode for Method: ${method.toJava} \n↓")
-//            instructions.foreach(println)
+            methodByteCodeMap += (method -> instructions)
         }
 
         methodByteCodeMap.toMap
@@ -82,7 +77,6 @@ object TACtoBC {
         Method,
         Seq[CodeElement[Nothing]]
     ] = {
-
         tacs.map { case (method, tacCode) =>
             // Convert the TAC representation back to bytecode for each method
             val bytecodeInstructions = translateSingleTACtoBC(method, tacCode)
@@ -97,19 +91,17 @@ object TACtoBC {
      * of bytecode instructions. It handles various types of TAC statements and expressions, translating them
      * into their equivalent bytecode form.
      *
+     * @param method Current method to be translated
      * @param tac The TAC representation of a method to be converted into bytecode.
-     * @return An array of bytecode instructions representing the method's functionality
+     * @return A Sequence of bytecode instructions representing the method's functionality
      */
-    def translateSingleTACtoBC(
+    private def translateSingleTACtoBC(
         method: Method,
         tac:    AITACode[TACMethodParameter, ValueInformation]
     ): Seq[CodeElement[Nothing]] = {
         val tacStmts = tac.stmts.zipWithIndex
-
         // fill uVarToLVIndexMap
         val uVarToLVIndex = LvIndicesPreparation.prepareLvIndices(method, tacStmts)
-        println(s"--------------------------------lvIndexMap for method $method: \n" + uVarToLVIndex)
         StmtToInstructionTranslator.translateStmtsToInstructions(tacStmts, uVarToLVIndex)
-
     }
 }
