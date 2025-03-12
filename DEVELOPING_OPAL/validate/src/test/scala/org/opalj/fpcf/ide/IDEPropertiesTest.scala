@@ -16,6 +16,11 @@ import org.opalj.ide.ConfigKeyDebugLog
 import org.opalj.ide.ConfigKeyTraceLog
 import org.opalj.tac.cg.RTACallGraphKey
 
+/**
+ * Specialized test for IDE analyses preparing the configuration.
+ *
+ * @author Robin Körkemeier
+ */
 class IDEPropertiesTest extends PropertiesTest {
     override def withRT: Boolean = false
 

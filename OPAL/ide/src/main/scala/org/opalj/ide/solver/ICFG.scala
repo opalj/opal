@@ -8,7 +8,9 @@ import scala.collection
 import org.opalj.fpcf.Entity
 
 /**
- * Interface representing the interprocedural control flow graph
+ * Interface representing the interprocedural control flow graph.
+ *
+ * @author Robin Körkemeier
  */
 trait ICFG[Statement, Callable <: Entity] {
     /**
@@ -47,7 +49,8 @@ trait ICFG[Statement, Callable <: Entity] {
     def getCallable(stmt: Statement): Callable
 
     /**
-     * Build a string representation of a statement. Only used for debugging purposes!
+     * Build a string representation of a statement. Is only used for debugging purposes.
+     *
      * @param indent to use on newlines (e.g. indentation for prettier logs)
      * @param short whether to build a long or a more compact string
      */

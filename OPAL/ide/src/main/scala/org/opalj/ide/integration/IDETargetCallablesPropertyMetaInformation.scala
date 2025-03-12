@@ -9,6 +9,8 @@ import org.opalj.fpcf.PropertyMetaInformation
 
 /**
  * Class for property meta information for properties carrying the target callables.
+ *
+ * @author Robin Körkemeier
  */
 final class IDETargetCallablesPropertyMetaInformation[Callable <: Entity](
     propertyMetaInformation: IDEPropertyMetaInformation[?, ?, ?, Callable]

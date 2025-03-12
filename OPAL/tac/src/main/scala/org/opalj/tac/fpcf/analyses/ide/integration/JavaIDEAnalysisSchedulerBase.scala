@@ -27,7 +27,9 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * A base IDE analysis scheduler for Java programs
+ * A base IDE analysis scheduler for Java programs.
+ *
+ * @author Robin Körkemeier
  */
 abstract class JavaIDEAnalysisSchedulerBase[Fact <: IDEFact, Value <: IDEValue]
     extends IDEAnalysisScheduler[Fact, Value, JavaStatement, Method, JavaICFG] {

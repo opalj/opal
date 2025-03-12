@@ -19,7 +19,9 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
 
 /**
- * Edge function holding the current object state (in form of its field-value mapping)
+ * Edge function holding the current object state (in form of its field-value mapping).
+ *
+ * @author Robin Körkemeier
  */
 case class ObjectEdgeFunction(
     values: immutable.Map[String, LinearConstantPropagationValue]
@@ -93,14 +95,18 @@ case class ObjectEdgeFunction(
 }
 
 /**
- * Edge function for initializing an object
+ * Edge function for initializing an object.
+ *
+ * @author Robin Körkemeier
  */
 object NewObjectEdgeFunction extends ObjectEdgeFunction(immutable.Map.empty) {
     override def toString: String = "NewObjectEdgeFunction()"
 }
 
 /**
- * Edge function modeling the effect of writing the field of an object
+ * Edge function modeling the effect of writing the field of an object.
+ *
+ * @author Robin Körkemeier
  */
 case class PutFieldEdgeFunction(
     fieldName: String,
@@ -177,6 +183,8 @@ case class PutFieldEdgeFunction(
  * elements. The array length is not tracked in this problem definition, thus arbitrary indices can be read and written.
  * The initial value is used as a fallback/default value for elements that are not in the collection of elements yet
  * (will likely be one of `ConstantValue(0)` and `VariableValue`).
+ *
+ * @author Robin Körkemeier
  */
 class ArrayEdgeFunction(
     val initValue: LinearConstantPropagationValue,
@@ -281,7 +289,9 @@ object ArrayEdgeFunction {
 }
 
 /**
- * Edge function for initializing an array
+ * Edge function for initializing an array.
+ *
+ * @author Robin Körkemeier
  */
 case class NewArrayEdgeFunction(
     override val initValue: LinearConstantPropagationValue = linear_constant_propagation.problem.ConstantValue(0)
@@ -290,7 +300,9 @@ case class NewArrayEdgeFunction(
 }
 
 /**
- * Edge function modeling the effect of writing an element of an array
+ * Edge function modeling the effect of writing an element of an array.
+ *
+ * @author Robin Körkemeier
  */
 case class PutElementEdgeFunction(
     index: LinearConstantPropagationValue,
@@ -391,7 +403,9 @@ case class PutElementEdgeFunction(
 }
 
 /**
- * Edge function modeling the effect of when a static field gets written
+ * Edge function modeling the effect of when a static field gets written.
+ *
+ * @author Robin Körkemeier
  */
 case class PutStaticFieldEdgeFunction(
     value: LinearConstantPropagationValue
@@ -438,7 +452,9 @@ case class PutStaticFieldEdgeFunction(
 }
 
 /**
- * Edge function for cases where a value is unknown
+ * Edge function for cases where a value is unknown.
+ *
+ * @author Robin Körkemeier
  */
 object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](UnknownValue) {
     override def composeWith(
@@ -478,7 +494,9 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
 }
 
 /**
- * Edge function for cases where a value is variable
+ * Edge function for cases where a value is variable.
+ *
+ * @author Robin Körkemeier
  */
 object VariableValueEdgeFunction extends AllBottomEdgeFunction[LCPOnFieldsValue](VariableValue) {
     override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {

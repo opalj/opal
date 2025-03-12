@@ -3,6 +3,11 @@ package org.opalj.fpcf.fixtures.linear_constant_propagation;
 
 import org.opalj.fpcf.properties.linear_constant_propagation.*;
 
+/**
+ * An example to test fact and value propagation across methods.
+ *
+ * @author Robin Körkemeier
+ */
 public class PropagationAcrossMethodsExample {
     @VariableValues({
             @VariableValue(variable = "param2"),

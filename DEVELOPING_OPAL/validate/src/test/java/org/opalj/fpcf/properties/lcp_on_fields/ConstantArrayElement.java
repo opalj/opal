@@ -4,7 +4,9 @@ package org.opalj.fpcf.properties.lcp_on_fields;
 import java.lang.annotation.*;
 
 /**
- * Annotation to state that an array element has a constant value
+ * Annotation to state that an array element has a constant value.
+ *
+ * @author Robin Körkemeier
  */
 @Documented
 @Target(ElementType.ANNOTATION_TYPE)

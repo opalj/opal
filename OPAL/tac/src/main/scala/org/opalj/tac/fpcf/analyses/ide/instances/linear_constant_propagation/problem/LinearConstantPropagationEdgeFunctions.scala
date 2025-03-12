@@ -14,7 +14,9 @@ import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.IdentityEdgeFunction
 
 /**
- * Edge function to calculate the value of a variable `i` for a statement `val i = a * x + b`
+ * Edge function to calculate the value of a variable `i` for a statement `val i = a * x + b`.
+ *
+ * @author Robin Körkemeier
  */
 case class LinearCombinationEdgeFunction(
     a: Int,
@@ -101,7 +103,9 @@ case class LinearCombinationEdgeFunction(
 }
 
 /**
- * Edge function for variables whose value is unknown
+ * Edge function for variables whose value is unknown.
+ *
+ * @author Robin Körkemeier
  */
 object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropagationValue](UnknownValue) {
     override def composeWith(
@@ -141,7 +145,9 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
 }
 
 /**
- * Edge function for a variable that is definitely not constant
+ * Edge function for a variable that is definitely not constant.
+ *
+ * @author Robin Körkemeier
  */
 object VariableValueEdgeFunction extends AllBottomEdgeFunction[LinearConstantPropagationValue](VariableValue) {
     override def composeWith(

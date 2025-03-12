@@ -13,7 +13,9 @@ import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 
 /**
- * Specialized IDE analysis scheduler for Java programs
+ * Specialized IDE analysis scheduler for Java programs.
+ *
+ * @author Robin Körkemeier
  */
 abstract class JavaIDEAnalysisScheduler[Fact <: IDEFact, Value <: IDEValue]
     extends JavaIDEAnalysisSchedulerBase[Fact, Value] {

@@ -8,6 +8,11 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
 import org.opalj.ide.integration.EagerIDEAnalysisProxyScheduler
 
+/**
+ * Test runner for linear constant propagation.
+ *
+ * @author Robin Körkemeier
+ */
 class LinearConstantPropagationTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
         List("org/opalj/fpcf/fixtures/linear_constant_propagation")

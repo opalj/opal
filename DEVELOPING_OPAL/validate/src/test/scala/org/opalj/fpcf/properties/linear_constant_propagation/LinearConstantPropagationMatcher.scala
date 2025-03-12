@@ -11,7 +11,10 @@ import org.opalj.ide.integration.BasicIDEProperty
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 
 /**
- * Matcher for [[ConstantValue]] and [[ConstantValues]] annotations
+ * Matcher for [[org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue]] and
+ * [[org.opalj.fpcf.properties.linear_constant_propagation.ConstantValues]] annotations.
+ *
+ * @author Robin Körkemeier
  */
 class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher {
     override val singleAnnotationType: ObjectType =
@@ -56,7 +59,10 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher {
 }
 
 /**
- * Matcher for [[VariableValue]] and [[VariableValues]] annotations
+ * Matcher for [[org.opalj.fpcf.properties.linear_constant_propagation.VariableValue]] and
+ * [[org.opalj.fpcf.properties.linear_constant_propagation.VariableValues]] annotations.
+ *
+ * @author Robin Körkemeier
  */
 class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
     override val singleAnnotationType: ObjectType =
@@ -99,7 +105,10 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
 }
 
 /**
- * Matcher for [[UnknownValue]] and [[UnknownValues]] annotations
+ * Matcher for [[org.opalj.fpcf.properties.linear_constant_propagation.UnknownValue]] and
+ * [[org.opalj.fpcf.properties.linear_constant_propagation.UnknownValues]] annotations.
+ *
+ * @author Robin Körkemeier
  */
 class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher {
     override val singleAnnotationType: ObjectType =

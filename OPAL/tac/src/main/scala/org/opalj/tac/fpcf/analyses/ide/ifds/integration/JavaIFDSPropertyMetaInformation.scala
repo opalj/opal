@@ -13,6 +13,8 @@ import org.opalj.ide.problem.IDEFact
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 
 /**
- * Specialized property meta information for IFDS problems with Java programs
+ * Specialized property meta information for IFDS problems with Java programs.
+ *
+ * @author Robin Körkemeier
  */
 trait JavaIFDSPropertyMetaInformation[Fact <: IDEFact] extends IFDSPropertyMetaInformation[Fact, JavaStatement, Method]

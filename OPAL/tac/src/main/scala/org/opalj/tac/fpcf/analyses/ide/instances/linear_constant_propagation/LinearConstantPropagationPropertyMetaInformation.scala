@@ -13,7 +13,9 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
 import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEPropertyMetaInformation
 
 /**
- * Meta information for linear constant propagation
+ * Meta information for linear constant propagation.
+ *
+ * @author Robin Körkemeier
  */
 object LinearConstantPropagationPropertyMetaInformation
     extends JavaIDEPropertyMetaInformation[LinearConstantPropagationFact, LinearConstantPropagationValue] {

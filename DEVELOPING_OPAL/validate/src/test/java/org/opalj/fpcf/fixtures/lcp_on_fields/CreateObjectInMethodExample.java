@@ -6,6 +6,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.ObjectValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 
+/**
+ * An example to test objects created across methods.
+ *
+ * @author Robin Körkemeier
+ */
 public class CreateObjectInMethodExample {
     private int a = 42;
 

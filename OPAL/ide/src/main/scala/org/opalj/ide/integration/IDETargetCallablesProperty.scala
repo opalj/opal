@@ -11,6 +11,8 @@ import org.opalj.fpcf.PropertyKey
 
 /**
  * Property for the target callables that should be analysed by an IDE analysis.
+ *
+ * @author Robin Körkemeier
  */
 class IDETargetCallablesProperty[Callable <: Entity](
     val key:             PropertyKey[IDETargetCallablesProperty[Callable]],

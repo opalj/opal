@@ -6,7 +6,9 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import java.lang.annotation.*;
 
 /**
- * Annotation to state that an array has been identified and has certain constant and non-constant elements
+ * Annotation to state that an array has been identified and has certain constant and non-constant elements.
+ *
+ * @author Robin Körkemeier
  */
 @PropertyValidator(key = LCPOnFieldsProperty.KEY, validator = ArrayValueMatcher.class)
 @Repeatable(ArrayValues.class)

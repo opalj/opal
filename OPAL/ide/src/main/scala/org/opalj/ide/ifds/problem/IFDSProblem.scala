@@ -12,7 +12,9 @@ import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.MeetLattice
 
 /**
- * Interface for modeling IFDS problems based on an IDE problem
+ * Interface for modeling IFDS problems based on an IDE problem.
+ *
+ * @author Robin Körkemeier
  */
 abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
     extends IDEProblem[Fact, IFDSValue, Statement, Callable] {
@@ -78,6 +80,7 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
     /**
      * Whether precomputed flow functions for a `(callSite, callSiteFact, callee)` combination exist (resp. can be
      * generated).
+     *
      * @param callSite where the flow starts
      * @param callSiteFact the fact the flow starts with
      * @param callee the callable this flow is about

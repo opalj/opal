@@ -4,7 +4,9 @@ package ide
 package problem
 
 /**
- * Interface representing the lattice that orders the IDE values
+ * Interface representing the lattice that orders the IDE values.
+ *
+ * @author Robin Körkemeier
  */
 trait MeetLattice[Value <: IDEValue] {
     /**

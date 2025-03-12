@@ -18,7 +18,9 @@ import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 
 /**
- * Linear constant propagation as IDE analysis
+ * Linear constant propagation as IDE analysis.
+ *
+ * @author Robin Körkemeier
  */
 abstract class LinearConstantPropagationAnalysisScheduler
     extends JavaIDEAnalysisScheduler[LinearConstantPropagationFact, LinearConstantPropagationValue]

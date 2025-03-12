@@ -5,6 +5,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.ObjectValue;
 import org.opalj.fpcf.properties.lcp_on_fields.ObjectValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 
+/**
+ * An example to test reading and writing of object fields with constants.
+ *
+ * @author Robin Körkemeier
+ */
 public class FieldReadWriteConstantExample {
     private int a = -1;
 

@@ -4,6 +4,8 @@ package ide
 package problem
 
 /**
- * Interface representing IDE facts
+ * Interface representing IDE facts.
+ *
+ * @author Robin Körkemeier
  */
 trait IDEFact

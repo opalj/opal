@@ -5,6 +5,11 @@ import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValues;
 
+/**
+ * An example to test simple variable values in presence of if-then-else constructs.
+ *
+ * @author Robin Körkemeier
+ */
 public class BranchingConstantsExample {
     @ConstantValue(variable = "lvd", value = 8)
     @VariableValues({

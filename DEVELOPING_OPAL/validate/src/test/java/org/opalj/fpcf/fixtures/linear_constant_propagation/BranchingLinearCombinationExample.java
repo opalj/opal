@@ -6,6 +6,11 @@ import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValues;
 
+/**
+ * An example to test linear combination values in the presence of if-then-else constructs.
+ *
+ * @author Robin Körkemeier
+ */
 public class BranchingLinearCombinationExample {
     private static int linearCalculation1(int y, int x) {
         int z;

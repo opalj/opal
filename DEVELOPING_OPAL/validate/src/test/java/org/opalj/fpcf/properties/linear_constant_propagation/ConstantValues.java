@@ -6,7 +6,9 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import java.lang.annotation.*;
 
 /**
- * Container annotation for {@link ConstantValue} annotations
+ * Container annotation for {@link ConstantValue} annotations.
+ *
+ * @author Robin Körkemeier
  */
 @PropertyValidator(key = LinearConstantPropagationProperty.KEY, validator = ConstantValueMatcher.class)
 @Documented

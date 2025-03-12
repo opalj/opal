@@ -11,21 +11,29 @@ package problem
 import org.opalj.ide.problem.IDEValue
 
 /**
- * Type for modeling values for linear constant propagation
+ * Type for modeling values for linear constant propagation.
+ *
+ * @author Robin Körkemeier
  */
 trait LinearConstantPropagationValue extends IDEValue
 
 /**
- * Value not known (yet)
+ * Value not known (yet).
+ *
+ * @author Robin Körkemeier
  */
 case object UnknownValue extends LinearConstantPropagationValue
 
 /**
- * A constant value
+ * A constant value.
+ *
+ * @author Robin Körkemeier
  */
 case class ConstantValue(c: Int) extends LinearConstantPropagationValue
 
 /**
- * Value is variable
+ * Value is variable.
+ *
+ * @author Robin Körkemeier
  */
 case object VariableValue extends LinearConstantPropagationValue

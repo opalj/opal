@@ -8,6 +8,9 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 
+/**
+ * @author Robin Körkemeier
+ */
 package object ide {
 
     final val FrameworkName = "OPAL IDE"

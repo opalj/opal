@@ -25,6 +25,8 @@ import org.opalj.value.ValueInformation
 /**
  * Base interprocedural control flow graph for Java programs. This implementation is based on the
  * [[org.opalj.tac.fpcf.analyses.ifds.JavaICFG]] from IFDS.
+ *
+ * @author Robin Körkemeier
  */
 abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
     private val lazyTacProvider: Method => AITACode[TACMethodParameter, ValueInformation] = {

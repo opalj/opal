@@ -7,7 +7,9 @@ package problem
 import org.opalj.ide.problem.MeetLattice
 
 /**
- * Lattice to use for IFDS problems that are solved with an IDE solver
+ * Lattice to use for IFDS problems that are solved with an IDE solver.
+ *
+ * @author Robin Körkemeier
  */
 object IFDSLattice extends MeetLattice[IFDSValue] {
     override def top: IFDSValue = Top

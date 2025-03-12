@@ -5,6 +5,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.ArrayValue;
 import org.opalj.fpcf.properties.lcp_on_fields.ArrayValues;
 import org.opalj.fpcf.properties.lcp_on_fields.ConstantArrayElement;
 
+/**
+ * An example to test reading and writing array elements in one method.
+ *
+ * @author Robin Körkemeier
+ */
 public class ArrayReadWriteConstantExample {
     @ArrayValues({
             @ArrayValue(variable = "lv1", constantElements = {

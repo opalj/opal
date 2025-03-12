@@ -12,17 +12,23 @@ import org.opalj.br.ObjectType
 import org.opalj.ide.problem.IDEFact
 
 /**
- * Type for modeling facts for linear constant propagation on fields
+ * Type for modeling facts for linear constant propagation on fields.
+ *
+ * @author Robin Körkemeier
  */
 trait LCPOnFieldsFact extends IDEFact
 
 /**
- * Fact to use as null fact
+ * Fact to use as null fact.
+ *
+ * @author Robin Körkemeier
  */
 case object NullFact extends LCPOnFieldsFact
 
 /**
- * Common type for different types of entities
+ * Common type for different types of entities.
+ *
+ * @author Robin Körkemeier
  */
 trait AbstractEntityFact extends LCPOnFieldsFact {
     /**
@@ -38,7 +44,9 @@ trait AbstractEntityFact extends LCPOnFieldsFact {
 }
 
 /**
- * Type for object facts
+ * Type for object facts.
+ *
+ * @author Robin Körkemeier
  */
 trait AbstractObjectFact extends AbstractEntityFact {
     def toObjectFact: ObjectFact = ObjectFact(name, definedAtIndex)
@@ -47,7 +55,9 @@ trait AbstractObjectFact extends AbstractEntityFact {
 }
 
 /**
- * Fact representing a seen object variable
+ * Fact representing a seen object variable.
+ *
+ * @author Robin Körkemeier
  */
 case class ObjectFact(name: String, definedAtIndex: Int) extends AbstractObjectFact {
     override def toObjectFact: ObjectFact = this
@@ -56,22 +66,29 @@ case class ObjectFact(name: String, definedAtIndex: Int) extends AbstractObjectF
 }
 
 /**
- * Fact representing a seen object variable and modeling that it gets initialized
+ * Fact representing a seen object variable and modeling that it gets initialized.
+ *
+ * @author Robin Körkemeier
  */
 case class NewObjectFact(name: String, definedAtIndex: Int) extends AbstractObjectFact {
     override def toString: String = s"NewObjectFact($name)"
 }
 
 /**
- * Fact representing a seen object variable and modeling that one of its fields gets written
+ * Fact representing a seen object variable and modeling that one of its fields gets written.
+ *
  * @param fieldName the name of the field that gets written
+ *
+ * @author Robin Körkemeier
  */
 case class PutFieldFact(name: String, definedAtIndex: Int, fieldName: String) extends AbstractObjectFact {
     override def toString: String = s"PutFieldFact($name, $fieldName)"
 }
 
 /**
- * Type for array facts
+ * Type for array facts.
+ *
+ * @author Robin Körkemeier
  */
 trait AbstractArrayFact extends AbstractEntityFact {
     def toArrayFact: ArrayFact = ArrayFact(name, definedAtIndex)
@@ -80,7 +97,9 @@ trait AbstractArrayFact extends AbstractEntityFact {
 }
 
 /**
- * Fact representing a seen array variable
+ * Fact representing a seen array variable.
+ *
+ * @author Robin Körkemeier
  */
 case class ArrayFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
     override def toArrayFact: ArrayFact = this
@@ -89,21 +108,27 @@ case class ArrayFact(name: String, definedAtIndex: Int) extends AbstractArrayFac
 }
 
 /**
- * Fact representing a seen array variable and modeling that it gets initialized
+ * Fact representing a seen array variable and modeling that it gets initialized.
+ *
+ * @author Robin Körkemeier
  */
 case class NewArrayFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
     override def toString: String = s"NewArrayFact($name)"
 }
 
 /**
- * Fact representing a seen array variable and modeling that one of its elements gets written
+ * Fact representing a seen array variable and modeling that one of its elements gets written.
+ *
+ * @author Robin Körkemeier
  */
 case class PutElementFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
     override def toString: String = s"PutElementFact($name)"
 }
 
 /**
- * Type for facts for static fields
+ * Type for facts for static fields.
+ *
+ * @author Robin Körkemeier
  */
 trait AbstractStaticFieldFact extends LCPOnFieldsFact {
     /**
@@ -120,7 +145,9 @@ trait AbstractStaticFieldFact extends LCPOnFieldsFact {
 }
 
 /**
- * Fact representing a seen static field
+ * Fact representing a seen static field.
+ *
+ * @author Robin Körkemeier
  */
 case class StaticFieldFact(objectType: ObjectType, fieldName: String) extends AbstractStaticFieldFact {
     override def toStaticFieldFact: StaticFieldFact = this
@@ -129,7 +156,9 @@ case class StaticFieldFact(objectType: ObjectType, fieldName: String) extends Ab
 }
 
 /**
- * Fact representing a seen static field and modeling that it gets written
+ * Fact representing a seen static field and modeling that it gets written.
+ *
+ * @author Robin Körkemeier
  */
 case class PutStaticFieldFact(objectType: ObjectType, fieldName: String) extends AbstractStaticFieldFact {
     override def toString: String = s"PutStaticFieldFact(${objectType.simpleName}, $fieldName)"

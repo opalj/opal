@@ -6,6 +6,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.ObjectValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.UnknownValue;
 
+/**
+ * An example to test reading and writing fields of objects across methods.
+ *
+ * @author Robin Körkemeier
+ */
 public class FieldReadWriteAcrossMethodsExample {
     private int a = -2;
 

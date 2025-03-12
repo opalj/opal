@@ -4,17 +4,21 @@ package ide
 package problem
 
 /**
- * Interface representing IDE edge functions
+ * Interface representing IDE edge functions.
+ *
+ * @author Robin Körkemeier
  */
 trait EdgeFunction[Value <: IDEValue] {
     /**
      * Compute the value of the edge function
+     *
      * @param sourceValue the incoming parameter value
      */
     def compute(sourceValue: Value): Value
 
     /**
      * Compose two edge functions
+     *
      * @param secondEdgeFunction the edge function that is applied after this one
      * @return an edge function computing the same values as first applying this edge function and then applying the
      *         result to the second edge function
@@ -33,7 +37,9 @@ trait EdgeFunction[Value <: IDEValue] {
 }
 
 /**
- * Special edge function representing an identity edge function
+ * Special edge function representing an identity edge function.
+ *
+ * @author Robin Körkemeier
  */
 case class IdentityEdgeFunction[Value <: IDEValue]() extends EdgeFunction[Value] {
     override def compute(sourceValue: Value): Value =
@@ -57,6 +63,8 @@ case class IdentityEdgeFunction[Value <: IDEValue]() extends EdgeFunction[Value]
 /**
  * Special edge function representing an edge function where all source values evaluate to the top element. Implementing
  * [[composeWith]] is left to the user, as it requires knowledge of the other possible edge functions.
+ *
+ * @author Robin Körkemeier
  */
 abstract case class AllTopEdgeFunction[Value <: IDEValue](private val top: Value) extends EdgeFunction[Value] {
     override def compute(sourceValue: Value): Value =
@@ -78,6 +86,8 @@ abstract case class AllTopEdgeFunction[Value <: IDEValue](private val top: Value
 /**
  * Special edge function representing an edge function where all source values evaluate to the bottom element.
  * Implementing [[composeWith]] is left to the user, as it requires knowledge of the other possible edge functions.
+ *
+ * @author Robin Körkemeier
  */
 abstract case class AllBottomEdgeFunction[Value <: IDEValue](private val bottom: Value) extends EdgeFunction[Value] {
     override def compute(sourceValue: Value): Value =

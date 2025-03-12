@@ -16,6 +16,8 @@ import org.opalj.br.analyses.SomeProject
 /**
  * Interprocedural control flow graph for Java programs in forward direction. This implementation is based on the
  * [[org.opalj.tac.fpcf.analyses.ifds.JavaForwardICFG]] from IFDS.
+ *
+ * @author Robin Körkemeier
  */
 class JavaForwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
     override def getStartStatements(callable: Method): collection.Set[JavaStatement] = {

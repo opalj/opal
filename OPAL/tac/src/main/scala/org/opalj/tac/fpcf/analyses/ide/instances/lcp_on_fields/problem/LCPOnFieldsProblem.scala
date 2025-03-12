@@ -44,6 +44,8 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
  * method where the value is passed as an argument (e.g. a classical setter). Similar, array read accesses can only be
  * resolved if the index is a constant literal. There also is just minimal support for static fields.
  * This implementation is mainly intended to be an example of a cyclic IDE analysis.
+ *
+ * @author Robin Körkemeier
  */
 class LCPOnFieldsProblem(
     project: SomeProject,
@@ -63,8 +65,10 @@ class LCPOnFieldsProblem(
         (if (callee.isStatic) {
              immutable.Set.empty
          } else {
+             /* Add fact for `this` */
              immutable.Set(ObjectFact("param0", -1))
          }) ++
+            /* Add facts for other parameters */
             callee.parameterTypes
                 .zipWithIndex
                 .filter { case (paramType, _) => paramType.isObjectType || paramType.isArrayType }
@@ -76,6 +80,7 @@ class LCPOnFieldsProblem(
                     }
                 }
                 .toSet ++
+            /* Add facts for static fields of class */
             callee.classFile
                 .fields
                 .filter(_.isStatic)
@@ -720,6 +725,7 @@ class LCPOnFieldsProblem(
                     ) {
                         identityEdgeFunction
                     } else {
+                        /* It is unknown what the callee does with the object */
                         VariableValueEdgeFunction
                     }
 

@@ -13,7 +13,9 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 
 /**
- * Interface for modeling IDE problems
+ * Interface for modeling IDE problems.
+ *
+ * @author Robin Körkemeier
  */
 abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity] {
     implicit def edgeFunctionToFinalEdgeFunction(edgeFunction: EdgeFunction[Value]): EdgeFunctionResult[Value] = {
@@ -44,6 +46,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * Add additional facts that the analysis should be seeded with. Traditionally, IDE starts with the null fact at the
      * start statements of the callable. E.g. additional seeds can be used for adding facts about the parameters of the
      * analyzed callable.
+     *
      * @param stmt the start statement
      * @param callee the analyzed callable
      */
@@ -52,7 +55,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     ): collection.Set[Fact] = immutable.Set.empty
 
     /**
-     * Generate an edge function for a flow starting with an additional seeds
+     * Generate an edge function for a flow starting with an additional seeds.
+     *
      * @param stmt the start statement
      * @param fact the start fact
      * @param callee the analyzed callable
@@ -62,7 +66,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     ): EdgeFunctionResult[Value] = identityEdgeFunction
 
     /**
-     * Generate a flow function for a normal flow
+     * Generate a flow function for a normal flow.
+     *
      * @param source where the normal flow starts
      * @param sourceFact the fact the flow starts with
      * @param target where the normal flow ends
@@ -72,7 +77,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     ): FlowFunction[Fact]
 
     /**
-     * Generate a flow function for a call flow
+     * Generate a flow function for a call flow.
+     *
      * @param callSite where the call flow starts (always a call statement)
      * @param callSiteFact the fact the flow starts with
      * @param calleeEntry where the callable starts (the statement which the callable is started with)
@@ -83,7 +89,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     ): FlowFunction[Fact]
 
     /**
-     * Generate a flow function for a return flow
+     * Generate a flow function for a return flow.
+     *
      * @param calleeExit where the return flow starts (the statement the callable is exited with)
      * @param calleeExitFact the fact the flow starts with
      * @param callee the callable that is returned from
@@ -103,7 +110,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     ): FlowFunction[Fact]
 
     /**
-     * Generate a flow function for a call-to-return flow
+     * Generate a flow function for a call-to-return flow.
+     *
      * @param callSite where the call-to-return flow starts (always a call statement)
      * @param callSiteFact the fact the flow starts with
      * @param callee the callable this flow is about
@@ -114,7 +122,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     ): FlowFunction[Fact]
 
     /**
-     * Generate an edge function for a normal flow
+     * Generate an edge function for a normal flow.
+     *
      * @param source where the normal flow starts
      * @param sourceFact the fact the flow starts with
      * @param target where the normal flow ends
@@ -128,7 +137,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value]
 
     /**
-     * Generate an edge function for a call flow
+     * Generate an edge function for a call flow.
+     *
      * @param callSite where the call flow starts (always a call statement)
      * @param callSiteFact the fact the flow starts with
      * @param calleeEntry where the callable starts (the statement which the callable is started with)
@@ -144,7 +154,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value]
 
     /**
-     * Generate an edge function for a return flow
+     * Generate an edge function for a return flow.
+     *
      * @param calleeExit where the return flow starts (the statement the callable is exited with)
      * @param calleeExitFact the fact the flow starts with
      * @param callee the callable that is returned from
@@ -164,7 +175,8 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[Value]
 
     /**
-     * Generate an edge function for a call-to-return flow
+     * Generate an edge function for a call-to-return flow.
+     *
      * @param callSite where the call-to-return flow starts (always a call statement)
      * @param callSiteFact the fact the flow starts with
      * @param callee the callable this flow is about
@@ -182,6 +194,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     /**
      * Whether precomputed flow and summary functions for a `(callSite, callSiteFact, callee)` combination exist
      * (resp. can be generated).
+     *
      * @param callSite where the flow starts
      * @param callSiteFact the fact the flow starts with
      * @param callee the callable this flow is about
@@ -196,6 +209,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * Generate a flow function that yields the facts that are valid when going through the callable and reaching the
      * return site. Similar to a call-to-return flow (cfg. [[getCallToReturnFlowFunction]]) but capturing the effects
      * that flow through the callable.
+     *
      * @param callSite where the flow starts (always a call statement)
      * @param callSiteFact the fact the flow starts with
      * @param callee the callable this flow is about
@@ -215,6 +229,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     /**
      * Generate a summary function from a call-site node up to a return-site node (just what summary functions are in
      * the foundation paper, but in one step).
+     *
      * @param callSite where the flow starts (always a call statement)
      * @param callSiteFact the fact the flow starts with
      * @param callee the callable the flow is about
@@ -240,6 +255,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      * Generate a flow function that yields the facts that are valid when going through the unknown callable and
      * reaching the return site. Similar to a call-to-return flow (cfg. [[getCallToReturnFlowFunction]]) but capturing
      * the effects that flow through the possible callables.
+     *
      * @param callSite where the flow starts (always a call statement)
      * @param callSiteFact the fact the flow starts with
      * @param returnSite where the flow ends (e.g. the next statement after the call)
@@ -258,6 +274,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     /**
      * Generate a summary function from a call-site node up to a return-site node (just what summary functions are in
      * the foundation paper, but in one step and for all callables that are possible call targets).
+     *
      * @param callSite where the flow starts (always a call statement)
      * @param callSiteFact the fact the flow starts with
      * @param returnSite where the flow ends (e.g. the next statement after the call)

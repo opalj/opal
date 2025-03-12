@@ -20,7 +20,9 @@ import org.opalj.ide.problem.IDEValue
 import org.opalj.ide.solver.IDEAnalysisProxy
 
 /**
- * Base scheduler to schedule the proxy analysis that is used to access the IDE analysis results
+ * Base scheduler to schedule the proxy analysis that is used to access the IDE analysis results.
+ *
+ * @author Robin Körkemeier
  */
 trait BaseIDEAnalysisProxyScheduler[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity]
     extends FPCFAnalysisScheduler {

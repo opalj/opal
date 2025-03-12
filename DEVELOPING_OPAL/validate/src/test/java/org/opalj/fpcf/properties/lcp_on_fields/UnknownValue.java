@@ -6,7 +6,9 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import java.lang.annotation.*;
 
 /**
- * Annotation to state that a variables value is unknown
+ * Annotation to state that a variables value is unknown.
+ *
+ * @author Robin Körkemeier
  */
 @PropertyValidator(key = LCPOnFieldsProperty.KEY, validator = UnknownValueMatcher.class)
 @Repeatable(UnknownValues.class)

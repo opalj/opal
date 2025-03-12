@@ -13,6 +13,8 @@ import org.opalj.ide.problem.IDEFact
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 
 /**
- * Specialized IFDS problem for Java programs based on an IDE problem
+ * Specialized IFDS problem for Java programs based on an IDE problem.
+ *
+ * @author Robin Körkemeier
  */
 abstract class JavaIFDSProblem[Fact <: IDEFact] extends IFDSProblem[Fact, JavaStatement, Method]

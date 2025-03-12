@@ -37,6 +37,8 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.V
 /**
  * Extended definition of the linear constant propagation problem, trying to resolve field accesses with the LCP on
  * fields analysis.
+ *
+ * @author Robin Körkemeier
  */
 class LinearConstantPropagationProblemExtended extends LinearConstantPropagationProblem {
     override def isArrayLoadExpressionGeneratedByFact(

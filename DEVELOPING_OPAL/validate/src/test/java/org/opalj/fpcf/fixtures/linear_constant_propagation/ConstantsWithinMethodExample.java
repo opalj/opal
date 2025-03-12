@@ -4,6 +4,11 @@ package org.opalj.fpcf.fixtures.linear_constant_propagation;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValues;
 
+/**
+ * An example to test constants (simple and linear) in a single method.
+ *
+ * @author Robin Körkemeier
+ */
 public class ConstantsWithinMethodExample {
     @ConstantValues({
             @ConstantValue(variable = "lv0", value = 4),

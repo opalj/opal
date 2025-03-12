@@ -37,8 +37,11 @@ import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.ide.util.Logging
 
 /**
- * Basic solver for IDE problems. Uses the exhaustive/forward algorithm that was presented in the original IDE paper
- * from 1996 as base.
+ * Basic solver for IDE problems. Uses the exhaustive algorithm that was presented in the original IDE paper from 1996
+ * as base. For an example problem have a look at `LinearConstantPropagationProblem` in the TAC module. For an example
+ * of interacting IDE problems have a look at `LCPOnFieldsProblem` and `LinearConstantPropagationProblemExtended`.
+ *
+ * @author Robin Körkemeier
  */
 class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
     val project:                 SomeProject,
@@ -79,7 +82,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
-     * Container class for simpler interaction and passing of the 'shared' data
+     * Container class for simpler interaction and passing of the shared data
      */
     private class State(
         initialTargetCallablesEOptionP: EOptionP[
@@ -87,6 +90,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             IDETargetCallablesProperty[Callable]
         ]
     ) {
+        /**
+         * Collection of callables to compute results for. Used to optimize solver computation.
+         */
         private val targetCallables = mutable.Set.empty[Callable]
 
         private var targetCallablesEOptionP: EOptionP[
@@ -135,7 +141,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         private val nodeWorkList: NodeWorkList = mutable.Queue.empty
 
         /**
-         * Store all calculated (intermediate) values
+         * Store all calculated (intermediate) values. Associated by callable for performant access.
          */
         private val values: mutable.Map[Callable, Values] = mutable.Map.empty
 
@@ -370,6 +376,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     /**
      * Run the IDE solver and calculate (and return) the result. This method should only be triggered in combination
      * with the IDE proxy!
+     *
      * @param entity Expected to be `None`. Other values do not cause errors but will only return empty (temporary)
      *               results.
      * @return a result for each statement of the target callables plus one result for each target callable itself
@@ -970,8 +977,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
-     * Collect all statements that are reachable from a certain start set of statements
-     * @param originStmts the statements to start searchgin from
+     * Collect all statements that are reachable from a certain start set of statements.
+     *
+     * @param originStmts the statements to start searching from
      * @param filterPredicate an additional predicate the collected statements have to fulfill
      */
     private def collectReachableStmts(

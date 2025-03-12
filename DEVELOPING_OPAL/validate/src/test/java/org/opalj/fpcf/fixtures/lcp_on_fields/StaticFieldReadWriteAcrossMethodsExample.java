@@ -5,6 +5,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.StaticValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValues;
 
+/**
+ * An example to test reading and writing private static fields across methods.
+ *
+ * @author Robin Körkemeier
+ */
 public class StaticFieldReadWriteAcrossMethodsExample {
     private static int a;
 

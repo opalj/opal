@@ -4,6 +4,11 @@ package org.opalj.fpcf.fixtures.linear_constant_propagation;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValues;
 
+/**
+ * An example to test detection of variable values within a method.
+ *
+ * @author Robin Körkemeier
+ */
 public class VariablesWithinMethodExample {
     @VariableValues({
             @VariableValue(variable = "lv0"),

@@ -14,6 +14,11 @@ import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 
+/**
+ * Test runner for linear constant propagation on fields.
+ *
+ * @author Robin Körkemeier
+ */
 class LCPOnFieldsTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
         List("org/opalj/fpcf/fixtures/lcp_on_fields")

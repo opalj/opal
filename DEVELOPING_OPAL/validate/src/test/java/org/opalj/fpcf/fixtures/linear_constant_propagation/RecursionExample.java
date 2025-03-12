@@ -3,6 +3,11 @@ package org.opalj.fpcf.fixtures.linear_constant_propagation;
 
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 
+/**
+ * An example to test behavior of IDE solver when encountering recursion.
+ *
+ * @author Robin Körkemeier
+ */
 public class RecursionExample {
     public static int recursive1(int a) {
         if (a > 0) {

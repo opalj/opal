@@ -7,7 +7,9 @@ package problem
 import org.opalj.ide.problem.EdgeFunction
 
 /**
- * Edge function evaluating all source values to the bottom value
+ * Edge function evaluating all source values to the bottom value.
+ *
+ * @author Robin Körkemeier
  */
 object AllBottomEdgeFunction extends org.opalj.ide.problem.AllBottomEdgeFunction[IFDSValue](Bottom) {
     override def composeWith(secondEdgeFunction: EdgeFunction[IFDSValue]): EdgeFunction[IFDSValue] = {

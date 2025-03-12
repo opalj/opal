@@ -13,6 +13,8 @@ import org.opalj.ide.problem.IDEValue
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 
 /**
- * Specialized IDE problem for Java programs
+ * Specialized IDE problem for Java programs.
+ *
+ * @author Robin Körkemeier
  */
 abstract class JavaIDEProblem[Fact <: IDEFact, Value <: IDEValue] extends IDEProblem[Fact, Value, JavaStatement, Method]

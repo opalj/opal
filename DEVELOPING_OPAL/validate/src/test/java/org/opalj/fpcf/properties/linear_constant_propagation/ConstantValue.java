@@ -6,7 +6,9 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import java.lang.annotation.*;
 
 /**
- * Annotation to state that a variable has a constant value
+ * Annotation to state that a variable has a constant value.
+ *
+ * @author Robin Körkemeier
  */
 @PropertyValidator(key = LinearConstantPropagationProperty.KEY, validator = ConstantValueMatcher.class)
 @Repeatable(ConstantValues.class)

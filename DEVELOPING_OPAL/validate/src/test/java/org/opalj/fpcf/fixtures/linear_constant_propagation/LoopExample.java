@@ -4,6 +4,11 @@ package org.opalj.fpcf.fixtures.linear_constant_propagation;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 
+/**
+ * An example to test behavior of IDE solver on loop constructs.
+ *
+ * @author Robin Körkemeier
+ */
 public class LoopExample {
     public static int loop1(int a) {
         int res = 0;

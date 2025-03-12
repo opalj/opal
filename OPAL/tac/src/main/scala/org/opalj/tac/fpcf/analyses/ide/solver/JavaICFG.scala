@@ -10,6 +10,8 @@ import org.opalj.br.Method
 import org.opalj.ide.solver.ICFG
 
 /**
- * Interprocedural control flow graph for Java programs
+ * Interprocedural control flow graph for Java programs.
+ *
+ * @author Robin Körkemeier
  */
 trait JavaICFG extends ICFG[JavaStatement, Method]

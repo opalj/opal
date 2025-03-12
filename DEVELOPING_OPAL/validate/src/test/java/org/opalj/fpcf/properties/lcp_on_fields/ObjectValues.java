@@ -6,7 +6,9 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import java.lang.annotation.*;
 
 /**
- * Container annotation for {@link ObjectValue} annotations
+ * Container annotation for {@link ObjectValue} annotations.
+ *
+ * @author Robin Körkemeier
  */
 @PropertyValidator(key = LCPOnFieldsProperty.KEY, validator = ObjectValueMatcher.class)
 @Documented

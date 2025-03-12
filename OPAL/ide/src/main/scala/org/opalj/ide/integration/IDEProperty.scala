@@ -11,14 +11,19 @@ import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEValue
 
 /**
- * Base interface of properties that are produced by an IDE analysis
+ * Base interface of properties that are produced by an IDE analysis.
+ *
+ * @author Robin Körkemeier
  */
 trait IDEProperty[Fact <: IDEFact, Value <: IDEValue] extends Property
 
 /**
- * Basic implementation of [[IDEProperty]] that simply wraps the fact-value results of an IDE analysis
+ * Basic implementation of [[IDEProperty]] that simply wraps the fact-value results of an IDE analysis.
+ *
  * @param key the property key
  * @param results the results produced by the analysis
+ *
+ * @author Robin Körkemeier
  */
 class BasicIDEProperty[Fact <: IDEFact, Value <: IDEValue](
     val key:     PropertyKey[BasicIDEProperty[Fact, Value]],

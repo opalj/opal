@@ -13,7 +13,10 @@ import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 
 /**
- * Matcher for [[ObjectValue]] and [[ObjectValues]] annotations
+ * Matcher for [[org.opalj.fpcf.properties.lcp_on_fields.ObjectValue]] and
+ * [[org.opalj.fpcf.properties.lcp_on_fields.ObjectValues]] annotations.
+ *
+ * @author Robin Körkemeier
  */
 class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher {
     override val singleAnnotationType: ObjectType =
@@ -119,7 +122,10 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher {
 }
 
 /**
- * Matcher for [[ArrayValue]] and [[ArrayValues]] annotations
+ * Matcher for [[org.opalj.fpcf.properties.lcp_on_fields.ArrayValue]] and
+ * [[org.opalj.fpcf.properties.lcp_on_fields.ArrayValues]] annotations.
+ *
+ * @author Robin Körkemeier
  */
 class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher {
     override val singleAnnotationType: ObjectType =
@@ -234,7 +240,9 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher {
 }
 
 /**
- * Matcher for [[StaticValues]] annotations
+ * Matcher for [[org.opalj.fpcf.properties.lcp_on_fields.StaticValues]] annotations.
+ *
+ * @author Robin Körkemeier
  */
 class StaticValuesMatcher extends AbstractPropertyMatcher {
     private val annotationType: ObjectType =
@@ -355,7 +363,10 @@ class StaticValuesMatcher extends AbstractPropertyMatcher {
 }
 
 /**
- * Matcher for [[VariableValue]] and [[VariableValues]] annotations
+ * Matcher for [[org.opalj.fpcf.properties.lcp_on_fields.VariableValue]] and
+ * [[org.opalj.fpcf.properties.lcp_on_fields.VariableValues]] annotations.
+ *
+ * @author Robin Körkemeier
  */
 class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
     override val singleAnnotationType: ObjectType =
@@ -403,7 +414,10 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
 }
 
 /**
- * Matcher for [[UnknownValue]] and [[UnknownValues]] annotations
+ * Matcher for [[org.opalj.fpcf.properties.lcp_on_fields.UnknownValue]] and
+ * [[org.opalj.fpcf.properties.lcp_on_fields.UnknownValues]] annotations.
+ *
+ * @author Robin Körkemeier
  */
 class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher {
     override val singleAnnotationType: ObjectType =

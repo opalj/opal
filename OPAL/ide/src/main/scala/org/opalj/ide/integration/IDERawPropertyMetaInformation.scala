@@ -11,7 +11,10 @@ import org.opalj.ide.problem.IDEValue
 /**
  * Class for property meta information for properties that are created by IDE analyses directly (also called 'raw').
  * The property type is fixed to [[IDERawProperty]].
+ *
  * @param propertyMetaInformation the property meta information this object should be backing
+ *
+ * @author Robin Körkemeier
  */
 final class IDERawPropertyMetaInformation[Fact <: IDEFact, Value <: IDEValue, Statement](
     propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, ?]

@@ -6,6 +6,11 @@ import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 
+/**
+ * An example to test detection of static immutable fields.
+ *
+ * @author Robin Körkemeier
+ */
 public final class StaticFieldImmutableExample {
     protected static int a = 42;
     static int b;

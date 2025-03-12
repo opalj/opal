@@ -11,7 +11,9 @@ package problem
 import org.opalj.ide.problem.MeetLattice
 
 /**
- * Lattice used for linear constant propagation
+ * Lattice used for linear constant propagation.
+ *
+ * @author Robin Körkemeier
  */
 object LinearConstantPropagationLattice extends MeetLattice[LinearConstantPropagationValue] {
     override def top: LinearConstantPropagationValue = UnknownValue

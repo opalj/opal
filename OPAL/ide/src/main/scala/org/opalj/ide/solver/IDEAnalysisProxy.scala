@@ -29,6 +29,8 @@ import org.opalj.ide.util.Logging
  * The [[IDEAnalysis]] solver runs on callables only and additionally produces results for each statement of that
  * callable. This proxy analysis reduces all analysis requests to the callable and then forward it to the actual IDE
  * solver.
+ *
+ * @author Robin Körkemeier
  */
 class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
     val project:                 SomeProject,
@@ -74,6 +76,7 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
                             IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
                             IDETargetCallablesProperty[Callable]
                         ]) =>
+                            /* Add target callable if not yet part of the set */
                             if (!eOptionP.hasUBP) {
                                 Some(InterimEUBP(
                                     propertyMetaInformation,

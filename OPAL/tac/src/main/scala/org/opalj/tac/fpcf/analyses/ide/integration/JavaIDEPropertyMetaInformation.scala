@@ -13,7 +13,9 @@ import org.opalj.ide.problem.IDEValue
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 
 /**
- * Specialized property meta information for IDE problems with Java programs
+ * Specialized property meta information for IDE problems with Java programs.
+ *
+ * @author Robin Körkemeier
  */
 trait JavaIDEPropertyMetaInformation[Fact <: IDEFact, Value <: IDEValue]
     extends IDEPropertyMetaInformation[Fact, Value, JavaStatement, Method]

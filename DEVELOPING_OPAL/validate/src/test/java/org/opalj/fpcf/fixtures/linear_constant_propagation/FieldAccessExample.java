@@ -4,6 +4,11 @@ package org.opalj.fpcf.fixtures.linear_constant_propagation;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValues;
 
+/**
+ * An example to test field accesses are detected by classical linear constant propagation.
+ *
+ * @author Robin Körkemeier
+ */
 public class FieldAccessExample {
     private final int a;
     int b;

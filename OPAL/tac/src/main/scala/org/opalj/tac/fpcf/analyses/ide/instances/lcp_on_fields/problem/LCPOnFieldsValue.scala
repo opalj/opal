@@ -14,17 +14,23 @@ import org.opalj.ide.problem.IDEValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
 
 /**
- * Type for modeling values for linear constant propagation on fields
+ * Type for modeling values for linear constant propagation on fields.
+ *
+ * @author Robin Körkemeier
  */
 trait LCPOnFieldsValue extends IDEValue
 
 /**
- * Value not known (yet)
+ * Value not known (yet).
+ *
+ * @author Robin Körkemeier
  */
 case object UnknownValue extends LCPOnFieldsValue
 
 /**
- * Value representing the state of an object
+ * Value representing the state of an object.
+ *
+ * @author Robin Körkemeier
  */
 case class ObjectValue(values: immutable.Map[String, LinearConstantPropagationValue]) extends LCPOnFieldsValue {
     override def toString: String =
@@ -32,7 +38,9 @@ case class ObjectValue(values: immutable.Map[String, LinearConstantPropagationVa
 }
 
 /**
- * Value representing the state of an array
+ * Value representing the state of an array.
+ *
+ * @author Robin Körkemeier
  */
 case class ArrayValue(
     initValue: LinearConstantPropagationValue,
@@ -43,7 +51,9 @@ case class ArrayValue(
 }
 
 /**
- * Value representing the value of a static field
+ * Value representing the value of a static field.
+ *
+ * @author Robin Körkemeier
  */
 case class StaticFieldValue(
     value: LinearConstantPropagationValue
@@ -52,6 +62,8 @@ case class StaticFieldValue(
 }
 
 /**
- * Value is variable (not really used currently, mainly for completeness)
+ * Value is variable (not really used currently, mainly for completeness).
+ *
+ * @author Robin Körkemeier
  */
 case object VariableValue extends LCPOnFieldsValue

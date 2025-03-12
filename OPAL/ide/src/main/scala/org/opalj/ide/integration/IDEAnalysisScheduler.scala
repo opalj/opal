@@ -20,7 +20,9 @@ import org.opalj.ide.solver.ICFG
 import org.opalj.ide.solver.IDEAnalysis
 
 /**
- * A base scheduler for IDE analyses adding common default behavior
+ * A base scheduler for IDE analyses adding common default behavior.
+ *
+ * @author Robin Körkemeier
  */
 abstract class IDEAnalysisScheduler[
     Fact <: IDEFact,

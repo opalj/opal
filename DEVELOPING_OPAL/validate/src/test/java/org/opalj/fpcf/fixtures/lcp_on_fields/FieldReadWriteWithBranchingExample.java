@@ -6,6 +6,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.ObjectValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 
+/**
+ * An example to test reading and writing object fields in presence of if-then-else constructs.
+ *
+ * @author Robin Körkemeier
+ */
 public class FieldReadWriteWithBranchingExample {
     private int a = -1;
 

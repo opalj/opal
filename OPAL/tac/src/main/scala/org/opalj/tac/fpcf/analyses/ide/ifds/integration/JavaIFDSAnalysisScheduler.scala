@@ -15,7 +15,9 @@ import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 
 /**
- * Specialized IDE analysis scheduler for IFDS problems with Java programs
+ * Specialized IDE analysis scheduler for IFDS problems with Java programs.
+ *
+ * @author Robin Körkemeier
  */
 abstract class JavaIFDSAnalysisScheduler[Fact <: IDEFact] extends JavaIDEAnalysisSchedulerBase[Fact, IFDSValue] {
     override def propertyMetaInformation: JavaIFDSPropertyMetaInformation[Fact]

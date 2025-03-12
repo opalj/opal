@@ -9,7 +9,9 @@ import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 import java.lang.annotation.*;
 
 /**
- * Annotation to state that an object has been identified and has certain constant and non-constant values
+ * Annotation to state that an object has been identified and has certain constant and non-constant values.
+ *
+ * @author Robin Körkemeier
  */
 @PropertyValidator(key = LCPOnFieldsProperty.KEY, validator = ObjectValueMatcher.class)
 @Repeatable(ObjectValues.class)

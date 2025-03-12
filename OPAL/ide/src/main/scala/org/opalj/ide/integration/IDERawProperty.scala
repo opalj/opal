@@ -12,9 +12,12 @@ import org.opalj.ide.problem.IDEValue
 
 /**
  * Class representing a property that is directly created by an IDE analysis.
+ *
  * @param key the property key (very likely taken from an [[IDERawPropertyMetaInformation]] instance)
  * @param stmtResults the raw statement results produced by the analysis
  * @param callableResults the raw callable results produced by the analysis
+ *
+ * @author Robin Körkemeier
  */
 class IDERawProperty[Fact <: IDEFact, Value <: IDEValue, Statement](
     val key:             PropertyKey[IDERawProperty[Fact, Value, Statement]],

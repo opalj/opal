@@ -6,6 +6,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.ObjectValues;
 import org.opalj.fpcf.properties.lcp_on_fields.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 
+/**
+ * An example to test conservative handling of objects when encountering native methods.
+ *
+ * @author Robin Körkemeier
+ */
 public class ObjectNativeMethodExample {
     int a = 2;
 

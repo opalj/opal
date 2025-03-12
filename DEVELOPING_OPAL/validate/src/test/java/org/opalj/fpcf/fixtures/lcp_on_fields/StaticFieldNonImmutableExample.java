@@ -5,6 +5,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.StaticValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValues;
 
+/**
+ * An example to test detection of static but non-immutable fields.
+ *
+ * @author Robin Körkemeier
+ */
 public class StaticFieldNonImmutableExample {
     static int a = 42;
     protected static int b = 23;

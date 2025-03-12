@@ -12,7 +12,9 @@ import org.opalj.ide.problem.MeetLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice
 
 /**
- * Lattice used for linear constant propagation on fields
+ * Lattice used for linear constant propagation on fields.
+ *
+ * @author Robin Körkemeier
  */
 object LCPOnFieldsLattice extends MeetLattice[LCPOnFieldsValue] {
     override def top: LCPOnFieldsValue = UnknownValue

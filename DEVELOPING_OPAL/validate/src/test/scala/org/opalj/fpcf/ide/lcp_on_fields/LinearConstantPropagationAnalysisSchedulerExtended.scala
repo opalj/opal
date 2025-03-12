@@ -7,5 +7,12 @@ package lcp_on_fields
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LinearConstantPropagationAnalysisSchedulerExtended
 import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
 
+/**
+ * Scheduler for
+ * [[org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LinearConstantPropagationProblemExtended]] for Java
+ * using RTA call graph.
+ *
+ * @author Robin Körkemeier
+ */
 object LinearConstantPropagationAnalysisSchedulerExtended
     extends LinearConstantPropagationAnalysisSchedulerExtended with JavaIDEAnalysisSchedulerBase.RTACallGraph

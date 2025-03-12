@@ -9,7 +9,9 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 /**
- * Logging extension for IDE
+ * Logging extension for IDE.
+ *
+ * @author Robin Körkemeier
  */
 trait Logging {
     /**

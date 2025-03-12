@@ -4,6 +4,8 @@ package ide
 package problem
 
 /**
- * Interface representing IDE values
+ * Interface representing IDE values.
+ *
+ * @author Robin Körkemeier
  */
 trait IDEValue

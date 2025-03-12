@@ -15,8 +15,11 @@ import org.opalj.ide.problem.IDEValue
 import org.opalj.ide.solver.IDEAnalysisProxy
 
 /**
- * A scheduler to (eagerly) schedule the proxy analysis that is used to access the IDE analysis results
+ * A scheduler to (eagerly) schedule the proxy analysis that is used to access the IDE analysis results.
+ *
  * @param methodProvider for which methods the results should be computed eagerly
+ *
+ * @author Robin Körkemeier
  */
 class EagerIDEAnalysisProxyScheduler[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
     val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable],

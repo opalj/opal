@@ -7,6 +7,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.VariableArrayElement;
 import org.opalj.fpcf.properties.linear_constant_propagation.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.VariableValue;
 
+/**
+ * An example to test reading and writing of arrays at an unknown index.
+ *
+ * @author Robin Körkemeier
+ */
 public class ArrayUnknownIndicesExample {
     @ArrayValue(variable = "lv1", variableElements = {
             @VariableArrayElement(index = 0),

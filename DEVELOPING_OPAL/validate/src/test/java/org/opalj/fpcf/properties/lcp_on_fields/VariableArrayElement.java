@@ -6,7 +6,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to state that an array element has a non-constant value
+ * Annotation to state that an array element has a non-constant value.
+ *
+ * @author Robin Körkemeier
  */
 @Documented
 @Target(ElementType.ANNOTATION_TYPE)

@@ -13,7 +13,9 @@ import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LCPOnFiel
 import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEPropertyMetaInformation
 
 /**
- * Meta information for linear constant propagation on fields
+ * Meta information for linear constant propagation on fields.
+ *
+ * @author Robin Körkemeier
  */
 object LCPOnFieldsPropertyMetaInformation
     extends JavaIDEPropertyMetaInformation[LCPOnFieldsFact, LCPOnFieldsValue] {

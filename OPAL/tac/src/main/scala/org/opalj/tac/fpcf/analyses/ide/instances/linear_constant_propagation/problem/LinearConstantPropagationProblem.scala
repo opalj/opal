@@ -26,7 +26,9 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
 
 /**
- * Definition of the linear constant propagation problem
+ * Definition of the linear constant propagation problem.
+ *
+ * @author Robin Körkemeier
  */
 class LinearConstantPropagationProblem
     extends JavaIDEProblem[LinearConstantPropagationFact, LinearConstantPropagationValue] {

@@ -12,9 +12,12 @@ import org.opalj.br.cfg.CFG
 import org.opalj.value.ValueInformation
 
 /**
- * Class to model statements used with IDE analyses
+ * Class to model statements used with IDE analyses.
+ *
  * @param pc the pc of the statement in the code
  * @param isReturnNode whether the statement models the return node of a call
+ *
+ * @author Robin Körkemeier
  */
 case class JavaStatement(
     method:       Method,

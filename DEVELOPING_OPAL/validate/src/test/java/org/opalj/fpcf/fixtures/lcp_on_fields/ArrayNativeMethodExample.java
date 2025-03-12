@@ -6,6 +6,11 @@ import org.opalj.fpcf.properties.lcp_on_fields.ArrayValues;
 import org.opalj.fpcf.properties.lcp_on_fields.ConstantArrayElement;
 import org.opalj.fpcf.properties.lcp_on_fields.VariableArrayElement;
 
+/**
+ * An example to test conservative handling of array elements in native method calls.
+ *
+ * @author Robin Körkemeier
+ */
 public class ArrayNativeMethodExample {
     @ArrayValues({
             @ArrayValue(variable = "lv1", variableElements = {

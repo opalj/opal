@@ -8,7 +8,9 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 
 /**
- * Property matcher for repeatable annotations
+ * Basic property matcher for repeatable annotations.
+ *
+ * @author Robin Körkemeier
  */
 abstract class AbstractRepeatablePropertyMatcher extends AbstractPropertyMatcher {
     /**

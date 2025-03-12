@@ -3,6 +3,11 @@ package org.opalj.fpcf.fixtures.lcp_on_fields;
 
 import org.opalj.fpcf.properties.lcp_on_fields.*;
 
+/**
+ * An example to test reading and writing array elements across methods.
+ *
+ * @author Robin Körkemeier
+ */
 public class ArrayReadWriteAcrossMethodsExample {
     public void setIndexTo23(int[] arr, int index) {
         arr[index] = 23;

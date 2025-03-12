@@ -10,7 +10,9 @@ import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.ide.problem.IDEFact
 
 /**
- * Interface for property meta information for IFDS problems based on an IDE problem
+ * Interface for property meta information for IFDS problems based on an IDE problem.
+ *
+ * @author Robin Körkemeier
  */
 trait IFDSPropertyMetaInformation[Fact <: IDEFact, Statement, Callable <: Entity]
     extends IDEPropertyMetaInformation[Fact, IFDSValue, Statement, Callable]

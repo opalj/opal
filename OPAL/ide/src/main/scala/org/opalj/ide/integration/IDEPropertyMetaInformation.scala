@@ -12,6 +12,8 @@ import org.opalj.ide.problem.IDEValue
 
 /**
  * Base interface of property meta information of IDE analyses. Creates [[BasicIDEProperty]] by default.
+ *
+ * @author Robin Körkemeier
  */
 trait IDEPropertyMetaInformation[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity]
     extends PropertyMetaInformation {
@@ -31,6 +33,7 @@ trait IDEPropertyMetaInformation[Fact <: IDEFact, Value <: IDEValue, Statement, 
 
     /**
      * Create a property
+     *
      * @param results the results the property should represent
      */
     def createProperty(

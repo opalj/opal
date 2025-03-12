@@ -11,6 +11,11 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.solver.ICFG
 
+/**
+ * Different modes to record flow.
+ *
+ * @author Robin Körkemeier
+ */
 object FlowRecorderModes extends Enumeration {
     type FlowRecorderMode = Value
 
@@ -29,9 +34,12 @@ object FlowRecorderModes extends Enumeration {
  * given base problem as graph and writes it to a file in DOT format.
  * DOT files can either be viewed with a suitable local program or online e.g. at
  * [[https://dreampuf.github.io/GraphvizOnline]].
+ *
  * @param baseProblem the base problem that defines the flows and edge functions that should be analyzed
  * @param uniqueFlowsOnly whether to drop or to keep duplicated flows
  * @param recordEdgeFunctions whether to record edge functions too or just stick with the flow
+ *
+ * @author Robin Körkemeier
  */
 class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
     val baseProblem:         IDEProblem[Fact, Value, Statement, Callable],
@@ -301,6 +309,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
 
     /**
      * Start recording
+     *
      * @param writer to write the graph to
      */
     def startRecording(writer: Writer): Unit = {
