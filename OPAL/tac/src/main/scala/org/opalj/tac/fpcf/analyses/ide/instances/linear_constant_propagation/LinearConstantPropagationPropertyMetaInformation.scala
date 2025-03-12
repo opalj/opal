@@ -1,5 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package instances
+package linear_constant_propagation
 
 import org.opalj.fpcf.PropertyKey
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationFact

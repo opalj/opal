@@ -1,7 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ide.problem
+package org.opalj
+package ide
+package problem
 
 import java.io.Writer
+import scala.collection
 import scala.collection.mutable
 
 import org.opalj.fpcf.Entity

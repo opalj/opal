@@ -1,5 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.solver
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package solver
 
 import org.opalj.br.Method
 import org.opalj.ide.solver.ICFG

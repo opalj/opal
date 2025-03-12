@@ -1,5 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package instances
+package lcp_on_fields
+package problem
 
 import scala.collection.immutable
 
@@ -11,9 +18,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FinalEdgeFunction
 import org.opalj.ide.problem.InterimEdgeFunction
-import org.opalj.tac.ArrayLoad
-import org.opalj.tac.GetField
-import org.opalj.tac.GetStatic
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.{VariableValue => LCPVariableValue}
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.ConstantValue

@@ -1,5 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package instances
+package lcp_on_fields
+package problem
 
 import scala.collection.immutable
 

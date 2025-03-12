@@ -1,6 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.solver
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package solver
 
+import scala.collection
 import scala.collection.immutable
 import scala.collection.mutable
 

@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.ide
+package org.opalj
+package fpcf
+package ide
 
 import java.net.URL
 
@@ -10,7 +12,6 @@ import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.fpcf.PropertiesTest
 import org.opalj.ide.ConfigKeyDebugLog
 import org.opalj.ide.ConfigKeyTraceLog
 import org.opalj.tac.cg.RTACallGraphKey

@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ide.problem
+package org.opalj
+package ide
+package problem
 
 /**
  * Interface representing the lattice that orders the IDE values

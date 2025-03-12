@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.ide.lcp_on_fields
+package org.opalj
+package fpcf
+package ide
+package lcp_on_fields
 
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.lcp_on_fields.LCPOnFieldsProperty
 import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
 import org.opalj.ide.integration.LazyIDEAnalysisProxyScheduler

@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ide.solver
+package org.opalj
+package ide
+package solver
 
 import scala.collection.immutable
 

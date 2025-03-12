@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ide.ifds.problem
+package org.opalj
+package ide
+package ifds
+package problem
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore

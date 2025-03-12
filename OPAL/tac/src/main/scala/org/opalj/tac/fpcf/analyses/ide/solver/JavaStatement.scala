@@ -1,15 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.solver
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package solver
 
 import org.opalj.br.Method
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
-import org.opalj.tac.Assignment
-import org.opalj.tac.Call
-import org.opalj.tac.DUVar
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
 import org.opalj.value.ValueInformation
 
 /**

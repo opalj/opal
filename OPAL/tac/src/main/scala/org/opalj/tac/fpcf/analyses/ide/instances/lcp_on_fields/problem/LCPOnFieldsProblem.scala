@@ -1,6 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package instances
+package lcp_on_fields
+package problem
 
+import scala.collection
 import scala.collection.immutable
 import scala.collection.mutable
 
@@ -21,12 +29,6 @@ import org.opalj.ide.problem.FinalEdgeFunction
 import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.ide.problem.MeetLattice
-import org.opalj.tac.ArrayStore
-import org.opalj.tac.Assignment
-import org.opalj.tac.New
-import org.opalj.tac.NewArray
-import org.opalj.tac.PutField
-import org.opalj.tac.PutStatic
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice

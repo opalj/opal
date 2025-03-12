@@ -1,6 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.solver
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package solver
 
+import scala.collection
 import scala.collection.immutable
 import scala.collection.mutable
 
@@ -14,17 +20,6 @@ import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
-import org.opalj.tac.AITACode
-import org.opalj.tac.Assignment
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.LazyDetachedTACAIKey
-import org.opalj.tac.NonVirtualFunctionCall
-import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.StaticMethodCall
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.ValueInformation
 
 /**

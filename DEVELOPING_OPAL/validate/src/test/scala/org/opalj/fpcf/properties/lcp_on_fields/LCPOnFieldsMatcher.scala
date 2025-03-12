@@ -1,13 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.lcp_on_fields
+package org.opalj
+package fpcf
+package properties
+package lcp_on_fields
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.properties.AbstractPropertyMatcher
-import org.opalj.fpcf.properties.AbstractRepeatablePropertyMatcher
 import org.opalj.ide.integration.BasicIDEProperty
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation

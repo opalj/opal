@@ -1,5 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.ifds.integration
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package ifds
+package integration
 
 import org.opalj.br.Method
 import org.opalj.ide.ifds.integration.IFDSPropertyMetaInformation

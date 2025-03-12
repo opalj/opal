@@ -1,8 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.ide.linear_constant_propagation
+package org.opalj
+package fpcf
+package ide
+package linear_constant_propagation
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.ide.IDEPropertiesTest
 import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
 import org.opalj.ide.integration.EagerIDEAnalysisProxyScheduler
 

@@ -1,10 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties
+package org.opalj
+package fpcf
+package properties
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.Property
 
 /**
  * Property matcher for repeatable annotations

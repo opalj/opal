@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.linear_constant_propagation
+package org.opalj
+package fpcf
+package properties
+package linear_constant_propagation
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.properties.AbstractRepeatablePropertyMatcher
 import org.opalj.ide.integration.BasicIDEProperty
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 

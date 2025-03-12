@@ -1,8 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package instances
+package linear_constant_propagation
+package problem
 
 import scala.annotation.unused
 
+import scala.collection
 import scala.collection.immutable
 
 import org.opalj.BinaryArithmeticOperators
@@ -13,15 +21,6 @@ import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.IdentityFlowFunction
 import org.opalj.ide.problem.MeetLattice
-import org.opalj.tac.ArrayLength
-import org.opalj.tac.ArrayLoad
-import org.opalj.tac.Assignment
-import org.opalj.tac.BinaryExpr
-import org.opalj.tac.Expr
-import org.opalj.tac.GetField
-import org.opalj.tac.GetStatic
-import org.opalj.tac.IntConst
-import org.opalj.tac.Var
 import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall

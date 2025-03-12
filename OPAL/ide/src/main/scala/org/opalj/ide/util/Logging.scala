@@ -1,10 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ide.util
+package org.opalj
+package ide
+package util
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ide.ConfigKeyDebugLog
-import org.opalj.ide.ConfigKeyTraceLog
-import org.opalj.ide.FrameworkName
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
