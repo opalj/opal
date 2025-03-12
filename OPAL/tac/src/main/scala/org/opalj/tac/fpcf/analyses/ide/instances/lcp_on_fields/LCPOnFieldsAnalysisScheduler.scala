@@ -26,7 +26,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 
 /**
  * Linear constant propagation on fields as IDE analysis. This implementation is mainly intended to be an example of a
- * cyclic IDE analysis (see [[LCPOnFieldsProblem]]).
+ * cyclic IDE analysis (see [[org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LCPOnFieldsProblem]]).
  *
  * @author Robin Körkemeier
  */

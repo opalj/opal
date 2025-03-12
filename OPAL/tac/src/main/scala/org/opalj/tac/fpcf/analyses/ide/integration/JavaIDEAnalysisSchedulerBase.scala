@@ -54,14 +54,14 @@ abstract class JavaIDEAnalysisSchedulerBase[Fact <: IDEFact, Value <: IDEValue]
 
 object JavaIDEAnalysisSchedulerBase {
     /**
-     * Trait to drop-in [[RTACallGraphKey]] as [[callGraphKey]]
+     * Trait to drop-in [[org.opalj.tac.cg.RTACallGraphKey]] as [[callGraphKey]]
      */
     trait RTACallGraph {
         val callGraphKey: CallGraphKey = RTACallGraphKey
     }
 
     /**
-     * Trait to drop-in [[JavaForwardICFG]] for [[createICFG]]
+     * Trait to drop-in [[org.opalj.tac.fpcf.analyses.ide.solver.JavaForwardICFG]] for [[createICFG]]
      */
     trait ForwardICFG {
         def createICFG(project: SomeProject): JavaICFG = {
@@ -70,7 +70,7 @@ object JavaIDEAnalysisSchedulerBase {
     }
 
     /**
-     * Trait to drop-in [[JavaBackwardICFG]] for [[createICFG]]
+     * Trait to drop-in [[org.opalj.tac.fpcf.analyses.ide.solver.JavaBackwardICFG]] for [[createICFG]]
      */
     trait BackwardICFG {
         def createICFG(project: SomeProject): JavaICFG = {
