@@ -176,6 +176,7 @@ lazy val `OPAL` = (project in file("."))
     ba,
     ai,
     ifds,
+    ide,
     tac,
     de,
     av,
