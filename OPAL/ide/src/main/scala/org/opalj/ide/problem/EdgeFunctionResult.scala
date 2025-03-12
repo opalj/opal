@@ -19,6 +19,6 @@ case class FinalEdgeFunction[Value <: IDEValue](edgeFunction: EdgeFunction[Value
  *                            the final edge function)
  */
 case class InterimEdgeFunction[Value <: IDEValue](
-        interimEdgeFunction: EdgeFunction[Value],
-        dependees:           collection.Set[SomeEOptionP]
+    interimEdgeFunction: EdgeFunction[Value],
+    dependees:           collection.Set[SomeEOptionP]
 ) extends EdgeFunctionResult[Value]
