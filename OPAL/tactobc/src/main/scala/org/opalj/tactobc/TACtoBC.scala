@@ -2,7 +2,6 @@
 package org.opalj.tactobc
 
 import java.io.File
-import scala.Console.println
 import scala.collection.mutable
 
 import org.opalj.ba.CodeElement
@@ -91,8 +90,8 @@ object TACtoBC {
      * of bytecode instructions. It handles various types of TAC statements and expressions, translating them
      * into their equivalent bytecode form.
      *
-     * @param method Current method to be translated
-     * @param tac The TAC representation of a method to be converted into bytecode.
+     * @param method method to be translated
+     * @param tac TAC representation of a method to be converted into bytecode.
      * @return A Sequence of bytecode instructions representing the method's functionality
      */
     private def translateSingleTACtoBC(

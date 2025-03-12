@@ -1,4 +1,4 @@
-public class Throw {
+public class ThrowException {
     public static void main(String[] args) {
 
         // 1. new Exception
@@ -47,5 +47,16 @@ public class Throw {
         } finally {
             System.out.println("Test4 - Finally");
         }
+
+        // 5. method external exception with throw
+        try {
+            System.out.println("Test5 - Try");
+            exception();
+        } catch (Exception e) {
+            System.out.println("Test5 - Caught Exception");
+        }
+    }
+    public static void exception() throws Exception {
+        throw new Exception();
     }
 }

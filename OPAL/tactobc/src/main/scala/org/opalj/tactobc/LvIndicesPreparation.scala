@@ -125,7 +125,7 @@ object LvIndicesPreparation {
         duVars.toArray.foreach {
             case uVar: UVar[_] =>
                 nextLVIndex = populateUVarToLVIndexMap(uVar, uVarToLVIndex, nextLVIndex)
-            case _ =>
+            case _ => // we only need uVars
         }
 
     }
@@ -140,9 +140,9 @@ object LvIndicesPreparation {
         var nextLVIndex = if (method.isStatic) 0 else 1
 
         method.descriptor.parameterTypes.zipWithIndex.foreach { case (tpe, index) =>
-            // for some reason defSite -1 is *always* reserved for 'this' so we always start at -2 and then go further down per parameter (-3, -4, etc.)
+            // defSite -1 seems to *always* be reserved for 'this' so we always start at -2 and then go further down per parameter (-3, -4, etc.)
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(-(index + 2)), nextLVIndex)
-            nextLVIndex += (if (tpe.isDoubleType || tpe.isLongType) 2 else 1)
+            nextLVIndex += tpe.computationalType.operandSize
         }
         if (!method.isStatic) {
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(-1), 0)

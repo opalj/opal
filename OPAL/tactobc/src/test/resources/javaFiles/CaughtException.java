@@ -1,5 +1,5 @@
 public class CaughtException {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         // 1. Try-catch where no error occurs
         try {
@@ -25,24 +25,17 @@ public class CaughtException {
             System.out.println("Test 3: Finally block executed");
         }
 
-        // 4. Try-catch-finally where an error occurs
+        // 4. Try-catch-finally with error from external method
         try {
             System.out.println("Test 4: An error will occur, with finally");
-            int result = 10 / 0;
+            exception();
         } catch (Exception e) {
             System.out.println("Caught an exception in Test 4");
         } finally {
             System.out.println("Test 4: Finally block executed");
         }
 
-        // 5. Try-finally without catch (finally always runs)
-        try {
-            System.out.println("Test 5: Try-finally without catch");
-        } finally {
-            System.out.println("Test 5: Finally block executed");
-        }
-
-        // 6. Multiple catch blocks (wrong order test)
+        // 5. Multiple catch blocks (wrong order test)
         try {
             System.out.println("Test 6: Multiple catch blocks with wrong order");
             int result = 10 / 0; // Causes ArithmeticException
@@ -55,5 +48,28 @@ public class CaughtException {
         } finally {
             System.out.println("Test 6: Finally block executed");
         }
+
+        // 6. inner try-catch + caused by method
+        try {
+            System.out.println("Test3 - outer try 1/6");
+            try {
+                System.out.println("Test3 - inner try 2/6");
+                exception();
+            } catch (Exception e) {
+                System.out.println("Test3 - Caught Exception 3/6");
+            } finally {
+                System.out.println("Test3 - inner finally 4/6");
+                exception();
+            }
+        } catch (Exception e) {
+            System.out.println("Test3- Caught Exception 5/6");
+        } finally {
+            System.out.println("Test3 - Finally 6/6");
+        }
+
+    }
+
+    public static void exception() throws Exception {
+        int result = 10 / 0;
     }
 }

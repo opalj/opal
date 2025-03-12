@@ -7,7 +7,6 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators._
-import org.opalj.ai
 import org.opalj.ba.CodeElement
 import org.opalj.br._
 import org.opalj.br.instructions.AASTORE
@@ -94,9 +93,8 @@ object StmtProcessor {
         ExprProcessor.processExpression(index, uVarToLVIndex, listedCodeElements)
 
         listedCodeElements += {
-            if (isLookupSwitch(index)) {
-                LabeledLOOKUPSWITCH(defaultTarget, labeledNpairs)
-            } else {
+            if (isLookupSwitch(index)) LabeledLOOKUPSWITCH(defaultTarget, labeledNpairs)
+            else {
                 val minValue = npairs.minBy(_._1)._1
                 val maxValue = npairs.maxBy(_._1)._1
                 val jumpTable = ArrayBuffer.fill(maxValue - minValue + 1)(defaultTarget)
@@ -237,25 +235,50 @@ object StmtProcessor {
         tacIndex:           Int
     ): Unit = {
         // TODO: handle CaughtExceptions correctly
-//        throw new UnsupportedOperationException("Caught Exception not yet supported")
-        println("DEBUG")
-        var minPC = Int.MaxValue
-        var maxPC = Int.MinValue
-        var pc = 0
-        throwingStmts.foreach(stmt => {
-            if (ai.isImmediateVMException(stmt)) pc = ai.pcOfImmediateVMException(stmt)
-            else if (ai.isMethodExternalExceptionOrigin(stmt)) pc = ai.pcOfMethodExternalException(stmt)
-            else pc = stmt
-            if (pc > maxPC) maxPC = pc
-            if (pc < minPC) minPC = pc
-            println(s"pc: $pc, tac: ${tacStmts(pc)} minpc:$minPC maxpc:$maxPC")
-        })
-        maxPC = maxPC + 1
-        val minPCLabel = indexMap(minPC)
-        val maxPCLabel = indexMap(maxPC)
-        println(s"$minPCLabel $maxPCLabel")
-
-//        listedCodeElements.indexWhere()
+        // below is an idea on how to handle caught exceptions - but its not working yet:
+        // somethings wrong with the stack map frames (for the exception tests only)
+        throw new UnsupportedOperationException("Caught Exception not yet supported")
+//        println("DEBUG")
+//        var minPC = Int.MaxValue
+//        var maxPC = Int.MinValue
+//        var pc = 0
+//        throwingStmts.foreach(stmt => {
+//            if (ai.isImmediateVMException(stmt)) {
+//                pc = ai.pcOfImmediateVMException(stmt)
+//                println("ImmediateVMException")
+//            } else if (ai.isMethodExternalExceptionOrigin(stmt)) {
+//                pc = ai.pcOfMethodExternalException(stmt)
+//                println("MethodExternalException")
+//            } else {
+//                pc = stmt
+//                println("throw")
+//            }
+//            if (pc > maxPC) maxPC = pc
+//            if (pc < minPC) minPC = pc
+//            println(s"pc: $pc, tac: ${tacStmts(pc)} minpc:$minPC maxpc:$maxPC")
+//        })
+//        maxPC = maxPC + 1
+//        val minPCLabel = indexMap(minPC)
+//        val maxPCLabel = indexMap(maxPC)
+//        println(s"$minPCLabel $maxPCLabel")
+//
+//        val minIndex = listedCodeElements.indexWhere {
+//            case LabelElement(label: RewriteLabel) => label == minPCLabel
+//            case _                                 => false
+//        }
+//        val maxIndex = listedCodeElements.indexWhere {
+//            case LabelElement(label: RewriteLabel) => label == maxPCLabel
+//            case _                                 => false
+//        }
+//        if (minIndex != -1 && maxIndex != -1) {
+//            val preMinInstr = TRY(Symbol("test"))
+//            val postMaxInstr = TRYEND(Symbol("test"))
+//            listedCodeElements.insert(minIndex + 1, preMinInstr)
+//            listedCodeElements += postMaxInstr
+//            listedCodeElements += CATCH(Symbol("test"), 0, exceptionType)
+//        } else {
+//            println("ERROR: minPCLabel oder maxPCLabel nicht gefunden!")
+//        }
 
     }
 
