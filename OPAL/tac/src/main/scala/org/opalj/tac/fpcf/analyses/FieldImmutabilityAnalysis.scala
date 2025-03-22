@@ -269,13 +269,13 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
 
             if (state.hasDependee(eps.toEPK)) {
+                typeIterator.continuation(state.field, eps) {
+                    actualType => determineClassImmutability(actualType)
+                }
                 if (eps.isFinal)
                     state.removeDependee(eps.toEPK)
                 else
                     state.updateDependency(eps)
-                typeIterator.continuation(state.field, eps) {
-                    actualType => determineClassImmutability(actualType.asObjectType)
-                }
             } else {
 
                 state.fieldImmutabilityDependees =

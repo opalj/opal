@@ -578,6 +578,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                             scheduledInThisPhase =
                                 scheduledInThisPhase + computationSpecificationMap.find(_._2 == csID).map(_._1).head
                         }
+
                         this.scheduleBatches = this.scheduleBatches :+ computePhase(
                             ps,
                             scheduledInThisPhase,
@@ -585,6 +586,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                         )
                         alreadyScheduledCS = alreadyScheduledCS ++ scheduledInThisPhase
                     }
+
                 case _ => throw new IllegalStateException(s"Invalid scheduler configuration: $scheduleStrategy");
             }
 
@@ -631,6 +633,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         val propertyKindsFromPhaseAnalysis = extractPropertyKinds(phaseAnalysis)
         val propertyKindsFromNextPhaseAnalysis = extractPropertyKinds(nextPhaseAnalysis)
 
+        val collabProperties = phaseAnalysis.flatMap { analysis => analysis.derivesCollaboratively.map(_.pk) }
+
         // 3. create the batch
         val batchBuilder = List.newBuilder[ComputationSpecification[A]]
         batchBuilder ++= phaseAnalysis
@@ -645,7 +649,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         val phase1Configuration = PropertyKindsConfiguration(
             propertyKindsComputedInThisPhase = propertyKindsFromPhaseAnalysis,
             suppressInterimUpdates = suppressInterimUpdates,
-            propertyKindsComputedInLaterPhase = propertyKindsFromNextPhaseAnalysis
+            propertyKindsComputedInLaterPhase = propertyKindsFromNextPhaseAnalysis,
+            collaborativelyComputedPropertyKindsFinalizationOrder = List(collabProperties.toList)
         )
 
         PhaseConfiguration(phase1Configuration, batchBuilder.result())
