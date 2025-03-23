@@ -53,8 +53,6 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.fpcf.ScheduleConfig
-import org.opalj.fpcf.ScheduleStrategy
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
@@ -81,6 +79,14 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
+
+/**
+ * This PurityRunner has been adapted for the scheduling strategies. This means that all analyses are transferred to one scheduler,
+ * whereby the call graph is transferred to the scheduler with the other analyses in “dependencies”.
+ * The original purity analysis is the "Purity.scala".
+ *
+ * @author Viktor Wysluch
+ */
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
