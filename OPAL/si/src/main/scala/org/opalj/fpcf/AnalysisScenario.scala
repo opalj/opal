@@ -283,19 +283,28 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     }
                 }
 
+            // This code implements different scheduling strategies for batching computations based on their dependencies and properties.
+
             val scheduleStrategy = BaseConfig.getAnyRef(AnalysisScheduleStrategy)
             val scheduleLazyTransformerInAllBatches =
                 BaseConfig.getBoolean(AnalysisScheduleLazyTransformerInMultipleBatches)
 
+            // The match statement handles three main scheduling strategies: "SPS", "MPS", "IPMS", and "SPMS".
+            // Each strategy defines how computations are scheduled into batches based on their dependencies and other constraints.
             scheduleStrategy match {
                 case "SPS" =>
+                    // SPS (Single Phase Scheduling) schedules all computations in a single batch.
                     this.scheduleBatches = List(computePhase(ps, allCS, Set.empty))
 
                 case "MPS" =>
-                    // TEMPORARY for optimization
+                    // MPS (Maximum Phase Scheduling) breaks down computations into multiple phases based on dependencies and computation types.
+
+                    // Creates a map from ComputationSpecifications to their indices
                     val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
+                    // Initializes an empty schedule graph
                     var scheduleGraph: Map[Int, Set[Int]] = Map.empty
 
+                    // Helper functions and logic for MPS scheduling follow...
                     def getAllCSFromPropertyBounds(
                         properties: Set[PropertyBounds]
                     ): Set[ComputationSpecification[A]] = {
@@ -483,13 +492,16 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                         alreadyScheduledCS = alreadyScheduledCS ++ scheduledInThisPhase
                     }
 
-                // TEMPORARY - ENDE
-
                 case "IPMS" =>
-                    // TEMPORARY for optimization
+                    // IPMS (Independent Phase Merge Scheduling) extends MPS by merging independent batches to optimize parallelism.
+
+                    // Creates a map from ComputationSpecifications to their indices
                     val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
+
+                    // Initializes an empty schedule graph
                     var scheduleGraph: Map[Int, Set[Int]] = Map.empty
 
+                    // Helper functions and logic for IPMS scheduling follow...
                     def getAllCSFromPropertyBounds(
                         properties: Set[PropertyBounds]
                     ): Set[ComputationSpecification[A]] = {
@@ -760,11 +772,16 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                         alreadyScheduledCS = alreadyScheduledCS ++ scheduledInThisPhase
                     }
 
-
                 case "SPMS" =>
+                    // SPMS (Smart Parallel Multi-Phase Scheduling) further optimizes parallelism by intelligently merging batches based on analysis.
+
+                    // Creates a map from ComputationSpecifications to their indices
                     val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
+
+                    // Initializes an empty schedule graph
                     var scheduleGraph: Map[Int, Set[Int]] = Map.empty
 
+                    // Helper functions and logic for SPMS scheduling follow...
                     def getAllCSFromPropertyBounds(
                         properties: Set[PropertyBounds]
                     ): Set[ComputationSpecification[A]] = {

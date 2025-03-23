@@ -270,9 +270,6 @@ object PurityRunner {
 
         val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
 
-        ScheduleConfig.getConfig.setStrategy(ScheduleStrategy.MPS)
-        ScheduleConfig.getConfig.setLazyTransformerInMultipleBatches(true)
-
         time {
             manager.runAll(
                 allAnalyses,
