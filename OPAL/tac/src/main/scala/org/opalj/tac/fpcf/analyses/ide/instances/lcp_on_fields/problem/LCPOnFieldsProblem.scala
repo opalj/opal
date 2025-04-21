@@ -19,8 +19,10 @@ import org.opalj.br.IntegerType
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.immutability.FieldImmutability
-import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableField
+import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PropertyStore
@@ -111,23 +113,23 @@ class LCPOnFieldsProblem(
         /* We enhance the analysis with immutability information. When a static field is immutable and we have knowledge
          * of an assignment site, then this will always be the value of the field. This way we can make this analysis
          * more precise without the need to add precise handling of static initializers. */
-        val fieldImmutabilityEOptionP = propertyStore(field, FieldImmutability.key)
+        val fieldAssignabilityEOptionP = propertyStore(field, FieldAssignability.key)
 
-        fieldImmutabilityEOptionP match {
-            case FinalP(fieldImmutability) =>
-                fieldImmutability match {
-                    case TransitivelyImmutableField =>
+        fieldAssignabilityEOptionP match {
+            case FinalP(fieldAssignability) =>
+                fieldAssignability match {
+                    case NonAssignable | EffectivelyNonAssignable | LazilyInitialized =>
                         val value = getValueForGetStaticExprByStaticInitializer(field)
                         FinalEdgeFunction(PutStaticFieldEdgeFunction(value))
                     case _ =>
                         FinalEdgeFunction(PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue))
                 }
 
-            case InterimUBP(fieldImmutability) =>
-                fieldImmutability match {
-                    case TransitivelyImmutableField =>
+            case InterimUBP(fieldAssignability) =>
+                fieldAssignability match {
+                    case NonAssignable | EffectivelyNonAssignable | LazilyInitialized =>
                         val value = getValueForGetStaticExprByStaticInitializer(field)
-                        InterimEdgeFunction(PutStaticFieldEdgeFunction(value), immutable.Set(fieldImmutabilityEOptionP))
+                        InterimEdgeFunction(PutStaticFieldEdgeFunction(value), immutable.Set(fieldAssignabilityEOptionP))
                     case _ =>
                         FinalEdgeFunction(PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue))
                 }
@@ -135,7 +137,7 @@ class LCPOnFieldsProblem(
             case _ =>
                 InterimEdgeFunction(
                     PutStaticFieldEdgeFunction(linear_constant_propagation.problem.UnknownValue),
-                    immutable.Set(fieldImmutabilityEOptionP)
+                    immutable.Set(fieldAssignabilityEOptionP)
                 )
         }
     }
