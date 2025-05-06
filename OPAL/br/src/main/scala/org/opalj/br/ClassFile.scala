@@ -702,7 +702,7 @@ final class ClassFile private (
                 (majorVersion < 51 || method.isStatic)
             )
                 return Some(method);
-            else if (methodNameComparison < 0)
+            else if (methodNameComparison > 0)
                 return None;
 
             i += 1

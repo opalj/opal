@@ -799,14 +799,14 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 }
 
-trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => AbstractPointsToAnalysis
 
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
+        super.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

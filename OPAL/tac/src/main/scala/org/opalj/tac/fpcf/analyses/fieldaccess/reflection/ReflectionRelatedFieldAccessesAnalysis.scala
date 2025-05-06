@@ -37,6 +37,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.ForNameClasses
 import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
@@ -1198,6 +1199,8 @@ object ReflectionRelatedFieldAccessesAnalysisScheduler extends BasicFPCFEagerAna
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         ForNameClasses,
+        Callers,
+        TACAI,
         FieldReadAccessInformation,
         FieldWriteAccessInformation,
         MethodFieldReadAccessInformation,
