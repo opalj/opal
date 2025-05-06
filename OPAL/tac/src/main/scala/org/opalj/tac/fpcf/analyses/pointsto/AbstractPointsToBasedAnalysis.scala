@@ -9,13 +9,17 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -66,7 +70,10 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
     }
 }
 
-object AbstractPointsToBasedAnalysis {
-    val requiredProjectInformation: ProjectInformationKeys =
+trait PointsToBasedAnalysisScheduler extends FPCFAnalysisScheduler {
+    def requiredProjectInformation: ProjectInformationKeys =
         Seq(TypeIteratorKey, DefinitionSitesKey, VirtualFormalParametersKey, DeclaredFieldsKey)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        super.uses(p, ps) ++ p.get(TypeIteratorKey).usedPropertyKinds
 }

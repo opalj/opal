@@ -204,13 +204,13 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
     }
 }
 
-trait TamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait TamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => TamiFlexPointsToAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :++ Seq(DeclaredMethodsKey, TamiFlexKey)
+        super.requiredProjectInformation :++ Seq(DeclaredMethodsKey, TamiFlexKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 
