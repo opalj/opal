@@ -40,20 +40,22 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
     /**
      * The [[InitialEntryPointsKey]] depends on three other keys and queries information about closed
      * packages, must answer the question whether a method can be overridden by unknown code, and
-     * performs checks whether types are extensible or not.
+     * performs checks whether types are extensible or not. Additionally, required keys from the configured
+     * EntryPointFinder are added.
      *
      * @return `Nil`.
      */
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey)
+        val entryPointFinderRequiredKeys = getEntryPointFinder(project).requirements(project)
+        Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey) ++ entryPointFinderRequiredKeys
     }
 
-    /**
-     * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
-     * The instantiated class has to satisfy the interface and needs to provide a single
-     * constructor parameterized over a Project.
-     */
     override def compute(project: SomeProject): Iterable[Method] = {
+        val epFinder: EntryPointFinder = getEntryPointFinder(project)
+        epFinder.collectEntryPoints(project)
+    }
+
+    private[this] def getEntryPointFinder(project: SomeProject) = {
         val configuredAnalysis = project.config.as[Option[String]](ConfigKey)
         val entryPointFinder = configuredAnalysis
         if (entryPointFinder.isEmpty) {
@@ -64,9 +66,13 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
 
         val fqn = entryPointFinder.get
         val epFinder = instantiateEntryPointFinder(fqn)
-        epFinder.collectEntryPoints(project)
+        epFinder
     }
-
+    /**
+     * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
+     * The instantiated class has to satisfy the interface and needs to provide a single
+     * constructor parameterized over a Project.
+     */
     private[this] def instantiateEntryPointFinder(fqn: String): EntryPointFinder = {
         import scala.reflect.runtime.universe._
         val mirror = runtimeMirror(this.getClass.getClassLoader)

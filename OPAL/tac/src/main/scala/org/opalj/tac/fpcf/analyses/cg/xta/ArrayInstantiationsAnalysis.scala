@@ -127,6 +127,10 @@ class ArrayInstantiationsAnalysisScheduler(
     }
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
+
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
     override def triggeredBy: PropertyKind = Callers.key

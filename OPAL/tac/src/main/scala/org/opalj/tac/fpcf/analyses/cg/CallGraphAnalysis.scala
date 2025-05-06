@@ -447,7 +447,7 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
      * ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) to be called from an unknown context.
      * This will trigger the computation of the callees for these methods (see `processMethod`).
      */
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CallGraphAnalysis = {
         val declaredMethods = p.get(DeclaredMethodsKey)
         val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
 
@@ -467,10 +467,6 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
             }
         }
 
-        null
-    }
-
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CallGraphAnalysis = {
         val analysis = new CallGraphAnalysis(p)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
