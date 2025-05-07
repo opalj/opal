@@ -1,4 +1,5 @@
-package org.opalj.tactobc
+package org.opalj
+package tac2bc
 
 import scala.collection.mutable
 
@@ -6,26 +7,26 @@ import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
-import org.opalj.tac.ArrayStore
-import org.opalj.tac.Assignment
 import org.opalj.tac.BinaryExpr
-import org.opalj.tac.Checkcast
 import org.opalj.tac.Compare
 import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
-import org.opalj.tac.ExprStmt
 import org.opalj.tac.GetField
-import org.opalj.tac.If
 import org.opalj.tac.InstanceOf
 import org.opalj.tac.InvokedynamicFunctionCall
 import org.opalj.tac.NewArray
-import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.PrefixExpr
 import org.opalj.tac.PrimitiveTypecastExpr
+import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.ArrayStore
+import org.opalj.tac.Assignment
+import org.opalj.tac.Checkcast
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.If
+import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
-import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.Switch

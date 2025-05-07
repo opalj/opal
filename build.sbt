@@ -177,7 +177,7 @@ lazy val `OPAL` = (project in file("."))
     ai,
     ifds,
     tac,
-    tactobc,
+    tac2bc,
     de,
     av,
     apk,
@@ -326,14 +326,14 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
   .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
-lazy val tactobc = `ThreeAddressCodeToBytecode`
-lazy val `ThreeAddressCodeToBytecode` = (project in file("OPAL/tactobc"))
+lazy val tac2bc = `ThreeAddressCodeToBytecode`
+lazy val `ThreeAddressCodeToBytecode` = (project in file("OPAL/tac2bc"))
   .settings(buildSettings: _*)
   .settings(
     name := "Three Address Code to Bytecode",
     Compile / doc / scalacOptions := (Opts.doc
       .title("OPAL - Three Address Code to Bytecode") ++ Seq("-groups", "-implicits")),
-    assembly / mainClass := Some("org.opalj.tactobc.TACtoBC"),
+    assembly / mainClass := Some("org.opalj.tac2bc.TACtoBC"),
     run / fork := true,
 
     // Ensure resources directory is included in the classpath
@@ -354,12 +354,8 @@ lazy val `ThreeAddressCodeToBytecode` = (project in file("OPAL/tactobc"))
       Seq(targetDir)
     }
   )
-  .dependsOn(br % "it->it;it->test;test->test;compile->compile")
-  .dependsOn(da % "it->it;it->test;test->test;compile->compile")
   .dependsOn(ba % "it->it;it->test;test->test;compile->compile")
   .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
-  .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
-  .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
 lazy val ba = `BytecodeAssembler`

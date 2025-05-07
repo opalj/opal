@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tactobc
+package org.opalj
+package tac2bc
 
 import java.io.File
 import scala.collection.mutable
@@ -7,7 +8,9 @@ import scala.collection.mutable
 import org.opalj.ba.CodeElement
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
-import org.opalj.tac._
+import org.opalj.tac.AITACode
+import org.opalj.tac.LazyDetachedTACAIKey
+import org.opalj.tac.TACMethodParameter
 import org.opalj.value.ValueInformation
 
 object TACtoBC {
@@ -16,6 +19,7 @@ object TACtoBC {
      * Compiles the Three-Address Code (TAC) representation for all methods in the given .class file.
      *
      * @param file A File object representing the .class file to be analyzed and compiled into TAC.
+     *
      * @return A Map associating each method in the class file with its corresponding TAC representation.
      */
     def compileTACFromClassFile(file: File): Map[Method, AITACode[TACMethodParameter, ValueInformation]] = {

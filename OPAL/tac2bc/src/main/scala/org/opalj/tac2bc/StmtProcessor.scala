@@ -1,14 +1,37 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tactobc
+package org.opalj
+package tac2bc
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.RelationalOperator
-import org.opalj.RelationalOperators._
+import org.opalj.RelationalOperators.EQ
+import org.opalj.RelationalOperators.GE
+import org.opalj.RelationalOperators.GT
+import org.opalj.RelationalOperators.LE
+import org.opalj.RelationalOperators.LT
+import org.opalj.RelationalOperators.NE
 import org.opalj.ba.CodeElement
-import org.opalj.br._
+import org.opalj.br.BootstrapMethod
+import org.opalj.br.ByteType
+import org.opalj.br.CharType
+import org.opalj.br.ComputationalTypeDouble
+import org.opalj.br.ComputationalTypeFloat
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.ComputationalTypeLong
+import org.opalj.br.ComputationalTypeReference
+import org.opalj.br.DoubleType
+import org.opalj.br.FieldType
+import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.PCs
+import org.opalj.br.ReferenceType
+import org.opalj.br.ShortType
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ARETURN
 import org.opalj.br.instructions.ATHROW
@@ -53,9 +76,11 @@ import org.opalj.br.instructions.RewriteLabel
 import org.opalj.br.instructions.SASTORE
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac._
-import org.opalj.tactobc.ExprProcessor.inferElementType
-import org.opalj.tactobc.ExprProcessor.storeVariable
+import org.opalj.tac.DUVar
+import org.opalj.tac.Expr
+import org.opalj.tac.Stmt
+import org.opalj.tac.UVar
+import org.opalj.tac.Var
 import org.opalj.value.ValueInformation
 
 object StmtProcessor {
@@ -170,7 +195,7 @@ object StmtProcessor {
         // Load the value to be stored onto the stack
         ExprProcessor.processExpression(value, uVarToLVIndex, listedCodeElements)
         // Infer the element type from the array reference expression
-        val elementType = inferElementType(arrayRef)
+        val elementType = ExprProcessor.inferElementType(arrayRef)
         listedCodeElements += {
             elementType match {
                 case IntegerType      => IASTORE
@@ -211,7 +236,7 @@ object StmtProcessor {
         ExprProcessor.processExpression(value, uVarToLVIndex, listedCodeElements)
         listedCodeElements += CHECKCAST(cmpTpe)
         value match {
-            case variable: Var[_] => storeVariable(variable, uVarToLVIndex, listedCodeElements)
+            case variable: Var[_] => ExprProcessor.storeVariable(variable, uVarToLVIndex, listedCodeElements)
             case _                => throw new UnsupportedOperationException(s"Error with CheckCast. Expected a Var but got: $value")
         }
     }

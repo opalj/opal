@@ -20,6 +20,7 @@ flowchart BT
     ll[LLVM\n ll]
     apk[APK\n apk]
     av[Architecture Validation\n av]
+    tac2bc[TAC2BC\n tac2bc]
 
     framework[Framework]
 
@@ -61,6 +62,9 @@ flowchart BT
     ba --> bc
 
     av --> de
+
+    tac2bc --> tac
+    tac2bc --> ba
 
     framework --> tac
     framework --> av

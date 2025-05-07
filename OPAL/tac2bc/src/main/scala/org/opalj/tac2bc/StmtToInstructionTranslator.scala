@@ -1,4 +1,5 @@
-package org.opalj.tactobc
+package org.opalj
+package tac2bc
 
 import scala.collection.mutable
 
@@ -8,7 +9,30 @@ import org.opalj.br.instructions.POP
 import org.opalj.br.instructions.POP2
 import org.opalj.br.instructions.RewriteLabel
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac._
+import org.opalj.tac.ArrayStore
+import org.opalj.tac.Assignment
+import org.opalj.tac.CaughtException
+import org.opalj.tac.Checkcast
+import org.opalj.tac.DUVar
+import org.opalj.tac.ExprStmt
+import org.opalj.tac.Goto
+import org.opalj.tac.If
+import org.opalj.tac.InvokedynamicMethodCall
+import org.opalj.tac.JSR
+import org.opalj.tac.MonitorEnter
+import org.opalj.tac.MonitorExit
+import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.Nop
+import org.opalj.tac.PutField
+import org.opalj.tac.PutStatic
+import org.opalj.tac.Ret
+import org.opalj.tac.Return
+import org.opalj.tac.ReturnValue
+import org.opalj.tac.StaticMethodCall
+import org.opalj.tac.Stmt
+import org.opalj.tac.Switch
+import org.opalj.tac.Throw
+import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.ValueInformation
 
 /**

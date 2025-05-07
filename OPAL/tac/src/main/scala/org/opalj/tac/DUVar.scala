@@ -110,7 +110,7 @@ object DefSites {
  * @param value The value information.
  */
 class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
-    var origin:   ValueOrigin,
+    var origin:                ValueOrigin,
     val value:                 Value,
     private[tac] var useSites: IntTrieSet
 ) extends DUVar[Value] {
@@ -214,7 +214,7 @@ object DVar {
 }
 
 class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ] private (
-    val value:                 Value,
+    val value:    Value,
     var defSites: IntTrieSet
 ) extends DUVar[Value] {
 

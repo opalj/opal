@@ -1,15 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tactobc
+package org.opalj
+package tac2bc
 
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
 import java.nio.file.Paths
-import scala.Console.println
 import scala.sys.process._
 
-import org.opalj.ba.CODE
 import org.opalj.ba.CodeElement
+import org.opalj.ba.CODE
 import org.opalj.ba.toDA
 import org.opalj.bc.Assembler
 import org.opalj.br.Method
@@ -43,12 +43,6 @@ trait TACtoBCTest {
                                     method.descriptor == methodDescriptor
                         } match {
                             case Some((_, instructions)) =>
-                                //TODO: comment out print stmts
-
-                                // Print out the translation from TAC to Bytecode
-                                println(s"Original Instructions for method $m: \n${originalBody.instructions.mkString("\n ")}")
-                                println(s"New Instructions for method $m: \n${instructions.mkString("\n")}")
-
                                 val codeAttrBuilder = CODE(instructions.toIndexedSeq)
                                 val newBody = codeAttrBuilder(cf.version, m)
                                 m.copy(body = Some(newBody._1))
@@ -62,7 +56,6 @@ trait TACtoBCTest {
         val newRawCF = Assembler(toDA(cfWithNewInstructions))
         Files.createDirectories(outputDir.getParent)
         val newClassFile = Files.write(outputDir, newRawCF)
-        println("Created class file: " + newClassFile.toAbsolutePath)
     }
 
     def compileJavaFile(
@@ -75,11 +68,8 @@ trait TACtoBCTest {
         val command = s"javac -d $inputDirOriginalJavaPath $javaFilePath"
         val result = command.!
 
-        if (result != 0) {
+        if (result != 0)
             throw new RuntimeException(s"Compilation of original Java file ($javaFileName) failed.")
-        } else {
-            println(s"Compilation of original Java file ($javaFileName) completed successfully.")
-        }
     }
 
     def invokeMainMethod(clazz: Class[_]): String = {

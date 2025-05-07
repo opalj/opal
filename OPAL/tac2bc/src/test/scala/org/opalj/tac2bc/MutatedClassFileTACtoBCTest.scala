@@ -1,4 +1,5 @@
-package org.opalj.tactobc
+package org.opalj
+package tac2bc
 
 import java.io.File
 import java.io.FileNotFoundException
@@ -19,13 +20,13 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers with TACtoBCT
 
         // define paths
         val projectRoot: String = System.getProperty("user.dir")
-        val javaFileDirPath: String = s"$projectRoot/OPAL/tactobc/src/test/resources/javaFilesMutation"
+        val javaFileDirPath: String = s"$projectRoot/OPAL/tac2bc/src/test/resources/org/opalj/tac2bc/javaFilesMutation"
         val inputDirOriginalJavaPath: String =
-            s"$projectRoot/OPAL/tactobc/src/test/resources/generatedClassFiles/mutation/original"
+            s"$projectRoot/OPAL/tac2bc/src/test/resources/org/opalj/tac2bc/generatedClassFiles/mutation/original"
         val inputDirMutatedJavaPath: String =
-            s"$projectRoot/OPAL/tactobc/src/test/resources/generatedClassFiles/mutation/mutated"
+            s"$projectRoot/OPAL/tac2bc/src/test/resources/org/opalj/tac2bc/generatedClassFiles/mutation/mutated"
         val outputDirPath: String =
-            s"$projectRoot/OPAL/tactobc/src/test/resources/generatedClassFiles/mutation/generated"
+            s"$projectRoot/OPAL/tac2bc/src/test/resources/org/opalj/tac2bc/generatedClassFiles/mutation/generated"
 
         // load test files from directory
         val javaFileDir = new File(javaFileDirPath)
