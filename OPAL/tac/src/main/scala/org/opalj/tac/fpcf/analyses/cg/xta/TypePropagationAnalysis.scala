@@ -268,7 +268,9 @@ final class TypePropagationAnalysis private[analyses] (
             // Instances of DefinedMethod we see should only be those where the method is defined in the class file of
             // the declaring class type (i.e., it is not a DefinedMethod instance of some inherited method).
             assert(!callee.hasSingleDefinedMethod ||
-                (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType))
+                (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType) ||
+                // Happens in inconsistent bytecode scenarios where the call graph resolves to a non-implemented abstract method
+                callee.asDefinedMethod.definedMethod.isAbstract)
 
             // Remember callee (with PC) so we don't have to process it again later.
             state.addSeenCallee(pc, callee)
