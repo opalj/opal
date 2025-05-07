@@ -5,35 +5,10 @@ import scala.collection.mutable
 
 import org.opalj.br.Method
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.ArrayLength
-import org.opalj.tac.ArrayLoad
-import org.opalj.tac.BinaryExpr
-import org.opalj.tac.Compare
 import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
-import org.opalj.tac.GetField
-import org.opalj.tac.InstanceOf
-import org.opalj.tac.InvokedynamicFunctionCall
-import org.opalj.tac.NewArray
-import org.opalj.tac.PrefixExpr
-import org.opalj.tac.PrimitiveTypecastExpr
-import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.ArrayStore
-import org.opalj.tac.Assignment
-import org.opalj.tac.Checkcast
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.If
-import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.PutField
-import org.opalj.tac.PutStatic
-import org.opalj.tac.ReturnValue
-import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
-import org.opalj.tac.Switch
-import org.opalj.tac.Throw
 import org.opalj.tac.UVar
-import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.ValueInformation
 
 /**
@@ -67,42 +42,9 @@ object LvIndicesPreparation {
         val duVars = mutable.ListBuffer[DUVar[_]]()
         tacStmts.foreach {
             case (stmt, _) =>
-                stmt match {
-                    case Assignment(_, targetVar, expr) =>
-                        collectDUVarFromExpr(targetVar, duVars)
-                        collectDUVarFromExpr(expr, duVars)
-                    case If(_, left, _, right, _) =>
-                        collectDUVarFromExpr(left, duVars)
-                        collectDUVarFromExpr(right, duVars)
-                    case VirtualMethodCall(_, _, _, _, _, receiver, params) =>
-                        collectDUVarFromExpr(receiver, duVars)
-                        for (param <- params) collectDUVarFromExpr(param, duVars)
-                    case PutField(_, _, _, _, objRef, value) =>
-                        collectDUVarFromExpr(objRef, duVars)
-                        collectDUVarFromExpr(value, duVars)
-                    case PutStatic(_, _, _, _, value) =>
-                        collectDUVarFromExpr(value, duVars)
-                    case StaticMethodCall(_, _, _, _, _, params) =>
-                        for (param <- params) collectDUVarFromExpr(param, duVars)
-                    case NonVirtualMethodCall(_, _, _, _, _, receiver, params) =>
-                        collectDUVarFromExpr(receiver, duVars)
-                        for (param <- params) collectDUVarFromExpr(param, duVars)
-                    case ReturnValue(_, expr) =>
-                        collectDUVarFromExpr(expr, duVars)
-                    case ArrayStore(_, arrayRef, index, value) =>
-                        collectDUVarFromExpr(arrayRef, duVars)
-                        collectDUVarFromExpr(index, duVars)
-                        collectDUVarFromExpr(value, duVars)
-                    case ExprStmt(_, expr) =>
-                        collectDUVarFromExpr(expr, duVars)
-                    case Throw(_, exception) =>
-                        collectDUVarFromExpr(exception, duVars)
-                    case Switch(_, _, index, _) =>
-                        collectDUVarFromExpr(index, duVars)
-                    case Checkcast(_, value, _) =>
-                        collectDUVarFromExpr(value, duVars)
-                    case _ =>
-                }
+                if (stmt.isAssignment)
+                    collectDUVarFromExpr(stmt.asAssignment.targetVar, duVars)
+                stmt.forallSubExpressions(subExpr => { collectDUVarFromExpr(subExpr, duVars); true })
         }
         val uVarToLVIndex = mutable.Map[IntTrieSet, Int]()
         val nextLVIndexAfterParameters = mapParametersAndPopulate(method, uVarToLVIndex)
@@ -139,15 +81,16 @@ object LvIndicesPreparation {
         uVarToLVIndex: mutable.Map[IntTrieSet, Int]
     ): Int = {
         var nextLVIndex = if (method.isStatic) 0 else 1
-
-        method.descriptor.parameterTypes.zipWithIndex.foreach { case (tpe, index) =>
-            // defSite -1 seems to *always* be reserved for 'this' so we always start at -2 and then go further down per parameter (-3, -4, etc.)
-            uVarToLVIndex.getOrElseUpdate(IntTrieSet(-(index + 2)), nextLVIndex)
-            nextLVIndex += tpe.computationalType.operandSize
-        }
         if (!method.isStatic) {
             uVarToLVIndex.getOrElseUpdate(IntTrieSet(-1), 0)
         }
+
+        method.descriptor.parameterTypes.zipWithIndex.foreach { case (tpe, index) =>
+            // defSite -1 is reserved for 'this' so we always start at -2 and then go further down per parameter (-3, -4, etc.)
+            uVarToLVIndex.getOrElseUpdate(IntTrieSet(-(index + 2)), nextLVIndex)
+            nextLVIndex += tpe.computationalType.operandSize
+        }
+
         nextLVIndex
     }
 
@@ -194,128 +137,7 @@ object LvIndicesPreparation {
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
     private def collectDUVarFromExpr(expr: Expr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        expr match {
-            case duVar: DUVar[_]           => duVars += duVar
-            case binaryExpr: BinaryExpr[_] => collectDUVarFromBinaryExpr(binaryExpr, duVars)
-            case virtualFunctionCallExpr: VirtualFunctionCall[_] =>
-                collectDUVarFromVirtualMethodCall(virtualFunctionCallExpr, duVars)
-            case staticFunctionCallExpr: StaticFunctionCall[_] =>
-                collectDUVarFromStaticFunctionCall(staticFunctionCallExpr, duVars)
-            case primitiveTypecastExpr: PrimitiveTypecastExpr[_] =>
-                collectDUVarFromPrimitiveTypeCastExpr(primitiveTypecastExpr, duVars)
-            case arrayLengthExpr: ArrayLength[_] => collectDUVarFromArrayLengthExpr(arrayLengthExpr, duVars)
-            case arrayLoadExpr: ArrayLoad[_]     => collectDUVarFromArrayLoadExpr(arrayLoadExpr, duVars)
-            case newArrayExpr: NewArray[_]       => collectDUVarFromNewArrayExpr(newArrayExpr, duVars)
-            case invokedynamicFunctionCall: InvokedynamicFunctionCall[_] =>
-                collectDUVarFromInvokedynamicFunctionCall(invokedynamicFunctionCall, duVars)
-            case getField: GetField[_]     => collectDUVarFromGetField(getField, duVars)
-            case compare: Compare[_]       => collectDUVarFromCompare(compare, duVars)
-            case prefixExpr: PrefixExpr[_] => collectDUVarFromPrefixExpr(prefixExpr, duVars)
-            case instanceOf: InstanceOf[_] => collectDUVarFromInstanceOf(instanceOf, duVars)
-            case _                         =>
-        }
-    }
-
-    private def collectDUVarFromInstanceOf(instanceOf: InstanceOf[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        collectDUVarFromExpr(instanceOf.value, duVars)
-    }
-
-    private def collectDUVarFromPrefixExpr(prefixExpr: PrefixExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        collectDUVarFromExpr(prefixExpr.operand, duVars)
-    }
-
-    private def collectDUVarFromCompare(compare: Compare[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        collectDUVarFromExpr(compare.left, duVars)
-        collectDUVarFromExpr(compare.right, duVars)
-    }
-
-    private def collectDUVarFromGetField(getField: GetField[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        collectDUVarFromExpr(getField.objRef, duVars)
-    }
-
-    private def collectDUVarFromInvokedynamicFunctionCall(
-        invokedynamicFunctionCall: InvokedynamicFunctionCall[_],
-        duVars:                    mutable.ListBuffer[DUVar[_]]
-    ): Unit = {
-        // Process each parameter and collect from each
-        for (param <- invokedynamicFunctionCall.params) collectDUVarFromExpr(param, duVars)
-    }
-
-    private def collectDUVarFromNewArrayExpr(newArrayExpr: NewArray[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        for (count <- newArrayExpr.counts) collectDUVarFromExpr(count, duVars)
-        // tpe does not contain any expr
-    }
-
-    /**
-     * Traverses a `ArrayLoad` expr to collect all DUVars embedded within it.
-     *
-     * @param arrayLoadExpr The `ArrayLength` expr to be traversed.
-     * @param duVars ListBuffer to be extended with all DUVars found in the expression.
-     */
-    private def collectDUVarFromArrayLoadExpr(arrayLoadExpr: ArrayLoad[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        collectDUVarFromExpr(arrayLoadExpr.index, duVars)
-        collectDUVarFromExpr(arrayLoadExpr.arrayRef, duVars)
-    }
-
-    /**
-     * Traverses a `ArrayLength` expr to collect all DUVars embedded within it.
-     *
-     * @param arrayLength The `ArrayLength` expr to be traversed.
-     * @param duVars ListBuffer to be extended with all DUVars found in the expression.
-     */
-    private def collectDUVarFromArrayLengthExpr(arrayLength: ArrayLength[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        collectDUVarFromExpr(arrayLength.arrayRef, duVars)
-    }
-
-    /**
-     * Traverses a `PrimitiveTypeCastExpr` to collect all DUVars embedded within it.
-     *
-     * @param primitiveTypecastExpr The `PrimitiveTypecastExpr` to be traversed.
-     * @param duVars ListBuffer to be extended with all DUVars found in the expression.
-     */
-    private def collectDUVarFromPrimitiveTypeCastExpr(
-        primitiveTypecastExpr: PrimitiveTypecastExpr[_],
-        duVars:                mutable.ListBuffer[DUVar[_]]
-    ): Unit = {
-        collectDUVarFromExpr(primitiveTypecastExpr.operand, duVars)
-    }
-
-    /**
-     * Traverses a `StaticFunctionCall` expression to collect all DUVars embedded within it.
-     *
-     * @param staticFunctionCallExpr The `StaticFunctionCall` expression to be traversed.
-     * @param duVars ListBuffer to be extended with all DUVars found in the expression.
-     */
-    private def collectDUVarFromStaticFunctionCall(
-        staticFunctionCallExpr: StaticFunctionCall[_],
-        duVars:                 mutable.ListBuffer[DUVar[_]]
-    ): Unit = {
-        // Process each parameter and collect from each
-        for (param <- staticFunctionCallExpr.params) collectDUVarFromExpr(param, duVars)
-    }
-
-    /**
-     * Traverses a `BinaryExpr` to collect all DUVars embedded within it.
-     *
-     * @param binaryExpr The `BinaryExpr` to be traversed.
-     * @param duVars ListBuffer to be extended with all DUVars found in the expression.
-     */
-    private def collectDUVarFromBinaryExpr(binaryExpr: BinaryExpr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        collectDUVarFromExpr(binaryExpr.left, duVars)
-        collectDUVarFromExpr(binaryExpr.right, duVars)
-    }
-
-    /**
-     * Traverses a `VirtualFunctionCall` expression to collect all DUVars embedded within it.
-     *
-     * @param virtualFunctionCallExpr The `VirtualFunctionCall` expression to be traversed.
-     * @param duVars ListBuffer to be extended with all DUVars found in the expression.
-     */
-    private def collectDUVarFromVirtualMethodCall(
-        virtualFunctionCallExpr: VirtualFunctionCall[_],
-        duVars:                  mutable.ListBuffer[DUVar[_]]
-    ): Unit = {
-        collectDUVarFromExpr(virtualFunctionCallExpr.receiver, duVars)
-        for (param <- virtualFunctionCallExpr.params) collectDUVarFromExpr(param, duVars)
+        if(expr.isVar) duVars += expr.asVar
+        else expr.forallSubExpressions(subExpr => { collectDUVarFromExpr(subExpr, duVars); true})
     }
 }

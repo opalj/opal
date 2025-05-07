@@ -5,12 +5,11 @@ import scala.collection.mutable
 
 import org.opalj.ba.CodeElement
 import org.opalj.ba.LabelElement
-import org.opalj.br.instructions.POP
-import org.opalj.br.instructions.POP2
 import org.opalj.br.instructions.RewriteLabel
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
+import org.opalj.tac.Call
 import org.opalj.tac.CaughtException
 import org.opalj.tac.Checkcast
 import org.opalj.tac.DUVar
@@ -21,18 +20,15 @@ import org.opalj.tac.InvokedynamicMethodCall
 import org.opalj.tac.JSR
 import org.opalj.tac.MonitorEnter
 import org.opalj.tac.MonitorExit
-import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.Nop
 import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.Ret
 import org.opalj.tac.Return
 import org.opalj.tac.ReturnValue
-import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.Switch
 import org.opalj.tac.Throw
-import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.ValueInformation
 
 /**
@@ -62,76 +58,52 @@ object StmtToInstructionTranslator {
         val labelMap = tacStmts.map(_ => RewriteLabel())
 
         // list of all CodeElements including bytecode instructions as well as pseudo instructions
-        val listedCodeElements = mutable.ListBuffer[CodeElement[Nothing]]()
+        val code = mutable.ListBuffer[CodeElement[Nothing]]()
 
-        // zipWithIndex -> every Tac-Stmt gets its own index -> allows finding the right Label in the labelMap
-        tacStmts.zipWithIndex.foreach { case ((stmt, _), tacIndex) =>
+        tacStmts.foreach { case (stmt, tacIndex) =>
             // add label to the list
-            listedCodeElements += LabelElement(labelMap(tacIndex))
+            code += LabelElement(labelMap(tacIndex))
             stmt match {
                 case Assignment(_, targetVar, expr) =>
-                    StmtProcessor.processAssignment(targetVar, expr, uVarToLVIndex, listedCodeElements)
+                    StmtProcessor.processAssignment(targetVar, expr, uVarToLVIndex, code)
                 case ArrayStore(_, arrayRef, index, value) =>
-                    StmtProcessor.processArrayStore(arrayRef, index, value, uVarToLVIndex, listedCodeElements)
+                    StmtProcessor.processArrayStore(arrayRef, index, value, uVarToLVIndex, code)
                 case CaughtException(_, exceptionType, throwingStmts) =>
                     // TODO: handle CaughtExceptions
                     StmtProcessor.processCaughtException(
                         exceptionType,
                         throwingStmts,
-                        listedCodeElements,
+                        code,
                         tacStmts,
                         labelMap,
                         tacIndex
                     )
                 case ExprStmt(_, expr) =>
-                    ExprProcessor.processExpression(expr, uVarToLVIndex, listedCodeElements)
-                    listedCodeElements += (if (expr.cTpe.isCategory2) POP2 else POP)
+                    StmtProcessor.processExprStmt(expr, uVarToLVIndex, code)
                 case If(_, left, condition, right, target) =>
-                    StmtProcessor.processIf(left, condition, right, labelMap(target), uVarToLVIndex, listedCodeElements)
+                    StmtProcessor.processIf(left, condition, right, labelMap(target), uVarToLVIndex, code)
                 case Goto(_, target) =>
-                    StmtProcessor.processGoto(labelMap(target), listedCodeElements)
+                    StmtProcessor.processGoto(labelMap(target), code)
                 case Switch(_, defaultTarget, index, npairs) =>
                     StmtProcessor.processSwitch(
                         labelMap(defaultTarget),
                         index,
                         npairs,
                         uVarToLVIndex,
-                        listedCodeElements,
+                        code,
                         labelMap
                     )
                 case JSR(_, target) =>
-                    StmtProcessor.processJSR(labelMap(target), listedCodeElements)
-                case VirtualMethodCall(_, declaringClass, isInterface, name, descriptor, receiver, params) =>
-                    StmtProcessor.processVirtualMethodCall(
+                    StmtProcessor.processJSR(labelMap(target), code)
+                case call @ Call(declaringClass, isInterface, name, descriptor) =>
+                    StmtProcessor.processMethodCall(
+                        call,
                         declaringClass,
                         isInterface,
                         name,
                         descriptor,
-                        receiver,
-                        params,
                         uVarToLVIndex,
-                        listedCodeElements
-                    )
-                case NonVirtualMethodCall(_, declaringClass, isInterface, name, descriptor, receiver, params) =>
-                    StmtProcessor.processNonVirtualMethodCall(
-                        declaringClass,
-                        isInterface,
-                        name,
-                        descriptor,
-                        receiver,
-                        params,
-                        uVarToLVIndex,
-                        listedCodeElements
-                    )
-                case StaticMethodCall(_, declaringClass, isInterface, name, descriptor, params) =>
-                    StmtProcessor.processStaticMethodCall(
-                        declaringClass,
-                        isInterface,
-                        name,
-                        descriptor,
-                        params,
-                        uVarToLVIndex,
-                        listedCodeElements
+                        code
                     )
                 case InvokedynamicMethodCall(_, bootstrapMethod, name, descriptor, params) =>
                     StmtProcessor.processInvokeDynamicMethodCall(
@@ -140,12 +112,12 @@ object StmtToInstructionTranslator {
                         descriptor,
                         params,
                         uVarToLVIndex,
-                        listedCodeElements
+                        code
                     )
                 case MonitorEnter(_, objRef) =>
-                    StmtProcessor.processMonitorEnter(objRef, uVarToLVIndex, listedCodeElements)
+                    StmtProcessor.processMonitorEnter(objRef, uVarToLVIndex, code)
                 case MonitorExit(_, objRef) =>
-                    StmtProcessor.processMonitorExit(objRef, uVarToLVIndex, listedCodeElements)
+                    StmtProcessor.processMonitorExit(objRef, uVarToLVIndex, code)
                 case PutField(_, declaringClass, name, declaredFieldType, objRef, value) =>
                     StmtProcessor.processPutField(
                         declaringClass,
@@ -154,7 +126,7 @@ object StmtToInstructionTranslator {
                         objRef,
                         value,
                         uVarToLVIndex,
-                        listedCodeElements
+                        code
                     )
                 case PutStatic(_, declaringClass, name, declaredFieldType, value) =>
                     StmtProcessor.processPutStatic(
@@ -163,23 +135,23 @@ object StmtToInstructionTranslator {
                         declaredFieldType,
                         value,
                         uVarToLVIndex,
-                        listedCodeElements
+                        code
                     )
                 case Checkcast(_, value, cmpTpe) =>
-                    StmtProcessor.processCheckCast(value, cmpTpe, uVarToLVIndex, listedCodeElements)
+                    StmtProcessor.processCheckCast(value, cmpTpe, uVarToLVIndex, code)
                 case Ret(_, returnAddresses) =>
-                    StmtProcessor.processRet(returnAddresses, listedCodeElements)
+                    StmtProcessor.processRet(returnAddresses, code)
                 case ReturnValue(_, expr) =>
-                    StmtProcessor.processReturnValue(expr, uVarToLVIndex, listedCodeElements)
+                    StmtProcessor.processReturnValue(expr, uVarToLVIndex, code)
                 case Return(_) =>
-                    StmtProcessor.processReturn(listedCodeElements)
+                    StmtProcessor.processReturn(code)
                 case Throw(_, exception) =>
-                    StmtProcessor.processThrow(exception, uVarToLVIndex, listedCodeElements)
+                    StmtProcessor.processThrow(exception, uVarToLVIndex, code)
                 case Nop(_) =>
-                    StmtProcessor.processNop(listedCodeElements)
+                    StmtProcessor.processNop(code)
                 case _ => throw new UnsupportedOperationException(s"Unsupported TAC-Stmt: $stmt")
             }
         }
-        listedCodeElements.toSeq
+        code.toSeq
     }
 }
