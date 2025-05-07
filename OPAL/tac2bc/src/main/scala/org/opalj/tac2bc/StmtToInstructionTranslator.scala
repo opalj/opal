@@ -96,7 +96,7 @@ object StmtToInstructionTranslator {
                 case JSR(_, target) =>
                     StmtProcessor.processJSR(labelMap(target), code)
                 case call @ Call(declaringClass, isInterface, name, descriptor) =>
-                    StmtProcessor.processMethodCall(
+                    ExprProcessor.processCall(
                         call,
                         declaringClass,
                         isInterface,

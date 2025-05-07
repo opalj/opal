@@ -30,6 +30,7 @@ import org.opalj.br.DoubleType
 import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
@@ -40,12 +41,13 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.BinaryExpr
+import org.opalj.tac.Call
 import org.opalj.tac.ClassConst
 import org.opalj.tac.Compare
 import org.opalj.tac.Const
+import org.opalj.tac.DoubleConst
 import org.opalj.tac.DUVar
 import org.opalj.tac.DVar
-import org.opalj.tac.DoubleConst
 import org.opalj.tac.DynamicConst
 import org.opalj.tac.Expr
 import org.opalj.tac.FloatConst
@@ -59,13 +61,17 @@ import org.opalj.tac.MethodHandleConst
 import org.opalj.tac.MethodTypeConst
 import org.opalj.tac.New
 import org.opalj.tac.NewArray
+import org.opalj.tac.NonVirtualFunctionCall
+import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.PrefixExpr
 import org.opalj.tac.PrimitiveTypecastExpr
 import org.opalj.tac.StaticFunctionCall
+import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.StringConst
 import org.opalj.tac.UVar
 import org.opalj.tac.Var
 import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.IsSReferenceValue
 
 object ExprProcessor {
@@ -75,57 +81,63 @@ object ExprProcessor {
      *
      * @param expr the Expression to be converted into InstructionElements
      * @param uVarToLVIndex map that holds information for Local Variable Indices
-     * @param listedCodeElements list where bytecode instructions should be added
+     * @param code list where bytecode instructions should be added
      */
     def processExpression(
-        expr:               Expr[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+        expr:          Expr[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         expr match {
-            case const: Const              => loadConstant(const, listedCodeElements)
-            case variable: Var[_]          => loadVariable(variable, uVarToLVIndex, listedCodeElements)
-            case getField: GetField[_]     => handleGetField(getField, uVarToLVIndex, listedCodeElements)
-            case getStatic: GetStatic      => handleGetStatic(getStatic, listedCodeElements)
-            case binaryExpr: BinaryExpr[_] => handleBinaryExpr(binaryExpr, uVarToLVIndex, listedCodeElements)
-            case virtualFunctionCallExpr: VirtualFunctionCall[_] =>
-                handleVirtualFunctionCall(virtualFunctionCallExpr, uVarToLVIndex, listedCodeElements)
-            case staticFunctionCallExpr: StaticFunctionCall[_] =>
-                handleStaticFunctionCall(staticFunctionCallExpr, uVarToLVIndex, listedCodeElements)
-            case newExpr: New => handleNewExpr(newExpr.tpe, listedCodeElements)
+            case const: Const              => loadConstant(const, code)
+            case variable: Var[_]          => loadVariable(variable, uVarToLVIndex, code)
+            case getField: GetField[_]     => processGetField(getField, uVarToLVIndex, code)
+            case getStatic: GetStatic      => processGetStatic(getStatic, code)
+            case binaryExpr: BinaryExpr[_] => processBinaryExpr(binaryExpr, uVarToLVIndex, code)
+            case call @ Call(declaringClass, isInterface, name, descriptor) =>
+                processCall(
+                    call,
+                    declaringClass,
+                    isInterface,
+                    name,
+                    descriptor,
+                    uVarToLVIndex,
+                    code
+                )
+            case newExpr: New => processNewExpr(newExpr.tpe, code)
             case primitiveTypecastExpr: PrimitiveTypecastExpr[_] =>
-                handlePrimitiveTypeCastExpr(primitiveTypecastExpr, uVarToLVIndex, listedCodeElements)
-            case arrayLength: ArrayLength[_] => handleArrayLength(arrayLength, uVarToLVIndex, listedCodeElements)
-            case arrayLoadExpr: ArrayLoad[_] => handleArrayLoad(arrayLoadExpr, uVarToLVIndex, listedCodeElements)
-            case newArrayExpr: NewArray[_]   => handleNewArray(newArrayExpr, uVarToLVIndex, listedCodeElements)
+                processPrimitiveTypeCastExpr(primitiveTypecastExpr, uVarToLVIndex, code)
+            case arrayLength: ArrayLength[_] => processArrayLength(arrayLength, uVarToLVIndex, code)
+            case arrayLoadExpr: ArrayLoad[_] => processArrayLoad(arrayLoadExpr, uVarToLVIndex, code)
+            case newArrayExpr: NewArray[_]   => processNewArray(newArrayExpr, uVarToLVIndex, code)
             case invokedynamicFunctionCall: InvokedynamicFunctionCall[_] =>
-                handleInvokedynamicFunctionCall(invokedynamicFunctionCall, uVarToLVIndex, listedCodeElements)
-            case compare: Compare[_]       => handleCompare(compare, uVarToLVIndex, listedCodeElements)
-            case prefixExpr: PrefixExpr[_] => handlePrefixExpr(prefixExpr, uVarToLVIndex, listedCodeElements)
-            case instanceOf: InstanceOf[_] => handleInstanceOf(instanceOf, uVarToLVIndex, listedCodeElements)
+                processInvokedynamicFunctionCall(invokedynamicFunctionCall, uVarToLVIndex, code)
+            case compare: Compare[_]       => processCompare(compare, uVarToLVIndex, code)
+            case prefixExpr: PrefixExpr[_] => processPrefixExpr(prefixExpr, uVarToLVIndex, code)
+            case instanceOf: InstanceOf[_] => processInstanceOf(instanceOf, uVarToLVIndex, code)
             case _ =>
                 throw new UnsupportedOperationException("Unsupported expression type" + expr)
         }
     }
 
-    private def handleInstanceOf(
-        instanceOf:         InstanceOf[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processInstanceOf(
+        instanceOf:    InstanceOf[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
-        ExprProcessor.processExpression(instanceOf.value, uVarToLVIndex, listedCodeElements)
-        listedCodeElements += INSTANCEOF(instanceOf.cmpTpe)
+        ExprProcessor.processExpression(instanceOf.value, uVarToLVIndex, code)
+        code += INSTANCEOF(instanceOf.cmpTpe)
     }
 
-    private def handlePrefixExpr(
-        prefixExpr:         PrefixExpr[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processPrefixExpr(
+        prefixExpr:    PrefixExpr[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process the operand (the expression being negated)
-        ExprProcessor.processExpression(prefixExpr.operand, uVarToLVIndex, listedCodeElements)
+        ExprProcessor.processExpression(prefixExpr.operand, uVarToLVIndex, code)
         // Determine the appropriate negation instruction based on the operand type
-        listedCodeElements += {
+        code += {
             prefixExpr.operand.cTpe match {
                 case ComputationalTypeInt    => INEG
                 case ComputationalTypeLong   => LNEG
@@ -137,17 +149,17 @@ object ExprProcessor {
         }
     }
 
-    private def handleCompare(
-        compare:            Compare[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processCompare(
+        compare:       Compare[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process the left expression
-        processExpression(compare.left, uVarToLVIndex, listedCodeElements)
+        processExpression(compare.left, uVarToLVIndex, code)
         // Process the right expression
-        processExpression(compare.right, uVarToLVIndex, listedCodeElements)
+        processExpression(compare.right, uVarToLVIndex, code)
         // Determine the appropriate comparison instruction
-        listedCodeElements += {
+        code += {
             compare.left.cTpe match {
                 case ComputationalTypeFloat =>
                     compare.condition match {
@@ -168,30 +180,30 @@ object ExprProcessor {
         }
     }
 
-    private def handleInvokedynamicFunctionCall(
+    private def processInvokedynamicFunctionCall(
         invokedynamicFunctionCall: InvokedynamicFunctionCall[_],
         uVarToLVIndex:             mutable.Map[IntTrieSet, Int],
-        listedCodeElements:        mutable.ListBuffer[CodeElement[Nothing]]
+        code:                      mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process each parameter
         for (param <- invokedynamicFunctionCall.params)
-            ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
-        listedCodeElements += DEFAULT_INVOKEDYNAMIC(
+            ExprProcessor.processExpression(param, uVarToLVIndex, code)
+        code += DEFAULT_INVOKEDYNAMIC(
             invokedynamicFunctionCall.bootstrapMethod,
             invokedynamicFunctionCall.name,
             invokedynamicFunctionCall.descriptor
         )
     }
 
-    private def handleNewArray(
-        newArrayExpr:       NewArray[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processNewArray(
+        newArrayExpr:  NewArray[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process each parameter
         for (count <- newArrayExpr.counts.reverse)
-            ExprProcessor.processExpression(count, uVarToLVIndex, listedCodeElements)
-        listedCodeElements += {
+            ExprProcessor.processExpression(count, uVarToLVIndex, code)
+        code += {
             if (newArrayExpr.counts.size > 1) {
                 MULTIANEWARRAY(newArrayExpr.tpe, newArrayExpr.counts.size)
             } else if (newArrayExpr.tpe.componentType.isReferenceType) {
@@ -202,18 +214,18 @@ object ExprProcessor {
         }
     }
 
-    private def handleArrayLoad(
-        arrayLoadExpr:      ArrayLoad[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processArrayLoad(
+        arrayLoadExpr: ArrayLoad[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Load the array reference onto the stack
-        processExpression(arrayLoadExpr.arrayRef, uVarToLVIndex, listedCodeElements)
+        processExpression(arrayLoadExpr.arrayRef, uVarToLVIndex, code)
         // Load the index onto the stack
-        processExpression(arrayLoadExpr.index, uVarToLVIndex, listedCodeElements)
+        processExpression(arrayLoadExpr.index, uVarToLVIndex, code)
         // Infer the element type from the array reference expression
         val elementType = inferElementType(arrayLoadExpr.arrayRef)
-        listedCodeElements += {
+        code += {
             elementType match {
                 case IntegerType      => IALOAD
                 case LongType         => LALOAD
@@ -235,62 +247,50 @@ object ExprProcessor {
             case _                        => throw new IllegalArgumentException(s"Expected an array type but found: ${expr.cTpe}")
         }
     }
-    private def handleArrayLength(
-        arrayLength:        ArrayLength[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processArrayLength(
+        arrayLength:   ArrayLength[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process the receiver object (e.g., aload_0 for `this`)
-        ExprProcessor.processExpression(arrayLength.arrayRef, uVarToLVIndex, listedCodeElements)
-        listedCodeElements += ARRAYLENGTH
+        ExprProcessor.processExpression(arrayLength.arrayRef, uVarToLVIndex, code)
+        code += ARRAYLENGTH
     }
 
-    private def handleNewExpr(
-        tpe:                ObjectType,
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processNewExpr(
+        tpe:  ObjectType,
+        code: mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
-        listedCodeElements += NEW(tpe)
+        code += NEW(tpe)
     }
 
-    private def handleStaticFunctionCall(
-        expr:               StaticFunctionCall[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    def processCall(
+        call:             Call[_],
+        declaringClass:   ReferenceType,
+        isInterface:      Boolean,
+        methodName:       String,
+        methodDescriptor: MethodDescriptor,
+        uVarToLVIndex:    mutable.Map[IntTrieSet, Int],
+        code:             mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process each parameter
-        for (param <- expr.params) ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
-        listedCodeElements += {
-            if (expr.isInterface) {
-                INVOKEINTERFACE(expr.declaringClass, expr.name, expr.descriptor)
-            } else {
-                INVOKESTATIC(expr.declaringClass, expr.isInterface, expr.name, expr.descriptor)
-            }
-        }
-    }
-
-    private def handleVirtualFunctionCall(
-        expr:               VirtualFunctionCall[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
-    ): Unit = {
-        // Process the receiver object (e.g., ALOAD_0 for `this`)
-        ExprProcessor.processExpression(expr.receiver, uVarToLVIndex, listedCodeElements)
-        // Process each parameter
-        for (param <- expr.params) ExprProcessor.processExpression(param, uVarToLVIndex, listedCodeElements)
-        listedCodeElements += {
-            if (expr.isInterface) {
-                INVOKEINTERFACE(expr.declaringClass.asObjectType, expr.name, expr.descriptor)
-            } else {
-                INVOKEVIRTUAL(expr.declaringClass, expr.name, expr.descriptor)
-            }
+        for (param <- call.allParams) ExprProcessor.processExpression(param, uVarToLVIndex, code)
+        code += call match {
+            case _: VirtualMethodCall[_] | _: VirtualFunctionCall[_] =>
+                if (isInterface) INVOKEINTERFACE(declaringClass.asObjectType, methodName, methodDescriptor)
+                else INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
+            case _: NonVirtualMethodCall[_] | _: NonVirtualFunctionCall[_] =>
+                INVOKESPECIAL(declaringClass.asObjectType, isInterface, methodName, methodDescriptor)
+            case _: StaticMethodCall[_] | _: StaticFunctionCall[_] =>
+                INVOKESTATIC(declaringClass.asObjectType, isInterface, methodName, methodDescriptor)
         }
     }
 
     private def loadConstant(
-        constExpr:          Const,
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+        constExpr: Const,
+        code:      mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
-        listedCodeElements += {
+        code += {
             if (constExpr.isNullExpr) {
                 ACONST_NULL
             } else {
@@ -330,12 +330,12 @@ object ExprProcessor {
     }
 
     private def loadVariable(
-        variable:           Var[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+        variable:      Var[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         val index = getVariableLvIndex(variable, uVarToLVIndex)
-        listedCodeElements += {
+        code += {
             variable.cTpe match {
                 case ComputationalTypeInt       => ILOAD.canonicalRepresentation(index)
                 case ComputationalTypeFloat     => FLOAD.canonicalRepresentation(index)
@@ -351,12 +351,12 @@ object ExprProcessor {
     }
 
     def storeVariable(
-        variable:           Var[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+        variable:      Var[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         val index: Int = getVariableLvIndex(variable, uVarToLVIndex)
-        listedCodeElements += {
+        code += {
             variable.cTpe match {
                 case ComputationalTypeInt       => ISTORE.canonicalRepresentation(index)
                 case ComputationalTypeFloat     => FSTORE.canonicalRepresentation(index)
@@ -371,35 +371,35 @@ object ExprProcessor {
         }
     }
 
-    private def handleGetField(
-        getField:           GetField[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processGetField(
+        getField:      GetField[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Load the object reference onto the stack
-        processExpression(getField.objRef, uVarToLVIndex, listedCodeElements)
+        processExpression(getField.objRef, uVarToLVIndex, code)
         // Generate the GETFIELD instruction
-        listedCodeElements += GETFIELD(getField.declaringClass, getField.name, getField.declaredFieldType)
+        code += GETFIELD(getField.declaringClass, getField.name, getField.declaredFieldType)
     }
 
-    private def handleGetStatic(
-        getStatic:          GetStatic,
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processGetStatic(
+        getStatic: GetStatic,
+        code:      mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
-        listedCodeElements += GETSTATIC(getStatic.declaringClass, getStatic.name, getStatic.declaredFieldType)
+        code += GETSTATIC(getStatic.declaringClass, getStatic.name, getStatic.declaredFieldType)
     }
 
-    private def handleBinaryExpr(
-        binaryExpr:         BinaryExpr[_],
-        uVarToLVIndex:      mutable.Map[IntTrieSet, Int],
-        listedCodeElements: mutable.ListBuffer[CodeElement[Nothing]]
+    private def processBinaryExpr(
+        binaryExpr:    BinaryExpr[_],
+        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // process the left expr and save the pc to give in the right expr processing
-        processExpression(binaryExpr.left, uVarToLVIndex, listedCodeElements)
+        processExpression(binaryExpr.left, uVarToLVIndex, code)
         // process the right Expr
-        processExpression(binaryExpr.right, uVarToLVIndex, listedCodeElements)
+        processExpression(binaryExpr.right, uVarToLVIndex, code)
 
-        listedCodeElements += {
+        code += {
             (binaryExpr.cTpe, binaryExpr.op) match {
                 // Double
                 case (ComputationalTypeDouble, Add)      => DADD
@@ -444,15 +444,15 @@ object ExprProcessor {
             }
         }
     }
-    private def handlePrimitiveTypeCastExpr(
+    private def processPrimitiveTypeCastExpr(
         primitiveTypecastExpr: PrimitiveTypecastExpr[_],
         uVarToLVIndex:         mutable.Map[IntTrieSet, Int],
-        listedCodeElements:    mutable.ListBuffer[CodeElement[Nothing]]
+        code:                  mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // First, process the operand expression and add its instructions to the buffer
-        processExpression(primitiveTypecastExpr.operand, uVarToLVIndex, listedCodeElements)
+        processExpression(primitiveTypecastExpr.operand, uVarToLVIndex, code)
 
-        listedCodeElements += {
+        code += {
             (primitiveTypecastExpr.operand.cTpe, primitiveTypecastExpr.targetTpe) match {
                 // -> to Float
                 case (ComputationalTypeDouble, FloatType) => D2F

@@ -137,7 +137,7 @@ object LvIndicesPreparation {
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
     private def collectDUVarFromExpr(expr: Expr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
-        if(expr.isVar) duVars += expr.asVar
-        else expr.forallSubExpressions(subExpr => { collectDUVarFromExpr(subExpr, duVars); true})
+        if (expr.isVar) duVars += expr.asVar
+        else expr.forallSubExpressions(subExpr => { collectDUVarFromExpr(subExpr, duVars); true })
     }
 }

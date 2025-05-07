@@ -45,10 +45,6 @@ import org.opalj.br.instructions.DRETURN
 import org.opalj.br.instructions.FASTORE
 import org.opalj.br.instructions.FRETURN
 import org.opalj.br.instructions.IASTORE
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.IRETURN
 import org.opalj.br.instructions.LabeledGOTO
 import org.opalj.br.instructions.LabeledIF_ACMPEQ
@@ -79,15 +75,11 @@ import org.opalj.br.instructions.RewriteLabel
 import org.opalj.br.instructions.SASTORE
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
-import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
 import org.opalj.tac.Var
-import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.ValueInformation
 
 object StmtProcessor {
@@ -360,27 +352,6 @@ object StmtProcessor {
 
     def processJSR(target: RewriteLabel, code: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
         code += LabeledJSR(target)
-    }
-
-    def processMethodCall(
-        call:             Call[_],
-        declaringClass:   ReferenceType,
-        isInterface:      Boolean,
-        methodName:       String,
-        methodDescriptor: MethodDescriptor,
-        uVarToLVIndex:    mutable.Map[IntTrieSet, Int],
-        code:             mutable.ListBuffer[CodeElement[Nothing]]
-    ): Unit = {
-        for (param <- call.allParams) ExprProcessor.processExpression(param, uVarToLVIndex, code)
-        code += call match {
-            case _: VirtualMethodCall[_] =>
-                if (isInterface) INVOKEINTERFACE(declaringClass.asObjectType, methodName, methodDescriptor)
-                else INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
-            case _: NonVirtualMethodCall[_] =>
-                INVOKESPECIAL(declaringClass.asObjectType, isInterface, methodName, methodDescriptor)
-            case _: StaticMethodCall[_] =>
-                INVOKESTATIC(declaringClass.asObjectType, isInterface, methodName, methodDescriptor)
-        }
     }
 
     def processGoto(target: RewriteLabel, code: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
