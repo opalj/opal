@@ -527,10 +527,23 @@ lazy val runProjectDependencyGeneration =  ThisBuild / taskKey[Unit] ("Regenerat
 
 runProjectDependencyGeneration := {
   import scala.sys.process.*
+  import scala.util.{Try, Success, Failure}
+
   val s: TaskStreams = streams.value
-  val uid = "id -u".!!.stripSuffix("\n")
-  val gid = "id -g".!!.stripSuffix("\n")
-  val baseCommand = s"docker run --userns=host --rm -u $uid:$gid -v ${baseDirectory.value.getAbsolutePath}/:/data minlag/mermaid-cli -i OPAL/ProjectDependencies.mmd -c mermaid-config.json"
+
+  val dockerUserArg = Try {
+      val uid = "id -u".!!.stripSuffix("\n").toString
+      val gid = "id -g".!!.stripSuffix("\n").toString
+      s"$uid:$gid"
+  } match {
+    case Success(userSpec) =>
+      s"-u $userSpec"
+    case Failure(ex) =>
+        s.log.warn(s"Cannot obtain user id, using mermaid default user for diagram file creation")
+      ""
+  }
+
+  val baseCommand = s"docker run --userns=host --rm $dockerUserArg -v ${baseDirectory.value.getAbsolutePath}/:/data minlag/mermaid-cli -i OPAL/ProjectDependencies.mmd -c mermaid-config.json"
   s.log.info("Regenerating ProjectDependencies.svg")
   baseCommand + " -o OPAL/ProjectDependencies.svg" ! s.log
   s.log.info("Regenerating ProjectDependencies.pdf")
