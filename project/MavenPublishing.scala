@@ -1,6 +1,4 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-import sbt._
-
 import scala.xml.NodeSeq
 
 /**
@@ -11,19 +9,10 @@ import scala.xml.NodeSeq
  */
 object MavenPublishing {
 
-  // method populates sbt.publishTo = SettingKey[Option[Resolver]]
-  def publishTo(isSnapshot: Boolean): Option[Resolver] = {
-    val nexus = "https://oss.sonatype.org/"
-    if (isSnapshot)
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-    else
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  }
-
   def pomNodeSeq(): NodeSeq = {
     <scm>
-        <url>git@github.com:stg-tud/opal.git</url>
-        <connection>scm:git:git@github.com:stg-tud/opal.git</connection>
+        <url>https://github.com/opalj/opal.git</url>
+        <connection>scm:git:git@github.com:opalj/opal.git</connection>
     </scm>
     <developers>
         <developer>

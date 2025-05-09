@@ -6,7 +6,7 @@ The latest release is always found on [Maven Central](https://search.maven.org/#
 
 If you want to use the snapshot version do not forget to add the respective resolver:
 
-    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+    resolvers += "Sonatype Central Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/"
 
 ## Using OPAL to Develop Analyses
 

@@ -1,6 +1,7 @@
 import sbt.Test
 import sbtassembly.AssemblyPlugin.autoImport.*
 import sbtunidoc.ScalaUnidocPlugin
+import xerial.sbt.Sonatype.sonatypeCentralHost
 
 name := "OPAL Library"
 
@@ -14,7 +15,7 @@ ThisBuild / version := "5.0.1-SNAPSHOT"
 // RELEASED version in ThisBuild := "1.0.0" // October 25th, 2017
 // RELEASED version in ThisBuild := "0.8.15" // September 7th, 2017
 // RELEASED version in ThisBuild := "0.8.14" // June 23rd, 2017
-// RELEASED version in ThisBuild := "0.8.13" // MAY 19th, 2017
+// RELEASED version in ThisBuild := "0.8.13" // May 19th, 2017
 // RELEASED version in ThisBuild := "0.8.12" // April 28th, 2017
 // RELEASED version in ThisBuild := "0.8.11" // April 14th, 2017
 // RELEASED version in ThisBuild := "0.8.10"
@@ -543,6 +544,7 @@ runProjectDependencyGeneration := {
 //
 
 ThisBuild / publishMavenStyle.withRank(KeyRanks.Invisible) := true
+ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 Test / publishArtifact := false
-ThisBuild / publishTo := MavenPublishing.publishTo(isSnapshot.value)
+ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / pomExtra := MavenPublishing.pomNodeSeq()
