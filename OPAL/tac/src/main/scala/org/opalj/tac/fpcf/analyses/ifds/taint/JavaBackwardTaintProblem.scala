@@ -6,8 +6,8 @@ package analyses
 package ifds
 package taint
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
@@ -329,7 +329,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
      */
     private def createNewInstanceFieldTaints(
         expression:     Expr[V],
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         statement:      JavaStatement
     ): Set[TaintFact] =

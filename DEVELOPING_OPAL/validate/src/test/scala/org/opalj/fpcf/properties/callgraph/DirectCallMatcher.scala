@@ -8,13 +8,13 @@ import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ArrayValue
+import org.opalj.br.ClassType
 import org.opalj.br.ClassValue
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
@@ -27,7 +27,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
 
     override def validateProperty(
         p:          Project[_],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -35,8 +35,8 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         // If the entity is annotated with a single annotation, we receive a DirectCall annotation.
         // If it is annotated with multiple DirectCall annotations, we receive a single DirectCalls
         // container annotation.
-        val singleAnnotation = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCall")
-        val containerAnnotation = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCalls")
+        val singleAnnotation = ClassType("org/opalj/fpcf/properties/callgraph/DirectCall")
+        val containerAnnotation = ClassType("org/opalj/fpcf/properties/callgraph/DirectCalls")
 
         if (a.annotationType == singleAnnotation) {
             validateSingleAnnotation(p, as, entity, a, properties)
@@ -65,17 +65,17 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
 
     private def validateSingleAnnotation(
         p:          Project[_],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
 
         // Get call graph analyses for which this annotation applies.
         val analysesElementValues: Seq[ElementValue] =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         // If none of the annotated analyses match the executed ones, return...
         // If the list of specified analyses is empty, we assume the annotation applies to all

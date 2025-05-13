@@ -4,7 +4,7 @@ package fpcf
 package ifds
 
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -44,7 +44,7 @@ class ForwardTaintProblemFixture(p: SomeProject) extends AbstractJavaForwardTain
     override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] = {
         var temp: mutable.Seq[(Method, IFDSFact[TaintFact, JavaStatement])] = mutable.Seq.empty
         for {
-            cf <- p.allProjectClassFiles if cf.thisType == ObjectType("org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
+            cf <- p.allProjectClassFiles if cf.thisType == ClassType("org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
             m <- cf.methods if m.isPublic && outsideAnalysisContextCall(m).isEmpty
         } {
             temp :+= (m -> new IFDSFact(TaintNullFact))

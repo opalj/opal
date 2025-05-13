@@ -44,17 +44,17 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     val javaLangCHCreator = List(() => getClass.getResourceAsStream(javaLangCHFile))
     val javaLangCH = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
 
-    val Object = ObjectType.Object
-    val Throwable = ObjectType.Throwable
-    val Exception = ObjectType.Exception
-    val Error = ObjectType.Error
-    val RuntimeException = ObjectType.RuntimeException
-    val ArithmeticException = ObjectType.ArithmeticException
-    val Cloneable = ObjectType.Cloneable
-    val Serializable = ObjectType.Serializable
+    val Object = ClassType.Object
+    val Throwable = ClassType.Throwable
+    val Exception = ClassType.Exception
+    val Error = ClassType.Error
+    val RuntimeException = ClassType.RuntimeException
+    val ArithmeticException = ClassType.ArithmeticException
+    val Cloneable = ClassType.Cloneable
+    val Serializable = ClassType.Serializable
     val SeriablizableArray = ArrayType(Serializable)
     val SeriablizableArrayOfArray = ArrayType(SeriablizableArray)
-    val AnUnknownType = ObjectType("myTest/AnUnknownType")
+    val AnUnknownType = ClassType("myTest/AnUnknownType")
     val AnUnknownTypeArray = ArrayType(AnUnknownType)
     val CloneableArray = ArrayType(Cloneable)
     val ObjectArray = ArrayType.ArrayOfObject
@@ -400,10 +400,10 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     it should "return all leaf types" in {
         jlsCH.leafTypes should be(UIDSet(
-            ObjectType("java/lang/String"),
-            ObjectType("java/lang/Class"),
-            ObjectType("java/lang/Cloneable"),
-            ObjectType("java/lang/Comparable")
+            ClassType("java/lang/String"),
+            ClassType("java/lang/Class"),
+            ClassType("java/lang/Cloneable"),
+            ClassType("java/lang/Comparable")
         ))
     }
 
@@ -432,27 +432,27 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     behavior of "the default ClassHierarchy's allSupertypesOf method w.r.t. class types"
 
     it should "identify the same set of class as allSupertypes if the bound contains only one element" in {
-        val supertypesOfString = javaLangCH.allSupertypes(ObjectType.String, true)
+        val supertypesOfString = javaLangCH.allSupertypes(ClassType.String, true)
 
-        supertypesOfString should be(javaLangCH.allSupertypesOf(UIDSet(ObjectType.String), true))
+        supertypesOfString should be(javaLangCH.allSupertypesOf(UIDSet(ClassType.String), true))
     }
 
     behavior of "the default ClassHierarchy's leafTypes method w.r.t. class types"
 
     it should "correctly return a class if we give it a class and all types it inherits from" in {
-        val supertypesOfString = javaLangCH.allSupertypes(ObjectType.String, true)
+        val supertypesOfString = javaLangCH.allSupertypes(ClassType.String, true)
 
-        javaLangCH.leafTypes(supertypesOfString) should be(UIDSet(ObjectType.String))
+        javaLangCH.leafTypes(supertypesOfString) should be(UIDSet(ClassType.String))
     }
 
     it should "correctly return a class' direct supertypes if we give it all types the class inherits from" in {
-        val supertypesOfString = javaLangCH.allSupertypes(ObjectType.String, false)
+        val supertypesOfString = javaLangCH.allSupertypes(ClassType.String, false)
 
         javaLangCH.leafTypes(supertypesOfString) should be(
             UIDSet(
-                ObjectType.Serializable,
-                ObjectType("java/lang/Comparable"),
-                ObjectType("java/lang/CharSequence")
+                ClassType.Serializable,
+                ClassType("java/lang/Comparable"),
+                ClassType("java/lang/CharSequence")
             )
         )
     }
@@ -603,35 +603,35 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
             true
         )
 
-    val cRootType = ObjectType("classhierarchy/CRoot")
-    val cRootAType = ObjectType("classhierarchy/CRootA")
-    val cRootAABType = ObjectType("classhierarchy/CRootAAB")
-    val cRootAAABBCType = ObjectType("classhierarchy/CRootAAABBC")
-    val iRootAType = ObjectType("classhierarchy/IRootA")
-    val iRootBType = ObjectType("classhierarchy/IRootB")
-    val iRootCType = ObjectType("classhierarchy/IRootC")
+    val cRootType = ClassType("classhierarchy/CRoot")
+    val cRootAType = ClassType("classhierarchy/CRootA")
+    val cRootAABType = ClassType("classhierarchy/CRootAAB")
+    val cRootAAABBCType = ClassType("classhierarchy/CRootAAABBC")
+    val iRootAType = ClassType("classhierarchy/IRootA")
+    val iRootBType = ClassType("classhierarchy/IRootB")
+    val iRootCType = ClassType("classhierarchy/IRootC")
 
     it should "return the given upper type bound if it just contains a single type" in {
         import typesProject.classHierarchy.directSubtypesOf
-        directSubtypesOf(UIDSet[ObjectType](cRootType)) should be(UIDSet(cRootType))
-        directSubtypesOf(UIDSet[ObjectType](iRootAType)) should be(UIDSet(iRootAType))
-        directSubtypesOf(UIDSet[ObjectType](cRootAAABBCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ClassType](cRootType)) should be(UIDSet(cRootType))
+        directSubtypesOf(UIDSet[ClassType](iRootAType)) should be(UIDSet(iRootAType))
+        directSubtypesOf(UIDSet[ClassType](cRootAAABBCType)) should be(UIDSet(cRootAAABBCType))
     }
 
     it should "return the type that is the subtype of all types of the bound" in {
         import typesProject.classHierarchy.directSubtypesOf
-        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootBType)) should be(UIDSet(cRootAABType))
-        directSubtypesOf(UIDSet[ObjectType](cRootAType, iRootBType)) should be(UIDSet(cRootAABType))
-        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootCType)) should be(UIDSet(cRootAAABBCType))
-        directSubtypesOf(UIDSet[ObjectType](iRootAType, iRootBType, iRootCType)) should be(UIDSet(cRootAAABBCType))
-        directSubtypesOf(UIDSet[ObjectType](iRootBType, iRootCType)) should be(UIDSet(cRootAAABBCType))
-        directSubtypesOf(UIDSet[ObjectType](cRootAType, iRootCType)) should be(UIDSet(cRootAAABBCType))
-        directSubtypesOf(UIDSet[ObjectType](cRootAABType, iRootCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ClassType](iRootAType, iRootBType)) should be(UIDSet(cRootAABType))
+        directSubtypesOf(UIDSet[ClassType](cRootAType, iRootBType)) should be(UIDSet(cRootAABType))
+        directSubtypesOf(UIDSet[ClassType](iRootAType, iRootCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ClassType](iRootAType, iRootBType, iRootCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ClassType](iRootBType, iRootCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ClassType](cRootAType, iRootCType)) should be(UIDSet(cRootAAABBCType))
+        directSubtypesOf(UIDSet[ClassType](cRootAABType, iRootCType)) should be(UIDSet(cRootAAABBCType))
     }
 
     it should "not fail if no common subtype exists" in {
         import typesProject.classHierarchy.directSubtypesOf
-        directSubtypesOf(UIDSet[ObjectType](cRootType, iRootBType)) should be(UIDSet.empty)
+        directSubtypesOf(UIDSet[ClassType](cRootType, iRootBType)) should be(UIDSet.empty)
     }
 
     behavior of "the ClassHierarchy's allSubclassTypes method"
@@ -668,21 +668,21 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     it should "return all subclasses (non-reflexive) of a class with multiple direct subclasses" in {
         import typesProject.classHierarchy.allSubclassTypes
-        allSubclassTypes(ObjectType("java/lang/IndexOutOfBoundsException"), false).toSet should be(
+        allSubclassTypes(ClassType("java/lang/IndexOutOfBoundsException"), false).toSet should be(
             Set(
-                ObjectType("java/lang/ArrayIndexOutOfBoundsException"),
-                ObjectType("java/lang/StringIndexOutOfBoundsException")
+                ClassType("java/lang/ArrayIndexOutOfBoundsException"),
+                ClassType("java/lang/StringIndexOutOfBoundsException")
             )
         )
     }
 
     it should "return all subclasses (reflexive) of a class with multiple direct subclasses" in {
         import typesProject.classHierarchy.allSubclassTypes
-        allSubclassTypes(ObjectType("java/lang/IndexOutOfBoundsException"), true).toSet should be(
+        allSubclassTypes(ClassType("java/lang/IndexOutOfBoundsException"), true).toSet should be(
             Set(
-                ObjectType("java/lang/IndexOutOfBoundsException"),
-                ObjectType("java/lang/ArrayIndexOutOfBoundsException"),
-                ObjectType("java/lang/StringIndexOutOfBoundsException")
+                ClassType("java/lang/IndexOutOfBoundsException"),
+                ClassType("java/lang/ArrayIndexOutOfBoundsException"),
+                ClassType("java/lang/StringIndexOutOfBoundsException")
             )
         )
     }
@@ -873,13 +873,13 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     it should "be possible to get all supertypes, even if not all information is available" in {
 
-        val mi = ObjectType("org/apache/tools/ant/taskdefs/MacroInstance")
+        val mi = ClassType("org/apache/tools/ant/taskdefs/MacroInstance")
         apacheANTCH.allSupertypes(mi) should be(UIDSet(
-            ObjectType("org/apache/tools/ant/Task"),
-            ObjectType("org/apache/tools/ant/ProjectComponent"),
-            ObjectType("org/apache/tools/ant/TaskContainer"),
-            ObjectType("org/apache/tools/ant/DynamicAttribute"),
-            ObjectType.Object
+            ClassType("org/apache/tools/ant/Task"),
+            ClassType("org/apache/tools/ant/ProjectComponent"),
+            ClassType("org/apache/tools/ant/TaskContainer"),
+            ClassType("org/apache/tools/ant/DynamicAttribute"),
+            ClassType.Object
         ))
     }
 
@@ -899,8 +899,8 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     it should "correctly find all suptypes of an interface" in {
         import clusteringProject.classHierarchy
 
-        val window = ObjectType("pattern/decorator/example1/Window")
-        val simpleWindow = ObjectType("pattern/decorator/example1/SimpleWindow")
+        val window = ClassType("pattern/decorator/example1/Window")
+        val simpleWindow = ClassType("pattern/decorator/example1/SimpleWindow")
 
         classHierarchy.isKnown(window) should be(true)
         classHierarchy.isKnown(simpleWindow) should be(true)
@@ -909,7 +909,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         classHierarchy.isSubtypeOf(simpleWindow, window) should be(true)
 
         // check if the SimpleWindow is in the set of all subtypes of Window
-        var subtypes = Set.empty[ObjectType]
+        var subtypes = Set.empty[ClassType]
         classHierarchy.foreachSubtype(window) { subtypes += _ }
         if (!subtypes.contains(simpleWindow))
             fail(s"SimpleWindow is not among the subtypes: $subtypes; " +
@@ -934,9 +934,9 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     it should "correctly iterate over all suptypes of Object, even without the JDK included" in {
         var foundSomeEnumerationClass = false
-        jvmFeaturesProject.classHierarchy.foreachSubtypeCF(ObjectType.Object, false) { subTypeCF =>
+        jvmFeaturesProject.classHierarchy.foreachSubtypeCF(ClassType.Object, false) { subTypeCF =>
             val subType = subTypeCF.thisType
-            if (subType == ObjectType("class_types/SomeEnumeration")) {
+            if (subType == ClassType("class_types/SomeEnumeration")) {
                 foundSomeEnumerationClass = true
                 false
             } else

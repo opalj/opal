@@ -72,7 +72,7 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
         evaluateMethod("alwaysThrows") { domain =>
             import domain._
             allThrownExceptions should be(
-                Map((8 -> Set(ObjectValue(0, No, true, ObjectType.RuntimeException))))
+                Map((8 -> Set(ObjectValue(0, No, true, ClassType.RuntimeException))))
             )
         }
     }
@@ -89,8 +89,8 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
             import domain._
             allThrownExceptions should be(
                 Map(
-                    (19 -> Set(ObjectValue(12, No, true, ObjectType("java/lang/IllegalArgumentException")))), // <= finally
-                    (11 -> Set(ObjectValue(4, No, true, ObjectType.NullPointerException)))
+                    (19 -> Set(ObjectValue(12, No, true, ClassType("java/lang/IllegalArgumentException")))), // <= finally
+                    (11 -> Set(ObjectValue(4, No, true, ClassType.NullPointerException)))
                 ) // <= if t is null
             )
         }
@@ -112,7 +112,7 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
             // Due to the simplicity of the domain (the exceptions of called methods are
             // not yet analyzed) we cannot determine that the following exception
             // (among others?) may also be thrown:
-            // ("throws", SomeReferenceValue(...,ObjectType("java/lang/RuntimeException"),No))
+            // ("throws", SomeReferenceValue(...,ClassType("java/lang/RuntimeException"),No))
         }
     }
 
@@ -127,18 +127,18 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
                             ImmediateVMExceptionsOriginOffset - 19,
                             No,
                             true,
-                            ObjectType.NullPointerException
+                            ClassType.NullPointerException
                         ))
                     ),
                     (
                         23,
                         Set(
-                            ObjectValue(-1, No, false, ObjectType.Throwable),
+                            ObjectValue(-1, No, false, ClassType.Throwable),
                             ObjectValue(
                                 ImmediateVMExceptionsOriginOffset - 11,
                                 No,
                                 true,
-                                ObjectType.NullPointerException
+                                ClassType.NullPointerException
                             )
                         )
                     ),
@@ -148,7 +148,7 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
                             ImmediateVMExceptionsOriginOffset - 25,
                             No,
                             true,
-                            ObjectType.NullPointerException
+                            ClassType.NullPointerException
                         ))
                     )
                 )

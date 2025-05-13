@@ -16,11 +16,11 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  *
  * @author Michael Eichberg
  */
-object PrivateMethodsWithObjectTypeParameterCounter extends ProjectAnalysisApplication {
+object PrivateMethodsWithClassTypeParameterCounter extends ProjectAnalysisApplication {
 
     override def description: String = {
         "counts the number of package private and private methods " +
-            "with a body with at least one parameter that is an object type"
+            "with a body with at least one parameter that is a class type"
     }
 
     def doAnalyze(
@@ -36,8 +36,8 @@ object PrivateMethodsWithObjectTypeParameterCounter extends ProjectAnalysisAppli
                 if method.isPrivate // || method.isPackagePrivate
                 if method.name != "readObject" && method.name != "writeObject"
                 potential = (method.descriptor.parameterTypes.collect {
-                    case ot: ObjectType => project.classHierarchy.allSubtypes(ot, false).size
-                    case _              => 0
+                    case ot: ClassType => project.classHierarchy.allSubtypes(ot, false).size
+                    case _             => 0
                 }).sum
                 if potential >= 5
             } yield {

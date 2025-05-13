@@ -2,7 +2,7 @@ import java.net.URL
 
 import org.opalj.br.ClassFile
 import org.opalj.br.Field
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -82,7 +82,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         val superclassType = classFile.superclassType
 
-        if (superclassType.isDefined && superclassType.get != ObjectType.Object) {
+        if (superclassType.isDefined && superclassType.get != ClassType.Object) {
             val superclass = project.classFile(superclassType.get)
             if (superclass.isEmpty)
                 return Result(classFile, MutableClass)
@@ -238,9 +238,9 @@ class FieldImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             if (field.isFinal) field.fieldType match {
                 case bt if bt.isBaseType =>
                     TransitivelyImmutableField
-                case wt: ObjectType if ObjectType.isPrimitiveTypeWrapper(wt) =>
+                case wt: ClassType if ClassType.isPrimitiveTypeWrapper(wt) =>
                     TransitivelyImmutableField
-                case st if st == ObjectType.String =>
+                case st if st == ClassType.String =>
                     TransitivelyImmutableField
                 case _ =>
                     NonTransitivelyImmutableField

@@ -7,7 +7,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.EPS
@@ -37,7 +37,7 @@ abstract class AbstractBackwardFlowPathMatcher(pk: PropertyKey[_ <: Property]) e
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]

@@ -6,7 +6,7 @@ package analyses
 package ifds
 package taint
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.AbstractIFDSNullFact
 import org.opalj.ifds.Callable
@@ -39,7 +39,7 @@ case class NativeArrayElement(base: Value, indices: Iterable[Long]) extends Nati
  * @param classType The field's class.
  * @param fieldName The field's name.
  */
-case class JavaStaticField(classType: ObjectType, fieldName: String) extends NativeTaintFact
+case class JavaStaticField(classType: ClassType, fieldName: String) extends NativeTaintFact
 
 /**
  * A tainted instance field.
@@ -48,7 +48,7 @@ case class JavaStaticField(classType: ObjectType, fieldName: String) extends Nat
  * @param classType The field's type.
  * @param fieldName The field's value.
  */
-case class JavaInstanceField(index: Int, classType: ObjectType, fieldName: String) extends NativeTaintFact
+case class JavaInstanceField(index: Int, classType: ClassType, fieldName: String) extends NativeTaintFact
 
 /**
  * A path of method calls, originating from the analyzed method, over which a tainted variable

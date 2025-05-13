@@ -8,9 +8,9 @@ import scala.reflect.ClassTag
 
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.UninitializedThisVariableInfo
 import org.opalj.br.UninitializedVariableInfo
 import org.opalj.br.VerificationTypeInfo
@@ -67,7 +67,7 @@ final class TypeCheckingDomain(
     // -----------------------------------------------------------------------------------
 
     protected case class InitializedObjectValue(
-        override val theUpperTypeBound: ObjectType
+        override val theUpperTypeBound: ClassType
     ) extends SObjectValueLike with Value {
         this: DomainObjectValue =>
 
@@ -86,7 +86,7 @@ final class TypeCheckingDomain(
      * @param origin The origin of the `new` instruction or -1 in case of "uninitialized this".
      */
     protected case class UninitializedObjectValue(
-        override val theUpperTypeBound: ObjectType,
+        override val theUpperTypeBound: ClassType,
         origin:                         ValueOrigin
     ) extends SObjectValueLike {
         this: DomainObjectValue =>
@@ -138,7 +138,7 @@ final class TypeCheckingDomain(
 
     override def invokespecial(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -161,7 +161,7 @@ final class TypeCheckingDomain(
     // --------------------------------------------------------------------------------------------
 
     protected case class DefaultMObjectValue(
-        upperTypeBound: UIDSet[ObjectType]
+        upperTypeBound: UIDSet[ClassType]
     ) extends MObjectValueLike {
         override def isNull: Answer = Unknown
     }
@@ -174,25 +174,25 @@ final class TypeCheckingDomain(
 
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
-    override def NewObject(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        new UninitializedObjectValue(objectType, pc)
+    override def NewObject(pc: Int, classType: ClassType): DomainObjectValue = {
+        new UninitializedObjectValue(classType, pc)
     }
 
-    override def UninitializedThis(objectType: ObjectType): DomainObjectValue = {
-        new UninitializedObjectValue(objectType, -1)
+    override def UninitializedThis(classType: ClassType): DomainObjectValue = {
+        new UninitializedObjectValue(classType, -1)
     }
 
-    override def InitializedObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        new InitializedObjectValue(objectType)
+    override def InitializedObjectValue(pc: Int, classType: ClassType): DomainObjectValue = {
+        new InitializedObjectValue(classType)
     }
 
-    override def ObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainObjectValue = {
-        new InitializedObjectValue(objectType)
+    override def ObjectValue(origin: ValueOrigin, classType: ClassType): DomainObjectValue = {
+        new InitializedObjectValue(classType)
     }
 
     override def ObjectValue(
         origin:         ValueOrigin,
-        upperTypeBound: UIDSet[ObjectType]
+        upperTypeBound: UIDSet[ClassType]
     ): DomainObjectValue = {
         if (upperTypeBound.isSingletonSet)
             ObjectValue(origin, upperTypeBound.head)

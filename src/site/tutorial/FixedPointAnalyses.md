@@ -141,7 +141,7 @@ def analyzeClassImmutability(classFile: ClassFile): ProperPropertyComputationRes
 
     val superclassType = classFile.superclassType
 
-    if(superclassType.isDefined && superclassType.get != ObjectType.Object) {
+    if(superclassType.isDefined && superclassType.get != ClassType.Object) {
         [...]
     }
 
@@ -150,11 +150,11 @@ def analyzeClassImmutability(classFile: ClassFile): ProperPropertyComputationRes
 ```
 First, we get the type of the superclass from our classfile.  
 Note that some classes, in particular `java.lang.Object`, do not have superclasses, in which case we can't (and don't have to) check any superclass' immutability.  
-We also don't have to check the immutability of `java.lang.Object` (represented by `ObjectType.Object`) as we know it is transitively immutable because it has no fields.  
+We also don't have to check the immutability of `java.lang.Object` (represented by `ClassType.Object`) as we know it is transitively immutable because it has no fields.  
 Checking whether the superclass is `java.lang.Object` not only allows us to skip checking the superclass, but also allows to get useful results even when the JDK is not part of our analyzed software and thus the classfile for `java.lang.Object` is not available.
 
 ```scala
-    if(superclassType.isDefined && superclassType.get != ObjectType.Object) {
+    if(superclassType.isDefined && superclassType.get != ClassType.Object) {
         val superclass = project.classFile(superclassType.get)
         if(superclass.isEmpty)
             return Result(classFile, MutableClass)

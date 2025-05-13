@@ -2,7 +2,7 @@
 package org.opalj
 package ll
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.PropertiesTest
 import org.opalj.fpcf.properties.taint.XlangBackwardFlowPath
@@ -40,7 +40,7 @@ class CrossLanguageBackwardTaintAnalysisTest extends PropertiesTest {
         val testContext = executeAnalyses(JavaBackwardTaintAnalysisScheduler, NativeBackwardTaintAnalysisScheduler)
         val project = testContext.project
         val eas = methodsWithAnnotations(project)
-            .filter(_._1.classFile.thisType == ObjectType("org/opalj/fpcf/fixtures/taint_xlang/TaintTest"))
+            .filter(_._1.classFile.thisType == ClassType("org/opalj/fpcf/fixtures/taint_xlang/TaintTest"))
             .map {
                 case (method, entityString, annotations) =>
                     ((method, new IFDSFact(TaintNullFact)), entityString, annotations)

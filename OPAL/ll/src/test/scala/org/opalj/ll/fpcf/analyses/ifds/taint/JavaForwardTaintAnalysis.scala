@@ -216,7 +216,7 @@ class JavaForwardTaintProblem(p: SomeProject) extends AbstractJavaForwardTaintPr
                     flows += InstanceField(defSite, declClass, taintedField)
                 }
 
-            case JavaStaticField(objectType, fieldName) => flows += StaticField(objectType, fieldName)
+            case JavaStaticField(classType, fieldName) => flows += StaticField(classType, fieldName)
 
             // Track the call chain to the sink back
             case NativeFlowFact(flow) if !flow.contains(JavaMethod(call.method)) =>

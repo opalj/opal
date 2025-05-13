@@ -4,7 +4,7 @@ package fpcf
 package ifds
 
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -41,7 +41,7 @@ class BackwardTaintProblemFixture(p: SomeProject) extends JavaBackwardTaintProbl
 
     override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
         p.allProjectClassFiles.flatMap {
-            case cf if cf.thisType == ObjectType("org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass") =>
+            case cf if cf.thisType == ClassType("org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass") =>
                 cf.methods.collect {
                     case m if m.name == "sink" =>
                         m -> new IFDSFact(

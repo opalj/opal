@@ -12,7 +12,7 @@ import scala.util.Random
 
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.VirtualClass
 import org.opalj.br.VirtualSourceElement
 import org.opalj.br.analyses.Analysis
@@ -171,10 +171,10 @@ object DependencyAnalysis extends AnalysisApplication {
                     arrayType: ArrayType,
                     dType:     DependencyType
                 ): Unit = {
-                    if (source.isClass && arrayType.componentType.isObjectType)
+                    if (source.isClass && arrayType.componentType.isClassType)
                         addDependency(
                             source.asInstanceOf[VirtualClass].thisType.packageName,
-                            arrayType.componentType.asInstanceOf[ObjectType].packageName
+                            arrayType.componentType.asInstanceOf[ClassType].packageName
                         )
                 }
 

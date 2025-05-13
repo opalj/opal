@@ -7,8 +7,8 @@ package callgraph
 import scala.collection.mutable
 
 import org.opalj.br.AnnotationLike
+import org.opalj.br.ClassType
 import org.opalj.br.ElementValue
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -27,13 +27,13 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
 
     override def validateProperty(
         p:          Project[_],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
 
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
 
         // Get the set of type propagation variants for which this annotation applies.
         val variantsElementValues: Seq[ElementValue] =
@@ -68,7 +68,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
         }.toSet
 
         val expectedTypeNames: Seq[String] =
-            getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "value").asArrayValue.values
+            getValue(p, a.annotationType.asClassType, a.elementValuePairs, "value").asArrayValue.values
                 .map(ev => ev.asStringValue.value)
 
         val expectedTypes = expectedTypeNames.map(ReferenceType(_)).toSet

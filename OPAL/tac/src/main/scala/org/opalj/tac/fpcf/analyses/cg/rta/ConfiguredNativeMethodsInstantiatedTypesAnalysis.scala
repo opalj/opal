@@ -9,9 +9,9 @@ package rta
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -63,7 +63,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
     private[this] def canBeInstantiated(rt: ReferenceType): Boolean = rt match {
         case _: ArrayType => true
-        case ot: ObjectType =>
+        case ot: ClassType =>
             val cfOption = project.classFile(ot)
             cfOption.isDefined && {
                 val cf = cfOption.get
@@ -102,8 +102,8 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             val returnType = m.returnType.asReferenceType
             // TODO We should probably handle ArrayTypes as well
             val types =
-                if (m.returnType.isArrayType && m.returnType.asArrayType.elementType.isObjectType)
-                    Array(returnType, m.returnType.asArrayType.elementType.asObjectType)
+                if (m.returnType.isArrayType && m.returnType.asArrayType.elementType.isClassType)
+                    Array(returnType, m.returnType.asArrayType.elementType.asClassType)
                 else Array(returnType)
             types.filter(canBeInstantiated)
         } else

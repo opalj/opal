@@ -6,7 +6,7 @@ package properties
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
@@ -22,7 +22,7 @@ class ForwardFlowPathMatcher extends AbstractPropertyMatcher {
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]

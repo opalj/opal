@@ -5,7 +5,7 @@ package ifds
 
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.properties.taint.BackwardFlowPath
 import org.opalj.ifds.IFDSFact
@@ -37,7 +37,7 @@ class BackwardTaintAnalysisFixtureTest extends PropertiesTest {
         val testContext = executeAnalyses(BackwardTaintAnalysisFixtureScheduler)
         val project = testContext.project
         val eas = methodsWithAnnotations(project)
-            .filter(_._1.classFile.thisType == ObjectType("org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass"))
+            .filter(_._1.classFile.thisType == ClassType("org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass"))
             .map {
                 case (method, entityString, annotations) =>
                     ((method, new IFDSFact(TaintNullFact)), entityString, annotations)

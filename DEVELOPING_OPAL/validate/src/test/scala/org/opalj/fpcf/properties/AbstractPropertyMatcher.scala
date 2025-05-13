@@ -3,10 +3,10 @@ package org.opalj
 package fpcf
 package properties
 
+import org.opalj.br.ClassType
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.ElementValuePairs
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -33,7 +33,7 @@ abstract class AbstractPropertyMatcher extends org.opalj.fpcf.properties.Propert
      */
     def getValue(
         p:              SomeProject,
-        annotationType: ObjectType,
+        annotationType: ClassType,
         evps:           ElementValuePairs,
         elementName:    String
     ): ElementValue = {

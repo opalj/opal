@@ -6,8 +6,8 @@ package base
 
 import java.net.URL
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.SingleArgumentMethodDescriptor
@@ -44,10 +44,10 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                         case PCAndInstruction(
                                 pc,
                                 INVOKESPECIAL(
-                                    ObjectType("java/io/File"),
+                                    ClassType("java/io/File"),
                                     false /* = isInterface*/,
                                     "<init>",
-                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
+                                    SingleArgumentMethodDescriptor((ClassType.String, VoidType))
                                 )
                             ) => pc
                     }

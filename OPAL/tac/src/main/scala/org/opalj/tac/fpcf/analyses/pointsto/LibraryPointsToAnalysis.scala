@@ -61,7 +61,7 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
         // pre-initialized. Note: This set only contains ArrayTypes whose element type is an
-        // ObjectType. Arrays of primitive types can be ignored.
+        // ClassType. Arrays of primitive types can be ignored.
         val seenArrayTypes = UIDSet.newBuilder[ArrayType]
 
         def createExternalAllocation(tpe: ReferenceType): PointsToSet = {
@@ -81,7 +81,7 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
         }
 
         def isRelevantArrayType(rt: Type): Boolean =
-            rt.isArrayType && rt.asArrayType.elementType.isObjectType
+            rt.isArrayType && rt.asArrayType.elementType.isClassType
 
         // For each method which is also an entry point, we assume that the caller has passed all
         // subtypes of the method's parameter types to the method.
@@ -101,16 +101,16 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
                 val pt = dm.descriptor.parameterType(i)
                 val fp = getFormalParameter(i + 1, fps, context)
 
-                if (pt.isObjectType) {
+                if (pt.isClassType) {
                     val validTypes = initialInstantiatedTypes.filter(iit =>
-                        classHierarchy.isSubtypeOf(iit, pt.asObjectType)
+                        classHierarchy.isSubtypeOf(iit, pt.asClassType)
                     )
                     initialize(fp, validTypes)
                 } else if (isRelevantArrayType(pt)) {
                     seenArrayTypes += pt.asArrayType
 
                     val dim = pt.asArrayType.dimensions
-                    val et = pt.asArrayType.elementType.asObjectType
+                    val et = pt.asArrayType.elementType.asClassType
                     if (initialInstantiatedTypes.contains(et)) {
                         initialize(fp, UIDSet(ArrayType(dim, et)))
                     }
@@ -120,12 +120,12 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
         // Returns true if the field's type indicates that the field should be pre-initialized.
         @inline def fieldIsRelevant(f: Field): Boolean = {
-            // Only fields which are ArrayType or ObjectType are relevant.
+            // Only fields which are ArrayType or ClassType are relevant.
             f.fieldType.isReferenceType &&
-            // If the field is an ArrayType, then the array's element type must be an ObjectType.
+            // If the field is an ArrayType, then the array's element type must be a ClassType.
             // In other words: We don't care about arrays of primitive types (e.g. int[]) which
             // do not have to be pre-initialized.
-            (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isObjectType)
+            (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isClassType)
         }
 
         // Returns true if a field can be written by the user of a library containing that field.
@@ -144,8 +144,8 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
         for {
             iit <- initialInstantiatedTypes;
-            // Only object types should be initially instantiated.
-            ot = iit.asObjectType
+            // Only class types should be initially instantiated.
+            ot = iit.asClassType
         } {
             // Assign initial types to all accessible fields.
             p.classFile(ot) match {
@@ -153,8 +153,8 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
                     for (f <- cf.fields if f.isNotFinal && fieldIsRelevant(f) && fieldIsAccessible(f)) {
                         val fieldType = f.fieldType.asReferenceType
 
-                        val initialAssignments = if (fieldType.isObjectType) {
-                            val ot = fieldType.asObjectType
+                        val initialAssignments = if (fieldType.isClassType) {
+                            val ot = fieldType.asClassType
                             initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) {
                                 (assignments, iit) =>
                                     if (classHierarchy.isSubtypeOf(iit, ot)) {
@@ -166,7 +166,7 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
                             val at = fieldType.asArrayType
                             seenArrayTypes += at
                             val dim = at.dimensions
-                            val et = at.elementType.asObjectType
+                            val et = at.elementType.asClassType
                             if (initialInstantiatedTypes.contains(et)) {
                                 UIDSet[ReferenceType](ArrayType(dim, iit))
                             } else {
@@ -201,11 +201,11 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
             initializedArrayTypes.add(at)
 
-            val et = at.elementType.asObjectType
+            val et = at.elementType.asClassType
             val allSubtypes = p.classHierarchy.allSubtypes(et, reflexive = true)
             val subtypes =
                 initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, iit) =>
-                    if (allSubtypes.contains(iit.asObjectType)) {
+                    if (allSubtypes.contains(iit.asClassType)) {
                         builder += iit
                     }
                     builder
@@ -222,7 +222,7 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
                 // that these were types which were not initially seen when processing entry points and fields.
                 assignedArrayTypes foreach initializeArrayType
             } else {
-                // If dim == 1, we just need to assign the "pure" ObjectTypes to the ArrayType.
+                // If dim == 1, we just need to assign the "pure" ClassTypes to the ArrayType.
                 initialize(ArrayEntity(at), subtypes)
             }
         }
