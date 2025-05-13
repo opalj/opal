@@ -52,7 +52,6 @@ import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
-import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.value.IsReferenceValue
@@ -800,14 +799,14 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 }
 
-trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => AbstractPointsToAnalysis
 
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
+        super.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

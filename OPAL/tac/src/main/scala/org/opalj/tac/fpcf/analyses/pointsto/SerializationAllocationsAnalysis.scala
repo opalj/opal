@@ -143,12 +143,13 @@ abstract class SerializationAllocationsAnalysis(
     }
 }
 
-trait SerializationAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait SerializationAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
+    with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => SerializationAllocationsAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
+        super.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 

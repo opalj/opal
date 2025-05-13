@@ -3,8 +3,10 @@ package org.opalj
 package br
 package fpcf
 package properties
+package alias
 
-import org.opalj.fpcf.Property
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 
@@ -16,7 +18,7 @@ sealed trait AliasPropertyMetaInformation extends PropertyMetaInformation {
  * Describes the alias properties of the associated entities.
  *
  * Alias properties can establish a binding between a pair of entities, including definition sites, formal parameters, method return values, fields, etc.
- * For more information, see TODO.
+ * For more information, see [[org.opalj.tac.fpcf.analyses.alias.AliasSourceElement]] and [[org.opalj.tac.fpcf.analyses.alias.AliasEntity]].
  * The pair may consist of different types of entities, such as a field and a formal parameter.
  *
  * An alias property provides information about the relationship of the memory locations of the associated entities.
@@ -66,6 +68,13 @@ sealed trait AliasPropertyMetaInformation extends PropertyMetaInformation {
  *
  * Note that the examples above are usually already optimized by the compiler and are used for illustrative purposes.
  *
+ * The alias properties are ordered and form a lattice with the following order: [[MayAlias]] > [[MustAlias]] > [[NoAlias]].
+ * This means that [[MayAlias]] is the most precise property and [[NoAlias]] is the least precise property.
+ * This allows for an analysis to return [[NoAlias]] as an intermediate result when no further information is available
+ * (because there is no reason to assume it can alias) and later refine it to [[MustAlias]] or even [[MayAlias]] if more
+ * information becomes available that indicate a [[MayAlias]] or [[MustAlias]] relation.
+ * An analysis is not allowed to return a less precise property than the one that was previously assigned to the same pair of entities.
+ *
  * An analysis should attempt to be as sound as possible when assigning [[MustAlias]] or [[NoAlias]] properties,
  * but might not always be able to do so, e.g. when a field is changed via reflection or native methods.
  * In such cases, the analysis should document the possible unsoundness.
@@ -73,12 +82,22 @@ sealed trait AliasPropertyMetaInformation extends PropertyMetaInformation {
  * Alias information is only defined at a location where both entities of the associated pair are defined.
  * If one of the entities is not defined at the current location, the given alias property holds no information.
  */
-sealed trait Alias extends AliasPropertyMetaInformation with Property {
+sealed trait Alias extends AliasPropertyMetaInformation with OrderedProperty {
 
     /**
      * A globally unique key used to access alias properties
      */
     final def key: PropertyKey[Alias] = Alias.key
+
+    /**
+     * Checks if this alias property is at least as restrictive as `other`.
+     * For the restrictiveness order, see [[Alias]].
+     *
+     * @param e The entity that this property is associated with.
+     * @param other The other alias property.
+     * @throws IllegalArgumentException If this property is less precise than the given one.
+     */
+    override def checkIsEqualOrBetterThan(e: Entity, other: Alias): Unit
 }
 
 object Alias extends AliasPropertyMetaInformation {
@@ -102,23 +121,54 @@ object Alias extends AliasPropertyMetaInformation {
 /**
  * Indicates that the two associated entities are guaranteed to '''always''' refer to the same memory location.
  *
+ * If this property is given as an [[org.opalj.fpcf.InterimResult]], the final result can be refined to [[MayAlias]]
+ * if further information becomes available that indicate a [[MayAlias]] relation.
+ *
+ * An analysis should attempt to be as sound as possible when assigning [[MustAlias]] as a final result,
+ * but might not always be able to do so, e.g. when a field is changed via reflection or native methods.
+ * In such cases, the analysis should document the possible unsoundness.
+ *
  * @see [[Alias]] for more information about alias properties.
  */
-case object MustAlias extends Alias
+case object MustAlias extends Alias {
+
+    override def checkIsEqualOrBetterThan(e: Entity, other: Alias): Unit = {
+        if (other == NoAlias) {
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
+        }
+    }
+}
 
 /**
  * Indicates that the two associated entities are guaranteed to '''never''' refer to the same memory location.
  *
+ * If this property is given as an [[org.opalj.fpcf.InterimResult]], the final result can be refined to [[MustAlias]]
+ * or [[MayAlias]] if further information becomes available that indicate a [[MustAlias]] or [[MayAlias]] relation.
+ *
+ * An analysis should attempt to be as sound as possible when assigning [[NoAlias]] as a final result,
+ * but might not always be able to do so, e.g. when a field is changed via reflection or native methods.
+ * In such cases, the analysis should document the possible unsoundness.
+ *
  * @see [[Alias]] for more information about alias properties.
  */
-case object NoAlias extends Alias
+case object NoAlias extends Alias {
+
+    override def checkIsEqualOrBetterThan(e: Entity, other: Alias): Unit = {}
+}
 
 /**
  * Indicates that the two associated entities might refer to the same memory location but are not obligated to do so.
  *
- * This property does not guarantee that the actually relation of the associated entities can't be described using [[MustAlias]] or [[MayAlias]],
- * as there are scenarios where the analysis may not have sufficient information to prove a more specific relationship
+ * If this property is given as an [[org.opalj.fpcf.InterimResult]], it is guaranteed that the final result will be [[MayAlias]].
+ * However, it is not guaranteed that the actual relation cannot be described as [[MustAlias]] or [[NoAlias]].
  *
  * @see [[Alias]] for more information about alias properties.
  */
-case object MayAlias extends Alias
+case object MayAlias extends Alias {
+
+    override def checkIsEqualOrBetterThan(e: Entity, other: Alias): Unit = {
+        if (other != MayAlias) {
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
+        }
+    }
+}

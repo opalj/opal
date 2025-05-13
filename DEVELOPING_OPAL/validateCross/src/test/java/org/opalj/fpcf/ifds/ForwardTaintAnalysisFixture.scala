@@ -89,8 +89,15 @@ class ForwardTaintProblemFixture(p: SomeProject) extends AbstractJavaForwardTain
 }
 
 object ForwardTaintAnalysisFixtureScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+
     override def init(p: SomeProject, ps: PropertyStore) = new ForwardTaintAnalysisFixture()(p)
+
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
-    override val uses: Set[PropertyBounds] = Set(PropertyBounds.ub(Taint))
+
     override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeIteratorKey, DeclaredMethodsKey, PropertyStoreKey)
+
+    override val uses: Set[PropertyBounds] = PropertyBounds.ubs(Taint)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
 }

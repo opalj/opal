@@ -356,7 +356,7 @@ override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterru
     [...]
 }
 ```
-We use the [`FPCFAnalysisManagerKey`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFAnalysesManagerKey$.html) to get an [`FPCFAnalysisManager`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFAnalysesManager.html) that will run our analyses.  
+We use the [`FPCFAnalysesManagerKey`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFAnalysesManagerKey$.html) to get an [`FPCFAnalysesManager`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFAnalysesManager.html) that will run our analyses.  
 We just pass all analyses that we want to execute to the `runAll` method.  
 Note that we assume that a `LazyFieldImmutabilityAnalysis` has been implemented as well.  
 As long as that doesn't exist, you can remove that line and OPAL will use the fallback value of the `FieldImmutability` lattice whenever a field immutability is queried.
