@@ -430,9 +430,9 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     run / fork := true
   )
   .dependsOn(
-    ba  % "it->it;it->test;test->test;compile->compile",
-    av  % "it->it;it->test;test->test;compile->compile",
-    tac % "it->it;it->test;test->test;compile->compile"
+    ba     % "it->it;it->test;test->test;compile->compile",
+    av     % "it->it;it->test;test->test;compile->compile",
+    tac2bc % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 
