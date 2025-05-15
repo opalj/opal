@@ -17,8 +17,10 @@ class SingleClassFileTACtoBCTest extends AnyFunSpec with Matchers with TACtoBCTe
         // define paths
         val projectRoot: String = System.getProperty("user.dir")
         val javaFileDirPath: String = s"$projectRoot/OPAL/tac2bc/src/test/resources/org/opalj/tac2bc/javaFiles"
-        val inputDirPath: String = s"$projectRoot/OPAL/tac2bc/src/test/resources/org/opalj/tac2bc/generatedClassFiles/single/original"
-        val outputDirPath: String = s"$projectRoot/OPAL/tac2bc/src/test/resources/org/opalj/tac2bc/generatedClassFiles/single/generated"
+        val inputDirPath: String =
+            s"$projectRoot/OPAL/tac2bc/src/test/resources/org/opalj/tac2bc/generatedClassFiles/single/original"
+        val outputDirPath: String =
+            s"$projectRoot/OPAL/tac2bc/src/test/resources/org/opalj/tac2bc/generatedClassFiles/single/generated"
 
         // load test files from directory
         val javaFilesDir = new File(javaFileDirPath)

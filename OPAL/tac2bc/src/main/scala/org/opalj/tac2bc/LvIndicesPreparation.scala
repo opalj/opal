@@ -9,6 +9,7 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
+import org.opalj.tac.V
 import org.opalj.value.ValueInformation
 
 /**
@@ -36,10 +37,10 @@ object LvIndicesPreparation {
     def prepareLvIndices(
         method:   Method,
         tacStmts: Array[(Stmt[DUVar[ValueInformation]], Int)]
-    ): mutable.Map[IntTrieSet, Int] = {
+    ): Map[IntTrieSet, Int] = {
 
         // container for all DUVars in the method
-        val duVars = mutable.ListBuffer[DUVar[_]]()
+        val duVars = mutable.ListBuffer[DUVar[ValueInformation]]()
         tacStmts.foreach {
             case (stmt, _) =>
                 if (stmt.isAssignment)
@@ -48,8 +49,8 @@ object LvIndicesPreparation {
         }
         val uVarToLVIndex = mutable.Map[IntTrieSet, Int]()
         val nextLVIndexAfterParameters = mapParametersAndPopulate(method, uVarToLVIndex)
-        collectAllUVarsAndPopulateUVarToLVIndexMap(duVars, uVarToLVIndex, nextLVIndexAfterParameters)
-        uVarToLVIndex
+        collectAllUVarsAndPopulateUVarToLVIndexMap(duVars.toSeq, uVarToLVIndex, nextLVIndexAfterParameters)
+        uVarToLVIndex.toMap
     }
 
     /**
@@ -60,13 +61,13 @@ object LvIndicesPreparation {
      * @param initialLVIndex The initial index after having processed the parameters
      */
     private def collectAllUVarsAndPopulateUVarToLVIndexMap(
-        duVars:         mutable.ListBuffer[DUVar[_]],
+        duVars:         Seq[DUVar[ValueInformation]],
         uVarToLVIndex:  mutable.Map[IntTrieSet, Int],
         initialLVIndex: Int
     ): Unit = {
         var nextLVIndex = initialLVIndex
-        duVars.toArray.foreach {
-            case uVar: UVar[_] =>
+        duVars.foreach {
+            case uVar: UVar[ValueInformation] =>
                 nextLVIndex = populateUVarToLVIndexMap(uVar, uVarToLVIndex, nextLVIndex)
             case _ => // we only need uVars
         }
@@ -100,20 +101,20 @@ object LvIndicesPreparation {
      * @param uVar A variable used in the method.
      */
     private def populateUVarToLVIndexMap(
-        uVar:           UVar[_],
+        uVar:           UVar[ValueInformation],
         uVarToLVIndex:  mutable.Map[IntTrieSet, Int],
         initialLVIndex: Int
     ): Int = {
         var nextLVIndex = initialLVIndex
-        val existingEntry = uVarToLVIndex.find { case (key, _) => key.intersect(uVar.defSites).nonEmpty }
+        val existingEntry = uVarToLVIndex.find { case (key, _) => key.intersect(uVar.definedBy).nonEmpty }
         existingEntry match {
             case Some((existingDefSites, index)) =>
-                val mergedDefSites = existingDefSites ++ uVar.defSites
+                val mergedDefSites = existingDefSites ++ uVar.definedBy
                 uVarToLVIndex -= existingDefSites
                 uVarToLVIndex(mergedDefSites) = index
 
             case None =>
-                uVarToLVIndex.getOrElseUpdate(uVar.defSites, nextLVIndex)
+                uVarToLVIndex.getOrElseUpdate(uVar.definedBy, nextLVIndex)
                 nextLVIndex = incrementLVIndex(uVar, nextLVIndex)
         }
         nextLVIndex
@@ -126,7 +127,7 @@ object LvIndicesPreparation {
      * @param initialLVIndex current LV index
      * @return updated LV index based on the type of UVar
      */
-    private def incrementLVIndex(uVar: UVar[_], initialLVIndex: Int): Int = {
+    private def incrementLVIndex(uVar: UVar[ValueInformation], initialLVIndex: Int): Int = {
         initialLVIndex + uVar.cTpe.operandSize
     }
 
@@ -136,7 +137,7 @@ object LvIndicesPreparation {
      * @param expr The expression to be traversed
      * @param duVars ListBuffer to be extended with all DUVars found in the expression.
      */
-    private def collectDUVarFromExpr(expr: Expr[_], duVars: mutable.ListBuffer[DUVar[_]]): Unit = {
+    private def collectDUVarFromExpr(expr: Expr[V], duVars: mutable.ListBuffer[DUVar[ValueInformation]]): Unit = {
         if (expr.isVar) duVars += expr.asVar
         else expr.forallSubExpressions(subExpr => { collectDUVarFromExpr(subExpr, duVars); true })
     }

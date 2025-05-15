@@ -29,6 +29,7 @@ import org.opalj.tac.ReturnValue
 import org.opalj.tac.Stmt
 import org.opalj.tac.Switch
 import org.opalj.tac.Throw
+import org.opalj.tac.V
 import org.opalj.value.ValueInformation
 
 /**
@@ -50,7 +51,7 @@ object StmtToInstructionTranslator {
      */
     def translateStmtsToInstructions(
         tacStmts:      Array[(Stmt[DUVar[ValueInformation]], Int)],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int]
+        uVarToLVIndex: Map[IntTrieSet, Int]
     ): Seq[CodeElement[Nothing]] = {
 
         // generate Label for each TAC-Stmt -> index in TAC-Array = corresponding label
@@ -95,7 +96,8 @@ object StmtToInstructionTranslator {
                     )
                 case JSR(_, target) =>
                     StmtProcessor.processJSR(labelMap(target), code)
-                case call @ Call(declaringClass, isInterface, name, descriptor) =>
+                case callStmt: Call[V @unchecked] =>
+                    val call @ Call(declaringClass, isInterface, name, descriptor) = callStmt
                     ExprProcessor.processCall(
                         call,
                         declaringClass,

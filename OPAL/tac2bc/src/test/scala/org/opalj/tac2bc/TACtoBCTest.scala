@@ -8,8 +8,8 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import scala.sys.process._
 
-import org.opalj.ba.CodeElement
 import org.opalj.ba.CODE
+import org.opalj.ba.CodeElement
 import org.opalj.ba.toDA
 import org.opalj.bc.Assembler
 import org.opalj.br.Method

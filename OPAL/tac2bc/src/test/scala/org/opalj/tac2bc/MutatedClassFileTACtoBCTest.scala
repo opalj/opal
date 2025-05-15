@@ -112,7 +112,6 @@ class MutatedClassFileTACtoBCTest extends AnyFunSpec with Matchers with TACtoBCT
             // check if there are inner classes that need to be loaded
             findExtraFiles(classFileName, inputDirMutatedJavaPath, classesToLoad, pathsOfClassesToLoad)
 
-
             // (4) Load the original class and the mutated/generated class
             val originalClass =
                 loadClassesFromDirs(

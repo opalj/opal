@@ -4,8 +4,6 @@ package tac2bc
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.ListBuffer
 
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators.EQ
@@ -79,15 +77,16 @@ import org.opalj.tac.DUVar
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.UVar
+import org.opalj.tac.V
 import org.opalj.tac.Var
 import org.opalj.value.ValueInformation
 
 object StmtProcessor {
 
     def processAssignment(
-        targetVar:     Var[_],
-        expr:          Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        targetVar:     Var[V],
+        expr:          Expr[V],
+        uVarToLVIndex: Map[IntTrieSet, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         ExprProcessor.processExpression(expr, uVarToLVIndex, code)
@@ -95,9 +94,9 @@ object StmtProcessor {
     }
 
     def processExprStmt(
-        expr:          Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
-        code:          ListBuffer[CodeElement[Nothing]]
+        expr:          Expr[V],
+        uVarToLVIndex: Map[IntTrieSet, Int],
+        code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         ExprProcessor.processExpression(expr, uVarToLVIndex, code)
         code += (if (expr.cTpe.isCategory2) POP2 else POP)
@@ -105,9 +104,9 @@ object StmtProcessor {
 
     def processSwitch(
         defaultTarget: RewriteLabel,
-        index:         Expr[_],
+        index:         Expr[V],
         npairs:        ArraySeq[IntIntPair /*(Case Value, Jump Target)*/ ],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[IntTrieSet, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]],
         indexMap:      Array[RewriteLabel]
     ): Unit = {
@@ -127,7 +126,7 @@ object StmtProcessor {
             else {
                 val minValue = npairs.minBy(_._1)._1
                 val maxValue = npairs.maxBy(_._1)._1
-                val jumpTable = ArrayBuffer.fill(maxValue - minValue + 1)(defaultTarget)
+                val jumpTable = mutable.ArrayBuffer.fill(maxValue - minValue + 1)(defaultTarget)
                 // Set the case values in the jump table
                 labeledNpairs.foreach { case (caseValue, target) =>
                     jumpTable(caseValue - minValue) = target
@@ -137,11 +136,11 @@ object StmtProcessor {
         }
     }
 
-    private def isLookupSwitch(index: Expr[_]): Boolean = {
+    private def isLookupSwitch(index: Expr[V]): Boolean = {
         // TODO: decide when to use lookup switch more efficiently
         index match {
-            case variable: UVar[_] => variable.defSites.size == 1
-            case _                 => false
+            case variable: UVar[ValueInformation] => variable.definedBy.size == 1
+            case _                                => false
         }
     }
 
@@ -150,8 +149,8 @@ object StmtProcessor {
     }
 
     def processReturnValue(
-        expr:          Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        expr:          Expr[V],
+        uVarToLVIndex: Map[IntTrieSet, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         ExprProcessor.processExpression(expr, uVarToLVIndex, code)
@@ -168,10 +167,10 @@ object StmtProcessor {
     }
 
     def processArrayStore(
-        arrayRef:      Expr[_],
-        index:         Expr[_],
-        value:         Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        arrayRef:      Expr[V],
+        index:         Expr[V],
+        value:         Expr[V],
+        uVarToLVIndex: Map[IntTrieSet, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Load the arrayRef onto the stack
@@ -205,8 +204,8 @@ object StmtProcessor {
         bootstrapMethod: BootstrapMethod,
         name:            String,
         descriptor:      MethodDescriptor,
-        params:          Seq[Expr[_]],
-        uVarToLVIndex:   mutable.Map[IntTrieSet, Int],
+        params:          Seq[Expr[V]],
+        uVarToLVIndex:   Map[IntTrieSet, Int],
         code:            mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         for (param <- params) ExprProcessor.processExpression(param, uVarToLVIndex, code)
@@ -214,15 +213,15 @@ object StmtProcessor {
     }
 
     def processCheckCast(
-        value:         Expr[_],
+        value:         Expr[V],
         cmpTpe:        ReferenceType,
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[IntTrieSet, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         ExprProcessor.processExpression(value, uVarToLVIndex, code)
         code += CHECKCAST(cmpTpe)
         value match {
-            case variable: Var[_] => ExprProcessor.storeVariable(variable, uVarToLVIndex, code)
+            case variable: Var[V] => ExprProcessor.storeVariable(variable, uVarToLVIndex, code)
             case _                => throw new UnsupportedOperationException(s"Error with CheckCast. Expected a Var but got: $value")
         }
     }
@@ -294,8 +293,8 @@ object StmtProcessor {
     }
 
     def processThrow(
-        exception:     Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        exception:     Expr[V],
+        uVarToLVIndex: Map[IntTrieSet, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         ExprProcessor.processExpression(exception, uVarToLVIndex, code)
@@ -306,8 +305,8 @@ object StmtProcessor {
         declaringClass:    ObjectType,
         name:              String,
         declaredFieldType: FieldType,
-        value:             Expr[_],
-        uVarToLVIndex:     mutable.Map[IntTrieSet, Int],
+        value:             Expr[V],
+        uVarToLVIndex:     Map[IntTrieSet, Int],
         code:              mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         ExprProcessor.processExpression(value, uVarToLVIndex, code)
@@ -318,9 +317,9 @@ object StmtProcessor {
         declaringClass:    ObjectType,
         name:              String,
         declaredFieldType: FieldType,
-        objRef:            Expr[_],
-        value:             Expr[_],
-        uVarToLVIndex:     mutable.Map[IntTrieSet, Int],
+        objRef:            Expr[V],
+        value:             Expr[V],
+        uVarToLVIndex:     Map[IntTrieSet, Int],
         code:              mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Load the object reference onto the stack
@@ -331,8 +330,8 @@ object StmtProcessor {
     }
 
     def processMonitorEnter(
-        objRef:        Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        objRef:        Expr[V],
+        uVarToLVIndex: Map[IntTrieSet, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Load the object reference onto the stack
@@ -341,8 +340,8 @@ object StmtProcessor {
     }
 
     def processMonitorExit(
-        objRef:        Expr[_],
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        objRef:        Expr[V],
+        uVarToLVIndex: Map[IntTrieSet, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Load the object reference onto the stack
@@ -359,11 +358,11 @@ object StmtProcessor {
     }
 
     def processIf(
-        left:          Expr[_],
+        left:          Expr[V],
         condition:     RelationalOperator,
-        right:         Expr[_],
+        right:         Expr[V],
         target:        RewriteLabel,
-        uVarToLVIndex: mutable.Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[IntTrieSet, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // process the left expr
