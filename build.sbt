@@ -82,7 +82,7 @@ addCommandAlias(
     "; copyResources ; " +
     "OPAL / scalafmt ; OPAL / headerCheck ; " +
     "OPAL / Test / scalafmt ; OPAL / Test / headerCheck ; OPAL / Test / compile ; " +
-    "OPAL/ IntegrationTest/ scalafmt ; OPAL / IntegrationTest / headerCheck ; OPAL / IntegrationTest / compile "
+    "OPAL / IntegrationTest / scalafmt ; OPAL / IntegrationTest / headerCheck ; OPAL / IntegrationTest / compile "
 )
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
@@ -105,6 +105,8 @@ addCommandAlias("cleanBuildCross", "; project OPAL ; cleanAll ; buildAll ; " +
                         "project ValidateCross ; cleanAll ; buildAll ;" +
                         // Add other crosslanguage projects here
                         " project OPAL ;")
+
+addCommandAlias("format", "; scalafmt; Test / scalafmt; IntegrationTest / scalafmt")
 
 lazy val IntegrationTest = config("it") extend Test
 
