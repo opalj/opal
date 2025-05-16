@@ -385,10 +385,11 @@ trait InvokedynamicRewriting
                 MethodDescriptor.NoArgsAndReturnVoid
             )
 
-            def appendType(t: Type): FieldType = {
-                if (t.isBaseType) t.asBaseType
-                else if (t eq ObjectType.String) ObjectType.String
-                else ObjectType.Object
+            def appendType(t: Type): FieldType = t match {
+                case ShortType | ByteType => IntegerType
+                case bt: BaseType         => bt
+                case ObjectType.String    => ObjectType.String
+                case _                    => ObjectType.Object
             }
 
             // Generate instructions to append a parameter to the StringBuilder
