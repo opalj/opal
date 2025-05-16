@@ -23,8 +23,8 @@ class MutatedClassFileTACtoBCTest extends TACtoBCTest {
     }
 
     def getTestFiles(file: File, fileName: String): IterableOnce[(String, String)] = {
-        if(file.isDirectory){
-            for{
+        if (file.isDirectory) {
+            for {
                 subFile <- file.listFiles()
                 subFileName = subFile.getName
                 if subFileName.endsWith(".java") && fileName.startsWith(s"${fileName}_mutation")
@@ -34,7 +34,7 @@ class MutatedClassFileTACtoBCTest extends TACtoBCTest {
 
     override def extraFilesToLoad(
         testClassFileName: String,
-        testInputDir: String
+        testInputDir:      String
     ): List[Path] = {
         val baseFileName = testClassFileName.replace(".class", "$")
         val directory = new File(testInputDir)

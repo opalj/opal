@@ -22,7 +22,9 @@ object TACtoBC {
      *
      * @return A Map associating each method in the class file with its corresponding TAC representation.
      */
-    def compileTACFromClassFile(classFile: ClassFile)(implicit tacProvider: Method => AITACode[TACMethodParameter, ValueInformation]): Map[Method, AITACode[TACMethodParameter, ValueInformation]] = {
+    def compileTACFromClassFile(classFile: ClassFile)(implicit
+        tacProvider: Method => AITACode[TACMethodParameter, ValueInformation]
+    ): Map[Method, AITACode[TACMethodParameter, ValueInformation]] = {
         // Store the TAC results in a map
         val methodTACMap = mutable.Map.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 

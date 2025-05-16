@@ -21,7 +21,7 @@ class SingleClassFileTACtoBCTest extends TACtoBCTest {
     }
 
     def getTestFiles(file: File, fileName: String): IterableOnce[(String, String)] = {
-        if(fileName.endsWith(".java"))
+        if (fileName.endsWith(".java"))
             Iterator((fileName, fileName))
         else Iterator.empty
     }

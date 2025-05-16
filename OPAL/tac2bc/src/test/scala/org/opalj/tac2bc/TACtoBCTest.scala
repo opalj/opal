@@ -133,10 +133,10 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
     }
 
     def compileJavaFile(
-        sourceFolder:             String,
-        fileName:             String,
-        javaFileDir:          String,
-        inputDir: String
+        sourceFolder: String,
+        fileName:     String,
+        javaFileDir:  String,
+        inputDir:     String
     ): Unit = {
         val javaFilePath = Paths.get(javaFileDir, sourceFolder, fileName).toString
         val command = s"javac -d $inputDir $javaFilePath"
