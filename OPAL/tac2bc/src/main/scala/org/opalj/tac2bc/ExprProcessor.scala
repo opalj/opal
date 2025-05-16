@@ -15,10 +15,12 @@ import org.opalj.BinaryArithmeticOperators.ShiftRight
 import org.opalj.BinaryArithmeticOperators.Subtract
 import org.opalj.BinaryArithmeticOperators.UnsignedShiftRight
 import org.opalj.BinaryArithmeticOperators.XOr
+import org.opalj.RelationalOperators.CMP
 import org.opalj.RelationalOperators.CMPG
 import org.opalj.RelationalOperators.CMPL
 import org.opalj.ba.CodeElement
 import org.opalj.br.ArrayType
+import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
 import org.opalj.br.ComputationalTypeDouble
@@ -27,6 +29,7 @@ import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.ComputationalTypeLong
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DoubleType
+import org.opalj.br.FieldType
 import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
@@ -34,10 +37,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
-import org.opalj.br.Type
 import org.opalj.br.instructions._
-import org.opalj.bytecode.BytecodeProcessingFailedException
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.ArrayLength
 import org.opalj.tac.ArrayLoad
 import org.opalj.tac.BinaryExpr
@@ -46,7 +46,6 @@ import org.opalj.tac.ClassConst
 import org.opalj.tac.Compare
 import org.opalj.tac.Const
 import org.opalj.tac.DoubleConst
-import org.opalj.tac.DUVar
 import org.opalj.tac.DVar
 import org.opalj.tac.DynamicConst
 import org.opalj.tac.Expr
@@ -63,6 +62,7 @@ import org.opalj.tac.New
 import org.opalj.tac.NewArray
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.NonVirtualMethodCall
+import org.opalj.tac.NullExpr
 import org.opalj.tac.PrefixExpr
 import org.opalj.tac.PrimitiveTypecastExpr
 import org.opalj.tac.StaticFunctionCall
@@ -79,7 +79,7 @@ import org.opalj.value.ValueInformation
 object ExprProcessor {
 
     /**
-     * Generates Java bytecode instructions for Expr
+     * Generates Java bytecode instructions for Expr.
      *
      * @param expr the Expression to be converted into InstructionElements
      * @param uVarToLVIndex map that holds information for Local Variable Indices
@@ -87,7 +87,7 @@ object ExprProcessor {
      */
     def processExpression(
         expr:          Expr[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         expr match {
@@ -125,7 +125,7 @@ object ExprProcessor {
 
     private def processInstanceOf(
         instanceOf:    InstanceOf[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         ExprProcessor.processExpression(instanceOf.value, uVarToLVIndex, code)
@@ -134,11 +134,13 @@ object ExprProcessor {
 
     private def processPrefixExpr(
         prefixExpr:    PrefixExpr[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process the operand (the expression being negated)
         ExprProcessor.processExpression(prefixExpr.operand, uVarToLVIndex, code)
+        // Note that [[UnaryArithmeticOperators.Negate]] is the only UnaryArithmeticOperator used
+        assert(prefixExpr.op eq UnaryArithmeticOperators.Negate)
         // Determine the appropriate negation instruction based on the operand type
         code += {
             prefixExpr.operand.cTpe match {
@@ -154,7 +156,7 @@ object ExprProcessor {
 
     private def processCompare(
         compare:       Compare[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process the left expression
@@ -163,29 +165,20 @@ object ExprProcessor {
         processExpression(compare.right, uVarToLVIndex, code)
         // Determine the appropriate comparison instruction
         code += {
-            compare.left.cTpe match {
-                case ComputationalTypeFloat =>
-                    compare.condition match {
-                        case CMPG => FCMPG
-                        case CMPL => FCMPL
-                        case _    => throw new IllegalArgumentException("Unsupported comparison operator for float type")
-                    }
-                case ComputationalTypeDouble =>
-                    compare.condition match {
-                        case CMPG => DCMPG
-                        case CMPL => DCMPL
-                        case _    => throw new IllegalArgumentException("Unsupported comparison operator for double type")
-                    }
-                case ComputationalTypeLong =>
-                    LCMP
-                case _ => throw new IllegalArgumentException("Unsupported comparison type")
+            (compare.left.cTpe, compare.condition) match {
+                case (ComputationalTypeLong, CMP)    => LCMP
+                case (ComputationalTypeFloat, CMPG)  => FCMPG
+                case (ComputationalTypeFloat, CMPL)  => FCMPL
+                case (ComputationalTypeDouble, CMPG) => DCMPG
+                case (ComputationalTypeDouble, CMPL) => DCMPL
+                case _                               => throw new IllegalArgumentException("Unsupported comparison type")
             }
         }
     }
 
     private def processInvokedynamicFunctionCall(
         invokedynamicFunctionCall: InvokedynamicFunctionCall[V],
-        uVarToLVIndex:             Map[IntTrieSet, Int],
+        uVarToLVIndex:             Map[Int, Int],
         code:                      mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process each parameter
@@ -200,7 +193,7 @@ object ExprProcessor {
 
     private def processNewArray(
         newArrayExpr:  NewArray[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process each parameter
@@ -219,7 +212,7 @@ object ExprProcessor {
 
     private def processArrayLoad(
         arrayLoadExpr: ArrayLoad[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Load the array reference onto the stack
@@ -235,27 +228,28 @@ object ExprProcessor {
                 case FloatType        => FALOAD
                 case DoubleType       => DALOAD
                 case ByteType         => BALOAD
+                case BooleanType      => BALOAD // Boolean arrays are also accessed with BALOAD (see JVM Spec. newarray / baload)
                 case CharType         => CALOAD
                 case ShortType        => SALOAD
                 case _: ReferenceType => AALOAD
-                case _                => throw new IllegalArgumentException("Unsupported array load type" + elementType)
             }
         }
     }
 
     // Helper function to infer the element type from the array reference expression
-    def inferElementType(expr: Expr[V]): Type = {
+    private[tac2bc] def inferElementType(expr: Expr[V]): FieldType = {
         expr.asVar.value.asInstanceOf[IsSReferenceValue[_]].theUpperTypeBound match {
             case ArrayType(componentType) => componentType
             case _                        => throw new IllegalArgumentException(s"Expected an array type but found: ${expr.cTpe}")
         }
     }
+
     private def processArrayLength(
         arrayLength:   ArrayLength[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
-        // Process the receiver object (e.g., aload_0 for `this`)
+        // Process the receiver object
         ExprProcessor.processExpression(arrayLength.arrayRef, uVarToLVIndex, code)
         code += ARRAYLENGTH
     }
@@ -273,7 +267,7 @@ object ExprProcessor {
         isInterface:      Boolean,
         methodName:       String,
         methodDescriptor: MethodDescriptor,
-        uVarToLVIndex:    Map[IntTrieSet, Int],
+        uVarToLVIndex:    Map[Int, Int],
         code:             mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Process each parameter
@@ -296,47 +290,34 @@ object ExprProcessor {
         code:      mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         code += {
-            if (constExpr.isNullExpr) {
-                ACONST_NULL
-            } else {
-                constExpr match {
-                    case IntConst(_, value)          => LoadConstantInstruction(value)
-                    case FloatConst(_, value)        => LoadFloat(value)
-                    case ClassConst(_, value)        => LoadClass(value)
-                    case StringConst(_, value)       => LoadString(value)
-                    case MethodHandleConst(_, value) => LoadMethodHandle(value)
-                    case MethodTypeConst(_, value)   => LoadMethodType(value)
-                    case DoubleConst(_, value)       => LoadDouble(value)
-                    case LongConst(_, value)         => LoadLong(value)
-                    case DynamicConst(_, bootstrapMethod, name, descriptor) =>
-                        LoadDynamic(bootstrapMethod, name, descriptor)
-                    case _ => throw BytecodeProcessingFailedException("unsupported constant value: " + constExpr)
-                }
+            constExpr match {
+                case _: NullExpr                 => ACONST_NULL
+                case IntConst(_, value)          => LoadConstantInstruction(value)
+                case FloatConst(_, value)        => LoadFloat(value)
+                case ClassConst(_, value)        => LoadClass(value)
+                case StringConst(_, value)       => LoadString(value)
+                case MethodHandleConst(_, value) => LoadMethodHandle(value)
+                case MethodTypeConst(_, value)   => LoadMethodType(value)
+                case DoubleConst(_, value)       => LoadDouble(value)
+                case LongConst(_, value)         => LoadLong(value)
+                case DynamicConst(_, bootstrapMethod, name, descriptor) =>
+                    LoadDynamic(bootstrapMethod, name, descriptor)
             }
         }
     }
 
     // Method to get LVIndex for a variable
-    private def getVariableLvIndex(variable: Var[V], uVarToLVIndex: Map[IntTrieSet, Int]): Int = {
-        variable match {
-            case duVar: DUVar[ValueInformation] =>
-                val uVarDefSites = uVarToLVIndex.find { case (defSites, _) =>
-                    duVar match {
-                        case dVar: DVar[ValueInformation] => defSites.contains(dVar.originatedAt)
-                        case uVar: UVar[ValueInformation] => defSites.exists(uVar.definedBy.contains)
-                    }
-                }
-                uVarDefSites match {
-                    case Some((_, index)) => index
-                    case None             => throw new RuntimeException(s"no index found for variable $variable")
-                }
-            case _ => throw new UnsupportedOperationException("Unsupported variable type")
+    private def getVariableLvIndex(variable: Var[V], uVarToLVIndex: Map[Int, Int]): Int = {
+        val tacIndex = variable match {
+            case dVar: DVar[ValueInformation] => dVar.originatedAt
+            case uVar: UVar[ValueInformation] => uVar.definedBy.head
         }
+        uVarToLVIndex.getOrElse(tacIndex, throw new RuntimeException(s"no index found for variable $variable"))
     }
 
     private def loadVariable(
         variable:      Var[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         val index = getVariableLvIndex(variable, uVarToLVIndex)
@@ -357,7 +338,7 @@ object ExprProcessor {
 
     def storeVariable(
         variable:      Var[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         val index: Int = getVariableLvIndex(variable, uVarToLVIndex)
@@ -378,7 +359,7 @@ object ExprProcessor {
 
     private def processGetField(
         getField:      GetField[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // Load the object reference onto the stack
@@ -396,7 +377,7 @@ object ExprProcessor {
 
     private def processBinaryExpr(
         binaryExpr:    BinaryExpr[V],
-        uVarToLVIndex: Map[IntTrieSet, Int],
+        uVarToLVIndex: Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // process the left expr and save the pc to give in the right expr processing
@@ -451,7 +432,7 @@ object ExprProcessor {
     }
     private def processPrimitiveTypeCastExpr(
         primitiveTypecastExpr: PrimitiveTypecastExpr[V],
-        uVarToLVIndex:         Map[IntTrieSet, Int],
+        uVarToLVIndex:         Map[Int, Int],
         code:                  mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         // First, process the operand expression and add its instructions to the buffer

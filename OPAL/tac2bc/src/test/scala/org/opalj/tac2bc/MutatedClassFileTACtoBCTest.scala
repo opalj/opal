@@ -3,9 +3,6 @@ package tac2bc
 
 import java.io.File
 import java.nio.file.Path
-import java.nio.file.Paths
-
-import org.opalj.bi.TestResources
 
 class MutatedClassFileTACtoBCTest extends TACtoBCTest {
 

@@ -2,9 +2,6 @@ package org.opalj
 package tac2bc
 
 import java.io.File
-import java.nio.file.Paths
-
-import org.opalj.bi.TestResources
 
 class SingleClassFileTACtoBCTest extends TACtoBCTest {
 

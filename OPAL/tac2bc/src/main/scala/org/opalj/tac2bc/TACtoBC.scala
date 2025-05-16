@@ -2,15 +2,20 @@
 package org.opalj
 package tac2bc
 
-import java.io.File
 import scala.collection.mutable
 
 import org.opalj.ba.CodeElement
+import org.opalj.ba.LabelElement
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
-import org.opalj.br.analyses.Project
+import org.opalj.br.instructions.RewriteLabel
 import org.opalj.tac.AITACode
+import org.opalj.tac.DUVar
+import org.opalj.tac.Expr
+import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
+import org.opalj.tac.UVar
+import org.opalj.tac.V
 import org.opalj.value.ValueInformation
 
 object TACtoBC {
@@ -18,7 +23,7 @@ object TACtoBC {
     /**
      * Compiles the Three-Address Code (TAC) representation for all methods in the given .class file.
      *
-     * @param file A File object representing the .class file to be analyzed and compiled into TAC.
+     * @param classFile The class file to be analyzed and compiled into TAC.
      *
      * @return A Map associating each method in the class file with its corresponding TAC representation.
      */
@@ -36,33 +41,6 @@ object TACtoBC {
             methodTACMap += (m -> tac)
         }
         methodTACMap.toMap
-    }
-
-    /**
-     * Compiles and prints the bytecode representation for all methods in the given .class file.
-     *
-     * @param file The .class file or JAR archive to be analyzed.
-     * @return A Map associating each method in the class file with its bytecode instructions.
-     */
-    def compileByteCodeFromClassFile(file: File): Map[Method, Array[String]] = {
-        val p = Project(file)
-
-        // A map to store the bytecode representation of each method
-        val methodByteCodeMap = scala.collection.mutable.Map.empty[Method, Array[String]]
-
-        for {
-            cf <- p.allProjectClassFiles
-            method <- cf.methods
-            if method.body.isDefined
-        } {
-            // Convert the body's instructions to a human-readable format
-            val instructions = method.body.get.instructions.zipWithIndex.map { case (instr, index) =>
-                s"$index: $instr"
-            }
-            methodByteCodeMap += (method -> instructions)
-        }
-
-        methodByteCodeMap.toMap
     }
 
     /**
@@ -102,7 +80,128 @@ object TACtoBC {
     ): IndexedSeq[CodeElement[Nothing]] = {
         val tacStmts = tac.stmts.zipWithIndex
         // fill uVarToLVIndexMap
-        val uVarToLVIndex = LvIndicesPreparation.prepareLvIndices(method, tacStmts)
-        StmtToInstructionTranslator.translateStmtsToInstructions(tacStmts, uVarToLVIndex)
+        val uVarToLVIndex = prepareLvIndices(method, tacStmts)
+        translateStmtsToInstructions(tacStmts, uVarToLVIndex)
+    }
+
+    /**
+     * Prepares local variable (LV) indices for the given method by:
+     * 1. Collecting all defined-use variables (DUVars) from the method's statements.
+     * 2. Assigning LV indices to method parameters.
+     * 3. Populating the `uVarToLVIndex` map with unique LV indices for each unique variable.
+     *
+     * @param method Method which the Array 'tacStmts' belongs to
+     * @param tacStmts Array of tuples where each tuple contains a TAC statement and its index.
+     */
+    private[tac2bc] def prepareLvIndices(
+        method:   Method,
+        tacStmts: Array[(Stmt[DUVar[ValueInformation]], Int)]
+    ): Map[Int, Int] = {
+        val uVarToLVIndex = mutable.Map[Int, Int]()
+        var nextLVIndex = mapParametersAndPopulate(method, uVarToLVIndex)
+        tacStmts.foreach {
+            case (stmt, _) => stmt.forallSubExpressions { subExpr =>
+                    nextLVIndex = populateForExpression(subExpr, uVarToLVIndex, nextLVIndex)
+                    true
+                }
+        }
+        uVarToLVIndex.toMap
+    }
+
+    /**
+     * Populates the `uVarToLVIndex` map with unique LV indices for each variable in the given expression.
+     *
+     * @param expr The expression to extract variables from
+     * @param uVarToLVIndex Map to be filled with indices
+     * @param initialLVIndex The first index to populate
+     */
+    private def populateForExpression(expr: Expr[V], uVarToLVIndex: mutable.Map[Int, Int], initialLVIndex: Int): Int =
+        expr match {
+            case uVar: UVar[ValueInformation] => populateUVarToLVIndexMap(uVar, uVarToLVIndex, initialLVIndex)
+            case _ =>
+                var nextLVIndex = initialLVIndex
+                expr.forallSubExpressions { subExpr =>
+                    nextLVIndex = populateForExpression(subExpr, uVarToLVIndex, nextLVIndex)
+                    true
+                }
+                nextLVIndex
+        }
+
+    /**
+     * Iterates over the parameterTypes of the method and assigns defSites -2, -3, -4, ... to LVIndices starting at 0 or 1 (for static/non-static methods respectively)
+     */
+    private def mapParametersAndPopulate(
+        method:        Method,
+        uVarToLVIndex: mutable.Map[Int, Int]
+    ): Int = {
+        var nextLVIndex = 0
+
+        if (!method.isStatic) {
+            uVarToLVIndex(-1) = 0
+            nextLVIndex = 1
+        }
+
+        method.descriptor.parameterTypes.zipWithIndex.foreach { case (tpe, index) =>
+            // defSite -1 is reserved for 'this' so we always start at -2 and then go further down per parameter (-3, -4, etc.)
+            uVarToLVIndex(-(index + 2)) = nextLVIndex
+            nextLVIndex += tpe.computationalType.operandSize
+        }
+
+        nextLVIndex
+    }
+
+    /**
+     * Populates the `uVarToLVIndex` map with unique LV indices for each unique UVar.
+     *
+     * @param uVar A variable used in the method.
+     */
+    private def populateUVarToLVIndexMap(
+        uVar:           UVar[ValueInformation],
+        uVarToLVIndex:  mutable.Map[Int, Int],
+        initialLVIndex: Int
+    ): Int = {
+        val existingIndex = uVar.definedBy.iterator
+            .find(defSite => uVarToLVIndex.contains(defSite))
+            .map(defSite => uVarToLVIndex(defSite))
+
+        val (index, nextLVIndex) = existingIndex match {
+            case Some(index) =>
+                (index, initialLVIndex)
+            case None =>
+                (initialLVIndex, initialLVIndex + uVar.cTpe.operandSize)
+        }
+
+        uVar.definedBy.foreach(defSite => uVarToLVIndex(defSite) = index)
+
+        nextLVIndex
+    }
+
+    /**
+     * Translates TAC statements to bytecode instructions.
+     *
+     * This method iterates over the given TAC statements, processes each statement according to its type,
+     * generates the corresponding bytecode instructions.
+     *
+     * @param tacStmts Array of tuples where each tuple contains a TAC statement and its index
+     * @param uVarToLVIndex Map that holds information about what variable belongs to which register
+     */
+    def translateStmtsToInstructions(
+        tacStmts:      Array[(Stmt[DUVar[ValueInformation]], Int)],
+        uVarToLVIndex: Map[Int, Int]
+    ): IndexedSeq[CodeElement[Nothing]] = {
+
+        // generate Label for each TAC-Stmt -> index in TAC-Array = corresponding label
+        // e.g. labelMap(2) = RewriteLabel of TAC-Statement at index 2
+        val labels = tacStmts.map(_ => RewriteLabel())
+
+        // list of all CodeElements including bytecode instructions as well as pseudo instructions
+        val code = mutable.ListBuffer[CodeElement[Nothing]]()
+
+        tacStmts.foreach { case (stmt, tacIndex) =>
+            // add label to the list
+            code += LabelElement(labels(tacIndex))
+            StmtProcessor.processStmt(stmt, uVarToLVIndex, labels, code)
+        }
+        code.toIndexedSeq
     }
 }
