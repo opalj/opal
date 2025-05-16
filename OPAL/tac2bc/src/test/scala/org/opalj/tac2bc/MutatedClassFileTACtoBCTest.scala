@@ -24,7 +24,7 @@ class MutatedClassFileTACtoBCTest extends TACtoBCTest {
             for {
                 subFile <- file.listFiles()
                 subFileName = subFile.getName
-                if subFileName.endsWith(".java") && fileName.startsWith(s"${fileName}_mutation")
+                if subFileName.endsWith(".java") && subFileName.startsWith(s"${fileName}_mutation")
             } yield (subFileName, s"$fileName.java")
         } else Iterator.empty
     }
