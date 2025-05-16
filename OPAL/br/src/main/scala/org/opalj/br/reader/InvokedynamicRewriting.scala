@@ -194,8 +194,8 @@ trait InvokedynamicRewriting
     ): String = {
         val descriptor = surroundingMethodDescriptor.toJVMDescriptor
         val sanitizedDescriptor = replaceChars(descriptor, "/[;", "$]:")
-        s"${surroundingType.packageName}/${surroundingType.simpleName}$$" +
-            s"$surroundingMethodName$sanitizedDescriptor:$pc$$Lambda"
+        val packageString = if (surroundingType.packageName.isEmpty) "" else s"${surroundingType.packageName}/"
+        s"$packageString${surroundingType.simpleName}$$$surroundingMethodName$sanitizedDescriptor:$pc$$Lambda"
     }
 
     override def deferredInvokedynamicResolution(
