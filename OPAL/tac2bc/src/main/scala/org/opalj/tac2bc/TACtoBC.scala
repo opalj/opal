@@ -6,10 +6,10 @@ import java.io.File
 import scala.collection.mutable
 
 import org.opalj.ba.CodeElement
+import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 import org.opalj.tac.AITACode
-import org.opalj.tac.LazyDetachedTACAIKey
 import org.opalj.tac.TACMethodParameter
 import org.opalj.value.ValueInformation
 
@@ -22,16 +22,12 @@ object TACtoBC {
      *
      * @return A Map associating each method in the class file with its corresponding TAC representation.
      */
-    def compileTACFromClassFile(file: File): Map[Method, AITACode[TACMethodParameter, ValueInformation]] = {
-        val p = Project(file)
-        val tacProvider = p.get(LazyDetachedTACAIKey)
-
+    def compileTACFromClassFile(classFile: ClassFile)(implicit tacProvider: Method => AITACode[TACMethodParameter, ValueInformation]): Map[Method, AITACode[TACMethodParameter, ValueInformation]] = {
         // Store the TAC results in a map
         val methodTACMap = mutable.Map.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 
         for {
-            cf <- p.allProjectClassFiles
-            m <- cf.methods
+            m <- classFile.methods
             if m.body.isDefined
         } {
             val tac = tacProvider(m)
@@ -78,7 +74,7 @@ object TACtoBC {
      */
     def translateTACStoBC(tacs: Map[Method, AITACode[TACMethodParameter, ValueInformation]]): Map[
         Method,
-        Seq[CodeElement[Nothing]]
+        IndexedSeq[CodeElement[Nothing]]
     ] = {
         tacs.map { case (method, tacCode) =>
             // Convert the TAC representation back to bytecode for each method
@@ -101,7 +97,7 @@ object TACtoBC {
     private def translateSingleTACtoBC(
         method: Method,
         tac:    AITACode[TACMethodParameter, ValueInformation]
-    ): Seq[CodeElement[Nothing]] = {
+    ): IndexedSeq[CodeElement[Nothing]] = {
         val tacStmts = tac.stmts.zipWithIndex
         // fill uVarToLVIndexMap
         val uVarToLVIndex = LvIndicesPreparation.prepareLvIndices(method, tacStmts)

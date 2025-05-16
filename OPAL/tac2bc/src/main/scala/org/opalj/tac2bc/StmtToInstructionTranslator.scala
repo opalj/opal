@@ -52,7 +52,7 @@ object StmtToInstructionTranslator {
     def translateStmtsToInstructions(
         tacStmts:      Array[(Stmt[DUVar[ValueInformation]], Int)],
         uVarToLVIndex: Map[IntTrieSet, Int]
-    ): Seq[CodeElement[Nothing]] = {
+    ): IndexedSeq[CodeElement[Nothing]] = {
 
         // generate Label for each TAC-Stmt -> index in TAC-Array = corresponding label
         // e.g. labelMap(2) = RewriteLabel of TAC-Statement at index 2
@@ -154,6 +154,6 @@ object StmtToInstructionTranslator {
                 case _ => throw new UnsupportedOperationException(s"Unsupported TAC-Stmt: $stmt")
             }
         }
-        code.toSeq
+        code.toIndexedSeq
     }
 }
