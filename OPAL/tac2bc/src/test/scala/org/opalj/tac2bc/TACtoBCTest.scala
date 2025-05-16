@@ -4,7 +4,7 @@ package tac2bc
 
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.PrintStream
+import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -13,15 +13,22 @@ import scala.sys.process._
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.ba.CODE
 import org.opalj.ba.CodeElement
 import org.opalj.ba.toDA
 import org.opalj.bc.Assembler
 import org.opalj.bi.TestResources
+import org.opalj.br.BaseConfig
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
+import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogContext
 import org.opalj.tac.LazyDetachedTACAIKey
 import org.opalj.util.InMemoryClassLoader
 
@@ -71,22 +78,33 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
                     compileJavaFile(getSourceDir(originalFileName), testFileName, javaFileDir, testInputDir)
                 }
 
-                val project = Project(Paths.get(testInputDir, testClassFileName).toFile)
+                val config: Config = BaseConfig.withValue(
+                    InvokedynamicRewriting.InvokedynamicRewritingConfigKey,
+                    ConfigValueFactory.fromAnyRef(false)
+                )
+                val logContext = new StandardLogContext()
+                OPALLogger.register(logContext)
+                implicit val project: Project[URL] =
+                    Project(Paths.get(testInputDir, testClassFileName).toFile, logContext, config)
 
                 // Load the test class file
                 val classFile = project.allClassFiles.head
 
                 // Compile the TAC from the test class file
-                val tacs = TACtoBC.compileTACFromClassFile(classFile)(project.get(LazyDetachedTACAIKey))
-
-                tacs.foreach(p => println(p))
-
-                val byteCodes = TACtoBC.translateTACStoBC(tacs)
+                val tacProvider = project.get(LazyDetachedTACAIKey)
+                val byteCodes = for {
+                    m <- classFile.methods
+                    if m.body.isDefined
+                } yield {
+                    val tac = tacProvider(m)
+                    val bytecodeInstructions = TACtoBC.translateTACtoBC(m.descriptor, m.isStatic, tac)
+                    m -> bytecodeInstructions
+                }
 
                 // Generate the new class file
                 generateClassFile(
                     classFile,
-                    byteCodes,
+                    byteCodes.toMap,
                     outputDir,
                     testClassFileName
                 )
@@ -127,7 +145,8 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
         }
 
         val cfWithNewInstructions = classFile.copy(methods = newMethods)
-        val newRawCF = Assembler(toDA(cfWithNewInstructions))
+        val daClassFile = toDA(cfWithNewInstructions)
+        val newRawCF = Assembler(daClassFile)
         Files.createDirectories(outputFile.getParent)
         Files.write(outputFile, newRawCF)
     }
