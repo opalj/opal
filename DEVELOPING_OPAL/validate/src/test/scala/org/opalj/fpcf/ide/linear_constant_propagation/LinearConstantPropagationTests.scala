@@ -7,6 +7,8 @@ package linear_constant_propagation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
 import org.opalj.ide.integration.EagerIDEAnalysisProxyScheduler
+import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
 
 /**
  * Test runner for linear constant propagation.
@@ -19,10 +21,13 @@ class LinearConstantPropagationTests extends IDEPropertiesTest {
     }
 
     describe("Execute the o.o.t.f.a.i.i.l.LinearConstantPropagationAnalysis") {
+        val linearConstantPropagationAnalysisScheduler =
+            new LinearConstantPropagationAnalysisScheduler() with JavaIDEAnalysisSchedulerBase.RTACallGraph
+
         val testContext = executeAnalyses(Set(
-            LinearConstantPropagationAnalysisScheduler,
+            linearConstantPropagationAnalysisScheduler,
             new EagerIDEAnalysisProxyScheduler(
-                LinearConstantPropagationAnalysisScheduler,
+                linearConstantPropagationAnalysisScheduler,
                 { (project: SomeProject) => methodsWithAnnotations(project).map(_._1) }
             )
         ))

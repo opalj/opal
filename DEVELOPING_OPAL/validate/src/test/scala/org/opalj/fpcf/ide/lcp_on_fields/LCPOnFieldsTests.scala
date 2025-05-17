@@ -10,6 +10,8 @@ import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropa
 import org.opalj.ide.integration.LazyIDEAnalysisProxyScheduler
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
 
 /**
  * Test runner for linear constant propagation on fields.
@@ -22,15 +24,18 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
     }
 
     describe("Execute the o.o.t.f.a.i.i.l.LCPOnFieldsAnalysis") {
+        val lcpOnFieldsAnalysisScheduler =
+            new LCPOnFieldsAnalysisScheduler() with JavaIDEAnalysisSchedulerBase.RTACallGraph
+
         val testContext = executeAnalyses(Set(
             LinearConstantPropagationAnalysisSchedulerExtended,
-            LCPOnFieldsAnalysisScheduler,
+            lcpOnFieldsAnalysisScheduler,
             new LazyIDEAnalysisProxyScheduler(LinearConstantPropagationAnalysisSchedulerExtended),
-            new LazyIDEAnalysisProxyScheduler(LCPOnFieldsAnalysisScheduler) {
+            new LazyIDEAnalysisProxyScheduler(lcpOnFieldsAnalysisScheduler) {
                 override def afterPhaseScheduling(propertyStore: PropertyStore, analysis: FPCFAnalysis): Unit = {
                     val entryPoints = methodsWithAnnotations(analysis.project)
                     entryPoints.foreach { case (method, _, _) =>
-                        propertyStore.force(method, LCPOnFieldsAnalysisScheduler.propertyMetaInformation.key)
+                        propertyStore.force(method, lcpOnFieldsAnalysisScheduler.propertyMetaInformation.key)
                         propertyStore.force(
                             method,
                             LinearConstantPropagationAnalysisSchedulerExtended.propertyMetaInformation.key

@@ -21,7 +21,7 @@ import org.opalj.tac.cg.RTACallGraphKey
  *
  * @author Robin Körkemeier
  */
-class IDEPropertiesTest extends PropertiesTest {
+abstract class IDEPropertiesTest extends PropertiesTest {
     override def withRT: Boolean = false
 
     override def createConfig(): Config = {
