@@ -11,6 +11,7 @@ import org.opalj.ide.integration.LazyIDEAnalysisProxyScheduler
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LinearConstantPropagationAnalysisSchedulerExtended
 import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
 
 /**
@@ -24,13 +25,15 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
     }
 
     describe("Execute the o.o.t.f.a.i.i.l.LCPOnFieldsAnalysis") {
+        val linearConstantPropagationAnalysisSchedulerExtended =
+            new LinearConstantPropagationAnalysisSchedulerExtended() with JavaIDEAnalysisSchedulerBase.RTACallGraph
         val lcpOnFieldsAnalysisScheduler =
             new LCPOnFieldsAnalysisScheduler() with JavaIDEAnalysisSchedulerBase.RTACallGraph
 
         val testContext = executeAnalyses(Set(
-            LinearConstantPropagationAnalysisSchedulerExtended,
+            linearConstantPropagationAnalysisSchedulerExtended,
             lcpOnFieldsAnalysisScheduler,
-            new LazyIDEAnalysisProxyScheduler(LinearConstantPropagationAnalysisSchedulerExtended),
+            new LazyIDEAnalysisProxyScheduler(linearConstantPropagationAnalysisSchedulerExtended),
             new LazyIDEAnalysisProxyScheduler(lcpOnFieldsAnalysisScheduler) {
                 override def afterPhaseScheduling(propertyStore: PropertyStore, analysis: FPCFAnalysis): Unit = {
                     val entryPoints = methodsWithAnnotations(analysis.project)
@@ -38,7 +41,7 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
                         propertyStore.force(method, lcpOnFieldsAnalysisScheduler.propertyMetaInformation.key)
                         propertyStore.force(
                             method,
-                            LinearConstantPropagationAnalysisSchedulerExtended.propertyMetaInformation.key
+                            linearConstantPropagationAnalysisSchedulerExtended.propertyMetaInformation.key
                         )
                     }
                 }
