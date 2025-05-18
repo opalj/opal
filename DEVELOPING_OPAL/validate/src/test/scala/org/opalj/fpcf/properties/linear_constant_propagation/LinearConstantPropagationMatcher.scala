@@ -7,7 +7,7 @@ package linear_constant_propagation
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.ide.integration.BasicIDEProperty
+import org.opalj.fpcf.properties.ide.IDEPropertyMatcherMixin
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 
 /**
@@ -16,7 +16,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
  *
  * @author Robin Körkemeier
  */
-class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher {
+class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/ConstantValue")
     override val containerAnnotationType: ObjectType =
@@ -34,20 +34,18 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher {
         val expectedVariableValue =
             getValue(p, singleAnnotationType, a.elementValuePairs, "value").asIntValue.value
 
-        if (properties.exists {
-                case property: BasicIDEProperty[?, ?] =>
-                    property.results.exists {
-                        case (
-                                linear_constant_propagation.problem.VariableFact(name, _),
-                                linear_constant_propagation.problem.ConstantValue(value)
-                            ) =>
-                            expectedVariableName == name && expectedVariableValue == value
+        if (existsBasicIDEPropertyResult(
+                properties,
+                {
+                    case (
+                            linear_constant_propagation.problem.VariableFact(name, _),
+                            linear_constant_propagation.problem.ConstantValue(value)
+                        ) =>
+                        expectedVariableName == name && expectedVariableValue == value
 
-                        case _ => false
-                    }
-
-                case _ => false
-            }
+                    case _ => false
+                }
+            )
         ) {
             None
         } else {
@@ -64,7 +62,7 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher {
  *
  * @author Robin Körkemeier
  */
-class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
+class VariableValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/VariableValue")
     override val containerAnnotationType: ObjectType =
@@ -80,20 +78,18 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
         val expectedVariableName =
             getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
 
-        if (properties.exists {
-                case property: BasicIDEProperty[?, ?] =>
-                    property.results.exists {
-                        case (
-                                linear_constant_propagation.problem.VariableFact(name, _),
-                                linear_constant_propagation.problem.VariableValue
-                            ) =>
-                            expectedVariableName == name
+        if (existsBasicIDEPropertyResult(
+                properties,
+                {
+                    case (
+                            linear_constant_propagation.problem.VariableFact(name, _),
+                            linear_constant_propagation.problem.VariableValue
+                        ) =>
+                        expectedVariableName == name
 
-                        case _ => false
-                    }
-
-                case _ => false
-            }
+                    case _ => false
+                }
+            )
         ) {
             None
         } else {
@@ -110,7 +106,7 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
  *
  * @author Robin Körkemeier
  */
-class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher {
+class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/UnknownValue")
     override val containerAnnotationType: ObjectType =
@@ -126,20 +122,18 @@ class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher {
         val expectedVariableName =
             getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
 
-        if (properties.exists {
-                case property: BasicIDEProperty[?, ?] =>
-                    property.results.exists {
-                        case (
-                                linear_constant_propagation.problem.VariableFact(name, _),
-                                linear_constant_propagation.problem.UnknownValue
-                            ) =>
-                            expectedVariableName == name
+        if (existsBasicIDEPropertyResult(
+                properties,
+                {
+                    case (
+                            linear_constant_propagation.problem.VariableFact(name, _),
+                            linear_constant_propagation.problem.UnknownValue
+                        ) =>
+                        expectedVariableName == name
 
-                        case _ => false
-                    }
-
-                case _ => false
-            }
+                    case _ => false
+                }
+            )
         ) {
             None
         } else {

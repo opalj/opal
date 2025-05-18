@@ -8,7 +8,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.ide.integration.BasicIDEProperty
+import org.opalj.fpcf.properties.ide.IDEPropertyMatcherMixin
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 
@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
  *
  * @author Robin Körkemeier
  */
-class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher {
+class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/lcp_on_fields/ObjectValue")
     override val containerAnnotationType: ObjectType =
@@ -39,68 +39,41 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher {
             getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
 
         val expectedConstantValues =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "constantValues").asArrayValue.values
-                .map { a =>
-                    val annotation = a.asAnnotationValue.annotation
-                    val expectedFieldName =
-                        getValue(p, constantValueType, annotation.elementValuePairs, "variable").asStringValue.value
-                    val expectedValue =
-                        getValue(p, constantValueType, annotation.elementValuePairs, "value").asIntValue.value
+            mapArrayValueExtractStringAndInt(p, a, "constantValues", constantValueType, "variable", "value")
 
-                    (expectedFieldName, expectedValue)
-                }
+        val expectedVariableValues = mapArrayValueExtractString(p, a, "variableValues", variableValueType, "variable")
 
-        val expectedVariableValues =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "variableValues").asArrayValue.values
-                .map { a =>
-                    val annotation = a.asAnnotationValue.annotation
-                    val expectedFieldName =
-                        getValue(p, variableValueType, annotation.elementValuePairs, "variable").asStringValue.value
+        val expectedUnknownValues = mapArrayValueExtractString(p, a, "unknownValues", unknownValueType, "variable")
 
-                    expectedFieldName
-                }
-
-        val expectedUnknownValues =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "unknownValues").asArrayValue.values
-                .map { a =>
-                    val annotation = a.asAnnotationValue.annotation
-                    val expectedFieldName =
-                        getValue(p, unknownValueType, annotation.elementValuePairs, "variable").asStringValue.value
-
-                    expectedFieldName
-                }
-
-        if (properties.exists {
-                case property: BasicIDEProperty[?, ?] =>
-                    property.results.exists {
-                        case (f: lcp_on_fields.problem.AbstractObjectFact, lcp_on_fields.problem.ObjectValue(values)) =>
-                            expectedVariableName == f.name &&
-                                expectedConstantValues.forall {
-                                    case (fieldName, value) =>
-                                        values.get(fieldName) match {
-                                            case Some(linear_constant_propagation.problem.ConstantValue(c)) =>
-                                                value == c
-                                            case _ => false
-                                        }
-                                } &&
-                                expectedVariableValues.forall { fieldName =>
+        if (existsBasicIDEPropertyResult(
+                properties,
+                {
+                    case (f: lcp_on_fields.problem.AbstractObjectFact, lcp_on_fields.problem.ObjectValue(values)) =>
+                        expectedVariableName == f.name &&
+                            expectedConstantValues.forall {
+                                case (fieldName, value) =>
                                     values.get(fieldName) match {
-                                        case Some(linear_constant_propagation.problem.VariableValue) => true
-                                        case _                                                       => false
+                                        case Some(linear_constant_propagation.problem.ConstantValue(c)) =>
+                                            value == c
+                                        case _ => false
                                     }
-                                } &&
-                                expectedUnknownValues.forall { fieldName =>
-                                    values.get(fieldName) match {
-                                        case Some(linear_constant_propagation.problem.UnknownValue) => true
-                                        case _                                                      => false
-                                    }
+                            } &&
+                            expectedVariableValues.forall { fieldName =>
+                                values.get(fieldName) match {
+                                    case Some(linear_constant_propagation.problem.VariableValue) => true
+                                    case _                                                       => false
                                 }
+                            } &&
+                            expectedUnknownValues.forall { fieldName =>
+                                values.get(fieldName) match {
+                                    case Some(linear_constant_propagation.problem.UnknownValue) => true
+                                    case _                                                      => false
+                                }
+                            }
 
-                        case _ => false
-                    }
-
-                case _ => false
-            }
+                    case _ => false
+                }
+            )
         ) {
             None
         } else {
@@ -127,7 +100,7 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher {
  *
  * @author Robin Körkemeier
  */
-class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher {
+class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/lcp_on_fields/ArrayValue")
     override val containerAnnotationType: ObjectType =
@@ -148,77 +121,51 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher {
             getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
 
         val expectedConstantElements =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "constantElements").asArrayValue.values
-                .map { a =>
-                    val annotation = a.asAnnotationValue.annotation
-                    val expectedIndex =
-                        getValue(p, constantArrayElementType, annotation.elementValuePairs, "index").asIntValue.value
-                    val expectedValue =
-                        getValue(p, constantArrayElementType, annotation.elementValuePairs, "value").asIntValue.value
-
-                    (expectedIndex, expectedValue)
-                }
+            mapArrayValueExtractIntAndInt(p, a, "constantElements", constantArrayElementType, "index", "value")
 
         val expectedVariableElements =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "variableElements").asArrayValue.values
-                .map { a =>
-                    val annotation = a.asAnnotationValue.annotation
-                    val expectedIndex =
-                        getValue(p, variableArrayElementType, annotation.elementValuePairs, "index").asIntValue.value
+            mapArrayValueExtractInt(p, a, "variableElements", variableArrayElementType, "index")
 
-                    expectedIndex
-                }
+        val expectedUnknownElements = mapArrayValueExtractInt(p, a, "unknownElements", unknownArrayElementType, "index")
 
-        val expectedUnknownElements =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "unknownElements").asArrayValue.values
-                .map { a =>
-                    val annotation = a.asAnnotationValue.annotation
-                    val expectedIndex =
-                        getValue(p, unknownArrayElementType, annotation.elementValuePairs, "index").asIntValue.value
-
-                    expectedIndex
-                }
-
-        if (properties.exists {
-                case property: BasicIDEProperty[?, ?] =>
-                    property.results.exists {
-                        case (
-                                f: lcp_on_fields.problem.AbstractArrayFact,
-                                lcp_on_fields.problem.ArrayValue(initValue, elements)
-                            ) =>
-                            expectedVariableName == f.name &&
-                                expectedConstantElements.forall {
-                                    case (index, value) =>
-                                        elements.get(index) match {
-                                            case Some(linear_constant_propagation.problem.ConstantValue(c)) =>
-                                                value == c
-                                            case None =>
-                                                initValue == linear_constant_propagation.problem.ConstantValue(value)
-                                            case _ => false
-                                        }
-                                } &&
-                                expectedVariableElements.forall { index =>
+        if (existsBasicIDEPropertyResult(
+                properties,
+                {
+                    case (
+                            f: lcp_on_fields.problem.AbstractArrayFact,
+                            lcp_on_fields.problem.ArrayValue(initValue, elements)
+                        ) =>
+                        expectedVariableName == f.name &&
+                            expectedConstantElements.forall {
+                                case (index, value) =>
                                     elements.get(index) match {
-                                        case Some(linear_constant_propagation.problem.VariableValue) => true
+                                        case Some(linear_constant_propagation.problem.ConstantValue(c)) =>
+                                            value == c
                                         case None =>
-                                            initValue == linear_constant_propagation.problem.VariableValue
+                                            initValue == linear_constant_propagation.problem.ConstantValue(value)
                                         case _ => false
                                     }
-                                } &&
-                                expectedUnknownElements.forall { index =>
-                                    elements.get(index) match {
-                                        case Some(linear_constant_propagation.problem.UnknownValue) => true
-                                        case None =>
-                                            initValue == linear_constant_propagation.problem.UnknownValue
-                                        case _ => false
-                                    }
+                            } &&
+                            expectedVariableElements.forall { index =>
+                                elements.get(index) match {
+                                    case Some(linear_constant_propagation.problem.VariableValue) => true
+                                    case None =>
+                                        initValue == linear_constant_propagation.problem.VariableValue
+                                    case _ => false
                                 }
+                            } &&
+                            expectedUnknownElements.forall { index =>
+                                elements.get(index) match {
+                                    case Some(linear_constant_propagation.problem.UnknownValue) => true
+                                    case None =>
+                                        initValue == linear_constant_propagation.problem.UnknownValue
+                                    case _ => false
+                                }
+                            }
 
-                        case _ => false
-                    }
-
-                case _ => false
-            }
+                    case _ => false
+                }
+            )
         ) {
             None
         } else {
@@ -244,8 +191,8 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher {
  *
  * @author Robin Körkemeier
  */
-class StaticValuesMatcher extends AbstractPropertyMatcher {
-    private val annotationType: ObjectType =
+class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatcherMixin {
+    override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/lcp_on_fields/ObjectValue")
 
     private val constantValueType = ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/ConstantValue")
@@ -262,81 +209,59 @@ class StaticValuesMatcher extends AbstractPropertyMatcher {
         val entityObjectType = entity.asInstanceOf[Method].classFile.thisType
 
         val expectedConstantValues =
-            getValue(p, annotationType, a.elementValuePairs, "constantValues").asArrayValue.values
-                .map { a =>
-                    val annotation = a.asAnnotationValue.annotation
-                    val expectedFieldName =
-                        getValue(p, constantValueType, annotation.elementValuePairs, "variable").asStringValue.value
-                    val expectedValue =
-                        getValue(p, constantValueType, annotation.elementValuePairs, "value").asIntValue.value
+            mapArrayValueExtractStringAndInt(p, a, "constantValues", constantValueType, "variable", "value")
 
-                    (expectedFieldName, expectedValue)
-                }
+        val expectedVariableValues = mapArrayValueExtractString(p, a, "variableValues", variableValueType, "variable")
 
-        val expectedVariableValues =
-            getValue(p, annotationType, a.elementValuePairs, "variableValues").asArrayValue.values
-                .map { a =>
-                    val annotation = a.asAnnotationValue.annotation
-                    val expectedFieldName =
-                        getValue(p, variableValueType, annotation.elementValuePairs, "variable").asStringValue.value
+        val expectedUnknownValues = mapArrayValueExtractString(p, a, "unknownValues", unknownValueType, "variable")
 
-                    expectedFieldName
-                }
+        if (expectedConstantValues.forall {
+                case (fieldName, value) => existsBasicIDEPropertyResult(
+                        properties,
+                        {
+                            case (
+                                    f: lcp_on_fields.problem.AbstractStaticFieldFact,
+                                    lcp_on_fields.problem.StaticFieldValue(v)
+                                ) =>
+                                f.objectType == entityObjectType && f.fieldName == fieldName &&
+                                    (v match {
+                                        case linear_constant_propagation.problem.ConstantValue(c) => value == c
+                                        case _                                                    => false
+                                    })
 
-        val expectedUnknownValues =
-            getValue(p, annotationType, a.elementValuePairs, "unknownValues").asArrayValue.values
-                .map { a =>
-                    val annotation = a.asAnnotationValue.annotation
-                    val expectedFieldName =
-                        getValue(p, unknownValueType, annotation.elementValuePairs, "variable").asStringValue.value
-
-                    expectedFieldName
-                }
-
-        if (properties.exists {
-                case property: BasicIDEProperty[?, ?] =>
-                    expectedConstantValues.forall {
-                        case (fieldName, value) =>
-                            property.results.exists {
-                                case (
-                                        f: lcp_on_fields.problem.AbstractStaticFieldFact,
-                                        lcp_on_fields.problem.StaticFieldValue(v)
-                                    ) =>
-                                    f.objectType == entityObjectType && f.fieldName == fieldName &&
-                                        (v match {
-                                            case linear_constant_propagation.problem.ConstantValue(c) => value == c
-                                            case _                                                    => false
-                                        })
-
-                                case _ => false
-                            }
-                    } &&
-                        expectedVariableValues.forall { fieldName =>
-                            property.results.exists {
-                                case (
-                                        f: lcp_on_fields.problem.AbstractStaticFieldFact,
-                                        lcp_on_fields.problem.StaticFieldValue(v)
-                                    ) =>
-                                    f.objectType == entityObjectType && f.fieldName == fieldName &&
-                                        v == linear_constant_propagation.problem.VariableValue
-
-                                case _ => false
-                            }
-                        } &&
-                        expectedUnknownValues.forall { fieldName =>
-                            property.results.exists {
-                                case (
-                                        f: lcp_on_fields.problem.AbstractStaticFieldFact,
-                                        lcp_on_fields.problem.StaticFieldValue(v)
-                                    ) =>
-                                    f.objectType == entityObjectType && f.fieldName == fieldName &&
-                                        v == linear_constant_propagation.problem.UnknownValue
-
-                                case _ => false
-                            }
+                            case _ => false
                         }
+                    )
+            } &&
+            expectedVariableValues.forall { fieldName =>
+                existsBasicIDEPropertyResult(
+                    properties,
+                    {
+                        case (
+                                f: lcp_on_fields.problem.AbstractStaticFieldFact,
+                                lcp_on_fields.problem.StaticFieldValue(v)
+                            ) =>
+                            f.objectType == entityObjectType && f.fieldName == fieldName &&
+                                v == linear_constant_propagation.problem.VariableValue
 
-                case _ => false
+                        case _ => false
+                    }
+                )
+            } &&
+            expectedUnknownValues.forall { fieldName =>
+                existsBasicIDEPropertyResult(
+                    properties,
+                    {
+                        case (
+                                f: lcp_on_fields.problem.AbstractStaticFieldFact,
+                                lcp_on_fields.problem.StaticFieldValue(v)
+                            ) =>
+                            f.objectType == entityObjectType && f.fieldName == fieldName &&
+                                v == linear_constant_propagation.problem.UnknownValue
+
+                        case _ => false
+                    }
+                )
             }
         ) {
             None
@@ -368,7 +293,7 @@ class StaticValuesMatcher extends AbstractPropertyMatcher {
  *
  * @author Robin Körkemeier
  */
-class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
+class VariableValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/lcp_on_fields/VariableValue")
     override val containerAnnotationType: ObjectType =
@@ -384,25 +309,17 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
         val expectedVariableName =
             getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
 
-        if (properties.exists {
-                case property: BasicIDEProperty[?, ?] =>
-                    property.results.exists {
-                        case (
-                                lcp_on_fields.problem.ObjectFact(name, _),
-                                lcp_on_fields.problem.VariableValue
-                            ) =>
-                            expectedVariableName == name
-                        case (
-                                lcp_on_fields.problem.ArrayFact(name, _),
-                                lcp_on_fields.problem.VariableValue
-                            ) =>
-                            expectedVariableName == name
+        if (existsBasicIDEPropertyResult(
+                properties,
+                {
+                    case (f: lcp_on_fields.problem.AbstractObjectFact, lcp_on_fields.problem.VariableValue) =>
+                        expectedVariableName == f.name
+                    case (f: lcp_on_fields.problem.AbstractArrayFact, lcp_on_fields.problem.VariableValue) =>
+                        expectedVariableName == f.name
 
-                        case _ => false
-                    }
-
-                case _ => false
-            }
+                    case _ => false
+                }
+            )
         ) {
             None
         } else {
@@ -419,7 +336,7 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher {
  *
  * @author Robin Körkemeier
  */
-class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher {
+class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/lcp_on_fields/UnknownValue")
     override val containerAnnotationType: ObjectType =
@@ -435,25 +352,17 @@ class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher {
         val expectedVariableName =
             getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
 
-        if (properties.exists {
-                case property: BasicIDEProperty[?, ?] =>
-                    property.results.exists {
-                        case (
-                                lcp_on_fields.problem.ObjectFact(name, _),
-                                lcp_on_fields.problem.UnknownValue
-                            ) =>
-                            expectedVariableName == name
-                        case (
-                                lcp_on_fields.problem.ArrayFact(name, _),
-                                lcp_on_fields.problem.UnknownValue
-                            ) =>
-                            expectedVariableName == name
+        if (existsBasicIDEPropertyResult(
+                properties,
+                {
+                    case (f: lcp_on_fields.problem.AbstractObjectFact, lcp_on_fields.problem.UnknownValue) =>
+                        expectedVariableName == f.name
+                    case (f: lcp_on_fields.problem.AbstractArrayFact, lcp_on_fields.problem.UnknownValue) =>
+                        expectedVariableName == f.name
 
-                        case _ => false
-                    }
-
-                case _ => false
-            }
+                    case _ => false
+                }
+            )
         ) {
             None
         } else {
