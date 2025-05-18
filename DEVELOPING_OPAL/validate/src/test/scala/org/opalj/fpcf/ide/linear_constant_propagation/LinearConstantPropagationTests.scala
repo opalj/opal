@@ -5,7 +5,7 @@ package ide
 package linear_constant_propagation
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.properties.linear_constant_propagation.LinearConstantPropagationProperty
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp.LinearConstantPropagationProperty
 import org.opalj.ide.integration.EagerIDEAnalysisProxyScheduler
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
  */
 class LinearConstantPropagationTests extends IDEPropertiesTest {
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/linear_constant_propagation")
+        List("org/opalj/fpcf/fixtures/linear_constant_propagation/lcp")
     }
 
     describe("Execute the o.o.t.f.a.i.i.l.LinearConstantPropagationAnalysis") {
