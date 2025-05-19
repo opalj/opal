@@ -22,7 +22,7 @@ trait ConstantsPoolLike {
 
     def CPENameAndType(name: String, tpe: String): Int
 
-    def CPEFieldRef(objectType: ObjectType, fieldName: String, fieldType: String): Int
+    def CPEFieldRef(classType: ClassType, fieldName: String, fieldType: String): Int
 
     def CPEMethodRef(
         referenceType: ReferenceType,
@@ -31,7 +31,7 @@ trait ConstantsPoolLike {
     ): Int
 
     def CPEInterfaceMethodRef(
-        objectType: ReferenceType,
+        classType:  ReferenceType,
         name:       String,
         descriptor: MethodDescriptor
     ): Int
@@ -51,8 +51,8 @@ trait ConstantsPoolLike {
 
     def CPEUtf8OfCPEClass(referenceType: ReferenceType): Int = {
         val typeName =
-            if (referenceType.isObjectType)
-                referenceType.asObjectType.fqn // "just", e.g., "java/lang/Object"
+            if (referenceType.isClassType)
+                referenceType.asClassType.fqn // "just", e.g., "java/lang/Object"
             else // an array type including L and ; in case of reference types
                 referenceType.toJVMTypeName
         CPEUtf8(typeName)

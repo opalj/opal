@@ -6,9 +6,9 @@ package jcg
 
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
@@ -32,9 +32,9 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     type V = DUVar[KnownTypedValue]
 
     // required types and descriptors
-    val ClassLoaderT = ObjectType("java/lang/ClassLoader")
+    val ClassLoaderT = ClassType("java/lang/ClassLoader")
 
-    val loadClassMD = MethodDescriptor(ObjectType.String, ObjectType.Class)
+    val loadClassMD = MethodDescriptor(ClassType.String, ClassType.Class)
 
     override def featureIDs: Seq[String] = {
         Seq(
@@ -91,6 +91,6 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     }
 
     def isStandardClassLoader(receiverType: ReferenceType): Boolean = {
-        receiverType.asObjectType.fqn.startsWith("java/")
+        receiverType.asClassType.fqn.startsWith("java/")
     }
 }

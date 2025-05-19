@@ -50,7 +50,7 @@ object ClassFileFactory {
      *
      * The generated class uses the following template:
      * {{{
-     * class <definingType.objectType>
+     * class <definingType.classType>
      *  extends <definingType.theSuperclassType>
      *  implements <definingType.theSuperinterfaceTypes> {
      *
@@ -96,7 +96,7 @@ object ClassFileFactory {
      * generic types, the generated proxy will need to create a bridge method to be valid.
      * Therefore, in these cases, `bridgeMethodDescriptor` must be specified.
      * It must be identical to `methodDescriptor` except for all occurrences of generic
-     * types, which must be replaced with `ObjectType.Object`.
+     * types, which must be replaced with `ClassType.Object`.
      * For example, consider the Java interface `java.util.Comparator` that defines the
      * generic type `T` and uses it in its `int compare(T, T)` method. This would require
      * a bridge method `int compare(Object, Object)`. The appropriate method descriptors
@@ -104,10 +104,10 @@ object ClassFileFactory {
      * {{{
      * // Uses "String"
      * methodDescriptor =
-     *  MethodDescriptor(IndexedSeq(ObjectType.String, ObjectType.String), IntegerType)
+     *  MethodDescriptor(IndexedSeq(ClassType.String, ClassType.String), IntegerType)
      * // Uses "Object"
      * bridgeMethodDescriptor =
-     *  MethodDescriptor(IndexedSeq(ObjectType.Object, ObjectType.Object), IntegerType)
+     *  MethodDescriptor(IndexedSeq(ClassType.Object, ClassType.Object), IntegerType)
      * }}}
      *
      * The created class will always have its synthetic access flag set, as well as the
@@ -153,20 +153,20 @@ object ClassFileFactory {
      * methodDescriptor =
      *  MethodDescriptor(IntegerType, VoidType)
      * receiverMethodDescriptor =
-     *  MethodDescriptor(ObjectType.Integer, VoidType)
-     *  // or MethodDescriptor(ObjectType.Object, ByteType)
+     *  MethodDescriptor(ClassType.Integer, VoidType)
+     *  // or MethodDescriptor(ClassType.Object, ByteType)
      *
      * // ------------- Second Example
      * methodDescriptor =
-     *  MethodDescriptor(ObjectType.String, BooleanType)
+     *  MethodDescriptor(ClassType.String, BooleanType)
      * receiverMethodDescriptor =
-     *  MethodDescriptor.JustReturnsBoolean // IF receiverType == ObjectType.String
+     *  MethodDescriptor.JustReturnsBoolean // IF receiverType == ClassType.String
      *
      * // ------------- Third Example
      * methodDescriptor =
-     *  MethodDescriptor(IndexedSeq(ByteType, ByteType, ObjectType.Integer), IntegerType)
+     *  MethodDescriptor(IndexedSeq(ByteType, ByteType, ClassType.Integer), IntegerType)
      * receiverMethodDescriptor =
-     *  MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object) // generic method
+     *  MethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object) // generic method
      *
      * // ------------- Fourth Example
      * methodDescriptor =
@@ -184,12 +184,12 @@ object ClassFileFactory {
      *          used to call call the method on the receiver.
      */
     def Proxy(
-        caller:                  ObjectType,
+        caller:                  ClassType,
         callerIsInterface:       Boolean,
         definingType:            TypeDeclaration,
         methodName:              String,
         methodDescriptor:        MethodDescriptor,
-        receiverType:            ObjectType,
+        receiverType:            ClassType,
         receiverIsInterface:     Boolean,
         implMethod:              MethodCallMethodHandle,
         invocationInstruction:   Opcode,
@@ -239,7 +239,7 @@ object ClassFileFactory {
          *      SerializedLambda. The caller class must have an appropriate $deserializeLambda$
          *      method, as described in SerializedLambda.
          */
-        val isSerializable = definingType.theSuperinterfaceTypes.contains(ObjectType.Serializable)
+        val isSerializable = definingType.theSuperinterfaceTypes.contains(ClassType.Serializable)
 
         val methods = new Array[AnyRef](
             3 /* proxy method, constructor, factory */ +
@@ -247,7 +247,7 @@ object ClassFileFactory {
                 (if (isSerializable) 2 else 0) // writeReplace and $deserializeLambda$ if Serializable
         )
         methods(0) = proxyMethod(
-            definingType.objectType,
+            definingType.classType,
             methodName,
             methodDescriptor,
             additionalFieldsForStaticParameters,
@@ -258,7 +258,7 @@ object ClassFileFactory {
         )
         methods(1) = constructor
         methods(2) = createFactoryMethod(
-            definingType.objectType,
+            definingType.classType,
             fields.map[FieldType](_.fieldType),
             factoryMethodName
         )
@@ -269,7 +269,7 @@ object ClassFileFactory {
                     methodName,
                     bridgeMethodDescriptor,
                     methodDescriptor,
-                    definingType.objectType
+                    definingType.classType
                 )
         }
 
@@ -297,7 +297,7 @@ object ClassFileFactory {
             0,
             52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
-            definingType.objectType,
+            definingType.classType,
             definingType.theSuperclassType,
             definingType.theSuperinterfaceTypes.toArraySeq,
             fields,
@@ -354,7 +354,7 @@ object ClassFileFactory {
                 } else if (t.isBaseType) {
                     // Primitive type handling
                     Array(
-                        GETSTATIC(t.asBaseType.WrapperType, "TYPE", ObjectType.Class),
+                        GETSTATIC(t.asBaseType.WrapperType, "TYPE", ClassType.Class),
                         null,
                         null
                     )
@@ -364,7 +364,7 @@ object ClassFileFactory {
                         GETSTATIC(
                             VoidType.WrapperType,
                             "TYPE",
-                            ObjectType.Class
+                            ClassType.Class
                         ),
                         null,
                         null
@@ -379,12 +379,12 @@ object ClassFileFactory {
                 // IMPROVE: check if LDC method type can be used
                 buildMethodType ++= Array(
                     INVOKESTATIC(
-                        ObjectType.MethodType,
+                        ClassType.MethodType,
                         false,
                         "methodType",
                         MethodDescriptor(
-                            ArraySeq(ObjectType.Class),
-                            ObjectType.MethodType
+                            ArraySeq(ClassType.Class),
+                            ClassType.MethodType
                         )
                     ),
                     null,
@@ -395,12 +395,12 @@ object ClassFileFactory {
                 buildMethodType ++= getParameterTypeInstruction(staticHandle.methodDescriptor.parameterType(0))
                 buildMethodType ++= Array(
                     INVOKESTATIC(
-                        ObjectType.MethodType,
+                        ClassType.MethodType,
                         false,
                         "methodType",
                         MethodDescriptor(
-                            ArraySeq(ObjectType.Class, ObjectType.Class),
-                            ObjectType.MethodType
+                            ArraySeq(ClassType.Class, ClassType.Class),
+                            ClassType.MethodType
                         )
                     ),
                     null,
@@ -412,7 +412,7 @@ object ClassFileFactory {
                 buildMethodType ++= Array(
                     // The first parameter has its own parameter field
                     ICONST_4,
-                    ANEWARRAY(ObjectType.Class),
+                    ANEWARRAY(ClassType.Class),
                     null,
                     null
                 )
@@ -431,16 +431,16 @@ object ClassFileFactory {
 
                 buildMethodType ++= Array(
                     INVOKESTATIC(
-                        ObjectType.MethodType,
+                        ClassType.MethodType,
                         false,
                         "methodType",
                         MethodDescriptor(
                             ArraySeq(
-                                ObjectType.Class,
-                                ObjectType.Class,
-                                ArrayType(ObjectType.Class)
+                                ClassType.Class,
+                                ClassType.Class,
+                                ArrayType(ClassType.Class)
                             ),
-                            ObjectType.MethodType
+                            ClassType.MethodType
                         )
                     ),
                     null,
@@ -459,15 +459,15 @@ object ClassFileFactory {
             buildMethodType ++= Array(
                 ALOAD_2, // Load the lookup
                 INVOKEVIRTUAL(
-                    ObjectType.MethodHandles$Lookup,
+                    ClassType.MethodHandles$Lookup,
                     "getStatic",
                     MethodDescriptor(
                         ArraySeq(
-                            ObjectType.Class,
-                            ObjectType.String,
-                            ObjectType.MethodType
+                            ClassType.Class,
+                            ClassType.String,
+                            ClassType.MethodType
                         ),
-                        ObjectType.MethodHandle
+                        ClassType.MethodHandle
                     )
                 ),
                 null,
@@ -481,23 +481,23 @@ object ClassFileFactory {
         val instructions: Array[Instruction] =
             Array(
                 INVOKESTATIC(
-                    ObjectType.MethodHandles,
+                    ClassType.MethodHandles,
                     false,
                     "lookup",
-                    MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
+                    MethodDescriptor.withNoArgs(ClassType.MethodHandles$Lookup)
                 ),
                 null,
                 null,
                 ASTORE_2,
-                LoadClass(ObjectType.Object),
+                LoadClass(ClassType.Object),
                 null,
-                LoadClass(ObjectType.SerializedLambda),
+                LoadClass(ClassType.SerializedLambda),
                 null,
                 INVOKESTATIC(
-                    ObjectType.MethodType,
+                    ClassType.MethodType,
                     false,
                     "methodType",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, ObjectType.Class), ObjectType.MethodType)
+                    MethodDescriptor(ArraySeq(ClassType.Class, ClassType.Class), ClassType.MethodType)
                 ),
                 null,
                 null,
@@ -505,7 +505,7 @@ object ClassFileFactory {
                 ALOAD_2,
                 ALOAD_0,
                 INVOKEVIRTUAL(
-                    ObjectType.SerializedLambda,
+                    ClassType.SerializedLambda,
                     "getImplMethodName",
                     MethodDescriptor.JustReturnsString
                 ),
@@ -514,7 +514,7 @@ object ClassFileFactory {
                 ALOAD_3,
                 LoadInt(bootstrapArguments.length),
                 null,
-                ANEWARRAY(ObjectType.MethodHandle),
+                ANEWARRAY(ClassType.MethodHandle),
                 null,
                 null
             ) ++
@@ -523,17 +523,17 @@ object ClassFileFactory {
                 // *** END Add lookup for each argument ***
                 Array(
                     INVOKESTATIC(
-                        ObjectType.ScalaLambdaDeserialize,
+                        ClassType.ScalaLambdaDeserialize,
                         false,
                         "bootstrap",
                         MethodDescriptor(
                             ArraySeq(
-                                ObjectType.MethodHandles$Lookup,
-                                ObjectType.String,
-                                ObjectType.MethodType,
-                                ArrayType(ObjectType.MethodHandle)
+                                ClassType.MethodHandles$Lookup,
+                                ClassType.String,
+                                ClassType.MethodType,
+                                ArrayType(ClassType.MethodHandle)
                             ),
-                            ObjectType.CallSite
+                            ClassType.CallSite
                         )
                     ),
                     null,
@@ -543,19 +543,19 @@ object ClassFileFactory {
                     ALOAD(4),
                     null,
                     INVOKEVIRTUAL(
-                        ObjectType.CallSite,
+                        ClassType.CallSite,
                         "getTarget",
-                        MethodDescriptor.withNoArgs(ObjectType.MethodHandle)
+                        MethodDescriptor.withNoArgs(ClassType.MethodHandle)
                     ),
                     null,
                     null,
                     ALOAD_0,
                     INVOKEVIRTUAL(
-                        ObjectType.MethodHandle,
+                        ClassType.MethodHandle,
                         "invoke",
                         MethodDescriptor(
-                            ObjectType.SerializedLambda, // Parameter
-                            ObjectType.Object // Return
+                            ClassType.SerializedLambda, // Parameter
+                            ClassType.Object // Return
                         )
                     ),
                     null,
@@ -570,8 +570,8 @@ object ClassFileFactory {
                 bi.ACC_PUBLIC.mask | bi.ACC_STATIC.mask,
                 staticMethodName,
                 MethodDescriptor(
-                    ArraySeq(ObjectType.SerializedLambda),
-                    ObjectType.Object
+                    ArraySeq(ClassType.SerializedLambda),
+                    ClassType.Object
                 ),
                 ArraySeq(
                     Code(maxStack, maxLocals = 5, instructions, NoExceptionHandlers, NoAttributes)
@@ -587,7 +587,7 @@ object ClassFileFactory {
             0,
             52,
             bi.ACC_SYNTHETIC.mask | bi.ACC_PUBLIC.mask | bi.ACC_SUPER.mask,
-            definingType.objectType,
+            definingType.classType,
             definingType.theSuperclassType,
             definingType.theSuperinterfaceTypes.toArraySeq,
             NoFieldTemplates, // Class fields
@@ -614,7 +614,7 @@ object ClassFileFactory {
      */
     def isVirtualMethodReference(
         opcode:                         Opcode,
-        targetMethodDeclaringType:      ObjectType,
+        targetMethodDeclaringType:      ClassType,
         targetMethodDescriptor:         MethodDescriptor,
         proxyInterfaceMethodDescriptor: MethodDescriptor
     ): Boolean = {
@@ -654,7 +654,7 @@ object ClassFileFactory {
     ): MethodTemplate = {
         // it doesn't make sense that the superClassType is not defined
         val theSuperclassType = definingType.theSuperclassType.get
-        val theType = definingType.objectType
+        val theType = definingType.classType
         val instructions =
             callSuperDefaultConstructor(theSuperclassType) ++
                 copyParametersToInstanceFields(theType, fields) :+
@@ -687,7 +687,7 @@ object ClassFileFactory {
      * Returns the instructions necessary to perform a call to the constructor of the
      * given superclass.
      */
-    def callSuperDefaultConstructor(theSuperclassType: ObjectType): Array[Instruction] = {
+    def callSuperDefaultConstructor(theSuperclassType: ClassType): Array[Instruction] = {
         Array(
             ALOAD_0,
             INVOKESPECIAL(theSuperclassType, false, "<init>", DefaultConstructorDescriptor),
@@ -708,7 +708,7 @@ object ClassFileFactory {
      * the constructor.
      */
     def copyParametersToInstanceFields(
-        declaringType: ObjectType,
+        declaringType: ClassType,
         fields:        FieldTemplates
     ): Array[Instruction] = {
 
@@ -764,7 +764,7 @@ object ClassFileFactory {
      * @see [[createConstructor]]
      */
     def createFactoryMethod(
-        typeToCreate:      ObjectType,
+        typeToCreate:      ClassType,
         fieldTypes:        FieldTypes,
         factoryMethodName: String
     ): MethodTemplate = {
@@ -841,11 +841,11 @@ object ClassFileFactory {
         additionalFieldsForStaticParameters: FieldTemplates
     ): MethodTemplate = {
         var instructions: Array[Instruction] = Array(
-            NEW(ObjectType.SerializedLambda),
+            NEW(ClassType.SerializedLambda),
             null,
             null,
             DUP,
-            LoadClass(definingType.objectType),
+            LoadClass(definingType.classType),
             null,
             LDC(ConstantString(definingType.theSuperinterfaceTypes.head.fqn)),
             null,
@@ -855,7 +855,7 @@ object ClassFileFactory {
             null,
             LDC(ConstantInteger(implMethod.referenceKind.referenceKind)),
             null,
-            LDC(ConstantString(implMethod.receiverType.asObjectType.fqn)),
+            LDC(ConstantString(implMethod.receiverType.asClassType.fqn)),
             null,
             LDC(ConstantString(implMethod.name)),
             null,
@@ -866,7 +866,7 @@ object ClassFileFactory {
             // Add the capturedArgs
             BIPUSH(additionalFieldsForStaticParameters.length),
             null,
-            ANEWARRAY(ObjectType.Object),
+            ANEWARRAY(ClassType.Object),
             null,
             null
         )
@@ -878,7 +878,7 @@ object ClassFileFactory {
                     BIPUSH(i),
                     null,
                     ALOAD_0,
-                    GETFIELD(definingType.objectType, x.name, x.fieldType),
+                    GETFIELD(definingType.classType, x.name, x.fieldType),
                     null,
                     null
                 )
@@ -890,21 +890,21 @@ object ClassFileFactory {
 
         instructions ++= Array(
             INVOKESPECIAL(
-                ObjectType.SerializedLambda,
+                ClassType.SerializedLambda,
                 isInterface = false,
                 "<init>",
                 MethodDescriptor(
                     ArraySeq(
-                        ObjectType.Class,
-                        ObjectType.String,
-                        ObjectType.String,
-                        ObjectType.String,
+                        ClassType.Class,
+                        ClassType.String,
+                        ClassType.String,
+                        ClassType.String,
                         IntegerType,
-                        ObjectType.String,
-                        ObjectType.String,
-                        ObjectType.String,
-                        ObjectType.String,
-                        ArrayType(ObjectType.Object)
+                        ClassType.String,
+                        ClassType.String,
+                        ClassType.String,
+                        ClassType.String,
+                        ArrayType(ClassType.Object)
                     ),
                     VoidType
                 )
@@ -933,12 +933,12 @@ object ClassFileFactory {
      *         class that implements the lambda.
      */
     def createDeserializeLambdaProxy(
-        caller:            ObjectType,
+        caller:            ClassType,
         callerIsInterface: Boolean
     ): MethodTemplate = {
         val deserializedLambdaMethodDescriptor = MethodDescriptor(
-            ObjectType.SerializedLambda,
-            ObjectType.Object
+            ClassType.SerializedLambda,
+            ClassType.Object
         )
         val instructions: Array[Instruction] = Array(
             ALOAD_0,
@@ -970,11 +970,11 @@ object ClassFileFactory {
      * be compatible w.r.t. the return type.
      */
     def proxyMethod(
-        definingType:          ObjectType,
+        definingType:          ClassType,
         methodName:            String,
         methodDescriptor:      MethodDescriptor,
         staticParameters:      Seq[FieldTemplate],
-        receiverType:          ObjectType,
+        receiverType:          ClassType,
         receiverIsInterface:   Boolean,
         implMethod:            MethodCallMethodHandle,
         invocationInstruction: Opcode
@@ -1004,10 +1004,10 @@ object ClassFileFactory {
      * @see [[parameterForwardingInstructions]]
      */
     private def createProxyMethodBytecode(
-        definingType:          ObjectType, // type of "this"
+        definingType:          ClassType, // type of "this"
         methodDescriptor:      MethodDescriptor, // the parameters of the current method
         staticParameters:      Seq[FieldTemplate],
-        receiverType:          ObjectType,
+        receiverType:          ClassType,
         receiverIsInterface:   Boolean,
         implMethod:            MethodCallMethodHandle,
         invocationInstruction: Opcode
@@ -1070,7 +1070,7 @@ object ClassFileFactory {
             case INVOKESTATIC.opcode =>
                 Array(
                     INVOKESTATIC(
-                        implMethod.receiverType.asObjectType,
+                        implMethod.receiverType.asClassType,
                         receiverIsInterface,
                         implMethod.name,
                         fixedImplDescriptor
@@ -1087,7 +1087,7 @@ object ClassFileFactory {
                         fixedImplDescriptor
                     }
                 val invoke = INVOKESPECIAL(
-                    implMethod.receiverType.asObjectType,
+                    implMethod.receiverType.asClassType,
                     receiverIsInterface,
                     implMethod.name,
                     methodDescriptor
@@ -1095,7 +1095,7 @@ object ClassFileFactory {
                 Array(invoke, null, null)
 
             case INVOKEINTERFACE.opcode =>
-                val invoke = INVOKEINTERFACE(implMethod.receiverType.asObjectType, implMethod.name, fixedImplDescriptor)
+                val invoke = INVOKEINTERFACE(implMethod.receiverType.asClassType, implMethod.name, fixedImplDescriptor)
                 Array(invoke, null, null, null, null)
 
             case INVOKEVIRTUAL.opcode =>
@@ -1164,7 +1164,7 @@ object ClassFileFactory {
         receiverMethodDescriptor:  MethodDescriptor,
         variableOffset:            Int,
         staticParameters:          Seq[FieldTemplate],
-        definingType:              ObjectType
+        definingType:              ClassType
     ): Array[Instruction] =
         try {
             val receiverParameters = receiverMethodDescriptor.parameterTypes
@@ -1173,9 +1173,9 @@ object ClassFileFactory {
             var lvIndex = variableOffset
 
             val receiverTakesObjectArray =
-                receiverParameters.size == 1 && receiverParameters(0) == ArrayType(ObjectType.Object)
+                receiverParameters.size == 1 && receiverParameters(0) == ArrayType(ClassType.Object)
             val callerDoesNotTakeObjectArray =
-                forwarderParameters.isEmpty || forwarderParameters(0) != ArrayType(ObjectType.Object)
+                forwarderParameters.isEmpty || forwarderParameters(0) != ArrayType(ClassType.Object)
 
             if (receiverTakesObjectArray && callerDoesNotTakeObjectArray) {
 
@@ -1206,7 +1206,7 @@ object ClassFileFactory {
 
                 instructions(nextIndex) = LoadConstantInstruction(arraySize)
                 nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
-                instructions(nextIndex) = ANEWARRAY(ObjectType.Object)
+                instructions(nextIndex) = ANEWARRAY(ClassType.Object)
                 nextIndex = instructions(nextIndex).indexOfNextInstruction(nextIndex, false)
 
                 forwarderParameters.zipWithIndex foreach { p =>
@@ -1271,10 +1271,10 @@ object ClassFileFactory {
                                 } else {
                                     1 // we only do safe conversions => 1 instruction
                                 }
-                            } else if ((rt.isBaseType && ft.isObjectType) || (ft.isBaseType && rt.isObjectType)) {
+                            } else if ((rt.isBaseType && ft.isClassType) || (ft.isBaseType && rt.isClassType)) {
                                 // can (un)box to fit => invokestatic/invokevirtual
                                 3
-                            } else if (rt.isReferenceType && ft.isReferenceType && (rt ne ObjectType.Object)) {
+                            } else if (rt.isReferenceType && ft.isReferenceType && (rt ne ClassType.Object)) {
                                 3 // checkcast
                             } else 0
                         } else 0
@@ -1318,17 +1318,17 @@ object ClassFileFactory {
                                     currentIndex = instr.indexOfNextInstruction(currentIndex, false)
                                 }
                             } else if (rt.isReferenceType && ft.isReferenceType) {
-                                if (rt ne ObjectType.Object) {
+                                if (rt ne ClassType.Object) {
                                     val conversion = CHECKCAST(rt.asReferenceType)
                                     instructions(currentIndex) = conversion
                                     currentIndex = conversion.indexOfNextInstruction(currentIndex, false)
                                 }
-                            } else if (rt.isBaseType && ft.isObjectType) {
-                                val unboxInstructions = ft.asObjectType.unboxValue
+                            } else if (rt.isBaseType && ft.isClassType) {
+                                val unboxInstructions = ft.asClassType.unboxValue
                                 val unboxInstruction = unboxInstructions(0)
                                 instructions(currentIndex) = unboxInstruction
                                 currentIndex = unboxInstruction.indexOfNextInstruction(currentIndex, false)
-                            } else if (ft.isBaseType && rt.isObjectType) {
+                            } else if (ft.isBaseType && rt.isClassType) {
                                 val boxInstructions = ft.asBaseType.boxValue
                                 val boxInstruction = boxInstructions(0)
                                 instructions(currentIndex) = boxInstruction
@@ -1371,7 +1371,7 @@ object ClassFileFactory {
             return Array(ReturnInstruction(toBeReturnedType))
 
         val conversionInstructions: Array[Instruction] =
-            if (typeOnStack eq ObjectType.Object) {
+            if (typeOnStack eq ClassType.Object) {
                 if (toBeReturnedType.isBaseType) {
                     val baseType = toBeReturnedType.asBaseType
                     val wrapper = baseType.WrapperType
@@ -1379,19 +1379,19 @@ object ClassFileFactory {
                 } else {
                     Array(CHECKCAST(toBeReturnedType.asReferenceType), null, null)
                 }
-            } else if (typeOnStack.isObjectType && toBeReturnedType.isObjectType) {
-                Array(CHECKCAST(toBeReturnedType.asObjectType), null, null)
+            } else if (typeOnStack.isClassType && toBeReturnedType.isClassType) {
+                Array(CHECKCAST(toBeReturnedType.asClassType), null, null)
             } else if (typeOnStack.isNumericType && toBeReturnedType.isNumericType) {
                 typeOnStack.asNumericType.convertTo(toBeReturnedType.asNumericType)
-            } else if (typeOnStack.isNumericType && toBeReturnedType.isObjectType) {
+            } else if (typeOnStack.isNumericType && toBeReturnedType.isClassType) {
                 typeOnStack.asNumericType.boxValue
-            } else if (typeOnStack.isObjectType && toBeReturnedType.isNumericType) {
-                typeOnStack.asObjectType.unboxValue
-            } else if (typeOnStack.isBooleanType && toBeReturnedType.isObjectType) {
+            } else if (typeOnStack.isClassType && toBeReturnedType.isNumericType) {
+                typeOnStack.asClassType.unboxValue
+            } else if (typeOnStack.isBooleanType && toBeReturnedType.isClassType) {
                 typeOnStack.asBooleanType.boxValue
-            } else if (typeOnStack.isObjectType && toBeReturnedType.isBooleanType) {
-                typeOnStack.asObjectType.unboxValue
-            } else if (typeOnStack.isArrayType && (typeOnStack.asArrayType.elementType eq ObjectType.Object)
+            } else if (typeOnStack.isClassType && toBeReturnedType.isBooleanType) {
+                typeOnStack.asClassType.unboxValue
+            } else if (typeOnStack.isArrayType && (typeOnStack.asArrayType.elementType eq ClassType.Object)
                        && toBeReturnedType.isArrayType &&
                        typeOnStack.asArrayType.dimensions <= toBeReturnedType.asArrayType.dimensions
             ) {
@@ -1417,7 +1417,7 @@ object ClassFileFactory {
         methodName:                String,
         bridgeMethodDescriptor:    MethodDescriptor,
         targetMethodDescriptor:    MethodDescriptor,
-        targetMethodDeclaringType: ObjectType
+        targetMethodDeclaringType: ClassType
     ): MethodTemplate = {
 
         val bridgeMethodParameters = bridgeMethodDescriptor.parameterTypes
@@ -1488,11 +1488,11 @@ object ClassFileFactory {
     }
 
     def cloneMethodSignature: MethodSignature = {
-        MethodSignature("clone", MethodDescriptor.withNoArgs(ObjectType.Object))
+        MethodSignature("clone", MethodDescriptor.withNoArgs(ClassType.Object))
     }
 
     def equalsMethodSignature: MethodSignature = {
-        MethodSignature("equals", MethodDescriptor(ObjectType.Object, BooleanType))
+        MethodSignature("equals", MethodDescriptor(ClassType.Object, BooleanType))
     }
 
     def finalizeMethodSignature: MethodSignature = {
@@ -1504,7 +1504,7 @@ object ClassFileFactory {
     }
 
     def toStringSignature: MethodSignature = {
-        MethodSignature("toString", MethodDescriptor.withNoArgs(ObjectType.String))
+        MethodSignature("toString", MethodDescriptor.withNoArgs(ClassType.String))
     }
 
     def nonFinalInterfaceOfObject(): Array[MethodSignature] = {

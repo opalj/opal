@@ -47,7 +47,7 @@ trait InstructionLike {
      * will always either succeed, throw a linkage time related exception or throw one of the
      * specified exceptions.
      */
-    def jvmExceptions: List[ObjectType]
+    def jvmExceptions: List[ClassType]
 
     /**
      * Returns `true` if the evaluation of the instruction may lead to some runtime exception.

@@ -8,7 +8,7 @@ package cfg
  *
  * @note   `CatchNode`s are made explicit to handle/identify situations where the same
  *         exception handlers is responsible for handling multiple different exceptions.
- *         This situation generally arises in case of Java`s multi-catch expressions.
+ *         This situation generally arises in case of Java's multi-catch expressions.
  *
  * @param  index The index of the underlying exception handler in the exception table.
  * @param  startPC The start pc of the try-block.
@@ -20,11 +20,11 @@ package cfg
  * @author Michael Eichberg
  */
 final class CatchNode(
-    val index:     Int, // primarily used to compute a unique id
-    val startPC:   Int,
-    val endPC:     Int,
-    val handlerPC: Int,
-    val catchType: Option[ObjectType]
+    val index:          Int, // primarily used to compute a unique id
+    val startPC:        Int,
+    override val endPC: Int,
+    val handlerPC:      Int,
+    val catchType:      Option[ClassType]
 ) extends CFGNode {
 
     /**
@@ -44,11 +44,11 @@ final class CatchNode(
     }
 
     def copy(
-        index:     Int                = this.index,
-        startPC:   Int                = this.startPC,
-        endPC:     Int                = this.endPC,
-        handlerPC: Int                = this.handlerPC,
-        catchType: Option[ObjectType] = this.catchType
+        index:     Int               = this.index,
+        startPC:   Int               = this.startPC,
+        endPC:     Int               = this.endPC,
+        handlerPC: Int               = this.handlerPC,
+        catchType: Option[ClassType] = this.catchType
     ): CatchNode = {
         new CatchNode(index, startPC, endPC, handlerPC, catchType)
     }

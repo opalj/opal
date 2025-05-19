@@ -76,8 +76,8 @@ object DependencyExtractorsHelper {
                         target: ArrayType,
                         dType:  DependencyType
                     ): Unit = {
-                        if (target.elementType.isObjectType) {
-                            processDependency(source, VirtualClass(target.elementType.asObjectType), dType)
+                        if (target.elementType.isClassType) {
+                            processDependency(source, VirtualClass(target.elementType.asClassType), dType)
                         }
                     }
                 }

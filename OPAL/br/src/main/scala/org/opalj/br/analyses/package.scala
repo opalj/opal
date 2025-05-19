@@ -17,9 +17,9 @@ package object analyses {
      */
     type SomeProject = Project[_]
 
-    type ProgressEvent = ProgressEvents.Value
+    type ProjectInformationKeys = si.ProjectInformationKeys
 
-    type ProjectInformationKeys = Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]]
+    type ProgressEvent = ProgressEvents.Value
 
     type StringConstantsInformation = Map[String, ArraySeq[PCInMethod]]
 

@@ -5,11 +5,10 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
@@ -19,6 +18,7 @@ import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.MutableClass
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -79,7 +79,7 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
         val groupedResults = propertyStore.entities(ClassImmutability.key).filter(x =>
-            allProjectClassTypes.contains(x.asInstanceOf[ObjectType])
+            allProjectClassTypes.contains(x.asInstanceOf[ClassType])
         ).iterator.to(Iterable).groupBy(_.e)
 
         val order = (eps1: EPS[Entity, ClassImmutability], eps2: EPS[Entity, ClassImmutability]) =>
@@ -99,10 +99,10 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val allInterfaces = project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val transitivelyImmutableInterfaces = transitivelyImmutableClassesOrInterfaces
-            .filter(eps => allInterfaces.contains(eps.asInstanceOf[ObjectType])).sortWith(order)
+            .filter(eps => allInterfaces.contains(eps.asInstanceOf[ClassType])).sortWith(order)
 
         val transitivelyImmutableClasses = transitivelyImmutableClassesOrInterfaces
-            .filter(eps => !allInterfaces.contains(eps.asInstanceOf[ObjectType])).sortWith(order)
+            .filter(eps => !allInterfaces.contains(eps.asInstanceOf[ClassType])).sortWith(order)
 
         s"""
            |

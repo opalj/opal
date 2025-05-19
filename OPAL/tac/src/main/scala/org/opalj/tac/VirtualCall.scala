@@ -4,8 +4,8 @@ package tac
 
 import scala.collection.Set
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.value.ValueInformation
 
@@ -21,7 +21,7 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] =>
      *      is a `Var`.)
      */
     def resolveCallTargets(
-        callingContext: ObjectType
+        callingContext: ClassType
     )(
         implicit
         p:  ProjectLike,
@@ -32,7 +32,7 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] =>
         if (receiverValue.isNull.isYes) {
             Set.empty
         } else if (declaringClass.isArrayType) {
-            p.instanceCall(ObjectType.Object, ObjectType.Object, name, descriptor).toSet
+            p.instanceCall(ClassType.Object, ClassType.Object, name, descriptor).toSet
         } else if (receiverValue.isPrecise) {
             val receiverType = receiverValue.upperTypeBound.head
             p.instanceCall(callingContext, receiverType, name, descriptor).toSet
@@ -41,7 +41,7 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] =>
             import p.classHierarchy.joinReferenceTypesUntilSingleUpperBound
             val receiverType = joinReferenceTypesUntilSingleUpperBound(receiverValue.upperTypeBound)
             if (isInterface) {
-                p.interfaceCall(callingContext, receiverType.asObjectType, name, descriptor)
+                p.interfaceCall(callingContext, receiverType.asClassType, name, descriptor)
             } else {
                 p.virtualCall(callingContext, receiverType, name, descriptor)
             }

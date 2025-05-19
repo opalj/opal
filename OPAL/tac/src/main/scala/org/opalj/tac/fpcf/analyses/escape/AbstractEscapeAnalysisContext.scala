@@ -5,8 +5,8 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.fpcf.properties.Context
@@ -26,7 +26,7 @@ trait AbstractEscapeAnalysisContext {
     val entity: (Context, Entity)
     val targetMethod: Method
 
-    def targetMethodDeclaringClassType: ObjectType = targetMethod.classFile.thisType
+    def targetMethodDeclaringClassType: ClassType = targetMethod.classFile.thisType
 }
 
 trait PropertyStoreContainer {

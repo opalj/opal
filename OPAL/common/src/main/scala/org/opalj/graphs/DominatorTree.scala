@@ -179,7 +179,7 @@ object DominatorTree {
         while (vertexStack.nonEmpty) {
             val v = vertexStack.pop()
             // The following "if" is necessary, because the recursive DFS impl. in the paper
-            // performs an eager decent. This may already initialize a node that is also pushed
+            // performs an eager descent. This may already initialize a node that is also pushed
             // on the stack and, hence, must not be visited again.
             if (semi(v) == 0) {
                 n = n + 1
