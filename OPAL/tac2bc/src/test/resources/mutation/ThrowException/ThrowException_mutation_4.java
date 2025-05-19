@@ -1,4 +1,6 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class ThrowException_mutation_4 {
+
     public static void main(String[] args) {
 
         // 1. new Exception

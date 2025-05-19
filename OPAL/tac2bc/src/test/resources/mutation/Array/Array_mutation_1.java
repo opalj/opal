@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class Array_mutation_1 {
 
     // Declare a static field

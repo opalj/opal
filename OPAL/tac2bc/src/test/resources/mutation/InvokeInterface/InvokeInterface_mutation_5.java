@@ -1,5 +1,7 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 import java.util.List;
 import java.util.ArrayList;
+
 public class InvokeInterface_mutation_5 {
 
     public static void main(String[] args) {

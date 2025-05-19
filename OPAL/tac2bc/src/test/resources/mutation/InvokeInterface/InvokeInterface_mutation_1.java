@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 import java.util.List;
 import java.util.ArrayList;
 

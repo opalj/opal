@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class Switch_mutation_2 {
 
     static class Myclass {

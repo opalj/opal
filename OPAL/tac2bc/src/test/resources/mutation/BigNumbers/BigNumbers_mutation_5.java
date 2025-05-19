@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class BigNumbers_mutation_5 {
 
     public static class MyNumbers {

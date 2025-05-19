@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class ObjectPropertyAccess_mutation_3 {
 
     // Object attributes

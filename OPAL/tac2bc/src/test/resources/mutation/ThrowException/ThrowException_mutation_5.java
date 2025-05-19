@@ -1,4 +1,6 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class ThrowException_mutation_5 {
+
     public static void main(String[] args) {
 
         // 1. new Exception
@@ -58,6 +60,7 @@ public class ThrowException_mutation_5 {
             System.out.println("Test5 - Caught Exception");
         }
     }
+
     public static void exception() throws Exception {
         throw new Exception();
     }

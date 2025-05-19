@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class ArithmeticOperations_mutation_3 {
     public static void main(String[] args) {
         int a = 10;
@@ -16,4 +17,4 @@ public class ArithmeticOperations_mutation_3 {
     private static int calculateQuotient(int a, int b) {
         return a / b;
     }
-}
+}h

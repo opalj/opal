@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class Negation_mutation_4 {
 
     private static int INT_FIELD = 42;
