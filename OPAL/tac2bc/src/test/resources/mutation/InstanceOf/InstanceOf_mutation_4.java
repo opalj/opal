@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class InstanceOf_mutation_4 {
 
     public static String mystaticstring = "Hello, World!";

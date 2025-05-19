@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class Jsr {
 
     public static void main(String[] args) {

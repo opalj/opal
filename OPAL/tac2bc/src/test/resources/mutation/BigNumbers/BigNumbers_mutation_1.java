@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class BigNumbers_mutation_1 {
 
     public static void main(String[] args) {

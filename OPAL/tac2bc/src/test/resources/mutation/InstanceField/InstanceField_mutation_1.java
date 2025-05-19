@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class InstanceField_mutation_1 {
 
     private int instanceValue;

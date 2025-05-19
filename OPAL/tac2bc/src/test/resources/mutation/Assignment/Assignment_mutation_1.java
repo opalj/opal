@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class Assignment_mutation_1 {
 
     public static void main(String[] args) {

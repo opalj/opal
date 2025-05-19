@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 public class ArithmeticOperations_mutation_5 {
     public static void main(String[] args) {
         int[] a = {10};
