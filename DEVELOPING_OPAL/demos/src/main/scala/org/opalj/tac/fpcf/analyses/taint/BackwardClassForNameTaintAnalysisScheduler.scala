@@ -137,8 +137,11 @@ object BackwardClassForNameTaintAnalysisScheduler
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
 
-    override def uses: Set[PropertyBounds] =
-        Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
+    override def uses: Set[PropertyBounds] = PropertyBounds.finalPs(TACAI, Callers)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
+        p.get(TypeIteratorKey).usedPropertyKinds
+    }
 
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)

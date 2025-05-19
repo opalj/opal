@@ -1,6 +1,7 @@
 import sbt.Test
 import sbtassembly.AssemblyPlugin.autoImport.*
 import sbtunidoc.ScalaUnidocPlugin
+import xerial.sbt.Sonatype.sonatypeCentralHost
 
 name := "OPAL Library"
 
@@ -14,7 +15,7 @@ ThisBuild / version := "5.0.1-SNAPSHOT"
 // RELEASED version in ThisBuild := "1.0.0" // October 25th, 2017
 // RELEASED version in ThisBuild := "0.8.15" // September 7th, 2017
 // RELEASED version in ThisBuild := "0.8.14" // June 23rd, 2017
-// RELEASED version in ThisBuild := "0.8.13" // MAY 19th, 2017
+// RELEASED version in ThisBuild := "0.8.13" // May 19th, 2017
 // RELEASED version in ThisBuild := "0.8.12" // April 28th, 2017
 // RELEASED version in ThisBuild := "0.8.11" // April 14th, 2017
 // RELEASED version in ThisBuild := "0.8.10"
@@ -81,7 +82,7 @@ addCommandAlias(
     "; copyResources ; " +
     "OPAL / scalafmt ; OPAL / headerCheck ; " +
     "OPAL / Test / scalafmt ; OPAL / Test / headerCheck ; OPAL / Test / compile ; " +
-    "OPAL/ IntegrationTest/ scalafmt ; OPAL / IntegrationTest / headerCheck ; OPAL / IntegrationTest / compile "
+    "OPAL / IntegrationTest / scalafmt ; OPAL / IntegrationTest / headerCheck ; OPAL / IntegrationTest / compile "
 )
 
 addCommandAlias("buildAll", "; compileAll ; unidoc ;  publishLocal ")
@@ -104,6 +105,8 @@ addCommandAlias("cleanBuildCross", "; project OPAL ; cleanAll ; buildAll ; " +
                         "project ValidateCross ; cleanAll ; buildAll ;" +
                         // Add other crosslanguage projects here
                         " project OPAL ;")
+
+addCommandAlias("format", "; scalafmt; Test / scalafmt; IntegrationTest / scalafmt")
 
 lazy val IntegrationTest = config("it") extend Test
 
@@ -542,10 +545,17 @@ lazy val runProjectDependencyGeneration =  ThisBuild / taskKey[Unit] ("Regenerat
 
 runProjectDependencyGeneration := {
   import scala.sys.process.*
+  import scala.util.Try
+
   val s: TaskStreams = streams.value
-  val uid = "id -u".!!.stripSuffix("\n")
-  val gid = "id -g".!!.stripSuffix("\n")
-  val baseCommand = s"docker run --userns=host --rm -u $uid:$gid -v ${baseDirectory.value.getAbsolutePath}/:/data minlag/mermaid-cli -i OPAL/ProjectDependencies.mmd -c mermaid-config.json"
+
+  val dockerUserArg = Try {
+    val uid = "id -u".!!.stripSuffix("\n").toString().trim()
+    val gid = "id -g".!!.stripSuffix("\n").toString().trim()
+    s"-u $uid:$gid"
+  }.getOrElse("")
+
+  val baseCommand = s"docker run --userns=host --rm $dockerUserArg -v ${baseDirectory.value.getAbsolutePath}/:/data minlag/mermaid-cli -i OPAL/ProjectDependencies.mmd -c mermaid-config.json"
   s.log.info("Regenerating ProjectDependencies.svg")
   baseCommand + " -o OPAL/ProjectDependencies.svg" ! s.log
   s.log.info("Regenerating ProjectDependencies.pdf")
@@ -558,6 +568,7 @@ runProjectDependencyGeneration := {
 //
 
 ThisBuild / publishMavenStyle.withRank(KeyRanks.Invisible) := true
+ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 Test / publishArtifact := false
-ThisBuild / publishTo := MavenPublishing.publishTo(isSnapshot.value)
+ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / pomExtra := MavenPublishing.pomNodeSeq()
