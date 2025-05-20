@@ -10,14 +10,14 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.Date
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Unparsed
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
@@ -68,7 +68,7 @@ import org.opalj.issues.Relevance
  */
 class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
-    import BugPickerAnalysis._
+    import BugPickerAnalysis.*
 
     override def title: String = "BugPicker"
 
@@ -303,7 +303,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
             if (!result.wasAborted) {
                 if (debug) {
-                    import result._
+                    import result.*
                     val domainName = domain.getClass.getName
                     org.opalj.io.writeAndOpen(
                         org.opalj.ai.common.XHTML.dump(
@@ -438,7 +438,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             s"the analysis took ${analysisTime.toSeconds} "+
                 s"and found ${identifiedIssues.size} unique issues"
         )
-        import scala.collection.JavaConverters._
+        import scala.collection.JavaConverters.*
         (analysisTime, identifiedIssues, exceptions.asScala)
     }
 }

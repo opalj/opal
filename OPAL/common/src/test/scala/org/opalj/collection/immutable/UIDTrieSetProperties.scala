@@ -6,81 +6,94 @@ package immutable
 import scala.language.implicitConversions
 
 import org.junit.runner.RunWith
+import org.scalacheck.Arbitrary
+import org.scalacheck.Gen
+import org.scalacheck.Prop.forAll
+//import org.scalacheck.Prop.classify
 import org.scalacheck.Prop.propBoolean
+import org.scalacheck.Properties
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
 
 @RunWith(classOf[JUnitRunner])
-class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with Matchers {
+object UIDTrieSetProperties extends Properties("UIDTrieSet") {
 
-    describe("properties") {
+    implicit def intToSUID(i: Int): SUID = SUID(i)
+    implicit def toSUIDSet(l: Iterable[Int]): UIDTrieSet[SUID] = {
+        l.foldLeft(UIDTrieSet.empty[SUID])(_ + SUID(_))
+    }
 
-        implicit def intToSUID(i: Int): SUID = SUID(i)
-        implicit def toSUIDSet(l: Iterable[Int]): UIDTrieSet[SUID] = {
-            l.foldLeft(UIDTrieSet.empty[SUID])(_ add SUID(_))
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                             G E N E R A T O R S
+
+    val intSetGen: Gen[Set[Int]] = Gen.containerOf[Set, Int](Gen.posNum[Int])
+
+    val veryLargeListGen = for {
+        i <- Gen.choose(30000, 100000)
+        s <- Gen.containerOfN[List, Int](i, Arbitrary.arbitrary[Int])
+    } yield (s, i)
+
+    val largeSetGen = for {
+        i <- Gen.choose(20, 100)
+        s <- Gen.containerOfN[Set, Int](i, Arbitrary.arbitrary[Int])
+    } yield (s, i)
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    //                             P R O P E R T I E S
+
+    property("create set(+) and forall and contains(id)") = forAll { (intSet: Set[Int]) =>
+        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _)
+
+        val sUIDSet = intSet.map(SUID(_))
+        (sUIDSet.isEmpty == oUIDTrieSet.isEmpty) :| "isEmpty" &&
+            ((sUIDSet.size == 1 && oUIDTrieSet.isSingletonSet) || sUIDSet.size != 1) :| "isSingletonSet" &&
+            (sUIDSet.size == oUIDTrieSet.size) :| "size" &&
+            sUIDSet.forall(oUIDTrieSet.contains) :| "oUIDTrieSet.contains" &&
+            oUIDTrieSet.forall(sUIDSet.contains) :| "oUIDTrieSet.forall"
+    }
+
+    property("create set(+) and foreach") = forAll { (intSet: Set[Int]) =>
+        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _)
+        val sUIDSet = intSet.map(SUID(_))
+        var newSUIDSet = Set.empty[SUID]
+        oUIDTrieSet.foreach { e => newSUIDSet += e }
+        sUIDSet == newSUIDSet
+    }
+
+    property("create set(+) and iterator") = forAll { (intSet: Set[Int]) =>
+        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _)
+        val sUIDSet = intSet.map(SUID(_))
+        var newSUIDSet = Set.empty[SUID]
+        oUIDTrieSet.iterator.foreach { e => newSUIDSet += e }
+        sUIDSet == newSUIDSet
+    }
+
+    property("equals and hashCode (if the sets are equal)") = forAll { (intSet: Set[Int]) =>
+        val p = intSet.toList.permutations
+        val initialUIDTrieSet = toSUIDSet(p.next())
+        p.take(100).forall { p =>
+            val pUIDTrieSet = toSUIDSet(p)
+            initialUIDTrieSet == pUIDTrieSet &&
+                initialUIDTrieSet.hashCode == pUIDTrieSet.hashCode
         }
+    }
 
-        it("create set(+) and forall and contains(id)") {
-            forAll { (intSet: Set[Int]) =>
-                val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _)
-
-                val sUIDSet = intSet.map(SUID(_))
-                (sUIDSet.isEmpty == oUIDTrieSet.isEmpty) :| "isEmpty" &&
-                    ((sUIDSet.size == 1 && oUIDTrieSet.isSingletonSet) || sUIDSet.size != 1) :| "isSingletonSet" &&
-                    (sUIDSet.size == oUIDTrieSet.size) :| "size" &&
-                    sUIDSet.forall(oUIDTrieSet.contains) :| "oUIDTrieSet.contains" &&
-                    oUIDTrieSet.forall(sUIDSet.contains) :| "oUIDTrieSet.forall"
-            }
-        }
-
-        it("create set(+) and foreach") {
-            forAll { (intSet: Set[Int]) =>
-                val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _)
-                val sUIDSet = intSet.map(SUID(_))
-                var newSUIDSet = Set.empty[SUID]
-                oUIDTrieSet.foreach { e => newSUIDSet += e }
-                sUIDSet == newSUIDSet
-            }
-        }
-
-        it("create set(+) and iterator") {
-            forAll { (intSet: Set[Int]) =>
-                val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _)
-                val sUIDSet = intSet.map(SUID(_))
-                var newSUIDSet = Set.empty[SUID]
-                oUIDTrieSet.iterator.foreach { e => newSUIDSet += e }
-                sUIDSet == newSUIDSet
-            }
-        }
-
-        it("equals and hashCode (if the sets are equal)") {
-            forAll { (intSet: Set[Int]) =>
-                val p = intSet.toList.permutations
-                val initialUIDTrieSet = toSUIDSet(p.next())
-                p.take(100).forall { p =>
-                    val pUIDTrieSet = toSUIDSet(p)
-                    initialUIDTrieSet == pUIDTrieSet &&
-                        initialUIDTrieSet.hashCode == pUIDTrieSet.hashCode
-                }
-            }
-        }
-
-        it("equals (if the sets are not equal)") {
-            forAll { (intSet: Set[Int]) =>
-                intSet.nonEmpty ==> {
-                    val oUIDTrieSet = toSUIDSet(intSet)
-                    oUIDTrieSet.iterator.toList.tail.tails.forall { tailUIDTrieSet =>
-                        tailUIDTrieSet.foldLeft(UIDTrieSet.empty[SUID])(_ add _) != oUIDTrieSet
-                    }
-                }
+    property("equals (if the sets are not equal)") = forAll { (intSet: Set[Int]) =>
+        intSet.nonEmpty ==> {
+            val oUIDTrieSet = toSUIDSet(intSet)
+            oUIDTrieSet.iterator.toList.tail.tails.forall { tailUIDTrieSet =>
+                tailUIDTrieSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _) != oUIDTrieSet
             }
         }
     }
+}
+
+@RunWith(classOf[JUnitRunner])
+class UIDTrieSetTest extends AnyFunSpec with Matchers {
 
     describe("performance") {
 
@@ -94,7 +107,7 @@ class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with
                 for { i <- 1 to 100000 } {
                     var s = UIDTrieSet.empty[SUID]
                     for { j <- 1 to 500 } {
-                        s = s add SUID(rngGen.nextInt())
+                        s += SUID(rngGen.nextInt())
                     }
 
                     var sumForeach = 0
@@ -141,7 +154,7 @@ class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with
                         var opalS = UIDTrieSet.empty[SUID]
                         for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
-                            opalS = opalS add SUID(v)
+                            opalS += SUID(v)
                         }
                         totalSize += opalS.size
                         lastOpalS = opalS
@@ -186,7 +199,7 @@ class UIDTrieSetTest extends AnyFunSpec with ScalaCheckDrivenPropertyChecks with
                         var opalS = UIDTrieSet.empty[SUID]
                         for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
-                            opalS = opalS add SUID(v)
+                            opalS += SUID(v)
                         }
                         allSets ::= opalS
                     }

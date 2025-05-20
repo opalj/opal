@@ -6,8 +6,8 @@ package seq
 import scala.language.existentials
 
 import scala.collection.mutable
-import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.HashMap
 
 import com.typesafe.config.Config
 
@@ -68,17 +68,17 @@ final class PKESequentialPropertyStore protected (
     private[this] var evaluationDepth: Int = 0
 
     // If the map's value is an epk a lazy analysis was started if it exists.
-    private[this] val ps: Array[mutable.AnyRefMap[Entity, SomeEOptionP]] = {
-        Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
+    private[this] val ps: Array[mutable.HashMap[Entity, SomeEOptionP]] = {
+        Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.HashMap.empty }
     }
 
-    // type EntityDependers = AnyRefMap[SomeEPK, OnUpdateContinuation]
-    private[this] val dependers: Array[AnyRefMap[Entity, EntityDependers]] = {
-        Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
+    // type EntityDependers = HashMap[SomeEPK, OnUpdateContinuation]
+    private[this] val dependers: Array[HashMap[Entity, EntityDependers]] = {
+        Array.fill(SupportedPropertyKinds) { new HashMap() }
     }
 
-    private[this] val dependees: Array[AnyRefMap[Entity, Iterable[SomeEOptionP]]] = {
-        Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
+    private[this] val dependees: Array[HashMap[Entity, Iterable[SomeEOptionP]]] = {
+        Array.fill(SupportedPropertyKinds) { new HashMap() }
     }
 
     private[seq] def dependeesCount(eOptionP: SomeEOptionP): Int = {
@@ -122,9 +122,9 @@ final class PKESequentialPropertyStore protected (
 
     // The registered triggered computations along with the set of entities for which the analysis was triggered
     private[this] val triggeredComputations: Array[
-        mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]
+        mutable.HashMap[SomePropertyComputation, mutable.HashSet[Entity]]
     ] = {
-        Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
+        Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.HashMap.empty }
     }
 
     override def toString(printProperties: Boolean): String = {
@@ -249,7 +249,7 @@ final class PKESequentialPropertyStore protected (
                                         Result(transform(e, p))
                                     }
                                     dependers(sourcePK.id)
-                                        .getOrElseUpdate(e, AnyRefMap.empty)
+                                        .getOrElseUpdate(e, HashMap.empty)
                                         .put(epk, c)
                                     dependees(pkId).put(e, List(sourceEPK))
                                 }
@@ -641,7 +641,7 @@ final class PKESequentialPropertyStore protected (
                     val dependerAK = EPK(sourceE, AnalysisKey)
                     newDependees foreach { dependee =>
                         val dependeeDependers =
-                            dependers(dependee.pk.id).getOrElseUpdate(dependee.e, AnyRefMap.empty)
+                            dependers(dependee.pk.id).getOrElseUpdate(dependee.e, HashMap.empty)
                         dependeeDependers += ((dependerAK, newC))
                     }
                     dependees(AnalysisKeyId).put(sourceE, newDependees)
@@ -670,7 +670,7 @@ final class PKESequentialPropertyStore protected (
                     val dependerEPK = newEPS.toEPK
                     newDependees foreach { dependee =>
                         val dependeeDependers =
-                            dependers(dependee.pk.id).getOrElseUpdate(dependee.e, AnyRefMap.empty)
+                            dependers(dependee.pk.id).getOrElseUpdate(dependee.e, HashMap.empty)
                         dependeeDependers += ((dependerEPK, newC))
                     }
                 }
@@ -844,7 +844,7 @@ final class PKESequentialPropertyStore protected (
  */
 object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialPropertyStore] {
 
-    final type EntityDependers = AnyRefMap[SomeEPK, OnUpdateContinuation]
+    final type EntityDependers = HashMap[SomeEPK, OnUpdateContinuation]
 
     final val TasksManagerKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.TasksManager"
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.MaxEvaluationDepth"

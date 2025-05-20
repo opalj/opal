@@ -263,7 +263,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
 
         var outputFormatGiven = false
 
-        import org.opalj.bugpicker.core.analyses.BugPickerAnalysis._
+        import org.opalj.bugpicker.core.analyses.BugPickerAnalysis.*
 
         val issues =
             parameters.filterNot(parameter => parameter match {

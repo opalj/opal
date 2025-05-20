@@ -106,7 +106,7 @@ class DeclaredFields(
     }
 
     def declaredFields: Iterator[DeclaredField] = {
-        import scala.jdk.CollectionConverters._
+        import scala.jdk.CollectionConverters.*
         // Thread-safe as .values() creates a view of the current state
         declaredInformation2id.values().asScala.iterator.flatMap {
             _.values().asScala.iterator.flatMap { _.values().asScala }

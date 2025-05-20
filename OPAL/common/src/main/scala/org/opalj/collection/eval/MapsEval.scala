@@ -3,6 +3,8 @@ package org.opalj
 package collection
 package eval
 
+import scala.annotation.nowarn
+
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -41,6 +43,7 @@ object MapsEval extends App {
 
     // SCALA maps
     //
+    @nowarn("msg=deprecated")
     val anyRefMap = scala.collection.mutable.AnyRefMap.empty[T, Object]
     val trieMap = scala.collection.concurrent.TrieMap.empty[T, Object]
     // immmutable maps...

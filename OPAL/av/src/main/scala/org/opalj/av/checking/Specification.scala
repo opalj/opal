@@ -435,7 +435,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             this(
                 sourceEnsemble,
                 annotationPredicates,
-                annotationPredicates.map(_.toDescription()).mkString("(", " - ", ")"),
+                annotationPredicates.map(_.toDescription).mkString("(", " - ", ")"),
                 matchAny
             )
 
@@ -517,7 +517,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         methodPredicate: SourceElementPredicate[Method]
     ) extends PropertyChecker {
 
-        override def property: String = methodPredicate.toDescription()
+        override def property: String = methodPredicate.toDescription
 
         override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 

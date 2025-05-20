@@ -6,8 +6,8 @@ import java.net.URL
 import scala.jdk.CollectionConverters.*
 
 // import org.opalj.log.OPALLogger.info
-//import org.opalj.br._
-//import org.opalj.br.cfg._
+//import org.opalj.br.*
+//import org.opalj.br.cfg.*
 import org.opalj.br.analyses.*
 
 /**

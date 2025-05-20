@@ -26,7 +26,7 @@ final class DynamicConstant(
         else bsm
     }
 
-    override def value = throw BytecodeProcessingFailedException("value is dynamic")
+    override def value: Nothing = throw BytecodeProcessingFailedException("value is dynamic")
 
     override def valueToString = {
         (Iterator(name, descriptor.toJava + ".class") ++

@@ -3,9 +3,9 @@ package org.opalj
 package frb
 package analyses
 
-import br._
-import br.analyses._
-import br.instructions._
+import br.*
+import br.analyses.*
+import br.instructions.*
 
 /**
  * This analysis reports calls to `show()`, `pack()` or `setVisible()` methods on

@@ -1350,7 +1350,7 @@ object ObjectType {
      * Implicit mapping from a wrapper type to its primitive type.
      * @example
      * {{{
-     * scala> import org.opalj.br._
+     * scala> import org.opalj.br.*
      * scala> ObjectType.primitiveType(ObjectType.Integer.id)
      * res1: org.opalj.br.FieldType = IntegerType
      * }}}
@@ -1382,7 +1382,7 @@ object ObjectType {
      *
      * @example
      * {{{
-     * scala> import org.opalj.br._
+     * scala> import org.opalj.br.*
      * scala> ObjectType.primitiveType(ObjectType.Integer)
      * res0: Option[org.opalj.br.BaseType] = Some(IntegerType)
      * }}}

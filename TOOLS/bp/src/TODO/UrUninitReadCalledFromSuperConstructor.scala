@@ -3,9 +3,9 @@ package org.opalj
 package frb
 package analyses
 
-import br._
-import br.analyses._
-import br.instructions._
+import br.*
+import br.analyses.*
+import br.instructions.*
 
 /**
  * This analysis reports methods which access their class' fields and are called by

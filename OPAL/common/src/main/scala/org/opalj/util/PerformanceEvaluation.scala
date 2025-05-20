@@ -198,8 +198,8 @@ object PerformanceEvaluation {
      *
      * ==Example Usage==
      * {{{
-     * import org.opalj.util.PerformanceEvaluation._
-     * import org.opalj.util._
+     * import org.opalj.util.PerformanceEvaluation.*
+     * import org.opalj.util.*
      * time[String](2,4,3,{Thread.sleep(300).toString}){ (t, ts) =>
      *     val sTs = ts.map(t => f"\${t.toSeconds.timeSpan}%1.4f").mkString(", ")
      *     println(f"Avg: \${avg(ts).timeSpan}%1.4f; T: \${t.toSeconds.timeSpan}%1.4f; Ts: \$sTs")

@@ -3,10 +3,10 @@ package org.opalj
 package frb
 package analyses
 
-import br._
+import br.*
 import org.opalj.br.MethodDescriptor.JustReturnsObject
-import br.analyses._
-import br.instructions._
+import br.analyses.*
+import br.instructions.*
 
 /**
  * This analysis reports `clone()` methods that do not contain a call to `super.clone`.

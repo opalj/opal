@@ -201,8 +201,8 @@ This representation gives you full control over every single bit and is extremel
 Defining an interface with a (Java 8) default method which calls another static method.
 
     import java.nio.file.{Files,Paths}
-    import org.opalj.bi._
-    import org.opalj.da._
+    import org.opalj.bi.*
+    import org.opalj.da.*
     import org.opalj.bc.Assembler
     val cf = ClassFile(
         Array[Constant_Pool_Entry](

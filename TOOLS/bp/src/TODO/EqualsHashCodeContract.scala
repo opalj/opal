@@ -3,8 +3,8 @@ package org.opalj
 package frb
 package analyses
 
-import br._
-import br.analyses._
+import br.*
+import br.analyses.*
 
 /**
  * This analysis reports violations of the contract defined in `java.lang.Object` w.r.t.

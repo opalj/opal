@@ -30,7 +30,7 @@ import org.opalj.log.OPALLogger
  * {{{
  * import org.opalj.io.write
  * import org.opalj.util.PerformanceEvaluation.time
- * import org.opalj.tac._
+ * import org.opalj.tac.*
  * val f = new java.io.File("OPAL/bi/target/scala-2.12/resource_managed/test/ai.jar")
  * val p = org.opalj.br.analyses.Project(f)
  * var i = 0

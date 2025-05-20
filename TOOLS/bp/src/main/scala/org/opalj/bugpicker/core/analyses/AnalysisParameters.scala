@@ -4,7 +4,7 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.bugpicker.core.analyses.BugPickerAnalysis._
+import org.opalj.bugpicker.core.analyses.BugPickerAnalysis.*
 import org.opalj.util.Milliseconds
 
 case class AnalysisParameters(

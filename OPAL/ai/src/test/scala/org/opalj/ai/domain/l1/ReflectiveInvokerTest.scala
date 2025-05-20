@@ -125,7 +125,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     //    it should ("be able to call a method that returns a primitive value") in {
     //        val domain = createDomain()
-    //        import domain._
+    //        import domain.*
     //
     //        val stringValue = StringValue(IrrelevantPC, "Test")
     //        val declaringClass = ObjectType.String

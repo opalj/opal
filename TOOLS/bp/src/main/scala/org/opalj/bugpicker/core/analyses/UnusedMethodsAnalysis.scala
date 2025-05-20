@@ -60,7 +60,7 @@ object UnusedMethodsAnalysis {
             val classFile = method.classFile
 
             import method.{isConstructor, isPrivate, actualArgumentsCount, descriptor, name}
-            import descriptor.{returnType, parametersCount => declaredParametersCount}
+            import descriptor.returnType, parametersCount as declaredParametersCount
 
             //
             // Let's handle some technical artifacts related methods...

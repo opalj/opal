@@ -106,7 +106,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
     ): AIResult { val domain: calledMethodDomain.type } = {
         val result = super.doInvoke(method, calledMethodDomain)(parameters)
         if (debug) {
-            import result._
+            import result.*
             org.opalj.io.writeAndOpen(
                 org.opalj.ai.common.XHTML.dump(
                     Some(method.classFile),

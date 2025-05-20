@@ -42,11 +42,11 @@ sealed abstract class UIDTrieSet[T <: UID] { set =>
     }
 
     def iterator: Iterator[T]
-    def add(value: T): UIDTrieSet[T]
+    def +(value: T): UIDTrieSet[T]
     def head: T
 
     // TODO: optimize implementation
-    def ++(other: UIDTrieSet[T]): UIDTrieSet[T] = other.foldLeft(this)((r, e) => r add e)
+    def ++(other: UIDTrieSet[T]): UIDTrieSet[T] = other.foldLeft(this)((r, e) => r + e)
 
     override final def equals(other: Any): Boolean = {
         other match {
@@ -134,7 +134,7 @@ case object UIDTrieSet0 extends UIDTrieSetLeaf[UID] {
 
     override def foldLeft[B](z: B)(op: (B, UID) => B): B = z
 
-    override def add(i: UID): UIDTrieSet1[UID] = new UIDTrieSet1(i)
+    override def +(i: UID): UIDTrieSet1[UID] = new UIDTrieSet1(i)
 
     override def iterator: Iterator[UID] = Iterator.empty
     override def containsId(id: Int): Boolean = false
@@ -150,7 +150,7 @@ case object UIDTrieSet0 extends UIDTrieSetLeaf[UID] {
         key:   Int,
         level: Int
     ): UIDTrieSetNode[UID] = {
-        this add value
+        this + value
     }
 }
 
@@ -167,7 +167,7 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
 
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(z, i)
 
-    override def add(value: T): UIDTrieSetLeaf[T] = {
+    override def +(value: T): UIDTrieSetLeaf[T] = {
         val v = this.i
         if (v.id == value.id) this else new UIDTrieSet2(v, value)
     }
@@ -192,7 +192,7 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
         key:   Int,
         level: Int
     ): UIDTrieSetNode[T] = {
-        this add value
+        this + value
     }
 }
 
@@ -219,7 +219,7 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
 
     override def containsId(id: Int): Boolean = id == i1.id || id == i2.id
     override def head: T = i1
-    override def add(value: T): UIDTrieSetLeaf[T] = {
+    override def +(value: T): UIDTrieSetLeaf[T] = {
         val id = value.id
 
         val i1 = this.i1
@@ -257,7 +257,7 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
         key:   Int,
         level: Int
     ): UIDTrieSetNode[T] = {
-        this add value
+        this + value
     }
 
 }
@@ -286,7 +286,7 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
 
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(op(op(z, i1), i2), i3)
 
-    override def add(value: T): UIDTrieSet[T] = {
+    override def +(value: T): UIDTrieSet[T] = {
         val id = value.id
         val newSet = this.add(value, id, id, 0)
         if (newSet ne this)
@@ -524,7 +524,7 @@ private[immutable] final class UIDTrieSetN[T <: UID](
 
     override def hashCode: Int = root.hashCode * size
 
-    override def add(value: T): UIDTrieSet[T] = {
+    override def +(value: T): UIDTrieSet[T] = {
         val id = value.id
         val root = this.root
         val newRoot = root.add(value, id, id, 0)

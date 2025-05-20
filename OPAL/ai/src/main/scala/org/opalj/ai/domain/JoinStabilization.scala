@@ -36,7 +36,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
     // THE FOLLOWING IS AN ALTERNATIVE IMPLEMENTATION
     // WHICH IS LESS EFFICIENT (BUT WAS EXPECTED TO BE MORE EFFICIENT)
     //
-    //    import java.util.{ IdentityHashMap => IDMap }
+    //    import java.util. IdentityHashMap as IDMap
     //
     //    private[this] val leftValues =
     //        new IDMap[DomainValue, IDMap[DomainValue, Update[DomainValue]]]()
