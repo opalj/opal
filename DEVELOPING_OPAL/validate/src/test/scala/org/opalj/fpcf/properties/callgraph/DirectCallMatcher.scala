@@ -23,58 +23,20 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 
-class DirectCallMatcher extends AbstractPropertyMatcher {
+class DirectCallMatcher extends AbstractRepeatablePropertyMatcher {
+    override val singleAnnotationType: ObjectType = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCall")
+    override val containerAnnotationType: ObjectType = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCalls")
 
-    override def validateProperty(
+    override def validateSingleProperty(
         p:          Project[?],
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        // If the entity is annotated with a single annotation, we receive a DirectCall annotation.
-        // If it is annotated with multiple DirectCall annotations, we receive a single DirectCalls
-        // container annotation.
-        val singleAnnotation = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCall")
-        val containerAnnotation = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCalls")
-
-        if (a.annotationType == singleAnnotation) {
-            validateSingleAnnotation(p, as, entity, a, properties)
-
-        } else if (a.annotationType == containerAnnotation) {
-            // Get sub-annotations from the container annotation.
-            val subAnnotations: ArraySeq[AnnotationLike] =
-                getValue(p, containerAnnotation, a.elementValuePairs, "value")
-                    .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
-
-            // Validate each sub-annotation individually.
-            val validationResults =
-                subAnnotations.map(validateSingleAnnotation(p, as, entity, _, properties))
-            val errors = validationResults.filter(_.isDefined)
-
-            if (errors.nonEmpty) {
-                Some(errors.mkString(", "))
-            } else {
-                None
-            }
-
-        } else {
-            Some("Invalid annotation.")
-        }
-    }
-
-    private def validateSingleAnnotation(
-        p:          Project[?],
-        as:         Set[ObjectType],
-        entity:     Any,
-        a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
-        val annotationType = a.annotationType.asObjectType
-
         // Get call graph analyses for which this annotation applies.
         val analysesElementValues: Seq[ElementValue] =
-            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+            getValue(p, singleAnnotationType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         // If none of the annotated analyses match the executed ones, return...
@@ -119,8 +81,8 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         // Fetch values from the annotation.
         // TODO clean these up and move them into some helper?
         // note: there is a helper class in JCG that does something similar
-        val lineNumber = getValue(p, annotationType, a.elementValuePairs, "line").asIntValue.value
-        val methodName = getValue(p, annotationType, a.elementValuePairs, "name").asStringValue.value
+        val lineNumber = getValue(p, singleAnnotationType, a.elementValuePairs, "line").asIntValue.value
+        val methodName = getValue(p, singleAnnotationType, a.elementValuePairs, "name").asStringValue.value
         val resolvedTargets = {
             val av = a.elementValuePairs collectFirst {
                 case ElementValuePair("resolvedTargets", ArrayValue(ab)) =>

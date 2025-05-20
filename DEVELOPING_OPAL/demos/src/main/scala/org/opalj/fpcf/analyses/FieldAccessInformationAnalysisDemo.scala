@@ -7,10 +7,10 @@ import java.net.URL
 
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.DefinedField
-import org.opalj.br.Field
+import org.opalj.br.DeclaredField
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.ContextProviderKey
@@ -90,28 +90,26 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             propertyStore.waitOnPhaseCompletion()
         } { t => analysisTime = t.toSeconds }
 
-        val projectClassFiles = project.allProjectClassFiles.iterator.filter { cf =>
-            !JDKPackages.exists(cf.thisType.packageName.startsWith)
-        }
-        val fields = projectClassFiles.flatMap { _.fields }.toSet
+        val projectTypes = project.allProjectClassFiles.iterator.collect {
+            case cf if !JDKPackages.exists(cf.thisType.packageName.startsWith) => cf.thisType
+        }.toSet
 
         val readFields = propertyStore
             .entities(FieldReadAccessInformation.key)
-            .filter(ep =>
-                fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                    && ep.asFinal.p != NoFieldReadAccessInformation
-            )
-            .map(_.e.asInstanceOf[DefinedField].definedField)
+            .collect {
+                case FinalEP(f: DeclaredField, p)
+                    if projectTypes.contains(f.declaringClassType) && p != NoFieldReadAccessInformation => f
+            }
             .toSet
         val writtenFields = propertyStore
             .entities(FieldWriteAccessInformation.key)
-            .filter(ep =>
-                fields.contains(ep.e.asInstanceOf[DefinedField].definedField)
-                    && ep.asFinal.p != NoFieldWriteAccessInformation
-            )
-            .map(_.e.asInstanceOf[DefinedField].definedField)
+            .collect {
+                case FinalEP(f: DeclaredField, p)
+                    if projectTypes.contains(f.declaringClassType) && p != NoFieldWriteAccessInformation => f
+            }
             .toSet
 
+        val fields = project.get(DeclaredFieldsKey).declaredFields.toSet
         val readAndWrittenFields = readFields intersect writtenFields
         val purelyReadFields = readFields diff readAndWrittenFields
         val purelyWrittenFields = writtenFields diff readAndWrittenFields
@@ -119,11 +117,11 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
 
         val totalIncompleteAccessSiteCount = propertyStore
             .entities(MethodFieldReadAccessInformation.key)
-            .filter(ai => projectClassFiles.contains(ai.e.asInstanceOf[Method].classFile))
+            .filter(ai => projectTypes.contains(ai.e.asInstanceOf[Method].classFile.thisType))
             .map(_.asFinal.p.numIncompleteAccessSites)
             .sum
 
-        def getFieldsList(fields: Set[Field]): String = {
+        def getFieldsList(fields: Set[DeclaredField]): String = {
             if (fields.size > 50) "\n|     Too many fields to display!"
             else fields.iterator.map(f => s"- ${f.name}").mkString("\n|     ", "\n|     ", "")
         }

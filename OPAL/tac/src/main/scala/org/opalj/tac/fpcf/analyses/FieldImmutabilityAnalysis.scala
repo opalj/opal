@@ -90,8 +90,8 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         var lowerBound:                 FieldImmutability               = MutableField,
         var upperBound:                 FieldImmutability               = TransitivelyImmutableField
     ) extends BaseAnalysisState with TypeIteratorState {
-        def hasFieldImmutabilityDependees: Boolean = fieldImmutabilityDependees.nonEmpty || super.hasOpenDependencies
-        def getFieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = fieldImmutabilityDependees
+        override def hasOpenDependencies: Boolean = fieldImmutabilityDependees.nonEmpty || super.hasOpenDependencies
+        override def dependees: Set[EOptionP[Entity, Property]] = fieldImmutabilityDependees ++ super.dependees
     }
 
     final val typeExtensibility = project.get(TypeExtensibilityKey)
@@ -260,10 +260,10 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          * If there are no dependencies left, this method can be called to create the result.
          */
         def createResult()(implicit state: State): ProperPropertyComputationResult = {
-            if (state.lowerBound == state.upperBound || !state.hasFieldImmutabilityDependees)
+            if (state.lowerBound == state.upperBound || !state.hasOpenDependencies)
                 Result(field, state.upperBound)
             else
-                InterimResult(field, state.lowerBound, state.upperBound, state.getFieldImmutabilityDependees, c)
+                InterimResult(field, state.lowerBound, state.upperBound, state.dependees, c)
         }
 
         def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
@@ -339,8 +339,12 @@ trait FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(FieldImmutability)
     )
 
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
+
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(TypeIteratorKey, DeclaredFieldsKey, TypeExtensibilityKey)
+
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
 }
 

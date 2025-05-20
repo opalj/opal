@@ -19,6 +19,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.Entity
@@ -122,36 +123,62 @@ class ThreadStartAnalysis private[cg] (
                 }
 
             case _ =>
-                val (callPC, receiver) = state.dependersOf(epk).head.asInstanceOf[(Int, V)]
+                state.dependersOf(epk).foreach {
 
-                typeIterator.continuationForAllocations(
-                    receiver,
-                    eps.asInstanceOf[EPS[Entity, PropertyType]]
-                ) { (tpe, allocationContext, allocationPC) =>
-                    val hasRunnable = handleTypeAndHasRunnable(
-                        tpe,
-                        state.callContext,
-                        callPC,
-                        state.tac.stmts,
-                        receiver,
-                        partialAnalysisResults
-                    )
-                    if (hasRunnable)
-                        AllocationsUtil.handleAllocation(
-                            allocationContext,
-                            allocationPC,
-                            (callPC, allocationContext),
-                            () => partialAnalysisResults.addIncompleteCallSite(callPC)
-                        ) { (allocationContext, allocationIndex, stmts) =>
-                            handleThreadInit(
+                    case (callPC: Int, receiver: V) =>
+                        typeIterator.continuationForAllocations(
+                            receiver,
+                            eps.asInstanceOf[EPS[Entity, PropertyType]]
+                        ) { (tpe, allocationContext, allocationPC) =>
+                            val hasRunnable = handleTypeAndHasRunnable(
+                                tpe,
                                 state.callContext,
                                 callPC,
-                                allocationContext,
-                                allocationIndex,
+                                state.tac.stmts,
+                                receiver,
+                                partialAnalysisResults
+                            )
+                            if (hasRunnable)
+                                AllocationsUtil.handleAllocation(
+                                    allocationContext,
+                                    allocationPC,
+                                    (callPC, allocationContext),
+                                    () => partialAnalysisResults.addIncompleteCallSite(callPC)
+                                ) { (allocationContext, allocationIndex, stmts) =>
+                                    handleThreadInit(
+                                        state.callContext,
+                                        callPC,
+                                        allocationContext,
+                                        allocationIndex,
+                                        stmts,
+                                        partialAnalysisResults
+                                    )
+                                }
+                        }
+
+                    case (
+                            callPC: Int,
+                            receiver: V,
+                            allocationContext: ContextType @unchecked,
+                            stmts: Array[Stmt[V @unchecked]]
+                        ) =>
+                        typeIterator.continuation(
+                            receiver,
+                            eps.asInstanceOf[EPS[Entity, PropertyType]]
+                        ) { runnableType =>
+                            addRunnableMethod(
+                                state.callContext,
+                                callPC,
+                                runnableType.mostPreciseObjectType,
+                                if (state.callContext.method == allocationContext.method)
+                                    Some(receiver)
+                                else
+                                    None,
                                 stmts,
                                 partialAnalysisResults
                             )
                         }
+
                 }
         }
 
@@ -289,7 +316,7 @@ class ThreadStartAnalysis private[cg] (
         threadDefSite:          Int,
         stmts:                  Array[Stmt[V]],
         partialAnalysisResults: ThreadStartAnalysisResults
-    ): Unit = stmts(threadDefSite) match {
+    )(implicit typeIteratorState: TypeIteratorState): Unit = stmts(threadDefSite) match {
         case Assignment(_, thread, New(_, _)) =>
             for {
                 case NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) <- getConstructorCalls(
@@ -304,23 +331,29 @@ class ThreadStartAnalysis private[cg] (
 
                 // if there is no runnable passed as parameter, we are sound
                 if (indexOfRunnableParameter != -1) {
-                    val theReceiver = params(indexOfRunnableParameter).asVar
-                    for (runnableValue <- theReceiver.value.asReferenceValue.allValues) {
-                        if (runnableValue.isPrecise) {
-                            addRunnableMethod(
-                                callContext,
-                                callPC,
-                                runnableValue,
-                                if (callContext.method == allocationContext.method)
-                                    Some(theReceiver)
-                                else
-                                    None,
-                                stmts,
-                                partialAnalysisResults
+                    allocationContext match {
+                        case NoContext => partialAnalysisResults.addIncompleteCallSite(callPC)
+                        case context: ContextType @unchecked =>
+                            val theReceiver = params(indexOfRunnableParameter).asVar
+                            val runnableTypes = typeIterator.typesProperty(
+                                theReceiver,
+                                context,
+                                (callPC, theReceiver, allocationContext, stmts),
+                                stmts
                             )
-                        } else {
-                            partialAnalysisResults.addIncompleteCallSite(callPC)
-                        }
+                            typeIterator.foreachType(theReceiver, runnableTypes) { runnableType =>
+                                addRunnableMethod(
+                                    callContext,
+                                    callPC,
+                                    runnableType.mostPreciseObjectType,
+                                    if (callContext.method == allocationContext.method)
+                                        Some(theReceiver)
+                                    else
+                                        None,
+                                    stmts,
+                                    partialAnalysisResults
+                                )
+                            }
                     }
                 }
 
@@ -362,16 +395,15 @@ class ThreadStartAnalysis private[cg] (
     private[this] def addRunnableMethod(
         callContext:            ContextType,
         callPC:                 Int,
-        receiverValue:          IsReferenceValue,
+        receiverType:           ObjectType,
         receiver:               Option[V],
         stmts:                  Array[Stmt[V]],
         partialAnalysisResults: IndirectCalls
     ): Unit = {
         val thisType = callContext.method.declaringClassType
-        val preciseType = receiverValue.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
             thisType,
-            preciseType,
+            receiverType,
             "run",
             MethodDescriptor.NoArgsAndReturnVoid
         )
@@ -382,7 +414,7 @@ class ThreadStartAnalysis private[cg] (
             receiver,
             stmts,
             tgt,
-            preciseType,
+            receiverType,
             "run",
             MethodDescriptor.NoArgsAndReturnVoid,
             partialAnalysisResults

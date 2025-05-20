@@ -149,6 +149,12 @@ trait IntegerRangeValues
 
         val upperBound: Int // inclusive
 
+        override def constantValue: Option[ValueOrigin] = {
+            if (lowerBound == upperBound)
+                Some(lowerBound)
+            else
+                None
+        }
     }
 
     /**

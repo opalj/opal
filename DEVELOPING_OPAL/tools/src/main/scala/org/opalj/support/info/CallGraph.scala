@@ -26,6 +26,7 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysesRegistry
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -96,14 +97,9 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-writeOutput=file]" +
             "[-j=<number of threads>]" +
             "[-main=package.MainClass]" +
-            "[-tamiflex-log=logfile]" +
-            "[-finalizerAnalysis=<yes|no|default>]" +
-            "[-loadedClassesAnalysis=<yes|no|default>]" +
-            "[-staticInitializerAnalysis=<yes|no|default>]" +
-            "[-reflectionAnalysis=<yes|no|default>]" +
-            "[-serializationAnalysis=<yes|no|default>]" +
-            "[-threadRelatedCallsAnalysis=<yes|no|default>]" +
-            "[-configuredNativeMethodsAnalysis=<yes|no|default>]"
+            "[-tamiflexLog=logfile]" +
+            "[-enabledModules=<comma-separated list of modules, e.g., ReflectionRelatedCallsAnalysis,FinalizerAnalysis]" +
+            "[-disabledModules=<comma-separated list of modules, e.g., ReflectionRelatedCallsAnalysis,FinalizerAnalysis]"
     }
 
     private val algorithmRegex =
@@ -122,14 +118,9 @@ object CallGraph extends ProjectAnalysisApplication {
                 !p.startsWith("-writeOutput=") &&
                 !p.startsWith("-main=") &&
                 !p.startsWith("-j=") &&
-                !p.startsWith("-tamiflex-log=") &&
-                !p.startsWith("-finalizerAnalysis=") &&
-                !p.startsWith("-loadedClassesAnalysis=") &&
-                !p.startsWith("-staticInitializerAnalysis=") &&
-                !p.startsWith("-reflectionAnalysis=") &&
-                !p.startsWith("-serializationAnalysis=") &&
-                !p.startsWith("-threadRelatedCallsAnalysis=") &&
-                !p.startsWith("-configuredNativeMethodsAnalysis=")
+                !p.startsWith("-tamiflexLog=") &&
+                !p.startsWith("-enabledModules=") &&
+                !p.startsWith("-disabledModules=")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
@@ -336,28 +327,23 @@ object CallGraph extends ProjectAnalysisApplication {
         val writeOutputRegex = "-writeOutput=(.*)".r
         val numThreadsRegex = "-j=(.*)".r
         val mainClassRegex = "-main=(.*)".r
-        val tamiflexLogRegex = "-tamiflex-log=(.*)".r
-
-        val finalizerAnalysisRegex = "-finalizerAnalysis=(.*)".r
-        val loadedClassesAnalysisRegex = "-loadedClassesAnalysis=(.*)".r
-        val staticInitializerAnalysisRegex = "-staticInitializerAnalysis=(.*)".r
-        val reflectionAnalysisRegex = "-reflectionAnalysis=(.*)".r
-        val serializationAnalysisRegex = "-serializationAnalysis=(.*)".r
-        val threadRelatedCallsAnalysisRegex = "-threadRelatedCallsAnalysis=(.*)".r
-        val configuredNativeMethodsAnalysisRegex = "-configuredNativeMethodsAnalysis=(.*)".r
+        val tamiflexLogRegex = "-tamiflexLog=(.*)".r
+        val enabledModulesRegex = "-enabledModules=(.*)".r
+        val disabledModulesRegex = "-disabledModules=(.*)".r
 
         var newConfig = project.config
         var modules = newConfig.getStringList("org.opalj.tac.cg.CallGraphKey.modules").asScala.toSet
 
-        def analyisOption(option: String, analysis: String): Unit = {
-            option match {
-                case "yes" =>
-                    modules += s"org.opalj.tac.fpcf.analyses.cg.${analysis}Scheduler"
-                case "no" =>
-                    modules -= s"org.opalj.tac.fpcf.analyses.cg.${analysis}Scheduler"
-                case "default" =>
-                case _         => throw new IllegalArgumentException(s"illegal value for $analysis")
-            }
+        def enforceModule(enable: Boolean, moduleName: String): Unit = {
+            val moduleFQN =
+                if (moduleName.contains('.')) moduleName
+                else
+                    FPCFAnalysesRegistry.factory(moduleName).getClass.getName.replace("$", "")
+
+            if (enable)
+                modules += moduleFQN
+            else
+                modules -= moduleFQN
         }
 
         parameters.foreach {
@@ -396,20 +382,10 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (tamiflexLog.isEmpty)
                     tamiflexLog = Some(fileName)
                 else throw new IllegalArgumentException("-tamiflex-log was set twice")
-            case finalizerAnalysisRegex(option) =>
-                analyisOption(option, "FinalizerAnalysis")
-            case loadedClassesAnalysisRegex(option) =>
-                analyisOption(option, "LoadedClassesAnalysis")
-            case staticInitializerAnalysisRegex(option) =>
-                analyisOption(option, "StaticInitializerAnalysis")
-            case reflectionAnalysisRegex(option) =>
-                analyisOption(option, "reflection.ReflectionRelatedCallsAnalysis")
-            case serializationAnalysisRegex(option) =>
-                analyisOption(option, "SerializationRelatedCallsAnalysis")
-            case threadRelatedCallsAnalysisRegex(option) =>
-                analyisOption(option, "ThreadRelatedCallsAnalysis")
-            case configuredNativeMethodsAnalysisRegex(option) =>
-                analyisOption(option, "ConfiguredNativeMethodsCallGraphAnalysis")
+            case enabledModulesRegex(moduleNames) =>
+                moduleNames.split(',').foreach(enforceModule(true, _))
+            case disabledModulesRegex(moduleNames) =>
+                moduleNames.split(',').foreach(enforceModule(false, _))
         }
 
         if (tamiflexLog.isDefined) {
@@ -417,7 +393,6 @@ object CallGraph extends ProjectAnalysisApplication {
                 TamiFlexKey.configKey,
                 ConfigValueFactory.fromAnyRef(tamiflexLog.get)
             )
-            modules += "org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler"
         }
 
         if (schedulingStrategy.isDefined) {

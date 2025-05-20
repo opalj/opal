@@ -194,6 +194,23 @@ package object ai {
 
     /**
      * Identifies the ''upper bound for those origin values that encode origin
+     * information about formal parameters''. That is, respective values
+     * identify formal parameters of a method including the `this` parameter (in first position).
+     */
+    final val FormalParametersOriginOffset /*: ValueOrigin*/ = -1
+
+    /**
+     * Returns `true` if the value with the given origin was (implicitly) created
+     * by the JVM while declaring a formal parameter.
+     *
+     * @see [[ImmediateVMExceptionsOriginOffset]] for further information.
+     */
+    final def isFormalParameter(origin: ValueOrigin): Boolean = {
+        FormalParametersOriginOffset >= origin && origin > ImmediateVMExceptionsOriginOffset
+    }
+
+    /**
+     * Identifies the ''upper bound for those origin values that encode origin
      * information about exceptions created by the JVM''. That is, respective values
      * identify VM generated and thrown exceptions due to the ''immediate execution'' of the
      * instruction; exceptions that may have been raised in a called method - even if they

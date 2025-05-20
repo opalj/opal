@@ -162,6 +162,9 @@ object TamiFlexCallGraphAnalysisScheduler extends BasicFPCFEagerAnalysisSchedule
         TACAI
     )
 
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
+
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
         Callees

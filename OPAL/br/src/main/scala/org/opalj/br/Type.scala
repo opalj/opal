@@ -185,13 +185,10 @@ sealed trait Type extends UIDValue with Ordered[Type] {
     def toJava: String
 
     /**
-     * Returns the binary name of this type as used by the Java runtime. Basically
-     * returns the same name as produced by `Class.getName`.
+     * Returns the binary name of this type as used by the Java runtime.
+     * Returns the same name as produced by `Class.getName`.
      */
-    @throws[UnsupportedOperationException](
-        "if this type has not binary name(i.e., if this type represents void)"
-    )
-    def toBinaryJavaName: String
+    def toBinaryJavaName: String = toJava
 
     /**
      * Returns the representation of this type as used by the JVM in, for example,
@@ -302,10 +299,6 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
     override final def accept[T](sv: SignatureVisitor[T]): T = sv.visit(this)
 
     override def toJava: String = "void"
-
-    override def toBinaryJavaName: String = {
-        throw new UnsupportedOperationException("void does not have a binary name")
-    }
 
     override def toJVMTypeName: String = "V"
 
@@ -555,7 +548,7 @@ sealed trait CTIntType extends Type {
  */
 case object CTIntType extends CTIntType {
     final val id = Int.MinValue + 1
-    def toBinaryJavaName: String = throw new UnsupportedOperationException()
+    override def toBinaryJavaName: String = throw new UnsupportedOperationException()
     def toJVMTypeName: String = throw new UnsupportedOperationException()
     def toJava: String = throw new UnsupportedOperationException()
     def toJavaClass: Class[?] = throw new UnsupportedOperationException()
@@ -592,8 +585,6 @@ sealed abstract class ByteType private () extends IntLikeType {
     def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "byte"
-
-    override def toBinaryJavaName: String = "B"
 
     override def toJVMTypeName: String = "B"
 
@@ -643,8 +634,6 @@ sealed abstract class CharType private () extends IntLikeType {
 
     def toJava: String = "char"
 
-    override def toBinaryJavaName: String = "C"
-
     override def toJVMTypeName: String = "C"
 
     override def toJavaClass: java.lang.Class[?] = java.lang.Character.TYPE
@@ -693,8 +682,6 @@ sealed abstract class DoubleType private () extends NumericType {
     final val id = Int.MinValue + atype
 
     def toJava: String = "double"
-
-    override def toBinaryJavaName: String = "D"
 
     override def toJVMTypeName: String = "D"
 
@@ -751,8 +738,6 @@ sealed abstract class FloatType private () extends NumericType {
 
     def toJava: String = "float"
 
-    override def toBinaryJavaName: String = "F"
-
     override def toJVMTypeName: String = "F"
 
     override def toJavaClass: java.lang.Class[?] = java.lang.Float.TYPE
@@ -802,8 +787,6 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     def toJava: String = "short"
 
-    override def toBinaryJavaName: String = "S"
-
     override def toJVMTypeName: String = "S"
 
     override def toJavaClass: java.lang.Class[?] = java.lang.Short.TYPE
@@ -851,8 +834,6 @@ sealed abstract class IntegerType private () extends IntLikeType {
     override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "int"
-
-    override def toBinaryJavaName: String = "I"
 
     override def toJVMTypeName: String = "I"
 
@@ -909,8 +890,6 @@ sealed abstract class LongType private () extends NumericType {
     override final def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "long"
-
-    override def toBinaryJavaName: String = "J"
 
     override def toJVMTypeName: String = "J"
 
@@ -970,8 +949,6 @@ sealed abstract class BooleanType private () extends BaseType with CTIntType {
 
     final val toJava /*: String*/ = "boolean"
 
-    override def toBinaryJavaName: String = "Z"
-
     override def toJVMTypeName: String = "Z"
 
     override def toJavaClass: java.lang.Class[?] = java.lang.Boolean.TYPE
@@ -1018,8 +995,6 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     def simpleName: String = ObjectType.simpleName(fqn)
 
     override def toJava: String = fqn.replace('/', '.')
-
-    override def toBinaryJavaName: String = s"L${toJava};"
 
     override def toJVMTypeName: String = s"L$fqn;"
 
@@ -1529,7 +1504,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJava: String = componentType.toJava + "[]"
 
-    override def toBinaryJavaName: String = "[" + componentType.toBinaryJavaName
+    override def toBinaryJavaName: String = "[" + componentType.toJVMTypeName.replace('/', '.')
 
     override def toJVMTypeName: String = "[" + componentType.toJVMTypeName
 

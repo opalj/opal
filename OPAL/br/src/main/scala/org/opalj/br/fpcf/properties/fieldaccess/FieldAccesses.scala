@@ -31,21 +31,28 @@ import org.opalj.fpcf.PropertyKey
  * @author Maximilian Rüsch
  */
 sealed trait FieldAccesses {
-    final def partialResults(accessContext: Context): IterableOnce[PartialResult[?, ? >: Null <: Property]] =
-        if (containsNoMethodBasedAccessInformation)
-            partialResultsForFieldBasedFieldAccesses
-        else
-            Iterator(
-                partialResultForReadFields(accessContext),
-                partialResultForWriteFields(accessContext)
-            ) ++ partialResultsForFieldBasedFieldAccesses
+    final def partialResults(accessContext: Context): IterableOnce[PartialResult[?, ? >: Null <: Property]] = {
+        var results = partialResultsForFieldBasedFieldAccesses
+            .iterator
+            .asInstanceOf[Iterator[PartialResult[_, _ >: Null <: Property]]]
 
-    private[this] def containsNoMethodBasedAccessInformation =
-        directReadFields.isEmpty &&
-            directWriteFields.isEmpty &&
-            indirectReadFields.isEmpty &&
-            indirectWriteFields.isEmpty &&
-            incompleteAccessSites.isEmpty
+        if (containsMethodBasedReadAccessInformation)
+            results ++= Iterator(partialResultForReadFields(accessContext))
+        if (containsMethodBasedWriteAccessInformation)
+            results ++= Iterator(partialResultForWriteFields(accessContext))
+
+        results
+    }
+
+    private[this] def containsMethodBasedReadAccessInformation =
+        directReadFields.nonEmpty ||
+            indirectReadFields.nonEmpty ||
+            incompleteAccessSites.nonEmpty
+
+    private[this] def containsMethodBasedWriteAccessInformation =
+        directWriteFields.nonEmpty ||
+            indirectWriteFields.nonEmpty ||
+            incompleteAccessSites.nonEmpty
 
     protected def directReadFields: IntMap[IntList] = IntMap.empty
     protected def directReadReceivers: IntMap[IntMap[AccessReceiver]] = IntMap.empty
@@ -65,6 +72,7 @@ sealed trait FieldAccesses {
         accessContext:             Context,
         propertyKey:               PropertyKey[S],
         noFieldAccessesValue:      S,
+        containsInformation:       Boolean,
         fieldAccessesValueUpdater: S => S
     ): PartialResult[Method, S] = {
         val method = accessContext.method.definedMethod
@@ -73,13 +81,13 @@ sealed trait FieldAccesses {
             method,
             propertyKey,
             {
-                case InterimUBP(_) if containsNoMethodBasedAccessInformation =>
+                case InterimUBP(_) if !containsInformation =>
                     None
 
                 case InterimUBP(ub) =>
                     Some(InterimEUBP(method, fieldAccessesValueUpdater(ub)))
 
-                case _: EPK[_, _] if containsNoMethodBasedAccessInformation =>
+                case _: EPK[_, _] if !containsInformation =>
                     Some(InterimEUBP(method, noFieldAccessesValue))
 
                 case _: EPK[_, _] =>
@@ -98,6 +106,7 @@ sealed trait FieldAccesses {
             accessContext,
             MethodFieldReadAccessInformation.key,
             NoMethodFieldReadAccessInformation,
+            containsMethodBasedReadAccessInformation,
             previousFRA =>
                 previousFRA.updateWithFieldAccesses(
                     accessContext,
@@ -117,6 +126,7 @@ sealed trait FieldAccesses {
             accessContext,
             MethodFieldWriteAccessInformation.key,
             NoMethodFieldWriteAccessInformation,
+            containsMethodBasedWriteAccessInformation,
             previousFWA =>
                 previousFWA.updateWithFieldAccesses(
                     accessContext,

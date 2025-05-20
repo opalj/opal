@@ -594,12 +594,12 @@ abstract class ProjectLike extends ClassFileRepository { project =>
 
         project.classFile(receiverType) match {
             case Some(classFile) =>
-                assert(
-                    !classFile.isInterfaceDeclaration, {
-                        val methodInfo = descriptor.toJava(receiverType.toJava, name)
-                        s"the method is defined in an interface $methodInfo"
-                    }
-                )
+                if (classFile.isInterfaceDeclaration) {
+                    OPALLogger.error(
+                        "project configuration - class hierarchy",
+                        s"invalid inheritance: $receiverType is an interface"
+                    )
+                }
 
                 def resolveSuperclassMethodReference(): Result[Method] = {
                     classFile.superclassType match {
@@ -859,7 +859,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
      * }}}
      *
      * This method supports default methods and signature polymorphic calls; i.e., the
-     * descriptor of the retuned methods may not be equal to the given method descriptor.
+     * descriptor of the returned methods may not be equal to the given method descriptor.
      *
      * @param   callerClassType The object type which defines the method which performs the call.
      *          This information is required if the call target has (potentially) default

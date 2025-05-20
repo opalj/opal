@@ -20,7 +20,7 @@ import net.ceedubs.ficus.Ficus.*
  *
  * @author Michael Reif
  */
-sealed trait EntryPointFinder {
+trait EntryPointFinder {
 
     /*
      * Returns the entry points with respect to a concrete scenario.
@@ -28,6 +28,12 @@ sealed trait EntryPointFinder {
      * This method must be implemented by any subtype.
      */
     def collectEntryPoints(project: SomeProject): Iterable[Method] = Set.empty[Method]
+
+    /**
+     * Returns ProjectInformationKeys required by this EntryPointFinder
+     * If no extra keys are required, `Nil` can be returned.
+     */
+    def requirements(project: SomeProject): ProjectInformationKeys = Nil
 }
 
 /**
