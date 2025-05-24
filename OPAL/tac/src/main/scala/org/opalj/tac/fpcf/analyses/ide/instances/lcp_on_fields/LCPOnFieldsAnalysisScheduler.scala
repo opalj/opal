@@ -30,7 +30,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
  *
  * @author Robin Körkemeier
  */
-abstract class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCPOnFieldsFact, LCPOnFieldsValue]
+class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCPOnFieldsFact, LCPOnFieldsValue]
     with JavaIDEAnalysisSchedulerBase.ForwardICFG {
     override def propertyMetaInformation: JavaIDEPropertyMetaInformation[LCPOnFieldsFact, LCPOnFieldsValue] =
         LCPOnFieldsPropertyMetaInformation

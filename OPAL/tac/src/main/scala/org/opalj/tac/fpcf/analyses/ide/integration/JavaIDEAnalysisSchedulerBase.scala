@@ -17,8 +17,6 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.ide.integration.IDEAnalysisScheduler
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEValue
-import org.opalj.tac.cg.CallGraphKey
-import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaBackwardICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaForwardICFG
@@ -33,16 +31,11 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 abstract class JavaIDEAnalysisSchedulerBase[Fact <: IDEFact, Value <: IDEValue]
     extends IDEAnalysisScheduler[Fact, Value, JavaStatement, Method, JavaICFG] {
-    /**
-     * Key indicating which call graph should be used
-     */
-    val callGraphKey: CallGraphKey
 
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation ++ Seq(
             DeclaredMethodsKey,
-            TypeIteratorKey,
-            callGraphKey
+            TypeIteratorKey
         )
 
     override def uses: Set[PropertyBounds] =
@@ -53,13 +46,6 @@ abstract class JavaIDEAnalysisSchedulerBase[Fact <: IDEFact, Value <: IDEValue]
 }
 
 object JavaIDEAnalysisSchedulerBase {
-    /**
-     * Trait to drop-in [[org.opalj.tac.cg.RTACallGraphKey]] as [[callGraphKey]]
-     */
-    trait RTACallGraph {
-        val callGraphKey: CallGraphKey = RTACallGraphKey
-    }
-
     /**
      * Trait to drop-in [[org.opalj.tac.fpcf.analyses.ide.solver.JavaForwardICFG]] for [[createICFG]]
      */

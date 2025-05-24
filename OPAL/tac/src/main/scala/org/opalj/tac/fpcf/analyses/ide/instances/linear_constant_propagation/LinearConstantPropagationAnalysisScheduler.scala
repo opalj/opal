@@ -22,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
  *
  * @author Robin Körkemeier
  */
-abstract class LinearConstantPropagationAnalysisScheduler
+class LinearConstantPropagationAnalysisScheduler
     extends JavaIDEAnalysisScheduler[LinearConstantPropagationFact, LinearConstantPropagationValue]
     with JavaIDEAnalysisSchedulerBase.ForwardICFG {
     override def propertyMetaInformation: JavaIDEPropertyMetaInformation[

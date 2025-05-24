@@ -12,7 +12,6 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalys
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LinearConstantPropagationAnalysisSchedulerExtended
-import org.opalj.tac.fpcf.analyses.ide.integration.JavaIDEAnalysisSchedulerBase
 
 /**
  * Test runner for linear constant propagation on fields.
@@ -26,9 +25,8 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
 
     describe("Execute the o.o.t.f.a.i.i.l.LCPOnFieldsAnalysis") {
         val linearConstantPropagationAnalysisSchedulerExtended =
-            new LinearConstantPropagationAnalysisSchedulerExtended() with JavaIDEAnalysisSchedulerBase.RTACallGraph
-        val lcpOnFieldsAnalysisScheduler =
-            new LCPOnFieldsAnalysisScheduler() with JavaIDEAnalysisSchedulerBase.RTACallGraph
+            new LinearConstantPropagationAnalysisSchedulerExtended()
+        val lcpOnFieldsAnalysisScheduler = new LCPOnFieldsAnalysisScheduler()
 
         val testContext = executeAnalyses(Set(
             linearConstantPropagationAnalysisSchedulerExtended,
