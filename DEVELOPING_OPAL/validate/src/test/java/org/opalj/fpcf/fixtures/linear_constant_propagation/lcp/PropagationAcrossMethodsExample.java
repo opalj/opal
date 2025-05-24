@@ -10,8 +10,8 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp.*;
  */
 public class PropagationAcrossMethodsExample {
     @VariableValues({
-            @VariableValue(variable = "param2"),
-            @VariableValue(variable = "param3")
+            @VariableValue(pc = -3),
+            @VariableValue(pc = -4)
     })
     public int linearCalculation1(String msg, int a, int b) {
         System.out.println(msg + ": " + a);
@@ -23,27 +23,27 @@ public class PropagationAcrossMethodsExample {
         return 12 - 4 * 4 + a;
     }
 
-    @ConstantValue(variable = "lv3", value = 139)
+    @ConstantValue(pc = 3, value = 139)
     public static int linearCalculation3(String msg, int a) {
         System.out.println(msg);
         return a + 11;
     }
 
-    @UnknownValue(variable = "lv3")
+    @UnknownValue(pc = 3)
     public static int linearCalculation4(String msg, int a) {
         System.out.println(msg);
         return 3 * a;
     }
 
     @ConstantValues({
-            @ConstantValue(variable = "lv5", value = -18),
-            @ConstantValue(variable = "lv8", value = 132),
-            @ConstantValue(variable = "lva", value = 128),
-            @ConstantValue(variable = "lv12", value = 139)
+            @ConstantValue(pc = 5, value = -18),
+            @ConstantValue(pc = 8, value = 132),
+            @ConstantValue(pc = 10, value = 128),
+            @ConstantValue(pc = 18, value = 139)
     })
     @VariableValues({
-            @VariableValue(variable = "lvd"),
-            @VariableValue(variable = "lv10")
+            @VariableValue(pc = 13),
+            @VariableValue(pc = 16)
     })
     public static void main(String[] args) {
         PropagationAcrossMethodsExample example = new PropagationAcrossMethodsExample();

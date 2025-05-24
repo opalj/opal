@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation.lcp_on_fields;
 
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ConstantField;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValues;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
 
 /**
  * An example to test reading and writing of object fields with constants.
@@ -14,9 +14,9 @@ public class FieldReadWriteConstantExample {
     private int a = -1;
 
     @ObjectValues({
-            @ObjectValue(variable = "lv0", constantValues = {@ConstantValue(variable = "a", value = -1)}),
-            @ObjectValue(variable = "lv2", constantValues = {@ConstantValue(variable = "a", value = 42)}),
-            @ObjectValue(variable = "lv4", constantValues = {@ConstantValue(variable = "a", value = 41)})
+            @ObjectValue(pc = 0, constantValues = {@ConstantField(field = "a", value = -1)}),
+            @ObjectValue(pc = 2, constantValues = {@ConstantField(field = "a", value = 42)}),
+            @ObjectValue(pc = 4, constantValues = {@ConstantField(field = "a", value = 41)})
     })
     public static void main(String[] args) {
         FieldReadWriteConstantExample example1 = new FieldReadWriteConstantExample();

@@ -13,17 +13,17 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.Varia
  */
 public class ArrayNativeMethodExample {
     @ArrayValues({
-            @ArrayValue(variable = "lv1", variableElements = {
+            @ArrayValue(pc = 1, variableElements = {
                     @VariableArrayElement(index = 0),
                     @VariableArrayElement(index = 1),
                     @VariableArrayElement(index = 2),
                     @VariableArrayElement(index = 3)
             }),
-            @ArrayValue(variable = "lvf", constantElements = {
+            @ArrayValue(pc = 15, constantElements = {
                     @ConstantArrayElement(index = 0, value = 42),
                     @ConstantArrayElement(index = 1, value = 23)
             }),
-            @ArrayValue(variable = "lv17", variableElements = {
+            @ArrayValue(pc = 23, variableElements = {
                     @VariableArrayElement(index = 0),
                     @VariableArrayElement(index = 1),
                     @VariableArrayElement(index = 2),

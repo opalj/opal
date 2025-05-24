@@ -18,9 +18,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.CLASS)
 public @interface ConstantValue {
     /**
-     * The name of the variable
+     * The PC of this variable in the TAC
      */
-    String variable();
+    int pc();
 
     /**
      * The constant value of the variable

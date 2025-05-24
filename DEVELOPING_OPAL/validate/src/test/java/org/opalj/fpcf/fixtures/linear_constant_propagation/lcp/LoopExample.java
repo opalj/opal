@@ -34,8 +34,8 @@ public class LoopExample {
         return res;
     }
 
-    @ConstantValue(variable = "lv3", value = 22)
-    @VariableValue(variable = "lv1")
+    @ConstantValue(pc = 3, value = 22)
+    @VariableValue(pc = 1)
     public static void main(String[] args) {
         int i = loop1(42);
         int j = loop2(23);

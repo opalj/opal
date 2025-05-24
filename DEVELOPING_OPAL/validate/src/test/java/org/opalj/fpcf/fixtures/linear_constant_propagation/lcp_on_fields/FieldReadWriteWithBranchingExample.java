@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation.lcp_on_fields;
 
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ConstantField;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValues;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValue;
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.VariableField;
 
 /**
  * An example to test reading and writing object fields in presence of if-then-else constructs.
@@ -14,7 +14,7 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValue;
 public class FieldReadWriteWithBranchingExample {
     private int a = -1;
 
-    @ObjectValue(variable = "lv0", variableValues = {@VariableValue(variable = "a")})
+    @ObjectValue(pc = 0, variableValues = {@VariableField(field = "a")})
     public static FieldReadWriteWithBranchingExample multipleReturns(int y) {
         FieldReadWriteWithBranchingExample e = new FieldReadWriteWithBranchingExample();
         if (y > 0) {
@@ -27,9 +27,9 @@ public class FieldReadWriteWithBranchingExample {
     }
 
     @ObjectValues({
-            @ObjectValue(variable = "lv0", constantValues = {@ConstantValue(variable = "a", value = 42)}),
-            @ObjectValue(variable = "lv2", variableValues = {@VariableValue(variable = "a")}),
-            @ObjectValue(variable = "lv4", variableValues = {@VariableValue(variable = "a")})
+            @ObjectValue(pc = 0, constantValues = {@ConstantField(field = "a", value = 42)}),
+            @ObjectValue(pc = 2, variableValues = {@VariableField(field = "a")}),
+            @ObjectValue(pc = 4, variableValues = {@VariableField(field = "a")})
     })
     public static void main(String[] args) {
         FieldReadWriteWithBranchingExample example1 = new FieldReadWriteWithBranchingExample();

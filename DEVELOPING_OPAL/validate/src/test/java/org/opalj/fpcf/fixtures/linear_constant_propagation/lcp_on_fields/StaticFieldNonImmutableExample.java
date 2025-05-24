@@ -1,9 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation.lcp_on_fields;
 
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.StaticValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValues;
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.StaticValues;
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.VariableField;
 
 /**
  * An example to test detection of static but non-immutable fields.
@@ -15,12 +16,12 @@ public class StaticFieldNonImmutableExample {
     protected static int b = 23;
 
     @StaticValues(variableValues = {
-            @VariableValue(variable = "a"),
-            @VariableValue(variable = "b")
+            @VariableField(field = "a"),
+            @VariableField(field = "b")
     })
     @VariableValues({
-            @VariableValue(variable = "lv0"),
-            @VariableValue(variable = "lv1")
+            @VariableValue(pc = 0),
+            @VariableValue(pc = 1)
     })
     public static void main(String[] args) {
         int a = StaticFieldNonImmutableExample.a;

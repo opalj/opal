@@ -1,9 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation.lcp_on_fields;
 
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.StaticValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValues;
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ConstantField;
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.StaticValues;
 
 /**
  * An example to test reading and writing private static fields across methods.
@@ -22,11 +23,11 @@ public class StaticFieldReadWriteAcrossMethodsExample {
     }
 
     @StaticValues(constantValues = {
-            @ConstantValue(variable = "a", value = 42)
+            @ConstantField(field = "a", value = 42)
     })
     @ConstantValues({
-            @ConstantValue(variable = "lv3", value = 11),
-            @ConstantValue(variable = "lv5", value = 42)
+            @ConstantValue(pc = 3, value = 11),
+            @ConstantValue(pc = 5, value = 42)
     })
     public static void main(String[] args) {
         StaticFieldReadWriteAcrossMethodsExample example = new StaticFieldReadWriteAcrossMethodsExample();

@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation.lcp_on_fields;
 
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ArrayValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ConstantArrayElement;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.VariableArrayElement;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValue;
 
 /**
  * An example to test reading and writing of arrays at an unknown index.
@@ -13,7 +13,7 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValue;
  * @author Robin Körkemeier
  */
 public class ArrayUnknownIndicesExample {
-    @ArrayValue(variable = "lv1", variableElements = {
+    @ArrayValue(pc = 1, variableElements = {
             @VariableArrayElement(index = 0),
             @VariableArrayElement(index = 1),
             @VariableArrayElement(index = 10),
@@ -25,8 +25,8 @@ public class ArrayUnknownIndicesExample {
     }, constantElements = {
             @ConstantArrayElement(index = 50, value = 99)
     })
-    @ConstantValue(variable = "lv9", value = 0)
-    @VariableValue(variable = "lvf")
+    @ConstantValue(pc = 9, value = 0)
+    @VariableValue(pc = 15)
     public static void main(String[] args) {
         int[] arr = new int[100];
 

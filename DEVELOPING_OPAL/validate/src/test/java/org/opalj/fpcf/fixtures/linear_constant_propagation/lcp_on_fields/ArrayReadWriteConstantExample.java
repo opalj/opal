@@ -12,20 +12,20 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.Const
  */
 public class ArrayReadWriteConstantExample {
     @ArrayValues({
-            @ArrayValue(variable = "lv1", constantElements = {
+            @ArrayValue(pc = 1, constantElements = {
                     @ConstantArrayElement(index = 0, value = 0),
                     @ConstantArrayElement(index = 1, value = 0),
                     @ConstantArrayElement(index = 2, value = 42),
                     @ConstantArrayElement(index = 3, value = 4),
                     @ConstantArrayElement(index = 4, value = 0)
             }),
-            @ArrayValue(variable = "lv3", constantElements = {
+            @ArrayValue(pc = 3, constantElements = {
                     @ConstantArrayElement(index = 0, value = 0),
                     @ConstantArrayElement(index = 1, value = 2),
                     @ConstantArrayElement(index = 2, value = 3),
                     @ConstantArrayElement(index = 3, value = 4)
             }),
-            @ArrayValue(variable = "lv11", constantElements = {
+            @ArrayValue(pc = 17, constantElements = {
                     @ConstantArrayElement(index = 0, value = 11),
                     @ConstantArrayElement(index = 1, value = 12),
                     @ConstantArrayElement(index = 2, value = 13)

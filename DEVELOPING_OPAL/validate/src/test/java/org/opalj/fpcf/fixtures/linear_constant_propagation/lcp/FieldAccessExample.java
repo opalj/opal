@@ -25,11 +25,11 @@ public class FieldAccessExample {
     }
 
     @VariableValues({
-            @VariableValue(variable = "lv4"),
-            @VariableValue(variable = "lv5"),
-            @VariableValue(variable = "lv6"),
-            @VariableValue(variable = "lv8"),
-            @VariableValue(variable = "lvb")
+            @VariableValue(pc = 4),
+            @VariableValue(pc = 5),
+            @VariableValue(pc = 6),
+            @VariableValue(pc = 8),
+            @VariableValue(pc = 11)
     })
     public static void main(String[] args) {
         FieldAccessExample example = new FieldAccessExample(11, 22);

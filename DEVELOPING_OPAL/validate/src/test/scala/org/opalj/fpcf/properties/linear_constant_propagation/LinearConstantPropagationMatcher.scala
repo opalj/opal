@@ -29,8 +29,8 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPro
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val expectedVariableName =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
+        val expectedVariablePC =
+            getValue(p, singleAnnotationType, a.elementValuePairs, "pc").asIntValue.value
         val expectedVariableValue =
             getValue(p, singleAnnotationType, a.elementValuePairs, "value").asIntValue.value
 
@@ -38,10 +38,10 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPro
                 properties,
                 {
                     case (
-                            linear_constant_propagation.problem.VariableFact(name, _),
+                            linear_constant_propagation.problem.VariableFact(_, definedAtIndex),
                             linear_constant_propagation.problem.ConstantValue(value)
                         ) =>
-                        expectedVariableName == name && expectedVariableValue == value
+                        expectedVariablePC == definedAtIndex && expectedVariableValue == value
 
                     case _ => false
                 }
@@ -50,7 +50,7 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPro
             None
         } else {
             Some(
-                s"Result should contain (${linear_constant_propagation.problem.VariableFact(expectedVariableName, 0)}, ${linear_constant_propagation.problem.ConstantValue(expectedVariableValue)})!"
+                s"Result should contain (${linear_constant_propagation.problem.VariableFact("?", expectedVariablePC)}, ${linear_constant_propagation.problem.ConstantValue(expectedVariableValue)})!"
             )
         }
     }
@@ -75,17 +75,17 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPro
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val expectedVariableName =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
+        val expectedVariablePC =
+            getValue(p, singleAnnotationType, a.elementValuePairs, "pc").asIntValue.value
 
         if (existsBasicIDEPropertyResult(
                 properties,
                 {
                     case (
-                            linear_constant_propagation.problem.VariableFact(name, _),
+                            linear_constant_propagation.problem.VariableFact(_, definedAtIndex),
                             linear_constant_propagation.problem.VariableValue
                         ) =>
-                        expectedVariableName == name
+                        expectedVariablePC == definedAtIndex
 
                     case _ => false
                 }
@@ -94,7 +94,7 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPro
             None
         } else {
             Some(
-                s"Result should contain (${linear_constant_propagation.problem.VariableFact(expectedVariableName, 0)}, ${linear_constant_propagation.problem.VariableValue})!"
+                s"Result should contain (${linear_constant_propagation.problem.VariableFact("?", expectedVariablePC)}, ${linear_constant_propagation.problem.VariableValue})!"
             )
         }
     }
@@ -119,17 +119,17 @@ class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher with IDEProp
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val expectedVariableName =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "variable").asStringValue.value
+        val expectedVariablePC =
+            getValue(p, singleAnnotationType, a.elementValuePairs, "pc").asIntValue.value
 
         if (existsBasicIDEPropertyResult(
                 properties,
                 {
                     case (
-                            linear_constant_propagation.problem.VariableFact(name, _),
+                            linear_constant_propagation.problem.VariableFact(_, definedAtIndex),
                             linear_constant_propagation.problem.UnknownValue
                         ) =>
-                        expectedVariableName == name
+                        expectedVariablePC == definedAtIndex
 
                     case _ => false
                 }
@@ -138,7 +138,7 @@ class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher with IDEProp
             None
         } else {
             Some(
-                s"Result should contain (${linear_constant_propagation.problem.VariableFact(expectedVariableName, 0)}, ${linear_constant_propagation.problem.UnknownValue})!"
+                s"Result should contain (${linear_constant_propagation.problem.VariableFact("?", expectedVariablePC)}, ${linear_constant_propagation.problem.UnknownValue})!"
             )
         }
     }

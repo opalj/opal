@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation.lcp_on_fields;
 
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ConstantField;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValues;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.UnknownValue;
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.UnknownField;
 
 /**
  * An example to test reading and writing fields of objects across methods.
@@ -27,9 +27,9 @@ public class FieldReadWriteAcrossMethodsExample {
     }
 
     @ObjectValues({
-            @ObjectValue(variable = "lv0", unknownValues = {@UnknownValue(variable = "a")}),
-            @ObjectValue(variable = "lv2", constantValues = {@ConstantValue(variable = "a", value = 42)}),
-            @ObjectValue(variable = "lv4", constantValues = {@ConstantValue(variable = "a", value = -2)})
+            @ObjectValue(pc = 0, unknownValues = {@UnknownField(field = "a")}),
+            @ObjectValue(pc = 2, constantValues = {@ConstantField(field = "a", value = 42)}),
+            @ObjectValue(pc = 4, constantValues = {@ConstantField(field = "a", value = -2)})
     })
     public static void main(String[] args) {
         FieldReadWriteAcrossMethodsExample example1 = new FieldReadWriteAcrossMethodsExample();

@@ -3,9 +3,6 @@ package org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields;
 
 import org.opalj.fpcf.properties.PropertyValidator;
 import org.opalj.fpcf.properties.linear_constant_propagation.ObjectValueMatcher;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.UnknownValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValue;
 
 import java.lang.annotation.*;
 
@@ -21,22 +18,22 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.CLASS)
 public @interface ObjectValue {
     /**
-     * The name of the variable the object is stored in
+     * The PC of the variable the object is stored in
      */
-    String variable();
+    int pc();
 
     /**
      * The constant fields of the object
      */
-    ConstantValue[] constantValues() default {};
+    ConstantField[] constantValues() default {};
 
     /**
      * The non-constant fields of the object
      */
-    VariableValue[] variableValues() default {};
+    VariableField[] variableValues() default {};
 
     /**
      * The fields of the object with unknown value
      */
-    UnknownValue[] unknownValues() default {};
+    UnknownField[] unknownValues() default {};
 }

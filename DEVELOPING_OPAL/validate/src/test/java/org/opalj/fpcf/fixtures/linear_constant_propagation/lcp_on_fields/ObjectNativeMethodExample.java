@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation.lcp_on_fields;
 
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ConstantField;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValues;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.VariableValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
 
 /**
  * An example to test conservative handling of objects when encountering native methods.
@@ -14,10 +14,10 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
 public class ObjectNativeMethodExample {
     int a = 2;
 
-    @VariableValue(variable = "lv0")
+    @VariableValue(pc = 0)
     @ObjectValues({
-            @ObjectValue(variable = "lv2", constantValues = {
-                    @ConstantValue(variable = "a", value = 2)
+            @ObjectValue(pc = 2, constantValues = {
+                    @ConstantField(field = "a", value = 2)
             })
     })
     public static void main(String[] args) {

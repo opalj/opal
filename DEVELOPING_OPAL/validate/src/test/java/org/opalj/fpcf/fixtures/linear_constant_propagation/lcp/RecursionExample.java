@@ -19,7 +19,7 @@ public class RecursionExample {
         return a + 3;
     }
 
-    @ConstantValue(variable = "lv1", value = 14)
+    @ConstantValue(pc = 1, value = 14)
     public static void main(String[] args) {
         int i = recursive1(11);
 

@@ -31,13 +31,13 @@ public class BranchingLinearCombinationExample {
     }
 
     @ConstantValues({
-            @ConstantValue(variable = "lv12", value = 19),
-            @ConstantValue(variable = "lv14", value = 18),
-            @ConstantValue(variable = "lv1b", value = 7)
+            @ConstantValue(pc = 18, value = 19),
+            @ConstantValue(pc = 20, value = 18),
+            @ConstantValue(pc = 27, value = 7)
     })
     @VariableValues({
-            @VariableValue(variable = "lv17"),
-            @VariableValue(variable = "lv1e")
+            @VariableValue(pc = 23),
+            @VariableValue(pc = 30)
     })
     public static void main(String[] args) {
         int a = 7;

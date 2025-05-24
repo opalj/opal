@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.linear_constant_propagation.lcp_on_fields;
 
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ConstantField;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValue;
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.ObjectValues;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValue;
-import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValue;
+import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.VariableField;
 
 /**
  * An example to test objects created across methods.
@@ -20,14 +20,14 @@ public class CreateObjectInMethodExample {
         return example;
     }
 
-    @ObjectValue(variable = "lv0", constantValues = {@ConstantValue(variable = "a", value = 33)})
+    @ObjectValue(pc = 0, constantValues = {@ConstantField(field = "a", value = 33)})
     private CreateObjectInMethodExample createNew2() {
         CreateObjectInMethodExample example = new CreateObjectInMethodExample();
         example.a = a + 2;
         return example;
     }
 
-    @ObjectValue(variable = "lv0", variableValues = {@VariableValue(variable = "a")})
+    @ObjectValue(pc = 0, variableValues = {@VariableField(field = "a")})
     private CreateObjectInMethodExample createNew3() {
         CreateObjectInMethodExample example = new CreateObjectInMethodExample();
         example.a = a + 2;
@@ -35,11 +35,11 @@ public class CreateObjectInMethodExample {
     }
 
     @ObjectValues({
-            @ObjectValue(variable = "lv0", constantValues = {@ConstantValue(variable = "a", value = 42)}),
-            @ObjectValue(variable = "lv2", constantValues = {@ConstantValue(variable = "a", value = 31)}),
-            @ObjectValue(variable = "lv3", constantValues = {@ConstantValue(variable = "a", value = 33)}),
-            @ObjectValue(variable = "lv4", variableValues = {@VariableValue(variable = "a")}),
-            @ObjectValue(variable = "lv5", variableValues = {@VariableValue(variable = "a")})
+            @ObjectValue(pc = 0, constantValues = {@ConstantField(field = "a", value = 42)}),
+            @ObjectValue(pc = 2, constantValues = {@ConstantField(field = "a", value = 31)}),
+            @ObjectValue(pc = 3, constantValues = {@ConstantField(field = "a", value = 33)}),
+            @ObjectValue(pc = 4, variableValues = {@VariableField(field = "a")}),
+            @ObjectValue(pc = 5, variableValues = {@VariableField(field = "a")})
     })
     public static void main(String[] args) {
         CreateObjectInMethodExample example1 = new CreateObjectInMethodExample();

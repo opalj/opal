@@ -18,7 +18,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.CLASS)
 public @interface VariableValue {
     /**
-     * The name of the variable
+     * The PC of this variable in the TAC
      */
-    String variable() default "";
+    int pc();
 }

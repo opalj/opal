@@ -11,9 +11,9 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValues;
  */
 public class VariablesWithinMethodExample {
     @VariableValues({
-            @VariableValue(variable = "lv0"),
-            @VariableValue(variable = "lv3"),
-            @VariableValue(variable = "lv6")
+            @VariableValue(pc = 0),
+            @VariableValue(pc = 3),
+            @VariableValue(pc = 6)
     })
     public static void main(String[] args) {
         int a = args.length;

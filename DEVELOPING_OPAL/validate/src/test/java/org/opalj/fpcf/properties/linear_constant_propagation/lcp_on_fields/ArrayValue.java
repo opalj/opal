@@ -18,9 +18,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.CLASS)
 public @interface ArrayValue {
     /**
-     * The name of the variable the array is stored in
+     * The PC of the variable the array is stored in
      */
-    String variable();
+    int pc();
 
     /**
      * The constant elements of the array
