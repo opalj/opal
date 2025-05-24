@@ -7,8 +7,6 @@ package ide
 package instances
 package lcp_on_fields
 
-import scala.collection.immutable
-
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.LinearConstantPropagationProblemExtended
@@ -42,7 +40,5 @@ abstract class LinearConstantPropagationAnalysisSchedulerExtended
     }
 
     override def uses: Set[PropertyBounds] =
-        super.uses.union(immutable.Set(
-            PropertyBounds.ub(LCPOnFieldsPropertyMetaInformation)
-        ))
+        super.uses + PropertyBounds.ub(LCPOnFieldsPropertyMetaInformation)
 }

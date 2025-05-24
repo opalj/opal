@@ -48,8 +48,8 @@ abstract class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCP
         )
 
     override def uses: Set[PropertyBounds] =
-        super.uses.union(immutable.Set(
+        super.uses ++ immutable.Set(
             PropertyBounds.ub(FieldAssignability),
             PropertyBounds.ub(LinearConstantPropagationPropertyMetaInformation)
-        ))
+        )
 }

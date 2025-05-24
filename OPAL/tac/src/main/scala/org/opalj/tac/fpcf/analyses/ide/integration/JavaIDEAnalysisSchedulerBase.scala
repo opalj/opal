@@ -46,10 +46,10 @@ abstract class JavaIDEAnalysisSchedulerBase[Fact <: IDEFact, Value <: IDEValue]
         )
 
     override def uses: Set[PropertyBounds] =
-        super.uses.union(immutable.Set(
+        super.uses ++ immutable.Set(
             PropertyBounds.finalP(TACAI),
             PropertyBounds.finalP(Callers)
-        ))
+        )
 }
 
 object JavaIDEAnalysisSchedulerBase {
