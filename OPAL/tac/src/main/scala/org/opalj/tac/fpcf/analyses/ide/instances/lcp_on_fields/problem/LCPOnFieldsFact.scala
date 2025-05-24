@@ -61,8 +61,6 @@ trait AbstractObjectFact extends AbstractEntityFact {
  */
 case class ObjectFact(name: String, definedAtIndex: Int) extends AbstractObjectFact {
     override def toObjectFact: ObjectFact = this
-
-    override def toString: String = s"ObjectFact($name)"
 }
 
 /**
@@ -70,9 +68,7 @@ case class ObjectFact(name: String, definedAtIndex: Int) extends AbstractObjectF
  *
  * @author Robin Körkemeier
  */
-case class NewObjectFact(name: String, definedAtIndex: Int) extends AbstractObjectFact {
-    override def toString: String = s"NewObjectFact($name)"
-}
+case class NewObjectFact(name: String, definedAtIndex: Int) extends AbstractObjectFact
 
 /**
  * Fact representing a seen object variable and modeling that one of its fields gets written.
@@ -81,9 +77,7 @@ case class NewObjectFact(name: String, definedAtIndex: Int) extends AbstractObje
  *
  * @author Robin Körkemeier
  */
-case class PutFieldFact(name: String, definedAtIndex: Int, fieldName: String) extends AbstractObjectFact {
-    override def toString: String = s"PutFieldFact($name, $fieldName)"
-}
+case class PutFieldFact(name: String, definedAtIndex: Int, fieldName: String) extends AbstractObjectFact
 
 /**
  * Type for array facts.
@@ -103,8 +97,6 @@ trait AbstractArrayFact extends AbstractEntityFact {
  */
 case class ArrayFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
     override def toArrayFact: ArrayFact = this
-
-    override def toString: String = s"ArrayFact($name)"
 }
 
 /**
@@ -112,18 +104,14 @@ case class ArrayFact(name: String, definedAtIndex: Int) extends AbstractArrayFac
  *
  * @author Robin Körkemeier
  */
-case class NewArrayFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
-    override def toString: String = s"NewArrayFact($name)"
-}
+case class NewArrayFact(name: String, definedAtIndex: Int) extends AbstractArrayFact
 
 /**
  * Fact representing a seen array variable and modeling that one of its elements gets written.
  *
  * @author Robin Körkemeier
  */
-case class PutElementFact(name: String, definedAtIndex: Int) extends AbstractArrayFact {
-    override def toString: String = s"PutElementFact($name)"
-}
+case class PutElementFact(name: String, definedAtIndex: Int) extends AbstractArrayFact
 
 /**
  * Type for facts for static fields.

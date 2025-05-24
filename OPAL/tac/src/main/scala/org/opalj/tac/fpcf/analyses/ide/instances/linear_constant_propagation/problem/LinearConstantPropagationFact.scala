@@ -32,6 +32,4 @@ case object NullFact extends LinearConstantPropagationFact
  *
  * @author Robin Körkemeier
  */
-case class VariableFact(name: String, definedAtIndex: Int) extends LinearConstantPropagationFact {
-    override def toString: String = s"VariableFact($name)"
-}
+case class VariableFact(name: String, definedAtIndex: Int) extends LinearConstantPropagationFact
