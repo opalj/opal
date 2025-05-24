@@ -859,7 +859,7 @@ abstract class ProjectLike extends ClassFileRepository { project =>
      * }}}
      *
      * This method supports default methods and signature polymorphic calls; i.e., the
-     * descriptor of the retuned methods may not be equal to the given method descriptor.
+     * descriptor of the returned methods may not be equal to the given method descriptor.
      *
      * @param   callerClassType The object type which defines the method which performs the call.
      *          This information is required if the call target has (potentially) default

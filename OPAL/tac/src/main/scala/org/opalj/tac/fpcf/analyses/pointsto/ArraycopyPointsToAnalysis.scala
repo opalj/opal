@@ -85,7 +85,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
     }
 }
 
-trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => ArraycopyPointsToAnalysis
@@ -93,7 +93,7 @@ trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
     override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
+        super.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 
