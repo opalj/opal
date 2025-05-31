@@ -27,7 +27,7 @@ import org.opalj.ide.util.Logging
 /**
  * A proxy for IDE analyses that accepts analysis requests for callables as well as statement-callable combinations.
  * The [[IDEAnalysis]] solver runs on callables only and additionally produces results for each statement of that
- * callable. This proxy analysis reduces all analysis requests to the callable and then forward it to the actual IDE
+ * callable. This proxy analysis reduces all analysis requests to the callable and then forwards them to the actual IDE
  * solver.
  *
  * @author Robin Körkemeier

@@ -33,8 +33,6 @@ import org.opalj.ide.util.Logging
 /**
  * Wrapper class for a normal IDE analysis scheduler for debugging purposes. Records the flow paths the IDE solver takes
  * for a given base problem as graph and writes it to a file in DOT format.
- * DOT files can either be viewed with a suitable local program or online e.g. at
- * [[https://dreampuf.github.io/GraphvizOnline]].
  *
  * @param path the location to write the resulting DOT file (either a file ending with `.dot` or a directory)
  * @param uniqueFlowsOnly whether to drop or to keep duplicated flows
