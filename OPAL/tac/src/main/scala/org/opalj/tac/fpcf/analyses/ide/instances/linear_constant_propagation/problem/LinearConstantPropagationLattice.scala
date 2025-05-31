@@ -21,14 +21,14 @@ object LinearConstantPropagationLattice extends MeetLattice[LinearConstantPropag
     override def bottom: LinearConstantPropagationValue = VariableValue
 
     override def meet(
-        x: LinearConstantPropagationValue,
-        y: LinearConstantPropagationValue
-    ): LinearConstantPropagationValue = (x, y) match {
-        case (UnknownValue, y)                                  => y
-        case (x, UnknownValue)                                  => x
-        case (VariableValue, _)                                 => VariableValue
-        case (_, VariableValue)                                 => VariableValue
-        case (ConstantValue(xc), ConstantValue(yc)) if xc == yc => x
-        case _                                                  => VariableValue
+        value1: LinearConstantPropagationValue,
+        value2: LinearConstantPropagationValue
+    ): LinearConstantPropagationValue = (value1, value2) match {
+        case (UnknownValue, _)                                                              => value2
+        case (_, UnknownValue)                                                              => value1
+        case (VariableValue, _)                                                             => VariableValue
+        case (_, VariableValue)                                                             => VariableValue
+        case (ConstantValue(constant1), ConstantValue(constant2)) if constant1 == constant2 => value1
+        case _                                                                              => VariableValue
     }
 }
