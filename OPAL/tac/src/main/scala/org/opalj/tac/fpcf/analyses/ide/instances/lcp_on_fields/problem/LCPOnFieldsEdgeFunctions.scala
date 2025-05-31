@@ -52,7 +52,7 @@ case class ObjectEdgeFunction(
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
 
-    override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
+    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
         otherEdgeFunction match {
             case ObjectEdgeFunction(values2) =>
                 ObjectEdgeFunction(
@@ -86,7 +86,7 @@ case class ObjectEdgeFunction(
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
         }
 
-    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
         (otherEdgeFunction eq this) ||
             (otherEdgeFunction match {
                 case ObjectEdgeFunction(values2) => values == values2
@@ -140,7 +140,7 @@ case class PutFieldEdgeFunction(
         }
     }
 
-    override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
         otherEdgeFunction match {
             case ObjectEdgeFunction(values2) =>
                 ObjectEdgeFunction(
@@ -170,7 +170,7 @@ case class PutFieldEdgeFunction(
         }
     }
 
-    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
         (otherEdgeFunction eq this) ||
             (otherEdgeFunction match {
                 case PutFieldEdgeFunction(fieldName2, value2) => fieldName == fieldName2 && value == value2
@@ -227,7 +227,7 @@ class ArrayEdgeFunction(
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
 
-    override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
+    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
         otherEdgeFunction match {
             case ArrayEdgeFunction(initValue2, elements2) =>
                 ArrayEdgeFunction(
@@ -266,7 +266,7 @@ class ArrayEdgeFunction(
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
         }
 
-    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
         (otherEdgeFunction eq this) ||
             (otherEdgeFunction match {
                 case ArrayEdgeFunction(initValue2, elements2) => initValue == initValue2 && elements == elements2
@@ -361,7 +361,7 @@ case class PutElementEdgeFunction(
         }
     }
 
-    override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
         otherEdgeFunction match {
             case ArrayEdgeFunction(initValue, elements) =>
                 index match {
@@ -394,7 +394,7 @@ case class PutElementEdgeFunction(
         }
     }
 
-    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
         (otherEdgeFunction eq this) ||
             (otherEdgeFunction match {
                 case PutElementEdgeFunction(index2, value2) => index == index2 && value == value2
@@ -427,7 +427,7 @@ case class PutStaticFieldEdgeFunction(
         }
     }
 
-    override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
         otherEdgeFunction match {
             case PutStaticFieldEdgeFunction(value2) =>
                 PutStaticFieldEdgeFunction(
@@ -443,7 +443,7 @@ case class PutStaticFieldEdgeFunction(
         }
     }
 
-    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
         (otherEdgeFunction eq this) ||
             (otherEdgeFunction match {
                 case PutStaticFieldEdgeFunction(value2) => value == value2
@@ -478,7 +478,7 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
         }
     }
 
-    override def meetWith(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
         otherEdgeFunction match {
             case AllTopEdgeFunction(_)  => this
             case IdentityEdgeFunction() => this
@@ -486,7 +486,7 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
         }
     }
 
-    override def equalTo(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean = {
+    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean = {
         otherEdgeFunction eq this
     }
 

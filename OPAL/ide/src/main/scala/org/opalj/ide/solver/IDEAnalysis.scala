@@ -74,10 +74,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
 
-        override def meetWith(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] =
+        override def meet(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] =
             otherEdgeFunction
 
-        override def equalTo(otherEdgeFunction: EdgeFunction[Value]): Boolean =
+        override def equals(otherEdgeFunction: EdgeFunction[Value]): Boolean =
             otherEdgeFunction eq this
     }
 
@@ -567,9 +567,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def seedPhase1()(implicit s: State): Unit = {
         def propagateSeed(e: Path, callable: Callable, f: EdgeFunction[Value]): Unit = {
             val oldJumpFunction = s.getJumpFunction(e)
-            val fPrime = f.meetWith(oldJumpFunction)
+            val fPrime = f.meet(oldJumpFunction)
 
-            if (!fPrime.equalTo(oldJumpFunction)) {
+            if (!fPrime.equals(oldJumpFunction)) {
                 s.setJumpFunction(e, fPrime)
                 s.enqueuePath(e)
                 s.rememberCallableWithChanges(callable)
@@ -648,9 +648,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                         handleEdgeFunctionResult(problem.getPrecomputedSummaryFunction(n, d2, r, d5), path)
                     val callToReturnPath = ((n, d2), (r, d5))
                     val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
-                    val fPrime = summaryFunction.meetWith(oldSummaryFunction)
+                    val fPrime = summaryFunction.meet(oldSummaryFunction)
 
-                    if (!fPrime.equalTo(oldSummaryFunction)) {
+                    if (!fPrime.equals(oldSummaryFunction)) {
                         s.setSummaryFunction(callToReturnPath, fPrime)
                     }
 
@@ -677,9 +677,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                 handleEdgeFunctionResult(problem.getPrecomputedSummaryFunction(n, d2, q, r, d5), path)
                             val callToReturnPath = ((n, d2), (r, d5))
                             val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
-                            val fPrime = summaryFunction.meetWith(oldSummaryFunction)
+                            val fPrime = summaryFunction.meet(oldSummaryFunction)
 
-                            if (!fPrime.equalTo(oldSummaryFunction)) {
+                            if (!fPrime.equals(oldSummaryFunction)) {
                                 s.setSummaryFunction(callToReturnPath, fPrime)
                             }
 
@@ -716,9 +716,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                             val callToReturnPath = ((n, d2), (r, d5))
                                             val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
                                             val fPrime =
-                                                f4.composeWith(fEndSummary).composeWith(f5).meetWith(oldSummaryFunction)
+                                                f4.composeWith(fEndSummary).composeWith(f5).meet(oldSummaryFunction)
 
-                                            if (!fPrime.equalTo(oldSummaryFunction)) {
+                                            if (!fPrime.equals(oldSummaryFunction)) {
                                                 s.setSummaryFunction(callToReturnPath, fPrime)
                                             }
 
@@ -753,7 +753,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     // IDE P1 lines 17 - 18
                     d3s.foreach { d3 =>
                         val f3 = s.getSummaryFunction(((n, d2), (r, d3)))
-                        if (!f3.equalTo(allTopEdgeFunction)) {
+                        if (!f3.equals(allTopEdgeFunction)) {
                             propagate(((sp, d1), (r, d3)), f.composeWith(f3))
                         }
                     }
@@ -792,10 +792,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                         // IDE P1 line 24
                         val callToReturnPath = ((c, d4), (r, d5))
                         val oldSummaryFunction = s.getSummaryFunction(callToReturnPath)
-                        val fPrime = f4.composeWith(f).composeWith(f5).meetWith(oldSummaryFunction)
+                        val fPrime = f4.composeWith(f).composeWith(f5).meet(oldSummaryFunction)
 
                         // IDE P1 lines 25 - 29
-                        if (!fPrime.equalTo(oldSummaryFunction)) {
+                        if (!fPrime.equals(oldSummaryFunction)) {
                             s.setSummaryFunction(callToReturnPath, fPrime)
 
                             val sqs = icfg.getStartStatements(icfg.getCallable(c))
@@ -803,7 +803,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                 val jumpFunctionsMatchingTarget =
                                     s.lookupJumpFunctions(source = sq, target = c, targetFactOption = Some(d4))
                                 jumpFunctionsMatchingTarget.foreach {
-                                    case ((d3, _), f3) if !f3.equalTo(allTopEdgeFunction) =>
+                                    case ((d3, _), f3) if !f3.equals(allTopEdgeFunction) =>
                                         propagate(((sq, d3), (r, d5)), f3.composeWith(fPrime))
                                     case _ =>
                                 }
@@ -839,9 +839,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         // IDE P1 lines 34 - 37
         val oldJumpFunction = s.getJumpFunction(e)
-        val fPrime = f.meetWith(oldJumpFunction)
+        val fPrime = f.meet(oldJumpFunction)
 
-        if (!fPrime.equalTo(oldJumpFunction)) {
+        if (!fPrime.equals(oldJumpFunction)) {
             logTrace(s"updating and re-enqueuing path as oldJumpFunction=$oldJumpFunction != fPrime=$fPrime")
 
             s.setJumpFunction(e, fPrime)
@@ -956,7 +956,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 sps.foreach { sp =>
                     val jumpFunctionsMatchingTarget = s.lookupJumpFunctions(source = sp, target = n)
                     jumpFunctionsMatchingTarget.foreach {
-                        case ((dPrime, d), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
+                        case ((dPrime, d), fPrime) if !fPrime.equals(allTopEdgeFunction) =>
                             val nSharp = (n, d)
                             val vPrime = problem.lattice.meet(
                                 s.getValue(nSharp, p),
@@ -1041,7 +1041,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             val jumpFunctionsMatchingTarget =
                 s.lookupJumpFunctions(source = n, sourceFactOption = Some(d), target = c)
             jumpFunctionsMatchingTarget.foreach {
-                case ((_, dPrime), fPrime) if !fPrime.equalTo(allTopEdgeFunction) =>
+                case ((_, dPrime), fPrime) if !fPrime.equals(allTopEdgeFunction) =>
                     propagateValue((c, dPrime), fPrime.compute(s.getValue((n, d))))
                 case _ =>
             }

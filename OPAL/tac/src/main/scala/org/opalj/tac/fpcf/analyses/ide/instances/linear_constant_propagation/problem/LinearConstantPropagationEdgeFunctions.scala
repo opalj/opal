@@ -64,7 +64,7 @@ case class LinearCombinationEdgeFunction(
         }
     }
 
-    override def meetWith(
+    override def meet(
         otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
     ): EdgeFunction[LinearConstantPropagationValue] = {
         otherEdgeFunction match {
@@ -93,7 +93,7 @@ case class LinearCombinationEdgeFunction(
         }
     }
 
-    override def equalTo(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean = {
+    override def equals(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean = {
         (otherEdgeFunction eq this) ||
         (otherEdgeFunction match {
             case LinearCombinationEdgeFunction(a2, b2, c2) => a == a2 && b == b2 && c == c2
@@ -127,7 +127,7 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
         }
     }
 
-    override def meetWith(
+    override def meet(
         otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
     ): EdgeFunction[LinearConstantPropagationValue] = {
         otherEdgeFunction match {
@@ -137,7 +137,7 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
         }
     }
 
-    override def equalTo(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean = {
+    override def equals(otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]): Boolean = {
         otherEdgeFunction eq this
     }
 
