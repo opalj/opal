@@ -32,8 +32,6 @@ object FlowRecorderModes extends Enumeration {
 /**
  * Wrapper class for a normal IDE problem for debugging purposes. Records the flow paths the IDE solver takes for a
  * given base problem as graph and writes it to a file in DOT format.
- * DOT files can either be viewed with a suitable local program or online e.g. at
- * [[https://dreampuf.github.io/GraphvizOnline]].
  *
  * @param baseProblem the base problem that defines the flows and edge functions that should be analyzed
  * @param uniqueFlowsOnly whether to drop or to keep duplicated flows
