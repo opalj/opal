@@ -20,7 +20,8 @@ import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 
 /**
- * Extended linear constant propagation as IDE analysis.
+ * Extended linear constant propagation as IDE analysis, trying to resolve field accesses with the LCP on fields
+ * analysis (see [[LCPOnFieldsAnalysisScheduler]]).
  *
  * @author Robin Körkemeier
  */
