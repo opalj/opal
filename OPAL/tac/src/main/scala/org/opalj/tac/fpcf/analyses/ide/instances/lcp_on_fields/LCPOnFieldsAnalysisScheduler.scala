@@ -43,9 +43,7 @@ class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCPOnFieldsF
     }
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        super.requiredProjectInformation ++ Seq(
-            DeclaredFieldsKey
-        )
+        super.requiredProjectInformation :+ DeclaredFieldsKey
 
     override def uses: Set[PropertyBounds] =
         super.uses ++ immutable.Set(
