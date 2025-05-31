@@ -23,7 +23,7 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
         List("org/opalj/fpcf/fixtures/linear_constant_propagation/lcp_on_fields")
     }
 
-    describe("Execute the o.o.t.f.a.i.i.l.LCPOnFieldsAnalysis") {
+    describe("Execute the LCPOnFieldsAnalysis") {
         val linearConstantPropagationAnalysisSchedulerExtended =
             new LinearConstantPropagationAnalysisSchedulerExtended()
         val lcpOnFieldsAnalysisScheduler = new LCPOnFieldsAnalysisScheduler()

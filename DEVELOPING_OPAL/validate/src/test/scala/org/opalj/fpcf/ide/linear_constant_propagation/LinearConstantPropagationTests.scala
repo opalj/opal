@@ -19,7 +19,7 @@ class LinearConstantPropagationTests extends IDEPropertiesTest {
         List("org/opalj/fpcf/fixtures/linear_constant_propagation/lcp")
     }
 
-    describe("Execute the o.o.t.f.a.i.i.l.LinearConstantPropagationAnalysis") {
+    describe("Execute the LinearConstantPropagationAnalysis") {
         val linearConstantPropagationAnalysisScheduler = new LinearConstantPropagationAnalysisScheduler()
 
         val testContext = executeAnalyses(Set(
