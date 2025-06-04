@@ -63,7 +63,7 @@ public @interface MustAlias {
     String reason();
 
     /**
-     * The id of this MayAlias relation.
+     * The id of this MustAlias relation.
      * It is used to associate this element with the other element that is part of this relation.
      * <p>
      * The id of the relation must be unique within the class.
