@@ -94,18 +94,6 @@ addCommandAlias(
 
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
 
-addCommandAlias("buildAllCross", "; compileAll ; unidoc ;  publishLocal ; " +
-                        "project LLVM ; compileAll ; unidoc ; publishLocal ;" +
-                        "project ValidateCross ; compileAll ; publishLocal ; " +
-                        // Add other crosslanguage projects here
-                        " project OPAL ;")
-
-addCommandAlias("cleanBuildCross", "; project OPAL ; cleanAll ; buildAll ; " +
-                        "project LLVM ; cleanAll; buildAll ;" +
-                        "project ValidateCross ; cleanAll ; buildAll ;" +
-                        // Add other crosslanguage projects here
-                        " project OPAL ;")
-
 addCommandAlias("format", "; scalafmt; Test / scalafmt; IntegrationTest / scalafmt")
 
 lazy val IntegrationTest = config("it") extend Test
@@ -136,8 +124,6 @@ lazy val buildSettings =
     Seq(assembly / assemblyMergeStrategy := {
       case "module-info.class" => MergeStrategy.discard
       case PathList("META-INF", "versions", xs @ _, "module-info.class") => MergeStrategy.discard
-      case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "jni-config.json") => MergeStrategy.discard
-      case PathList("META-INF", "native-image", xs @ _, "jnijavacpp", "reflect-config.json") => MergeStrategy.discard
       case other => (assembly / assemblyMergeStrategy).value(other)
     }) ++
       Seq(
@@ -364,19 +350,6 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
   .dependsOn(de % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
-lazy val ll = `LLVM`
-lazy val `LLVM` = (project in file("OPAL/ll"))
-  .settings(buildSettings: _*)
-  .enablePlugins(ScalaUnidocPlugin)
-  .settings(
-    name := "LLVM",
-    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - LLVM"),
-    fork := true,
-    libraryDependencies ++= Dependencies.llvm
-  )
-  .dependsOn(tac % "it->it;it->test;test->test;compile->compile")
-  .configs(IntegrationTest)
-
 lazy val apk = `APK`
 lazy val `APK` = (project in file("OPAL/apk"))
   .settings(buildSettings: _*)
@@ -386,8 +359,7 @@ lazy val `APK` = (project in file("OPAL/apk"))
     libraryDependencies ++= Dependencies.apk,
   )
   .dependsOn(
-    br % "it->it;it->test;test->test;compile->compile",
-    ll % "it->it;it->test;test->test;compile->compile"
+    tac % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 
@@ -470,22 +442,6 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
     hermes % "it->it;test->test;compile->compile"
   )
   .configs(IntegrationTest)
-
-lazy val validateCross = `ValidateCross`
-lazy val `ValidateCross` = (project in file("DEVELOPING_OPAL/validateCross"))
-  .settings(buildSettings: _*)
-  .settings(
-    name := "Validate Cross",
-    publishArtifact := false,
-    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Validate"),
-    Test / compileOrder := CompileOrder.Mixed
-  )
-  .dependsOn(
-      ll % "it->it;it->test;test->test;compile->compile",
-      validate % "it->it;it->test;test->test;compile->compile"
-  )
-  .configs(IntegrationTest)
-
 
 lazy val demos = `Demos`
 lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
