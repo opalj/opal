@@ -3,7 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.EagerSimpleFieldAccessInformationAnalysis
 import org.opalj.log.OPALLogger

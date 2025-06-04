@@ -5,9 +5,9 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.si.ProjectInformationKey
+import org.opalj.si.Project
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalEP
 import org.opalj.ll.LLVMProjectKey
@@ -19,7 +19,7 @@ import org.opalj.ll.llvm.value.Function
  * @author Nicolas Gross
  */
 object SimpleNativeCallGraphKey
-    extends ProjectInformationKey[SimpleNativeCallGraph, Set[Function]] {
+    extends ProjectInformationKey[Project, SimpleNativeCallGraph, Set[Function]] {
 
     /**
      * The computation of the call graph requires a LLVM project.
@@ -27,8 +27,8 @@ object SimpleNativeCallGraphKey
      * @return the dependencies.
      */
     override def requirements(
-        project: SomeProject
-    ): Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = Seq(LLVMProjectKey)
+        project: Project
+    ): Seq[ProjectInformationKey[_ <: Project, _ <: AnyRef, _ <: AnyRef]] = Seq(LLVMProjectKey)
 
     /**
      * Computes the call graph.
@@ -42,7 +42,7 @@ object SimpleNativeCallGraphKey
      *
      * @return the call graph.
      */
-    override def compute(project: SomeProject): SimpleNativeCallGraph = {
+    override def compute(project: Project): SimpleNativeCallGraph = {
         val manager = project.get(FPCFAnalysesManagerKey)
         val (ps, _) = manager.runAll(LazySimpleCallGraphAnalysis)
         val entryPoints =

@@ -2,13 +2,13 @@
 package org.opalj
 package ll
 
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
+import org.opalj.si.ProjectInformationKey
+import org.opalj.si.Project
 
-object LLVMProjectKey extends ProjectInformationKey[LLVMProject, Iterable[String]] {
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+object LLVMProjectKey extends ProjectInformationKey[Project, LLVMProject, Iterable[String]] {
+    override def requirements(project: Project): Seq[ProjectInformationKey[Project, Nothing, Nothing]] = Nil
 
-    override def compute(project: SomeProject): LLVMProject = {
+    override def compute(project: Project): LLVMProject = {
         LLVMProject(project.getOrCreateProjectInformationKeyInitializationData(this, Iterable.empty))
     }
 

@@ -11,6 +11,8 @@ import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
@@ -47,20 +49,9 @@ sealed trait TACAIProviderScheduler extends TACAIInitializer with DomainBasedFPC
     override def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.finalP(TACAI)
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
-
 }
 
-object EagerTACAIProvider extends TACAIProviderScheduler with FPCFEagerAnalysisScheduler {
+object EagerTACAIProvider extends TACAIProviderScheduler with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -74,7 +65,7 @@ object EagerTACAIProvider extends TACAIProviderScheduler with FPCFEagerAnalysisS
     }
 }
 
-object LazyTACAIProvider extends TACAIProviderScheduler with FPCFLazyAnalysisScheduler {
+object LazyTACAIProvider extends TACAIProviderScheduler with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

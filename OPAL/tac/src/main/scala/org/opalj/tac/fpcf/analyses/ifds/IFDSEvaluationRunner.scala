@@ -18,8 +18,8 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.bytecode
 import org.opalj.fpcf.FinalEP

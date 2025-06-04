@@ -25,10 +25,10 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysis
+import org.opalj.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
@@ -143,7 +143,7 @@ object Immutability {
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
 
-        val dependencies: List[FPCFAnalysisScheduler] =
+        val dependencies: List[FPCFAnalysisScheduler[_]] =
             List(
                 EagerFieldAccessInformationAnalysis,
                 LazyL2FieldAssignabilityAnalysis,

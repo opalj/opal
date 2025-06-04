@@ -10,7 +10,7 @@ import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity

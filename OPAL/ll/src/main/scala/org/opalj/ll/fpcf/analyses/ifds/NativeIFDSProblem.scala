@@ -7,7 +7,7 @@ package ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimEUBP

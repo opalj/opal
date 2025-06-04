@@ -19,9 +19,9 @@ import org.opalj.br.analyses.cg.CallBySignatureKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.fpcf.PropertyStore
 import org.opalj.log.LogContext

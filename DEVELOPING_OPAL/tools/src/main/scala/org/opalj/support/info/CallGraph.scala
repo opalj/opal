@@ -26,8 +26,8 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.FPCFAnalysesRegistry
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesRegistry
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers

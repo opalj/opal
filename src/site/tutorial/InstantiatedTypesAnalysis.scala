@@ -14,7 +14,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.instructions.NEW
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP

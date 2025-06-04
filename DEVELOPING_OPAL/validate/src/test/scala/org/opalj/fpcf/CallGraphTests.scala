@@ -11,7 +11,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.properties.callgraph.TypePropagationVariant
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey

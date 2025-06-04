@@ -14,8 +14,8 @@ import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation

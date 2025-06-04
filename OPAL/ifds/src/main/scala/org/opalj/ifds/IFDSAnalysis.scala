@@ -2,15 +2,15 @@
 package org.opalj
 package ifds
 
-import scala.collection.{Set => SomeSet}
+import scala.collection.Set as SomeSet
 import scala.collection.mutable
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimResult
@@ -634,7 +634,6 @@ abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <:
     override final type InitializationData = IFDSAnalysis[Fact, C, S]
     def property: IFDSPropertyMetaInformation[S, Fact]
     override final def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def register(
         p:        SomeProject,
@@ -645,11 +644,9 @@ abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <:
         analysis
     }
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: org.opalj.fpcf.FPCFAnalysis): Unit = {}
+
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: org.opalj.fpcf.FPCFAnalysis): Unit = {}
 }

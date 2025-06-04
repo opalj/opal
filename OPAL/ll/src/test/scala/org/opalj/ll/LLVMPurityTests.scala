@@ -4,7 +4,7 @@ package ll
 
 import org.opalj.bi.TestResources
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.ll.fpcf.analyses.EagerSimplePurityAnalysis

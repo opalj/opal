@@ -45,7 +45,7 @@ import control.find
  *
  * @author Michael Eichberg
  */
-abstract class ProjectLike extends ClassFileRepository { project =>
+trait ProjectLike extends ClassFileRepository { project =>
 
     private[this] implicit final val thisProjectLike: this.type = this
 

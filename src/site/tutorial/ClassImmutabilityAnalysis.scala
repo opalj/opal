@@ -10,7 +10,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.Entity

@@ -11,6 +11,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.UBP

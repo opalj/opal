@@ -1,6 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
 package fpcf
 
 import scala.reflect.runtime.universe.runtimeMirror
@@ -9,9 +8,6 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -38,11 +34,11 @@ object FPCFAnalysesRegistry {
 
     private[this] implicit def logContext: LogContext = GlobalLogContext
 
-    private[this] var idToEagerScheduler: Map[String, FPCFEagerAnalysisScheduler] = Map.empty
-    private[this] var idToLazyScheduler: Map[String, FPCFLazyAnalysisScheduler] = Map.empty
-    private[this] var idToTriggeredScheduler: Map[String, FPCFTriggeredAnalysisScheduler] = Map.empty
+    private[this] var idToEagerScheduler: Map[String, FPCFEagerAnalysisScheduler[_]] = Map.empty
+    private[this] var idToLazyScheduler: Map[String, FPCFLazyAnalysisScheduler[_]] = Map.empty
+    private[this] var idToTriggeredScheduler: Map[String, FPCFTriggeredAnalysisScheduler[_]] = Map.empty
     private[this] var idToDescription: Map[String, String] = Map.empty
-    private[this] var propertyToDefaultScheduler: Map[PropertyBounds, FPCFAnalysisScheduler] = Map.empty
+    private[this] var propertyToDefaultScheduler: Map[PropertyBounds, FPCFAnalysisScheduler[_]] = Map.empty
 
     /**
      * Registers the factory of a fixpoint analysis that can be
@@ -64,14 +60,14 @@ object FPCFAnalysesRegistry {
             case Some(analysisRunner) =>
                 factoryType match {
                     case "lazy" =>
-                        idToLazyScheduler += ((analysisID, analysisRunner.asInstanceOf[FPCFLazyAnalysisScheduler]))
+                        idToLazyScheduler += ((analysisID, analysisRunner.asInstanceOf[FPCFLazyAnalysisScheduler[_]]))
                     case "triggered" =>
                         idToTriggeredScheduler += ((
                             analysisID,
-                            analysisRunner.asInstanceOf[FPCFTriggeredAnalysisScheduler]
+                            analysisRunner.asInstanceOf[FPCFTriggeredAnalysisScheduler[_]]
                         ))
                     case "eager" =>
-                        idToEagerScheduler += ((analysisID, analysisRunner.asInstanceOf[FPCFEagerAnalysisScheduler]))
+                        idToEagerScheduler += ((analysisID, analysisRunner.asInstanceOf[FPCFEagerAnalysisScheduler[_]]))
                     case _ =>
                         OPALLogger.error("project configuration", s"Unknown analysis factory type ${factoryType}")
                 }
@@ -98,12 +94,12 @@ object FPCFAnalysesRegistry {
         }
     }
 
-    private[this] def resolveAnalysisRunner(fqn: String): Option[FPCFAnalysisScheduler] = {
+    private[this] def resolveAnalysisRunner(fqn: String): Option[FPCFAnalysisScheduler[_]] = {
         val mirror = runtimeMirror(getClass.getClassLoader)
         try {
             val module = mirror.staticModule(fqn)
             import mirror.reflectModule
-            Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler])
+            Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler[_]])
         } catch {
             case sre: ScalaReflectionException =>
                 error("FPCF registry", "cannot find analysis scheduler", sre)
@@ -175,49 +171,49 @@ object FPCFAnalysesRegistry {
     /**
      * Returns the current view of the registry for eager factories.
      */
-    def eagerFactories: Iterable[FPCFEagerAnalysisScheduler] = this.synchronized {
+    def eagerFactories: Iterable[FPCFEagerAnalysisScheduler[_]] = this.synchronized {
         idToEagerScheduler.values
     }
 
     /**
      * Returns the current view of the registry for triggered factories.
      */
-    def triggeredFactories: Iterable[FPCFTriggeredAnalysisScheduler] = this.synchronized {
+    def triggeredFactories: Iterable[FPCFTriggeredAnalysisScheduler[_]] = this.synchronized {
         idToTriggeredScheduler.values
     }
 
     /**
      * Returns the current view of the registry for lazy factories.
      */
-    def lazyFactories: Iterable[FPCFLazyAnalysisScheduler] = this.synchronized {
+    def lazyFactories: Iterable[FPCFLazyAnalysisScheduler[_]] = this.synchronized {
         idToLazyScheduler.values
     }
 
     /**
      * Returns the eager factory for analysis with a matching description.
      */
-    def eagerFactory(id: String): FPCFEagerAnalysisScheduler = this.synchronized {
+    def eagerFactory(id: String): FPCFEagerAnalysisScheduler[_] = this.synchronized {
         idToEagerScheduler(id)
     }
 
     /**
      * Returns the triggered factory for analysis with a matching description.
      */
-    def triggeredFactory(id: String): FPCFTriggeredAnalysisScheduler = this.synchronized {
+    def triggeredFactory(id: String): FPCFTriggeredAnalysisScheduler[_] = this.synchronized {
         idToTriggeredScheduler(id)
     }
 
     /**
      * Returns the lazy factory for analysis with a matching description.
      */
-    def lazyFactory(id: String): FPCFLazyAnalysisScheduler = this.synchronized {
+    def lazyFactory(id: String): FPCFLazyAnalysisScheduler[_] = this.synchronized {
         idToLazyScheduler(id)
     }
 
     /**
      * Returns the most suitable factory for analysis with a matching description.
      */
-    def factory(id: String): FPCFAnalysisScheduler = this.synchronized {
+    def factory(id: String): FPCFAnalysisScheduler[_] = this.synchronized {
         idToLazyScheduler.getOrElse(id, idToTriggeredScheduler.getOrElse(id, idToEagerScheduler(id)))
     }
 

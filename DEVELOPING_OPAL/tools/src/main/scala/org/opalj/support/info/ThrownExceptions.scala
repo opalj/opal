@@ -10,8 +10,8 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.collection.TypesSet
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.br.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
 import org.opalj.br.fpcf.properties.{ThrownExceptions => ThrownExceptionsProperty}

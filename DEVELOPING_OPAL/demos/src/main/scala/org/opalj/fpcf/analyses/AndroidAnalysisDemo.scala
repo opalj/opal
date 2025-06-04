@@ -14,7 +14,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.android.AndroidManifestKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.tac.cg.CFA_1_0_CallGraphKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds

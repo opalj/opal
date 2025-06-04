@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.bi.TestResources
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ifds
 import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSProperty

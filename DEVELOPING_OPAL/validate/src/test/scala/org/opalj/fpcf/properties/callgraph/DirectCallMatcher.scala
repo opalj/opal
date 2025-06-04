@@ -19,7 +19,7 @@ import org.opalj.br.StringValue
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 

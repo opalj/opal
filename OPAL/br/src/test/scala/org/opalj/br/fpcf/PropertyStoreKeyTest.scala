@@ -10,6 +10,7 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.PropertyStoreKey
 
 /**
  * @author Michael Eichberg

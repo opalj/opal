@@ -5,7 +5,7 @@ package domain
 
 import org.opalj.br.{ClassHierarchy => BRClassHierarchy}
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.log.LogContext
 

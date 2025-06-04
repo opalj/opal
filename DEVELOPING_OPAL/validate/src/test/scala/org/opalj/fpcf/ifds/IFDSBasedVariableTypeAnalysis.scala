@@ -11,7 +11,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey

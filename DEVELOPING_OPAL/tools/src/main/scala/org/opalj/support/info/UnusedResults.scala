@@ -18,8 +18,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.{Purity => PurityProperty}

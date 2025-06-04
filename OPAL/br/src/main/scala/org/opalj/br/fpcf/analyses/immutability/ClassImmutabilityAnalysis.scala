@@ -49,6 +49,8 @@ import org.opalj.fpcf.UBP
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
+import org.opalj
+
 /**
  * Determines the immutability of instances of a specific class. In the case of an abstract class
  * the (implicit) assumption is made that all abstract methods (if any) are/can
@@ -434,13 +436,9 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: opalj.fpcf.FPCFAnalysis): Unit = {}
 
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: opalj.fpcf.FPCFAnalysis): Unit = {}
 }
 
 /**

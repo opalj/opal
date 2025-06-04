@@ -13,7 +13,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.fpcf.FinalEP

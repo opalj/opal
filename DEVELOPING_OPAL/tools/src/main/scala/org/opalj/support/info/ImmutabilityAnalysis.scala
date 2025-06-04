@@ -9,7 +9,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability

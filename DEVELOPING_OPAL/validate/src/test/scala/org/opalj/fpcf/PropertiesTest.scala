@@ -32,9 +32,9 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysis
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.bytecode.RTJar

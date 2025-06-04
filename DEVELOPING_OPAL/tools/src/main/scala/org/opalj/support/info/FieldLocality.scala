@@ -8,7 +8,8 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.analyses
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.properties.ExtensibleLocalField
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.br.fpcf.properties.LocalField
@@ -20,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 
 /**
- * Computes the field locality; see [[org.opalj.br.fpcf.properties.FieldLocality]] for details.
+ * Computes the field locality; see [[analyses.properties.FieldLocality]] for details.
  *
  * @author Florian Kuebler
  */

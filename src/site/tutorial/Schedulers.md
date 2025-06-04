@@ -181,11 +181,11 @@ Next up, the scheduling method (`start` or `register`, depending on the type of 
 Once this has happened, `afterPhaseScheduling` for your analyses before they are finally executed.
 You can use it if another analysis might have done something in its scheduling method that you need to react upon.
 ```scala
-def afterPhaseScheduling(propertyStore: PropertyStore, analysis: A): Unit
+def afterPhaseScheduling(propertyStore: PropertyStore): Unit
 ```
 
 ```scala
-def afterPhaseCompletion(project: SomeProject, propertyStore: PropertyStore, analysis: A): Unit
+def afterPhaseCompletion(project: SomeProject, propertyStore: PropertyStore): Unit
 ```
 Once your analysis have completed execution and the fixed point is reached, `afterPhaseCompletion` is the last life-cycle method called.
 You can use it to clean up after your analysis if necessary.
