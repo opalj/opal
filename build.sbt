@@ -60,7 +60,7 @@ ScalaUnidoc / unidoc / scalacOptions := {
 
 ScalaUnidoc / unidoc / scalacOptions ++=
   Opts.doc.sourceUrl(
-    "https://raw.githubusercontent.com/stg-tud/opal/" +
+    "https://raw.githubusercontent.com/opalj/opal/" +
       (if (isSnapshot.value) "develop" else "master") +
       "/€{FILE_PATH}.scala"
   )
