@@ -53,7 +53,6 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
             val tac = state.tacai1.get
             val cfg = tac.cfg
             val domTree = cfg.dominatorTree
-            val postDomTree = cfg.postDominatorTree
             val allocBB = cfg.bb(tac.properStmtIndexForPC(pc)).nodeId
 
             // check if the allocation site is dominated by a loop header, i.e., is executed multiple times
@@ -66,9 +65,8 @@ trait AllocationSiteAndTacBasedAliasAnalysis extends AllocationSiteBasedAliasAna
                     if (domTree.strictlyDominates(dom, pred)) {
 
                         // Only report a negative result if the allocation site is inside the loop.
-                        // If the loop head post dominates the allocation site we know that the allocation is behind
-                        // the loop.
-                        if (!postDomTree.strictlyDominates(dom, allocBB)) {
+                        // If the allocation site dominates (any) loop end nodes, it can be executed multiple times
+                        if (allocBB == pred || domTree.strictlyDominates(allocBB, pred)) {
                             return false
                         }
                     }
