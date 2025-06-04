@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -28,6 +29,7 @@ import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
@@ -119,12 +121,16 @@ class CallGraphAnalysis private[cg] (
         }
     }
 
+    override final def processMethodWithoutBody(eOptP: EOptionP[DeclaredMethod, Callers]): PropertyComputationResult = {
+        processMethodWithoutBody(eOptP, null)
+    }
+
     override final def processMethod(
         callContext: ContextType,
-        tacEPOpt:    EOptionP[Method, TACAI]
+        tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        if (tacEPOpt.hasUBP) {
-            val state = new TACAIBasedCGState[ContextType](callContext, tacEPOpt)
+        if (tacEP ne null) {
+            val state = new TACAIBasedCGState[ContextType](callContext, tacEP)
             processMethod(state, new DirectCalls())
         } else {
             Results(new DirectCalls().partialResults(callContext, enforceCalleesResult = true))

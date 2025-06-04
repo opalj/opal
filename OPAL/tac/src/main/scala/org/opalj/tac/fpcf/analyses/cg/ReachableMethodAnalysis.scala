@@ -13,7 +13,6 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.NoResult
@@ -27,6 +26,8 @@ import org.opalj.tac.fpcf.properties.TACAI
 /**
  * Base trait for analyses that are executed for every method that is reachable.
  * The analysis is performed by `processMethod`.
+ *
+ * Note that methods without a body are not processed unless `processMethodWithoutBody` is overridden
  *
  * @author Florian Kuebler
  */
@@ -57,7 +58,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
         val tacEP = propertyStore(method, TACAI.key)
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod(callersEOptP, NoCallers, tacEP)
+            processMethod(callersEOptP, NoCallers, tacEP.asEPS)
         } else {
             InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod))
         }
@@ -65,12 +66,19 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
     protected def processMethodWithoutBody(
         eOptP: EOptionP[DeclaredMethod, Callers]
-    ): PropertyComputationResult = processMethod(eOptP, NoCallers, EPK(eOptP.e.definedMethod, TACAI.key))
+    ): PropertyComputationResult = NoResult
 
-    private[this] def processMethod(
+    protected def processMethodWithoutBody(
+        eOptP: EOptionP[DeclaredMethod, Callers],
+        tacEP: EPS[Method, TACAI]
+    ): ProperPropertyComputationResult = {
+        processMethod(eOptP, NoCallers, tacEP)
+    }
+
+    protected def processMethod(
         eOptP:      EOptionP[DeclaredMethod, Callers],
         oldCallers: Callers,
-        tacEOptP:   EOptionP[Method, TACAI]
+        tacEP:      EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         val newCallers = if (eOptP.hasUBP) eOptP.ub else NoCallers
         var results: List[ProperPropertyComputationResult] = Nil
@@ -79,18 +87,18 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
             val theCalleeContext =
                 if (calleeContext.hasContext) calleeContext.asInstanceOf[ContextType]
                 else typeIterator.newContext(eOptP.e)
-            results ::= processMethod(theCalleeContext, tacEOptP)
+            results ::= processMethod(theCalleeContext, tacEP)
         }
 
         Results(
-            InterimPartialResult(Set(eOptP), continuationForCallers(newCallers, tacEOptP)),
+            InterimPartialResult(Set(eOptP), continuationForCallers(newCallers, tacEP)),
             results
         )
     }
 
     def processMethod(
         callContext: ContextType,
-        tacEOptP:    EOptionP[Method, TACAI]
+        tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult
 
     protected def continuationForTAC(
@@ -110,28 +118,11 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
     private[this] def continuationForCallers(
         oldCallers: Callers,
-        tacEOptP:   EOptionP[Method, TACAI]
+        tacEP:      EPS[Method, TACAI]
     )(
         update: SomeEPS
     ): ProperPropertyComputationResult = {
         val newCallers = update.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processMethod(newCallers, oldCallers, tacEOptP)
+        processMethod(newCallers, oldCallers, tacEP)
     }
-}
-
-trait DefinedBodyReachableMethodAnalysis extends ReachableMethodAnalysis {
-
-    override protected final def processMethodWithoutBody(
-        eOptP: EOptionP[DeclaredMethod, Callers]
-    ): PropertyComputationResult = NoResult
-
-    override final def processMethod(
-        callContext: ContextType,
-        tacEPOpt:    EOptionP[Method, TACAI]
-    ): ProperPropertyComputationResult = processMethod(callContext, tacEPOpt.asEPS)
-
-    def processMethod(
-        callContext: ContextType,
-        tacEP:       EPS[Method, TACAI]
-    ): ProperPropertyComputationResult
 }

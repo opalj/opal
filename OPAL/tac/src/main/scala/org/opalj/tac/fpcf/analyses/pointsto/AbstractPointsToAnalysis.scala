@@ -51,7 +51,7 @@ import org.opalj.fpcf.UBP
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.fpcf.analyses.cg.DefinedBodyReachableMethodAnalysis
+import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.value.IsReferenceValue
@@ -64,7 +64,7 @@ import org.opalj.value.ValueInformation
  *
  * @author Florian Kuebler
  */
-trait AbstractPointsToAnalysis extends PointsToAnalysisBase with DefinedBodyReachableMethodAnalysis {
+trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethodAnalysis {
 
     override def processMethod(
         callContext: ContextType,

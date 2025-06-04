@@ -37,7 +37,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
-import org.opalj.tac.fpcf.analyses.cg.DefinedBodyReachableMethodAnalysis
+import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.persistentUVar
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -166,7 +166,7 @@ private[fieldaccess] class EagerTacBasedFieldAccessInformationAnalysis(
 
 private[fieldaccess] class ReachableTacBasedFieldAccessInformationAnalysis(
     val project: SomeProject
-) extends FieldAccessInformationAnalysis with DefinedBodyReachableMethodAnalysis {
+) extends FieldAccessInformationAnalysis with ReachableMethodAnalysis {
 
     override def processMethod(callContext: ContextType, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         implicit val state: State = new State(callContext, tacEP)

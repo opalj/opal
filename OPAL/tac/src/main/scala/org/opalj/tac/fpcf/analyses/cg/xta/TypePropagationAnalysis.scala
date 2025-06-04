@@ -56,7 +56,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 final class TypePropagationAnalysis private[analyses] (
     val project:         SomeProject,
     selectTypeSetEntity: TypeSetEntitySelector
-) extends DefinedBodyReachableMethodAnalysis {
+) extends ReachableMethodAnalysis {
 
     private[this] val debug = false
     private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
