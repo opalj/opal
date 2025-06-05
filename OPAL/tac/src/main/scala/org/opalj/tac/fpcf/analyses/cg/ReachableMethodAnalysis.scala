@@ -27,7 +27,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * Base trait for analyses that are executed for every method that is reachable.
  * The analysis is performed by `processMethod`.
  *
- * Note that methods without a body are not processed unless `processMethodWithoutBody` is overridden
+ * Note that methods without a body are not processed unless `processMethodWithoutBody` is overridden.
  *
  * @author Florian Kuebler
  */
@@ -44,7 +44,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
         // we only allow defined methods
         if (!declaredMethod.hasSingleDefinedMethod)
-            return processMethodWithoutBody(callersEOptP);
+            return processNewContexts(callersEOptP, NoCallers) { processMethodWithoutBody };
 
         val method = declaredMethod.definedMethod
 
@@ -52,34 +52,31 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
         if (method.classFile.thisType != declaredMethod.declaringClassType)
             return NoResult;
 
-        if (method.body.isEmpty)
+        if (method.body.isEmpty) {
             // happens in particular for native methods
-            return processMethodWithoutBody(callersEOptP);
+            return processNewContexts(callersEOptP, NoCallers) { processMethodWithoutBody };
+        };
 
         val tacEP = propertyStore(method, TACAI.key)
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod(callersEOptP, NoCallers, tacEP.asEPS)
+            processMethodWithTAC(callersEOptP, NoCallers, tacEP.asEPS)
         } else {
             InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod))
         }
     }
 
-    protected def processMethodWithoutBody(
-        eOptP: EOptionP[DeclaredMethod, Callers]
-    ): PropertyComputationResult = NoResult
-
-    protected def processMethodWithoutBody(
-        eOptP: EOptionP[DeclaredMethod, Callers],
-        tacEP: EPS[Method, TACAI]
-    ): ProperPropertyComputationResult = {
-        processMethod(eOptP, NoCallers, tacEP)
-    }
-
-    protected def processMethod(
+    private def processMethodWithTAC(
         eOptP:      EOptionP[DeclaredMethod, Callers],
         oldCallers: Callers,
         tacEP:      EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
+        processNewContexts(eOptP, oldCallers) { processMethod(_, tacEP) }
+    }
+
+    private def processNewContexts(
+        eOptP:      EOptionP[DeclaredMethod, Callers],
+        oldCallers: Callers
+    )(processMethod: ContextType => ProperPropertyComputationResult): ProperPropertyComputationResult = {
         val newCallers = if (eOptP.hasUBP) eOptP.ub else NoCallers
         var results: List[ProperPropertyComputationResult] = Nil
 
@@ -87,14 +84,18 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
             val theCalleeContext =
                 if (calleeContext.hasContext) calleeContext.asInstanceOf[ContextType]
                 else typeIterator.newContext(eOptP.e)
-            results ::= processMethod(theCalleeContext, tacEP)
+            results ::= processMethod(theCalleeContext)
         }
 
         Results(
-            InterimPartialResult(Set(eOptP), continuationForCallers(newCallers, tacEP)),
+            InterimPartialResult(Set(eOptP), continuationForCallers(processNewContexts(_, newCallers)(processMethod))),
             results
         )
     }
+
+    protected def processMethodWithoutBody(
+        callContext: ContextType
+    ): ProperPropertyComputationResult = Results()
 
     def processMethod(
         callContext: ContextType,
@@ -106,7 +107,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     )(someEPS: SomeEPS): ProperPropertyComputationResult = {
         someEPS match {
             case UBP(tac: TACAI) if tac.tac.isDefined =>
-                processMethod(
+                processMethodWithTAC(
                     propertyStore(declaredMethod, Callers.key),
                     NoCallers,
                     someEPS.asInstanceOf[EPS[Method, TACAI]]
@@ -117,12 +118,8 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     }
 
     private[this] def continuationForCallers(
-        oldCallers: Callers,
-        tacEP:      EPS[Method, TACAI]
-    )(
-        update: SomeEPS
-    ): ProperPropertyComputationResult = {
-        val newCallers = update.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processMethod(newCallers, oldCallers, tacEP)
+        processMethod: EOptionP[DeclaredMethod, Callers] => ProperPropertyComputationResult
+    )(someEPS: SomeEPS): ProperPropertyComputationResult = {
+        processMethod(someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]])
     }
 }

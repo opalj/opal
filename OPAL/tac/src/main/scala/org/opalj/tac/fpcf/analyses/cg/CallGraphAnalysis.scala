@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package cg
 
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -21,7 +20,6 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimEUBP
@@ -29,7 +27,6 @@ import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
@@ -121,20 +118,16 @@ class CallGraphAnalysis private[cg] (
         }
     }
 
-    override final def processMethodWithoutBody(eOptP: EOptionP[DeclaredMethod, Callers]): PropertyComputationResult = {
-        processMethodWithoutBody(eOptP, null)
+    override final def processMethodWithoutBody(callContext: ContextType): ProperPropertyComputationResult = {
+        Results(new DirectCalls().partialResults(callContext, enforceCalleesResult = true))
     }
 
     override final def processMethod(
         callContext: ContextType,
         tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        if (tacEP ne null) {
-            val state = new TACAIBasedCGState[ContextType](callContext, tacEP)
-            processMethod(state, new DirectCalls())
-        } else {
-            Results(new DirectCalls().partialResults(callContext, enforceCalleesResult = true))
-        }
+        val state = new TACAIBasedCGState[ContextType](callContext, tacEP)
+        processMethod(state, new DirectCalls())
     }
 
     protected[this] def doHandleVirtualCall(
