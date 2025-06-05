@@ -2,7 +2,7 @@
 package org.opalj
 package ifds
 
-import scala.collection.Set as SomeSet
+import scala.collection.{Set => SomeSet}
 import scala.collection.mutable
 
 import org.opalj.br.analyses.SomeProject
