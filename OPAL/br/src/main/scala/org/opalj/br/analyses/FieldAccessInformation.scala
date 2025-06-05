@@ -5,7 +5,6 @@ package analyses
 
 import scala.collection.Map
 
-import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.fieldaccess
 import org.opalj.br.fpcf.properties.fieldaccess.AccessParameter
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
@@ -13,6 +12,7 @@ import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.SomeInterimEP
 
 /**

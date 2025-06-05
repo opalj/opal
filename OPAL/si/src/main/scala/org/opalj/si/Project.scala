@@ -2,13 +2,14 @@
 package org.opalj
 package si
 
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReferenceArray
+
 import com.typesafe.config.Config
+
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
-
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicReferenceArray
 
 trait Project {
 
@@ -52,7 +53,7 @@ trait Project {
         projectInformationKeyInitializationData.computeIfAbsent(
             key.asInstanceOf[ProjectInformationKey[P, AnyRef, AnyRef]],
             (_: ProjectInformationKey[_, AnyRef, AnyRef]) => info
-            ).asInstanceOf[I]
+        ).asInstanceOf[I]
     }
 
     /**
@@ -68,10 +69,11 @@ trait Project {
     ): I = {
         projectInformationKeyInitializationData.compute(
             key.asInstanceOf[ProjectInformationKey[Project, AnyRef, AnyRef]],
-            (_, current: AnyRef) => {
-                info(Option(current.asInstanceOf[I]))
-            }: I
-            ).asInstanceOf[I]
+            (_, current: AnyRef) =>
+                {
+                    info(Option(current.asInstanceOf[I]))
+                }: I
+        ).asInstanceOf[I]
     }
 
     /**

@@ -15,9 +15,9 @@ import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.br.TestSupport
 import org.opalj.br.analyses.SomeProject
+import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.util.PerformanceEvaluation.time
 

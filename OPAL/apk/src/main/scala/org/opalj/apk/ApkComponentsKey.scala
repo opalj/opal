@@ -3,8 +3,8 @@ package org.opalj
 package apk
 
 import org.opalj.apk.parser.ApkParser
-import org.opalj.si.ProjectInformationKey
 import org.opalj.si.Project
+import org.opalj.si.ProjectInformationKey
 
 /**
  * Key for a list of [[ApkComponent]] to link them to a [[org.opalj.br.analyses.Project]].

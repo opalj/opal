@@ -10,7 +10,6 @@ import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.FieldLocality
 import org.opalj.br.fpcf.properties.Purity
@@ -22,6 +21,7 @@ import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.PropertyStoreKey
 
 /**
  * Base trait for matchers that match a method's `Purity` property.
