@@ -12,4 +12,4 @@ Currently, we implement analyses across the following categories:
  - *Weird Code* - e.g., methods which will never return, switches with only default targets,...
 
 ## Extending Hermes
-See Hermes' built-in documentation or go to [Hermes.md](https://github.com/stg-tud/opal/blob/master/src/site/Hermes.md)
+See Hermes' built-in documentation or go to [Hermes.md](https://github.com/opalj/opal/blob/master/src/site/Hermes.md)
