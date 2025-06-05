@@ -79,7 +79,7 @@ import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ASObjectValue
 
-import net.ceedubs.ficus.Ficus.*
+import net.ceedubs.ficus.Ficus._
 
 /**
  * An inter-procedural analysis to determine a method's purity.

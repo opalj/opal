@@ -3,8 +3,6 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.si.Project
-
 /**
  * Common super trait of all analyses that use the fixpoint
  * computations framework. In general, an analysis computes a

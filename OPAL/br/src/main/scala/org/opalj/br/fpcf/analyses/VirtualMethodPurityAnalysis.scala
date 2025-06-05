@@ -28,8 +28,6 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 
-import org.opalj
-
 /**
  * Determines the aggregated purity for virtual methods.
  *
@@ -162,9 +160,9 @@ object EagerVirtualMethodPurityAnalysis
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: opalj.fpcf.FPCFAnalysis): Unit = {}
+    override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: org.opalj.fpcf.FPCFAnalysis): Unit = {}
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: opalj.fpcf.FPCFAnalysis): Unit = {}
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: org.opalj.fpcf.FPCFAnalysis): Unit = {}
 }
 
 object LazyVirtualMethodPurityAnalysis

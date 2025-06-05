@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.si.Project
-import org.opalj.util.PerformanceEvaluation.*
+import org.opalj.util.PerformanceEvaluation._
 
 /**
  * Enables the execution of a set of analyses.

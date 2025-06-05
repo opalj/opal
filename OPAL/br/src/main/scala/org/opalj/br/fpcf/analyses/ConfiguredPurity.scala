@@ -13,8 +13,8 @@ import org.opalj.br.analyses.cg.ClassExtensibilityKey
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.fpcf.PropertyStoreKey
 
-import net.ceedubs.ficus.Ficus.*
-import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
 /**
  * @author Dominik Helm

@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 
 /**
- * Computes the field locality; see [[analyses.properties.FieldLocality]] for details.
+ * Computes the field locality; see [[org.opalj.br.fpcf.properties.FieldLocality]] for details.
  *
  * @author Florian Kuebler
  */
