@@ -24,8 +24,8 @@ import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 
 class DirectCallMatcher extends AbstractRepeatablePropertyMatcher {
-    override val singleAnnotationType: ObjectType = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCall")
-    override val containerAnnotationType: ObjectType = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCalls")
+    override val singleAnnotationType: ClassType = ClassType("org/opalj/fpcf/properties/callgraph/DirectCall")
+    override val containerAnnotationType: ClassType = ClassType("org/opalj/fpcf/properties/callgraph/DirectCalls")
 
     override def validateSingleProperty(
         p:          Project[_],
