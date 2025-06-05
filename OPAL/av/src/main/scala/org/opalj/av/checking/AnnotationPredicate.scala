@@ -41,7 +41,7 @@ case object AnyAnnotation extends AnnotationPredicate {
  * ==Example==
  * {{{
  * scala> import org.opalj.br._
- * scala> val foo = ObjectType("java/lang/Foo")
+ * scala> val foo = ClassType("java/lang/Foo")
  * scala> val aw = org.opalj.av.checking.AnnotatedWith(foo)
  * aw: org.opalj.av.checking.AnnotatedWith = @java.lang.Foo
  * scala> aw(Annotation(foo,IndexedSeq(ElementValuePair("clazz",StringValue(" ")))))
@@ -71,7 +71,7 @@ case class HasAnnotation(annotationType: FieldType) extends AnnotationPredicate 
 object HasAnnotation {
 
     def apply(annotationType: String): HasAnnotation = {
-        new HasAnnotation(ObjectType(annotationType.replace('.', '/')))
+        new HasAnnotation(ClassType(annotationType.replace('.', '/')))
     }
 }
 
@@ -83,7 +83,7 @@ object HasAnnotation {
  * {{{
  * scala> import org.opalj.br._
  * scala> import org.opalj.av.checking._
- * scala> val foo = ObjectType("java/lang/Foo")
+ * scala> val foo = ClassType("java/lang/Foo")
  *
  * scala> val am = AnnotationPredicate("java.lang.Foo",Map("clazz" -> StringValue("")))
  * am: org.opalj.av.checking.AnnotationPredicate = @java.lang.Foo(clazz="")
@@ -97,7 +97,7 @@ object HasAnnotation {
  * scala> val am = DefaultAnnotationPredicate("java.lang.Foo",IndexedSeq.empty)
  * am: org.opalj.av.checking.DefaultAnnotationPredicate = @java.lang.Foo()
  *
- * scala> am(Annotation(ObjectType("java/lang/Foo"),IndexedSeq(ElementValuePair("clazz",StringValue(" ")))))
+ * scala> am(Annotation(ClassType("java/lang/Foo"),IndexedSeq(ElementValuePair("clazz",StringValue(" ")))))
  * res: Boolean = false
  * }}}
  *
@@ -172,7 +172,7 @@ object AnnotatedWith {
         elementValuePairs:  ElementValuePairs
     ): AnnotatedWith = {
 
-        val annotationType = ObjectType(annotationTypeName.asString)
+        val annotationType = ClassType(annotationTypeName.asString)
         new AnnotatedWith(annotationType, elementValuePairs)
     }
 
@@ -181,7 +181,7 @@ object AnnotatedWith {
         elementValuePairs:  Map[String, ElementValue]
     ): AnnotatedWith = {
         new AnnotatedWith(
-            ObjectType(annotationTypeName.asString),
+            ClassType(annotationTypeName.asString),
             elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2)).toSeq
         )
     }
@@ -190,7 +190,7 @@ object AnnotatedWith {
         elementValuePairs:  (String, ElementValue)*
     ): AnnotatedWith = {
         new AnnotatedWith(
-            ObjectType(annotationTypeName.asString),
+            ClassType(annotationTypeName.asString),
             elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2)).toSeq
         )
     }

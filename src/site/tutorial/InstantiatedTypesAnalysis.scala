@@ -2,7 +2,7 @@ import java.net.URL
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -44,7 +44,7 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
     final type Self = InstantiatedTypes
 }
 
-case class InstantiatedTypes(classes: UIDSet[ObjectType]) extends InstantiatedTypesPropertyMetaInformation with OrderedProperty {
+case class InstantiatedTypes(classes: UIDSet[ClassType]) extends InstantiatedTypesPropertyMetaInformation with OrderedProperty {
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
         if (!classes.subsetOf(other.classes)) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")

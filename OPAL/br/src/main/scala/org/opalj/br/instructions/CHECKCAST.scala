@@ -18,7 +18,7 @@ case class CHECKCAST(
 
     final def mnemonic: String = "checkcast"
 
-    final def jvmExceptions: List[ObjectType] = CHECKCAST.jvmExceptions
+    final def jvmExceptions: List[ClassType] = CHECKCAST.jvmExceptions
 
     final def mayThrowExceptions: Boolean = true
 
@@ -53,7 +53,7 @@ case class CHECKCAST(
         if (regularSuccessorsOnly)
             List(indexOfNextInstruction(currentPC))
         else
-            Instruction.nextInstructionOrExceptionHandler(this, currentPC, ObjectType.ClassCastException)
+            Instruction.nextInstructionOrExceptionHandler(this, currentPC, ClassType.ClassCastException)
     }
 
     final def expressionResult: Stack.type = Stack
@@ -73,7 +73,7 @@ object CHECKCAST extends InstructionMetaInformation {
 
     final val opcode = 192
 
-    val jvmExceptions = List(ObjectType.ClassCastException)
+    val jvmExceptions = List(ClassType.ClassCastException)
 
     /**
      * Factory method to create [[CHECKCAST]] instructions.

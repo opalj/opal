@@ -299,7 +299,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                 inSet.iterator.collect {
                     // When we know the array's type, we also know the type of the loaded element.
                     case VariableType(index, t, upperBound)
-                        if isArrayOfObjectType(t) &&
+                        if isArrayOfClassType(t) &&
                             expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) =>
                         VariableType(statementIndex, t.asArrayType.elementType.asReferenceType, upperBound)
                 }
@@ -317,20 +317,20 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
     }
 
     /**
-     * Checks, if some type is an array type containing an object type.
+     * Checks, if some type is an array type containing a class type.
      *
      * @param t The type to be checked.
-     * @param includeObjectType If true, this method also returns true if `t` is an object type
+     * @param includeClassType If true, this method also returns true if `t` is a class type
      *                          itself.
      *
-     * @return True, if `t` is an array type of an object type.
+     * @return True, if `t` is an array type of a class type.
      */
-    @tailrec private def isArrayOfObjectType(
-        t:                 FieldType,
-        includeObjectType: Boolean = false
+    @tailrec private def isArrayOfClassType(
+        t:                FieldType,
+        includeClassType: Boolean = false
     ): Boolean = {
-        if (t.isArrayType) isArrayOfObjectType(t.asArrayType.elementType, includeObjectType = true)
-        else if (t.isObjectType && includeObjectType) true
+        if (t.isArrayType) isArrayOfClassType(t.asArrayType.elementType, includeClassType = true)
+        else if (t.isClassType && includeClassType) true
         else false
     }
 

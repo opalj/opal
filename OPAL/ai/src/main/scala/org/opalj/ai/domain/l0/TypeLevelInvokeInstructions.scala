@@ -5,8 +5,8 @@ package domain
 package l0
 
 import org.opalj.br.BootstrapMethod
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 
 /**
@@ -35,7 +35,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     /*override*/
     def invokeinterface(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -46,7 +46,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     /*override*/
     def invokespecial(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -58,7 +58,7 @@ trait TypeLevelInvokeInstructions extends MethodCallsHandling {
     /*override*/
     def invokestatic(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,

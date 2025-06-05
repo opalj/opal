@@ -7,7 +7,7 @@ import java.io.File
 
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.log.GlobalLogContext
 
 /**
@@ -20,7 +20,7 @@ import org.opalj.log.GlobalLogContext
 object ClassHierarchyExtractor {
 
     def deriveSpecification(
-        types: Iterable[ObjectType]
+        types: Iterable[ClassType]
     )(
         implicit classHierarchy: ClassHierarchy
     ): String = {
@@ -66,7 +66,7 @@ object ClassHierarchyExtractor {
             classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
         }
         implicit val classHierarchy: ClassHierarchy =
-            if (classFiles.forall(cf => cf.thisType != ObjectType.Object)) {
+            if (classFiles.forall(cf => cf.thisType != ClassType.Object)) {
                 println("the class files do not contain java.lang.Object; adding default type hierarchy")
                 // load pre-configured class hierarchy...
                 ClassHierarchy(classFiles)(GlobalLogContext)
@@ -74,7 +74,7 @@ object ClassHierarchyExtractor {
                 ClassHierarchy(classFiles, Seq.empty)(GlobalLogContext)
             }
 
-        val supertype = ObjectType(supertypeName)
+        val supertype = ClassType(supertypeName)
         if (classHierarchy.isUnknown(supertype)) {
             err.println(s"The type: $supertypeName is not defined in the specified jar(s).")
             sys.exit(-2)

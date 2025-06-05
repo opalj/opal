@@ -117,7 +117,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
          * @param classFile The class file containing the `INVOKESPECIAL` instruction.
          * @param constructor The method containing the `INVOKESPECIAL` instruction.
          * @param pc The `PC` of the `INVOKESPECIAL` instruction.
-         * @param declaringClass The object type referenced by the `INVOKESPECIAL`.
+         * @param declaringClass The class type referenced by the `INVOKESPECIAL`.
          * @param name The method name referenced by the `INVOKESPECIAL`.
          * @param descriptor The method signature referenced by the `INVOKESPECIAL`.
          * @return The referenced `Method` or `None`.
@@ -126,7 +126,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
             classFile:      ClassFile,
             constructor:    Method,
             pc:             PC,
-            declaringClass: ObjectType,
+            declaringClass: ClassType,
             name:           String,
             descriptor:     MethodDescriptor
         ): Option[Method] = {

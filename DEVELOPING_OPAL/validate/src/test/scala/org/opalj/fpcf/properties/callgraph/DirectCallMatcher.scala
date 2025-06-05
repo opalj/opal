@@ -8,13 +8,13 @@ import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ArrayValue
+import org.opalj.br.ClassType
 import org.opalj.br.ClassValue
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
@@ -24,12 +24,12 @@ import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 
 class DirectCallMatcher extends AbstractRepeatablePropertyMatcher {
-    override val singleAnnotationType: ObjectType = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCall")
-    override val containerAnnotationType: ObjectType = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCalls")
+    override val singleAnnotationType: ClassType = ClassType("org/opalj/fpcf/properties/callgraph/DirectCall")
+    override val containerAnnotationType: ClassType = ClassType("org/opalj/fpcf/properties/callgraph/DirectCalls")
 
     override def validateSingleProperty(
         p:          Project[_],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -37,7 +37,7 @@ class DirectCallMatcher extends AbstractRepeatablePropertyMatcher {
         // Get call graph analyses for which this annotation applies.
         val analysesElementValues: Seq[ElementValue] =
             getValue(p, singleAnnotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         // If none of the annotated analyses match the executed ones, return...
         // If the list of specified analyses is empty, we assume the annotation applies to all

@@ -7,8 +7,8 @@ package taint
 
 import java.io.File
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -53,7 +53,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      */
     override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
         p.allProjectClassFiles.flatMap {
-            case cf if cf.thisType == ObjectType.Class =>
+            case cf if cf.thisType == ClassType.Class =>
                 cf.methods.collect {
                     case m if m.name == "forName" => (m, new IFDSFact(Variable(-2)))
                 }

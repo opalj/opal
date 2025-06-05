@@ -25,7 +25,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     test("test that it can find the first constructor") {
         assert(
-            immutableList.findMethod("<init>", MethodDescriptor(ObjectType.Object, VoidType)).isDefined
+            immutableList.findMethod("<init>", MethodDescriptor(ClassType.Object, VoidType)).isDefined
         )
     }
 
@@ -33,7 +33,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         assert(
             immutableList.findMethod(
                 "<init>",
-                MethodDescriptor(ArraySeq(ObjectType.Object, ObjectType("code/ImmutableList")), VoidType)
+                MethodDescriptor(ArraySeq(ClassType.Object, ClassType("code/ImmutableList")), VoidType)
             ).isDefined
         )
     }
@@ -46,26 +46,26 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         assert(
             immutableList.findMethod(
                 "getNext",
-                MethodDescriptor(NoFieldTypes, ObjectType("code/ImmutableList"))
+                MethodDescriptor(NoFieldTypes, ClassType("code/ImmutableList"))
             ).isDefined
         )
 
         assert(
             immutableList.findMethod(
                 "prepend",
-                MethodDescriptor(ObjectType.Object, ObjectType("code/ImmutableList"))
+                MethodDescriptor(ClassType.Object, ClassType("code/ImmutableList"))
             ).isDefined
         )
 
         assert(
             immutableList.findMethod(
                 "getIterator",
-                MethodDescriptor(NoFieldTypes, ObjectType("java/util/Iterator"))
+                MethodDescriptor(NoFieldTypes, ClassType("java/util/Iterator"))
             ).isDefined
         )
 
         assert(
-            immutableList.findMethod("get", MethodDescriptor(NoFieldTypes, ObjectType.Object)).isDefined
+            immutableList.findMethod("get", MethodDescriptor(NoFieldTypes, ClassType.Object)).isDefined
         )
 
         assert(immutableList.instanceMethods.size == 4)
@@ -99,25 +99,25 @@ class ClassFileTest extends AnyFunSuite with Matchers {
     }
 
     lazy val innerclassesProject = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature.jar")
-    lazy val outerClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass")).get
+    lazy val outerClass = innerclassesProject.classFile(ClassType("innerclasses/MyRootClass")).get
     lazy val innerPrinterOfXClass =
-        innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")).get
-    lazy val formatterClass = innerclassesProject.classFile(ObjectType("innerclasses/MyRootClass$Formatter")).get
+        innerclassesProject.classFile(ClassType("innerclasses/MyRootClass$InnerPrinterOfX")).get
+    lazy val formatterClass = innerclassesProject.classFile(ClassType("innerclasses/MyRootClass$Formatter")).get
 
     test("that all direct nested classes of a top-level class are correctly identified") {
         outerClass.nestedClasses(innerclassesProject).toSet should be(Set(
-            ObjectType("innerclasses/MyRootClass$1"),
-            ObjectType("innerclasses/MyRootClass$1MyInnerPrinter"),
-            ObjectType("innerclasses/MyRootClass$2"),
-            ObjectType("innerclasses/MyRootClass$Formatter"),
-            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX")
+            ClassType("innerclasses/MyRootClass$1"),
+            ClassType("innerclasses/MyRootClass$1MyInnerPrinter"),
+            ClassType("innerclasses/MyRootClass$2"),
+            ClassType("innerclasses/MyRootClass$Formatter"),
+            ClassType("innerclasses/MyRootClass$InnerPrinterOfX")
         ))
     }
 
     test("that all direct nested classes of a member class are correctly identified") {
         innerPrinterOfXClass.nestedClasses(innerclassesProject).toSet should be(Set(
-            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$1"),
-            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter")
+            ClassType("innerclasses/MyRootClass$InnerPrinterOfX$1"),
+            ClassType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter")
         ))
     }
 
@@ -127,19 +127,19 @@ class ClassFileTest extends AnyFunSuite with Matchers {
 
     test("that all direct and indirect nested classes of a top-level class are correctly identified") {
         val expectedNestedTypes = Set(
-            ObjectType("innerclasses/MyRootClass$2"),
-            ObjectType("innerclasses/MyRootClass$Formatter"),
-            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX"),
-            ObjectType("innerclasses/MyRootClass$1"),
-            ObjectType("innerclasses/MyRootClass$1MyInnerPrinter"),
-            ObjectType("innerclasses/MyRootClass$1$InnerPrinterOfAnonymousClass"),
-            ObjectType("innerclasses/MyRootClass$1$1"),
-            ObjectType("innerclasses/MyRootClass$1$1$1"),
-            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter"),
-            ObjectType("innerclasses/MyRootClass$InnerPrinterOfX$1")
+            ClassType("innerclasses/MyRootClass$2"),
+            ClassType("innerclasses/MyRootClass$Formatter"),
+            ClassType("innerclasses/MyRootClass$InnerPrinterOfX"),
+            ClassType("innerclasses/MyRootClass$1"),
+            ClassType("innerclasses/MyRootClass$1MyInnerPrinter"),
+            ClassType("innerclasses/MyRootClass$1$InnerPrinterOfAnonymousClass"),
+            ClassType("innerclasses/MyRootClass$1$1"),
+            ClassType("innerclasses/MyRootClass$1$1$1"),
+            ClassType("innerclasses/MyRootClass$InnerPrinterOfX$InnerPrettyPrinter"),
+            ClassType("innerclasses/MyRootClass$InnerPrinterOfX$1")
         )
 
-        var foundNestedTypes: Set[ObjectType] = Set.empty
+        var foundNestedTypes: Set[ClassType] = Set.empty
         outerClass.foreachNestedClass({ nc => foundNestedTypes += nc.thisType })(innerclassesProject)
 
         foundNestedTypes.size should be(expectedNestedTypes.size)
@@ -181,9 +181,9 @@ class ClassFileTest extends AnyFunSuite with Matchers {
     test("that it is possible to get the inner classes information for batik-AbstractJSVGComponent.jar") {
         val resources = locateTestResources("classfiles/batik-AbstractJSVGComponent.jar", "bi")
         val nestedTypeInformation = testJARFile(resources)
-        val o = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent")
-        val o$1 = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1")
-        val o$1$q = ObjectType("org/apache/batik/swing/svg/AbstractJSVGComponent$1$Query")
+        val o = ClassType("org/apache/batik/swing/svg/AbstractJSVGComponent")
+        val o$1 = ClassType("org/apache/batik/swing/svg/AbstractJSVGComponent$1")
+        val o$1$q = ClassType("org/apache/batik/swing/svg/AbstractJSVGComponent$1$Query")
         nestedTypeInformation(o) should contain(o$1)
         nestedTypeInformation(o$1) should be(Symbol("Empty")) // the jar contains inconsistent code...
         nestedTypeInformation(o$1$q) should be(Symbol("Empty"))
@@ -192,9 +192,9 @@ class ClassFileTest extends AnyFunSuite with Matchers {
     test("that it is possible to get the inner classes information for batik-DOMViewer 1.7.jar") {
         val resources = locateTestResources("classfiles/batik-DOMViewer 1.7.jar", "bi")
         val nestedTypeInformation = testJARFile(resources)
-        val D$Panel = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$Panel")
-        val D$2 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$2")
-        val D$3 = ObjectType("org/apache/batik/apps/svgbrowser/DOMViewer$3")
+        val D$Panel = ClassType("org/apache/batik/apps/svgbrowser/DOMViewer$Panel")
+        val D$2 = ClassType("org/apache/batik/apps/svgbrowser/DOMViewer$2")
+        val D$3 = ClassType("org/apache/batik/apps/svgbrowser/DOMViewer$3")
         nestedTypeInformation(D$Panel) should contain(D$2)
         nestedTypeInformation(D$2) should contain(D$3)
         nestedTypeInformation(D$3) should be(Symbol("Empty"))

@@ -8,7 +8,7 @@ package immutability
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -85,7 +85,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
      * Creates a result object that sets this type and all subclasses of if to the given immutability rating.
      */
     @inline private[this] def createResultForAllSubtypes(
-        t:            ObjectType,
+        t:            ClassType,
         immutability: ClassImmutability
     ): MultiResult = {
         val allSubtypes = classHierarchy.allSubclassTypes(t, reflexive = true)
@@ -93,7 +93,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         MultiResult(r)
     }
     @inline private[this] def createIncrementalResult(
-        t:                     ObjectType,
+        t:                     ClassType,
         cfImmutability:        EOptionP[Entity, Property],
         cfImmutabilityIsFinal: Boolean,
         result:                ProperPropertyComputationResult
@@ -124,14 +124,14 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /*
      * If the type is transitively immutable the class itself is also transitively immutable.
      */
-    val defaultTransitivelyImmutableTypes: Set[ObjectType] = project.config.getStringList(
+    val defaultTransitivelyImmutableTypes: Set[ClassType] = project.config.getStringList(
         "org.opalj.fpcf.analyses.TypeImmutabilityAnalysis.defaultTransitivelyImmutableTypes"
-    ).toArray().toList.map(s => ObjectType(s.asInstanceOf[String])).toSet
+    ).toArray().toList.map(s => ClassType(s.asInstanceOf[String])).toSet
 
     def doDetermineClassImmutability(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case t: ObjectType =>
-                if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
+            case t: ClassType =>
+                if (defaultTransitivelyImmutableTypes.contains(t.asClassType))
                     return Result(t, TransitivelyImmutableClass)
                 // this is safe
                 classHierarchy.superclassType(t) match {
@@ -146,7 +146,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                         propertyStore(superClassType, ClassImmutability.key) match {
                             case UBP(MutableClass) =>
                                 Result(t, MutableClass)
-                            case eps: EPS[ObjectType, ClassImmutability] =>
+                            case eps: EPS[ClassType, ClassImmutability] =>
                                 determineClassImmutability(
                                     superClassType,
                                     eps,
@@ -163,7 +163,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                         }
                 }
             case _ =>
-                val m = e.getClass.getSimpleName + " is not an org.opalj.br.ObjectType"
+                val m = e.getClass.getSimpleName + " is not an org.opalj.br.ClassType"
                 throw new IllegalArgumentException(m)
         }
     }
@@ -178,7 +178,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
      *      the mutability is either unknown, immutable or (at least) conditionally immutable.
      */
     def determineClassImmutability(
-        superClassType:                ObjectType,
+        superClassType:                ClassType,
         superClassInformation:         EOptionP[Entity, Property],
         superClassImmutabilityIsFinal: Boolean,
         lazyComputation:               Boolean
@@ -381,7 +381,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
         // 1.1
         // java.lang.Object is by definition transitively immutable.
-        set(ObjectType.Object, TransitivelyImmutableClass)
+        set(ClassType.Object, TransitivelyImmutableClass)
 
         // 1.2
         // All (instances of) interfaces are (by their very definition) also transitively immutable.
@@ -394,7 +394,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         // But, for classes that directly inherit from Object, but which also
         // implement unknown interface types it is possible to compute the class
         // immutability
-        val unexpectedRootClassTypes = rootClassTypesIterator.filter(rt => rt ne ObjectType.Object)
+        val unexpectedRootClassTypes = rootClassTypesIterator.filter(rt => rt ne ClassType.Object)
 
         unexpectedRootClassTypes foreach { rt =>
             allSubtypes(rt, reflexive = true) foreach { ot =>
@@ -406,7 +406,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         // Compute the initial set of classes for which we want to determine the mutability.
         var cfs: List[ClassFile] = Nil
         classHierarchy
-            .directSubclassesOf(ObjectType.Object)
+            .directSubclassesOf(ClassType.Object)
             .iterator
             .map(ot => (ot, project.classFile(ot)))
             .foreach {
@@ -456,7 +456,7 @@ object EagerClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler
         ps.scheduleEagerComputationsForEntities(cfs)(
             analysis.determineClassImmutability(
                 superClassType = null,
-                FinalEP(ObjectType.Object, TransitivelyImmutableClass),
+                FinalEP(ClassType.Object, TransitivelyImmutableClass),
                 superClassImmutabilityIsFinal = true,
                 lazyComputation = false
             )

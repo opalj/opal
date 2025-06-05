@@ -19,7 +19,7 @@ case class Module(
     requires:    ArraySeq[Requires],
     exports:     ArraySeq[Exports],
     opens:       ArraySeq[Opens],
-    uses:        ArraySeq[ObjectType],
+    uses:        ArraySeq[ClassType],
     provides:    ArraySeq[Provides]
 ) extends Attribute {
 
@@ -81,7 +81,7 @@ case class Opens(opens: String, flags: Int, toPackages: ArraySeq[String]) {
 
 }
 
-case class Provides(provides: ObjectType, withInterfaces: ArraySeq[ObjectType]) {
+case class Provides(provides: ClassType, withInterfaces: ArraySeq[ClassType]) {
 
     def toJava: String = {
         val withInterfaces =

@@ -110,8 +110,8 @@ sealed trait Type extends UIDValue with Ordered[Type] {
     def isBooleanType: Boolean = false
 
     /**
-     * Returns `true` if this type is a reference type; that is, an array type or an
-     * object type (class/interface type).
+     * Returns `true` if this type is a reference type; that is, an array type or a
+     * class type (class/interface).
      *
      * @note
      * In general, we can distinguish the following three categories of types:
@@ -121,7 +121,7 @@ sealed trait Type extends UIDValue with Ordered[Type] {
      */
     def isReferenceType: Boolean = false
     def isArrayType: Boolean = false
-    def isObjectType: Boolean = false
+    def isClassType: Boolean = false
     def isNumericType: Boolean = false
     def isIntLikeType: Boolean = false
 
@@ -149,9 +149,9 @@ sealed trait Type extends UIDValue with Ordered[Type] {
         throw new ClassCastException(this.toJava + " cannot be cast to an ArrayType");
     }
 
-    @throws[ClassCastException]("if this type is not an object type")
-    def asObjectType: ObjectType = {
-        throw new ClassCastException(this.toJava + " cannot be cast to an ObjectType");
+    @throws[ClassCastException]("if this type is not a class type")
+    def asClassType: ClassType = {
+        throw new ClassCastException(this.toJava + " cannot be cast to a ClassType");
     }
 
     @throws[ClassCastException]("if this type is not a base type")
@@ -287,7 +287,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     final val id = Int.MinValue
 
-    final def WrapperType: ObjectType = ObjectType.Void
+    final def WrapperType: ClassType = ClassType.Void
 
     override final def isVoidType: Boolean = true
 
@@ -350,7 +350,7 @@ object FieldType {
             case 'J' => LongType
             case 'S' => ShortType
             case 'Z' => BooleanType
-            case 'L' => ObjectType(ft.substring(1, ft.length - 1))
+            case 'L' => ClassType(ft.substring(1, ft.length - 1))
             case '[' => ArrayType(FieldType(ft.substring(1)))
             case _   => throw new IllegalArgumentException(ft + " is not a valid field type descriptor")
         }
@@ -368,14 +368,14 @@ sealed abstract class ReferenceType extends FieldType {
     override final def operandSize: Int = 1
 
     /**
-     * Returns the most precise object type that represents this reference type. In
-     * case of an `ArrayType`, the `ObjectType` of `java.lang.Object` is returned;
-     * other the current `ObjectType`.
+     * Returns the most precise class type that represents this reference type. In
+     * case of an `ArrayType`, the `ClassType` of `java.lang.Object` is returned;
+     * other the current `ClassType`.
      */
-    def mostPreciseObjectType: ObjectType
+    def mostPreciseClassType: ClassType
 
     /**
-     * Each reference type is associated with a unique id. Object types get ids &gt;= 0
+     * Each reference type is associated with a unique id. Class types get ids &gt;= 0
      * and array types get ids &lt; 0.
      */
     def id: Int
@@ -391,7 +391,7 @@ object ReferenceType {
      * Enables the reverse lookup of a ReferenceType given a ReferenceType's id.
      */
     def lookup(id: Int): ReferenceType = {
-        if (id >= 0) ObjectType.lookup(id)
+        if (id >= 0) ClassType.lookup(id)
         else ArrayType.lookup(id)
     }
 
@@ -400,7 +400,7 @@ object ReferenceType {
      * types, which are kept in memory for performance reasons.
      */
     def flushTypeCache(): Unit = {
-        ObjectType.flushTypeCache()
+        ClassType.flushTypeCache()
         ArrayType.flushTypeCache()
     }
 
@@ -420,7 +420,7 @@ object ReferenceType {
         if (rt.charAt(0) == '[')
             ArrayType(FieldType(rt.substring(1)))
         else
-            ObjectType(rt)
+            ClassType(rt)
     }
 }
 
@@ -440,7 +440,7 @@ sealed trait BaseType extends FieldType with TypeSignature {
      */
     def atype: Int
 
-    val WrapperType: ObjectType
+    val WrapperType: ClassType
 
     def boxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T
 
@@ -449,7 +449,7 @@ sealed trait BaseType extends FieldType with TypeSignature {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        if ((targetType eq WrapperType) || (targetType eq ObjectType.Object)) {
+        if ((targetType eq WrapperType) || (targetType eq ClassType.Object)) {
             boxValue
         } else {
             val message = s"adaptation of ${this.toJava} to $targetType is not supported"
@@ -578,7 +578,7 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     final val id = Int.MinValue + atype
 
-    final val WrapperType = ObjectType.Byte
+    final val WrapperType = ClassType.Byte
 
     override final def isByteType: Boolean = true
 
@@ -626,7 +626,7 @@ sealed abstract class CharType private () extends IntLikeType {
 
     final val id = Int.MinValue + atype
 
-    final val WrapperType = ObjectType.Character
+    final val WrapperType = ClassType.Character
 
     override final def isCharType: Boolean = true
 
@@ -685,7 +685,7 @@ sealed abstract class DoubleType private () extends NumericType {
 
     override def toJVMTypeName: String = "D"
 
-    final val WrapperType = ObjectType.Double
+    final val WrapperType = ClassType.Double
 
     override def toJavaClass: java.lang.Class[_] =
         java.lang.Double.TYPE
@@ -726,7 +726,7 @@ sealed abstract class FloatType private () extends NumericType {
 
     final val id = Int.MinValue + atype
 
-    final val WrapperType = ObjectType.Float
+    final val WrapperType = ClassType.Float
 
     override final def isFloatType: Boolean = true
 
@@ -779,7 +779,7 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     final val id = Int.MinValue + atype
 
-    final val WrapperType = ObjectType.Short
+    final val WrapperType = ClassType.Short
 
     override final def isShortType: Boolean = true
 
@@ -827,7 +827,7 @@ sealed abstract class IntegerType private () extends IntLikeType {
 
     final val id = Int.MinValue + atype
 
-    final val WrapperType = ObjectType.Integer
+    final val WrapperType = ClassType.Integer
 
     override final def isIntegerType: Boolean = true
 
@@ -879,7 +879,7 @@ sealed abstract class LongType private () extends NumericType {
 
     final val id = Int.MinValue + atype
 
-    final val WrapperType = ObjectType.Long
+    final val WrapperType = ClassType.Long
 
     override final def isLongType: Boolean = true
 
@@ -939,7 +939,7 @@ sealed abstract class BooleanType private () extends BaseType with CTIntType {
 
     final val id = Int.MinValue + atype
 
-    final val WrapperType = ObjectType.Boolean
+    final val WrapperType = ClassType.Boolean
 
     override final def isBooleanType: Boolean = true
 
@@ -963,36 +963,36 @@ sealed abstract class BooleanType private () extends BaseType with CTIntType {
 case object BooleanType extends BooleanType
 
 /**
- * Represents an `ObjectType`.
+ * Represents an `ClassType`.
  *
  * @param id The unique id associated with this type.
  * @param fqn The fully qualified name of the class or interface in binary notation
  *      (e.g. "java/lang/Object").
  */
-final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
+final class ClassType private ( // DO NOT MAKE THIS A CASE CLASS!
     final val id:  Int,
     final val fqn: String
 ) extends ReferenceType {
 
-    assert(fqn.indexOf('.') == -1, s"invalid object type name: $fqn")
+    assert(fqn.indexOf('.') == -1, s"invalid class type name: $fqn")
 
-    final val packageName: String = ObjectType.packageName(fqn).intern()
+    final val packageName: String = ClassType.packageName(fqn).intern()
 
-    override def isObjectType: Boolean = true
+    override def isClassType: Boolean = true
 
-    override def asObjectType: ObjectType = this
+    override def asClassType: ClassType = this
 
-    override def mostPreciseObjectType: ObjectType = this
+    override def mostPreciseClassType: ClassType = this
 
     @inline final def isPrimitiveTypeWrapper: Boolean = {
         val thisId = this.id
-        thisId <= ObjectType.javaLangDoubleId && thisId >= ObjectType.javaLangBooleanId
+        thisId <= ClassType.javaLangDoubleId && thisId >= ClassType.javaLangBooleanId
     }
 
     final def isPrimitiveTypeWrapperOf(baseType: BaseType): Boolean =
-        isPrimitiveTypeWrapper && (ObjectType.primitiveType(this).get eq baseType)
+        isPrimitiveTypeWrapper && (ClassType.primitiveType(this).get eq baseType)
 
-    def simpleName: String = ObjectType.simpleName(fqn)
+    def simpleName: String = ClassType.simpleName(fqn)
 
     override def toJava: String = fqn.replace('/', '.')
 
@@ -1001,7 +1001,7 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def toJavaClass: java.lang.Class[_] = classOf[Type].getClassLoader().loadClass(toJava)
 
     def unboxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
-        ObjectType.unboxValue(this)
+        ClassType.unboxValue(this)
     }
 
     override def adapt[T](
@@ -1009,78 +1009,78 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        ObjectType.unboxValue(targetType)
+        ClassType.unboxValue(targetType)
     }
 
-    def isASubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Answer = {
+    def isASubtypeOf(that: ClassType)(implicit classHierarchy: ClassHierarchy): Answer = {
         classHierarchy.isASubtypeOf(this, that)
     }
 
-    def isSubtypeOf(that: ObjectType)(implicit classHierarchy: ClassHierarchy): Boolean = {
+    def isSubtypeOf(that: ClassType)(implicit classHierarchy: ClassHierarchy): Boolean = {
         classHierarchy.isSubtypeOf(this, that)
     }
 
     // The default equals and hashCode methods are a perfect fit.
 
-    override def toString: String = "ObjectType(" + fqn + ")"
+    override def toString: String = "ClassType(" + fqn + ")"
 
 }
 
 /**
- * Defines factory and extractor methods for `ObjectType`s.
+ * Defines factory and extractor methods for `ClassType`s.
  *
  * @author Michael Eichberg
  */
-object ObjectType {
+object ClassType {
 
     // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
-    @volatile private[this] var objectTypes: Array[ObjectType] = new Array[ObjectType](0)
+    @volatile private[this] var classTypes: Array[ClassType] = new Array[ClassType](0)
 
-    private[this] def updateObjectTypes(): Unit = {
-        if (nextId.get > objectTypes.length) {
-            val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get)
+    private[this] def updateClassTypes(): Unit = {
+        if (nextId.get > classTypes.length) {
+            val newClassTypes = JArrays.copyOf(this.classTypes, nextId.get)
             cacheRWLock.readLock().lock()
             try {
                 cache.values.forEach { wot =>
                     val ot = wot.get
-                    if (ot != null && ot.id < newObjectTypes.length) {
-                        newObjectTypes(ot.id) = ot
+                    if (ot != null && ot.id < newClassTypes.length) {
+                        newClassTypes(ot.id) = ot
                     }
                 }
             } finally {
                 cacheRWLock.readLock().unlock()
             }
-            this.objectTypes = newObjectTypes
+            this.classTypes = newClassTypes
         }
     }
 
     /**
-     * Enables the reverse lookup of an ObjectType given an ObjectType's id.
+     * Enables the reverse lookup of a ClassType given a ClassType's id.
      */
-    def lookup(id: Int): ObjectType = {
-        var objectTypes = this.objectTypes
-        if (id < objectTypes.length) {
-            val ot = objectTypes(id)
+    def lookup(id: Int): ClassType = {
+        var classTypes = this.classTypes
+        if (id < classTypes.length) {
+            val ot = classTypes(id)
             if (ot == null) throw new IllegalArgumentException(s"$id is unknown")
             ot
         } else {
             // Let's check if the type was created in the meantime!
-            updateObjectTypes()
-            objectTypes = this.objectTypes
-            if (id < objectTypes.length) {
-                val ot = objectTypes(id)
+            updateClassTypes()
+            classTypes = this.classTypes
+            if (id < classTypes.length) {
+                val ot = classTypes(id)
                 if (ot == null) throw new IllegalArgumentException(s"$id is unknown")
                 ot
             } else {
                 throw new IllegalArgumentException(
-                    s"$id belongs to ObjectType created after the creation of the lookup map"
+                    s"$id belongs to ClassType created after the creation of the lookup map"
                 )
             }
         }
     }
 
     /**
-     *  Flushes the global cache for ObjectType instances. This does not include the predefined types,
+     *  Flushes the global cache for ClassType instances. This does not include the predefined types,
      *  which are kept in memory for performance reasons.
      */
     def flushTypeCache(): Unit = {
@@ -1090,17 +1090,17 @@ object ObjectType {
 
         // First we need to write all cached new types to the actual array, otherwise
         // we might delete the predefined types
-        updateObjectTypes()
+        updateClassTypes()
 
         try {
             // Clear the entire cache
             cache.clear()
 
-            // Truncate the ObjectType cache array to lose all not-predefined ObjectTypes
-            objectTypes = JArrays.copyOf(objectTypes, highestPredefinedTypeId + 1)
+            // Truncate the ClassType cache array to lose all not-predefined ClassTypes
+            classTypes = JArrays.copyOf(classTypes, highestPredefinedTypeId + 1)
 
-            // Refill the cache using the objectTypes array
-            objectTypes.foreach { ot => cache.put(ot.fqn, new WeakReference[ObjectType](ot)) }
+            // Refill the cache using the classTypes array
+            classTypes.foreach { ot => cache.put(ot.fqn, new WeakReference[ClassType](ot)) }
 
             // Reset ID counter to highest id in the cache
             nextId.set(highestPredefinedTypeId + 1)
@@ -1112,23 +1112,23 @@ object ObjectType {
 
     private[this] val nextId = new AtomicInteger(0)
     private[this] val cacheRWLock = new ReentrantReadWriteLock();
-    private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
+    private[this] val cache = new WeakHashMap[String, WeakReference[ClassType]]()
 
-    @volatile private[this] var objectTypeCreationListener: ObjectType => Unit = null
+    @volatile private[this] var classTypeCreationListener: ClassType => Unit = null
 
     /**
      * Sets the listener and immediately calls it (multiple times) to inform the listener
-     * about all known object types. It is guaranteed that the listener will not miss any
-     * object type creation. However, invocation may occur concurrently.
+     * about all known class types. It is guaranteed that the listener will not miss any
+     * class type creation. However, invocation may occur concurrently.
      */
-    def setObjectTypeCreationListener(f: ObjectType => Unit): Unit = {
+    def setClassTypeCreationListener(f: ClassType => Unit): Unit = {
         cacheRWLock.readLock().lock()
         try {
-            objectTypeCreationListener = f
-            val objectTypesIterator = cache.values().iterator()
-            while (objectTypesIterator.hasNext) {
-                val objectType = objectTypesIterator.next.get()
-                if (objectType ne null) f(objectType)
+            classTypeCreationListener = f
+            val classTypesIterator = cache.values().iterator()
+            while (classTypesIterator.hasNext) {
+                val classType = classTypesIterator.next.get()
+                if (classType ne null) f(classType)
             }
         } finally {
             cacheRWLock.readLock().unlock()
@@ -1136,21 +1136,21 @@ object ObjectType {
     }
 
     /**
-     * The number of different `ObjectType`s that were created.
+     * The number of different `ClassType`s that were created.
      */
-    def objectTypesCount = nextId.get
+    def classTypesCount = nextId.get
 
     /**
-     * Factory method to create `ObjectType`s.
+     * Factory method to create `ClassType`s.
      *
      * @param  fqn The fully qualified name of a class or interface type in
      *         binary notation.
-     * @note   `ObjectType` objects are cached internally to reduce the overall memory
-     *         requirements and to ensure that only one instance of an `ObjectType` exists
-     *         per fully qualified name. Hence, comparing `ObjectTypes` using reference
+     * @note   `ClassType` objects are cached internally to reduce the overall memory
+     *         requirements and to ensure that only one instance of an `ClassType` exists
+     *         per fully qualified name. Hence, comparing `ClassTypes` using reference
      *         comparison is explicitly supported.
      */
-    def apply(fqn: String): ObjectType = {
+    def apply(fqn: String): ClassType = {
         assert(!fqn.endsWith(";")) // Catch errors where we accidentally use a JVMTypeName instead
 
         val readLock = cacheRWLock.readLock()
@@ -1178,19 +1178,19 @@ object ObjectType {
                     return OT;
             }
 
-            val newOT = new ObjectType(nextId.getAndIncrement(), fqn)
+            val newOT = new ClassType(nextId.getAndIncrement(), fqn)
             val wrNewOT = new WeakReference(newOT)
             cache.put(fqn, wrNewOT)
-            val currentObjectTypeCreationListener = objectTypeCreationListener
-            if (currentObjectTypeCreationListener ne null)
-                currentObjectTypeCreationListener(newOT)
+            val currentClassTypeCreationListener = classTypeCreationListener
+            if (currentClassTypeCreationListener ne null)
+                currentClassTypeCreationListener(newOT)
             newOT
         } finally {
             writeLock.unlock()
         }
     }
 
-    def unapply(ot: ObjectType): Option[String] = Some(ot.fqn)
+    def unapply(ot: ClassType): Option[String] = Some(ot.fqn)
 
     def simpleName(fqn: String): String = {
         val index = fqn.lastIndexOf('/')
@@ -1206,8 +1206,8 @@ object ObjectType {
      *
      * E.g.,
      * {{{
-     * scala> val os = org.opalj.br.ObjectType("java/lang/String")
-     * os: org.opalj.br.ObjectType = ObjectType(java/lang/String)
+     * scala> val os = org.opalj.br.ClassType("java/lang/String")
+     * os: org.opalj.br.ClassType = ClassType(java/lang/String)
      *
      * scala> os.packageName
      * res1: String = java/lang
@@ -1228,121 +1228,121 @@ object ObjectType {
             fqn.substring(0, index)
     }
 
-    // THE FOLLOWING OBJECT TYPES ARE PREDEFINED BECAUSE OF
+    // THE FOLLOWING CLASS TYPES ARE PREDEFINED BECAUSE OF
     // THEIR PERVASIVE USAGE AND THEIR EXPLICIT MENTIONING IN THE
     // THE JVM SPEC. OR THEIR IMPORTANCE FOR THE RUNTIME ENVIRONMENT
-    final val Object = ObjectType("java/lang/Object")
+    final val Object = ClassType("java/lang/Object")
     final val ObjectId = 0
     require(Object.id == ObjectId)
 
-    final val Boolean = ObjectType("java/lang/Boolean")
-    final val Byte = ObjectType("java/lang/Byte")
-    final val Character = ObjectType("java/lang/Character")
-    final val Short = ObjectType("java/lang/Short")
-    final val Integer = ObjectType("java/lang/Integer")
-    final val Long = ObjectType("java/lang/Long")
-    final val Float = ObjectType("java/lang/Float")
-    final val Double = ObjectType("java/lang/Double")
+    final val Boolean = ClassType("java/lang/Boolean")
+    final val Byte = ClassType("java/lang/Byte")
+    final val Character = ClassType("java/lang/Character")
+    final val Short = ClassType("java/lang/Short")
+    final val Integer = ClassType("java/lang/Integer")
+    final val Long = ClassType("java/lang/Long")
+    final val Float = ClassType("java/lang/Float")
+    final val Double = ClassType("java/lang/Double")
     require(Double.id - Boolean.id == 7)
 
-    final val Void = ObjectType("java/lang/Void")
+    final val Void = ClassType("java/lang/Void")
 
-    final val String = ObjectType("java/lang/String")
+    final val String = ClassType("java/lang/String")
     final val StringId = 10
     require(String.id == StringId)
 
-    final val Class = ObjectType("java/lang/Class")
+    final val Class = ClassType("java/lang/Class")
     final val ClassId = 11
     require(Class.id == ClassId)
 
-    final val ModuleInfo = ObjectType("module-info")
+    final val ModuleInfo = ClassType("module-info")
     require(ModuleInfo.id == 12)
 
     // the following types are relevant when checking the subtype relation between
     // two reference types where the subtype is an array type
-    final val Serializable = ObjectType("java/io/Serializable")
+    final val Serializable = ClassType("java/io/Serializable")
     final val SerializableId = 13
     require(Serializable.id == SerializableId)
-    final val Cloneable = ObjectType("java/lang/Cloneable")
+    final val Cloneable = ClassType("java/lang/Cloneable")
     final val CloneableId = 14
     require(Cloneable.id == CloneableId)
-    final val Comparable = ObjectType("java/lang/Comparable")
+    final val Comparable = ClassType("java/lang/Comparable")
     final val ComparableId = 15
     require(Comparable.id == ComparableId)
-    final val StringBuilder = ObjectType("java/lang/StringBuilder")
+    final val StringBuilder = ClassType("java/lang/StringBuilder")
     final val StringBuilderId = 16
     require(StringBuilder.id == StringBuilderId)
-    final val StringBuffer = ObjectType("java/lang/StringBuffer")
+    final val StringBuffer = ClassType("java/lang/StringBuffer")
     final val StringBufferId = 17
     require(StringBuffer.id == StringBufferId)
 
-    final val System = ObjectType("java/lang/System")
+    final val System = ClassType("java/lang/System")
 
-    final val Throwable = ObjectType("java/lang/Throwable")
-    final val Error = ObjectType("java/lang/Error")
-    final val Exception = ObjectType("java/lang/Exception")
-    final val RuntimeException = ObjectType("java/lang/RuntimeException")
+    final val Throwable = ClassType("java/lang/Throwable")
+    final val Error = ClassType("java/lang/Error")
+    final val Exception = ClassType("java/lang/Exception")
+    final val RuntimeException = ClassType("java/lang/RuntimeException")
 
-    final val Thread = ObjectType("java/lang/Thread")
-    final val ThreadGroup = ObjectType("java/lang/ThreadGroup")
-    final val Runnable = ObjectType("java/lang/Runnable")
+    final val Thread = ClassType("java/lang/Thread")
+    final val ThreadGroup = ClassType("java/lang/ThreadGroup")
+    final val Runnable = ClassType("java/lang/Runnable")
 
     // Types related to the invokedynamic instruction
-    final val VarHandle = ObjectType("java/lang/invoke/VarHandle")
-    final val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
-    final val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
-    final val MethodHandles$Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
-    final val MethodType = ObjectType("java/lang/invoke/MethodType")
-    final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
-    final val StringConcatFactory = ObjectType("java/lang/invoke/StringConcatFactory")
-    final val ObjectMethods = ObjectType("java/lang/runtime/ObjectMethods")
-    final val Objects = ObjectType("java/util/Objects")
-    final val CallSite = ObjectType("java/lang/invoke/CallSite")
-    final val ScalaLambdaDeserialize = ObjectType("scala/runtime/LambdaDeserialize")
-    final val SerializedLambda = ObjectType("java/lang/invoke/SerializedLambda")
-    final val ScalaSymbolLiteral = ObjectType("scala/runtime/SymbolLiteral")
-    final val ScalaSymbol = ObjectType("scala/Symbol")
-    final val ScalaStructuralCallSite = ObjectType("scala/runtime/StructuralCallSite")
-    final val Method = ObjectType("java/lang/reflect/Method")
-    final val Constructor = ObjectType("java/lang/reflect/Constructor")
-    final val Array = ObjectType("java/lang/reflect/Array")
-    final val Field = ObjectType("java/lang/reflect/Field")
+    final val VarHandle = ClassType("java/lang/invoke/VarHandle")
+    final val MethodHandle = ClassType("java/lang/invoke/MethodHandle")
+    final val MethodHandles = ClassType("java/lang/invoke/MethodHandles")
+    final val MethodHandles$Lookup = ClassType("java/lang/invoke/MethodHandles$Lookup")
+    final val MethodType = ClassType("java/lang/invoke/MethodType")
+    final val LambdaMetafactory = ClassType("java/lang/invoke/LambdaMetafactory")
+    final val StringConcatFactory = ClassType("java/lang/invoke/StringConcatFactory")
+    final val ObjectMethods = ClassType("java/lang/runtime/ObjectMethods")
+    final val Objects = ClassType("java/util/Objects")
+    final val CallSite = ClassType("java/lang/invoke/CallSite")
+    final val ScalaLambdaDeserialize = ClassType("scala/runtime/LambdaDeserialize")
+    final val SerializedLambda = ClassType("java/lang/invoke/SerializedLambda")
+    final val ScalaSymbolLiteral = ClassType("scala/runtime/SymbolLiteral")
+    final val ScalaSymbol = ClassType("scala/Symbol")
+    final val ScalaStructuralCallSite = ClassType("scala/runtime/StructuralCallSite")
+    final val Method = ClassType("java/lang/reflect/Method")
+    final val Constructor = ClassType("java/lang/reflect/Constructor")
+    final val Array = ClassType("java/lang/reflect/Array")
+    final val Field = ClassType("java/lang/reflect/Field")
 
     // Types related to dynamic constants
-    final val ConstantBootstraps = ObjectType("java/lang/invoke/ConstantBootstraps")
+    final val ConstantBootstraps = ClassType("java/lang/invoke/ConstantBootstraps")
 
     // Exceptions and errors that may be thrown by the JVM (i.e., instances of these
     // exceptions may be created at runtime by the JVM)
-    final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")
-    final val ExceptionInInitializerError = ObjectType("java/lang/ExceptionInInitializerError")
-    final val BootstrapMethodError = ObjectType("java/lang/BootstrapMethodError")
-    final val OutOfMemoryError = ObjectType("java/lang/OutOfMemoryError")
+    final val IndexOutOfBoundsException = ClassType("java/lang/IndexOutOfBoundsException")
+    final val ExceptionInInitializerError = ClassType("java/lang/ExceptionInInitializerError")
+    final val BootstrapMethodError = ClassType("java/lang/BootstrapMethodError")
+    final val OutOfMemoryError = ClassType("java/lang/OutOfMemoryError")
 
-    final val NullPointerException = ObjectType("java/lang/NullPointerException")
-    final val ArrayIndexOutOfBoundsException = ObjectType("java/lang/ArrayIndexOutOfBoundsException")
-    final val ArrayStoreException = ObjectType("java/lang/ArrayStoreException")
-    final val NegativeArraySizeException = ObjectType("java/lang/NegativeArraySizeException")
-    final val IllegalMonitorStateException = ObjectType("java/lang/IllegalMonitorStateException")
-    final val ClassCastException = ObjectType("java/lang/ClassCastException")
-    final val ArithmeticException = ObjectType("java/lang/ArithmeticException")
-    final val ClassNotFoundException = ObjectType("java/lang/ClassNotFoundException")
+    final val NullPointerException = ClassType("java/lang/NullPointerException")
+    final val ArrayIndexOutOfBoundsException = ClassType("java/lang/ArrayIndexOutOfBoundsException")
+    final val ArrayStoreException = ClassType("java/lang/ArrayStoreException")
+    final val NegativeArraySizeException = ClassType("java/lang/NegativeArraySizeException")
+    final val IllegalMonitorStateException = ClassType("java/lang/IllegalMonitorStateException")
+    final val ClassCastException = ClassType("java/lang/ClassCastException")
+    final val ArithmeticException = ClassType("java/lang/ArithmeticException")
+    final val ClassNotFoundException = ClassType("java/lang/ClassNotFoundException")
 
     /**
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.
      */
-    final val SerializableAndCloneable: UIDSet[ObjectType] = {
-        new UIDSet2(ObjectType.Serializable, ObjectType.Cloneable)
+    final val SerializableAndCloneable: UIDSet[ClassType] = {
+        new UIDSet2(ClassType.Serializable, ClassType.Cloneable)
     }
 
     private final val javaLangBooleanId = Boolean.id
     private final val javaLangDoubleId = Double.id
 
     // Given the importance of "Object Serialization" we also predefine Externalizable
-    final val Externalizable = ObjectType("java/io/Externalizable")
+    final val Externalizable = ClassType("java/io/Externalizable")
 
-    final val ObjectInputStream = ObjectType("java/io/ObjectInputStream")
-    final val ObjectOutputStream = ObjectType("java/io/ObjectOutputStream")
+    final val ObjectInputStream = ClassType("java/io/ObjectInputStream")
+    final val ObjectOutputStream = ClassType("java/io/ObjectOutputStream")
 
     private[br] final val highestPredefinedTypeId = nextId.get() - 1
 
@@ -1351,7 +1351,7 @@ object ObjectType {
      * @example
      * {{{
      * scala> import org.opalj.br._
-     * scala> ObjectType.primitiveType(ObjectType.Integer.id)
+     * scala> ClassType.primitiveType(ClassType.Integer.id)
      * res1: org.opalj.br.FieldType = IntegerType
      * }}}
      */
@@ -1383,11 +1383,11 @@ object ObjectType {
      * @example
      * {{{
      * scala> import org.opalj.br._
-     * scala> ObjectType.primitiveType(ObjectType.Integer)
+     * scala> ClassType.primitiveType(ClassType.Integer)
      * res0: Option[org.opalj.br.BaseType] = Some(IntegerType)
      * }}}
      */
-    def primitiveType(wrapperType: ObjectType): Option[BaseType] = {
+    def primitiveType(wrapperType: ClassType): Option[BaseType] = {
         val wrapperId = wrapperType.id
         if (wrapperId < Boolean.id || wrapperId > Double.id) {
             None
@@ -1406,7 +1406,7 @@ object ObjectType {
         floatMatch:   Args => T,
         doubleMatch:  Args => T,
         orElse:       Args => T
-    ): (ObjectType, Args) => T = {
+    ): (ClassType, Args) => T = {
         val fs = new Array[Args => T](8)
         fs(0) = booleanMatch
         fs(1) = byteMatch
@@ -1417,8 +1417,8 @@ object ObjectType {
         fs(6) = floatMatch
         fs(7) = doubleMatch
 
-        (objectType: ObjectType, args: Args) => {
-            val oid = objectType.id
+        (classType: ClassType, args: Args) => {
+            val oid = classType.id
             if (oid > javaLangDoubleId || oid < javaLangBooleanId) {
                 orElse(args)
             } else {
@@ -1428,8 +1428,8 @@ object ObjectType {
         }
     }
 
-    @inline final def isPrimitiveTypeWrapper(objectType: ObjectType): Boolean = {
-        val oid = objectType.id
+    @inline final def isPrimitiveTypeWrapper(classType: ClassType): Boolean = {
+        val oid = classType.id
         oid <= javaLangDoubleId && oid >= javaLangBooleanId
     }
 }
@@ -1463,7 +1463,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def asArrayType = this
 
-    override def mostPreciseObjectType: ObjectType = ObjectType.Object
+    override def mostPreciseClassType: ClassType = ClassType.Object
 
     /**
      * Returns this array type's element type. E.g., the element type of an
@@ -1649,8 +1649,8 @@ object ArrayType {
 
     def unapply(at: ArrayType): Option[FieldType] = Some(at.componentType)
 
-    final val ArrayOfObject = ArrayType(ObjectType.Object)
-    final val ArrayOfMethodHandle = ArrayType(ObjectType.MethodHandle)
+    final val ArrayOfObject = ArrayType(ClassType.Object)
+    final val ArrayOfMethodHandle = ArrayType(ClassType.MethodHandle)
 
     private[br] final val lowestPredefinedTypeId = nextId.get() + 1
 }
@@ -1668,18 +1668,18 @@ object ArrayElementType {
 
 object ElementReferenceType {
 
-    def unapply(rt: ReferenceType): Option[ObjectType] = {
+    def unapply(rt: ReferenceType): Option[ClassType] = {
         rt match {
-            case ot: ObjectType                   => Some(ot)
-            case ArrayElementType(ot: ObjectType) => Some(ot)
-            case _                                => None
+            case ot: ClassType                   => Some(ot)
+            case ArrayElementType(ot: ClassType) => Some(ot)
+            case _                               => None
         }
     }
 
 }
 
 /**
- * Defines an extractor to match a type against any `ObjectType` except `java.lang.Object`.
+ * Defines an extractor to match a type against any `ClassType` except `java.lang.Object`.
  *
  * @example
  * {{{
@@ -1694,7 +1694,7 @@ object ElementReferenceType {
  */
 object NotJavaLangObject {
 
-    def unapply(objectType: ObjectType): Boolean = objectType ne ObjectType.Object
+    def unapply(classType: ClassType): Boolean = classType ne ClassType.Object
 }
 
 /**

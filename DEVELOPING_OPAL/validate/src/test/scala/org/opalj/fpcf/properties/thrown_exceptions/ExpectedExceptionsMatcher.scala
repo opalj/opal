@@ -7,7 +7,7 @@ package thrown_exceptions
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ThrownExceptions
 
@@ -21,8 +21,8 @@ private[thrown_exceptions] trait ExceptionTypeExtractor extends AbstractProperty
     def getConcreteAndUpperBoundExceptionAnnotations(
         p: SomeProject,
         a: AnnotationLike
-    ): (ArraySeq[ObjectType], ArraySeq[ObjectType]) = {
-        val annotationType = a.annotationType.asObjectType
+    ): (ArraySeq[ClassType], ArraySeq[ClassType]) = {
+        val annotationType = a.annotationType.asClassType
         val exceptionTypesAnnotation = getValue(
             p,
             annotationType,
@@ -32,20 +32,20 @@ private[thrown_exceptions] trait ExceptionTypeExtractor extends AbstractProperty
 
         val concreteTypeExceptions = getValue(
             p,
-            exceptionTypesAnnotation.annotationType.asObjectType,
+            exceptionTypesAnnotation.annotationType.asClassType,
             exceptionTypesAnnotation.elementValuePairs,
             "concrete"
         ).asArrayValue
         val upperBoundTypeExceptions = getValue(
             p,
-            exceptionTypesAnnotation.annotationType.asObjectType,
+            exceptionTypesAnnotation.annotationType.asClassType,
             exceptionTypesAnnotation.elementValuePairs,
             "upperBound"
         ).asArrayValue
 
         (
-            concreteTypeExceptions.values.map[ObjectType](ev => ev.asClassValue.value.asObjectType),
-            upperBoundTypeExceptions.values.map[ObjectType](ev => ev.asClassValue.value.asObjectType)
+            concreteTypeExceptions.values.map[ClassType](ev => ev.asClassValue.value.asClassType),
+            upperBoundTypeExceptions.values.map[ClassType](ev => ev.asClassValue.value.asClassType)
         )
     }
 }
@@ -59,7 +59,7 @@ class ExpectedExceptionsMatcher extends AbstractPropertyMatcher with ExceptionTy
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -67,10 +67,10 @@ class ExpectedExceptionsMatcher extends AbstractPropertyMatcher with ExceptionTy
         val (concreteTypeExceptions, upperBoundTypeExceptions) =
             getConcreteAndUpperBoundExceptionAnnotations(p, a)
 
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
-        val requiredAnalysis = analysesElementValues.map[ObjectType](ev => ev.asClassValue.value.asObjectType)
+        val requiredAnalysis = analysesElementValues.map[ClassType](ev => ev.asClassValue.value.asClassType)
 
         val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
             properties.forall {
