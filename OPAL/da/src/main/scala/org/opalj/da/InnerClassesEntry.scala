@@ -26,7 +26,7 @@ case class InnerClassesEntry(
         val accessFlags =
             AccessFlags.toString(inner_class_access_flags, AccessFlagsContexts.INNER_CLASS)
 
-        // IMPROVE Use ObjectTypeInfo
+        // IMPROVE Use ClassTypeInfo
         val definedType = cp(inner_class_info_index).toString
         val outerClassFQN =
             if (outer_class_info_index != 0)

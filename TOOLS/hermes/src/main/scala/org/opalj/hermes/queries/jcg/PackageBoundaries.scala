@@ -7,9 +7,9 @@ package jcg
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -60,8 +60,8 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
             val name = invoke.name
             val methodDescriptor = invoke.methodDescriptor
 
-            if (receiver.isObjectType && (receiver.asObjectType.packageName eq callerPackage)) {
-                val rtOt = receiver.asObjectType
+            if (receiver.isClassType && (receiver.asClassType.packageName eq callerPackage)) {
+                val rtOt = receiver.asClassType
                 val rcf = project.classFile(rtOt)
 
                 val isPackageVisibleMethod = rcf.map {
@@ -102,7 +102,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
 
     private def isMethodOverriddenInDiffPackage[S](
         callerPackage:    String,
-        rtOt:             ObjectType,
+        rtOt:             ClassType,
         name:             String,
         methodDescriptor: MethodDescriptor,
         project:          Project[S]
@@ -114,8 +114,8 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
     }
 
     private[this] def isMethodOverriddenInDiffPackage[S](
-        declaredType:     ObjectType,
-        targetType:       ObjectType,
+        declaredType:     ClassType,
+        targetType:       ClassType,
         name:             String,
         methodDescriptor: MethodDescriptor,
         project:          Project[S]
@@ -128,7 +128,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         classHierarchy.directSupertypes(targetType).foreach { sot => worklist.append(sot.id) }
         while (worklist.nonEmpty) {
             val cur = worklist.remove(0)
-            val ot = classHierarchy.getObjectType(cur)
+            val ot = classHierarchy.getClassType(cur)
             if (ot.packageName ne callingPackage) {
                 val cf = project.classFile(ot).get
                 val mo = cf.findMethod(name, methodDescriptor)

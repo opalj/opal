@@ -25,14 +25,14 @@ import scala.collection.mutable
  */
 private[analyses] class IsOverridableMethodAnalysis(
     project:           SomeProject,
-    isClassExtensible: ObjectType => Answer,
-    isTypeExtensible:  ObjectType => Answer
+    isClassExtensible: ClassType => Answer,
+    isTypeExtensible:  ClassType => Answer
 ) extends (Method => Answer) {
 
     // private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
 
-    private[this] def isAlwaysFinallyOverridden(objectType: ObjectType, method: Method): Answer = {
-        if (isClassExtensible(objectType).isYes && !method.isFinal)
+    private[this] def isAlwaysFinallyOverridden(classType: ClassType, method: Method): Answer = {
+        if (isClassExtensible(classType).isYes && !method.isFinal)
             return No;
 
         import project.classHierarchy
@@ -41,9 +41,9 @@ private[analyses] class IsOverridableMethodAnalysis(
         val methodDescriptor = method.descriptor
         val methodPackageName = method.classFile.thisType.packageName
 
-        val worklist = mutable.Queue.empty[ObjectType]
+        val worklist = mutable.Queue.empty[ClassType]
 
-        def addDirectSubclasses(ot: ObjectType): Unit = {
+        def addDirectSubclasses(ot: ClassType): Unit = {
             classHierarchy.directSubclassesOf(ot).foreach(worklist.enqueue(_))
         }
 
@@ -58,7 +58,7 @@ private[analyses] class IsOverridableMethodAnalysis(
                         // let's test if this "final override", is for a different method...
                         method.isPackagePrivate &&
                         subtypeMethod.get.declaringClassFile.thisType.packageName !=
-                            objectType.packageName &&
+                            classType.packageName &&
                             !subtypeMethod.get.isPackagePrivate /**/ && {
                                 // ... the original method is package private
                                 // ... both methods are defined in different packages

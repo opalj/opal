@@ -111,7 +111,7 @@ trait TraversingVisitor extends SignatureVisitor[Unit] {
 class TypesVisitor(val f: Type => Unit) extends TraversingVisitor {
 
     override def visit(cts: ClassTypeSignature): Unit = {
-        f(cts.objectType)
+        f(cts.classType)
         super.visit(cts)
     }
 

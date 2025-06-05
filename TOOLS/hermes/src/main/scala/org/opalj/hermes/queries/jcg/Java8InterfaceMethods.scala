@@ -68,11 +68,11 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
 
             val kindID = invokeKind match {
                 case ii @ INVOKEINTERFACE(dc, name, md) => {
-                    val subtypes = project.classHierarchy.allSubtypes(dc.asObjectType, false)
+                    val subtypes = project.classHierarchy.allSubtypes(dc.asClassType, false)
                     val hasDefaultMethodTarget = subtypes.exists { ot =>
                         val target = project.instanceCall(callerType, ot, name, md)
                         if (target.hasValue) {
-                            val definingClass = target.value.asVirtualMethod.classType.asObjectType
+                            val definingClass = target.value.asVirtualMethod.classType.asClassType
                             project.classFile(definingClass).exists(_.isInterfaceDeclaration)
                         } else
                             false
@@ -85,12 +85,12 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                     }
                 }
                 case iv @ INVOKEVIRTUAL(dc, name, md) => {
-                    val subtypes = project.classHierarchy.allSubtypes(dc.asObjectType, true)
+                    val subtypes = project.classHierarchy.allSubtypes(dc.asClassType, true)
                     var subtypeWithMultipleInterfaces = false
                     val hasDefaultMethodTarget = subtypes.exists { ot =>
                         val target = project.instanceCall(callerType, ot, name, md)
                         if (target.hasValue) {
-                            val definingClass = target.value.asVirtualMethod.classType.asObjectType
+                            val definingClass = target.value.asVirtualMethod.classType.asClassType
                             val isIDM = project.classFile(definingClass).exists(_.isInterfaceDeclaration)
                             if (isIDM) {
                                 // if the method is resolved to an IDM we have to check whether there are multiple options
@@ -150,10 +150,10 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
     ): Boolean = {
 
         val t = mii.declaringClass
-        if (!t.isObjectType)
+        if (!t.isClassType)
             return false;
 
-        val ot = t.asObjectType
+        val ot = t.asClassType
         val methodName = mii.name
         val methodDescriptor = mii.methodDescriptor
 

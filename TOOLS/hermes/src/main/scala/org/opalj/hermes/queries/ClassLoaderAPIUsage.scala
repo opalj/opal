@@ -3,9 +3,9 @@ package org.opalj
 package hermes
 package queries
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor.JustTakes
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
-import org.opalj.br.ObjectType
 import org.opalj.hermes.queries.util.APIClassExtension
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
@@ -22,7 +22,7 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
 
     override val apiFeatures: List[APIFeature] = {
 
-        val ClassLoader = ObjectType("java/lang/ClassLoader")
+        val ClassLoader = ClassType("java/lang/ClassLoader")
 
         List(
             APIClassExtension("custom ClassLoader implementation", ClassLoader),
@@ -36,7 +36,7 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
             APIFeatureGroup(
                 List(
                     InstanceAPIMethod(ClassLoader, "<init>", JustTakes(ClassLoader)),
-                    InstanceAPIMethod(ObjectType.Class, "getClassLoader")
+                    InstanceAPIMethod(ClassType.Class, "getClassLoader")
                 ),
                 "Retrieving some ClassLoader"
             ),

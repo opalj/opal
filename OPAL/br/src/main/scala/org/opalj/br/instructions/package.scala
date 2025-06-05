@@ -45,7 +45,7 @@ package object instructions {
             final lazy val LangBooleanToPrimitiveBoolean: Array[Instruction] =
                 Array(
                     INVOKEVIRTUAL(
-                        ObjectType.Boolean,
+                        ClassType.Boolean,
                         "booleanValue",
                         MethodDescriptor.JustReturnsBoolean
                     ),
@@ -56,10 +56,10 @@ package object instructions {
             final lazy val PrimitiveBooleanToLangBoolean: Array[Instruction] =
                 Array(
                     INVOKESTATIC(
-                        ObjectType.Boolean,
+                        ClassType.Boolean,
                         false,
                         "valueOf",
-                        MethodDescriptor(BooleanType, ObjectType.Boolean)
+                        MethodDescriptor(BooleanType, ClassType.Boolean)
                     ),
                     null,
                     null
@@ -68,7 +68,7 @@ package object instructions {
             final lazy val LangLongToPrimitiveLong: Array[Instruction] =
                 Array(
                     INVOKEVIRTUAL(
-                        ObjectType.Long,
+                        ClassType.Long,
                         "longValue",
                         MethodDescriptor.JustReturnsLong
                     ),
@@ -79,10 +79,10 @@ package object instructions {
             final lazy val PrimitiveLongToLangLong: Array[Instruction] =
                 Array(
                     INVOKESTATIC(
-                        ObjectType.Long,
+                        ClassType.Long,
                         false,
                         "valueOf",
-                        MethodDescriptor(LongType, ObjectType.Long)
+                        MethodDescriptor(LongType, ClassType.Long)
                     ),
                     null,
                     null
@@ -91,7 +91,7 @@ package object instructions {
             final lazy val LangByteToPrimitiveByte: Array[Instruction] =
                 Array(
                     INVOKEVIRTUAL(
-                        ObjectType.Byte,
+                        ClassType.Byte,
                         "byteValue",
                         MethodDescriptor.JustReturnsByte
                     ),
@@ -102,10 +102,10 @@ package object instructions {
             final lazy val PrimitiveByteToLangByte: Array[Instruction] =
                 Array(
                     INVOKESTATIC(
-                        ObjectType.Byte,
+                        ClassType.Byte,
                         false,
                         "valueOf",
-                        MethodDescriptor(ByteType, ObjectType.Byte)
+                        MethodDescriptor(ByteType, ClassType.Byte)
                     ),
                     null,
                     null
@@ -114,7 +114,7 @@ package object instructions {
             final lazy val LangIntegerToPrimitiveInt: Array[Instruction] =
                 Array(
                     INVOKEVIRTUAL(
-                        ObjectType.Integer,
+                        ClassType.Integer,
                         "intValue",
                         MethodDescriptor.JustReturnsInteger
                     ),
@@ -125,10 +125,10 @@ package object instructions {
             final lazy val PrimitiveIntToLangInteger: Array[Instruction] =
                 Array(
                     INVOKESTATIC(
-                        ObjectType.Integer,
+                        ClassType.Integer,
                         false,
                         "valueOf",
-                        MethodDescriptor(IntegerType, ObjectType.Integer)
+                        MethodDescriptor(IntegerType, ClassType.Integer)
                     ),
                     null,
                     null
@@ -137,7 +137,7 @@ package object instructions {
             final lazy val LangShortToPrimitiveShort: Array[Instruction] =
                 Array(
                     INVOKEVIRTUAL(
-                        ObjectType.Short,
+                        ClassType.Short,
                         "shortValue",
                         MethodDescriptor.JustReturnsShort
                     ),
@@ -148,10 +148,10 @@ package object instructions {
             final lazy val PrimitiveShortToLangShort: Array[Instruction] =
                 Array(
                     INVOKESTATIC(
-                        ObjectType.Short,
+                        ClassType.Short,
                         false,
                         "valueOf",
-                        MethodDescriptor(ShortType, ObjectType.Short)
+                        MethodDescriptor(ShortType, ClassType.Short)
                     ),
                     null,
                     null
@@ -160,7 +160,7 @@ package object instructions {
             final lazy val LangFloatToPrimitiveFloat: Array[Instruction] =
                 Array(
                     INVOKEVIRTUAL(
-                        ObjectType.Float,
+                        ClassType.Float,
                         "floatValue",
                         MethodDescriptor.JustReturnsFloat
                     ),
@@ -171,10 +171,10 @@ package object instructions {
             final lazy val PrimitiveFloatToLangFloat: Array[Instruction] =
                 Array(
                     INVOKESTATIC(
-                        ObjectType.Float,
+                        ClassType.Float,
                         false,
                         "valueOf",
-                        MethodDescriptor(FloatType, ObjectType.Float)
+                        MethodDescriptor(FloatType, ClassType.Float)
                     ),
                     null,
                     null
@@ -183,7 +183,7 @@ package object instructions {
             final lazy val LangCharacterToPrimitiveChar: Array[Instruction] =
                 Array(
                     INVOKEVIRTUAL(
-                        ObjectType.Character,
+                        ClassType.Character,
                         "charValue",
                         MethodDescriptor.JustReturnsChar
                     ),
@@ -194,10 +194,10 @@ package object instructions {
             final lazy val PrimitiveCharToLangCharacter: Array[Instruction] =
                 Array(
                     INVOKESTATIC(
-                        ObjectType.Character,
+                        ClassType.Character,
                         false,
                         "valueOf",
-                        MethodDescriptor(CharType, ObjectType.Character)
+                        MethodDescriptor(CharType, ClassType.Character)
                     ),
                     null,
                     null
@@ -206,7 +206,7 @@ package object instructions {
             final lazy val LangDoubleToPrimitiveDouble: Array[Instruction] =
                 Array(
                     INVOKEVIRTUAL(
-                        ObjectType.Double,
+                        ClassType.Double,
                         "doubleValue",
                         MethodDescriptor.JustReturnsDouble
                     ),
@@ -217,31 +217,31 @@ package object instructions {
             final lazy val PrimitiveDoubleToLangDouble: Array[Instruction] =
                 Array(
                     INVOKESTATIC(
-                        ObjectType.Double,
+                        ClassType.Double,
                         false,
                         "valueOf",
-                        MethodDescriptor(DoubleType, ObjectType.Double)
+                        MethodDescriptor(DoubleType, ClassType.Double)
                     ),
                     null,
                     null
                 )
 
             private[this] lazy val unboxInstructions: Array[Array[Instruction]] = {
-                val a = new Array[Array[Instruction]](ObjectType.Double.id + 1)
-                a(ObjectType.Boolean.id) = LangBooleanToPrimitiveBoolean
-                a(ObjectType.Byte.id) = LangByteToPrimitiveByte
-                a(ObjectType.Character.id) = LangCharacterToPrimitiveChar
-                a(ObjectType.Short.id) = LangShortToPrimitiveShort
-                a(ObjectType.Integer.id) = LangIntegerToPrimitiveInt
-                a(ObjectType.Long.id) = LangLongToPrimitiveLong
-                a(ObjectType.Float.id) = LangFloatToPrimitiveFloat
-                a(ObjectType.Double.id) = LangDoubleToPrimitiveDouble
+                val a = new Array[Array[Instruction]](ClassType.Double.id + 1)
+                a(ClassType.Boolean.id) = LangBooleanToPrimitiveBoolean
+                a(ClassType.Byte.id) = LangByteToPrimitiveByte
+                a(ClassType.Character.id) = LangCharacterToPrimitiveChar
+                a(ClassType.Short.id) = LangShortToPrimitiveShort
+                a(ClassType.Integer.id) = LangIntegerToPrimitiveInt
+                a(ClassType.Long.id) = LangLongToPrimitiveLong
+                a(ClassType.Float.id) = LangFloatToPrimitiveFloat
+                a(ClassType.Double.id) = LangDoubleToPrimitiveDouble
                 a
             }
 
             def unboxValue(wrapperType: Type): Array[Instruction] = {
                 val wid = wrapperType.id
-                assert(wid >= ObjectType.Boolean.id && wid <= ObjectType.Double.id)
+                assert(wid >= ClassType.Boolean.id && wid <= ClassType.Double.id)
 
                 unboxInstructions(wid)
             }

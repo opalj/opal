@@ -81,7 +81,7 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
         }.filterNot { ep =>
             // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
             // default package.
-            ep.classFile.thisType == ObjectType("WrapperGenerator")
+            ep.classFile.thisType == ClassType("WrapperGenerator")
         }
     }
 }
@@ -221,7 +221,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                 configuredType
             }
 
-            val objectType = ObjectType(typeName)
+            val classType = ClassType(typeName)
             val methodDescriptor: Option[MethodDescriptor] = descriptor.map { md =>
                 try {
                     Some(MethodDescriptor(md))
@@ -235,8 +235,8 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                 }
             }.getOrElse(None)
 
-            def findMethods(objectType: ObjectType, isSubtype: Boolean = false): Unit = {
-                project.classFile(objectType) match {
+            def findMethods(classType: ClassType, isSubtype: Boolean = false): Unit = {
+                project.classFile(classType) match {
                     case Some(cf) =>
                         var methods: List[Method] = cf.findMethod(name)
 
@@ -280,9 +280,9 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
             }
 
-            findMethods(objectType)
+            findMethods(classType)
             if (considerSubtypes) {
-                project.classHierarchy.allSubtypes(objectType, false).foreach {
+                project.classHierarchy.allSubtypes(classType, false).foreach {
                     ot => findMethods(ot, true)
                 }
             }

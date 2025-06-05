@@ -13,7 +13,7 @@ package br
  * @author Michael Eichberg
  */
 case class EnclosingMethod(
-    clazz:      ObjectType,
+    clazz:      ClassType,
     name:       Option[String],
     descriptor: Option[MethodDescriptor]
 ) extends Attribute {

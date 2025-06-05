@@ -396,7 +396,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
     private[this] def getStringValue(a: AnnotationLike, element: String)(implicit as: TestContext): String = {
         getValue(a, element) match {
             case str: StringValue => str.value
-            case ClassValue(t)    => t.asObjectType.fqn
+            case ClassValue(t)    => t.asClassType.fqn
             case _                => throw new RuntimeException("Unexpected value type")
         }
     }
@@ -404,7 +404,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
     private[this] def getValue(a: AnnotationLike, element: String)(implicit as: TestContext): ElementValue = {
         a.elementValuePairs.filter(_.name == element).collectFirst {
             case ElementValuePair(`element`, value) => value
-        }.getOrElse(as.project.classFile(a.annotationType.asObjectType)
+        }.getOrElse(as.project.classFile(a.annotationType.asClassType)
             .get
             .findMethod(element)
             .headOption
@@ -446,7 +446,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
     }
 
     private[this] def annotationName(a: AnnotationLike): String = {
-        a.annotationType.asObjectType.simpleName
+        a.annotationType.asClassType.simpleName
     }
 
     private[this] def fieldsWithTypeAnnotations(

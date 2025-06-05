@@ -47,7 +47,7 @@ object CovariantEqualsMethodDefined extends ProjectAnalysisApplication {
             var definesEqualsMethod = false
             var definesCovariantEqualsMethod = false
             for (Method(_, "equals", MethodDescriptor(Seq(ot), BooleanType)) <- classFile.methods)
-                if (ot == ObjectType.Object)
+                if (ot == ClassType.Object)
                     definesEqualsMethod = true
                 else
                     definesCovariantEqualsMethod = true
