@@ -7,6 +7,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
+
 import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
 import org.opalj.log.GlobalLogContext
 
@@ -43,6 +44,12 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
         derivesEagerly = Set(PropertyBounds.lub(pks(1)))
     )
 
+    /**
+     * Checks whether `analysis1` is scheduled before or in the same batch as `analysis2` within a given `schedule`.
+     * Iterates through the schedule's batches, tracking the phases in which each analysis appears.
+     * If `analysis1` is scheduled at an earlier or the same phase as `analysis2`, it prints "Success";
+     * otherwise, it triggers a failure message indicating incorrect scheduling.
+     */
     def analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(
         schedule:  Schedule[Unit],
         analysis1: BasicComputationSpecification,
@@ -51,34 +58,29 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
         var analysis1AlreadyComputed = false
         var analysis1phase = 0
         schedule.batches.foreach { batch =>
-            if (batch.scheduled.contains(analysis1)) {
-                if (!analysis1AlreadyComputed) {
-                    analysis1AlreadyComputed = true
-                }
-            } else if (!analysis1AlreadyComputed) {
+            if (batch.scheduled.contains(analysis1)) if (!analysis1AlreadyComputed) analysis1AlreadyComputed = true
+            else if (!analysis1AlreadyComputed)
                 analysis1phase += 1
-            }
         }
 
         var analysis2AlreadyComputed = false
         var analysis2phase = 0
         schedule.batches.foreach { batch =>
-            if (batch.scheduled.contains(analysis2)) {
-                if (!analysis2AlreadyComputed) {
-                    analysis2AlreadyComputed = true
-                }
-            } else if (!analysis2AlreadyComputed) {
+            if (batch.scheduled.contains(analysis2)) if (!analysis2AlreadyComputed) analysis2AlreadyComputed = true
+            else if (!analysis2AlreadyComputed)
                 analysis2phase += 1
-            }
         }
 
-        if (analysis1phase <= analysis2phase) {
-            println("Success")
-        } else {
-            fail(s"$analysis1 is not scheduled before or in the same batch as $analysis2!")
-        }
+        if (analysis1phase <= analysis2phase) println("Success")
+        else fail(s"$analysis1 is not scheduled before or in the same batch as $analysis2!")
     }
 
+    /**
+     * Checks whether `analysis1` is scheduled before `analysis2` within a given `schedule`.
+     * Iterates through the schedule's batches, tracking the phases in which each analysis appears.
+     * If `analysis1` is scheduled at an earlier phase than `analysis2`, it prints "Success";
+     * otherwise, it triggers a failure message indicating incorrect scheduling.
+     */
     def analysis1IsScheduledBeforeAnalysis2(
         schedule:  Schedule[Unit],
         analysis1: BasicComputationSpecification,
@@ -87,34 +89,29 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
         var analysis1AlreadyComputed = false
         var analysis1phase = 0
         schedule.batches.foreach { batch =>
-            if (batch.scheduled.contains(analysis1)) {
-                if (!analysis1AlreadyComputed) {
-                    analysis1AlreadyComputed = true
-                }
-            } else if (!analysis1AlreadyComputed) {
+            if (batch.scheduled.contains(analysis1)) if (!analysis1AlreadyComputed) analysis1AlreadyComputed = true
+            else if (!analysis1AlreadyComputed)
                 analysis1phase += 1
-            }
         }
 
         var analysis2AlreadyComputed = false
         var analysis2phase = 0
         schedule.batches.foreach { batch =>
-            if (batch.scheduled.contains(analysis2)) {
-                if (!analysis2AlreadyComputed) {
-                    analysis2AlreadyComputed = true
-                }
-            } else if (!analysis2AlreadyComputed) {
+            if (batch.scheduled.contains(analysis2)) if (!analysis2AlreadyComputed) analysis2AlreadyComputed = true
+            else if (!analysis2AlreadyComputed)
                 analysis2phase += 1
-            }
         }
 
-        if (analysis1phase < analysis2phase) {
-            println("Success")
-        } else {
-            fail(s"$analysis1 is not scheduled before $analysis2!")
-        }
+        if (analysis1phase < analysis2phase) println("Success")
+        else fail(s"$analysis1 is not scheduled before $analysis2!")
     }
 
+    /**
+     * Checks whether `analysis1` and `analysis2` are scheduled in the same batch within a given `schedule`.
+     * Iterates through the schedule's batches, tracking the phases in which each analysis appears.
+     * If both analyses are scheduled in the same phase, it prints "Success";
+     * otherwise, it triggers a failure message indicating incorrect scheduling.
+     */
     def analysis1IsScheduledInTheSameBatchAsAnalysis2(
         schedule:  Schedule[Unit],
         analysis1: BasicComputationSpecification,
@@ -258,7 +255,24 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                     )
 
                 val ps = new PropertyStoreConfigurationRecorder()
-                val scenario = AnalysisScenario(Set(eager1, eager3, eager4, eager5, eager6, eager2, lazy1, lazy2, lazy3, transformer1, triggered1, triggered2, triggered3), ps)
+                val scenario = AnalysisScenario(
+                    Set(
+                        eager1,
+                        eager3,
+                        eager4,
+                        eager5,
+                        eager6,
+                        eager2,
+                        lazy1,
+                        lazy2,
+                        lazy3,
+                        transformer1,
+                        triggered1,
+                        triggered2,
+                        triggered3
+                    ),
+                    ps
+                )
                 val schedule = scenario.computeSchedule(ps)
 
                 print(schedule.batches)

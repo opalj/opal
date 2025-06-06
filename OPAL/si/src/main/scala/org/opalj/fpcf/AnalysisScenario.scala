@@ -44,6 +44,9 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         Map.empty
     }
 
+    private[this] val lazyType = LazyComputation
+    private[this] val transformerType = Transformer
+
     def allProperties: Set[PropertyBounds] = derivedProperties ++ usedProperties
 
     /**
@@ -301,9 +304,10 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
                     // Creates a map from ComputationSpecifications to their indices
                     val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
+                    val computationSpecificationArray: Array[ComputationSpecification[A]] = allCS.toArray
                     // Initializes an empty schedule graph
                     var scheduleGraph: Map[Int, Set[Int]] = Map.empty
-
+                    print(computationSpecificationArray.mkString("Array(", ", ", ")"))
                     // Helper functions and logic for MPS scheduling follow...
                     def getAllCSFromPropertyBounds(
                         properties: Set[PropertyBounds]
@@ -329,36 +333,42 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     }
 
                     def getAllUses(css: List[Int]): Set[PropertyBounds] = {
-                        var allUses: Set[PropertyBounds] = Set.empty
-                        css.foreach { cs =>
-                            allUses = allUses ++ computationSpecificationMap.find(_._2 == cs).map(_._1).head.uses(ps)
+                        css.foldLeft(Set.empty[PropertyBounds]) { (allUses, cs) =>
+                            val uses = computationSpecificationArray(cs).uses(ps)
+                            allUses ++ uses
                         }
-                        allUses
                     }
 
+                    /**
+                     * Recursively updates the scheduling map (`map`) by setting specific computations (lazy/transformer) in all relevant batches.
+                     * The method ensures that computations with the type `lazyType` or `transformerType` are placed correctly in all batches,
+                     * adjusting dependencies to maintain a valid execution order.
+                     *
+                     * Steps:
+                     * 1. Iterates over batches to find occurrences of `firstElement` and merges it into other batches when necessary.
+                     * 2. Updates the scheduling graph (`aCyclicGraph`) to reflect changes and remove redundant batches.
+                     * 3. Recursively processes the next batch until all necessary batches are updated.
+                     * 4. Ensures computations are properly assigned across batches while preserving execution dependencies.
+                     */
                     def setLazyInAllBatches(
-                        map:          Map[List[Int], Set[Int]],
-                        firstElement: List[Int]
+                        tmp_aCyclicGraph: Map[List[Int], Set[Int]],
+                        firstElement:     List[Int]
                     ): Map[List[Int], Set[Int]] = {
                         var visited_batches: List[List[Int]] = List.empty
-                        var aCyclicGraph = map.toMap
+                        var aCyclicGraph = tmp_aCyclicGraph
 
-                        def setLazyInAllBatches_rek(
-                            map:          Map[List[Int], Set[Int]],
-                            firstElement: List[Int]
+                        def setLazyInAllBatchesInternal(
+                            tmp_aCyclicGraphInternal: Map[List[Int], Set[Int]],
+                            firstElement:             List[Int]
                         ): Map[List[Int], Set[Int]] = {
 
                             if (firstElement.forall(csID =>
-                                    computationSpecificationMap.find(_._2 == csID).map(
-                                        _._1
-                                    ).head.computationType.equals(LazyComputation) ||
-                                        computationSpecificationMap.find(_._2 == csID).map(
-                                            _._1
-                                        ).head.computationType.equals(Transformer)
+                                    computationSpecificationArray(csID).computationType.equals(lazyType) ||
+                                        computationSpecificationArray(csID).computationType.equals(transformerType)
                                 )
                             ) {
                                 var existInSomeBatch = false
-                                map.foreach { batch =>
+                                tmp_aCyclicGraphInternal.foreach { batch =>
                                     if (batch._2.toList.intersect(firstElement).nonEmpty && batch._1 != firstElement) {
                                         aCyclicGraph = aCyclicGraph + ((batch._1 ++ firstElement) -> mapCSToNum(
                                             getAllCSFromPropertyBounds(getAllUses(batch._1 ++ firstElement))
@@ -369,24 +379,24 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                                 }
                                 if (existInSomeBatch) {
                                     aCyclicGraph = aCyclicGraph - firstElement
-                                    setLazyInAllBatches_rek(aCyclicGraph, aCyclicGraph.head._1)
+                                    setLazyInAllBatchesInternal(aCyclicGraph, aCyclicGraph.head._1)
                                 } else {
                                     visited_batches = visited_batches :+ firstElement
                                     val keyList = aCyclicGraph.keys.toSet -- visited_batches
                                     if (keyList.nonEmpty) {
-                                        aCyclicGraph = setLazyInAllBatches_rek(aCyclicGraph, keyList.head)
+                                        aCyclicGraph = setLazyInAllBatchesInternal(aCyclicGraph, keyList.head)
                                     }
                                 }
                             } else {
                                 visited_batches = visited_batches :+ firstElement
                                 val keyList = aCyclicGraph.keys.toSet -- visited_batches
                                 if (keyList.nonEmpty) {
-                                    setLazyInAllBatches_rek(aCyclicGraph, keyList.head)
+                                    setLazyInAllBatchesInternal(aCyclicGraph, keyList.head)
                                 }
                             }
                             aCyclicGraph
                         }
-                        setLazyInAllBatches_rek(aCyclicGraph, firstElement)
+                        setLazyInAllBatchesInternal(aCyclicGraph, firstElement)
                     }
 
                     def topologicalSort(graph: Map[Int, List[Int]]): List[Int] = {
@@ -412,27 +422,23 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
                                 sortedNodes = sortedNodes :+ node
                             }
-
                         }
+
                         for (node <- preparedGraph.keys) {
                             visit(node)
                         }
-
                         sortedNodes
                     }
+
                     computationSpecificationMap.foreach { csID =>
                         scheduleGraph += (csID._2 -> mapCSToNum(getAllCSFromPropertyBounds(csID._1.uses(ps))))
                     }
 
                     if (!scheduleLazyTransformerInAllBatches) {
                         scheduleGraph.foreach { node =>
-                            if (computationSpecificationMap.find(_._2 == node._1).map(
-                                    _._1
-                                ).head.computationType.equals(LazyComputation) || computationSpecificationMap.find(
-                                    _._2 == node._1
-                                ).map(
-                                    _._1
-                                ).head.computationType.equals(Transformer)
+                            if (computationSpecificationArray(node._1).computationType.equals(
+                                    lazyType
+                                ) || computationSpecificationArray(node._1).computationType.equals(transformerType)
                             ) {
                                 scheduleGraph.foreach { subNode =>
                                     if (subNode._2.contains(node._1)) {
@@ -453,25 +459,25 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                         aCyclicGraph = setLazyInAllBatches(aCyclicGraph, aCyclicGraph.head._1)
                     }
 
-                    val preparedGraph = aCyclicGraph.map { case (nodes, deps) =>
+                    val graphWithoutSelfDependencies = aCyclicGraph.map { case (nodes, deps) =>
                         nodes -> (deps -- nodes).toList
                     }
 
-                    var transformingMap: Map[Int, List[Int]] = Map.empty
+                    var nodeIndexMap: Map[Int, List[Int]] = Map.empty
                     var counter = 0
-                    preparedGraph.foreach { node =>
-                        transformingMap = transformingMap + (counter -> node._1)
+                    graphWithoutSelfDependencies.foreach { node =>
+                        nodeIndexMap = nodeIndexMap + (counter -> node._1)
                         counter = counter + 1
                     }
 
-                    val transformedGraph = preparedGraph.map { case (node, deps) =>
+                    val transformedGraph = graphWithoutSelfDependencies.map { case (node, deps) =>
                         var dependencies: List[Int] = List.empty
-                        transformingMap.foreach { tuple =>
+                        nodeIndexMap.foreach { tuple =>
                             if (tuple._2.intersect(deps).nonEmpty) {
                                 dependencies = dependencies :+ tuple._1
                             }
                         }
-                        transformingMap.find(_._2 == node).map(_._1).head -> dependencies
+                        nodeIndexMap.find(_._2 == node).map(_._1).head -> dependencies
                     }
 
                     val batchOrder = topologicalSort(transformedGraph)
@@ -479,9 +485,9 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     var alreadyScheduledCS: Set[ComputationSpecification[A]] = Set.empty
                     batchOrder.foreach { batch =>
                         var scheduledInThisPhase: Set[ComputationSpecification[A]] = Set.empty
-                        transformingMap.get(batch).head.foreach { csID =>
+                        nodeIndexMap.get(batch).head.foreach { csID =>
                             scheduledInThisPhase =
-                                scheduledInThisPhase + computationSpecificationMap.find(_._2 == csID).map(_._1).head
+                                scheduledInThisPhase + computationSpecificationArray(csID)
                         }
 
                         this.scheduleBatches = this.scheduleBatches :+ computePhase(
@@ -497,6 +503,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
                     // Creates a map from ComputationSpecifications to their indices
                     val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
+                    val computationSpecificationArray: Array[ComputationSpecification[A]] = allCS.toArray
 
                     // Initializes an empty schedule graph
                     var scheduleGraph: Map[Int, Set[Int]] = Map.empty
@@ -527,35 +534,29 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
                     def getAllUses(css: List[Int]): Set[PropertyBounds] = {
                         var allUses: Set[PropertyBounds] = Set.empty
-                        css.foreach { cs =>
-                            allUses = allUses ++ computationSpecificationMap.find(_._2 == cs).map(_._1).head.uses(ps)
-                        }
+                        css.foreach { cs => allUses = allUses ++ computationSpecificationArray(cs).uses(ps) }
                         allUses
                     }
 
                     def setLazyInAllBatches(
-                        map:          Map[List[Int], Set[Int]],
-                        firstElement: List[Int]
+                        tmp_aCyclicGraph: Map[List[Int], Set[Int]],
+                        firstElement:     List[Int]
                     ): Map[List[Int], Set[Int]] = {
                         var visited_batches: List[List[Int]] = List.empty
-                        var aCyclicGraph = map.toMap
+                        var aCyclicGraph = tmp_aCyclicGraph
 
                         def setLazyInAllBatches_rek(
-                            map:          Map[List[Int], Set[Int]],
-                            firstElement: List[Int]
+                            tmp_aCyclicGraphInternal: Map[List[Int], Set[Int]],
+                            firstElement:             List[Int]
                         ): Map[List[Int], Set[Int]] = {
 
                             if (firstElement.forall(csID =>
-                                    computationSpecificationMap.find(_._2 == csID).map(
-                                        _._1
-                                    ).head.computationType.equals(LazyComputation) ||
-                                        computationSpecificationMap.find(_._2 == csID).map(
-                                            _._1
-                                        ).head.computationType.equals(Transformer)
+                                    computationSpecificationArray(csID).computationType.equals(lazyType) ||
+                                        computationSpecificationArray(csID).computationType.equals(transformerType)
                                 )
                             ) {
                                 var existInSomeBatch = false
-                                map.foreach { batch =>
+                                tmp_aCyclicGraphInternal.foreach { batch =>
                                     if (batch._2.toList.intersect(firstElement).nonEmpty && batch._1 != firstElement) {
                                         aCyclicGraph = aCyclicGraph + ((batch._1 ++ firstElement) -> mapCSToNum(
                                             getAllCSFromPropertyBounds(getAllUses(batch._1 ++ firstElement))
@@ -619,12 +620,12 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     }
 
                     def mergeIndependentBatches(
-                        tfMap: Map[Int, List[Int]],
-                        ct:    Int,
-                        graph: Map[Int, List[Int]]
+                        nodeIndexMap:    Map[Int, List[Int]],
+                        batchCount:      Int,
+                        dependencyGraph: Map[Int, List[Int]]
                     ): (Map[Int, List[Int]], Map[Int, List[Int]]) = {
-                        var transformingMap = tfMap.toMap
-                        var counter = ct
+                        var transformingMap = nodeIndexMap
+                        var counter = batchCount
 
                         def mergeIndependentBatches_rek(
                             graph: Map[Int, List[Int]]
@@ -692,7 +693,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                             }
                             updatedGraph
                         }
-                        (mergeIndependentBatches_rek(graph), transformingMap)
+                        (mergeIndependentBatches_rek(dependencyGraph), transformingMap)
                     }
 
                     computationSpecificationMap.foreach { csID =>
@@ -701,13 +702,9 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
                     if (!scheduleLazyTransformerInAllBatches) {
                         scheduleGraph.foreach { node =>
-                            if (computationSpecificationMap.find(_._2 == node._1).map(
-                                    _._1
-                                ).head.computationType.equals(LazyComputation) || computationSpecificationMap.find(
-                                    _._2 == node._1
-                                ).map(
-                                    _._1
-                                ).head.computationType.toString.equals(Transformer)
+                            if (computationSpecificationArray(node._1).computationType.equals(
+                                    lazyType
+                                ) || computationSpecificationArray(node._1).computationType.equals(transformerType)
                             ) {
                                 scheduleGraph.foreach { subNode =>
                                     if (subNode._2.contains(node._1)) {
@@ -728,40 +725,40 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                         aCyclicGraph = setLazyInAllBatches(aCyclicGraph, aCyclicGraph.head._1)
                     }
 
-                    val preparedGraph = aCyclicGraph.map { case (nodes, deps) =>
+                    val graphWithoutSelfDependencies = aCyclicGraph.map { case (nodes, deps) =>
                         nodes -> (deps -- nodes).toList
                     }
 
-                    var transformingMap: Map[Int, List[Int]] = Map.empty
+                    var nodeIndexMap: Map[Int, List[Int]] = Map.empty
                     var counter = 0
-                    preparedGraph.foreach { node =>
-                        transformingMap = transformingMap + (counter -> node._1)
+                    graphWithoutSelfDependencies.foreach { node =>
+                        nodeIndexMap = nodeIndexMap + (counter -> node._1)
                         counter = counter + 1
                     }
 
-                    var transformedGraph = preparedGraph.map { case (node, deps) =>
+                    var transformedGraph = graphWithoutSelfDependencies.map { case (node, deps) =>
                         var dependencies: List[Int] = List.empty
-                        transformingMap.foreach { tuple =>
+                        nodeIndexMap.foreach { tuple =>
                             if (tuple._2.intersect(deps).nonEmpty) {
                                 dependencies = dependencies :+ tuple._1
                             }
                         }
-                        transformingMap.find(_._2 == node).map(_._1).head -> dependencies
+                        nodeIndexMap.find(_._2 == node).map(_._1).head -> dependencies
                     }
 
                     val (newGraph, newTransformingMap) =
-                        mergeIndependentBatches(transformingMap, counter, transformedGraph)
+                        mergeIndependentBatches(nodeIndexMap, counter, transformedGraph)
                     transformedGraph = newGraph
-                    transformingMap = newTransformingMap
+                    nodeIndexMap = newTransformingMap
 
                     val batchOrder = topologicalSort(transformedGraph)
 
                     var alreadyScheduledCS: Set[ComputationSpecification[A]] = Set.empty
                     batchOrder.foreach { batch =>
                         var scheduledInThisPhase: Set[ComputationSpecification[A]] = Set.empty
-                        transformingMap.get(batch).head.foreach { csID =>
+                        nodeIndexMap.get(batch).head.foreach { csID =>
                             scheduledInThisPhase =
-                                scheduledInThisPhase + computationSpecificationMap.find(_._2 == csID).map(_._1).head
+                                scheduledInThisPhase + computationSpecificationArray(csID)
                         }
 
                         this.scheduleBatches = this.scheduleBatches :+ computePhase(
@@ -777,7 +774,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
                     // Creates a map from ComputationSpecifications to their indices
                     val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
-
+                    val computationSpecificationArray: Array[ComputationSpecification[A]] = allCS.toArray
                     // Initializes an empty schedule graph
                     var scheduleGraph: Map[Int, Set[Int]] = Map.empty
 
@@ -807,9 +804,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
                     def getAllUses(css: List[Int]): Set[PropertyBounds] = {
                         var allUses: Set[PropertyBounds] = Set.empty
-                        css.foreach { cs =>
-                            allUses = allUses ++ computationSpecificationMap.find(_._2 == cs).map(_._1).head.uses(ps)
-                        }
+                        css.foreach { cs => allUses = allUses ++ computationSpecificationArray(cs).uses(ps) }
                         allUses
                     }
 
@@ -826,12 +821,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                         ): Map[List[Int], Set[Int]] = {
 
                             if (firstElement.forall(csID =>
-                                    computationSpecificationMap.find(_._2 == csID).map(
-                                        _._1
-                                    ).head.computationType.equals(LazyComputation) ||
-                                        computationSpecificationMap.find(_._2 == csID).map(
-                                            _._1
-                                        ).head.computationType.equals(Transformer)
+                                    computationSpecificationArray(csID).computationType.equals(lazyType) ||
+                                        computationSpecificationArray(csID).computationType.equals(transformerType)
                                 )
                             ) {
                                 var existInSomeBatch = false
@@ -1005,13 +996,11 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
                     if (!scheduleLazyTransformerInAllBatches) {
                         scheduleGraph.foreach { node =>
-                            if (computationSpecificationMap.find(_._2 == node._1).map(
-                                    _._1
-                                ).head.computationType.equals(LazyComputation) || computationSpecificationMap.find(
-                                    _._2 == node._1
-                                ).map(
-                                    _._1
-                                ).head.computationType.toString.equals(Transformer)
+                            if (computationSpecificationArray(node._1).computationType.equals(
+                                    lazyType
+                                ) || computationSpecificationArray(node._1).computationType.toString.equals(
+                                    transformerType
+                                )
                             ) {
                                 scheduleGraph.foreach { subNode =>
                                     if (subNode._2.contains(node._1)) {
@@ -1064,7 +1053,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                         var scheduledInThisPhase: Set[ComputationSpecification[A]] = Set.empty
                         transformingMap.get(batch).head.foreach { csID =>
                             scheduledInThisPhase =
-                                scheduledInThisPhase + computationSpecificationMap.find(_._2 == csID).map(_._1).head
+                                scheduledInThisPhase + computationSpecificationArray(csID)
                         }
 
                         this.scheduleBatches = this.scheduleBatches :+ computePhase(
