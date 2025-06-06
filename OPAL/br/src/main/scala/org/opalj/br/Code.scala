@@ -713,7 +713,7 @@ final class Code private (
      * @param pc The program counter of an instruction of this `Code` array.
      */
     def handlersFor(pc: Int, justExceptions: Boolean = false): List[ExceptionHandler] = {
-        var handledExceptions = Set.empty[ObjectType]
+        var handledExceptions = Set.empty[ClassType]
         val ehs = List.newBuilder[ExceptionHandler]
         exceptionHandlers forall { eh =>
             if (eh.startPC <= pc && eh.endPC > pc) {
@@ -762,13 +762,13 @@ final class Code private (
      */
     def handlersForException(
         pc:        Int,
-        exception: ObjectType
+        exception: ClassType
     )(
         implicit classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): List[ExceptionHandler] = {
         import classHierarchy.isASubtypeOf
 
-        var handledExceptions = Set.empty[ObjectType]
+        var handledExceptions = Set.empty[ClassType]
 
         val ehs = List.newBuilder[ExceptionHandler]
         exceptionHandlers forall { eh =>
@@ -817,7 +817,7 @@ final class Code private (
      * multiple times.
      */
     def handlerInstructionsFor(pc: Int): List[Int] /*Chain[PC]*/ = {
-        var handledExceptions = Set.empty[ObjectType]
+        var handledExceptions = Set.empty[ClassType]
 
         val pcs = List.newBuilder[Int] /*PC*/
         exceptionHandlers forall { eh =>
@@ -1860,17 +1860,17 @@ object Code {
             maxLocals = descriptor.requiredRegisters + (if (isInstanceMethod) 1 else 0),
             instructions =
                 Array(
-                    NEW(ObjectType.Error),
+                    NEW(ClassType.Error),
                     null,
                     null,
                     DUP,
                     message.map(LoadString.apply).getOrElse(LoadString("OPAL: the underlying bytecode is invalid")),
                     null,
                     INVOKESPECIAL(
-                        ObjectType.Error,
+                        ClassType.Error,
                         isInterface = false,
                         "<init>",
-                        MethodDescriptor.JustTakes(ObjectType.String)
+                        MethodDescriptor.JustTakes(ClassType.String)
                     ),
                     null,
                     null,

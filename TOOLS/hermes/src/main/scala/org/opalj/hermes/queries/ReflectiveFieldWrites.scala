@@ -3,7 +3,7 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br._
+import org.opalj.br.ClassType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureQuery
 import org.opalj.hermes.queries.util.InstanceAPIMethod
@@ -15,8 +15,8 @@ import org.opalj.hermes.queries.util.InstanceAPIMethod
  */
 class ReflectiveFieldWrites(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
-    val FieldT = ObjectType("java/lang/reflect/Field")
-    val Lookup = ObjectType.MethodHandles$Lookup
+    val FieldT = ClassType("java/lang/reflect/Field")
+    val Lookup = ClassType.MethodHandles$Lookup
 
     override val apiFeatures: List[APIFeature] = {
         List(

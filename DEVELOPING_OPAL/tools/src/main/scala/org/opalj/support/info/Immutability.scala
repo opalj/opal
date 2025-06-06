@@ -20,8 +20,8 @@ import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.ClassType
 import org.opalj.br.Field
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
@@ -65,9 +65,8 @@ import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -146,6 +145,7 @@ object Immutability {
 
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
+                EagerFieldAccessInformationAnalysis,
                 LazyL2FieldAssignabilityAnalysis,
                 LazyFieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
@@ -155,13 +155,9 @@ object Immutability {
                 LazySimpleEscapeAnalysis
             )
 
-        project.get(callgraphKey)
-
-        L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
-
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
-                Set[Class[_ <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
+                Set[Class[_ <: AnyRef]](classOf[domain.l0.PrimitiveTACAIDomain])
             else if (level == 1)
                 Set[Class[_ <: AnyRef]](classOf[domain.l1.DefaultDomainWithCFGAndDefUse[URL]])
             else if (level == 2)
@@ -185,6 +181,8 @@ object Immutability {
 
         val propertyStore = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
+
+        project.get(callgraphKey)
 
         time {
             analysesManager.runAll(
@@ -379,7 +377,7 @@ object Immutability {
 
         val classGroupedResults = propertyStore
             .entities(ClassImmutability.key)
-            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ClassType]))
             .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
@@ -389,7 +387,7 @@ object Immutability {
             }
 
         def unpackClass(eps: EPS[Entity, OrderedProperty]): String = {
-            val classFile = eps.e.asInstanceOf[ObjectType]
+            val classFile = eps.e.asInstanceOf[ClassType]
             val className = classFile.simpleName
             s"${classFile.packageName.replace("/", ".")}.$className"
         }
@@ -421,13 +419,13 @@ object Immutability {
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val transitivelyImmutableClassesInterfaces = transitivelyImmutables
-            .filter(eps => allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => allInterfaces.contains(eps.e.asInstanceOf[ClassType]))
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
 
         val transitivelyImmutableClasses = transitivelyImmutables
-            .filter(eps => !allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => !allInterfaces.contains(eps.e.asInstanceOf[ClassType]))
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
@@ -463,7 +461,7 @@ object Immutability {
 
         val typeGroupedResults = propertyStore
             .entities(TypeImmutability.key)
-            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ClassType]))
             .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
@@ -539,10 +537,9 @@ object Immutability {
                 | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
                 | Fields: ${allFieldsInProjectClassFiles.size}
                 | Fields with primitive Types / java.lang.String: ${
-                        allFieldsInProjectClassFiles
-                            .filter(field =>
-                                !field.fieldType.isReferenceType || field.fieldType == ObjectType.String
-                            ).size
+                        allFieldsInProjectClassFiles.count(field =>
+                            !field.fieldType.isReferenceType || field.fieldType == ClassType.String
+                        )
                     }
                 |""".stripMargin
             )
@@ -628,7 +625,7 @@ object Immutability {
 
             val calender = Calendar.getInstance()
             calender.add(Calendar.ALL_STYLES, 1)
-            val date = calender.getTime()
+            val date = calender.getTime
             val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
 
             val file = new File(
@@ -701,8 +698,6 @@ object Immutability {
         var cp: File = null
         var resultFolder: Path = null
         var numThreads = 0
-        // var timeEvaluation: Boolean = false
-        // var threadEvaluation: Boolean = false
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var withoutJDK: Boolean = false

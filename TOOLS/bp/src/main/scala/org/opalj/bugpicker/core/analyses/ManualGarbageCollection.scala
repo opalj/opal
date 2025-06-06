@@ -9,7 +9,7 @@ import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.issues.IssueCategory
@@ -30,7 +30,7 @@ import org.opalj.issues.InstructionLocation
  */
 object ManualGarbageCollection {
 
-    final val Runtime = ObjectType("java/lang/Runtime")
+    final val Runtime = ClassType("java/lang/Runtime")
 
     def description: String =
         "Reports methods outside of java.lang that explicitly invoke the garbage collector."
@@ -52,7 +52,7 @@ object ManualGarbageCollection {
         for {
             method @ MethodWithBody(body) <- classFile.methods
             (pc, gcCall) <- body.collectWithIndex {
-                case (pc, INVOKESTATIC(ObjectType.System, false, "gc", NoArgsAndReturnVoid)) =>
+                case (pc, INVOKESTATIC(ClassType.System, false, "gc", NoArgsAndReturnVoid)) =>
                     (pc, "System.gc()")
                 case (pc, INVOKEVIRTUAL(Runtime, "gc", NoArgsAndReturnVoid)) =>
                     (pc, "Runtime.gc()")

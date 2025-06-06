@@ -6,9 +6,9 @@ package analyses
 package pointsto
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -90,9 +90,9 @@ abstract class NewInstanceAnalysis private[analyses] (
             new NewInstanceMethodAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Class,
+                    ClassType.Class,
                     "",
-                    ObjectType.Class,
+                    ClassType.Class,
                     "newInstance",
                     MethodDescriptor.JustReturnsObject
                 )
@@ -100,11 +100,11 @@ abstract class NewInstanceAnalysis private[analyses] (
             new NewInstanceMethodAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Constructor,
+                    ClassType.Constructor,
                     "",
-                    ObjectType.Constructor,
+                    ClassType.Constructor,
                     "newInstance",
-                    MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+                    MethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object)
                 )
             ) with PointsToBase
         )
@@ -193,12 +193,12 @@ abstract class NewInstanceMethodAnalysis(
     }
 }
 
-trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait NewInstanceAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => NewInstanceAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
+        super.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callees, propertyKind)
 

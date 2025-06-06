@@ -15,7 +15,7 @@ import org.opalj.br.TestSupport.biProject
 @RunWith(classOf[JUnitRunner])
 class TACNaiveFloatArithmeticTest extends TACNaiveTest {
 
-    val ArithmeticExpressionsType = ObjectType("tactest/ArithmeticExpressions")
+    val ArithmeticExpressionsType = ClassType("tactest/ArithmeticExpressions")
 
     val project = biProject("tactest-8-preserveAllLocals.jar")
 

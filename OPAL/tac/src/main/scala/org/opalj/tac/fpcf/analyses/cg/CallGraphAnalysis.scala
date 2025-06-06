@@ -5,9 +5,9 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -145,9 +145,9 @@ class CallGraphAnalysis private[cg] (
 
         val cbsTargets: Set[ReferenceType] =
             if (!isPrecise && resovleCallBySignature && call.isInterface &&
-                call.declaringClass.isObjectType
+                call.declaringClass.isClassType
             ) {
-                val cf = project.classFile(call.declaringClass.asObjectType)
+                val cf = project.classFile(call.declaringClass.asClassType)
                 cf.flatMap { _.findMethod(call.name, call.descriptor) }.map {
                     getCBSTargets(_).toSet[ReferenceType]
                 }.getOrElse(Set.empty)
@@ -176,8 +176,8 @@ class CallGraphAnalysis private[cg] (
         // Deal with the fact that there may be unknown subtypes of the receiver type that might
         // override the method
         if (!isPrecise) {
-            if (specializedDeclaringClassType.isObjectType) {
-                val declType = specializedDeclaringClassType.asObjectType
+            if (specializedDeclaringClassType.isClassType) {
+                val declType = specializedDeclaringClassType.asClassType
 
                 val mResult = if (classHierarchy.isInterface(declType).isYes)
                     org.opalj.Result(project.resolveInterfaceMethodReference(declType, call.name, call.descriptor))
@@ -355,8 +355,8 @@ class CallGraphAnalysis private[cg] (
         pc:                  Int,
         calleesAndCallers:   DirectCalls
     ): Unit = {
-        val declaringClassType = callDeclaringClass.mostPreciseObjectType
-        val runtimeType = runtimeReceiverType.mostPreciseObjectType
+        val declaringClassType = callDeclaringClass.mostPreciseClassType
+        val runtimeType = runtimeReceiverType.mostPreciseClassType
 
         val declTgt = declaredMethods.apply(declaringClassType, packageName, runtimeType, callName, callDescriptor)
 
@@ -392,7 +392,7 @@ class CallGraphAnalysis private[cg] (
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
         for (rv <- rvs) rv match {
             case _: IsSArrayValue =>
-                handlePreciseCall(ObjectType.Object, callContext, call, pc, calleesAndCallers)
+                handlePreciseCall(ClassType.Object, callContext, call, pc, calleesAndCallers)
 
             case ov: IsSObjectValue =>
                 if (ov.isPrecise) {
@@ -417,7 +417,7 @@ class CallGraphAnalysis private[cg] (
     }
 
     protected[this] def handlePreciseCall(
-        calleeType:        ObjectType,
+        calleeType:        ClassType,
         callContext:       ContextType,
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
@@ -448,7 +448,7 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
      * ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) to be called from an unknown context.
      * This will trigger the computation of the callees for these methods (see `processMethod`).
      */
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CallGraphAnalysis = {
         val declaredMethods = p.get(DeclaredMethodsKey)
         val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
 
@@ -468,10 +468,6 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
             }
         }
 
-        null
-    }
-
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CallGraphAnalysis = {
         val analysis = new CallGraphAnalysis(p)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis

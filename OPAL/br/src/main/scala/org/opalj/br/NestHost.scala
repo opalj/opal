@@ -7,7 +7,7 @@ package br
  *
  * @author Dominik Helm
  */
-case class NestHost(hostClassType: ObjectType) extends Attribute {
+case class NestHost(hostClassType: ClassType) extends Attribute {
 
     override final def kindId: Int = NestHost.KindId
 

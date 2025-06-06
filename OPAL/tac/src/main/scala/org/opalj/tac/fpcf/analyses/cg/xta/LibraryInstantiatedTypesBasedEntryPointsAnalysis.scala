@@ -8,8 +8,8 @@ package xta
 
 import java.util.concurrent.ConcurrentHashMap
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -55,7 +55,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     // TODO: Use a Scala set
-    private val globallySeenTypes = new ConcurrentHashMap[ObjectType, Boolean]()
+    private val globallySeenTypes = new ConcurrentHashMap[ClassType, Boolean]()
 
     def analyze(se: TypeSetEntity): PropertyComputationResult = {
         val instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes] =
@@ -107,7 +107,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
 
     def analyzeTypes(types: Iterator[ReferenceType]): Iterator[DeclaredMethod] = {
         types.flatMap {
-            case ot: ObjectType if !globallySeenTypes.containsKey(ot) =>
+            case ot: ClassType if !globallySeenTypes.containsKey(ot) =>
                 globallySeenTypes.put(ot, true)
                 project.classFile(ot).map { cf => cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic) }
                     .getOrElse(Iterator.empty)

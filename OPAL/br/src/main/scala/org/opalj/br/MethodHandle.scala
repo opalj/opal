@@ -23,10 +23,10 @@ sealed abstract class MethodHandle extends ConstantValue[MethodHandle] {
     override final def value: this.type = this
 
     /**
-     * Returns `ObjectType.MethodHandle`;
+     * Returns `ClassType.MethodHandle`;
      * the type of the value pushed onto the stack by an ldc(_w) instruction.
      */
-    override def runtimeValueType: ObjectType = ObjectType.MethodHandle
+    override def runtimeValueType: ClassType = ClassType.MethodHandle
 
     def isInvokeStaticMethodHandle: Boolean = false
 
@@ -39,7 +39,7 @@ sealed abstract class MethodHandle extends ConstantValue[MethodHandle] {
 
 sealed abstract class FieldAccessMethodHandle extends MethodHandle {
 
-    def declaringClassType: ObjectType
+    def declaringClassType: ClassType
     def name: String
     def fieldType: FieldType
 
@@ -59,7 +59,7 @@ sealed trait InstanceFieldAccessMethodHandle extends FieldAccessMethodHandle
 sealed trait StaticFieldAccessMethodHandle extends FieldAccessMethodHandle
 
 case class GetFieldMethodHandle(
-    declaringClassType: ObjectType,
+    declaringClassType: ClassType,
     name:               String,
     fieldType:          FieldType
 ) extends FieldReadAccessMethodHandle with InstanceFieldAccessMethodHandle {
@@ -67,7 +67,7 @@ case class GetFieldMethodHandle(
 }
 
 case class GetStaticMethodHandle(
-    declaringClassType: ObjectType,
+    declaringClassType: ClassType,
     name:               String,
     fieldType:          FieldType
 ) extends FieldReadAccessMethodHandle with StaticFieldAccessMethodHandle {
@@ -75,7 +75,7 @@ case class GetStaticMethodHandle(
 }
 
 case class PutFieldMethodHandle(
-    declaringClassType: ObjectType,
+    declaringClassType: ClassType,
     name:               String,
     fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle with InstanceFieldAccessMethodHandle {
@@ -83,7 +83,7 @@ case class PutFieldMethodHandle(
 }
 
 case class PutStaticMethodHandle(
-    declaringClassType: ObjectType,
+    declaringClassType: ClassType,
     name:               String,
     fieldType:          FieldType
 ) extends FieldWriteAccessMethodHandle with StaticFieldAccessMethodHandle {
@@ -151,7 +151,7 @@ case class InvokeSpecialMethodHandle(
 }
 
 case class NewInvokeSpecialMethodHandle(
-    receiverType:     ObjectType,
+    receiverType:     ClassType,
     methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
 

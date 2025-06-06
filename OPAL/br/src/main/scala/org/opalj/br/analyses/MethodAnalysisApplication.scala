@@ -44,7 +44,7 @@ abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
         val methodSignature = params.find(_.startsWith("-method=")).get.substring(8)
         info("progress", s"trying to find: $className{ $methodSignature }")
 
-        val cf = p.classFile(ObjectType(className)) match {
+        val cf = p.classFile(ClassType(className)) match {
             case Some(cf) => cf
             case None     => return s"Class $className could not be found!";
         }

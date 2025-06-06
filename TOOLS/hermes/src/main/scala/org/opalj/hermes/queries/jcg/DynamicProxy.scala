@@ -4,7 +4,7 @@ package hermes
 package queries
 package jcg
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureQuery
 import org.opalj.hermes.queries.util.StaticAPIMethod
@@ -20,7 +20,7 @@ class DynamicProxy(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
         List(
             StaticAPIMethod(
-                ObjectType("java/lang/reflect/Proxy"),
+                ClassType("java/lang/reflect/Proxy"),
                 "newProxyInstance",
                 featureID = "DP1"
             )

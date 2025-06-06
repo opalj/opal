@@ -13,7 +13,7 @@ object DeclaredFieldsKey extends ProjectInformationKey[DeclaredFields, Nothing] 
 
     override def compute(p: SomeProject): DeclaredFields = {
         val idCounter = new AtomicInteger()
-        val result: ConcurrentHashMap[ObjectType, ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]] =
+        val result: ConcurrentHashMap[ClassType, ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]] =
             new ConcurrentHashMap
 
         p.allFields.iterator.foreach { f =>

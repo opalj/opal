@@ -58,7 +58,7 @@ sealed abstract class MethodDescriptor
 
     def value: this.type = this
 
-    override def runtimeValueType: ObjectType = ObjectType.MethodType
+    override def runtimeValueType: ClassType = ClassType.MethodType
 
     def valueToString: String = toUMLNotation
 
@@ -488,7 +488,7 @@ object MethodDescriptor {
      * }}}
      */
     final val SignaturePolymorphicMethodObject: MethodDescriptor = {
-        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object)
     }
 
     final val SignaturePolymorphicMethodVoid: MethodDescriptor = {
@@ -516,37 +516,37 @@ object MethodDescriptor {
     final val JustReturnsLong: MethodDescriptor = new NoArgumentMethodDescriptor(LongType)
 
     final val JustReturnsObject: MethodDescriptor = {
-        new NoArgumentMethodDescriptor(ObjectType.Object)
+        new NoArgumentMethodDescriptor(ClassType.Object)
     }
 
     final val JustReturnsClass: MethodDescriptor = {
-        new NoArgumentMethodDescriptor(ObjectType.Class)
+        new NoArgumentMethodDescriptor(ClassType.Class)
     }
 
     final val JustReturnsString: MethodDescriptor = {
-        new NoArgumentMethodDescriptor(ObjectType.String)
+        new NoArgumentMethodDescriptor(ClassType.String)
     }
 
-    final val JustTakesObject: MethodDescriptor = apply(ObjectType.Object, VoidType)
+    final val JustTakesObject: MethodDescriptor = apply(ClassType.Object, VoidType)
 
     def JustTakes(parameterType: FieldType): MethodDescriptor = {
         new SingleArgumentMethodDescriptor(parameterType, VoidType)
     }
 
     final val ReadObjectDescriptor = {
-        MethodDescriptor(ObjectType("java/io/ObjectInputStream"), VoidType)
+        MethodDescriptor(ClassType("java/io/ObjectInputStream"), VoidType)
     }
 
     final val WriteObjectDescriptor = {
-        MethodDescriptor(ObjectType("java/io/ObjectOutputStream"), VoidType)
+        MethodDescriptor(ClassType("java/io/ObjectOutputStream"), VoidType)
     }
 
     final val ReadObjectInputDescriptor = {
-        MethodDescriptor(ObjectType("java/io/ObjectInput"), VoidType)
+        MethodDescriptor(ClassType("java/io/ObjectInput"), VoidType)
     }
 
     final val WriteObjectOutputDescriptor = {
-        MethodDescriptor(ObjectType("java/io/ObjectOutput"), VoidType)
+        MethodDescriptor(ClassType("java/io/ObjectOutput"), VoidType)
     }
 
     /**
@@ -555,14 +555,14 @@ object MethodDescriptor {
     final val LambdaMetafactoryDescriptor = {
         MethodDescriptor(
             ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
-                ObjectType.MethodType,
-                ObjectType.MethodHandle,
-                ObjectType.MethodType
+                ClassType.MethodHandles$Lookup,
+                ClassType.String,
+                ClassType.MethodType,
+                ClassType.MethodType,
+                ClassType.MethodHandle,
+                ClassType.MethodType
             ),
-            ObjectType.CallSite
+            ClassType.CallSite
         )
     }
 
@@ -572,12 +572,12 @@ object MethodDescriptor {
     final val LambdaAltMetafactoryDescriptor = {
         MethodDescriptor(
             ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
+                ClassType.MethodHandles$Lookup,
+                ClassType.String,
+                ClassType.MethodType,
                 ArrayType.ArrayOfObject
             ),
-            ObjectType.CallSite
+            ClassType.CallSite
         )
     }
 
@@ -587,12 +587,12 @@ object MethodDescriptor {
     final val ScalaLambdaDeserializeDescriptor = {
         MethodDescriptor(
             ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
+                ClassType.MethodHandles$Lookup,
+                ClassType.String,
+                ClassType.MethodType,
                 ArrayType.ArrayOfMethodHandle
             ),
-            ObjectType.CallSite
+            ClassType.CallSite
         )
     }
 
@@ -602,12 +602,12 @@ object MethodDescriptor {
     final val ScalaSymbolLiteralDescriptor = {
         MethodDescriptor(
             ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
-                ObjectType.String
+                ClassType.MethodHandles$Lookup,
+                ClassType.String,
+                ClassType.MethodType,
+                ClassType.String
             ),
-            ObjectType.CallSite
+            ClassType.CallSite
         )
     }
 
@@ -617,12 +617,12 @@ object MethodDescriptor {
     final val ScalaStructuralCallSiteDescriptor = {
         MethodDescriptor(
             ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.MethodType,
-                ObjectType.MethodType
+                ClassType.MethodHandles$Lookup,
+                ClassType.String,
+                ClassType.MethodType,
+                ClassType.MethodType
             ),
-            ObjectType.CallSite
+            ClassType.CallSite
         )
     }
 
@@ -632,11 +632,11 @@ object MethodDescriptor {
     final val ConstantBootstrapsPrimitiveClassDescriptor = {
         MethodDescriptor(
             ArraySeq(
-                ObjectType.MethodHandles$Lookup,
-                ObjectType.String,
-                ObjectType.Class
+                ClassType.MethodHandles$Lookup,
+                ClassType.String,
+                ClassType.Class
             ),
-            ObjectType.Class
+            ClassType.Class
         )
     }
 
@@ -647,29 +647,29 @@ object MethodDescriptor {
     final val FindVarHandleDescriptor = {
         MethodDescriptor(
             ArraySeq(
-                ObjectType.Class,
-                ObjectType.String,
-                ObjectType.Class
+                ClassType.Class,
+                ClassType.String,
+                ClassType.Class
             ),
-            ObjectType.VarHandle
+            ClassType.VarHandle
         )
     }
 
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {
-            case VoidType.id         => NoArgumentAndNoReturnValueMethodDescriptor
-            case BooleanType.id      => JustReturnsBoolean
-            case ByteType.id         => JustReturnsByte
-            case ShortType.id        => JustReturnsShort
-            case CharType.id         => JustReturnsChar
-            case IntegerType.id      => JustReturnsInteger
-            case LongType.id         => JustReturnsLong
-            case FloatType.id        => JustReturnsFloat
-            case DoubleType.id       => JustReturnsDouble
-            case ObjectType.ObjectId => JustReturnsObject
-            case ObjectType.StringId => JustReturnsString
-            case ObjectType.ClassId  => JustReturnsClass
-            case _                   => new NoArgumentMethodDescriptor(returnType)
+            case VoidType.id        => NoArgumentAndNoReturnValueMethodDescriptor
+            case BooleanType.id     => JustReturnsBoolean
+            case ByteType.id        => JustReturnsByte
+            case ShortType.id       => JustReturnsShort
+            case CharType.id        => JustReturnsChar
+            case IntegerType.id     => JustReturnsInteger
+            case LongType.id        => JustReturnsLong
+            case FloatType.id       => JustReturnsFloat
+            case DoubleType.id      => JustReturnsDouble
+            case ClassType.ObjectId => JustReturnsObject
+            case ClassType.StringId => JustReturnsString
+            case ClassType.ClassId  => JustReturnsClass
+            case _                  => new NoArgumentMethodDescriptor(returnType)
         }
     }
 
@@ -710,7 +710,7 @@ object MethodDescriptor {
             case 'L' =>
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple
-                    ObjectType(md.substring(startIndex + 1, endIndex)),
+                    ClassType(md.substring(startIndex + 1, endIndex)),
                     endIndex + 1
                 )
             case '[' =>

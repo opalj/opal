@@ -9,9 +9,9 @@ package reflection
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -43,27 +43,27 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    val ConstructorT: ObjectType = ObjectType("java/lang/reflect/Constructor")
+    val ConstructorT: ClassType = ClassType("java/lang/reflect/Constructor")
 
     def process(p: SomeProject): PropertyComputationResult = {
         val analyses = List(
             new TamiFlexMethodInvokeAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Method,
+                    ClassType.Method,
                     "",
-                    ObjectType.Method,
+                    ClassType.Method,
                     "invoke",
-                    MethodDescriptor.apply(ArraySeq(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object)
+                    MethodDescriptor.apply(ArraySeq(ClassType.Object, ArrayType.ArrayOfObject), ClassType.Object)
                 ),
                 "Method.invoke"
             ),
             new TamiFlexMethodInvokeAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Class,
+                    ClassType.Class,
                     "",
-                    ObjectType.Class,
+                    ClassType.Class,
                     "newInstance",
                     MethodDescriptor.JustReturnsObject
                 ),
@@ -76,7 +76,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     "",
                     ConstructorT,
                     "newInstance",
-                    MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+                    MethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object)
                 ),
                 "Constructor.newInstance"
             )
@@ -161,6 +161,9 @@ object TamiFlexCallGraphAnalysisScheduler extends BasicFPCFEagerAnalysisSchedule
         Callees,
         TACAI
     )
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

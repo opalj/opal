@@ -8,14 +8,14 @@ import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
+import org.opalj.br.ClassType.primitiveType
 import org.opalj.br.DoubleType
 import org.opalj.br.FieldType
 import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.NumericType
-import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.primitiveType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.value.IsNullValue
@@ -52,7 +52,7 @@ package object analyses {
                 })
 
         // actual type is base type, declared type might be a boxed type
-        case (ft: ObjectType, at: BaseType) =>
+        case (ft: ClassType, at: BaseType) =>
             primitiveType(ft) match {
                 case Some(BooleanType)     => at.isBooleanType
                 case Some(nt: NumericType) => at.isNumericType && nt.isWiderThan(at.asNumericType)
@@ -109,7 +109,7 @@ package object analyses {
                 })
 
         // actual type is base type, declared type might be a boxed type
-        case (pType: ObjectType, IsPrimitiveValue(v)) if !requireNonNullReferenceValue =>
+        case (pType: ClassType, IsPrimitiveValue(v)) if !requireNonNullReferenceValue =>
             primitiveType(pType) match {
                 case Some(BooleanType)     => v.isBooleanType
                 case Some(nt: NumericType) => v.isNumericType && nt.isWiderThan(v.asNumericType)

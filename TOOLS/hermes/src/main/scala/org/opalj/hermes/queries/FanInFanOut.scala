@@ -9,9 +9,9 @@ import scala.collection.mutable
 
 import com.typesafe.config.Config
 
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFile
 import org.opalj.da.CONSTANT_Class_info
@@ -204,12 +204,12 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         val fanOutMap = mutable.Map.empty[Int, Int]
         val fanInMap = mutable.Map.empty[Int, Int]
 
-        @inline def getObjectTypeID = project.classHierarchy.getObjectType _
+        @inline def getClassTypeID = project.classHierarchy.getClassType _
 
         for {
             (classFile, source) <- rawClassFiles
             classFileType = classFile.thisType.asJVMType
-            objectTypeId = ObjectType(classFileType).id
+            classTypeId = ClassType(classFileType).id
             location = ClassFileLocation(Some(source), classFileType)
         } {
             implicit val constantPool: Constant_Pool = classFile.constant_pool
@@ -229,20 +229,20 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
                 if (typeInfo.charAt(0) == '(') {
                     val md = MethodDescriptor(typeInfo)
                     referencedTypes ++= md.parameterTypes.foldLeft(Set.empty[Int])((res, p) =>
-                        if (p.isObjectType)
-                            res + p.asObjectType.id
+                        if (p.isClassType)
+                            res + p.asClassType.id
                         else res
                     )
-                    if (md.returnType.isObjectType)
-                        referencedTypes += md.returnType.asObjectType.id
+                    if (md.returnType.isClassType)
+                        referencedTypes += md.returnType.asClassType.id
                 } else {
                     try {
                         val ft = FieldType(typeInfo)
-                        if (ft.isObjectType)
-                            referencedTypes += ft.asObjectType.id
+                        if (ft.isClassType)
+                            referencedTypes += ft.asClassType.id
                     } catch {
                         case iae: IllegalArgumentException =>
-                            referencedTypes += ObjectType(typeInfo).id
+                            referencedTypes += ClassType(typeInfo).id
                     }
                 }
             }
@@ -251,10 +251,10 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             val fanOutIndex = fanoutFeature.featureIndex(fanOut)
             features(fanOutIndex) += location
 
-            fanOutMap += (objectTypeId -> fanOut)
+            fanOutMap += (classTypeId -> fanOut)
 
             referencedTypes.foreach { otId =>
-                if (otId != objectTypeId) {
+                if (otId != classTypeId) {
                     val newRefCount = fanInMap.getOrElse(otId, 0) + 1
                     fanInMap += ((otId, newRefCount))
                 }
@@ -265,7 +265,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             val (otID, fanIn) = entry
             val fanOut = fanOutMap.getOrElse(otID, 1)
             val fanInFanOut = fanIn.toDouble / fanOut.toDouble
-            val l = ClassFileLocation(project, getObjectTypeID(otID))
+            val l = ClassFileLocation(project, getClassTypeID(otID))
 
             val fanInFeatureIndex = faninFeature.featureIndex(fanIn)
             val ratioFeatureIndex = ratioFeature.featureIndex(fanInFanOut)
