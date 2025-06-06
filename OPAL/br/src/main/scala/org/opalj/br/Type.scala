@@ -1041,10 +1041,10 @@ object ClassType {
             val newClassTypes = JArrays.copyOf(this.classTypes, nextId.get)
             cacheRWLock.readLock().lock()
             try {
-                cache.values.forEach { wot =>
-                    val ot = wot.get
-                    if (ot != null && ot.id < newClassTypes.length) {
-                        newClassTypes(ot.id) = ot
+                cache.values.forEach { wct =>
+                    val ct = wct.get
+                    if (ct != null && ct.id < newClassTypes.length) {
+                        newClassTypes(ct.id) = ct
                     }
                 }
             } finally {
@@ -1060,17 +1060,17 @@ object ClassType {
     def lookup(id: Int): ClassType = {
         var classTypes = this.classTypes
         if (id < classTypes.length) {
-            val ot = classTypes(id)
-            if (ot == null) throw new IllegalArgumentException(s"$id is unknown")
-            ot
+            val ct = classTypes(id)
+            if (ct == null) throw new IllegalArgumentException(s"$id is unknown")
+            ct
         } else {
             // Let's check if the type was created in the meantime!
             updateClassTypes()
             classTypes = this.classTypes
             if (id < classTypes.length) {
-                val ot = classTypes(id)
-                if (ot == null) throw new IllegalArgumentException(s"$id is unknown")
-                ot
+                val ct = classTypes(id)
+                if (ct == null) throw new IllegalArgumentException(s"$id is unknown")
+                ct
             } else {
                 throw new IllegalArgumentException(
                     s"$id belongs to ClassType created after the creation of the lookup map"
@@ -1100,7 +1100,7 @@ object ClassType {
             classTypes = JArrays.copyOf(classTypes, highestPredefinedTypeId + 1)
 
             // Refill the cache using the classTypes array
-            classTypes.foreach { ot => cache.put(ot.fqn, new WeakReference[ClassType](ot)) }
+            classTypes.foreach { ct => cache.put(ct.fqn, new WeakReference[ClassType](ct)) }
 
             // Reset ID counter to highest id in the cache
             nextId.set(highestPredefinedTypeId + 1)
@@ -1156,11 +1156,11 @@ object ClassType {
         val readLock = cacheRWLock.readLock()
         readLock.lock()
         try {
-            val wrOT = cache.get(fqn)
-            if (wrOT != null) {
-                val OT = wrOT.get()
-                if (OT != null)
-                    return OT;
+            val wrCT = cache.get(fqn)
+            if (wrCT != null) {
+                val CT = wrCT.get()
+                if (CT != null)
+                    return CT;
             }
         } finally {
             readLock.unlock()
@@ -1171,26 +1171,26 @@ object ClassType {
         writeLock.lock()
         try {
             // WE HAVE TO CHECK AGAIN
-            val wrOT = cache.get(fqn)
-            if (wrOT != null) {
-                val OT = wrOT.get()
-                if (OT != null)
-                    return OT;
+            val wrCT = cache.get(fqn)
+            if (wrCT != null) {
+                val CT = wrCT.get()
+                if (CT != null)
+                    return CT;
             }
 
-            val newOT = new ClassType(nextId.getAndIncrement(), fqn)
-            val wrNewOT = new WeakReference(newOT)
-            cache.put(fqn, wrNewOT)
+            val newCT = new ClassType(nextId.getAndIncrement(), fqn)
+            val wrNewCT = new WeakReference(newCT)
+            cache.put(fqn, wrNewCT)
             val currentClassTypeCreationListener = classTypeCreationListener
             if (currentClassTypeCreationListener ne null)
-                currentClassTypeCreationListener(newOT)
-            newOT
+                currentClassTypeCreationListener(newCT)
+            newCT
         } finally {
             writeLock.unlock()
         }
     }
 
-    def unapply(ot: ClassType): Option[String] = Some(ot.fqn)
+    def unapply(ct: ClassType): Option[String] = Some(ct.fqn)
 
     def simpleName(fqn: String): String = {
         val index = fqn.lastIndexOf('/')
@@ -1418,19 +1418,19 @@ object ClassType {
         fs(7) = doubleMatch
 
         (classType: ClassType, args: Args) => {
-            val oid = classType.id
-            if (oid > javaLangDoubleId || oid < javaLangBooleanId) {
+            val cid = classType.id
+            if (cid > javaLangDoubleId || cid < javaLangBooleanId) {
                 orElse(args)
             } else {
-                val index = oid - javaLangBooleanId
+                val index = cid - javaLangBooleanId
                 fs(index)(args)
             }
         }
     }
 
     @inline final def isPrimitiveTypeWrapper(classType: ClassType): Boolean = {
-        val oid = classType.id
-        oid <= javaLangDoubleId && oid >= javaLangBooleanId
+        val cid = classType.id
+        cid <= javaLangDoubleId && cid >= javaLangBooleanId
     }
 }
 
@@ -1670,8 +1670,8 @@ object ElementReferenceType {
 
     def unapply(rt: ReferenceType): Option[ClassType] = {
         rt match {
-            case ot: ClassType                   => Some(ot)
-            case ArrayElementType(ot: ClassType) => Some(ot)
+            case ct: ClassType                   => Some(ct)
+            case ArrayElementType(ct: ClassType) => Some(ct)
             case _                               => None
         }
     }
@@ -1685,7 +1685,7 @@ object ElementReferenceType {
  * {{{
  * val t : Type = ...
  * t match {
- *  case ot @ NotJavaLangObject() => ot
+ *  case ct @ NotJavaLangObject() => ct
  *  case _ =>
  * }
  * }}}

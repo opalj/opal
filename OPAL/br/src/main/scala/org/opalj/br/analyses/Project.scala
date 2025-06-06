@@ -685,7 +685,7 @@ class Project[Source] private (
      * The set of all method names of the given types.
      */
     def methodNames(classTypes: Iterable[ClassType]): Set[String] = {
-        classTypes.flatMap(ot => classFile(ot)).flatMap(cf => cf.methods.map(m => m.name)).toSet
+        classTypes.flatMap(ct => classFile(ct)).flatMap(cf => cf.methods.map(m => m.name)).toSet
     }
 
     /**
@@ -1041,8 +1041,8 @@ class Project[Source] private (
     override def toString: String = {
         val classDescriptions =
             sources map { entry =>
-                val (ot, source) = entry
-                ot.toJava + " « " + source.toString
+                val (ct, source) = entry
+                ct.toJava + " « " + source.toString
             }
 
         classDescriptions.mkString(
@@ -1141,12 +1141,12 @@ object Project {
 
                 def missingSupertypeClassFile =
                     classHierarchy.allSupertypes(cf.thisType, false).find { t => project.classFile(t).isEmpty }.map {
-                        ot =>
-                            (classHierarchy.isInterface(ot) match {
+                        ct =>
+                            (classHierarchy.isInterface(ct) match {
                                 case Yes     => "interface "
                                 case No      => "class "
                                 case Unknown => "interface/class "
-                            }) + ot.toJava
+                            }) + ct.toJava
                     }.getOrElse("<None>")
 
                 m.body.get iterate { (pc: Int, instruction: Instruction) =>
@@ -1584,8 +1584,8 @@ object Project {
         // Stores for each type the number of subtypes that still need to be processed.
         val subtypesToProcessCounts = new Array[Int](ClassType.classTypesCount)
         classHierarchy.foreachKnownType { classType =>
-            val oid = classType.id
-            subtypesToProcessCounts(oid) = classHierarchy.directSubtypesCount(oid)
+            val cid = classType.id
+            subtypesToProcessCounts(cid) = classHierarchy.directSubtypesCount(cid)
         }
 
         val methods = new mutable.AnyRefMap[Method, immutable.Set[Method]](virtualMethodsCount)

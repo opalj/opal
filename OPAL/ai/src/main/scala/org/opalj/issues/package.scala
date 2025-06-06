@@ -102,8 +102,8 @@ package object issues {
             case bt: BaseType => Json.obj("bt" -> bt.toJava)
             case CTIntType    => Json.obj("bt" -> "<Computational Type Int>")
 
-            case ot: ClassType =>
-                Json.obj("ot" -> ot.toJava, "simpleName" -> ot.simpleName)
+            case ct: ClassType =>
+                Json.obj("ct" -> ct.toJava, "simpleName" -> ct.simpleName)
             case at: ArrayType =>
                 Json.obj("at" -> typeToIDL(at.elementType), "dimensions" -> at.dimensions)
 

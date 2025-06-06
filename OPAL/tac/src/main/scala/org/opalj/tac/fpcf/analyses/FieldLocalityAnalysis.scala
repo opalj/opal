@@ -226,8 +226,8 @@ class FieldLocalityAnalysis private[analyses] (
      * class.
      */
     def allSubclassMethods(field: Field): Set[Method] = {
-        classHierarchy.allSubclassTypes(field.classFile.thisType, reflexive = true).flatMap { ot =>
-            project.classFile(ot)
+        classHierarchy.allSubclassTypes(field.classFile.thisType, reflexive = true).flatMap { ct =>
+            project.classFile(ct)
         }.flatMap(_.methodsWithBody.filter(!_.isStatic)).toSet
     }
 

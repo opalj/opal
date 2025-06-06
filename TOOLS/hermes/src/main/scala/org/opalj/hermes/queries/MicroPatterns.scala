@@ -141,8 +141,8 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
 
         // IMPROVE Cache the results of super interfaces to avoid recomputations or compute it top-down starting with top-level interfaces.
 
-        def isDesignatorType(ot: ClassType): Boolean = {
-            project.classFile(ot).exists(this.isDesignator)
+        def isDesignatorType(ct: ClassType): Boolean = {
+            project.classFile(ct).exists(this.isDesignator)
         }
 
         cl.fields.isEmpty && {

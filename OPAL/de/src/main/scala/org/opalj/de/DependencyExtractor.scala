@@ -989,8 +989,8 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
             return;
 
         target match {
-            case ot: ClassType =>
-                processDependency(source, ot, dType)
+            case ct: ClassType =>
+                processDependency(source, ct, dType)
             case bt: BaseType =>
                 processDependency(source, bt, dType)
             case at: ArrayType =>

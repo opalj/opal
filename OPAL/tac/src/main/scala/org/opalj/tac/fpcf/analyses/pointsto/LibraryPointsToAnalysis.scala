@@ -145,19 +145,19 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
         for {
             iit <- initialInstantiatedTypes;
             // Only class types should be initially instantiated.
-            ot = iit.asClassType
+            ct = iit.asClassType
         } {
             // Assign initial types to all accessible fields.
-            p.classFile(ot) match {
+            p.classFile(ct) match {
                 case Some(cf) =>
                     for (f <- cf.fields if f.isNotFinal && fieldIsRelevant(f) && fieldIsAccessible(f)) {
                         val fieldType = f.fieldType.asReferenceType
 
                         val initialAssignments = if (fieldType.isClassType) {
-                            val ot = fieldType.asClassType
+                            val ct = fieldType.asClassType
                             initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) {
                                 (assignments, iit) =>
-                                    if (classHierarchy.isSubtypeOf(iit, ot)) {
+                                    if (classHierarchy.isSubtypeOf(iit, ct)) {
                                         assignments += iit
                                     }
                                     assignments

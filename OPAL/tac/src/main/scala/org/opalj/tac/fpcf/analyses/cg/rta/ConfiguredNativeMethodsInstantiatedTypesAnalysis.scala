@@ -63,8 +63,8 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
     private[this] def canBeInstantiated(rt: ReferenceType): Boolean = rt match {
         case _: ArrayType => true
-        case ot: ClassType =>
-            val cfOption = project.classFile(ot)
+        case ct: ClassType =>
+            val cfOption = project.classFile(ct)
             cfOption.isDefined && {
                 val cf = cfOption.get
                 !cf.isInterfaceDeclaration && !cf.isAbstract

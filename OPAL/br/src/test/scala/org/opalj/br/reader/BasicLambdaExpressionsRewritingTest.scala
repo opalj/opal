@@ -253,8 +253,8 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
     }
 
     def testProject(project: SomeProject): Unit = {
-        def testAllMethodsWithInvokedMethodAnnotation(ot: String): Unit = {
-            val classFile = project.classFile(ClassType(ot)).get
+        def testAllMethodsWithInvokedMethodAnnotation(ct: String): Unit = {
+            val classFile = project.classFile(ClassType(ct)).get
             classFile
                 .methods
                 .filter(_.runtimeVisibleAnnotations.exists { a =>
