@@ -20,15 +20,15 @@ import net.ceedubs.ficus.Ficus._
  * @author Michael Reif
  * @author Michael Eichberg
  */
-abstract class ClassExtensibility extends (ObjectType => Answer) {
+abstract class ClassExtensibility extends (ClassType => Answer) {
 
     /** See [[isClassExtensible]]. */
-    override final def apply(t: ObjectType): Answer = this.isClassExtensible(t)
+    override final def apply(t: ClassType): Answer = this.isClassExtensible(t)
 
     /**
      * Determines whether the given class can directly be extended by (yet unknown) code.
      */
-    def isClassExtensible(t: ObjectType): Answer
+    def isClassExtensible(t: ClassType): Answer
 }
 
 abstract class AbstractClassExtensibility extends ClassExtensibility {
@@ -40,22 +40,22 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
      * users to use domain knowledge to override the result of the base analysis.
      *
      * @note See [[AbstractClassExtensibility#parseSpecifiedClassesList]] for how to use OPAL's
-     *       configuration to configure sets of object types.
+     *       configuration to configure sets of class types.
      *
      * @return  Those types for which the direct extensibility is explicit configured.
      */
-    protected[this] def configuredExtensibleClasses: Iterator[(ObjectType, Answer)] = Iterator.empty
+    protected[this] def configuredExtensibleClasses: Iterator[(ClassType, Answer)] = Iterator.empty
 
     /**
      * Get the list of configured types using the configured config key.
      *
      * @param   simpleKey The simple name of the config key that will be used to get a list of
-     *          configured object types. [[ClassExtensibilityKey.ConfigKeyPrefix]].
-     * @return  A list of [[ObjectType]]s. The semantic of those types is encoded by the
+     *          configured class types. [[ClassExtensibilityKey.ConfigKeyPrefix]].
+     * @return  A list of [[ClassType]]s. The semantic of those types is encoded by the
      *          respective analysis;
      *          [[AbstractClassExtensibility#configuredExtensibleClasses]].
      */
-    protected[this] def parseSpecifiedClassesList(simpleKey: String): List[ObjectType] = {
+    protected[this] def parseSpecifiedClassesList(simpleKey: String): List[ClassType] = {
         val completeKey = ClassExtensibilityKey.ConfigKeyPrefix + simpleKey
         val fqns = project.config.as[Option[List[String]]](completeKey).getOrElse(List.empty)
 
@@ -65,10 +65,10 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
             // We chose "/." to identify all subtypes, because we can only use a character
             // (sequence) that contains an invalid character in a JVM identifier.
             if (fqn.endsWith("/.")) {
-                val ot = ObjectType(fqn.substring(0, fqn.length - 2))
+                val ot = ClassType(fqn.substring(0, fqn.length - 2))
                 classHierarchy.allSubtypes(ot, reflexive = true)
             } else {
-                List(ObjectType(fqn))
+                List(ClassType(fqn))
             }
         }
     }
@@ -84,11 +84,11 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
             }
 
         val allClassFiles = project.allClassFiles
-        val entries = ObjectType.objectTypesCount
+        val entries = ClassType.classTypesCount
         val extensibility = allClassFiles.foldLeft(ArrayMap[Answer](entries)) { (r, classFile) =>
-            val objectType = classFile.thisType
+            val classType = classFile.thisType
             val isExtensible = {
-                val configured = configuredTypes.get(objectType.id.toLong)
+                val configured = configuredTypes.get(classType.id.toLong)
                 if (configured.isDefined)
                     configured.get
                 else if (classFile.isEffectivelyFinal ||
@@ -98,12 +98,12 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
                     No
                 else if (classFile.isPublic)
                     Yes
-                else if (isClosedPackage(objectType.packageName))
+                else if (isClosedPackage(classType.packageName))
                     No
                 else // => non public class in an open package...
                     Yes
             }
-            r(objectType.id) = isExtensible
+            r(classType.id) = isExtensible
             r
 
         }
@@ -113,7 +113,7 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
     /**
      * Determines whether the given class can directly be extended by (yet unknown) code.
      */
-    def isClassExtensible(t: ObjectType): Answer = classExtensibility.get(t.id).getOrElse(Unknown)
+    def isClassExtensible(t: ClassType): Answer = classExtensibility.get(t.id).getOrElse(Unknown)
 }
 
 class DefaultClassExtensibility(val project: SomeProject) extends AbstractClassExtensibility
@@ -140,7 +140,7 @@ class ConfiguredExtensibleClasses(val project: SomeProject) extends AbstractClas
     /**
      * Returns the types which are extensible.
      */
-    override def configuredExtensibleClasses: Iterator[(ObjectType, Yes.type)] = {
+    override def configuredExtensibleClasses: Iterator[(ClassType, Yes.type)] = {
         parseSpecifiedClassesList("extensibleClasses").iterator.map(t => (t, Yes))
     }
 }
@@ -167,12 +167,12 @@ class ConfiguredFinalClasses(val project: SomeProject) extends AbstractClassExte
     /**
      * Returns the types which are not extensible/which are final.
      */
-    override def configuredExtensibleClasses: Iterator[(ObjectType, No.type)] = {
+    override def configuredExtensibleClasses: Iterator[(ClassType, No.type)] = {
         parseSpecifiedClassesList("finalClasses").iterator.map(t => (t, No))
     }
 }
 
 class ClassHierarchyIsNotExtensible(val project: SomeProject) extends ClassExtensibility {
 
-    def isClassExtensible(t: ObjectType): Answer = No
+    def isClassExtensible(t: ClassType): Answer = No
 }

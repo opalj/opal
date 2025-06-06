@@ -11,7 +11,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 
 /**
  * Tests the LongSets Domain.
@@ -582,8 +582,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val result = ldiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -601,8 +601,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val result = ldiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -613,8 +613,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val result = ldiv(SomePC, v1, v2)
                 result.result should be { LongValue(-1) }
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -625,8 +625,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val result = ldiv(SomePC, v1, v2)
                 result.result should be { LongValue(-1) }
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -654,8 +654,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val result = lrem(SomePC, v1, v2)
                 result.result should be { LongValue(-1) }
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -666,8 +666,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val result = lrem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -678,8 +678,8 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
                 val result = lrem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 

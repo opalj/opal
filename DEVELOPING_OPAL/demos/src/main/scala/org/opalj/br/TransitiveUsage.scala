@@ -21,10 +21,10 @@ import org.opalj.de.DependencyType
  */
 object TransitiveUsage extends AnalysisApplication {
 
-    private[this] var visitedTypes = Set.empty[ObjectType]
+    private[this] var visitedTypes = Set.empty[ClassType]
 
     // Types which are extracted but which are not yet analyzed.
-    private[this] var extractedTypes = Set.empty[ObjectType]
+    private[this] var extractedTypes = Set.empty[ClassType]
 
     // To extract all usages we reuse the infrastructure that enables us to extract
     // dependencies. In this case we just record referred to types and do not actually
@@ -32,10 +32,10 @@ object TransitiveUsage extends AnalysisApplication {
     object TypesCollector extends DependencyProcessorAdapter {
 
         private def processType(t: Type): Unit =
-            if (t.isObjectType) {
-                val objectType = t.asObjectType
-                if (!visitedTypes.contains(objectType))
-                    extractedTypes += objectType
+            if (t.isClassType) {
+                val classType = t.asClassType
+                if (!visitedTypes.contains(classType))
+                    extractedTypes += classType
             }
 
         override def processDependency(
@@ -87,7 +87,7 @@ object TransitiveUsage extends AnalysisApplication {
             isInterrupted: () => Boolean
         ) = {
 
-            val baseType = ObjectType(parameters.head.substring(7).replace('.', '/'))
+            val baseType = ClassType(parameters.head.substring(7).replace('.', '/'))
             extractedTypes += baseType
             while (extractedTypes.nonEmpty) {
                 val nextType = extractedTypes.head

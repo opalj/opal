@@ -98,7 +98,7 @@ case class MethodDesc(name: String, declaringClass: String, returnType: String, 
     }
 
     def toDeclaredMethod(implicit declaredMethods: DeclaredMethods): DeclaredMethod = {
-        val cfType = FieldType(declaringClass).asObjectType
+        val cfType = FieldType(declaringClass).asClassType
         val desc = MethodDescriptor(s"(${parameterTypes.mkString("")})$returnType")
         declaredMethods(cfType, cfType.packageName, cfType, name, desc)
     }

@@ -651,7 +651,7 @@ object Throw {
 }
 
 sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
-    def declaringClass: ObjectType
+    def declaringClass: ClassType
     def name: String
     def declaredFieldType: FieldType
     def value: Expr[V]
@@ -668,7 +668,7 @@ sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
 
 case class PutStatic[+V <: Var[V]](
     pc:                PC,
-    declaringClass:    ObjectType,
+    declaringClass:    ClassType,
     name:              String,
     declaredFieldType: FieldType,
     value:             Expr[V]
@@ -714,7 +714,7 @@ object PutStatic {
 
 case class PutField[+V <: Var[V]](
     pc:                Int,
-    declaringClass:    ObjectType,
+    declaringClass:    ClassType,
     name:              String,
     declaredFieldType: FieldType,
     objRef:            Expr[V],
@@ -808,7 +808,7 @@ object InstanceMethodCall {
  */
 case class NonVirtualMethodCall[+V <: Var[V]](
     pc:             Int,
-    declaringClass: ObjectType,
+    declaringClass: ClassType,
     isInterface:    Boolean,
     name:           String,
     descriptor:     MethodDescriptor,
@@ -825,13 +825,13 @@ case class NonVirtualMethodCall[+V <: Var[V]](
      *
      * @see [ProjectLike#specialCall] for further details.
      */
-    def resolveCallTarget(callerClassType: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+    def resolveCallTarget(callerClassType: ClassType)(implicit p: ProjectLike): Result[Method] = {
         p.specialCall(callerClassType, declaringClass, isInterface, name, descriptor)
     }
 
     // convenience method to enable Call to define a single method to handle all kinds of calls
     def resolveCallTargets(
-        callingContext: ObjectType
+        callingContext: ClassType
     )(
         implicit
         p:  ProjectLike,
@@ -908,7 +908,7 @@ object VirtualMethodCall {
 
 case class StaticMethodCall[+V <: Var[V]](
     pc:             Int,
-    declaringClass: ObjectType,
+    declaringClass: ClassType,
     isInterface:    Boolean,
     name:           String,
     descriptor:     MethodDescriptor,
@@ -929,13 +929,13 @@ case class StaticMethodCall[+V <: Var[V]](
      *
      * @see [ProjectLike#staticCall] for further details.
      */
-    def resolveCallTarget(callingContext: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+    def resolveCallTarget(callingContext: ClassType)(implicit p: ProjectLike): Result[Method] = {
         p.staticCall(callingContext, declaringClass, isInterface, name, descriptor)
     }
 
     // convenience method to enable Call to define a single method to handle all kinds of calls
     def resolveCallTargets(
-        callingContext: ObjectType
+        callingContext: ClassType
     )(
         implicit
         p:  ProjectLike,
@@ -1127,7 +1127,7 @@ object StaticFunctionCallStatement {
  */
 case class CaughtException[+V <: Var[V]](
     pc:                        PC,
-    exceptionType:             Option[ObjectType],
+    exceptionType:             Option[ClassType],
     private var throwingStmts: IntTrieSet
 ) extends Stmt[V] {
 

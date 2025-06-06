@@ -29,7 +29,7 @@ public @interface AvailableTypes {
      * Set of available types.
      *
      * Values are given in the format taken by the constructor of ReferenceType, e.g.
-     * "java/lang/Object" for object types and "[Ljava/lang/Object;" for array types.
+     * "java/lang/Object" for class types and "[Ljava/lang/Object;" for array types.
      *
      * The set given should match the computed types exactly (i.e., it is not a minimum
      * expectation).
