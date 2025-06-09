@@ -125,17 +125,10 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
             .results
-            .filter {
-                case (f: AbstractArrayFact, ArrayValue(_, _)) =>
-                    arrayVar.definedBy.contains(f.definedAtIndex)
-                case (f: AbstractArrayFact, LCPVariableValue) =>
-                    arrayVar.definedBy.contains(f.definedAtIndex)
-                case _ => false
-            }
-            .map(_._2)
-            .foldLeft(UnknownValue: LinearConstantPropagationValue) {
-                case (value, ArrayValue(initValue, values)) =>
-                    val arrayValue = index match {
+            .collect {
+                case (f: AbstractArrayFact, ArrayValue(initValue, values))
+                    if arrayVar.definedBy.contains(f.definedAtIndex) =>
+                    index match {
                         case Some(i) => values.getOrElse(i, initValue)
                         case None =>
                             if (values.values.forall { v => v == initValue }) {
@@ -144,11 +137,10 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                                 VariableValue
                             }
                     }
-                    lattice.meet(value, arrayValue)
-
-                case (_, LCPVariableValue) =>
+                case (f: AbstractArrayFact, LCPVariableValue) if arrayVar.definedBy.contains(f.definedAtIndex) =>
                     VariableValue
             }
+            .foldLeft(UnknownValue: LinearConstantPropagationValue)(lattice.meet)
     }
 
     override def getNormalEdgeFunctionForGetField(
@@ -200,20 +192,13 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
             .results
-            .filter {
-                case (f: AbstractObjectFact, ObjectValue(values)) =>
-                    objectVar.definedBy.contains(f.definedAtIndex) && values.contains(fieldName)
-                case (f: AbstractObjectFact, LCPVariableValue) =>
-                    objectVar.definedBy.contains(f.definedAtIndex)
-                case _ => false
-            }
-            .map(_._2)
-            .foldLeft(UnknownValue: LinearConstantPropagationValue) {
-                case (value, ObjectValue(values)) =>
-                    lattice.meet(value, values(fieldName))
-                case (_, LCPVariableValue) =>
+            .collect {
+                case (f: AbstractObjectFact, ObjectValue(values))
+                    if objectVar.definedBy.contains(f.definedAtIndex) && values.contains(fieldName) => values(fieldName)
+                case (f: AbstractObjectFact, LCPVariableValue) if objectVar.definedBy.contains(f.definedAtIndex) =>
                     VariableValue
             }
+            .fold(UnknownValue: LinearConstantPropagationValue)(lattice.meet)
     }
 
     override def getNormalEdgeFunctionForGetStatic(
@@ -262,19 +247,12 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
             .results
-            .filter {
-                case (f: AbstractStaticFieldFact, StaticFieldValue(_)) =>
-                    f.objectType == objectType && f.fieldName == fieldName
-                case (f: AbstractStaticFieldFact, LCPVariableValue) =>
-                    f.objectType == objectType && f.fieldName == fieldName
-                case _ => false
+            .collect {
+                case (f: AbstractStaticFieldFact, StaticFieldValue(value))
+                    if f.objectType == objectType && f.fieldName == fieldName => value
+                case (f: AbstractStaticFieldFact, LCPVariableValue)
+                    if f.objectType == objectType && f.fieldName == fieldName => VariableValue
             }
-            .map(_._2)
-            .foldLeft(UnknownValue: LinearConstantPropagationValue) {
-                case (value, StaticFieldValue(v)) =>
-                    lattice.meet(value, v)
-                case (_, LCPVariableValue) =>
-                    VariableValue
-            }
+            .fold(UnknownValue: LinearConstantPropagationValue)(lattice.meet)
     }
 }
