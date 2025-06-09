@@ -23,8 +23,8 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
  *
  * @author Robin Körkemeier
  */
-case class ObjectEdgeFunction(
-    values: immutable.Map[String, LinearConstantPropagationValue]
+class ObjectEdgeFunction(
+    val values: immutable.Map[String, LinearConstantPropagationValue]
 ) extends EdgeFunction[LCPOnFieldsValue] {
     override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue =
         sourceValue match {
@@ -92,6 +92,19 @@ case class ObjectEdgeFunction(
                 case ObjectEdgeFunction(values2) => values == values2
                 case _                           => false
             })
+
+    override def toString: String =
+        s"ObjectEdgeFunction(${values.toSeq.sortBy(_._1).map { case (fieldName, value) => s"$fieldName -> $value" }.mkString(", ")})"
+}
+
+object ObjectEdgeFunction {
+    def apply(values: immutable.Map[String, LinearConstantPropagationValue]): ObjectEdgeFunction = {
+        new ObjectEdgeFunction(values)
+    }
+
+    def unapply(objectEdgeFunction: ObjectEdgeFunction): Some[immutable.Map[String, LinearConstantPropagationValue]] = {
+        Some(objectEdgeFunction.values)
+    }
 }
 
 /**
@@ -99,7 +112,7 @@ case class ObjectEdgeFunction(
  *
  * @author Robin Körkemeier
  */
-object NewObjectEdgeFunction extends ObjectEdgeFunction(immutable.Map.empty) {
+case object NewObjectEdgeFunction extends ObjectEdgeFunction(immutable.Map.empty) {
     override def toString: String = "NewObjectEdgeFunction()"
 }
 
@@ -272,6 +285,11 @@ class ArrayEdgeFunction(
                 case ArrayEdgeFunction(initValue2, elements2) => initValue == initValue2 && elements == elements2
                 case _                                        => false
             })
+
+    override def toString: String =
+        s"ArrayEdgeFunction($initValue, ${elements.toSeq.sortBy(_._1).map {
+                case (index, value) => s"$index -> $value"
+            }.mkString(", ")})"
 }
 
 object ArrayEdgeFunction {
@@ -285,7 +303,9 @@ object ArrayEdgeFunction {
     def unapply(arrayEdgeFunction: ArrayEdgeFunction): Some[(
         LinearConstantPropagationValue,
         immutable.Map[Int, LinearConstantPropagationValue]
-    )] = Some((arrayEdgeFunction.initValue, arrayEdgeFunction.elements))
+    )] = {
+        Some((arrayEdgeFunction.initValue, arrayEdgeFunction.elements))
+    }
 }
 
 /**
@@ -295,9 +315,7 @@ object ArrayEdgeFunction {
  */
 case class NewArrayEdgeFunction(
     override val initValue: LinearConstantPropagationValue = linear_constant_propagation.problem.ConstantValue(0)
-) extends ArrayEdgeFunction(initValue, immutable.Map.empty) {
-    override def toString: String = s"NewArrayEdgeFunction($initValue)"
-}
+) extends ArrayEdgeFunction(initValue, immutable.Map.empty)
 
 /**
  * Edge function modeling the effect of writing an element of an array.
