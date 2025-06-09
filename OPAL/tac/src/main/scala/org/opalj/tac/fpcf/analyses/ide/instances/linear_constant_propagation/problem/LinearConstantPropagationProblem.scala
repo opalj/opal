@@ -42,9 +42,11 @@ class LinearConstantPropagationProblem
         implicit propertyStore: PropertyStore
     ): collection.Set[LinearConstantPropagationFact] = {
         callee.parameterTypes
+            .iterator
             .zipWithIndex
-            .filter { case (paramType, _) => paramType.isIntegerType }
-            .map { case (_, index) => VariableFact(s"param${index + 1}", -(index + 2)) }
+            .collect {
+                case (paramType, index) if paramType.isIntegerType => VariableFact(s"param${index + 1}", -(index + 2))
+            }
             .toSet
     }
 
