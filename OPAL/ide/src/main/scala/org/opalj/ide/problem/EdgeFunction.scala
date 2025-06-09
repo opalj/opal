@@ -59,8 +59,8 @@ case class IdentityEdgeFunction[Value <: IDEValue]() extends EdgeFunction[Value]
     override def equals(otherEdgeFunction: EdgeFunction[Value]): Boolean =
         (otherEdgeFunction eq this) ||
             (otherEdgeFunction match {
-                case IdentityEdgeFunction() => true
-                case _                      => false
+                case _: IdentityEdgeFunction[Value] => true
+                case _                              => false
             })
 }
 
