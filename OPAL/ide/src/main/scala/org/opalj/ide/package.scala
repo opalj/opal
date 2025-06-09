@@ -32,6 +32,4 @@ package object ide {
     val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader)
 
     final val ConfigKeyPrefix = "org.opalj.ide."
-    final val ConfigKeyDebugLog = s"${ConfigKeyPrefix}debug"
-    final val ConfigKeyTraceLog = s"${ConfigKeyPrefix}trace"
 }

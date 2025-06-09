@@ -12,8 +12,6 @@ import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.ide.ConfigKeyDebugLog
-import org.opalj.ide.ConfigKeyTraceLog
 import org.opalj.tac.cg.RTACallGraphKey
 
 /**
@@ -30,8 +28,6 @@ abstract class IDEPropertiesTest extends PropertiesTest {
                 InitialInstantiatedTypesKey.ConfigKeyPrefix + "AllInstantiatedTypesFinder.projectClassesOnly",
                 ConfigValueFactory.fromAnyRef(false)
             )
-            .withValue(ConfigKeyDebugLog, ConfigValueFactory.fromAnyRef(true))
-            .withValue(ConfigKeyTraceLog, ConfigValueFactory.fromAnyRef(false))
     }
 
     override def init(p: Project[URL]): Unit = {

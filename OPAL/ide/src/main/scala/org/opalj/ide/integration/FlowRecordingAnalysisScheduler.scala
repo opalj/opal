@@ -28,7 +28,9 @@ import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.IDEValue
 import org.opalj.ide.solver.ICFG
 import org.opalj.ide.solver.IDEAnalysis
-import org.opalj.ide.util.Logging
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Wrapper class for a normal IDE analysis scheduler for debugging purposes. Records the flow paths the IDE solver takes
@@ -52,8 +54,9 @@ class FlowRecordingAnalysisScheduler[
     recorderMode:         FlowRecorderMode = FlowRecorderModes.NODE_AS_STMT_AND_FACT,
     uniqueFlowsOnly:      Boolean          = true,
     recordEdgeFunctions:  Boolean          = true
-) extends IDEAnalysisScheduler[Fact, Value, Statement, Callable, _ICFG]
-    with Logging.EnableAll with Logging.GlobalLogContext {
+) extends IDEAnalysisScheduler[Fact, Value, Statement, Callable, _ICFG] {
+    private implicit val logContext: LogContext = GlobalLogContext
+
     override def propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable] = {
         ideAnalysisScheduler.propertyMetaInformation
     }
@@ -150,14 +153,12 @@ class FlowRecordingAnalysisScheduler[
         project:              SomeProject,
         flowRecordingProblem: FlowRecordingIDEProblem[Fact, Value, Statement, Callable]
     ): Unit = {
-        logDebug("starting recording")
-
         val file = getFile(project)
         val directoryAsFile = file.getParentFile
         val directoryAsPath = directoryAsFile.toPath.toAbsolutePath.normalize()
         if (!directoryAsFile.exists()) {
             if (directoryAsPath.startsWith(Paths.get(".").toAbsolutePath.normalize())) {
-                logWarn(s"creating directory '$directoryAsPath' as it didn't exist!")
+                OPALLogger.warn(FrameworkName, s"creating directory '$directoryAsPath' as it didn't exist!")
                 directoryAsFile.mkdirs()
             } else {
                 throw new FileNotFoundException(
@@ -173,12 +174,10 @@ class FlowRecordingAnalysisScheduler[
     }
 
     private def stopRecording(flowRecordingProblem: FlowRecordingIDEProblem[Fact, Value, Statement, Callable]): Unit = {
-        logDebug("stopping recording")
-
         val writer = flowRecordingProblem.stopRecording()
 
         writer.close()
 
-        logInfo(s"wrote flow recording to '${fileByWriter(writer)}'")
+        OPALLogger.info(FrameworkName, s"wrote flow recording to '${fileByWriter(writer)}'")
     }
 }

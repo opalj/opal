@@ -326,8 +326,8 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         var label: String = null
         recorderMode match {
             case FlowRecorderModes.NODE_AS_STMT =>
-                fromNode = s"${icfg.stringifyStatement(source, short = true)}"
-                toNode = s"${icfg.stringifyStatement(target, short = true)}"
+                fromNode = s"${stringifyStatement(source)}"
+                toNode = s"${stringifyStatement(target)}"
                 if (recordEdgeFunctions) {
                     label =
                         s"$targetFact\\n($flowType),\\n${collectedEdgeFunctions.get(dotEdge).map(_.toString).getOrElse("edge function missing")}"
@@ -335,8 +335,8 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
                     label = s"$targetFact\\n($flowType)"
                 }
             case FlowRecorderModes.NODE_AS_STMT_AND_FACT =>
-                fromNode = s"(${icfg.stringifyStatement(source, short = true)}, $sourceFact)"
-                toNode = s"(${icfg.stringifyStatement(target, short = true)}, $targetFact)"
+                fromNode = s"(${stringifyStatement(source)}, $sourceFact)"
+                toNode = s"(${stringifyStatement(target)}, $targetFact)"
                 if (recordEdgeFunctions) {
                     label =
                         s"$flowType,\\n${collectedEdgeFunctions.get(dotEdge).map(_.toString).getOrElse("edge function missing")}"
@@ -346,6 +346,11 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
         }
 
         s"\t\"$fromNode\" -> \"$toNode\" [label=\"$label\"]\n"
+    }
+
+    private def stringifyStatement(stmt: Statement): String = {
+        val stringifiedStatement = stmt.toString
+        stringifiedStatement.substring(0, stringifiedStatement.indexOf("{"))
     }
 
     /**

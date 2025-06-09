@@ -91,13 +91,4 @@ abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
     }
 
     override def getCallable(javaStmt: JavaStatement): Method = javaStmt.method
-
-    override def stringifyStatement(javaStmt: JavaStatement, indent: String = "", short: Boolean = false): String = {
-        val stringifiedStatement = javaStmt.toString
-        if (short) {
-            stringifiedStatement.substring(0, stringifiedStatement.indexOf("{"))
-        } else {
-            stringifiedStatement
-        }
-    }
 }

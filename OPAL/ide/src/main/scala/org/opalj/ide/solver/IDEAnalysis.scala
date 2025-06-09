@@ -16,7 +16,6 @@ import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
@@ -34,7 +33,6 @@ import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.IDEValue
 import org.opalj.ide.problem.InterimEdgeFunction
-import org.opalj.ide.util.Logging
 
 /**
  * Basic solver for IDE problems. Uses the exhaustive algorithm that was presented in the original IDE paper from 1996
@@ -48,7 +46,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     val problem:                 IDEProblem[Fact, Value, Statement, Callable],
     val icfg:                    ICFG[Statement, Callable],
     val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable]
-) extends FPCFAnalysis with Logging.ByProjectConfig {
+) extends FPCFAnalysis {
     private type Node = (Statement, Fact)
     /**
      * A 'path' in the graph, denoted by it's start and end node as done in the IDE algorithm
@@ -199,10 +197,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             pathWorkList.isEmpty
         }
 
-        def getPathWorkListSize: Int = {
-            pathWorkList.size
-        }
-
         def setJumpFunction(path: Path, jumpFunction: JumpFunction): Unit = {
             val ((source, sourceFact), (target, targetFact)) = path
             jumpFunctions
@@ -278,10 +272,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             nodeWorkList.isEmpty
         }
 
-        def getNodeWorkListSize: Int = {
-            nodeWorkList.size
-        }
-
         def getValue(node: Node, callable: Callable): Value = {
             values.getOrElse(callable, mutable.Map.empty).getOrElse(node, problem.lattice.top) // else part handles IDE line 1
         }
@@ -292,10 +282,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         def setValue(node: Node, newValue: Value, callable: Callable): Unit = {
             values.getOrElseUpdate(callable, { mutable.Map.empty }).put(node, newValue)
-        }
-
-        def setValue(node: Node, newValue: Value): Unit = {
-            setValue(node, newValue, icfg.getCallable(node._1))
         }
 
         def clearValues(): Unit = {
@@ -317,7 +303,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             valuesByCallable.map { case (callable, values) =>
                 val resultsByStatement = values
                     .view
-                    .filterKeys { case (n, d) => d != problem.nullFact }
+                    .filterKeys { case (_, d) => d != problem.nullFact }
                     .groupMap(_._1._1) { case ((_, d), value) => (d, value) }
                     .map { case (n, dValuePairs) =>
                         (
@@ -352,10 +338,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             dependees.isEmpty
         }
 
-        def getDependeesSize: Int = {
-            dependees.size
-        }
-
         def getDependees: collection.Set[SomeEOptionP] = {
             dependees.values.map(_._1).toSet
         }
@@ -363,14 +345,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         def getAndRemoveDependeeContinuations(eOptionP: SomeEOptionP): collection.Set[() => Unit] = {
             dependees.remove(eOptionP.toEPK).map(_._2).getOrElse(immutable.Set.empty).toSet
         }
-    }
-
-    private def nodeToString(node: Node, indent: String = ""): String = {
-        s"Node(\n$indent\t${icfg.stringifyStatement(node._1, s"$indent\t")},\n$indent\t${node._2}\n$indent)"
-    }
-
-    private def pathToString(path: Path, indent: String = ""): String = {
-        s"Path(\n$indent\t${nodeToString(path._1, s"$indent\t")} ->\n$indent\t${nodeToString(path._2, s"$indent\t")}\n$indent)"
     }
 
     /**
@@ -398,8 +372,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             propertyStore(propertyMetaInformation, propertyMetaInformation.targetCallablesPropertyMetaInformation.key)
         implicit val state: State = new State(targetCallablesEOptionP)
 
-        logInfo(s"performing ${PropertyKey.name(propertyMetaInformation.key)} for ${state.getTargetCallables.size} callables")
-
         performPhase1()
         performPhase2()
 
@@ -410,71 +382,42 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
      * @return whether the phase is finished or has to be continued once the dependees are resolved
      */
     private def performPhase1()(implicit s: State): Boolean = {
-        logDebug("starting phase 1")
-
         seedPhase1()
         processPathWorkList()
 
-        if (s.areDependeesEmpty) {
-            logDebug("finished phase 1")
-            true
-        } else {
-            logDebug(s"there is/are ${s.getDependeesSize} outstanding dependee(s)")
-            logDebug("pausing phase 1")
-            false
-        }
+        s.areDependeesEmpty
     }
 
     /**
      * @return whether the phase is finished or has to be continued once the dependees are resolved
      */
     private def continuePhase1()(implicit s: State): Boolean = {
-        logDebug("continuing phase 1")
-
         processPathWorkList()
 
-        if (s.areDependeesEmpty) {
-            logDebug("all outstanding dependees have been processed")
-            logDebug("finished phase 1")
-            true
-        } else {
-            logDebug(s"there is/are ${s.getDependeesSize} outstanding dependee(s) left")
-            logDebug("pausing phase 1 again")
-            false
-        }
+        s.areDependeesEmpty
     }
 
     /**
      * Perform phase 2 from scratch
      */
     private def performPhase2()(implicit s: State): Unit = {
-        logDebug("starting phase 2")
-
         s.clearValues()
 
         seedPhase2()
         computeValues()
-
-        logDebug("finished phase 2")
     }
 
     /**
      * Continue phase 2 from based on previous result
      */
     private def continuePhase2()(implicit s: State): Unit = {
-        logDebug("continuing phase 2")
-
         seedPhase2()
         computeValues()
-
-        logDebug("finished phase 2")
     }
 
     private def createResult()(
         implicit s: State
     ): ProperPropertyComputationResult = {
-        logDebug("starting creation of properties and results")
-
         // Only create results for target callables whose values could have changed
         val callables = s.getCallablesWithChanges.intersect(s.getTargetCallables)
         val collectedResults = s.collectResults(callables)
@@ -507,8 +450,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             )
         }
 
-        logDebug("finished creation of properties and results")
-
         Results(
             callableResults ++ Seq(
                 InterimPartialResult(
@@ -536,8 +477,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         s.clearCallablesWithChanges()
 
         s.processTargetCallablesEOptionP(eps)
-
-        logInfo(s"performing ${PropertyKey.name(propertyMetaInformation.key)} for ${s.getTargetCallables.size} callables")
 
         seedPhase1()
         continuePhase1()
@@ -600,8 +539,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 }
             }
         }
-
-        logDebug(s"seeded with ${s.getPathWorkListSize} path(s)")
     }
 
     private def processPathWorkList()(implicit s: State): Unit = {
@@ -610,10 +547,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             val ((_, _), (n, _)) = path
             val f = s.getJumpFunction(path) // IDE P1 line 9
 
-            logDebug("\nprocessing next path")
-            logTrace(s"path=${pathToString(path)}")
-            logTrace(s"current jumpFunction=$f")
-
             if (icfg.isCallStatement(n)) { // IDE P1 line 11
                 processCallFlow(path, f, icfg.getCallees(n))
             } else if (icfg.isNormalExitStatement(n)) { // IDE P1 line 19
@@ -621,27 +554,19 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             } else { // IDE P1 line 30
                 processNormalFlow(path, f)
             }
-
-            logDebug(s"${s.getPathWorkListSize} path(s) remaining after processing last path")
         }
     }
 
     private def processCallFlow(path: Path, f: JumpFunction, qs: collection.Set[Callable])(
         implicit s: State
     ): Unit = {
-        logDebug("processing as call flow")
-
         val ((sp, d1), (n, d2)) = path
 
         val rs = icfg.getNextStatements(n) // IDE P1 line 14
 
         if (qs.isEmpty) {
-            logDebug(s"handling path with precomputed information as qs=$qs")
-
             rs.foreach { r =>
                 val d5s = handleFlowFunctionResult(problem.getPrecomputedFlowFunction(n, d2, r).compute(), path)
-
-                logTrace(s"generated the following d5s=$d5s for return statement r=${icfg.stringifyStatement(r)}")
 
                 d5s.foreach { d5 =>
                     val summaryFunction =
@@ -660,17 +585,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         } else {
 
             qs.foreach { q =>
-                logDebug(s"handling call target q=$q")
-
                 if (problem.hasPrecomputedFlowAndSummaryFunction(n, d2, q)) {
-                    logDebug(s"handling path with precomputed information")
-
                     /* Handling for precomputed summaries */
                     rs.foreach { r =>
                         val d5s =
                             handleFlowFunctionResult(problem.getPrecomputedFlowFunction(n, d2, q, r).compute(), path)
-
-                        logTrace(s"generated the following d5s=$d5s for return statement r=${icfg.stringifyStatement(r)}")
 
                         d5s.foreach { d5 =>
                             val summaryFunction =
@@ -691,8 +610,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     sqs.foreach { sq =>
                         // IDE P1 lines 12 - 13
                         val d3s = handleFlowFunctionResult(problem.getCallFlowFunction(n, d2, sq, q).compute(), path)
-
-                        logTrace(s"generated the following d3s=$d3s for start statement sq=${icfg.stringifyStatement(sq)}")
 
                         d3s.foreach { d3 =>
                             s.rememberCallEdge(((n, d2), (sq, d3)))
@@ -737,8 +654,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 rs.foreach { r =>
                     val d3s = handleFlowFunctionResult(problem.getCallToReturnFlowFunction(n, d2, q, r).compute(), path)
 
-                    logTrace(s"generated the following d3s=$d3s for return-site statement r=${icfg.stringifyStatement(r)}")
-
                     // IDE P1 lines 15 - 16
                     d3s.foreach { d3 =>
                         propagate(
@@ -763,8 +678,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def processExitFlow(path: Path, f: JumpFunction)(implicit s: State): Unit = {
-        logDebug("processing as exit flow")
-
         val ((sp, d1), (n, d2)) = path
         val p = icfg.getCallable(n)
 
@@ -777,12 +690,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             case (c, d4) =>
                 val rs = icfg.getNextStatements(c)
                 rs.foreach { r =>
-                    logDebug(s"handling calling statement c=${icfg.stringifyStatement(c)}, d4=$d4 and return-site statement r=${icfg.stringifyStatement(r)}")
-
                     // IDE P1 line 21
                     val d5s = handleFlowFunctionResult(problem.getReturnFlowFunction(n, d2, p, r, c, d4).compute(), path)
-
-                    logDebug(s"generated the following d5s=$d5s")
 
                     d5s.foreach { d5 =>
                         // IDE P1 lines 22 - 23
@@ -815,15 +724,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def processNormalFlow(path: Path, f: JumpFunction)(implicit s: State): Unit = {
-        logDebug("processing as normal flow")
-
         val ((sp, d1), (n, d2)) = path
 
         // IDE P1 lines 31 - 32
         icfg.getNextStatements(n).foreach { m =>
             val d3s = handleFlowFunctionResult(problem.getNormalFlowFunction(n, d2, m).compute(), path)
-
-            logTrace(s"generated the following d3s=$d3s for next statement m=${icfg.stringifyStatement(m)}")
 
             d3s.foreach { d3 =>
                 propagate(
@@ -835,20 +740,14 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def propagate(e: Path, f: EdgeFunction[Value])(implicit s: State): Unit = {
-        logTrace(s"handling propagation for path=${pathToString(e)} and f=$f")
-
         // IDE P1 lines 34 - 37
         val oldJumpFunction = s.getJumpFunction(e)
         val fPrime = f.meet(oldJumpFunction)
 
         if (!fPrime.equals(oldJumpFunction)) {
-            logTrace(s"updating and re-enqueuing path as oldJumpFunction=$oldJumpFunction != fPrime=$fPrime")
-
             s.setJumpFunction(e, fPrime)
             s.enqueuePath(e)
             s.rememberCallableWithChanges(icfg.getCallable(e._2._1))
-        } else {
-            logTrace(s"nothing to do as oldJumpFunction=$oldJumpFunction == fPrime=$fPrime")
         }
     }
 
@@ -915,19 +814,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 s.setValue(node, problem.lattice.bottom, callable)
             }
         }
-
-        logDebug(s"seeded with ${s.getNodeWorkListSize} node(s)")
     }
 
     private def computeValues()(implicit s: State): Unit = {
-        logDebug("starting phase 2 (i)")
-
         // IDE P2 part (i)
         while (!s.isNodeWorkListEmpty) { // IDE P2 line 4
             val node = s.dequeueNode() // IDE P2 line 5
-
-            logDebug("processing next node")
-            logTrace(s"node=${nodeToString(node)}")
 
             val (n, _) = node
 
@@ -936,12 +828,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             } else { // IDE P2 line 7
                 processStartNode(node)
             }
-
-            logDebug(s"${s.getNodeWorkListSize} node(s) remaining after processing last node")
         }
-
-        logDebug("finished phase 2 (i)")
-        logDebug("starting phase 2 (ii)")
 
         // IDE P2 part (ii)
         // IDE P2 lines 15 - 17
@@ -963,8 +850,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                 fPrime.compute(s.getValue((sp, dPrime), p))
                             )
 
-                            logTrace(s"setting value of nSharp=${nodeToString(nSharp)} to vPrime=$vPrime")
-
                             s.setValue(nSharp, vPrime, p)
 
                         case _ =>
@@ -972,8 +857,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 }
             }
         }
-
-        logDebug("finished phase 2 (ii)")
     }
 
     /**
@@ -1029,8 +912,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def processStartNode(node: Node)(implicit s: State): Unit = {
-        logDebug("processing as start node")
-
         val (n, d) = node
 
         // IDE P2 line 8
@@ -1049,8 +930,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def processCallNode(node: Node, qs: collection.Set[Callable])(implicit s: State): Unit = {
-        logDebug("processing as call node")
-
         val (n, d) = node
 
         // IDE P2 lines 12 - 13
@@ -1072,8 +951,6 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     private def propagateValue(nSharp: Node, v: Value)(implicit s: State): Unit = {
-        logTrace(s"handling propagation for nSharp=${nodeToString(nSharp)} and v=$v")
-
         val callable = icfg.getCallable(nSharp._1)
 
         // IDE P2 lines 18 - 21
@@ -1081,13 +958,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         val vPrime = problem.lattice.meet(v, oldValue)
 
         if (vPrime != oldValue) {
-            logTrace(s"updating and re-enqueuing node as oldValue=$oldValue != vPrime=$vPrime")
-
             s.setValue(nSharp, vPrime, callable)
             s.enqueueNode(nSharp)
             s.rememberCallableWithChanges(callable)
-        } else {
-            logTrace(s"nothing to do as oldValue=$oldValue == vPrime=$vPrime")
         }
     }
 

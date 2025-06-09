@@ -14,7 +14,6 @@ import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
@@ -22,7 +21,6 @@ import org.opalj.ide.integration.IDEPropertyMetaInformation
 import org.opalj.ide.integration.IDETargetCallablesProperty
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEValue
-import org.opalj.ide.util.Logging
 
 /**
  * A proxy for IDE analyses that accepts analysis requests for callables as well as statement-callable combinations.
@@ -35,14 +33,12 @@ import org.opalj.ide.util.Logging
 class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Entity](
     val project:                 SomeProject,
     val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable]
-) extends FPCFAnalysis with Logging.ByProjectConfig {
+) extends FPCFAnalysis {
     /**
      * @param entity either only a callable or a pair of callable and statement that should be analyzed (if no statement
      *               is given, the result for all exit statements is calculated)
      */
     def proxyAnalysis(entity: Entity): ProperPropertyComputationResult = {
-        logInfo(s"proxying request to ${PropertyKey.name(propertyMetaInformation.key)} for $entity")
-
         val (callable, stmtOption) = entity match {
             case (c: Entity, s: Entity) => (c.asInstanceOf[Callable], Some(s.asInstanceOf[Statement]))
             case c                      => (c.asInstanceOf[Callable], None)

@@ -47,12 +47,4 @@ trait ICFG[Statement, Callable <: Entity] {
      * Get the callable a statement belongs to
      */
     def getCallable(stmt: Statement): Callable
-
-    /**
-     * Build a string representation of a statement. Is only used for debugging purposes.
-     *
-     * @param indent to use on newlines (e.g. indentation for prettier logs)
-     * @param short whether to build a long or a more compact string
-     */
-    def stringifyStatement(stmt: Statement, indent: String = "", short: Boolean = false): String
 }
