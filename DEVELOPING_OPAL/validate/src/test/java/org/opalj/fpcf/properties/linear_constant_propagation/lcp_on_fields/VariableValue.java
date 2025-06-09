@@ -18,7 +18,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.CLASS)
 public @interface VariableValue {
     /**
-     * The PC of this variable in the TAC
+     * The PC of this variable in the bytecode
      */
     int pc();
 }
