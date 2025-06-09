@@ -56,8 +56,8 @@ case class LinearCombinationEdgeFunction(
             case VariableValueEdgeFunction => secondEdgeFunction
             case UnknownValueEdgeFunction  => secondEdgeFunction
 
-            case IdentityEdgeFunction() => this
-            case AllTopEdgeFunction(_)  => secondEdgeFunction
+            case _: IdentityEdgeFunction[LinearConstantPropagationValue] => this
+            case _: AllTopEdgeFunction[LinearConstantPropagationValue]   => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -85,8 +85,8 @@ case class LinearCombinationEdgeFunction(
             case VariableValueEdgeFunction => otherEdgeFunction
             case UnknownValueEdgeFunction  => this
 
-            case IdentityEdgeFunction() => this
-            case AllTopEdgeFunction(_)  => this
+            case _: IdentityEdgeFunction[LinearConstantPropagationValue] => this
+            case _: AllTopEdgeFunction[LinearConstantPropagationValue]   => this
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
@@ -119,8 +119,8 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
             case VariableValueEdgeFunction => secondEdgeFunction
             case UnknownValueEdgeFunction  => secondEdgeFunction
 
-            case IdentityEdgeFunction() => this
-            case AllTopEdgeFunction(_)  => this
+            case _: IdentityEdgeFunction[LinearConstantPropagationValue] => this
+            case _: AllTopEdgeFunction[LinearConstantPropagationValue]   => this
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -131,9 +131,9 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
         otherEdgeFunction: EdgeFunction[LinearConstantPropagationValue]
     ): EdgeFunction[LinearConstantPropagationValue] = {
         otherEdgeFunction match {
-            case AllTopEdgeFunction(_)  => this
-            case IdentityEdgeFunction() => this
-            case _                      => otherEdgeFunction
+            case _: AllTopEdgeFunction[LinearConstantPropagationValue]   => this
+            case _: IdentityEdgeFunction[LinearConstantPropagationValue] => this
+            case _                                                       => otherEdgeFunction
         }
     }
 
