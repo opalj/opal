@@ -622,8 +622,8 @@ abstract class PropertyStore {
         val cleanUpSubPhase = propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet
 
         val finalizationWithAnalysisKey = finalizationOrder.zipWithIndex.map {
-            case (subPhase, 0) => subPhase :+ AnalysisKey  // Add AnalysisKey to first sub-phase
-            case (subPhase, _) => subPhase                 // Keep other sub-phases unchanged
+            case (subPhase, 0) => subPhase :+ AnalysisKey // Add AnalysisKey to first sub-phase
+            case (subPhase, _) => subPhase // Keep other sub-phases unchanged
         }
 
         this.subPhaseFinalizationOrder = {
