@@ -10,7 +10,6 @@ package problem
 
 import scala.collection.immutable
 
-import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.br.ObjectType
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
@@ -33,6 +32,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.VariableValueEdgeFunction
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.V
+import org.opalj.value.IsIntegerValue
 
 /**
  * Extended definition of the linear constant propagation problem, trying to resolve field accesses with the LCP on
@@ -78,14 +78,8 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
         val arrayVar = arrayLoadExpr.arrayRef.asVar
 
         val index = arrayLoadExpr.index.asVar.value match {
-            case intRange: DefaultIntegerRangeValues#IntegerRange =>
-                if (intRange.lowerBound == intRange.upperBound) {
-                    Some(intRange.lowerBound)
-                } else {
-                    None
-                }
-            case _ =>
-                None
+            case v: IsIntegerValue => v.constantValue
+            case _                 => None
         }
 
         val lcpOnFieldsEOptionP =

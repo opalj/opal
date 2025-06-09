@@ -12,7 +12,6 @@ import scala.collection
 import scala.collection.immutable
 import scala.collection.mutable
 
-import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.ai.isImplicitOrExternalException
 import org.opalj.br.Field
 import org.opalj.br.IntegerType
@@ -39,6 +38,7 @@ import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
+import org.opalj.value.IsIntegerValue
 
 /**
  * Definition of linear constant propagation on fields problem. This implementation detects basic cases of linear
@@ -160,14 +160,14 @@ class LCPOnFieldsProblem(
                                     field.name == putStatic.name
                                 ) {
                                     stmt.stmt.asPutStatic.value.asVar.value match {
-                                        case intRange: DefaultIntegerRangeValues#IntegerRange =>
-                                            if (intRange.lowerBound == intRange.upperBound) {
-                                                value = LinearConstantPropagationLattice.meet(
-                                                    value,
-                                                    linear_constant_propagation.problem.ConstantValue(intRange.upperBound)
-                                                )
-                                            } else {
-                                                return linear_constant_propagation.problem.VariableValue
+                                        case v: IsIntegerValue =>
+                                            v.constantValue match {
+                                                case Some(constantValue) =>
+                                                    value = LinearConstantPropagationLattice.meet(
+                                                        value,
+                                                        linear_constant_propagation.problem.ConstantValue(constantValue)
+                                                    )
+                                                case _ => return linear_constant_propagation.problem.VariableValue
                                             }
 
                                         case _ =>

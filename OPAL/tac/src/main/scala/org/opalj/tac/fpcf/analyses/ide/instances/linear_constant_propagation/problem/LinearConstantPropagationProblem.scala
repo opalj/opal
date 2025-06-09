@@ -14,7 +14,6 @@ import scala.collection
 import scala.collection.immutable
 
 import org.opalj.BinaryArithmeticOperators
-import org.opalj.ai.domain.l1.DefaultIntegerRangeValues
 import org.opalj.br.Method
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunctionResult
@@ -24,6 +23,7 @@ import org.opalj.ide.problem.MeetLattice
 import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
+import org.opalj.value.IsIntegerValue
 
 /**
  * Definition of the linear constant propagation problem.
@@ -163,9 +163,8 @@ class LinearConstantPropagationProblem
     ): Boolean = {
         val hasConstantValue =
             varExpr.value match {
-                case intRange: DefaultIntegerRangeValues#IntegerRange =>
-                    intRange.lowerBound == intRange.upperBound
-                case _ => false
+                case v: IsIntegerValue => v.constantValue.isDefined
+                case _                 => false
             }
 
         sourceFact match {
@@ -398,17 +397,8 @@ class LinearConstantPropagationProblem
                 case Var.ASTID =>
                     val var0 = expr.asVar
                     var0.value match {
-                        case intRange: DefaultIntegerRangeValues#IntegerRange =>
-                            if (intRange.lowerBound == intRange.upperBound) {
-                                /* If boundaries are equal, the value is constant */
-                                Some(intRange.lowerBound)
-                            } else if (var0.definedBy.size > 1) {
-                                return VariableValueEdgeFunction
-                            } else {
-                                None
-                            }
-                        case _ =>
-                            None
+                        case v: IsIntegerValue => v.constantValue
+                        case _                 => None
                     }
 
                 case IntConst.ASTID => Some(expr.asIntConst.value)
