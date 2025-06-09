@@ -7,7 +7,7 @@ package linear_constant_propagation
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.properties.ide.IDEPropertyMatcherMixin
+import org.opalj.fpcf.properties.ide.IDEPropertyMatcher
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 
 /**
@@ -16,7 +16,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
  *
  * @author Robin Körkemeier
  */
-class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
+class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/ConstantValue")
     override val containerAnnotationType: ObjectType =
@@ -62,7 +62,7 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPro
  *
  * @author Robin Körkemeier
  */
-class VariableValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
+class VariableValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/VariableValue")
     override val containerAnnotationType: ObjectType =
@@ -106,7 +106,7 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPro
  *
  * @author Robin Körkemeier
  */
-class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
+class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/UnknownValue")
     override val containerAnnotationType: ObjectType =

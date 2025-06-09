@@ -18,7 +18,7 @@ import org.opalj.ide.integration.BasicIDEProperty
  *
  * @author Robin Körkemeier
  */
-trait IDEPropertyMatcherMixin extends AbstractPropertyMatcher {
+trait IDEPropertyMatcher extends AbstractPropertyMatcher {
     /**
      * The annotation type that is processed
      */

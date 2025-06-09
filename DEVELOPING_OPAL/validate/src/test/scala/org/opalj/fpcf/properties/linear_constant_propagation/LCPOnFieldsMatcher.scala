@@ -8,7 +8,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.properties.ide.IDEPropertyMatcherMixin
+import org.opalj.fpcf.properties.ide.IDEPropertyMatcher
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 
@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
  *
  * @author Robin Körkemeier
  */
-class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
+class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ObjectValue")
     override val containerAnnotationType: ObjectType =
@@ -100,7 +100,7 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPrope
  *
  * @author Robin Körkemeier
  */
-class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
+class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ArrayValue")
     override val containerAnnotationType: ObjectType =
@@ -194,7 +194,7 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEProper
  *
  * @author Robin Körkemeier
  */
-class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatcherMixin {
+class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatcher {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/StaticValues")
 
@@ -297,7 +297,7 @@ class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatche
  *
  * @author Robin Körkemeier
  */
-class VariableValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
+class VariableValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/VariableValue")
     override val containerAnnotationType: ObjectType =
@@ -340,7 +340,7 @@ class VariableValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDE
  *
  * @author Robin Körkemeier
  */
-class UnknownValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcherMixin {
+class UnknownValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
     override val singleAnnotationType: ObjectType =
         ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/UnknownValue")
     override val containerAnnotationType: ObjectType =
