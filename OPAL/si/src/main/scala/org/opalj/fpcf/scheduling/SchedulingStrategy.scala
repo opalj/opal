@@ -1,4 +1,8 @@
-package org.opalj.fpcf.scheduling
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org
+package opalj
+package fpcf
+package scheduling
 
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PhaseConfiguration
