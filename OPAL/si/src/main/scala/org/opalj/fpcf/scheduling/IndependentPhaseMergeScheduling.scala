@@ -24,9 +24,6 @@ class IndependentPhaseMergeScheduling[A](ps: PropertyStore, scheduleLazyTransfor
         allCS: Set[ComputationSpecification[A]]
     ): List[PhaseConfiguration[A]] = {
 
-        val lazyType = LazyComputation
-        val transformerType = Transformer
-
         // Creates a map from ComputationSpecifications to their indices
         val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
         val computationSpecificationArray: Array[ComputationSpecification[A]] = allCS.toArray
@@ -77,8 +74,8 @@ class IndependentPhaseMergeScheduling[A](ps: PropertyStore, scheduleLazyTransfor
             ): Map[List[Int], Set[Int]] = {
 
                 if (firstElement.forall(csID =>
-                        computationSpecificationArray(csID).computationType.equals(lazyType) ||
-                            computationSpecificationArray(csID).computationType.equals(transformerType)
+                        computationSpecificationArray(csID).computationType.equals(LazyComputation) ||
+                            computationSpecificationArray(csID).computationType.equals(Transformer)
                     )
                 ) {
                     var existInSomeBatch = false
@@ -229,8 +226,8 @@ class IndependentPhaseMergeScheduling[A](ps: PropertyStore, scheduleLazyTransfor
         if (!scheduleLazyTransformerInAllBatches) {
             scheduleGraph.foreach { node =>
                 if (computationSpecificationArray(node._1).computationType.equals(
-                        lazyType
-                    ) || computationSpecificationArray(node._1).computationType.equals(transformerType)
+                        LazyComputation
+                    ) || computationSpecificationArray(node._1).computationType.equals(Transformer)
                 ) {
                     scheduleGraph.foreach { subNode =>
                         if (subNode._2.contains(node._1)) {

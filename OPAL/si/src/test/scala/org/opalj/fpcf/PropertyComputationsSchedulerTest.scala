@@ -71,8 +71,8 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 analysis2phase += 1
         }
 
-        if (analysis1phase <= analysis2phase) println("Success")
-        else fail(s"$analysis1 is not scheduled before or in the same batch as $analysis2!")
+        if (!(analysis1phase <= analysis2phase))
+            fail(s"$analysis1 is not scheduled before or in the same batch as $analysis2!")
     }
 
     /**
@@ -102,8 +102,8 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 analysis2phase += 1
         }
 
-        if (analysis1phase < analysis2phase) println("Success")
-        else fail(s"$analysis1 is not scheduled before $analysis2!")
+        if (!(analysis1phase < analysis2phase))
+            fail(s"$analysis1 is not scheduled before $analysis2!")
     }
 
     /**
@@ -141,11 +141,9 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
             }
         }
 
-        if (analysis1phase == analysis2phase) {
-            println("Success")
-        } else {
+        if (!(analysis1phase == analysis2phase))
             fail(s"$analysis1 is not scheduled in the same batch as $analysis2!")
-        }
+
     }
 
     // **********************************************************************************************
@@ -275,7 +273,21 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 )
                 val schedule = scenario.computeSchedule(ps)
 
-                print(schedule.batches)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, lazy1, eager1)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager1, eager4)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager1, eager5)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager1, eager6)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager1, transformer1)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager4, lazy3)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager4, eager2)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager6, lazy2)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager6, lazy2)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager6, lazy3)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager3, triggered1)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager3, triggered2)
+                analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager3, triggered3)
+                analysis1IsScheduledInTheSameBatchAsAnalysis2(schedule, triggered1, triggered2)
+                analysis1IsScheduledInTheSameBatchAsAnalysis2(schedule, triggered1, triggered3)
             }
         }
     }
