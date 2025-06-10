@@ -10,8 +10,8 @@ import org.opalj.collection.immutable.UIDSet
  * @author Michael Eichberg
  */
 case class TypeDeclaration(
-    objectType:             ObjectType,
+    classType:              ClassType,
     isInterfaceType:        Boolean,
-    theSuperclassType:      Option[ObjectType],
-    theSuperinterfaceTypes: UIDSet[ObjectType]
+    theSuperclassType:      Option[ClassType],
+    theSuperinterfaceTypes: UIDSet[ClassType]
 )

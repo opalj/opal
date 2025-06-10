@@ -20,7 +20,7 @@ import net.ceedubs.ficus.Ficus._
  *
  * @author Michael Reif
  */
-sealed trait EntryPointFinder {
+trait EntryPointFinder {
 
     /*
      * Returns the entry points with respect to a concrete scenario.
@@ -28,6 +28,12 @@ sealed trait EntryPointFinder {
      * This method must be implemented by any subtype.
      */
     def collectEntryPoints(project: SomeProject): Iterable[Method] = Set.empty[Method]
+
+    /**
+     * Returns ProjectInformationKeys required by this EntryPointFinder
+     * If no extra keys are required, `Nil` can be returned.
+     */
+    def requirements(project: SomeProject): ProjectInformationKeys = Nil
 }
 
 /**
@@ -75,7 +81,7 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
         }.filterNot { ep =>
             // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
             // default package.
-            ep.classFile.thisType == ObjectType("WrapperGenerator")
+            ep.classFile.thisType == ClassType("WrapperGenerator")
         }
     }
 }
@@ -99,11 +105,11 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
 
         @inline def isEntryPoint(method: Method): Boolean = {
             val classFile = method.classFile
-            val ot = classFile.thisType
+            val ct = classFile.thisType
 
-            if (isClosedPackage(ot.packageName)) {
+            if (isClosedPackage(ct.packageName)) {
                 if (method.isPublic) {
-                    classHierarchy.allSubtypes(ot, reflexive = true).exists { st =>
+                    classHierarchy.allSubtypes(ct, reflexive = true).exists { st =>
                         val subtypeCFOption = project.classFile(st)
                         // Class file must be public to access it
                         subtypeCFOption.forall(_.isPublic) &&
@@ -115,13 +121,13 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
                             subtypeCFOption.forall(_.constructors.exists { c =>
                                 c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
                             }) || classFile.methods.exists {
-                                m => m.isStatic && m.isPublic && m.returnType == ot
+                                m => m.isStatic && m.isPublic && m.returnType == ct
                             })
                     }
                 } else if (method.isProtected) {
-                    isExtensible(ot).isYesOrUnknown &&
+                    isExtensible(ct).isYesOrUnknown &&
                     (method.isStatic ||
-                    classHierarchy.allSubtypes(ot, reflexive = true).exists { st =>
+                    classHierarchy.allSubtypes(ct, reflexive = true).exists { st =>
                         project.classFile(st).forall(_.constructors.exists { c => c.isPublic || c.isProtected })
                     })
                 } else false
@@ -215,7 +221,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                 configuredType
             }
 
-            val objectType = ObjectType(typeName)
+            val classType = ClassType(typeName)
             val methodDescriptor: Option[MethodDescriptor] = descriptor.map { md =>
                 try {
                     Some(MethodDescriptor(md))
@@ -229,8 +235,8 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                 }
             }.getOrElse(None)
 
-            def findMethods(objectType: ObjectType, isSubtype: Boolean = false): Unit = {
-                project.classFile(objectType) match {
+            def findMethods(classType: ClassType, isSubtype: Boolean = false): Unit = {
+                project.classFile(classType) match {
                     case Some(cf) =>
                         var methods: List[Method] = cf.findMethod(name)
 
@@ -274,10 +280,10 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
             }
 
-            findMethods(objectType)
+            findMethods(classType)
             if (considerSubtypes) {
-                project.classHierarchy.allSubtypes(objectType, false).foreach {
-                    ot => findMethods(ot, true)
+                project.classHierarchy.allSubtypes(classType, false).foreach {
+                    ct => findMethods(ct, true)
                 }
             }
 

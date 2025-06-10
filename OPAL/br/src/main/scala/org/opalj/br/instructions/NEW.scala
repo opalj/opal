@@ -3,14 +3,14 @@ package org.opalj
 package br
 package instructions
 
-import org.opalj.br.ObjectType.OutOfMemoryError
+import org.opalj.br.ClassType.OutOfMemoryError
 
 /**
  * Create new object.
  *
  * @author Michael Eichberg
  */
-case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with NoLabels {
+case class NEW(classType: ClassType) extends ConstantLengthInstruction with NoLabels {
 
     override final def opcode: Opcode = NEW.opcode
 
@@ -18,7 +18,7 @@ case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with No
 
     override final def mnemonic: String = "new"
 
-    override final def jvmExceptions: List[ObjectType] = NEW.jvmExceptions
+    override final def jvmExceptions: List[ClassType] = NEW.jvmExceptions
 
     override final def mayThrowExceptions: Boolean = true
 
@@ -58,7 +58,7 @@ case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with No
 
     override final def expressionResult: Stack.type = Stack
 
-    override def toString: String = "NEW " + objectType.toJava
+    override def toString: String = "NEW " + classType.toJava
 
     override final def toString(currentPC: Int): String = toString()
 }
@@ -73,12 +73,12 @@ object NEW extends InstructionMetaInformation {
 
     final val opcode = 187
 
-    final val jvmExceptions = List(ObjectType.OutOfMemoryError)
+    final val jvmExceptions = List(ClassType.OutOfMemoryError)
 
     /**
      * Creates a new [[NEW]] instruction given the fully qualified name in binary notation.
-     * @see     [[org.opalj.br.ObjectType$]] for details.
+     * @see     [[org.opalj.br.ClassType$]] for details.
      */
-    def apply(fqn: String): NEW = NEW(ObjectType(fqn))
+    def apply(fqn: String): NEW = NEW(ClassType(fqn))
 
 }

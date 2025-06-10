@@ -6,8 +6,8 @@ package util
 
 import scala.collection.mutable
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.MethodInvocationInstruction
@@ -21,7 +21,7 @@ import org.opalj.da.ClassFile
  * Example of an `apiFeature` declaration in a subclass:
  * {{{
  * override def apiFeatures: Chain[APIFeatures] = Chain[APIFeature](
- *  val Unsafe = ObjectType("sun/misc/Unsafe")
+ *  val Unsafe = ClassType("sun/misc/Unsafe")
  *
  *  StaticAPIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;")),
  *  APIFeatureGroup(
@@ -52,8 +52,8 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
     /**
      * Returns the set of all relevant receiver types.
      */
-    private[this] final lazy val apiTypes: Set[ObjectType] = {
-        apiFeatures.foldLeft(Set.empty[ObjectType])(_ ++ _.apiMethods.map(_.declClass))
+    private[this] final lazy val apiTypes: Set[ClassType] = {
+        apiFeatures.foldLeft(Set.empty[ClassType])(_ ++ _.apiMethods.map(_.declClass))
     }
 
     /**
@@ -72,8 +72,8 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
         import classHierarchy.allSubtypes
         import project.isProjectType
 
-        def getClassFileLocation(objectType: ObjectType): Option[ClassFileLocation[S]] = {
-            val classFile = project.classFile(objectType)
+        def getClassFileLocation(classType: ClassType): Option[ClassFileLocation[S]] = {
+            val classFile = project.classFile(classType)
             classFile.flatMap { cf => project.source(cf).map(src => ClassFileLocation(src, cf)) }
         }
 
@@ -119,8 +119,8 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             pc = pcAndInvocation.pc
             mii = pcAndInvocation.value
             declClass = mii.declaringClass
-            if declClass.isObjectType
-            if apiTypes.contains(declClass.asObjectType)
+            if declClass.isClassType
+            if apiTypes.contains(declClass.asClassType)
             apiFeature <- apiFeatures
             featureID = apiFeature.featureID
             APIMethod <- apiFeature.apiMethods

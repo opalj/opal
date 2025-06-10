@@ -302,7 +302,7 @@ trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
     //
 
     /**
-     * Computation that returns a numeric value or an `ObjectType.ArithmeticException`.
+     * Computation that returns a numeric value or an `ClassType.ArithmeticException`.
      */
     type IntegerValueOrArithmeticException = Computation[DomainValue, ExceptionValue]
 

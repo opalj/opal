@@ -9,11 +9,11 @@ import java.util.function.{Function => JFunction}
 import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters._
 
+import org.opalj.br.ClassType.MethodHandle
+import org.opalj.br.ClassType.VarHandle
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
-import org.opalj.br.ObjectType.MethodHandle
-import org.opalj.br.ObjectType.VarHandle
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -138,12 +138,15 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                     // for subtypes, so we have to add them manually for all subtypes that don't
                     // override/implement them here
                     p.classHierarchy.processSubtypes(classType)(null) {
-                        (_: Null, subtype: ObjectType) =>
-                            val subClassFile = p.classFile(subtype).get
+                        (_: Null, subtype: ClassType) =>
                             val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
-                            if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
-                                val interfaceMethods =
-                                    p.resolveAllMethodReferences(subtype, m.name, m.descriptor)
+                            if (p.instanceMethods(subtype).exists { mdc =>
+                                    mdc.name == m.name && mdc.descriptor == m.descriptor
+                                }
+                            ) {
+                                (null, true, false) // Stop traversal on overridden method
+                            } else {
+                                val interfaceMethods = p.resolveAllMethodReferences(subtype, m.name, m.descriptor)
                                 interfaceMethods.size match {
                                     case 0 =>
                                     case 1 =>
@@ -158,27 +161,18 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                                         insertDeclaredMethod(
                                             subtypeDms,
                                             new MethodContext(m.name, m.descriptor),
-                                            id =>
-                                                new MultipleDefinedMethods(
-                                                    subtype,
-                                                    methods,
-                                                    id
-                                                )
+                                            id => new MultipleDefinedMethods(subtype, methods, id)
                                         )
                                 }
 
                                 (null, false, false) // Continue traversal on non-overridden method
-                            } else {
-                                (null, true, false) // Stop traversal on overridden method
                             }
                     }
-                } else if (m.isStatic && !m.isPrivate &&
-                           !m.isStaticInitializer && !cf.isInterfaceDeclaration
-                ) {
+                } else if (m.isStatic && !m.isPrivate && !m.isStaticInitializer && !cf.isInterfaceDeclaration) {
                     // Static methods are inherited as well - they can be invoked on subtypes
                     // this is not true for static initializers and static methods on interfaces
                     p.classHierarchy.processSubtypes(classType)(initial = null) {
-                        (_: Null, subtype: ObjectType) =>
+                        (_: Null, subtype: ClassType) =>
                             val subClassFile = p.classFile(subtype).get
                             val subtypeDms = result.computeIfAbsent(subtype, mapFactory)
                             if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
@@ -292,10 +286,10 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
          * Factory method for [[MethodContext]]/[[PackagePrivateMethodContext]] depending on
          * whether the given method is package-private or not.
          */
-        def apply(project: SomeProject, objectType: ObjectType, method: Method): MethodContext = {
+        def apply(project: SomeProject, classType: ClassType, method: Method): MethodContext = {
             MethodContext(
                 project,
-                objectType,
+                classType,
                 method.classFile.thisType.packageName,
                 method.name,
                 method.descriptor,
@@ -309,7 +303,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
          */
         def apply(
             project:          SomeProject,
-            objectType:       ObjectType,
+            classType:        ClassType,
             declaringPackage: String,
             methodName:       String,
             descriptor:       MethodDescriptor,
@@ -317,8 +311,8 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         ): MethodContext = {
             if (isPackagePrivate)
                 new PackagePrivateMethodContext(declaringPackage, methodName, descriptor)
-            else if (project.classFile(objectType).isDefined &&
-                     project.hasInstanceMethod(objectType, methodName, descriptor, true)
+            else if (project.classFile(classType).isDefined &&
+                     project.hasInstanceMethod(classType, methodName, descriptor, true)
             )
                 new ShadowsPackagePrivateMethodContext(methodName, descriptor)
             else
@@ -382,7 +376,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      */
     private[analyses] class MethodContextQuery(
         project:          SomeProject,
-        val receiverType: ObjectType,
+        val receiverType: ClassType,
         val packageName:  String,
         methodName:       String,
         descriptor:       MethodDescriptor

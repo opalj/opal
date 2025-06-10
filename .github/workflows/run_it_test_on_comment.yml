@@ -8,7 +8,14 @@ jobs:
   build:
     runs-on: [self-hosted, it_test]
 
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/it:test') && github.event.comment.author_association == 'COLLABORATOR'
+    if: |
+      github.event.issue.pull_request && contains(github.event.comment.body, '/it:test') &&
+      (
+        (github.event.issue.author_association == 'OWNER') ||
+        (github.event.issue.author_association == 'COLLABORATOR') ||
+        (github.event.issue.author_association == 'CONTRIBUTOR') ||
+        (github.event.issue.author_association == 'MEMBER')
+      )
 
     steps:
       - name: Get Repo
@@ -55,8 +62,6 @@ jobs:
 
       - name: Run Integration Tests
         run: sbt -J-Xmx40G "cleanBuild; IntegrationTest / test"
-      - name: Run Cross Language Tests
-        run: sbt -J-Xmx40G "project LLVM; IntegrationTest / test;project ValidateCross; IntegrationTest / test"
         
       - name: Set latest commit status as ${{ job.status }}
         uses: myrotvorets/set-commit-status-action@655d7d2517bab7f5d1b6e74cd7d5e995264184b1

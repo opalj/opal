@@ -49,7 +49,7 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
             "conversion of " + this.getClass.getSimpleName + " to constant field value is not supported"
         )
 
-    def asFieldref(cp: Constant_Pool): (ObjectType, String, FieldType) =
+    def asFieldref(cp: Constant_Pool): (ClassType, String, FieldType) =
         throw new BytecodeProcessingFailedException("conversion to field ref is not supported")
 
     def asMethodref(
@@ -57,8 +57,8 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
     ): (ReferenceType, Boolean /*InterfaceMethodRef*/, String, MethodDescriptor) =
         throw new BytecodeProcessingFailedException("conversion to method ref is not supported")
 
-    def asObjectType(cp: Constant_Pool): ObjectType =
-        throw new BytecodeProcessingFailedException("conversion to object type is not supported")
+    def asClassType(cp: Constant_Pool): ClassType =
+        throw new BytecodeProcessingFailedException("conversion to class type is not supported")
 
     def asReferenceType(cp: Constant_Pool): ReferenceType = {
         val message = "conversion to reference type is not supported"

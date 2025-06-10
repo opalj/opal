@@ -57,7 +57,7 @@ case class TRYEND(id: Symbol) extends ExceptionHandlerElement {
 case class CATCH(
     id:          Symbol,
     position:    Int,
-    handlerType: Option[br.ObjectType] = None
+    handlerType: Option[br.ClassType] = None
 ) extends ExceptionHandlerElement {
     override final def isTry: Boolean = false
     override final def isCatch: Boolean = true
@@ -77,6 +77,6 @@ object CATCH {
      * @param handlerType the fqn of the caught exception class
      */
     def apply(id: Symbol, order: Int, handlerType: String): CATCH = {
-        new CATCH(id, order, Some(br.ObjectType(handlerType)))
+        new CATCH(id, order, Some(br.ClassType(handlerType)))
     }
 }

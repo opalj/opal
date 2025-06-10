@@ -16,12 +16,12 @@ import org.opalj.br.Annotation
 import org.opalj.br.AnnotationLike
 import org.opalj.br.Annotations
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
 import org.opalj.br.ClassValue
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementValuePair
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.TAOfNew
 import org.opalj.br.Type
@@ -138,7 +138,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         )
     }
 
-    final val PropertyValidatorType = ObjectType("org/opalj/fpcf/properties/PropertyValidator")
+    final val PropertyValidatorType = ClassType("org/opalj/fpcf/properties/PropertyValidator")
 
     /**
      * Returns the [[org.opalj.fpcf.properties.PropertyMatcher]] associated with the annotation -
@@ -155,11 +155,11 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     )(
         annotation: AnnotationLike
     ): Option[(AnnotationLike, String, Type /* type of the matcher */ )] = {
-        if (!annotation.annotationType.isObjectType)
+        if (!annotation.annotationType.isClassType)
             return None;
 
         // Get the PropertyValidator meta-annotation of the given entity's annotation:
-        val annotationClassFile = p.classFile(annotation.annotationType.asObjectType).get
+        val annotationClassFile = p.classFile(annotation.annotationType.asClassType).get
         annotationClassFile.runtimeInvisibleAnnotations.collectFirst {
             case Annotation(
                     PropertyValidatorType,
@@ -191,14 +191,14 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     ): Unit = {
         val TestContext(p: Project[URL], ps: PropertyStore, as: List[FPCFAnalysis]) = context
         val ats =
-            as.map(a => ObjectType(a.getClass.getName.replace('.', '/'))).toSet
+            as.map(a => ClassType(a.getClass.getName.replace('.', '/'))).toSet
 
         for {
             (e, entityIdentifier, annotations) <- eas.iterator
             augmentedAnnotations = annotations.flatMap(getPropertyMatcher(p, propertyKinds))
             (annotation, propertyKind, matcherType) <- augmentedAnnotations
         } {
-            val annotationTypeName = annotation.annotationType.asObjectType.simpleName
+            val annotationTypeName = annotation.annotationType.asClassType.simpleName
             val matcherClass = Class.forName(matcherType.toJava)
             val matcherClassConstructor = matcherClass.getDeclaredConstructor()
             val matcher = matcherClassConstructor.newInstance().asInstanceOf[PropertyMatcher]

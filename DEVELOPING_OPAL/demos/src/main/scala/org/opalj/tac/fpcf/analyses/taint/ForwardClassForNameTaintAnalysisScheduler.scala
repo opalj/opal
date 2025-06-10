@@ -7,9 +7,9 @@ package taint
 
 import java.io.File
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -57,7 +57,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
         m <- icfg.methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
         index <- m.descriptor.parameterTypes.zipWithIndex.collect {
-            case (pType, index) if pType == ObjectType.String => index
+            case (pType, index) if pType == ClassType.String => index
         }
     } yield (m.definedMethod, new IFDSFact(Variable(-2 - index)))
 
@@ -97,7 +97,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
      * @return True if the method is Class.forName.
      */
     private def isClassForName(method: DeclaredMethod): Boolean =
-        method.declaringClassType == ObjectType.Class && method.name == "forName"
+        method.declaringClassType == ClassType.Class && method.name == "forName"
 }
 
 object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
@@ -109,7 +109,11 @@ object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[T
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
+    override def uses: Set[PropertyBounds] = PropertyBounds.finalPs(TACAI, Callers)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
+        p.get(TypeIteratorKey).usedPropertyKinds
+    }
 }
 
 class ForwardClassForNameAnalysisRunnerIFDS extends IFDSEvaluationRunner {
