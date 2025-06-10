@@ -8,9 +8,9 @@ import scala.reflect.ClassTag
 
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ClassType
 import org.opalj.br.ReferenceType
 import org.opalj.br.UninitializedThisVariableInfo
 import org.opalj.br.UninitializedVariableInfo
