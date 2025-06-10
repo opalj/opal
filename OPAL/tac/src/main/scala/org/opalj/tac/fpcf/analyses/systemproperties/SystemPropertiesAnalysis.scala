@@ -5,8 +5,8 @@ package fpcf
 package analyses
 package systemproperties
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -56,14 +56,14 @@ class SystemPropertiesAnalysis private[analyses] (
         for (stmt <- state.tac.stmts) stmt match {
             case VirtualFunctionCallStatement(call)
                 if (call.name == "setProperty" || call.name == "put") &&
-                    classHierarchy.isSubtypeOf(call.declaringClass, ObjectType("java/util/Properties")) =>
+                    classHierarchy.isSubtypeOf(call.declaringClass, ClassType("java/util/Properties")) =>
                 values ++= getPossibleStrings(call.pc, call.params(1))
 
             case StaticFunctionCallStatement(call)
-                if call.name == "setProperty" && call.declaringClass == ObjectType.System =>
+                if call.name == "setProperty" && call.declaringClass == ClassType.System =>
                 values ++= getPossibleStrings(call.pc, call.params(1))
 
-            case StaticMethodCall(pc, ObjectType.System, _, "setProperty", _, params) =>
+            case StaticMethodCall(pc, ClassType.System, _, "setProperty", _, params) =>
                 values ++= getPossibleStrings(pc, params(1))
 
             case _ =>

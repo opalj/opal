@@ -7,13 +7,13 @@ package string
 package l1
 package interpretation
 
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.DoubleType
 import org.opalj.br.FloatType
 import org.opalj.br.IntLikeType
-import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.string.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string.StringTreeConcat
 import org.opalj.br.fpcf.properties.string.StringTreeConst
@@ -55,7 +55,7 @@ class L1VirtualFunctionCallInterpreter(
             case "append"   => interpretAppendCall(at, pt, call)
             case "toString" => interpretToStringCall(at, pt)
             case "replace"  => interpretReplaceCall(pt)
-            case "substring" if call.descriptor.returnType == ObjectType.String =>
+            case "substring" if call.descriptor.returnType == ClassType.String =>
                 interpretSubstringCall(at, pt, call)
             case _ =>
                 call.descriptor.returnType match {

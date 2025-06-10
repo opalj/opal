@@ -7,7 +7,7 @@ package string
 package l1
 package interpretation
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -43,11 +43,11 @@ case class L1StaticFunctionCallInterpreter()(
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         call.name match {
-            case "getProperty" if call.declaringClass == ObjectType.System => interpretGetSystemPropertiesCall(target)
-            case "valueOf" if call.declaringClass == ObjectType.String     => processStringValueOf(target, call)
+            case "getProperty" if call.declaringClass == ClassType.System => interpretGetSystemPropertiesCall(target)
+            case "valueOf" if call.declaringClass == ClassType.String     => processStringValueOf(target, call)
             case _
-                if call.descriptor.returnType == ObjectType.String ||
-                    call.descriptor.returnType == ObjectType.Object =>
+                if call.descriptor.returnType == ClassType.String ||
+                    call.descriptor.returnType == ClassType.Object =>
                 interpretArbitraryCall(target, call)
             case _ => failure(target)
         }

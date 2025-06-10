@@ -9,9 +9,9 @@ package interpretation
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 import org.opalj.br.PUVar
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.SomeProject
@@ -215,5 +215,5 @@ object L3FieldReadInterpreter {
      * Checks whether the given type is supported by the field read analysis, i.e. if it may contain values desirable
      * AND resolvable by the string analysis as a whole.
      */
-    private def isSupportedType(fieldType: FieldType): Boolean = fieldType.isBaseType || (fieldType eq ObjectType.String)
+    private def isSupportedType(fieldType: FieldType): Boolean = fieldType.isBaseType || (fieldType eq ClassType.String)
 }

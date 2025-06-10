@@ -7,8 +7,8 @@ package string
 package l2
 package interpretation
 
+import org.opalj.br.ClassType
 import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
@@ -49,7 +49,7 @@ class L2VirtualFunctionCallInterpreter(
     override protected def interpretArbitraryCall(target: PV, call: E)(
         implicit state: InterpretationState
     ): ProperPropertyComputationResult = {
-        if (call.name == "getProperty" && call.declaringClass == ObjectType("java/util/Properties")) {
+        if (call.name == "getProperty" && call.declaringClass == ClassType("java/util/Properties")) {
             interpretGetSystemPropertiesCall(target)
         } else {
             interpretArbitraryCallWithCallees(target)

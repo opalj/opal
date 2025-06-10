@@ -8,7 +8,7 @@ import java.util.regex.Pattern
 import scala.util.Try
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.string.StringConstancyLevel
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
@@ -36,7 +36,7 @@ sealed abstract class ConstancyStringMatcher(val constancyLevel: StringConstancy
 
     override def validateProperty(
         p:          Project[_],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -70,7 +70,7 @@ class InvalidStringMatcher extends StringMatcher {
 
     override def validateProperty(
         p:          Project[_],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]

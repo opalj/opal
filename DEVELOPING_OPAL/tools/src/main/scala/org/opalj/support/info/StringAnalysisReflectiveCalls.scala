@@ -9,8 +9,8 @@ import java.net.URL
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
@@ -232,7 +232,7 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         if (isRelevantCall(call.declaringClass, call.name)) {
             // Loop through all parameters and start the analysis for those that take a string
             call.descriptor.parameterTypes.zipWithIndex.foreach {
-                case (ft, index) if ft == ObjectType.String =>
+                case (ft, index) if ft == ClassType.String =>
                     val e = VariableContext(
                         pc,
                         call.params(index).asVar.toPersistentForm,

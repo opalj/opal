@@ -15,11 +15,11 @@ import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.Annotation
 import org.opalj.br.Annotations
+import org.opalj.br.ClassType
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.ElementValuePairs
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
@@ -206,12 +206,12 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         def mapFailure(failureEvp: ElementValuePairs): Annotation = {
             if (soundnessMode == SoundnessMode.HIGH)
                 new Annotation(
-                    ObjectType(classOf[Dynamic].getName.replace(".", "/")),
+                    ClassType(classOf[Dynamic].getName.replace(".", "/")),
                     failureEvp.appended(ElementValuePair("value", StringValue(".*")))
                 )
             else
                 new Annotation(
-                    ObjectType(classOf[Invalid].getName.replace(".", "/")),
+                    ClassType(classOf[Invalid].getName.replace(".", "/")),
                     failureEvp
                 )
         }
@@ -278,7 +278,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
             case ElementValuePair(`name`, value) => value
         }.orElse {
             // get default value ...
-            p.classFile(a.annotationType.asObjectType).get.findMethod(name).head.annotationDefault
+            p.classFile(a.annotationType.asClassType).get.findMethod(name).head.annotationDefault
         }.get
     }
 }
