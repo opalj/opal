@@ -10,8 +10,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
 
@@ -45,8 +45,8 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         val exs = domain.thrownExceptions(result.domain, -1)
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
-            case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) => true
-            case _                                                                              => false
+            case domain.SObjectValueLike(ClassType("java/lang/UnsupportedOperationException")) => true
+            case _                                                                             => false
         } should be(true)
     }
 
@@ -59,8 +59,8 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         val exs = domain.thrownExceptions(result.domain, -1)
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
-            case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) => true
-            case _                                                                              => false
+            case domain.SObjectValueLike(ClassType("java/lang/UnsupportedOperationException")) => true
+            case _                                                                             => false
         } should be(true)
     }
 
@@ -106,16 +106,16 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
 
         exs forall { ex =>
             ex match {
-                case domain.SObjectValueLike(ObjectType("java/lang/UnsupportedOperationException")) =>
+                case domain.SObjectValueLike(ClassType("java/lang/UnsupportedOperationException")) =>
                     foundUnsupportedOperationException = true
                     true
-                case domain.SObjectValueLike(ObjectType.NullPointerException) =>
+                case domain.SObjectValueLike(ClassType.NullPointerException) =>
                     foundNullPointerException = true
                     true
-                case domain.SObjectValueLike(ObjectType("java/lang/UnknownError")) =>
+                case domain.SObjectValueLike(ClassType("java/lang/UnknownError")) =>
                     foundUnknownError = true
                     true
-                case domain.SObjectValueLike(ObjectType("java/lang/IllegalArgumentException")) =>
+                case domain.SObjectValueLike(ClassType("java/lang/IllegalArgumentException")) =>
                     foundIllegalArgumentException = true
                     true
                 case _ =>
@@ -179,7 +179,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
             domain.allReturnedValues(21) == domain.NullValue(20)
         )
         assert(
-            domain.allReturnedValues(19) == domain.InitializedObjectValue(0, ObjectType.Object)
+            domain.allReturnedValues(19) == domain.InitializedObjectValue(0, ClassType.Object)
         )
         println(result)
     }
@@ -281,6 +281,6 @@ object PerformInvocationsTestFixture {
     }
 
     val project = biProject("ai-9.jar")
-    val StaticCalls = project.classFile(ObjectType("ai/domain/StaticCalls")).get
+    val StaticCalls = project.classFile(ClassType("ai/domain/StaticCalls")).get
 
 }

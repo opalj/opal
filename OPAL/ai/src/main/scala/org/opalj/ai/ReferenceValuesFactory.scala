@@ -2,9 +2,9 @@
 package org.opalj
 package ai
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodHandle
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 
@@ -75,7 +75,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
      *      correctly models the runtime type.)
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def InitializedObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainReferenceValue
+    def InitializedObjectValue(origin: ValueOrigin, classType: ClassType): DomainReferenceValue
 
     /**
      * Represents ''a non-null reference value with the given type as an upper type bound''.
@@ -88,7 +88,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
      *  - Type: '''Upper Bound'''
      *  - Null: '''No''' (This value is not `null`.)
      */
-    def NonNullObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainReferenceValue
+    def NonNullObjectValue(origin: ValueOrigin, classType: ClassType): DomainReferenceValue
 
     /**
      * Creates a new `DomainValue` that represents ''a new,
@@ -110,7 +110,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
      *      `multianewarray` instructions and in both cases an exception may be thrown
      *      (e.g., `NegativeArraySizeException`).
      */
-    def NewObject(origin: ValueOrigin, objectType: ObjectType): DomainReferenceValue
+    def NewObject(origin: ValueOrigin, classType: ClassType): DomainReferenceValue
 
     /**
      * Creates a new `DomainValue` that represents ''the `this` value of a constructor before the
@@ -126,7 +126,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
      *
      * @note Instances of arrays are never uninitialized.
      */
-    def UninitializedThis(objectType: ObjectType): DomainReferenceValue
+    def UninitializedThis(classType: ClassType): DomainReferenceValue
 
     /**
      * Factory method to create a `DomainValue` that represents the given string value
@@ -172,12 +172,12 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
      * get a representation of/a DomainValue that represents the handle.
      *
      * @param handle A valid method handle.
-     * @return An `InitializedObjectValue(ObjectType.MethodHandle)`.
+     * @return An `InitializedObjectValue(ClassType.MethodHandle)`.
      *      Hence, this method needs to be overridden
      *      if resolution of MethodHandle based method calls should be performed.
      */
     def MethodHandle(origin: ValueOrigin, handle: MethodHandle): DomainReferenceValue = {
-        InitializedObjectValue(origin, ObjectType.MethodHandle)
+        InitializedObjectValue(origin, ClassType.MethodHandle)
     }
 
     /**
@@ -186,12 +186,12 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
      * get a domain-specific representation of the method descriptor as a `MethodType`.
      *
      * @param descriptor A valid method descriptor.
-     * @return An `InitializedObjectValue(ObjectType.MethodType)`.
+     * @return An `InitializedObjectValue(ClassType.MethodType)`.
      *      Hence, this method needs to be overridden
      *      if resolution of MethodType based method calls should be performed.
      */
     def MethodType(origin: ValueOrigin, descriptor: MethodDescriptor): DomainReferenceValue = {
-        InitializedObjectValue(origin, ObjectType.MethodType)
+        InitializedObjectValue(origin, ClassType.MethodType)
     }
 
     // -----------------------------------------------------------------------------------

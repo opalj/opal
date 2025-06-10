@@ -10,7 +10,7 @@ package instructions
  */
 abstract class FieldAccess extends Instruction with ConstantLengthInstruction with NoLabels {
 
-    def declaringClass: ObjectType
+    def declaringClass: ClassType
 
     def name: String
 
@@ -41,9 +41,9 @@ abstract class FieldAccess extends Instruction with ConstantLengthInstruction wi
  */
 object FieldAccess {
 
-    val jvmExceptions = List(ObjectType.NullPointerException)
+    val jvmExceptions = List(ClassType.NullPointerException)
 
-    def unapply(fa: FieldAccess): Option[(ObjectType, String, FieldType)] = {
+    def unapply(fa: FieldAccess): Option[(ClassType, String, FieldType)] = {
         Some((fa.declaringClass, fa.name, fa.fieldType))
     }
 }

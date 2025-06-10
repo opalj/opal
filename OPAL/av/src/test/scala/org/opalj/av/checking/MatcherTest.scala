@@ -15,11 +15,11 @@ import org.opalj.bi.AccessFlagsMatcher._
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.Annotation
 import org.opalj.br.BooleanValue
+import org.opalj.br.ClassType
 import org.opalj.br.ElementValuePair
 import org.opalj.br.ElementValuePairs
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.NoElementValuePairs
-import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -110,12 +110,12 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
      */
     test("that AnnotatedWith perform a precise match of the given annotation") {
         AnnotatedWith("entity.annotation.Transient")(
-            Annotation(ObjectType("entity/annotation/Transient"))
+            Annotation(ClassType("entity/annotation/Transient"))
         ) should be(true)
 
         AnnotatedWith("entity.annotation.Column", "name" -> StringValue("first_name"))(
             Annotation(
-                ObjectType("entity/annotation/Column"),
+                ClassType("entity/annotation/Column"),
                 ElementValuePairs(ElementValuePair("name", StringValue("first_name")))
             )
         ) should be(true)
@@ -123,12 +123,12 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
     test("the AnnotatedWith should not match the given annotation") {
         AnnotatedWith("entity.annotation.Column")(
-            Annotation(ObjectType("entity/annotation/Transient"))
+            Annotation(ClassType("entity/annotation/Transient"))
         ) should be(false)
 
         val fixture =
             Annotation(
-                ObjectType("entity/annotation/Transient"),
+                ClassType("entity/annotation/Transient"),
                 ElementValuePair("name", StringValue("last_name"))
             )
         AnnotatedWith(
@@ -143,12 +143,12 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
     test("the AnnotationsPredicate should match the given annotations") {
 
         HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Transient"))(
-            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs))
+            IndexedSeq(Annotation(ClassType("entity/annotation/Transient"), NoElementValuePairs))
         ) should be(true)
 
         val columnAnnotation = IndexedSeq(
             Annotation(
-                ObjectType("entity/annotation/Column"),
+                ClassType("entity/annotation/Column"),
                 ElementValuePair("name", StringValue("first_name"))
             )
         )
@@ -157,20 +157,20 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         )(columnAnnotation) should be(true)
 
         HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Transient"))(
-            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs))
+            IndexedSeq(Annotation(ClassType("entity/annotation/Transient"), NoElementValuePairs))
         ) should be(true)
 
         HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Column", "name" -> StringValue("first_name")))(
             IndexedSeq(Annotation(
-                ObjectType("entity/annotation/Column"),
+                ClassType("entity/annotation/Column"),
                 ElementValuePairs(ElementValuePair("name", StringValue("first_name")))
             ))
         ) should be(true)
 
         HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Column"))(
             IndexedSeq(
-                Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs),
-                Annotation(ObjectType("entity/annotation/Column"), NoElementValuePairs)
+                Annotation(ClassType("entity/annotation/Transient"), NoElementValuePairs),
+                Annotation(ClassType("entity/annotation/Column"), NoElementValuePairs)
             )
         ) should be(true)
 
@@ -179,8 +179,8 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             AnnotatedWith("entity.annotation.Transient")
         ))(
             IndexedSeq(
-                Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs),
-                Annotation(ObjectType("entity/annotation/Column"), NoElementValuePairs)
+                Annotation(ClassType("entity/annotation/Transient"), NoElementValuePairs),
+                Annotation(ClassType("entity/annotation/Column"), NoElementValuePairs)
             )
         ) should be(true)
 
@@ -188,13 +188,13 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             AnnotatedWith("entity.annotation.Column"),
             AnnotatedWith("entity.annotation.Transient")
         ))(
-            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs))
+            IndexedSeq(Annotation(ClassType("entity/annotation/Transient"), NoElementValuePairs))
         ) should be(true)
     }
 
     test("the AnnotationsPredicate should not match the given annotations") {
         HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Column"))(
-            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs))
+            IndexedSeq(Annotation(ClassType("entity/annotation/Transient"), NoElementValuePairs))
         ) should be(false)
 
         HasAtLeastTheAnnotations(
@@ -202,7 +202,7 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         )(
             IndexedSeq(
                 Annotation(
-                    ObjectType("entity/annotation/Transient"),
+                    ClassType("entity/annotation/Transient"),
                     ElementValuePairs(ElementValuePair("name", StringValue("last_name")))
                 )
             )
@@ -210,8 +210,8 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
         HasTheAnnotations(AnnotatedWith("entity.annotation.Column"))(
             IndexedSeq(
-                Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs),
-                Annotation(ObjectType("entity/annotation/Column"), NoElementValuePairs)
+                Annotation(ClassType("entity/annotation/Transient"), NoElementValuePairs),
+                Annotation(ClassType("entity/annotation/Column"), NoElementValuePairs)
             )
         ) should be(false)
 
@@ -219,21 +219,21 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             AnnotatedWith("entity.annotation.Column"),
             AnnotatedWith("entity.annotation.Transient")
         ))(
-            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs))
+            IndexedSeq(Annotation(ClassType("entity/annotation/Transient"), NoElementValuePairs))
         ) should be(false)
 
         HasTheAnnotations(Set(
             AnnotatedWith("entity.annotation.Column"),
             AnnotatedWith("entity.annotation.Transient")
         ))(
-            IndexedSeq(Annotation(ObjectType("entity/annotation/Transient"), NoElementValuePairs))
+            IndexedSeq(Annotation(ClassType("entity/annotation/Transient"), NoElementValuePairs))
         ) should be(false)
 
         HasAtLeastOneAnnotation(Set(
             AnnotatedWith("entity.annotation.Column"),
             AnnotatedWith("entity.annotation.Transient")
         ))(
-            IndexedSeq(Annotation(ObjectType("entity/annotation/Embedded"), NoElementValuePairs))
+            IndexedSeq(Annotation(ClassType("entity/annotation/Embedded"), NoElementValuePairs))
         ) should be(false)
     }
 

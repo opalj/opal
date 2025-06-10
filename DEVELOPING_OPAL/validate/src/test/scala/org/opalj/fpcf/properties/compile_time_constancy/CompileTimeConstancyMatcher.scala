@@ -5,7 +5,7 @@ package properties
 package compile_time_constancy
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
 import org.opalj.br.fpcf.properties.CompileTimeConstantField
@@ -22,7 +22,7 @@ sealed abstract class CompileTimeConstancyMatcher(
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]

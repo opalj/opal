@@ -55,7 +55,7 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
         expectedResult:            AnyRef,
         testClassLoader:           ClassLoader,
         fixtureClassLoader:        ClassLoader,
-        testClassType:             ObjectType,
+        testClassType:             ClassType,
         testMethodName:            String,
         testMethodParameterTypes:  Array[Class[_]]         = Array.empty,
         testMethodParameters:      Array[AnyRef]           = Array.empty,
@@ -85,14 +85,14 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
         val inMemoryClassLoader = new ProjectBasedInMemoryClassLoader(p)
         val fixtureClassLoader = new URLClassLoader(Array(r.toURI.toURL))
 
-        val intersectionTypes = ObjectType("lambdas/methodreferences/IntersectionTypes")
+        val intersectionTypes = ClassType("lambdas/methodreferences/IntersectionTypes")
 
         it("simpleLambdaAdd should calculate 2+2 correctly") {
             validateMethod(
                 Int.box(4),
                 inMemoryClassLoader,
                 fixtureClassLoader,
-                ObjectType("lambdas/InvokeDynamics"),
+                ClassType("lambdas/InvokeDynamics"),
                 "simpleLambdaAdd",
                 Array(classOf[Int], classOf[Int]),
                 Array(Int.box(2), Int.box(2)),
@@ -191,7 +191,7 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
     if (isCurrentJREAtLeastJava10) {
 
         describe("behavior of rewritten string_concat fixture") {
-            val testClassType = ObjectType("string_concat/StringConcatFactoryTest")
+            val testClassType = ClassType("string_concat/StringConcatFactoryTest")
             val r = locateTestResources("classfiles/string_concat.jar", "bi")
             val p = JavaFixtureProject(r)
             val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
@@ -288,7 +288,7 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
     if (isCurrentJREAtLeastJava16) {
 
         describe("behavior of rewritten java16records fixture") {
-            val testClassType = ObjectType("java16records/RecordClass")
+            val testClassType = ClassType("java16records/RecordClass")
             val r = locateTestResources("java16records-g-16-parameters-genericsignature.jar", "bi")
             val p = JavaFixtureProject(r)
             val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)

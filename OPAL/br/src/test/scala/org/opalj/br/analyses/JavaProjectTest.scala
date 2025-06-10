@@ -32,7 +32,7 @@ class JavaProjectTest extends AnyFlatSpec with Matchers {
 
         val jp = new JavaProject(cp)
 
-        jp.getAllSubclassesOfObjectType("methods/a/Super").asScala should contain("methods.a.DirectSub")
+        jp.getAllSubclassesOfClassType("methods/a/Super").asScala should contain("methods.a.DirectSub")
     }
 
 }

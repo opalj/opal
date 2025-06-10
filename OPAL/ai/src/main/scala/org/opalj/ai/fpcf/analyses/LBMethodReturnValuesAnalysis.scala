@@ -32,7 +32,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
 
 /**
- * Computes for each method that returns object typed values general information about the
+ * Computes for each method that returns class typed values general information about the
  * potentially returned values.
  *
  * @author Michael Eichberg
@@ -97,13 +97,13 @@ class LBMethodReturnValuesAnalysis private[analyses] (
             //    returnedReferenceValue.isNull.isYes ||
             //         classHierarchy.isASubtypeOf(
             //             returnedReferenceValue.upperTypeBound,
-            //            method.returnType.asObjectType
+            //            method.returnType.asClassType
             //        ).isYesOrUnknown,
             //     s"$returnedReferenceValue is not a subtype of the return type ${method.returnType}"
             // )
             if (isUpdated) {
                 val returnedValueUTB = returnedReferenceValue.upperTypeBound
-                val methodReturnType = method.returnType.asObjectType
+                val methodReturnType = method.returnType.asClassType
                 if (!classHierarchy.isSubtypeOf(returnedValueUTB, methodReturnType)) {
                     // the type hierarchy is incomplete...
                     ai.interrupt()
@@ -205,9 +205,9 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
         val analysis = new LBMethodReturnValuesAnalysis(p)
         val methods = p.allMethodsWithBody.iterator.filter { m =>
             val returnType = m.returnType
-            returnType.isObjectType
+            returnType.isClassType
             // If we enable the following check then we can't refine to null anymore:
-            // && p.classHierarchy.hasSubtypes(returnType.asObjectType).isYes
+            // && p.classHierarchy.hasSubtypes(returnType.asClassType).isYes
         }
         ps.scheduleEagerComputationsForEntities(methods)(analysis.analyze)
         analysis

@@ -20,8 +20,8 @@ import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.ClassType
 import org.opalj.br.Field
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
@@ -377,7 +377,7 @@ object Immutability {
 
         val classGroupedResults = propertyStore
             .entities(ClassImmutability.key)
-            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ClassType]))
             .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
@@ -387,7 +387,7 @@ object Immutability {
             }
 
         def unpackClass(eps: EPS[Entity, OrderedProperty]): String = {
-            val classFile = eps.e.asInstanceOf[ObjectType]
+            val classFile = eps.e.asInstanceOf[ClassType]
             val className = classFile.simpleName
             s"${classFile.packageName.replace("/", ".")}.$className"
         }
@@ -419,13 +419,13 @@ object Immutability {
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val transitivelyImmutableClassesInterfaces = transitivelyImmutables
-            .filter(eps => allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => allInterfaces.contains(eps.e.asInstanceOf[ClassType]))
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
 
         val transitivelyImmutableClasses = transitivelyImmutables
-            .filter(eps => !allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => !allInterfaces.contains(eps.e.asInstanceOf[ClassType]))
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
@@ -461,7 +461,7 @@ object Immutability {
 
         val typeGroupedResults = propertyStore
             .entities(TypeImmutability.key)
-            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps => allProjectClassTypes.contains(eps.e.asInstanceOf[ClassType]))
             .iterator.to(Iterable)
             .groupBy {
                 _.asFinal.p match {
@@ -538,7 +538,7 @@ object Immutability {
                 | Fields: ${allFieldsInProjectClassFiles.size}
                 | Fields with primitive Types / java.lang.String: ${
                         allFieldsInProjectClassFiles.count(field =>
-                            !field.fieldType.isReferenceType || field.fieldType == ObjectType.String
+                            !field.fieldType.isReferenceType || field.fieldType == ClassType.String
                         )
                     }
                 |""".stripMargin

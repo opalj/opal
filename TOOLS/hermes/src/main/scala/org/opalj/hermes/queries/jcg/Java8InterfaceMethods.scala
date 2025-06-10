@@ -68,11 +68,11 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
 
             val kindID = invokeKind match {
                 case ii @ INVOKEINTERFACE(dc, name, md) => {
-                    val subtypes = project.classHierarchy.allSubtypes(dc.asObjectType, false)
-                    val hasDefaultMethodTarget = subtypes.exists { ot =>
-                        val target = project.instanceCall(callerType, ot, name, md)
+                    val subtypes = project.classHierarchy.allSubtypes(dc.asClassType, false)
+                    val hasDefaultMethodTarget = subtypes.exists { ct =>
+                        val target = project.instanceCall(callerType, ct, name, md)
                         if (target.hasValue) {
-                            val definingClass = target.value.asVirtualMethod.classType.asObjectType
+                            val definingClass = target.value.asVirtualMethod.classType.asClassType
                             project.classFile(definingClass).exists(_.isInterfaceDeclaration)
                         } else
                             false
@@ -85,18 +85,18 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                     }
                 }
                 case iv @ INVOKEVIRTUAL(dc, name, md) => {
-                    val subtypes = project.classHierarchy.allSubtypes(dc.asObjectType, true)
+                    val subtypes = project.classHierarchy.allSubtypes(dc.asClassType, true)
                     var subtypeWithMultipleInterfaces = false
-                    val hasDefaultMethodTarget = subtypes.exists { ot =>
-                        val target = project.instanceCall(callerType, ot, name, md)
+                    val hasDefaultMethodTarget = subtypes.exists { ct =>
+                        val target = project.instanceCall(callerType, ct, name, md)
                         if (target.hasValue) {
-                            val definingClass = target.value.asVirtualMethod.classType.asObjectType
+                            val definingClass = target.value.asVirtualMethod.classType.asClassType
                             val isIDM = project.classFile(definingClass).exists(_.isInterfaceDeclaration)
                             if (isIDM) {
                                 // if the method is resolved to an IDM we have to check whether there are multiple options
                                 // in order to check the linearization order
                                 val typeInheritMultipleIntWithSameIDM =
-                                    project.classHierarchy.allSuperinterfacetypes(ot, false).count { it =>
+                                    project.classHierarchy.allSuperinterfacetypes(ct, false).count { it =>
                                         val cf = project.classFile(it)
                                         if (cf.nonEmpty) {
                                             val method = cf.get.findMethod(name, md)
@@ -150,21 +150,21 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
     ): Boolean = {
 
         val t = mii.declaringClass
-        if (!t.isObjectType)
+        if (!t.isClassType)
             return false;
 
-        val ot = t.asObjectType
+        val ct = t.asClassType
         val methodName = mii.name
         val methodDescriptor = mii.methodDescriptor
 
-        val invokeID = CacheKey(ot.id, methodDescriptor.toJava(methodName), mii.opcode)
+        val invokeID = CacheKey(ct.id, methodDescriptor.toJava(methodName), mii.opcode)
         relInvokeCache.containsKey(invokeID)
         if (relInvokeCache.containsKey(invokeID))
             return relInvokeCache.get(invokeID);
 
         val ch = project.classHierarchy
-        var relevantInterfaces = ch.allSuperinterfacetypes(ot, true)
-        ch.allSubclassTypes(ot, false).foreach { st =>
+        var relevantInterfaces = ch.allSuperinterfacetypes(ct, true)
+        ch.allSubclassTypes(ct, false).foreach { st =>
             relevantInterfaces = relevantInterfaces ++ ch.allSuperinterfacetypes(st, false)
         }
 

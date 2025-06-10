@@ -19,11 +19,11 @@ class ClassExtensibilityTest extends AnyFunSpec with Matchers {
     val testProject = biProject("extensible_classes.jar")
 
     /*
-     * Can be used as prefix when ObjectTypes are created.
+     * Can be used as prefix when ClassTypes are created.
      */
     val testPackage = "extensible_classes/visibility/"
 
-    private def TypeFixture(simpleName: String) = ObjectType(testPackage + simpleName)
+    private def TypeFixture(simpleName: String) = ClassType(testPackage + simpleName)
 
     val PublicInterface = TypeFixture("PublicInterface")
     val Interface = TypeFixture("Interface")

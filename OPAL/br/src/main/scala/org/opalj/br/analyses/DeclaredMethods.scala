@@ -6,11 +6,11 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
+import org.opalj.br.ClassType.MethodHandle
+import org.opalj.br.ClassType.VarHandle
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
-import org.opalj.br.ObjectType.MethodHandle
-import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
 import org.opalj.log.LogContext
@@ -41,9 +41,9 @@ class DeclaredMethods(
     def _UNSAFE_size: Int = idCounter
 
     def apply(
-        declaredType: ObjectType,
+        declaredType: ClassType,
         packageName:  String,
-        runtimeType:  ObjectType,
+        runtimeType:  ClassType,
         name:         String,
         descriptor:   MethodDescriptor
     ): DeclaredMethod = {

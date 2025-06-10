@@ -45,7 +45,7 @@ class CodePropertiesTest extends AnyFunSuite {
     def doAnalyzeMaxStackAndLocals(project: SomeProject): Int = {
 
         val ch = project.classHierarchy
-        val TyperTyperType = ObjectType("scala/tools/nsc/typechecker/Typers$Typer")
+        val TyperTyperType = ClassType("scala/tools/nsc/typechecker/Typers$Typer")
 
         val analyzedMethodsCount = new AtomicInteger(0)
         project.parForeachMethodWithBody() { m =>
