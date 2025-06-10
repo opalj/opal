@@ -115,14 +115,14 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
                 if field.fieldType.isReferenceType
             } {
                 field.fieldType match {
-                    case ArrayType(ot: ClassType) if (allObserverTypes.contains(ot)) =>
+                    case ArrayType(ct: ClassType) if (allObserverTypes.contains(ct)) =>
                         observerFields += ((classFile, field))
-                    case ot: ClassType =>
-                        if (allObserverTypes.contains(ot))
+                    case ct: ClassType =>
+                        if (allObserverTypes.contains(ct))
                             observerFields += ((classFile, field))
                         else { // check if it is a container type
                             field.fieldTypeSignature match {
-                                case Some(SimpleGenericType(_, ot: ClassType)) if allObserverTypes.contains(ot) =>
+                                case Some(SimpleGenericType(_, ct: ClassType)) if allObserverTypes.contains(ct) =>
                                     observerFields += ((classFile, field))
                                 case _ =>
                                 /* Ignore */

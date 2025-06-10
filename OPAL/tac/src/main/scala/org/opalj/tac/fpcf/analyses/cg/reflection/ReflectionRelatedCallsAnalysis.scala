@@ -149,7 +149,7 @@ class ClassForNameAnalysis private[analyses] (
         private[cg] def addNewLoadedClasses(loadedClasses: IterableOnce[ReferenceType]): Unit = {
             forNameClasses ++= loadedClasses
             _newLoadedClasses ++= loadedClasses.iterator.collect {
-                case ot: ClassType if !_loadedClassesUB.contains(ot) => ot
+                case ct: ClassType if !_loadedClassesUB.contains(ct) => ct
             }
         }
 
@@ -379,7 +379,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                 new ParameterTypesBasedMethodMatcher(ArraySeq.empty),
                 new ClassBasedMethodMatcher(
                     eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.collect {
-                        case ot: ClassType => ot
+                        case ct: ClassType => ct
                     },
                     true
                 )
@@ -532,7 +532,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
             val (callPC, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
             val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.collect {
-                case ot: ClassType => ot
+                case ct: ClassType => ct
             }
 
             val allMatchers = matchers + new ClassBasedMethodMatcher(classes, true)
@@ -1126,8 +1126,8 @@ class MethodHandleInvokeAnalysis private[analyses] (
             val (callPC, isVirtual, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
             val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.flatMap {
-                case ot: ClassType if isVirtual => project.classHierarchy.allSubtypes(ot, true)
-                case ot: ClassType              => Set(ot)
+                case ct: ClassType if isVirtual => project.classHierarchy.allSubtypes(ct, true)
+                case ct: ClassType              => Set(ct)
                 case _: ArrayType               => Set(ClassType.Object)
             }
 

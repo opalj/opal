@@ -1974,7 +1974,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         refId:             RefId
     ): DomainSingleOriginReferenceValue = {
         theUpperTypeBound match {
-            case ot: ClassType => ObjectValue(origin, isNull, isPrecise, ot, refId)
+            case ct: ClassType => ObjectValue(origin, isNull, isPrecise, ct, refId)
             case at: ArrayType => ArrayValue(origin, isNull, isPrecise, at, refId)
         }
     }

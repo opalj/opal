@@ -59,7 +59,7 @@ object IDLTestsFixtures {
 
     val classFileIDL: JsObject = Json.obj(
         "fqn" -> "foo/Bar",
-        "type" -> Json.obj("ot" -> "foo.Bar", "simpleName" -> "Bar"),
+        "type" -> Json.obj("ct" -> "foo.Bar", "simpleName" -> "Bar"),
         "accessFlags" -> "public"
     )
 
@@ -85,7 +85,7 @@ object IDLTestsFixtures {
         "returnType" -> Json.obj("bt" -> "int"),
         "parameters" -> Json.arr(
             Json.obj("at" -> Json.obj("bt" -> "byte"), "dimensions" -> 2),
-            Json.obj("ot" -> "foo.Bar", "simpleName" -> "Bar")
+            Json.obj("ct" -> "foo.Bar", "simpleName" -> "Bar")
         ),
         "signature" -> "test2p([[BLfoo/Bar;)I",
         "firstLine" -> "8"
