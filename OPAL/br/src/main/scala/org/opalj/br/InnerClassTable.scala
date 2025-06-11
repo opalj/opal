@@ -36,8 +36,8 @@ object InnerClassTable {
 }
 
 case class InnerClass(
-    innerClassType:        ObjectType,
-    outerClassType:        Option[ObjectType],
+    innerClassType:        ClassType,
+    outerClassType:        Option[ClassType],
     innerName:             Option[String],
     innerClassAccessFlags: Int
 ) {

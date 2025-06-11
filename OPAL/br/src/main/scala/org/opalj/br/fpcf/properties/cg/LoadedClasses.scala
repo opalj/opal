@@ -26,8 +26,8 @@ sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
  * @author Florian Kuebler
  */
 sealed class LoadedClasses private[properties] (
-    final val orderedClasses: List[ObjectType],
-    final val classes:        UIDSet[ObjectType]
+    final val orderedClasses: List[ClassType],
+    final val classes:        UIDSet[ClassType]
 ) extends OrderedProperty with LoadedClassesMetaInformation {
 
     assert(orderedClasses == null || orderedClasses.size == classes.size)
@@ -38,7 +38,7 @@ sealed class LoadedClasses private[properties] (
         }
     }
 
-    def updated(newClasses: IterableOnce[ObjectType]): LoadedClasses = {
+    def updated(newClasses: IterableOnce[ClassType]): LoadedClasses = {
         var updatedOrderedClasses = orderedClasses
         var updatedClasses = classes
         for { c <- newClasses.iterator } {
@@ -54,7 +54,7 @@ sealed class LoadedClasses private[properties] (
     /**
      * Will return the loaded classes added most recently, dropping the `num` oldest ones.
      */
-    def dropOldest(num: Int): Iterator[ObjectType] = {
+    def dropOldest(num: Int): Iterator[ClassType] = {
         orderedClasses.iterator.take(classes.size - num)
     }
 
@@ -69,7 +69,7 @@ object NoLoadedClasses extends LoadedClasses(classes = UIDSet.empty, orderedClas
 
 object LoadedClasses extends LoadedClassesMetaInformation {
 
-    def apply(classes: UIDSet[ObjectType]): LoadedClasses = {
+    def apply(classes: UIDSet[ClassType]): LoadedClasses = {
         new LoadedClasses(classes.toList, classes)
     }
 

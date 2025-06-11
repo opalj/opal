@@ -46,8 +46,8 @@ class ConfiguredPurity(
 
             if conditions forall {
                 _ forall { typeName =>
-                    val ot = ObjectType(typeName)
-                    project.classHierarchy.hasSubtypes(ot).isNo && classExtensibility(ot).isNo
+                    val ct = ClassType(typeName)
+                    project.classHierarchy.hasSubtypes(ct).isNo && classExtensibility(ct).isNo
                 }
             }
 
@@ -58,7 +58,7 @@ class ConfiguredPurity(
                     .filter { m => m.name == methodName && mdo.forall(_ == m.descriptor) }
                     .map(declaredMethods(_))
             } else {
-                val classType = ObjectType(className)
+                val classType = ClassType(className)
 
                 mdo match {
                     case Some(md) => Seq(

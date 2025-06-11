@@ -10,9 +10,9 @@ import org.opalj.ai.domain.MethodCallsHandling
 import org.opalj.ai.domain.TheCode
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.fpcf.properties.MethodReturnValue
+import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.fpcf.PropertyKind
@@ -32,12 +32,12 @@ trait RefinedTypeLevelInvokeInstructions
     }
 
     override protected[this] def tryLookup(
-        declaringType: ObjectType,
+        declaringType: ClassType,
         name:          String,
         descriptor:    MethodDescriptor
     ): Boolean = {
         val returnType = descriptor.returnType
-        returnType.isObjectType || super.tryLookup(declaringType, name, descriptor)
+        returnType.isClassType || super.tryLookup(declaringType, name, descriptor)
     }
 
     /**
@@ -62,7 +62,7 @@ trait RefinedTypeLevelInvokeInstructions
         fallback:               () => MethodCallResult
     ): MethodCallResult = {
         val returnType = method.returnType
-        if (!returnType.isObjectType ||
+        if (!returnType.isClassType ||
             returnType != invokeMethodDescriptor.returnType // <= to handle MethodHandle.invoke(Exact) calls
         ) {
             return fallback();
@@ -113,7 +113,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
      */
     protected[this] def doVirtualInvoke(
         pc:            PC,
-        declaringType: ObjectType,
+        declaringType: ClassType,
         isInterface:   Boolean,
         name:          String,
         descriptor:    MethodDescriptor,
@@ -123,10 +123,10 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
 
         val DomainReferenceValueTag(receiver) = operands.last
         val receiverUTB = receiver.upperTypeBound
-        if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.head.isObjectType)
+        if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.head.isClassType)
             return fallback();
 
-        val receiverType = receiverUTB.head.asObjectType
+        val receiverType = receiverUTB.head.asClassType
         // We can resolve (statically) all calls where the type information is precise
         // or where the called method is final.
 
@@ -162,7 +162,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
 
     protected[this] def doNonVirtualInvoke(
         pc:            PC,
-        declaringType: ObjectType,
+        declaringType: ClassType,
         isInterface:   Boolean,
         name:          String,
         descriptor:    MethodDescriptor,
@@ -229,7 +229,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
      * @return The default is to return `false`.
      */
     protected[this] def tryLookup(
-        declaringType: ObjectType,
+        declaringType: ClassType,
         name:          String,
         descriptor:    MethodDescriptor
     ): Boolean = false
@@ -249,16 +249,16 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         if (declaringType.isArrayType)
             return fallback();
 
-        val declaringObjectType = declaringType.asObjectType
-        if (!tryLookup(declaringObjectType, name, descriptor))
+        val declaringClassType = declaringType.asClassType
+        if (!tryLookup(declaringClassType, name, descriptor))
             return fallback();
 
-        doVirtualInvoke(pc, declaringObjectType, false, name, descriptor, operands, fallback _)
+        doVirtualInvoke(pc, declaringClassType, false, name, descriptor, operands, fallback _)
     }
 
     abstract override def invokeinterface(
         pc:            PC,
-        declaringType: ObjectType,
+        declaringType: ClassType,
         name:          String,
         descriptor:    MethodDescriptor,
         operands:      Operands
@@ -276,7 +276,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
 
     abstract override def invokespecial(
         pc:            PC,
-        declaringType: ObjectType,
+        declaringType: ClassType,
         isInterface:   Boolean,
         name:          String,
         descriptor:    MethodDescriptor,
@@ -300,7 +300,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
      */
     abstract override def invokestatic(
         pc:            PC,
-        declaringType: ObjectType,
+        declaringType: ClassType,
         isInterface:   Boolean,
         name:          String,
         descriptor:    MethodDescriptor,

@@ -117,8 +117,8 @@ private object TypeAnnotationsTest {
     //    RuntimeInvisibleTypeAnnotations:
     //      0: #15(): METHOD_RETURN
     // }
-    val aTA = ObjectType("type_annotations/RITypeAnnotation")
-    val taUser = ObjectType("type_annotations/RITypeAnnotationUser")
+    val aTA = ClassType("type_annotations/RITypeAnnotation")
+    val taUser = ClassType("type_annotations/RITypeAnnotationUser")
     val taUserClassFile = project.classFile(taUser).get
 
 }

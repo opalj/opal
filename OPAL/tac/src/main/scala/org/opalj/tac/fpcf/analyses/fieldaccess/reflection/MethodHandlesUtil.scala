@@ -6,8 +6,8 @@ package analyses
 package fieldaccess
 package reflection
 
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 
@@ -24,14 +24,14 @@ object MethodHandlesUtil {
             new NameBasedFieldMatcher(Set(name)),
             if (isStatic) StaticFieldMatcher else NonStaticFieldMatcher,
             if (declaringClass.isArrayType)
-                new ClassBasedFieldMatcher(Set(ObjectType.Object), onlyFieldsExactlyInClass = false)
+                new ClassBasedFieldMatcher(Set(ClassType.Object), onlyFieldsExactlyInClass = false)
             else if (!isStatic)
                 new ClassBasedFieldMatcher(
-                    project.classHierarchy.allSubtypes(declaringClass.asObjectType, reflexive = true),
+                    project.classHierarchy.allSubtypes(declaringClass.asClassType, reflexive = true),
                     onlyFieldsExactlyInClass = false
                 )
             else
-                new ClassBasedFieldMatcher(Set(declaringClass.asObjectType), onlyFieldsExactlyInClass = false)
+                new ClassBasedFieldMatcher(Set(declaringClass.asClassType), onlyFieldsExactlyInClass = false)
         )
     }
 }

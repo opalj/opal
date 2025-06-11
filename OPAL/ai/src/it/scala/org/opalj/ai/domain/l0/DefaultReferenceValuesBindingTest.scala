@@ -11,7 +11,7 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ValuesCoordinatingDomain
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.TestSupport
 import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet2
@@ -39,8 +39,8 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
     it should "be able to join a value with a single interface with one with multiple interfaces" in {
         // the operand stack value org.omg.CORBA.Object(origin=-1;maybeNull;isUpperBound)
         // does not abstract over org.omg.CORBA.Object with java.rmi.Remote(origin=-1; isUpperBound)
-        val t1 = ObjectType("org/omg/CORBA/Object")
-        val t2 = ObjectType("java/rmi/Remote")
+        val t1 = ClassType("org/omg/CORBA/Object")
+        val t2 = ClassType("java/rmi/Remote")
         val domain = ValuesDomain
         val stValue = domain.ReferenceValue(-1, t1)
         val mtValue = domain.ObjectValue(-1, UIDSet2(t1, t2))

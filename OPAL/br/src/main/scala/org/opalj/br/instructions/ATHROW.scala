@@ -18,7 +18,7 @@ case object ATHROW extends Instruction with NoLabels {
 
     override final def asATHROW: this.type = this
 
-    final def jvmExceptions: List[ObjectType] = Instruction.justNullPointerException
+    final def jvmExceptions: List[ClassType] = Instruction.justNullPointerException
 
     final def mayThrowExceptions: Boolean = true
 

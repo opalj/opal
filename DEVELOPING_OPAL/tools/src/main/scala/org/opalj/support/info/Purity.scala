@@ -282,7 +282,7 @@ object Purity {
         }
 
         val projectEntitiesWithPurity = entitiesWithPurity.filter { ep =>
-            val pn = ep.e.asInstanceOf[Context].method.declaringClassType.asObjectType.packageName
+            val pn = ep.e.asInstanceOf[Context].method.declaringClassType.asClassType.packageName
             packages match {
                 case None     => isJDK || !JDKPackages.exists(pn.startsWith)
                 case Some(ps) => ps.exists(pn.startsWith)

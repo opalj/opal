@@ -8,11 +8,11 @@ package pointsto
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.FieldType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -97,7 +97,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case Throw(_, UVar(_, defSites)) =>
                     val entity = MethodExceptions(state.callContext)
                     val filter = (t: ReferenceType) =>
-                        classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
+                        classHierarchy.isSubtypeOf(t, ClassType.Throwable)
                     state.includeSharedPointsToSets(
                         entity,
                         currentPointsToOfDefSites(entity, defSites, filter),
@@ -108,7 +108,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     val entity = MethodExceptions(state.callContext)
                     val callSite = getCallExceptions(throwingStmt.pc)
                     val filter = (t: ReferenceType) =>
-                        classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
+                        classHierarchy.isSubtypeOf(t, ClassType.Throwable)
                     state.includeSharedPointsToSet(
                         entity,
                         currentPointsTo(entity, callSite, filter),
@@ -141,7 +141,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         createPointsToSet(
                             pc,
                             state.callContext,
-                            const.tpe.asObjectType,
+                            const.tpe.asClassType,
                             isConstant = true
                         )
                 )
@@ -376,7 +376,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
 
         val callExceptions = getCallExceptions(pc)
-        val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
+        val filter = (t: ReferenceType) => classHierarchy.isSubtypeOf(t, ClassType.Throwable)
         for (target <- callees.callees(state.callContext, pc)) {
             val targetExceptions = MethodExceptions(target)
             state.includeSharedPointsToSet(

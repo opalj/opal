@@ -4,9 +4,9 @@ package tac
 
 import scala.collection.Set
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.value.ValueInformation
@@ -46,7 +46,7 @@ trait Call[+V <: Var[V]] {
      * always required.
      */
     def resolveCallTargets(
-        callingContext: ObjectType
+        callingContext: ClassType
     )(
         implicit
         p:  ProjectLike,

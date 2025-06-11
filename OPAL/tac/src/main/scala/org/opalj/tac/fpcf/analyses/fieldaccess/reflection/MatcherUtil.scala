@@ -6,7 +6,7 @@ package analyses
 package fieldaccess
 package reflection
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.fieldaccess.IncompleteFieldAccesses
@@ -102,7 +102,7 @@ object MatcherUtil {
         project:                  SomeProject,
         failure:                  () => Unit,
         onlyFieldsExactlyInClass: Boolean,
-        onlyObjectTypes:          Boolean = false,
+        onlyClassTypes:           Boolean = false,
         considerSubclasses:       Boolean = false
     )(
         implicit
@@ -113,13 +113,13 @@ object MatcherUtil {
         incompleteFieldAccesses: IncompleteFieldAccesses
     ): FieldMatcher = {
         val typesOpt = Some(
-            TypesUtil.getPossibleClasses(context, ref, depender, stmts, failure, onlyObjectTypes).flatMap { tpe =>
-                if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
-                else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
+            TypesUtil.getPossibleClasses(context, ref, depender, stmts, failure, onlyClassTypes).flatMap { tpe =>
+                if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asClassType, reflexive = true)
+                else Set(if (tpe.isClassType) tpe.asClassType else ClassType.Object)
             }
         )
 
-        retrieveSuitableMatcher[Set[ObjectType]](
+        retrieveSuitableMatcher[Set[ClassType]](
             typesOpt,
             pc,
             v => new ClassBasedFieldMatcher(v, onlyFieldsExactlyInClass)

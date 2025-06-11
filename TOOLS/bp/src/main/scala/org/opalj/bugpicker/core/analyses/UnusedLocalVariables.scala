@@ -239,10 +239,10 @@ object UnusedLocalVariables {
 
                     case GETSTATIC.opcode =>
                         val GETSTATIC(_, _, fieldType) = instruction
-                        if (fieldType.isObjectType) {
+                        if (fieldType.isClassType) {
                             val instr = instruction.toString(vo)
 
-                            theProject.classFile(fieldType.asObjectType) match {
+                            theProject.classFile(fieldType.asClassType) match {
                                 case Some(cf) =>
                                     if (cf.isEnumDeclaration) {
                                         issue = s"the enum value $instr"+

@@ -4,9 +4,9 @@ package br
 package fpcf
 package analyses
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
@@ -138,7 +138,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     val MethodInvocationInstruction(declaringClass, _, name, descriptor) =
                         instruction
 
-                    if ((declaringClass eq ObjectType.Object) && (
+                    if ((declaringClass eq ClassType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
                             (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
                             (name == "equals" &&
@@ -335,10 +335,10 @@ class L1ThrownExceptionsAnalysis private[analyses] (
         if (fieldAccessMayThrowNullPointerException ||
             (isFieldAccessed && isLocalVariable0Updated)
         ) {
-            initialExceptions += ObjectType.NullPointerException
+            initialExceptions += ClassType.NullPointerException
         }
         if (isSynchronizationUsed) {
-            initialExceptions += ObjectType.IllegalMonitorStateException
+            initialExceptions += ClassType.IllegalMonitorStateException
         }
 
         var exceptions = initialExceptions.toImmutableTypesSet

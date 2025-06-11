@@ -25,7 +25,7 @@ public class ProjectDemo {
         Project<java.net.URL> project = Project.apply(new File(args[0]));
 
         // Convert the project into a simple Map (NOT RECOMMENDED)
-        // Map<ObjectType, ClassFile> project = projectLike.toJavaMap();
+        // Map<ClassType, ClassFile> project = projectLike.toJavaMap();
 
         // Create an abstract interpreter (the same instance can be reused)
         BaseAI ai = new BaseAI(true, false);
