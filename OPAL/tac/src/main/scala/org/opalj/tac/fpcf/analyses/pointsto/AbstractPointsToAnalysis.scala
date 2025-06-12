@@ -78,7 +78,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     private[this] def doProcessMethod(
         implicit state: State
     ): ProperPropertyComputationResult = {
-        if (state.hasTACDependee)
+        if (state.isTACDependeeRefinable)
             throw new IllegalStateException("points to analysis does not support refinement based tac")
         val tac = state.tac
         val method = state.callContext.method.definedMethod
