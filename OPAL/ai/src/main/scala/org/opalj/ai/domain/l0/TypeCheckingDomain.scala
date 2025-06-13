@@ -91,18 +91,49 @@ final class TypeCheckingDomain(
         override val theUpperTypeBound: ClassType
     ) extends SObjectValueLike {
         override def isNull: Answer = Unknown
+
+        override def doJoin(pc: ValueOrigin, other: Value): Update[Value] = {
+            other match {
+                case ArrayOrObjectValue => NoUpdate
+                case _                  => super.doJoin(pc, other)
+            }
+        }
     }
 
     protected case class DefaultMObjectValue(
         upperTypeBound: UIDSet[ClassType]
     ) extends MObjectValueLike {
         override def isNull: Answer = Unknown
+
+        override def doJoin(pc: ValueOrigin, other: Value): Update[Value] = {
+            other match {
+                case ArrayOrObjectValue => NoUpdate
+                case _                  => super.doJoin(pc, other)
+            }
+        }
+    }
+
+    private object ArrayOrObjectValue extends DefaultSObjectValue(ClassType.Object) {
+        override def doJoin(pc: ValueOrigin, other: Value): Update[Value] = {
+            other match {
+                case ArrayOrObjectValue                                          => NoUpdate
+                case SObjectValueLike(_) | MObjectValueLike(_) | AnArrayValue(_) => StructuralUpdate(other)
+                case _                                                           => super.doJoin(pc, other)
+            }
+        }
     }
 
     protected case class DefaultArrayValue(
         theUpperTypeBound: ArrayType
     ) extends AnArrayValue {
         override def isNull: Answer = Unknown
+
+        override def doJoin(pc: ValueOrigin, other: Value): Update[Value] = {
+            other match {
+                case ArrayOrObjectValue => NoUpdate
+                case _                  => super.doJoin(pc, other)
+            }
+        }
     }
 
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
@@ -162,7 +193,7 @@ final class TypeCheckingDomain(
             case array: IsSArrayValue =>
                 asArrayAbstraction(array).load(pc, index)
             case _ =>
-                ComputedValueOrException(ObjectValue(pc, ClassType.Object), getArrayAccessRelatedExceptions(pc))
+                ComputedValueOrException(ArrayOrObjectValue, getArrayAccessRelatedExceptions(pc))
         }
     }
 
