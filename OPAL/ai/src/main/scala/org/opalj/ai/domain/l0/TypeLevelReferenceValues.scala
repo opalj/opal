@@ -463,7 +463,6 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *
      * @param value1 A value of type `ReferenceValue`.
      * @param value2 A value of type `ReferenceValue`.
-     * @param value2 A value of type `ReferenceValue`.
      */
     override def refAreEqual(pc: Int, value1: DomainValue, value2: DomainValue): Answer = {
         val v1 = asReferenceValue(value1)
@@ -516,7 +515,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *
      * @param value A value of type `ReferenceValue`.
      */
-    override def refIsNull(pc: Int, value: DomainValue): Answer = {
+    override final def refIsNull(pc: Int, value: DomainValue): Answer = {
         asReferenceValue(value).isNull
     }
 

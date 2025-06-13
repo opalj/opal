@@ -116,9 +116,8 @@ final class TypeCheckingDomain(
     private object ArrayOrObjectValue extends DefaultSObjectValue(ClassType.Object) {
         override def doJoin(pc: ValueOrigin, other: Value): Update[Value] = {
             other match {
-                case ArrayOrObjectValue                                          => NoUpdate
-                case SObjectValueLike(_) | MObjectValueLike(_) | AnArrayValue(_) => StructuralUpdate(other)
-                case _                                                           => super.doJoin(pc, other)
+                case ArrayOrObjectValue | _: ANullValue                          => NoUpdate
+                case _: SObjectValueLike | _: MObjectValueLike | _: AnArrayValue => StructuralUpdate(other)
             }
         }
     }
@@ -173,10 +172,6 @@ final class TypeCheckingDomain(
             case _: NullValueLike => Unknown
             case otherRefValue    => otherRefValue.isValueASubtypeOf(supertype)(classHierarchy)
         }
-    }
-
-    override def refIsNull(pc: Int, value: DomainValue): Answer = {
-        Unknown
     }
 
     override def arrayload(
