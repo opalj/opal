@@ -72,22 +72,16 @@ class LCPOnFieldsProblem(
          }) ++
             /* Add facts for other parameters */
             callee.parameterTypes
+                .iterator
                 .zipWithIndex
-                .filter { case (paramType, _) => paramType.isObjectType || paramType.isArrayType }
-                .map { case (paramType, index) =>
-                    if (paramType.isObjectType) {
-                        ObjectFact(s"param${index + 1}", -(index + 2))
-                    } else {
-                        ArrayFact(s"param${index + 1}", -(index + 2))
-                    }
-                }
-                .toSet ++
+                .collect {
+                    case (paramType, index) if paramType.isObjectType => ObjectFact(s"param${index + 1}", -(index + 2))
+                    case (paramType, index) if paramType.isObjectType => ArrayFact(s"param${index + 1}", -(index + 2))
+                } ++
             /* Add facts for static fields of class */
             callee.classFile
                 .fields
-                .filter(_.isStatic)
-                .map { field => StaticFieldFact(field.classFile.thisType, field.name) }
-                .toSet
+                .collect { case field if field.isStatic => StaticFieldFact(field.classFile.thisType, field.name) }
     }
 
     override def getAdditionalSeedsEdgeFunction(stmt: JavaStatement, fact: LCPOnFieldsFact, callee: Method)(
@@ -148,7 +142,7 @@ class LCPOnFieldsProblem(
         /* Search for statements that write the field in static initializer of the class belonging to the field. */
         field.classFile.staticInitializer match {
             case Some(method) =>
-                var workingStmts: mutable.Set[JavaStatement] = mutable.Set.from(icfg.getStartStatements(method))
+                var workingStmts: immutable.Set[JavaStatement] = immutable.Set.from(icfg.getStartStatements(method))
                 val seenStmts = mutable.Set.empty[JavaStatement]
 
                 while (workingStmts.nonEmpty) {
@@ -180,9 +174,11 @@ class LCPOnFieldsProblem(
                     }
 
                     seenStmts.addAll(workingStmts)
-                    workingStmts = workingStmts.foldLeft(mutable.Set.empty[JavaStatement]) { (nextStmts, stmt) =>
-                        nextStmts.addAll(icfg.getNextStatements(stmt))
-                    }.diff(seenStmts)
+                    workingStmts = workingStmts
+                        .map(icfg.getNextStatements)
+                        .fold(immutable.Set.empty[JavaStatement]) { (nextStmts, stmts) => nextStmts ++ stmts }
+                        .diff(seenStmts)
+                        .toSet
                 }
 
             case _ =>
