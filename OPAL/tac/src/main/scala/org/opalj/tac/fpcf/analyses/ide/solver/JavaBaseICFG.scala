@@ -6,9 +6,8 @@ package analyses
 package ide
 package solver
 
-import scala.collection
-import scala.collection.immutable
-import scala.collection.mutable
+import scala.collection.immutable.Set
+import scala.collection.mutable.{Map => MutableMap}
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
@@ -37,7 +36,7 @@ abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
     protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
     protected val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    private val tacProviderCache = mutable.Map.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
+    private val tacProviderCache = MutableMap.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 
     def tacProvider(callable: Method): AITACode[TACMethodParameter, ValueInformation] = {
         tacProviderCache.getOrElseUpdate(callable, { lazyTacProvider(callable) })
@@ -64,10 +63,10 @@ abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
         }
     }
 
-    override def getCallees(javaStmt: JavaStatement): collection.Set[Method] = {
+    override def getCallees(javaStmt: JavaStatement): scala.collection.Set[Method] = {
         val caller = declaredMethods(javaStmt.method)
         if (caller == null) {
-            return immutable.Set.empty
+            return Set.empty
         }
         val calleesEOptionP = propertyStore(caller, Callees.key)
         calleesEOptionP match {

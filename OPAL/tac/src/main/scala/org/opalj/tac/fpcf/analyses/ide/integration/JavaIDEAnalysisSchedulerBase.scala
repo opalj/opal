@@ -6,7 +6,7 @@ package analyses
 package ide
 package integration
 
-import scala.collection.immutable
+import scala.collection.immutable.Set
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -39,7 +39,7 @@ abstract class JavaIDEAnalysisSchedulerBase[Fact <: IDEFact, Value <: IDEValue]
         )
 
     override def uses: Set[PropertyBounds] =
-        super.uses ++ immutable.Set(
+        super.uses ++ Set(
             PropertyBounds.finalP(TACAI),
             PropertyBounds.finalP(Callers)
         )

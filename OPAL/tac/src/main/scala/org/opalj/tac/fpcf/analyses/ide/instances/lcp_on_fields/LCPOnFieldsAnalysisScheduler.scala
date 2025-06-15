@@ -7,7 +7,7 @@ package ide
 package instances
 package lcp_on_fields
 
-import scala.collection.immutable
+import scala.collection.immutable.Set
 
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -46,7 +46,7 @@ class LCPOnFieldsAnalysisScheduler extends JavaIDEAnalysisScheduler[LCPOnFieldsF
         super.requiredProjectInformation :+ DeclaredFieldsKey
 
     override def uses: Set[PropertyBounds] =
-        super.uses ++ immutable.Set(
+        super.uses ++ Set(
             PropertyBounds.ub(FieldAssignability),
             PropertyBounds.ub(LinearConstantPropagationPropertyMetaInformation)
         )

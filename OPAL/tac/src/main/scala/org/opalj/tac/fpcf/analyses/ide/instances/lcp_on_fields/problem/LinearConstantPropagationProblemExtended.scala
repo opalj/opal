@@ -8,7 +8,7 @@ package instances
 package lcp_on_fields
 package problem
 
-import scala.collection.immutable
+import scala.collection.immutable.Set
 
 import org.opalj.br.ObjectType
 import org.opalj.fpcf.FinalP
@@ -98,18 +98,15 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                 val value = getArrayElementFromProperty(arrayVar, index)(property)
                 value match {
                     case UnknownValue =>
-                        InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(lcpOnFieldsEOptionP))
+                        InterimEdgeFunction(UnknownValueEdgeFunction, Set(lcpOnFieldsEOptionP))
                     case ConstantValue(c) =>
-                        InterimEdgeFunction(
-                            LinearCombinationEdgeFunction(0, c, lattice.top),
-                            immutable.Set(lcpOnFieldsEOptionP)
-                        )
+                        InterimEdgeFunction(LinearCombinationEdgeFunction(0, c, lattice.top), Set(lcpOnFieldsEOptionP))
                     case VariableValue =>
                         FinalEdgeFunction(VariableValueEdgeFunction)
                 }
 
             case _ =>
-                InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(lcpOnFieldsEOptionP))
+                InterimEdgeFunction(UnknownValueEdgeFunction, Set(lcpOnFieldsEOptionP))
         }
     }
 
@@ -165,18 +162,15 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                 val value = getObjectFieldFromProperty(objectVar, fieldName)(property)
                 value match {
                     case UnknownValue =>
-                        InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(lcpOnFieldsEOptionP))
+                        InterimEdgeFunction(UnknownValueEdgeFunction, Set(lcpOnFieldsEOptionP))
                     case ConstantValue(c) =>
-                        InterimEdgeFunction(
-                            LinearCombinationEdgeFunction(0, c, lattice.top),
-                            immutable.Set(lcpOnFieldsEOptionP)
-                        )
+                        InterimEdgeFunction(LinearCombinationEdgeFunction(0, c, lattice.top), Set(lcpOnFieldsEOptionP))
                     case VariableValue =>
                         FinalEdgeFunction(VariableValueEdgeFunction)
                 }
 
             case _ =>
-                InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(lcpOnFieldsEOptionP))
+                InterimEdgeFunction(UnknownValueEdgeFunction, Set(lcpOnFieldsEOptionP))
         }
     }
 
@@ -220,18 +214,15 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
             case InterimUBP(property) =>
                 getStaticFieldFromProperty(objectType, fieldName)(property) match {
                     case UnknownValue =>
-                        InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(lcpOnFieldsEOptionP))
+                        InterimEdgeFunction(UnknownValueEdgeFunction, Set(lcpOnFieldsEOptionP))
                     case ConstantValue(c) =>
-                        InterimEdgeFunction(
-                            LinearCombinationEdgeFunction(0, c, lattice.top),
-                            immutable.Set(lcpOnFieldsEOptionP)
-                        )
+                        InterimEdgeFunction(LinearCombinationEdgeFunction(0, c, lattice.top), Set(lcpOnFieldsEOptionP))
                     case VariableValue =>
                         FinalEdgeFunction(VariableValueEdgeFunction)
                 }
 
             case _ =>
-                InterimEdgeFunction(UnknownValueEdgeFunction, immutable.Set(lcpOnFieldsEOptionP))
+                InterimEdgeFunction(UnknownValueEdgeFunction, Set(lcpOnFieldsEOptionP))
         }
     }
 

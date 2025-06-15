@@ -8,9 +8,8 @@ package instances
 package lcp_on_fields
 package problem
 
-import scala.collection
-import scala.collection.immutable
-import scala.collection.mutable
+import scala.collection.immutable.Set
+import scala.collection.mutable.{Set => MutableSet}
 
 import org.opalj.ai.isImplicitOrExternalException
 import org.opalj.br.Field
@@ -63,12 +62,12 @@ class LCPOnFieldsProblem(
 
     override def getAdditionalSeeds(stmt: JavaStatement, callee: Method)(
         implicit propertyStore: PropertyStore
-    ): collection.Set[LCPOnFieldsFact] = {
+    ): scala.collection.Set[LCPOnFieldsFact] = {
         (if (callee.isStatic) {
-             immutable.Set.empty
+             Set.empty
          } else {
              /* Add fact for `this` */
-             immutable.Set(ObjectFact("param0", -1))
+             Set(ObjectFact("param0", -1))
          }) ++
             /* Add facts for other parameters */
             callee.parameterTypes
@@ -123,7 +122,7 @@ class LCPOnFieldsProblem(
                 fieldAssignability match {
                     case NonAssignable | EffectivelyNonAssignable | LazilyInitialized =>
                         val value = getValueForGetStaticExprByStaticInitializer(field)
-                        InterimEdgeFunction(PutStaticFieldEdgeFunction(value), immutable.Set(fieldAssignabilityEOptionP))
+                        InterimEdgeFunction(PutStaticFieldEdgeFunction(value), Set(fieldAssignabilityEOptionP))
                     case _ =>
                         FinalEdgeFunction(PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue))
                 }
@@ -131,7 +130,7 @@ class LCPOnFieldsProblem(
             case _ =>
                 InterimEdgeFunction(
                     PutStaticFieldEdgeFunction(linear_constant_propagation.problem.UnknownValue),
-                    immutable.Set(fieldAssignabilityEOptionP)
+                    Set(fieldAssignabilityEOptionP)
                 )
         }
     }
@@ -142,8 +141,8 @@ class LCPOnFieldsProblem(
         /* Search for statements that write the field in static initializer of the class belonging to the field. */
         field.classFile.staticInitializer match {
             case Some(method) =>
-                var workingStmts: immutable.Set[JavaStatement] = immutable.Set.from(icfg.getStartStatements(method))
-                val seenStmts = mutable.Set.empty[JavaStatement]
+                var workingStmts: Set[JavaStatement] = Set.from(icfg.getStartStatements(method))
+                val seenStmts = MutableSet.empty[JavaStatement]
 
                 while (workingStmts.nonEmpty) {
                     workingStmts.foreach { stmt =>
@@ -176,7 +175,7 @@ class LCPOnFieldsProblem(
                     seenStmts.addAll(workingStmts)
                     workingStmts = workingStmts
                         .map(icfg.getNextStatements)
-                        .fold(immutable.Set.empty[JavaStatement]) { (nextStmts, stmts) => nextStmts ++ stmts }
+                        .fold(Set.empty[JavaStatement]) { (nextStmts, stmts) => nextStmts ++ stmts }
                         .diff(seenStmts)
                         .toSet
                 }
@@ -208,18 +207,18 @@ class LCPOnFieldsProblem(
                         assignment.expr.astID match {
                             case New.ASTID =>
                                 /* Generate new object fact from null fact if assignment is a 'new' expression */
-                                immutable.Set(sourceFact, NewObjectFact(assignment.targetVar.name, source.pc))
+                                Set(sourceFact, NewObjectFact(assignment.targetVar.name, source.pc))
 
                             case NewArray.ASTID =>
                                 /* Generate new array fact from null fact if assignment is a 'new array' expression for
                                  * an integer array */
                                 if (assignment.expr.asNewArray.tpe.componentType.isIntegerType) {
-                                    immutable.Set(sourceFact, NewArrayFact(assignment.targetVar.name, source.pc))
+                                    Set(sourceFact, NewArrayFact(assignment.targetVar.name, source.pc))
                                 } else {
-                                    immutable.Set(sourceFact)
+                                    Set(sourceFact)
                                 }
 
-                            case _ => immutable.Set(sourceFact)
+                            case _ => Set(sourceFact)
                         }
 
                     case (PutField.ASTID, f: AbstractObjectFact) =>
@@ -229,26 +228,26 @@ class LCPOnFieldsProblem(
                             val targetObject = putField.objRef.asVar
                             if (targetObject.definedBy.contains(f.definedAtIndex)) {
                                 /* Generate new (short-lived) fact to handle field assignment */
-                                immutable.Set(PutFieldFact(f.name, f.definedAtIndex, putField.name))
+                                Set(PutFieldFact(f.name, f.definedAtIndex, putField.name))
                             } else {
-                                immutable.Set(f.toObjectFact)
+                                Set(f.toObjectFact)
                             }
                         } else {
-                            immutable.Set(f.toObjectFact)
+                            Set(f.toObjectFact)
                         }
 
                     case (ArrayStore.ASTID, f: AbstractArrayFact) =>
                         val arrayStore = source.stmt.asArrayStore
                         val arrayVar = arrayStore.arrayRef.asVar
                         if (arrayVar.definedBy.contains(f.definedAtIndex)) {
-                            immutable.Set(PutElementFact(f.name, f.definedAtIndex))
+                            Set(PutElementFact(f.name, f.definedAtIndex))
                         } else {
-                            immutable.Set(f.toArrayFact)
+                            Set(f.toArrayFact)
                         }
 
                     case (_, f: AbstractEntityFact) =>
                         /* Specialized facts only live for one step and are turned back into basic ones afterwards */
-                        immutable.Set(f.toObjectOrArrayFact)
+                        Set(f.toObjectOrArrayFact)
 
                     /* Static fields are modeled such that statements that change their value can always originate from
                      * the null fact */
@@ -259,18 +258,18 @@ class LCPOnFieldsProblem(
                         if (putStatic.declaredFieldType.isIntegerType) {
                             val declaredField = declaredFields(putStatic.declaringClass, putStatic.name, IntegerType)
                             if (!declaredField.isDefinedField) {
-                                return immutable.Set(sourceFact)
+                                return Set(sourceFact)
                             }
                             val field = declaredField.definedField
 
                             /* Only private fields (as they cannot be influenced by other static initializers) */
                             if (field.isPrivate) {
-                                immutable.Set(sourceFact, PutStaticFieldFact(putStatic.declaringClass, putStatic.name))
+                                Set(sourceFact, PutStaticFieldFact(putStatic.declaringClass, putStatic.name))
                             } else {
-                                immutable.Set(sourceFact)
+                                Set(sourceFact)
                             }
                         } else {
-                            immutable.Set(sourceFact)
+                            Set(sourceFact)
                         }
 
                     case (PutStatic.ASTID, f: AbstractStaticFieldFact) =>
@@ -278,16 +277,16 @@ class LCPOnFieldsProblem(
 
                         /* Drop existing fact if for the same static field */
                         if (f.objectType == putStatic.declaringClass && f.fieldName == putStatic.name) {
-                            immutable.Set.empty
+                            Set.empty
                         } else {
-                            immutable.Set(f.toStaticFieldFact)
+                            Set(f.toStaticFieldFact)
                         }
 
                     case (_, f: AbstractStaticFieldFact) =>
                         /* Specialized facts only live for one step and are turned back into basic ones afterwards */
-                        immutable.Set(f.toStaticFieldFact)
+                        Set(f.toStaticFieldFact)
 
-                    case _ => immutable.Set(sourceFact)
+                    case _ => Set(sourceFact)
                 }
             }
         }
@@ -305,19 +304,19 @@ class LCPOnFieldsProblem(
                     case NullFact =>
                         /* Only propagate null fact if function returns an object or an array of integers */
                         if (callee.returnType.isObjectType) {
-                            immutable.Set(callSiteFact)
+                            Set(callSiteFact)
                         } else if (callee.returnType.isArrayType &&
                                    callee.returnType.asArrayType.componentType.isIntegerType
                         ) {
-                            immutable.Set(callSiteFact)
+                            Set(callSiteFact)
                         } else if (callee.classFile.fields.exists { field => field.isStatic } &&
                                    !callee.classFile.fqn.startsWith("java/") &&
                                    !callee.classFile.fqn.startsWith("sun/")
                         ) {
                             /* The null fact is needed for writing static fields */
-                            immutable.Set(callSiteFact)
+                            Set(callSiteFact)
                         } else {
-                            immutable.Set.empty
+                            Set.empty
                         }
 
                     case f: AbstractEntityFact =>
@@ -348,9 +347,9 @@ class LCPOnFieldsProblem(
                     case f: AbstractStaticFieldFact =>
                         /* Only propagate fact if the callee can access the corresponding static field */
                         if (callee.classFile.thisType == f.objectType) {
-                            immutable.Set(f.toStaticFieldFact)
+                            Set(f.toStaticFieldFact)
                         } else {
-                            immutable.Set.empty
+                            Set.empty
                         }
                 }
             }
@@ -370,13 +369,13 @@ class LCPOnFieldsProblem(
                 calleeExitFact match {
                     case NullFact =>
                         /* Always propagate null fact */
-                        immutable.Set(calleeExitFact)
+                        Set(calleeExitFact)
 
                     case f: AbstractEntityFact =>
                         val definedAtIndex = f.definedAtIndex
 
                         if (isImplicitOrExternalException(definedAtIndex)) {
-                            return immutable.Set.empty
+                            return Set.empty
                         }
 
                         val callStmt = returnSite.stmt.asCall()
@@ -406,26 +405,26 @@ class LCPOnFieldsProblem(
                                     /* Only propagate if the variable represented by the source fact is one possible
                                      * initializer of the variable at the return site */
                                     if (returnExpr.asVar.definedBy.contains(f.definedAtIndex)) {
-                                        immutable.Set(f match {
+                                        Set(f match {
                                             case _: AbstractObjectFact =>
                                                 ObjectFact(assignment.targetVar.name, returnSite.pc)
                                             case _: AbstractArrayFact =>
                                                 ArrayFact(assignment.targetVar.name, returnSite.pc)
                                         })
                                     } else {
-                                        immutable.Set.empty
+                                        Set.empty
                                     }
 
-                                case _ => immutable.Set.empty
+                                case _ => Set.empty
                             }
                         }
 
                     case f: AbstractStaticFieldFact =>
                         /* Only propagate fact if the caller can access the corresponding static field */
                         if (returnSite.method.classFile.thisType == f.objectType) {
-                            immutable.Set(f.toStaticFieldFact)
+                            Set(f.toStaticFieldFact)
                         } else {
-                            immutable.Set.empty
+                            Set.empty
                         }
                 }
             }
@@ -445,23 +444,23 @@ class LCPOnFieldsProblem(
                 callSiteFact match {
                     case NullFact =>
                         /* Always propagate null fact */
-                        immutable.Set(callSiteFact)
+                        Set(callSiteFact)
 
                     case f: AbstractEntityFact =>
                         /* Only propagate if the variable represented by the source fact is no initializer of one of the
                          * parameters */
                         if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
-                            immutable.Set.empty
+                            Set.empty
                         } else {
-                            immutable.Set(f.toObjectOrArrayFact)
+                            Set(f.toObjectOrArrayFact)
                         }
 
                     case f: AbstractStaticFieldFact =>
                         /* Propagate facts that are not propagated via the call flow */
                         if (callee.classFile.thisType == f.objectType) {
-                            immutable.Set.empty
+                            Set.empty
                         } else {
-                            immutable.Set(f.toStaticFieldFact)
+                            Set(f.toStaticFieldFact)
                         }
                 }
             }
@@ -498,26 +497,17 @@ class LCPOnFieldsProblem(
                         val value = getVariableFromProperty(valueVar)(property)
                         value match {
                             case linear_constant_propagation.problem.UnknownValue =>
-                                InterimEdgeFunction(
-                                    PutFieldEdgeFunction(fieldName, value),
-                                    immutable.Set(lcpEOptionP)
-                                )
+                                InterimEdgeFunction(PutFieldEdgeFunction(fieldName, value), Set(lcpEOptionP))
                             case linear_constant_propagation.problem.ConstantValue(_) =>
-                                InterimEdgeFunction(
-                                    PutFieldEdgeFunction(fieldName, value),
-                                    immutable.Set(lcpEOptionP)
-                                )
+                                InterimEdgeFunction(PutFieldEdgeFunction(fieldName, value), Set(lcpEOptionP))
                             case linear_constant_propagation.problem.VariableValue =>
                                 FinalEdgeFunction(PutFieldEdgeFunction(fieldName, value))
                         }
 
                     case _ =>
                         InterimEdgeFunction(
-                            PutFieldEdgeFunction(
-                                fieldName,
-                                linear_constant_propagation.problem.UnknownValue
-                            ),
-                            immutable.Set(lcpEOptionP)
+                            PutFieldEdgeFunction(fieldName, linear_constant_propagation.problem.UnknownValue),
+                            Set(lcpEOptionP)
                         )
                 }
 
@@ -542,7 +532,7 @@ class LCPOnFieldsProblem(
                     case InterimUBP(property) =>
                         val index = getVariableFromProperty(indexVar)(property)
                         val value = getVariableFromProperty(valueVar)(property)
-                        InterimEdgeFunction(PutElementEdgeFunction(index, value), immutable.Set(lcpEOptionP))
+                        InterimEdgeFunction(PutElementEdgeFunction(index, value), Set(lcpEOptionP))
 
                     case _ =>
                         InterimEdgeFunction(
@@ -550,7 +540,7 @@ class LCPOnFieldsProblem(
                                 linear_constant_propagation.problem.UnknownValue,
                                 linear_constant_propagation.problem.UnknownValue
                             ),
-                            immutable.Set(lcpEOptionP)
+                            Set(lcpEOptionP)
                         )
                 }
 
@@ -570,9 +560,9 @@ class LCPOnFieldsProblem(
                         val value = getVariableFromProperty(valueVar)(property)
                         value match {
                             case linear_constant_propagation.problem.UnknownValue =>
-                                InterimEdgeFunction(PutStaticFieldEdgeFunction(value), immutable.Set(lcpEOptionP))
+                                InterimEdgeFunction(PutStaticFieldEdgeFunction(value), Set(lcpEOptionP))
                             case linear_constant_propagation.problem.ConstantValue(_) =>
-                                InterimEdgeFunction(PutStaticFieldEdgeFunction(value), immutable.Set(lcpEOptionP))
+                                InterimEdgeFunction(PutStaticFieldEdgeFunction(value), Set(lcpEOptionP))
                             case linear_constant_propagation.problem.VariableValue =>
                                 FinalEdgeFunction(PutStaticFieldEdgeFunction(value))
                         }
@@ -580,7 +570,7 @@ class LCPOnFieldsProblem(
                     case _ =>
                         InterimEdgeFunction(
                             PutStaticFieldEdgeFunction(linear_constant_propagation.problem.UnknownValue),
-                            immutable.Set(lcpEOptionP)
+                            Set(lcpEOptionP)
                         )
                 }
 
@@ -660,16 +650,16 @@ class LCPOnFieldsProblem(
                                 case Assignment.ASTID =>
                                     val assignment = returnSite.stmt.asAssignment
                                     if (callee.returnType.isObjectType) {
-                                        immutable.Set(NewObjectFact(assignment.targetVar.name, returnSite.pc))
+                                        Set(NewObjectFact(assignment.targetVar.name, returnSite.pc))
                                     } else if (callee.returnType.isArrayType &&
                                                callee.returnType.asArrayType.componentType.isIntegerType
                                     ) {
-                                        immutable.Set(NewArrayFact(assignment.targetVar.name, returnSite.pc))
+                                        Set(NewArrayFact(assignment.targetVar.name, returnSite.pc))
                                     } else {
-                                        immutable.Set.empty
+                                        Set.empty
                                     }
 
-                                case _ => immutable.Set.empty
+                                case _ => Set.empty
                             }
 
                         case f: AbstractEntityFact =>
@@ -677,16 +667,16 @@ class LCPOnFieldsProblem(
 
                             /* Check whether fact corresponds to one of the parameters */
                             if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
-                                immutable.Set(f.toObjectOrArrayFact)
+                                Set(f.toObjectOrArrayFact)
                             } else {
-                                immutable.Set.empty
+                                Set.empty
                             }
 
                         case f: AbstractStaticFieldFact =>
                             if (callee.classFile.thisType == f.objectType) {
-                                immutable.Set(f.toStaticFieldFact)
+                                Set(f.toStaticFieldFact)
                             } else {
-                                immutable.Set.empty
+                                Set.empty
                             }
                     }
                 }
@@ -746,23 +736,23 @@ class LCPOnFieldsProblem(
                                 val assignment = returnSite.stmt.asAssignment
 
                                 if (callStmt.descriptor.returnType.isObjectType) {
-                                    immutable.Set(callSiteFact, NewObjectFact(assignment.targetVar.name, returnSite.pc))
+                                    Set(callSiteFact, NewObjectFact(assignment.targetVar.name, returnSite.pc))
                                 } else if (callStmt.descriptor.returnType.isArrayType &&
                                            callStmt.descriptor.returnType.asArrayType.componentType.isIntegerType
                                 ) {
-                                    immutable.Set(callSiteFact, NewArrayFact(assignment.targetVar.name, returnSite.pc))
+                                    Set(callSiteFact, NewArrayFact(assignment.targetVar.name, returnSite.pc))
                                 } else {
-                                    immutable.Set(callSiteFact)
+                                    Set(callSiteFact)
                                 }
 
-                            case _ => immutable.Set(callSiteFact)
+                            case _ => Set(callSiteFact)
                         }
 
                     case f: AbstractEntityFact =>
-                        immutable.Set(f.toObjectOrArrayFact)
+                        Set(f.toObjectOrArrayFact)
 
                     case f: AbstractStaticFieldFact =>
-                        immutable.Set(f.toStaticFieldFact)
+                        Set(f.toStaticFieldFact)
                 }
             }
         }

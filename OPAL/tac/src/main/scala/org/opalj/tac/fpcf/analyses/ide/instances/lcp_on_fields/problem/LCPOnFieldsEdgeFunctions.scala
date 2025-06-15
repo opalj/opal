@@ -8,7 +8,7 @@ package instances
 package lcp_on_fields
 package problem
 
-import scala.collection.immutable
+import scala.collection.immutable.Map
 
 import org.opalj.ide.problem.AllBottomEdgeFunction
 import org.opalj.ide.problem.AllTopEdgeFunction
@@ -24,7 +24,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
  * @author Robin Körkemeier
  */
 class ObjectEdgeFunction(
-    val values: immutable.Map[String, LinearConstantPropagationValue]
+    val values: Map[String, LinearConstantPropagationValue]
 ) extends EdgeFunction[LCPOnFieldsValue] {
     override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue =
         sourceValue match {
@@ -98,11 +98,11 @@ class ObjectEdgeFunction(
 }
 
 object ObjectEdgeFunction {
-    def apply(values: immutable.Map[String, LinearConstantPropagationValue]): ObjectEdgeFunction = {
+    def apply(values: Map[String, LinearConstantPropagationValue]): ObjectEdgeFunction = {
         new ObjectEdgeFunction(values)
     }
 
-    def unapply(objectEdgeFunction: ObjectEdgeFunction): Some[immutable.Map[String, LinearConstantPropagationValue]] = {
+    def unapply(objectEdgeFunction: ObjectEdgeFunction): Some[Map[String, LinearConstantPropagationValue]] = {
         Some(objectEdgeFunction.values)
     }
 }
@@ -112,7 +112,7 @@ object ObjectEdgeFunction {
  *
  * @author Robin Körkemeier
  */
-case object NewObjectEdgeFunction extends ObjectEdgeFunction(immutable.Map.empty) {
+case object NewObjectEdgeFunction extends ObjectEdgeFunction(Map.empty) {
     override def toString: String = "NewObjectEdgeFunction()"
 }
 
@@ -142,7 +142,7 @@ case class PutFieldEdgeFunction(
 
             case PutFieldEdgeFunction(fieldName2, _) if fieldName == fieldName2 => secondEdgeFunction
             case PutFieldEdgeFunction(fieldName2, value2) =>
-                ObjectEdgeFunction(immutable.Map(fieldName -> value, fieldName2 -> value2))
+                ObjectEdgeFunction(Map(fieldName -> value, fieldName2 -> value2))
 
             case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
             case _: AllTopEdgeFunction[LCPOnFieldsValue]    => secondEdgeFunction
@@ -169,7 +169,7 @@ case class PutFieldEdgeFunction(
             case PutFieldEdgeFunction(fieldName2, value2) if fieldName == fieldName2 =>
                 PutFieldEdgeFunction(fieldName, LinearConstantPropagationLattice.meet(value, value2))
             case PutFieldEdgeFunction(fieldName2, _) =>
-                ObjectEdgeFunction(immutable.Map(
+                ObjectEdgeFunction(Map(
                     fieldName -> linear_constant_propagation.problem.VariableValue,
                     fieldName2 -> linear_constant_propagation.problem.VariableValue
                 ))
@@ -201,7 +201,7 @@ case class PutFieldEdgeFunction(
  */
 class ArrayEdgeFunction(
     val initValue: LinearConstantPropagationValue,
-    val elements:  immutable.Map[Int, LinearConstantPropagationValue]
+    val elements:  Map[Int, LinearConstantPropagationValue]
 ) extends EdgeFunction[LCPOnFieldsValue] {
     override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue =
         sourceValue match {
@@ -262,10 +262,7 @@ class ArrayEdgeFunction(
                     case linear_constant_propagation.problem.ConstantValue(i) =>
                         ArrayEdgeFunction(
                             linear_constant_propagation.problem.VariableValue,
-                            immutable.Map(i -> LinearConstantPropagationLattice.meet(
-                                value,
-                                elements.getOrElse(i, initValue)
-                            ))
+                            Map(i -> LinearConstantPropagationLattice.meet(value, elements.getOrElse(i, initValue)))
                         )
                     case linear_constant_propagation.problem.VariableValue =>
                         ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
@@ -295,14 +292,14 @@ class ArrayEdgeFunction(
 object ArrayEdgeFunction {
     def apply(
         initValue: LinearConstantPropagationValue,
-        elements:  immutable.Map[Int, LinearConstantPropagationValue] = immutable.Map.empty
+        elements:  Map[Int, LinearConstantPropagationValue] = Map.empty
     ): ArrayEdgeFunction = {
         new ArrayEdgeFunction(initValue, elements)
     }
 
     def unapply(arrayEdgeFunction: ArrayEdgeFunction): Some[(
         LinearConstantPropagationValue,
-        immutable.Map[Int, LinearConstantPropagationValue]
+        Map[Int, LinearConstantPropagationValue]
     )] = {
         Some((arrayEdgeFunction.initValue, arrayEdgeFunction.elements))
     }
@@ -315,7 +312,7 @@ object ArrayEdgeFunction {
  */
 case class NewArrayEdgeFunction(
     override val initValue: LinearConstantPropagationValue = linear_constant_propagation.problem.ConstantValue(0)
-) extends ArrayEdgeFunction(initValue, immutable.Map.empty)
+) extends ArrayEdgeFunction(initValue, Map.empty)
 
 /**
  * Edge function modeling the effect of writing an element of an array.
@@ -332,11 +329,11 @@ case class PutElementEdgeFunction(
             case ArrayValue(initValue, elements) =>
                 index match {
                     case linear_constant_propagation.problem.UnknownValue =>
-                        ArrayValue(linear_constant_propagation.problem.UnknownValue, immutable.Map.empty)
+                        ArrayValue(linear_constant_propagation.problem.UnknownValue, Map.empty)
                     case linear_constant_propagation.problem.ConstantValue(i) =>
                         ArrayValue(initValue, (elements - i) + (i -> value))
                     case linear_constant_propagation.problem.VariableValue =>
-                        ArrayValue(linear_constant_propagation.problem.VariableValue, immutable.Map.empty)
+                        ArrayValue(linear_constant_propagation.problem.VariableValue, Map.empty)
                 }
             case VariableValue => VariableValue
 
@@ -388,10 +385,7 @@ case class PutElementEdgeFunction(
                     case linear_constant_propagation.problem.ConstantValue(i) =>
                         ArrayEdgeFunction(
                             linear_constant_propagation.problem.VariableValue,
-                            immutable.Map(i -> LinearConstantPropagationLattice.meet(
-                                value,
-                                elements.getOrElse(i, initValue)
-                            ))
+                            Map(i -> LinearConstantPropagationLattice.meet(value, elements.getOrElse(i, initValue)))
                         )
                     case linear_constant_propagation.problem.VariableValue =>
                         ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
@@ -480,7 +474,7 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
     ): EdgeFunction[LCPOnFieldsValue] = {
         secondEdgeFunction match {
             case ObjectEdgeFunction(_)                  => secondEdgeFunction
-            case PutFieldEdgeFunction(fieldName, value) => ObjectEdgeFunction(immutable.Map(fieldName -> value))
+            case PutFieldEdgeFunction(fieldName, value) => ObjectEdgeFunction(Map(fieldName -> value))
             case ArrayEdgeFunction(_, _)                => secondEdgeFunction
             case PutElementEdgeFunction(_, _)           => ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
             case PutStaticFieldEdgeFunction(_)          => secondEdgeFunction

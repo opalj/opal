@@ -10,8 +10,7 @@ package problem
 
 import scala.annotation.unused
 
-import scala.collection
-import scala.collection.immutable
+import scala.collection.immutable.Set
 
 import org.opalj.BinaryArithmeticOperators
 import org.opalj.br.Method
@@ -40,7 +39,7 @@ class LinearConstantPropagationProblem
 
     override def getAdditionalSeeds(stmt: JavaStatement, callee: Method)(
         implicit propertyStore: PropertyStore
-    ): collection.Set[LinearConstantPropagationFact] = {
+    ): scala.collection.Set[LinearConstantPropagationFact] = {
         callee.parameterTypes
             .iterator
             .zipWithIndex
@@ -74,12 +73,12 @@ class LinearConstantPropagationProblem
                         if (isExpressionGeneratedByFact(assignment.expr)(source, sourceFact, target)) {
                             /* Generate fact for target of assignment if the expression is influenced by the source
                              * fact */
-                            immutable.Set(sourceFact, VariableFact(assignment.targetVar.name, source.pc))
+                            Set(sourceFact, VariableFact(assignment.targetVar.name, source.pc))
                         } else {
-                            immutable.Set(sourceFact)
+                            Set(sourceFact)
                         }
 
-                    case _ => immutable.Set(sourceFact)
+                    case _ => Set(sourceFact)
                 }
             }
         }
@@ -236,12 +235,12 @@ class LinearConstantPropagationProblem
             override def compute(): FactsAndDependees = {
                 /* Only propagate to callees that return integers */
                 if (!callee.returnType.isIntegerType) {
-                    immutable.Set.empty
+                    Set.empty
                 } else {
                     callSiteFact match {
                         case NullFact =>
                             /* Always propagate null facts */
-                            immutable.Set(callSiteFact)
+                            Set(callSiteFact)
 
                         case VariableFact(_, definedAtIndex) =>
                             val callStmt = callSite.stmt.asCall()
@@ -279,12 +278,12 @@ class LinearConstantPropagationProblem
             override def compute(): FactsAndDependees = {
                 /* Only propagate to return site if callee returns an integer */
                 if (!callee.returnType.isIntegerType) {
-                    immutable.Set.empty
+                    Set.empty
                 } else {
                     calleeExitFact match {
                         case NullFact =>
                             /* Always propagate null fact */
-                            immutable.Set(calleeExitFact)
+                            Set(calleeExitFact)
 
                         case VariableFact(_, definedAtIndex) =>
                             returnSite.stmt.astID match {
@@ -295,12 +294,12 @@ class LinearConstantPropagationProblem
                                     /* Only propagate if the variable represented by the source fact is one possible
                                      * initializer of the variable at the return site */
                                     if (returnExpr.asVar.definedBy.contains(definedAtIndex)) {
-                                        immutable.Set(VariableFact(assignment.targetVar.name, returnSite.pc))
+                                        Set(VariableFact(assignment.targetVar.name, returnSite.pc))
                                     } else {
-                                        immutable.Set.empty
+                                        Set.empty
                                     }
 
-                                case _ => immutable.Set.empty
+                                case _ => Set.empty
                             }
                     }
                 }
@@ -561,12 +560,12 @@ class LinearConstantPropagationProblem
                         returnSite.stmt.astID match {
                             case Assignment.ASTID =>
                                 val assignment = returnSite.stmt.asAssignment
-                                immutable.Set(VariableFact(assignment.targetVar.name, returnSite.pc))
+                                Set(VariableFact(assignment.targetVar.name, returnSite.pc))
 
-                            case _ => immutable.Set.empty
+                            case _ => Set.empty
                         }
                     } else {
-                        immutable.Set.empty
+                        Set.empty
                     }
                 }
             }
@@ -602,15 +601,15 @@ class LinearConstantPropagationProblem
                             returnSite.stmt.astID match {
                                 case Assignment.ASTID =>
                                     val assignment = returnSite.stmt.asAssignment
-                                    immutable.Set(callSiteFact, VariableFact(assignment.targetVar.name, returnSite.pc))
+                                    Set(callSiteFact, VariableFact(assignment.targetVar.name, returnSite.pc))
 
-                                case _ => immutable.Set(callSiteFact)
+                                case _ => Set(callSiteFact)
                             }
 
-                        case VariableFact(_, _) => immutable.Set(callSiteFact)
+                        case VariableFact(_, _) => Set(callSiteFact)
                     }
                 } else {
-                    immutable.Set(callSiteFact)
+                    Set(callSiteFact)
                 }
             }
         }
