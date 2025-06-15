@@ -14,6 +14,7 @@ import org.opalj.ide.problem.AllBottomEdgeFunction
 import org.opalj.ide.problem.AllTopEdgeFunction
 import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.IdentityEdgeFunction
+import org.opalj.ide.problem.IDEValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
@@ -26,7 +27,7 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.pro
 class ObjectEdgeFunction(
     val values: Map[String, LinearConstantPropagationValue]
 ) extends EdgeFunction[LCPOnFieldsValue] {
-    override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue =
+    override def compute[V >: LCPOnFieldsValue](sourceValue: V): V = {
         sourceValue match {
             case UnknownValue         => UnknownValue
             case ObjectValue(values2) => ObjectValue((values -- values2.keys) ++ values2)
@@ -35,8 +36,11 @@ class ObjectEdgeFunction(
             case _ =>
                 throw new UnsupportedOperationException(s"Computing $this for $sourceValue is not implemented!")
         }
+    }
 
-    override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
+    override def composeWith[V >: LCPOnFieldsValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
         secondEdgeFunction match {
             case ObjectEdgeFunction(values2) =>
                 ObjectEdgeFunction((values -- values2.keys) ++ values2)
@@ -44,15 +48,16 @@ class ObjectEdgeFunction(
             case PutFieldEdgeFunction(fieldName, value) =>
                 ObjectEdgeFunction((values - fieldName) + (fieldName -> value))
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => secondEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
+    }
 
-    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
+    override def meet[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
         otherEdgeFunction match {
             case ObjectEdgeFunction(values2) =>
                 ObjectEdgeFunction(
@@ -78,20 +83,22 @@ class ObjectEdgeFunction(
                         ))
                 )
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => this
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => otherEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => this
+            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
         }
+    }
 
-    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean = {
         (otherEdgeFunction eq this) ||
-            (otherEdgeFunction match {
-                case ObjectEdgeFunction(values2) => values == values2
-                case _                           => false
-            })
+        (otherEdgeFunction match {
+            case ObjectEdgeFunction(values2) => values == values2
+            case _                           => false
+        })
+    }
 
     override def toString: String =
         s"ObjectEdgeFunction(${values.toSeq.sortBy(_._1).map { case (fieldName, value) => s"$fieldName -> $value" }.mkString(", ")})"
@@ -125,7 +132,7 @@ case class PutFieldEdgeFunction(
     fieldName: String,
     value:     LinearConstantPropagationValue
 ) extends EdgeFunction[LCPOnFieldsValue] {
-    override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue = {
+    override def compute[V >: LCPOnFieldsValue](sourceValue: V): V = {
         sourceValue match {
             case UnknownValue        => UnknownValue
             case ObjectValue(values) => ObjectValue((values - fieldName) + (fieldName -> value))
@@ -133,7 +140,9 @@ case class PutFieldEdgeFunction(
         }
     }
 
-    override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def composeWith[V >: LCPOnFieldsValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
         secondEdgeFunction match {
             case ObjectEdgeFunction(values) if values.contains(fieldName) =>
                 ObjectEdgeFunction((values - fieldName) + (fieldName -> value))
@@ -144,16 +153,16 @@ case class PutFieldEdgeFunction(
             case PutFieldEdgeFunction(fieldName2, value2) =>
                 ObjectEdgeFunction(Map(fieldName -> value, fieldName2 -> value2))
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => secondEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
     }
 
-    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def meet[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
         otherEdgeFunction match {
             case ObjectEdgeFunction(values2) =>
                 ObjectEdgeFunction(
@@ -174,21 +183,22 @@ case class PutFieldEdgeFunction(
                     fieldName2 -> linear_constant_propagation.problem.VariableValue
                 ))
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => this
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => otherEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => this
+            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
         }
     }
 
-    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean = {
         (otherEdgeFunction eq this) ||
-            (otherEdgeFunction match {
-                case PutFieldEdgeFunction(fieldName2, value2) => fieldName == fieldName2 && value == value2
-                case _                                        => false
-            })
+        (otherEdgeFunction match {
+            case PutFieldEdgeFunction(fieldName2, value2) => fieldName == fieldName2 && value == value2
+            case _                                        => false
+        })
+    }
 }
 
 /**
@@ -203,7 +213,7 @@ class ArrayEdgeFunction(
     val initValue: LinearConstantPropagationValue,
     val elements:  Map[Int, LinearConstantPropagationValue]
 ) extends EdgeFunction[LCPOnFieldsValue] {
-    override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue =
+    override def compute[V >: LCPOnFieldsValue](sourceValue: V): V = {
         sourceValue match {
             case UnknownValue                      => UnknownValue
             case ArrayValue(initValue2, elements2) => ArrayValue(initValue2, (elements -- elements2.keys) ++ elements2)
@@ -212,8 +222,11 @@ class ArrayEdgeFunction(
             case _ =>
                 throw new UnsupportedOperationException(s"Computing $this for $sourceValue is not implemented!")
         }
+    }
 
-    override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
+    override def composeWith[V >: LCPOnFieldsValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
         secondEdgeFunction match {
             case NewArrayEdgeFunction(_) => secondEdgeFunction
 
@@ -232,15 +245,16 @@ class ArrayEdgeFunction(
                         ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
                 }
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => secondEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
+    }
 
-    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] =
+    override def meet[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
         otherEdgeFunction match {
             case ArrayEdgeFunction(initValue2, elements2) =>
                 ArrayEdgeFunction(
@@ -268,20 +282,22 @@ class ArrayEdgeFunction(
                         ArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
                 }
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => this
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => otherEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => this
+            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
         }
+    }
 
-    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean = {
         (otherEdgeFunction eq this) ||
-            (otherEdgeFunction match {
-                case ArrayEdgeFunction(initValue2, elements2) => initValue == initValue2 && elements == elements2
-                case _                                        => false
-            })
+        (otherEdgeFunction match {
+            case ArrayEdgeFunction(initValue2, elements2) => initValue == initValue2 && elements == elements2
+            case _                                        => false
+        })
+    }
 
     override def toString: String =
         s"ArrayEdgeFunction($initValue, ${elements.toSeq.sortBy(_._1).map {
@@ -323,7 +339,7 @@ case class PutElementEdgeFunction(
     index: LinearConstantPropagationValue,
     value: LinearConstantPropagationValue
 ) extends EdgeFunction[LCPOnFieldsValue] {
-    override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue = {
+    override def compute[V >: LCPOnFieldsValue](sourceValue: V): V = {
         sourceValue match {
             case UnknownValue => UnknownValue
             case ArrayValue(initValue, elements) =>
@@ -342,7 +358,9 @@ case class PutElementEdgeFunction(
         }
     }
 
-    override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def composeWith[V >: LCPOnFieldsValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
         secondEdgeFunction match {
             case NewArrayEdgeFunction(_) => secondEdgeFunction
 
@@ -367,16 +385,16 @@ case class PutElementEdgeFunction(
                 ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     .composeWith(this).composeWith(secondEdgeFunction)
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => secondEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
     }
 
-    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def meet[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
         otherEdgeFunction match {
             case ArrayEdgeFunction(initValue, elements) =>
                 index match {
@@ -397,21 +415,22 @@ case class PutElementEdgeFunction(
                     LinearConstantPropagationLattice.meet(value, value2)
                 )
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => this
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => otherEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => this
+            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
         }
     }
 
-    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean = {
         (otherEdgeFunction eq this) ||
-            (otherEdgeFunction match {
-                case PutElementEdgeFunction(index2, value2) => index == index2 && value == value2
-                case _                                      => false
-            })
+        (otherEdgeFunction match {
+            case PutElementEdgeFunction(index2, value2) => index == index2 && value == value2
+            case _                                      => false
+        })
+    }
 }
 
 /**
@@ -422,45 +441,48 @@ case class PutElementEdgeFunction(
 case class PutStaticFieldEdgeFunction(
     value: LinearConstantPropagationValue
 ) extends EdgeFunction[LCPOnFieldsValue] {
-    override def compute(sourceValue: LCPOnFieldsValue): LCPOnFieldsValue = {
+    override def compute[V >: LCPOnFieldsValue](sourceValue: V): V = {
         StaticFieldValue(value)
     }
 
-    override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def composeWith[V >: LCPOnFieldsValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
         secondEdgeFunction match {
             case PutStaticFieldEdgeFunction(_) => secondEdgeFunction
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => secondEdgeFunction
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => secondEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => secondEdgeFunction
+            case _: AllBottomEdgeFunction[V] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
     }
 
-    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def meet[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
         otherEdgeFunction match {
             case PutStaticFieldEdgeFunction(value2) =>
                 PutStaticFieldEdgeFunction(
                     LinearConstantPropagationLattice.meet(value, value2)
                 )
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue]  => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]    => this
-            case _: AllBottomEdgeFunction[LCPOnFieldsValue] => otherEdgeFunction
+            case IdentityEdgeFunction        => this
+            case _: AllTopEdgeFunction[V]    => this
+            case _: AllBottomEdgeFunction[V] => otherEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
         }
     }
 
-    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean =
+    override def equals[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean = {
         (otherEdgeFunction eq this) ||
-            (otherEdgeFunction match {
-                case PutStaticFieldEdgeFunction(value2) => value == value2
-                case _                                  => false
-            })
+        (otherEdgeFunction match {
+            case PutStaticFieldEdgeFunction(value2) => value == value2
+            case _                                  => false
+        })
+    }
 }
 
 /**
@@ -469,9 +491,9 @@ case class PutStaticFieldEdgeFunction(
  * @author Robin Körkemeier
  */
 object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](UnknownValue) {
-    override def composeWith(
-        secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]
-    ): EdgeFunction[LCPOnFieldsValue] = {
+    override def composeWith[V >: LCPOnFieldsValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
         secondEdgeFunction match {
             case ObjectEdgeFunction(_)                  => secondEdgeFunction
             case PutFieldEdgeFunction(fieldName, value) => ObjectEdgeFunction(Map(fieldName -> value))
@@ -482,23 +504,23 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
             case VariableValueEdgeFunction => secondEdgeFunction
             case UnknownValueEdgeFunction  => secondEdgeFunction
 
-            case _: IdentityEdgeFunction[LCPOnFieldsValue] => this
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]   => this
+            case IdentityEdgeFunction     => this
+            case _: AllTopEdgeFunction[V] => this
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
     }
 
-    override def meet(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def meet[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
         otherEdgeFunction match {
-            case _: AllTopEdgeFunction[LCPOnFieldsValue]   => this
-            case _: IdentityEdgeFunction[LCPOnFieldsValue] => this
-            case _                                         => otherEdgeFunction
+            case _: AllTopEdgeFunction[V] => this
+            case IdentityEdgeFunction     => this
+            case _                        => otherEdgeFunction
         }
     }
 
-    override def equals(otherEdgeFunction: EdgeFunction[LCPOnFieldsValue]): Boolean = {
+    override def equals[V >: LCPOnFieldsValue <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean = {
         otherEdgeFunction eq this
     }
 
@@ -511,7 +533,9 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LCPOnFieldsValue](Unk
  * @author Robin Körkemeier
  */
 object VariableValueEdgeFunction extends AllBottomEdgeFunction[LCPOnFieldsValue](VariableValue) {
-    override def composeWith(secondEdgeFunction: EdgeFunction[LCPOnFieldsValue]): EdgeFunction[LCPOnFieldsValue] = {
+    override def composeWith[V >: LCPOnFieldsValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
         secondEdgeFunction match {
             case NewObjectEdgeFunction => secondEdgeFunction
             case _                     => this

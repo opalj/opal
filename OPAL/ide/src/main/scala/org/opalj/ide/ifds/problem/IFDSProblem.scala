@@ -8,6 +8,7 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.IDEFact
+import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.MeetLattice
 
@@ -29,7 +30,7 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
         if (sourceFact == nullFact) {
             AllBottomEdgeFunction
         } else {
-            identityEdgeFunction
+            IdentityEdgeFunction
         }
     }
 
@@ -43,7 +44,7 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
         if (callSiteFact == nullFact) {
             AllBottomEdgeFunction
         } else {
-            identityEdgeFunction
+            IdentityEdgeFunction
         }
     }
 
@@ -59,7 +60,7 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
         if (calleeExitFact == nullFact) {
             AllBottomEdgeFunction
         } else {
-            identityEdgeFunction
+            IdentityEdgeFunction
         }
     }
 
@@ -73,7 +74,7 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
         if (callSiteFact == nullFact) {
             AllBottomEdgeFunction
         } else {
-            identityEdgeFunction
+            IdentityEdgeFunction
         }
     }
 
@@ -109,7 +110,7 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
         if (callSiteFact == nullFact) {
             AllBottomEdgeFunction
         } else {
-            identityEdgeFunction
+            IdentityEdgeFunction
         }
     }
 
@@ -122,7 +123,7 @@ abstract class IFDSProblem[Fact <: IDEFact, Statement, Callable <: Entity]
         if (callSiteFact == nullFact) {
             AllBottomEdgeFunction
         } else {
-            identityEdgeFunction
+            IdentityEdgeFunction
         }
     }
 }

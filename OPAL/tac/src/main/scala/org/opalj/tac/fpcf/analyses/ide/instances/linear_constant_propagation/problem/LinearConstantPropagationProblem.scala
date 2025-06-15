@@ -17,6 +17,7 @@ import org.opalj.br.Method
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FlowFunction
+import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.IdentityFlowFunction
 import org.opalj.ide.problem.MeetLattice
 import org.opalj.tac.fpcf.analyses.ide.problem.JavaIDEProblem
@@ -324,7 +325,7 @@ class LinearConstantPropagationProblem
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
         if (sourceFact == targetFact) {
             /* Simply propagates a fact through the method */
-            return identityEdgeFunction
+            return IdentityEdgeFunction
         }
 
         source.stmt.astID match {
@@ -360,7 +361,7 @@ class LinearConstantPropagationProblem
                     targetFact
                 )
 
-            case _ => identityEdgeFunction
+            case _ => IdentityEdgeFunction
         }
     }
 
@@ -513,7 +514,7 @@ class LinearConstantPropagationProblem
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
         callSiteFact match {
             case NullFact => UnknownValueEdgeFunction
-            case _        => identityEdgeFunction
+            case _        => IdentityEdgeFunction
         }
     }
 
@@ -525,7 +526,7 @@ class LinearConstantPropagationProblem
         returnSiteFact: LinearConstantPropagationFact,
         callSite:       JavaStatement,
         callSiteFact:   LinearConstantPropagationFact
-    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = IdentityEdgeFunction
 
     override def getCallToReturnEdgeFunction(
         callSite:       JavaStatement,
@@ -533,7 +534,7 @@ class LinearConstantPropagationProblem
         callee:         Method,
         returnSite:     JavaStatement,
         returnSiteFact: LinearConstantPropagationFact
-    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = IdentityEdgeFunction
 
     override def hasPrecomputedFlowAndSummaryFunction(
         callSite:     JavaStatement,
@@ -626,7 +627,7 @@ class LinearConstantPropagationProblem
                 VariableValueEdgeFunction
 
             case _ =>
-                identityEdgeFunction
+                IdentityEdgeFunction
         }
     }
 }

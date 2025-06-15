@@ -8,13 +8,13 @@ package problem
  *
  * @author Robin Körkemeier
  */
-trait EdgeFunction[Value <: IDEValue] {
+trait EdgeFunction[+Value <: IDEValue] {
     /**
      * Compute the value of the edge function
      *
      * @param sourceValue the incoming parameter value
      */
-    def compute(sourceValue: Value): Value
+    def compute[V >: Value](sourceValue: V): V
 
     /**
      * Compose two edge functions
@@ -23,17 +23,17 @@ trait EdgeFunction[Value <: IDEValue] {
      * @return an edge function computing the same values as first applying this edge function and then applying the
      *         result to the second edge function
      */
-    def composeWith(secondEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value]
+    def composeWith[V >: Value <: IDEValue](secondEdgeFunction: EdgeFunction[V]): EdgeFunction[V]
 
     /**
      * Combine two edge functions via meet semantics
      */
-    def meet(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value]
+    def meet[V >: Value <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V]
 
     /**
      * Check whether two edge functions are equal (s.t. they produce the same result for same source values)
      */
-    def equals(otherEdgeFunction: EdgeFunction[Value]): Boolean
+    def equals[V >: Value <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean
 }
 
 /**
@@ -41,14 +41,14 @@ trait EdgeFunction[Value <: IDEValue] {
  *
  * @author Robin Körkemeier
  */
-case class IdentityEdgeFunction[Value <: IDEValue]() extends EdgeFunction[Value] {
-    override def compute(sourceValue: Value): Value =
+case object IdentityEdgeFunction extends EdgeFunction[Nothing] {
+    override def compute[V >: Nothing](sourceValue: V): V =
         sourceValue
 
-    override def composeWith(secondEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] =
+    override def composeWith[V >: Nothing <: IDEValue](secondEdgeFunction: EdgeFunction[V]): EdgeFunction[V] =
         secondEdgeFunction
 
-    override def meet(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] = {
+    override def meet[V >: Nothing <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
         if (otherEdgeFunction.equals(this)) {
             this
         } else {
@@ -56,12 +56,8 @@ case class IdentityEdgeFunction[Value <: IDEValue]() extends EdgeFunction[Value]
         }
     }
 
-    override def equals(otherEdgeFunction: EdgeFunction[Value]): Boolean =
-        (otherEdgeFunction eq this) ||
-            (otherEdgeFunction match {
-                case _: IdentityEdgeFunction[Value] => true
-                case _                              => false
-            })
+    override def equals[V >: Nothing <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean =
+        otherEdgeFunction eq this
 }
 
 /**
@@ -71,17 +67,17 @@ case class IdentityEdgeFunction[Value <: IDEValue]() extends EdgeFunction[Value]
  * @author Robin Körkemeier
  */
 abstract case class AllTopEdgeFunction[Value <: IDEValue](private val top: Value) extends EdgeFunction[Value] {
-    override def compute(sourceValue: Value): Value =
+    override def compute[V >: Value](sourceValue: V): V =
         top
 
-    override def meet(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] = {
+    override def meet[V >: Value <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
         otherEdgeFunction match {
-            case _: AllTopEdgeFunction[Value] => this
-            case _                            => otherEdgeFunction
+            case _: AllTopEdgeFunction[V] => this
+            case _                        => otherEdgeFunction
         }
     }
 
-    override def equals(otherEdgeFunction: EdgeFunction[Value]): Boolean =
+    override def equals[V >: Value <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean =
         (otherEdgeFunction eq this) ||
             (otherEdgeFunction match {
                 case AllTopEdgeFunction(top2) => top == top2
@@ -96,13 +92,13 @@ abstract case class AllTopEdgeFunction[Value <: IDEValue](private val top: Value
  * @author Robin Körkemeier
  */
 abstract case class AllBottomEdgeFunction[Value <: IDEValue](private val bottom: Value) extends EdgeFunction[Value] {
-    override def compute(sourceValue: Value): Value =
+    override def compute[V >: Value](sourceValue: V): V =
         bottom
 
-    override def meet(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] =
+    override def meet[V >: Value <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] =
         this
 
-    override def equals(otherEdgeFunction: EdgeFunction[Value]): Boolean =
+    override def equals[V >: Value <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean =
         (otherEdgeFunction eq this) ||
             (otherEdgeFunction match {
                 case AllBottomEdgeFunction(bottom2) => bottom == bottom2

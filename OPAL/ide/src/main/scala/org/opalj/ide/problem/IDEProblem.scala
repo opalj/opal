@@ -27,11 +27,6 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
     protected val emptyFlowFunction = new EmptyFlowFunction[Fact]
 
     /**
-     * Identity edge function that can be used when implementing problems
-     */
-    protected val identityEdgeFunction = new IdentityEdgeFunction[Value]
-
-    /**
      * The null fact to use. Also used to bootstrap the analysis at the entry points.
      */
     val nullFact: Fact
@@ -62,7 +57,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      */
     def getAdditionalSeedsEdgeFunction(stmt: Statement, fact: Fact, callee: Callable)(
         implicit @unused propertyStore: PropertyStore
-    ): EdgeFunctionResult[Value] = identityEdgeFunction
+    ): EdgeFunctionResult[Value] = IdentityEdgeFunction
 
     /**
      * Generate a flow function for a normal flow.

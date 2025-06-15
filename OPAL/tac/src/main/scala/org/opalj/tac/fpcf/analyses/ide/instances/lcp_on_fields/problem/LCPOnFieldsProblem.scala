@@ -27,6 +27,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FinalEdgeFunction
 import org.opalj.ide.problem.FlowFunction
+import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.ide.problem.MeetLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
@@ -474,7 +475,7 @@ class LCPOnFieldsProblem(
         targetFact: LCPOnFieldsFact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = {
         if (sourceFact == targetFact) {
-            return FinalEdgeFunction(identityEdgeFunction)
+            return FinalEdgeFunction(IdentityEdgeFunction)
         }
 
         targetFact match {
@@ -574,7 +575,7 @@ class LCPOnFieldsProblem(
                         )
                 }
 
-            case _ => FinalEdgeFunction(identityEdgeFunction)
+            case _ => FinalEdgeFunction(IdentityEdgeFunction)
         }
     }
 
@@ -601,7 +602,7 @@ class LCPOnFieldsProblem(
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = {
         callSiteFact match {
             case NullFact => UnknownValueEdgeFunction
-            case _        => identityEdgeFunction
+            case _        => IdentityEdgeFunction
         }
     }
 
@@ -613,7 +614,7 @@ class LCPOnFieldsProblem(
         returnSiteFact: LCPOnFieldsFact,
         callSite:       JavaStatement,
         callSiteFact:   LCPOnFieldsFact
-    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = IdentityEdgeFunction
 
     override def getCallToReturnEdgeFunction(
         callSite:       JavaStatement,
@@ -621,7 +622,7 @@ class LCPOnFieldsProblem(
         callee:         Method,
         returnSite:     JavaStatement,
         returnSiteFact: LCPOnFieldsFact
-    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = identityEdgeFunction
+    )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LCPOnFieldsValue] = IdentityEdgeFunction
 
     override def hasPrecomputedFlowAndSummaryFunction(
         callSite:     JavaStatement,
@@ -696,7 +697,7 @@ class LCPOnFieldsProblem(
         if (callee.isNative || callee.body.isEmpty) {
             return returnSiteFact match {
                 case NullFact =>
-                    identityEdgeFunction
+                    IdentityEdgeFunction
 
                 case _: AbstractObjectFact =>
                     val callStmt = callSite.stmt.asCall()
@@ -704,7 +705,7 @@ class LCPOnFieldsProblem(
                     if (callStmt.declaringClass.isObjectType &&
                         callStmt.declaringClass.asObjectType.fqn == "java/lang/Object" && callStmt.name == "<init>"
                     ) {
-                        identityEdgeFunction
+                        IdentityEdgeFunction
                     } else {
                         /* It is unknown what the callee does with the object */
                         VariableValueEdgeFunction
@@ -778,7 +779,7 @@ class LCPOnFieldsProblem(
                 if (callStmt.declaringClass.isObjectType &&
                     callStmt.declaringClass.asObjectType.fqn == "java/lang/Object" && callStmt.name == "<init>"
                 ) {
-                    identityEdgeFunction
+                    IdentityEdgeFunction
                 }
                 /* Check whether fact corresponds to one of the parameters */
                 else if (callStmt.allParams.exists { param => param.asVar.definedBy.contains(f.definedAtIndex) }) {
@@ -788,7 +789,7 @@ class LCPOnFieldsProblem(
                             NewArrayEdgeFunction(linear_constant_propagation.problem.VariableValue)
                     }
                 } else {
-                    identityEdgeFunction
+                    IdentityEdgeFunction
                 }
 
             case (_, f: AbstractStaticFieldFact) =>
@@ -799,12 +800,12 @@ class LCPOnFieldsProblem(
                 val field = declaredField.definedField
 
                 if (callStmt.declaringClass != f.objectType && field.isPrivate) {
-                    identityEdgeFunction
+                    IdentityEdgeFunction
                 } else {
                     getEdgeFunctionForStaticFieldFactByImmutability(f)
                 }
 
-            case _ => identityEdgeFunction
+            case _ => IdentityEdgeFunction
         }
     }
 }

@@ -64,18 +64,17 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
     private type Values = MutableMap[Node, Value]
 
-    private val identityEdgeFunction = new IdentityEdgeFunction[Value]
     private val allTopEdgeFunction = new AllTopEdgeFunction[Value](problem.lattice.top) {
-        override def composeWith(secondEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] = {
+        override def composeWith[V >: Value <: IDEValue](secondEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
             /* This method cannot be implemented correctly without knowledge about the other possible edge functions.
              * It will never be called on this instance anyway. However, we throw an exception here to be safe. */
             throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
         }
 
-        override def meet(otherEdgeFunction: EdgeFunction[Value]): EdgeFunction[Value] =
+        override def meet[V >: Value <: IDEValue](otherEdgeFunction: EdgeFunction[V]): EdgeFunction[V] =
             otherEdgeFunction
 
-        override def equals(otherEdgeFunction: EdgeFunction[Value]): Boolean =
+        override def equals[V >: Value <: IDEValue](otherEdgeFunction: EdgeFunction[V]): Boolean =
             otherEdgeFunction eq this
     }
 
@@ -515,11 +514,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             // IDE P1 lines 5 - 6
             icfg.getStartStatements(callable).foreach { stmt =>
                 val path = ((stmt, problem.nullFact), (stmt, problem.nullFact))
-                propagateSeed(path, callable, identityEdgeFunction)
+                propagateSeed(path, callable, IdentityEdgeFunction)
 
                 problem.getAdditionalSeeds(stmt, callable).foreach { fact =>
                     val path = ((stmt, problem.nullFact), (stmt, fact))
-                    propagateSeed(path, callable, identityEdgeFunction)
+                    propagateSeed(path, callable, IdentityEdgeFunction)
 
                     def processAdditionalSeed(): Unit = {
                         val edgeFunction =
@@ -640,7 +639,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                                 }
                             } else {
                                 // Default algorithm behavior
-                                propagate(((sq, d3), (sq, d3)), identityEdgeFunction)
+                                propagate(((sq, d3), (sq, d3)), IdentityEdgeFunction)
                             }
                         }
                     }
