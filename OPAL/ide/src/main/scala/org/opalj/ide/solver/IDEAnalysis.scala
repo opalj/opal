@@ -315,8 +315,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     }
 
                 val resultsForExit = resultsByStatement
-                    .filter { case (n, _) => icfg.isNormalExitStatement(n) }
-                    .map(_._2.toList)
+                    .collect { case (n, values) if icfg.isNormalExitStatement(n) => values.toList }
                     .flatten
                     .groupMapReduce(_._1)(_._2) {
                         (value1, value2) => problem.lattice.meet(value1, value2)
