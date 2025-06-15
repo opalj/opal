@@ -5,8 +5,7 @@ package problem
 
 import scala.language.implicitConversions
 
-import scala.collection
-import scala.collection.immutable
+import scala.collection.immutable.Set
 
 import org.opalj.fpcf.SomeEOptionP
 
@@ -18,8 +17,8 @@ import org.opalj.fpcf.SomeEOptionP
 trait FlowFunction[Fact <: IDEFact] {
     type FactsAndDependees = FlowFunction.FactsAndDependees[Fact]
 
-    implicit def setOfFactsToFactsAndDependees(facts: collection.Set[? <: Fact]): FactsAndDependees = {
-        (facts.toSet, immutable.Set.empty)
+    implicit def setOfFactsToFactsAndDependees(facts: scala.collection.Set[? <: Fact]): FactsAndDependees = {
+        (facts.toSet, Set.empty)
     }
 
     /**
@@ -33,7 +32,7 @@ trait FlowFunction[Fact <: IDEFact] {
 }
 
 object FlowFunction {
-    type FactsAndDependees[Fact] = (collection.Set[Fact], collection.Set[SomeEOptionP])
+    type FactsAndDependees[Fact] = (scala.collection.Set[Fact], scala.collection.Set[SomeEOptionP])
 }
 
 /**
@@ -43,7 +42,7 @@ object FlowFunction {
  */
 case class IdentityFlowFunction[Fact <: IDEFact](sourceFact: Fact) extends FlowFunction[Fact] {
     override def compute(): FactsAndDependees =
-        immutable.Set(sourceFact)
+        Set(sourceFact)
 }
 
 /**
@@ -53,5 +52,5 @@ case class IdentityFlowFunction[Fact <: IDEFact](sourceFact: Fact) extends FlowF
  */
 case class EmptyFlowFunction[Fact <: IDEFact]() extends FlowFunction[Fact] {
     override def compute(): FactsAndDependees =
-        immutable.Set.empty[Fact]
+        Set.empty[Fact]
 }

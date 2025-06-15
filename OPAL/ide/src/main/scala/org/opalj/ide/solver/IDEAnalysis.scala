@@ -3,9 +3,9 @@ package org.opalj
 package ide
 package solver
 
-import scala.collection
-import scala.collection.immutable
-import scala.collection.mutable
+import scala.collection.mutable.{Map => MutableMap}
+import scala.collection.mutable.{Queue => MutableQueue}
+import scala.collection.mutable.{Set => MutableSet}
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -53,16 +53,16 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
      */
     private type Path = (Node, Node)
 
-    private type PathWorkList = mutable.Queue[Path]
+    private type PathWorkList = MutableQueue[Path]
 
     private type JumpFunction = EdgeFunction[Value]
-    private type JumpFunctions = mutable.Map[(Statement, Statement), mutable.Map[(Fact, Fact), JumpFunction]]
+    private type JumpFunctions = MutableMap[(Statement, Statement), MutableMap[(Fact, Fact), JumpFunction]]
     private type SummaryFunction = EdgeFunction[Value]
-    private type SummaryFunctions = mutable.Map[Path, SummaryFunction]
+    private type SummaryFunctions = MutableMap[Path, SummaryFunction]
 
-    private type NodeWorkList = mutable.Queue[Node]
+    private type NodeWorkList = MutableQueue[Node]
 
-    private type Values = mutable.Map[Node, Value]
+    private type Values = MutableMap[Node, Value]
 
     private val identityEdgeFunction = new IdentityEdgeFunction[Value]
     private val allTopEdgeFunction = new AllTopEdgeFunction[Value](problem.lattice.top) {
@@ -91,7 +91,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         /**
          * Collection of callables to compute results for. Used to optimize solver computation.
          */
-        private val targetCallables = mutable.Set.empty[Callable]
+        private val targetCallables = MutableSet.empty[Callable]
 
         private var targetCallablesEOptionP: EOptionP[
             IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
@@ -105,51 +105,51 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
          * value, e.g. a changed jump function. Especially used to reduce computation overhead in phase 2 and to reduce
          * amount of created results.
          */
-        private val callablesWithChanges = mutable.Set.empty[Callable]
+        private val callablesWithChanges = MutableSet.empty[Callable]
 
         /**
          * The work list for paths used in P1
          */
-        private val pathWorkList: PathWorkList = mutable.Queue.empty
+        private val pathWorkList: PathWorkList = MutableQueue.empty
 
         /**
          * The jump functions (incrementally calculated) in P1
          */
-        private val jumpFunctions: JumpFunctions = mutable.Map.empty
+        private val jumpFunctions: JumpFunctions = MutableMap.empty
 
         /**
          * The summary functions (incrementally calculated) in P1
          */
-        private val summaryFunctions: SummaryFunctions = mutable.Map.empty
+        private val summaryFunctions: SummaryFunctions = MutableMap.empty
 
         /**
          * Collection of seen end nodes with corresponding jump function (needed for endSummaries extension)
          */
-        private val endSummaries = mutable.Map.empty[Node, mutable.Set[(Node, JumpFunction)]]
+        private val endSummaries = MutableMap.empty[Node, MutableSet[(Node, JumpFunction)]]
 
         /**
          * Map call targets to all seen call sources (similar to a call graph but reversed; needed for endSummaries
          * extension)
          */
-        private val callTargetsToSources = mutable.Map.empty[Node, mutable.Set[Node]]
+        private val callTargetsToSources = MutableMap.empty[Node, MutableSet[Node]]
 
         /**
          * The work list for nodes used in P2
          */
-        private val nodeWorkList: NodeWorkList = mutable.Queue.empty
+        private val nodeWorkList: NodeWorkList = MutableQueue.empty
 
         /**
          * Store all calculated (intermediate) values. Associated by callable for performant access.
          */
-        private val values: mutable.Map[Callable, Values] = mutable.Map.empty
+        private val values: MutableMap[Callable, Values] = MutableMap.empty
 
         /**
          * Map outstanding EPKs to the last processed property result and the continuations to be executed when a new
          * result is available
          */
-        private val dependees = mutable.Map.empty[SomeEPK, (SomeEOptionP, mutable.Set[() => Unit])]
+        private val dependees = MutableMap.empty[SomeEPK, (SomeEOptionP, MutableSet[() => Unit])]
 
-        def getTargetCallables: collection.Set[Callable] = {
+        def getTargetCallables: scala.collection.Set[Callable] = {
             targetCallables
         }
 
@@ -181,7 +181,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             callablesWithChanges.add(callable)
         }
 
-        def getCallablesWithChanges: collection.Set[Callable] = {
+        def getCallablesWithChanges: scala.collection.Set[Callable] = {
             callablesWithChanges
         }
 
@@ -200,14 +200,14 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         def setJumpFunction(path: Path, jumpFunction: JumpFunction): Unit = {
             val ((source, sourceFact), (target, targetFact)) = path
             jumpFunctions
-                .getOrElseUpdate((source, target), { mutable.Map.empty })
+                .getOrElseUpdate((source, target), { MutableMap.empty })
                 .put((sourceFact, targetFact), jumpFunction)
         }
 
         def getJumpFunction(path: Path): JumpFunction = {
             val ((source, sourceFact), (target, targetFact)) = path
             jumpFunctions
-                .getOrElse((source, target), immutable.Map.empty[(Fact, Fact), JumpFunction])
+                .getOrElse((source, target), Map.empty[(Fact, Fact), JumpFunction])
                 .getOrElse((sourceFact, targetFact), allTopEdgeFunction) // else part handles IDE lines 1 - 2
         }
 
@@ -216,8 +216,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             sourceFactOption: Option[Fact] = None,
             target:           Statement,
             targetFactOption: Option[Fact] = None
-        ): collection.Map[(Fact, Fact), JumpFunction] = {
-            val subMap = jumpFunctions.getOrElse((source, target), immutable.Map.empty[(Fact, Fact), JumpFunction])
+        ): scala.collection.Map[(Fact, Fact), JumpFunction] = {
+            val subMap = jumpFunctions.getOrElse((source, target), Map.empty[(Fact, Fact), JumpFunction])
 
             (sourceFactOption, targetFactOption) match {
                 case (Some(sourceFact), Some(targetFact)) =>
@@ -241,23 +241,23 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         def addEndSummary(path: Path, jumpFunction: JumpFunction): Unit = {
             val (start, end) = path
-            val set = endSummaries.getOrElseUpdate(start, mutable.Set.empty)
+            val set = endSummaries.getOrElseUpdate(start, MutableSet.empty)
             set.add((end, jumpFunction))
         }
 
-        def getEndSummaries(start: Node): collection.Set[(Node, JumpFunction)] = {
-            endSummaries.getOrElse(start, immutable.Set.empty)
+        def getEndSummaries(start: Node): scala.collection.Set[(Node, JumpFunction)] = {
+            endSummaries.getOrElse(start, Set.empty)
         }
 
         def rememberCallEdge(path: Path): Unit = {
             val (source, target) = path
 
-            val set = callTargetsToSources.getOrElseUpdate(target, mutable.Set.empty)
+            val set = callTargetsToSources.getOrElseUpdate(target, MutableSet.empty)
             set.add(source)
         }
 
-        def lookupCallSourcesForTarget(target: Statement, targetFact: Fact): collection.Set[Node] = {
-            callTargetsToSources.getOrElse((target, targetFact), immutable.Set.empty)
+        def lookupCallSourcesForTarget(target: Statement, targetFact: Fact): scala.collection.Set[Node] = {
+            callTargetsToSources.getOrElse((target, targetFact), Set.empty)
         }
 
         def enqueueNode(node: Node): Unit = {
@@ -273,7 +273,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
 
         def getValue(node: Node, callable: Callable): Value = {
-            values.getOrElse(callable, mutable.Map.empty).getOrElse(node, problem.lattice.top) // else part handles IDE line 1
+            values.getOrElse(callable, MutableMap.empty).getOrElse(node, problem.lattice.top) // else part handles IDE line 1
         }
 
         def getValue(node: Node): Value = {
@@ -281,7 +281,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
 
         def setValue(node: Node, newValue: Value, callable: Callable): Unit = {
-            values.getOrElseUpdate(callable, { mutable.Map.empty }).put(node, newValue)
+            values.getOrElseUpdate(callable, { MutableMap.empty }).put(node, newValue)
         }
 
         def clearValues(): Unit = {
@@ -292,13 +292,13 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
          * @return a map from statements to results and the results for the callable in total (both per requested
          *         callable)
          */
-        def collectResults(callables: collection.Set[Callable]): Map[
+        def collectResults(callables: scala.collection.Set[Callable]): Map[
             Callable,
-            (collection.Map[Statement, collection.Set[(Fact, Value)]], collection.Set[(Fact, Value)])
+            (scala.collection.Map[Statement, scala.collection.Set[(Fact, Value)]], scala.collection.Set[(Fact, Value)])
         ] = {
-            val valuesByCallable = callables.map { callable =>
-                callable -> values.getOrElse(callable, immutable.Map.empty[Node, Value])
-            }.toMap
+            val valuesByCallable = callables
+                .map { callable => callable -> values.getOrElse(callable, Map.empty[Node, Value]) }
+                .toMap
 
             valuesByCallable.map { case (callable, values) =>
                 val resultsByStatement = values
@@ -330,7 +330,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         def addDependee(eOptionP: SomeEOptionP, c: () => Unit): Unit = {
             // The eOptionP is only inserted the first time the corresponding EPK occurs. Consequently, it is the most
             // precise property result that is seen by all dependents.
-            val (_, set) = dependees.getOrElseUpdate(eOptionP.toEPK, (eOptionP, mutable.Set.empty))
+            val (_, set) = dependees.getOrElseUpdate(eOptionP.toEPK, (eOptionP, MutableSet.empty))
             set.add(c)
         }
 
@@ -338,12 +338,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             dependees.isEmpty
         }
 
-        def getDependees: collection.Set[SomeEOptionP] = {
+        def getDependees: scala.collection.Set[SomeEOptionP] = {
             dependees.values.map(_._1).toSet
         }
 
-        def getAndRemoveDependeeContinuations(eOptionP: SomeEOptionP): collection.Set[() => Unit] = {
-            dependees.remove(eOptionP.toEPK).map(_._2).getOrElse(immutable.Set.empty).toSet
+        def getAndRemoveDependeeContinuations(eOptionP: SomeEOptionP): scala.collection.Set[() => Unit] = {
+            dependees.remove(eOptionP.toEPK).map(_._2).getOrElse(Set.empty).toSet
         }
     }
 
@@ -424,12 +424,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         val callableResults = callables.map { callable =>
             val (resultsByStatement, resultsForExit) =
                 collectedResults.getOrElse(
-                    callable, {
-                        (
-                            immutable.Map.empty[Statement, collection.Set[(Fact, Value)]],
-                            immutable.Set.empty[(Fact, Value)]
-                        )
-                    }
+                    callable,
+                    { (Map.empty[Statement, scala.collection.Set[(Fact, Value)]], Set.empty[(Fact, Value)]) }
                 )
             val ideRawProperty = new IDERawProperty(
                 propertyMetaInformation.backingPropertyMetaInformation.key,
@@ -454,7 +450,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             callableResults ++ Seq(
                 InterimPartialResult(
                     None,
-                    s.getDependees.toSet ++ immutable.Set(s.getTargetCallablesEOptionP),
+                    s.getDependees.toSet ++ Set(s.getTargetCallablesEOptionP),
                     { (eps: SomeEPS) =>
                         if (eps.toEPK == s.getTargetCallablesEOptionP.toEPK) {
                             onTargetCallablesUpdateContinuation(eps.asInstanceOf[EPS[
@@ -557,7 +553,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
-    private def processCallFlow(path: Path, f: JumpFunction, qs: collection.Set[Callable])(
+    private def processCallFlow(path: Path, f: JumpFunction, qs: scala.collection.Set[Callable])(
         implicit s: State
     ): Unit = {
         val ((sp, d1), (n, d2)) = path
@@ -758,7 +754,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def handleFlowFunctionResult(
         factsAndDependees: FlowFunction.FactsAndDependees[Fact],
         path:              Path
-    )(implicit s: State): collection.Set[Fact] = {
+    )(implicit s: State): scala.collection.Set[Fact] = {
         val (facts, dependees) = factsAndDependees
         if (dependees.nonEmpty) {
             dependees.foreach { dependee =>
@@ -866,19 +862,19 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
      * @param filterPredicate an additional predicate the collected statements have to fulfill
      */
     private def collectReachableStmts(
-        originStmts:     collection.Set[Statement],
+        originStmts:     scala.collection.Set[Statement],
         filterPredicate: Statement => Boolean
     ): Iterator[Statement] = {
         new Iterator[Statement]() {
-            private val collectedStmts = mutable.Set.empty[Statement]
-            private val seenStmts = mutable.Set.empty[Statement]
+            private val collectedStmts = MutableSet.empty[Statement]
+            private val seenStmts = MutableSet.empty[Statement]
 
             collectedStmts.addAll(originStmts.filter(filterPredicate))
             seenStmts.addAll(originStmts)
             originStmts.filterNot(filterPredicate).foreach { stmt => processStatement(stmt) }
 
             private def processStatement(stmt: Statement): Unit = {
-                val workingStmts = mutable.Queue(stmt)
+                val workingStmts = MutableQueue(stmt)
 
                 while (workingStmts.nonEmpty) {
                     icfg.getNextStatements(workingStmts.dequeue())
@@ -915,7 +911,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         val (n, d) = node
 
         // IDE P2 line 8
-        val cs = collectReachableStmts(immutable.Set(n), stmt => icfg.isCallStatement(stmt))
+        val cs = collectReachableStmts(Set(n), stmt => icfg.isCallStatement(stmt))
 
         // IDE P2 lines 9 - 10
         cs.foreach { c =>
@@ -929,7 +925,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
-    private def processCallNode(node: Node, qs: collection.Set[Callable])(implicit s: State): Unit = {
+    private def processCallNode(node: Node, qs: scala.collection.Set[Callable])(implicit s: State): Unit = {
         val (n, d) = node
 
         // IDE P2 lines 12 - 13
@@ -969,7 +965,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
      */
     private def extractFlowFunctionFromResult(
         factsAndDependees: FlowFunction.FactsAndDependees[Fact]
-    ): collection.Set[Fact] = {
+    ): scala.collection.Set[Fact] = {
         val (facts, _) = factsAndDependees
         facts
     }

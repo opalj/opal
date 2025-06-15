@@ -6,8 +6,7 @@ package problem
 import scala.annotation.unused
 import scala.language.implicitConversions
 
-import scala.collection
-import scala.collection.immutable
+import scala.collection.immutable.Set
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
@@ -52,7 +51,7 @@ abstract class IDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Callabl
      */
     def getAdditionalSeeds(stmt: Statement, callee: Callable)(
         implicit @unused propertyStore: PropertyStore
-    ): collection.Set[Fact] = immutable.Set.empty
+    ): scala.collection.Set[Fact] = Set.empty
 
     /**
      * Generate an edge function for a flow starting with an additional seeds.

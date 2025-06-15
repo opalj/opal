@@ -4,8 +4,9 @@ package ide
 package problem
 
 import java.io.Writer
-import scala.collection
-import scala.collection.mutable
+import scala.collection.mutable.{ListBuffer => MutableListBuffer}
+import scala.collection.mutable.{Map => MutableMap}
+import scala.collection.mutable.{Set => MutableSet}
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
@@ -65,9 +66,9 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
 
     private type DotEdge = (Statement, Fact, Statement, Fact, String)
 
-    private val collectedFlows = mutable.ListBuffer.empty[DotEdge]
+    private val collectedFlows = MutableListBuffer.empty[DotEdge]
 
-    private val collectedEdgeFunctions = mutable.Map.empty[DotEdge, EdgeFunction[Value]]
+    private val collectedEdgeFunctions = MutableMap.empty[DotEdge, EdgeFunction[Value]]
 
     private var writer: Writer = _
 
@@ -77,7 +78,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
 
     override def getAdditionalSeeds(stmt: Statement, callee: Callable)(
         implicit propertyStore: PropertyStore
-    ): collection.Set[Fact] = {
+    ): scala.collection.Set[Fact] = {
         baseProblem.getAdditionalSeeds(stmt, callee)
     }
 
@@ -358,7 +359,7 @@ class FlowRecordingIDEProblem[Fact <: IDEFact, Value <: IDEValue, Statement, Cal
      */
     def stopRecording(): Writer = {
         if (uniqueFlowsOnly) {
-            val seenFlows = mutable.Set.empty[String]
+            val seenFlows = MutableSet.empty[String]
             collectedFlows.foreach { dotEdge =>
                 val stringDotEdge = stringifyDotEdge(dotEdge)
                 if (!seenFlows.contains(stringDotEdge)) {

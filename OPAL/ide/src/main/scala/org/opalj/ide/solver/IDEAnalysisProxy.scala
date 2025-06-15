@@ -3,7 +3,7 @@ package org.opalj
 package ide
 package solver
 
-import scala.collection.immutable
+import scala.collection.immutable.Set
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -78,7 +78,7 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
                                     propertyMetaInformation,
                                     new IDETargetCallablesProperty(
                                         propertyMetaInformation.targetCallablesPropertyMetaInformation.key,
-                                        immutable.Set(callable)
+                                        Set(callable)
                                     )
                                 ))
                             } else if (eOptionP.ub.targetCallables.contains(callable)) {
@@ -88,14 +88,14 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
                                     propertyMetaInformation,
                                     new IDETargetCallablesProperty(
                                         propertyMetaInformation.targetCallablesPropertyMetaInformation.key,
-                                        eOptionP.ub.targetCallables ++ immutable.Set(callable)
+                                        eOptionP.ub.targetCallables ++ Set(callable)
                                     )
                                 ))
                             }
                     }
                 ),
                 InterimPartialResult(
-                    immutable.Set(backingEOptionP),
+                    Set(backingEOptionP),
                     onDependeeUpdateContinuation(callable, stmtOption)
                 )
             )
@@ -104,7 +104,7 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
                 entity,
                 propertyMetaInformation.createProperty(
                     stmtOption match {
-                        case Some(statement) => backingEOptionP.ub.stmtResults.getOrElse(statement, immutable.Set.empty)
+                        case Some(statement) => backingEOptionP.ub.stmtResults.getOrElse(statement, Set.empty)
                         case None            => backingEOptionP.ub.callableResults
                     }
                 )
@@ -114,11 +114,11 @@ class IDEAnalysisProxy[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <
                 entity,
                 propertyMetaInformation.createProperty(
                     stmtOption match {
-                        case Some(statement) => backingEOptionP.ub.stmtResults.getOrElse(statement, immutable.Set.empty)
+                        case Some(statement) => backingEOptionP.ub.stmtResults.getOrElse(statement, Set.empty)
                         case None            => backingEOptionP.ub.callableResults
                     }
                 ),
-                immutable.Set(backingEOptionP),
+                Set(backingEOptionP),
                 onDependeeUpdateContinuation(callable, stmtOption)
             )
         } else {

@@ -3,7 +3,7 @@ package org.opalj
 package ide
 package integration
 
-import scala.collection.immutable
+import scala.collection.immutable.Set
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -45,8 +45,8 @@ abstract class IDEAnalysisScheduler[
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(PropertyStoreKey)
 
-    override def uses: immutable.Set[PropertyBounds] =
-        immutable.Set.empty
+    override def uses: Set[PropertyBounds] =
+        Set.empty
 
     override def beforeSchedule(project: SomeProject, propertyStore: PropertyStore): Unit = {}
 

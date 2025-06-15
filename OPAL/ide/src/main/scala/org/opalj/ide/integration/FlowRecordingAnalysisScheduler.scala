@@ -12,7 +12,7 @@ import java.io.Writer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import scala.collection.mutable
+import scala.collection.mutable.{Map as MutableMap}
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -108,7 +108,7 @@ class FlowRecordingAnalysisScheduler[
     /**
      * Associate used writers with the file they write to
      */
-    private val fileByWriter = mutable.Map.empty[Writer, File]
+    private val fileByWriter = MutableMap.empty[Writer, File]
 
     /**
      * Get the file to write the graph to. If [[path]] references a file then this method will return [[path]]. If

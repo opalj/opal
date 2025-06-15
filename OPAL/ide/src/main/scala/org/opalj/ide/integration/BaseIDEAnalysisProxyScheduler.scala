@@ -3,7 +3,7 @@ package org.opalj
 package ide
 package integration
 
-import scala.collection.immutable
+import scala.collection.immutable.Set
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -42,7 +42,7 @@ trait BaseIDEAnalysisProxyScheduler[Fact <: IDEFact, Value <: IDEValue, Statemen
     }
 
     override def uses: Set[PropertyBounds] =
-        immutable.Set(PropertyBounds.ub(propertyMetaInformation.backingPropertyMetaInformation))
+        Set(PropertyBounds.ub(propertyMetaInformation.backingPropertyMetaInformation))
 
     override def beforeSchedule(project: SomeProject, propertyStore: PropertyStore): Unit = {
         /* Add initial result for target callables */
