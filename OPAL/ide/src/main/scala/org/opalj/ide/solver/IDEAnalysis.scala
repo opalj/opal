@@ -333,8 +333,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             set.add(c)
         }
 
-        def areDependeesEmpty: Boolean = {
-            dependees.isEmpty
+        def hasDependees: Boolean = {
+            dependees.nonEmpty
         }
 
         def getDependees: scala.collection.Set[SomeEOptionP] = {
@@ -384,7 +384,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         seedPhase1()
         processPathWorkList()
 
-        s.areDependeesEmpty
+        !s.hasDependees
     }
 
     /**
@@ -393,7 +393,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     private def continuePhase1()(implicit s: State): Boolean = {
         processPathWorkList()
 
-        s.areDependeesEmpty
+        !s.hasDependees
     }
 
     /**
