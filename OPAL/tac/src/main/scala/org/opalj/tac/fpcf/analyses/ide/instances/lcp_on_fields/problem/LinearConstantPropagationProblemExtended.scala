@@ -134,7 +134,7 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                 case (f: AbstractArrayFact, LCPVariableValue) if arrayVar.definedBy.contains(f.definedAtIndex) =>
                     VariableValue
             }
-            .foldLeft(UnknownValue: LinearConstantPropagationValue)(lattice.meet)
+            .fold(UnknownValue: LinearConstantPropagationValue)(lattice.meet)
     }
 
     override def getNormalEdgeFunctionForGetField(

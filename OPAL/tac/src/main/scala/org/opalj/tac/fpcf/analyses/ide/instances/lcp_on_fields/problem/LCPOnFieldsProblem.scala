@@ -331,19 +331,17 @@ class LCPOnFieldsProblem(
 
                         allParams
                             .zipWithIndex
-                            .filter { case (param, _) =>
+                            .collect {
                                 /* Only parameters where the variable represented by the source fact is one possible
                                  * initializer */
-                                param.asVar.definedBy.contains(f.definedAtIndex)
-                            }
-                            .map { case (_, index) =>
-                                val adjustedIndex = index + staticCallIndexOffset
-                                f match {
-                                    case _: AbstractObjectFact =>
-                                        ObjectFact(s"param$adjustedIndex", -(adjustedIndex + 1))
-                                    case _: AbstractArrayFact =>
-                                        ArrayFact(s"param$adjustedIndex", -(adjustedIndex + 1))
-                                }
+                                case (param, index) if param.asVar.definedBy.contains(f.definedAtIndex) =>
+                                    val adjustedIndex = index + staticCallIndexOffset
+                                    f match {
+                                        case _: AbstractObjectFact =>
+                                            ObjectFact(s"param$adjustedIndex", -(adjustedIndex + 1))
+                                        case _: AbstractArrayFact =>
+                                            ArrayFact(s"param$adjustedIndex", -(adjustedIndex + 1))
+                                    }
                             }
                             .toSet
 
@@ -595,18 +593,13 @@ class LCPOnFieldsProblem(
     ): LinearConstantPropagationValue = {
         property
             .results
-            .filter {
-                case (linear_constant_propagation.problem.VariableFact(_, definedAtIndex), _) =>
-                    var0.definedBy.contains(definedAtIndex)
-                case _ => false
+            .collect {
+                case (linear_constant_propagation.problem.VariableFact(_, definedAtIndex), value)
+                    if var0.definedBy.contains(definedAtIndex) => value
             }
-            .map(_._2)
-            .foldLeft(
-                linear_constant_propagation.problem.UnknownValue: LinearConstantPropagationValue
-            ) {
-                case (value1, value2) =>
-                    LinearConstantPropagationLattice.meet(value1, value2)
-            }
+            .fold(linear_constant_propagation.problem.UnknownValue: LinearConstantPropagationValue)(
+                LinearConstantPropagationLattice.meet
+            )
     }
 
     override def getCallEdgeFunction(

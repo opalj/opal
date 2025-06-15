@@ -252,13 +252,13 @@ class LinearConstantPropagationProblem
 
                             params
                                 .zipWithIndex
-                                .filter { case (param, index) =>
+                                .collect {
                                     /* Only parameters that are of type integer and where the variable represented by
                                      * the source fact is one possible initializer */
-                                    paramTypes(index).isIntegerType && param.asVar.definedBy.contains(definedAtIndex)
-                                }
-                                .map { case (_, index) =>
-                                    VariableFact(s"param${index + 1}", -(index + 2))
+                                    case (param, index)
+                                        if paramTypes(index).isIntegerType && param.asVar.definedBy.contains(
+                                            definedAtIndex
+                                        ) => VariableFact(s"param${index + 1}", -(index + 2))
                                 }
                                 .toSet
                     }
