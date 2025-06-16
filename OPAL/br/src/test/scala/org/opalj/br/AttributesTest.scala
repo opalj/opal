@@ -21,8 +21,8 @@ class AttributesTest extends AnyFunSuite {
         assert(cf1.isDeprecated)
         assert(
             cf1.runtimeVisibleAnnotations.exists {
-                case Annotation(ObjectType("java/lang/Deprecated"), _) => true
-                case _                                                 => false
+                case Annotation(ClassType("java/lang/Deprecated"), _) => true
+                case _                                                => false
             }
         )
 

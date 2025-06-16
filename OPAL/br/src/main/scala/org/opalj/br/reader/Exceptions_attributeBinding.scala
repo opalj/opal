@@ -27,7 +27,7 @@ trait Exceptions_attributeBinding
         exception_index_table: Array[Constant_Pool_Index]
     ): Exceptions_attribute = {
         new Exceptions_attribute(
-            ArraySeq.from(exception_index_table).map(e_index => cp(e_index).asObjectType(cp))
+            ArraySeq.from(exception_index_table).map(e_index => cp(e_index).asClassType(cp))
         )
     }
 }

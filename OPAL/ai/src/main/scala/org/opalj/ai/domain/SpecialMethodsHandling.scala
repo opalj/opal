@@ -8,9 +8,9 @@ import scala.collection.immutable.ArraySeq
 import org.opalj.ai.Configuration
 import org.opalj.ai.IntegerValuesDomain
 import org.opalj.ai.ReferenceValuesDomain
+import org.opalj.br.ClassType
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 
 /**
@@ -31,7 +31,7 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
 
     abstract override def invokestatic(
         pc:            Int,
-        declaringType: ObjectType,
+        declaringType: ClassType,
         isInterface:   Boolean,
         name:          String,
         descriptor:    MethodDescriptor,
@@ -39,7 +39,7 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
     ): MethodCallResult = {
 
         if (!(
-                (declaringType eq ObjectType.System) &&
+                (declaringType eq ClassType.System) &&
                     name == "arraycopy" && descriptor == SystemArraycopyDescriptor
             )
         ) {
@@ -69,7 +69,7 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
         exceptions ::=
             InitializedObjectValue(
                 ValueOriginForImmediateVMException(pc),
-                ObjectType.IndexOutOfBoundsException
+                ClassType.IndexOutOfBoundsException
             )
         if (intIsSomeValueInRange(pc, sourcePos, 0, Int.MaxValue).isNo ||
             intIsSomeValueInRange(pc, destPos, 0, Int.MaxValue).isNo ||
@@ -85,7 +85,7 @@ object SpecialMethodsHandling {
 
     final val SystemArraycopyDescriptor = {
         MethodDescriptor(
-            ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
+            ArraySeq(ClassType.Object, IntegerType, ClassType.Object, IntegerType, IntegerType),
             VoidType
         )
     }

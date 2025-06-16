@@ -18,7 +18,7 @@ abstract class StoreLocalVariableInstruction extends Instruction with NoLabels {
 
     def computationalType: ComputationalType
 
-    def jvmExceptions: List[ObjectType] = Nil
+    def jvmExceptions: List[ClassType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 

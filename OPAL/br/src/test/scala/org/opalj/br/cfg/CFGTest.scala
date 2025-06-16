@@ -24,7 +24,7 @@ class CFGTest extends AbstractCFGTest {
     describe("Properties of CFGs") {
 
         val testProject: Project[URL] = biProject("controlflow.jar")
-        val testClassFile = testProject.classFile(ObjectType("controlflow/BoringCode")).get
+        val testClassFile = testProject.classFile(ClassType("controlflow/BoringCode")).get
 
         implicit val testClassHierarchy: ClassHierarchy = testProject.classHierarchy
 

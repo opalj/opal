@@ -11,7 +11,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.BooleanType
 import org.opalj.br.IntegerType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.issues.Issue
 import org.opalj.issues.Relevance
 import org.opalj.issues.IssueCategory
@@ -43,7 +43,7 @@ object CovariantEquals {
             case Method(_, "equals", MethodDescriptor(Seq(paramType), BooleanType)) => paramType
         }
 
-        paramTypes.size > 0 && !paramTypes.exists(_ == ObjectType.Object)
+        paramTypes.size > 0 && !paramTypes.exists(_ == ClassType.Object)
     }
 
     private def hasHashCode(classFile: ClassFile): Boolean = {
@@ -60,16 +60,16 @@ object CovariantEquals {
         project: SomeProject
     ): Boolean = {
 
-        if (classFile.thisType eq ObjectType.Object)
+        if (classFile.thisType eq ClassType.Object)
             return false;
 
         val superclassType = classFile.superclassType.get
-        if (superclassType eq ObjectType.Object)
+        if (superclassType eq ClassType.Object)
             return false;
 
         import MethodDescriptor.JustReturnsInteger
         project.resolveClassMethodReference(superclassType, "hashCode", JustReturnsInteger) match {
-            case Success(m) => m.classFile.thisType ne ObjectType.Object
+            case Success(m) => m.classFile.thisType ne ClassType.Object
             case _          => false
         }
     }

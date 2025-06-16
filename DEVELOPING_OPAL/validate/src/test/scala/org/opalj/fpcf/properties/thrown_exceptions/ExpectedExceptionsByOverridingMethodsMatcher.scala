@@ -5,7 +5,7 @@ package properties
 package thrown_exceptions
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
 
@@ -21,7 +21,7 @@ class ExpectedExceptionsByOverridingMethodsMatcher
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -29,10 +29,10 @@ class ExpectedExceptionsByOverridingMethodsMatcher
         val (concreteTypeExceptions, upperBoundTypeExceptions) =
             getConcreteAndUpperBoundExceptionAnnotations(p, a)
 
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
-        val requiredAnalysis = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val requiredAnalysis = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
             properties.forall {

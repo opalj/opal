@@ -72,11 +72,11 @@ object VirtualSourceElement {
  *
  * @author Michael Eichberg
  */
-final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement {
+final case class VirtualClass(thisType: ClassType) extends VirtualSourceElement {
 
     override def isClass: Boolean = true
 
-    override def classType: ObjectType = thisType
+    override def classType: ClassType = thisType
 
     override def toJava: String = thisType.toJava
 
@@ -116,14 +116,14 @@ sealed abstract class VirtualClassMember extends VirtualSourceElement
  * @author Michael Eichberg
  */
 final case class VirtualField(
-    declaringClassType: ObjectType,
+    declaringClassType: ClassType,
     name:               String,
     fieldType:          FieldType
 ) extends VirtualClassMember {
 
     override def isField: Boolean = true
 
-    override def classType: ObjectType = declaringClassType
+    override def classType: ClassType = declaringClassType
 
     override def toJava: String = declaringClassType.toJava + "{ " + fieldType.toJava + " " + name + "; }"
 
@@ -187,7 +187,7 @@ sealed class VirtualMethod(
         if (declaringClassType.isArrayType)
             return None;
 
-        project.classFile(declaringClassType.asObjectType).flatMap { cf =>
+        project.classFile(declaringClassType.asClassType).flatMap { cf =>
             cf.findMethod(name, descriptor).flatMap(m => m.body.flatMap(b => b.firstLineNumber))
         }
     }

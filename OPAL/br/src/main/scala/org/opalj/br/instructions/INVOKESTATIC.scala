@@ -9,7 +9,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESTATIC(
-    declaringClass:   ObjectType, // a class or interface (Java 8) type
+    declaringClass:   ClassType, // a class or interface (Java 8) type
     isInterface:      Boolean,
     name:             String,
     methodDescriptor: MethodDescriptor
@@ -27,7 +27,7 @@ case class INVOKESTATIC(
 
     final def mnemonic: String = "invokestatic"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ClassType] = Nil
 
     final def length: Int = 3
 
@@ -73,7 +73,7 @@ object INVOKESTATIC extends InstructionMetaInformation {
         methodName:       String,
         methodDescriptor: String
     ): INVOKESTATIC = {
-        val declaringClassType = ObjectType(declaringClass)
+        val declaringClassType = ClassType(declaringClass)
         INVOKESTATIC(declaringClassType, isInterface, methodName, MethodDescriptor(methodDescriptor))
     }
 

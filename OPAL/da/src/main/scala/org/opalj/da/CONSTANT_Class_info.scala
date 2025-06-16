@@ -23,8 +23,8 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
      * Should be called if and only if the referenced type is known not be an array type and
      * therefore the underlying descriptor does not encode a field type descriptor.
      */
-    def asJavaClassOrInterfaceType(implicit cp: Constant_Pool): ObjectTypeInfo = {
-        asJavaObjectType(cp(name_index).asConstantUTF8.value)
+    def asJavaClassOrInterfaceType(implicit cp: Constant_Pool): ClassTypeInfo = {
+        asJavaClassType(cp(name_index).asConstantUTF8.value)
     }
 
     override def asCPNode(implicit cp: Constant_Pool): Node = {

@@ -16,7 +16,6 @@ flowchart BT
     de[Dependency Extraction<br>de]
     ba[Bytecode Assembler<br>ba]
 
-    ll[LLVM<br>ll]
     apk[APK<br>apk]
     av[Architecture Validation<br>av]
     tac2bc[TAC2BC<br>tac2bc]
@@ -52,23 +51,21 @@ flowchart BT
     tac --> ifds
     tac --> ai
 
-    ll --> tac
+    apk --> tac
 
     tac2bc --> tac
     tac2bc --> ba
-
-    apk --> br
-    apk --> ll
 
     ba --> ai
     ba --> bc
 
     av --> de
 
+    framework --> tac
     framework --> av
     framework --> ba
     framework --> tac2bc
-    
+
     demos --> framework
     bp --> framework
     hermes --> framework

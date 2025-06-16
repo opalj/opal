@@ -4,8 +4,8 @@ package ai
 package domain
 package l1
 
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 
 /**
  * Default implementation of the `AsDomainValue` trait.
@@ -36,7 +36,7 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
                 case _ => ReferenceValue(pc, arrayType)
             }
         } else /*if (!clazz.isPrimitive()) */ {
-            InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))
+            InitializedObjectValue(pc, ClassType(fqnInBinaryNotation))
         }
     }
 }

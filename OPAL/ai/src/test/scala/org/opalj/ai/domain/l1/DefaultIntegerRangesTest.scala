@@ -11,8 +11,8 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfIntegerRanges
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.IntegerType
-import org.opalj.br.ObjectType
 
 /**
  * Tests the IntegerRanges Domain.
@@ -1389,8 +1389,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1408,8 +1408,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1420,8 +1420,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1432,8 +1432,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1464,8 +1464,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1476,8 +1476,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1488,8 +1488,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result shouldBe an[AnIntegerValue]
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1500,8 +1500,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1512,8 +1512,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1524,8 +1524,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(-21, 21))
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1572,8 +1572,8 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result should be(IntegerRange(-3, 3))
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -3295,7 +3295,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
     describe("using IntegerRangeValues") {
 
         val aiProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
-        val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
+        val IntegerValues = aiProject.classFile(ClassType("ai/domain/IntegerValuesFrenzy")).get
 
         describe("when we have multiple loops that reuse the same local variable") {
 

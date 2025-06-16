@@ -13,6 +13,6 @@ trait ClassFileRepository {
 
     implicit def logContext: LogContext
 
-    def classFile(objectType: ObjectType): Option[ClassFile]
+    def classFile(classType: ClassType): Option[ClassFile]
 
 }

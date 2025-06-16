@@ -2336,7 +2336,7 @@
 			<std>
 				<el type="mnemonic"/>
 				<!-- The spec states that "new" is never to be used to create arrays. -->
-				<el type="ushort_cp_index->objectType" id="objectType"/>
+				<el type="ushort_cp_index->classType" id="classType"/>
 			</std>
 		</format>
 	</instruction>

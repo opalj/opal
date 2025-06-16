@@ -51,7 +51,7 @@ trait CodeAttributeBinding
             if (catch_type_index == 0)
                 None
             else
-                Some(cp(catch_type_index).asObjectType(cp))
+                Some(cp(catch_type_index).asClassType(cp))
         )
     }
 }

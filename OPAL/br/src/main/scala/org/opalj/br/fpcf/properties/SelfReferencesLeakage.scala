@@ -42,7 +42,7 @@ case object LeaksSelfReference extends SelfReferenceLeakage
 
 object SelfReferenceLeakage {
 
-    final val Key = PropertyKey.create[ObjectType, SelfReferenceLeakage](
+    final val Key = PropertyKey.create[ClassType, SelfReferenceLeakage](
         name = "org.opalj.SelfReferenceLeakage",
         fallbackProperty = LeaksSelfReference
     )

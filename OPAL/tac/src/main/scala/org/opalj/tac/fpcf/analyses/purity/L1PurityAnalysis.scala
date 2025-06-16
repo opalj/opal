@@ -6,12 +6,12 @@ package analyses
 package purity
 
 import org.opalj.ai.isImmediateVMException
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -103,7 +103,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var dependees: Set[EOptionP[Entity, Property]],
         val method:    Method,
         val context:   Context,
-        val declClass: ObjectType,
+        val declClass: ClassType,
         var tac:       TACode[TACMethodParameter, V] = null,
         var lbPurity:  Purity                        = Pure,
         var ubPurity:  Purity                        = Pure
@@ -224,7 +224,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * not known yet.
      */
     override def handleUnknownTypeImmutability(
-        ep:   EOptionP[ObjectType, Property],
+        ep:   EOptionP[ClassType, Property],
         expr: Expr[V]
     )(implicit state: State): Unit = {
         if (!isLocal(expr, Pure)) state.dependees += ep
@@ -324,15 +324,15 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ClassType.Throwable)) {
             val candidate = org.opalj.control.find(project.instanceMethods(state.declClass)) { mdc =>
                 mdc.method.compare(
                     "fillInStackTrace",
-                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                    MethodDescriptor.withNoArgs(ClassType.Throwable)
                 )
             }
             candidate foreach { mdc =>
-                if (mdc.method.classFile.thisType != ObjectType.Throwable) {
+                if (mdc.method.classFile.thisType != ClassType.Throwable) {
                     val fISTMethod = declaredMethods(mdc.method)
                     val fISTContext = contextProvider.expandContext(state.context, fISTMethod, 0)
                     val fISTPurity = propertyStore(fISTContext, Purity.key)

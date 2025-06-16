@@ -56,7 +56,7 @@ class PropertyTracingTest extends AnyFlatSpec with Matchers {
 
         override def invokestatic(
             pc:             Int,
-            declaringClass: ObjectType,
+            declaringClass: ClassType,
             isInterface:    Boolean,
             name:           String,
             descriptor:     MethodDescriptor,

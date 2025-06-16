@@ -3,12 +3,12 @@ package org.opalj.fpcf.fixtures.alias;
 
 import org.opalj.fpcf.properties.alias.MayAlias;
 import org.opalj.fpcf.properties.alias.NoAlias;
-
-
+import org.opalj.tac.fpcf.analyses.alias.pointsto.AllocationSitePointsToBasedAliasAnalysis;
+import org.opalj.tac.fpcf.analyses.alias.pointsto.TypePointsToBasedAliasAnalysis;
 
 public class ReturnValueAlias {
 
-    @NoAlias(reason = "no Alias with local variable", lineNumber = 15)
+    @NoAlias(reason = "no Alias with local variable", lineNumber = 15, analyses = {AllocationSitePointsToBasedAliasAnalysis.class})
     public static Object noAliasWithLocal() {
         Object o1 = new Object();
 
@@ -40,9 +40,9 @@ public class ReturnValueAlias {
         return o1;
     }
 
-    @NoAlias(reason = "noAlias with parameter", id = 0)
+    @NoAlias(reason = "noAlias with parameter", id = 0, analyses = {AllocationSitePointsToBasedAliasAnalysis.class, TypePointsToBasedAliasAnalysis.class})
     public static Object noAliasWithParam(
-            @NoAlias(reason = "noAlias with parameter", id = 0)
+            @NoAlias(reason = "noAlias with parameter", id = 0, analyses = {AllocationSitePointsToBasedAliasAnalysis.class, TypePointsToBasedAliasAnalysis.class})
             Object a) {
         Object o1 = new Object();
         return o1;

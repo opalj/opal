@@ -326,9 +326,9 @@ class BytecodeInstructionsCache {
     // ReferenceType based caching
     //
 
-    private[this] val newInstructions = TrieMap.empty[ObjectType, NEW]
-    def NEW(objectType: ObjectType): NEW = {
-        newInstructions.getOrElseUpdate(objectType, new NEW(objectType))
+    private[this] val newInstructions = TrieMap.empty[ClassType, NEW]
+    def NEW(classType: ClassType): NEW = {
+        newInstructions.getOrElseUpdate(classType, new NEW(classType))
     }
 
     private[this] val checkcastInstructions = TrieMap.empty[ReferenceType, CHECKCAST]

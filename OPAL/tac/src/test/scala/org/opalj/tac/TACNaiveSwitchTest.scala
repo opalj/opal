@@ -18,7 +18,7 @@ import org.opalj.collection.immutable.IntIntPair
 @RunWith(classOf[JUnitRunner])
 class TACNaiveSwitchTest extends TACNaiveTest {
 
-    val SwitchStatementsType = ObjectType("tactest/SwitchStatements")
+    val SwitchStatementsType = ClassType("tactest/SwitchStatements")
 
     val project = biProject("tactest-8-preserveAllLocals.jar")
 

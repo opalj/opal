@@ -53,8 +53,8 @@ class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Sourc
                 method.name == "main") ||
                 (classFile.thisType.fqn.toLowerCase.indexOf("benchmark") >= 0)
             (idx, INVOKEVIRTUAL(targetType, name, desc)) <- body.associateWithIndex
-            if targetType.isObjectType &&
-                targetType.asObjectType.fqn.startsWith("javax/swing/")
+            if targetType.isClassType &&
+                targetType.asClassType.fqn.startsWith("javax/swing/")
             if ((name, desc) match {
                 case ("show" | "pack", MethodDescriptor.NoArgsAndReturnVoid) => true
                 case ("setVisible", MethodDescriptor(IndexedSeq(BooleanType),

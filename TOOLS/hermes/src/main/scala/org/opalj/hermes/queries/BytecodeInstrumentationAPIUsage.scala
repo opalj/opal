@@ -3,7 +3,7 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -18,7 +18,7 @@ import org.opalj.hermes.queries.util.InstanceAPIMethod
 class BytecodeInstrumentationAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override def apiFeatures: List[APIFeature] = {
-        val Instrumentation = ObjectType("java/lang/instrument/Instrumentation")
+        val Instrumentation = ClassType("java/lang/instrument/Instrumentation")
 
         List(
             APIFeatureGroup(

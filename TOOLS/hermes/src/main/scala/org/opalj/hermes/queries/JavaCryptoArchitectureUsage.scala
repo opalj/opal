@@ -3,7 +3,7 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -20,26 +20,26 @@ class JavaCryptoArchitectureUsage(implicit hermes: HermesConfig) extends APIFeat
     override val apiFeatures: List[APIFeature] = {
 
         // java.security
-        val SecureRandom = ObjectType("java/security/SecureRandom")
-        val MessageDigest = ObjectType("java/security/MessageDigest")
-        val Signature = ObjectType("java/security/Signature")
-        val KeyFactory = ObjectType("java/security/KeyFactory")
-        val KeyPairGenerator = ObjectType("java/security/KeyPairGenerator")
-        val KeyStore = ObjectType("java/security/KeyStore")
+        val SecureRandom = ClassType("java/security/SecureRandom")
+        val MessageDigest = ClassType("java/security/MessageDigest")
+        val Signature = ClassType("java/security/Signature")
+        val KeyFactory = ClassType("java/security/KeyFactory")
+        val KeyPairGenerator = ClassType("java/security/KeyPairGenerator")
+        val KeyStore = ClassType("java/security/KeyStore")
 
         // java.security.cert
 
-        val CertificateFactory = ObjectType("java/security/cert/CertificateFactory")
-        val CertPathBuilder = ObjectType("java/security/cert/CertPathBuilder")
-        val CertPathValidator = ObjectType("java/security/cert/CertPathValidator")
-        val CertStore = ObjectType("java/security/cert/CertStore")
+        val CertificateFactory = ClassType("java/security/cert/CertificateFactory")
+        val CertPathBuilder = ClassType("java/security/cert/CertPathBuilder")
+        val CertPathValidator = ClassType("java/security/cert/CertPathValidator")
+        val CertStore = ClassType("java/security/cert/CertStore")
 
         // javax/crypto
-        val Cipher = ObjectType("javax/crypto/Cipher")
-        val Mac = ObjectType("javax/crypto/Mac")
-        val SecretKeyFactory = ObjectType("javax/crypto/SecretKeyFactory")
-        val KeyGenerator = ObjectType("javax/crypto/KeyGenerator")
-        val KeyAgreement = ObjectType("javax/crypto/KeyAgreement")
+        val Cipher = ClassType("javax/crypto/Cipher")
+        val Mac = ClassType("javax/crypto/Mac")
+        val SecretKeyFactory = ClassType("javax/crypto/SecretKeyFactory")
+        val KeyGenerator = ClassType("javax/crypto/KeyGenerator")
+        val KeyAgreement = ClassType("javax/crypto/KeyAgreement")
 
         // common methods
         val init = "<init>"

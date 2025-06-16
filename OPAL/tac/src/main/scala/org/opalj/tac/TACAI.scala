@@ -718,7 +718,7 @@ object TACAI {
                         else
                             addStmt(NonVirtualMethodCall(
                                 pc,
-                                declClass.asObjectType,
+                                declClass.asClassType,
                                 isInterface,
                                 name,
                                 descriptor,
@@ -740,7 +740,7 @@ object TACAI {
                             else
                                 NonVirtualFunctionCall(
                                     pc,
-                                    declClass.asObjectType,
+                                    declClass.asClassType,
                                     isInterface,
                                     name,
                                     descriptor,
@@ -835,8 +835,8 @@ object TACAI {
                     }
 
                 case NEW.opcode =>
-                    val NEW(objectType) = instruction
-                    val newObject = New(pc, objectType)
+                    val NEW(classType) = instruction
+                    val newObject = New(pc, classType)
                     addInitLocalValStmt(pc, operandsArray(nextPC).head, newObject)
 
                 case NEWARRAY.opcode =>

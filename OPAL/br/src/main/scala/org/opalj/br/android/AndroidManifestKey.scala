@@ -8,7 +8,7 @@ import scala.xml.Node
 import scala.xml.XML
 
 import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -52,12 +52,12 @@ object AndroidManifestKey extends ProjectInformationKey[AndroidManifest, String]
             createComponent: (ClassFile, Seq[IntentFilter]) => T
         ): Option[T] = {
             val name = (node \ s"@{$androidURI}name").text
-            var ot = name.replaceAll("\\.", "/")
-            if (ot.startsWith("/")) {
-                ot = packageName + ot
+            var ct = name.replaceAll("\\.", "/")
+            if (ct.startsWith("/")) {
+                ct = packageName + ct
             }
             val intentFilters = (node \ "intent-filter").map(parseIntentFilter)
-            project.classFile(ObjectType(ot)).map(cls => createComponent(cls, intentFilters))
+            project.classFile(ClassType(ct)).map(cls => createComponent(cls, intentFilters))
         }
 
         // Parse the different component types using specific lambdas

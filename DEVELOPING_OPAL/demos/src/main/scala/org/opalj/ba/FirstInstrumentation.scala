@@ -5,11 +5,11 @@ package ba
 import java.io.ByteArrayInputStream
 
 import org.opalj.bc.Assembler
+import org.opalj.br.ClassType
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor.JustReturnsInteger
 import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.MethodDescriptor.JustTakes
-import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.instructions.DUP
 import org.opalj.br.instructions.GETSTATIC
@@ -28,10 +28,10 @@ import org.opalj.util.InMemoryClassLoader
  */
 object FirstInstrumentation extends App {
 
-    val PrintStreamType = ObjectType("java/io/PrintStream")
-    val SystemType = ObjectType("java/lang/System")
+    val PrintStreamType = ClassType("java/io/PrintStream")
+    val SystemType = ClassType("java/lang/System")
 
-    val TheType = ObjectType("org/opalj/ba/SimpleInstrumentationDemo")
+    val TheType = ClassType("org/opalj/ba/SimpleInstrumentationDemo")
 
     // let's load the class
     val in = () => this.getClass.getResourceAsStream("SimpleInstrumentationDemo.class")
@@ -58,7 +58,7 @@ object FirstInstrumentation extends App {
                                 DUP,
                                 GETSTATIC(SystemType, "out", PrintStreamType),
                                 SWAP,
-                                INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
+                                INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ClassType.String))
                             )
                         )
                         // print out the receiver's hashCode (it has to be on the stack!)
@@ -67,7 +67,7 @@ object FirstInstrumentation extends App {
                             InsertionPosition.Before,
                             Seq(
                                 DUP,
-                                INVOKEVIRTUAL(ObjectType.Object, "hashCode", JustReturnsInteger),
+                                INVOKEVIRTUAL(ClassType.Object, "hashCode", JustReturnsInteger),
                                 GETSTATIC(SystemType, "out", PrintStreamType),
                                 SWAP,
                                 INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(IntegerType))

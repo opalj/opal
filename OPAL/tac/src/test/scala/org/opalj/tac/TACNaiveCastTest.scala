@@ -17,7 +17,7 @@ class TACNaiveCastTest extends TACNaiveTest {
 
     describe("the naive TAC of cast instructions") {
 
-        val CastInstructionsType = ObjectType("tactest/CastInstructions")
+        val CastInstructionsType = ClassType("tactest/CastInstructions")
 
         val project = biProject("tactest-8-preserveAllLocals.jar")
 
@@ -104,8 +104,8 @@ class TACNaiveCastTest extends TACNaiveTest {
 
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
-            statements.shouldEqual(typecheckResultAST(ObjectType.Object))
-            javaLikeCode.shouldEqual(typecheckResultJLC(ObjectType.Object.toJava))
+            statements.shouldEqual(typecheckResultAST(ClassType.Object))
+            javaLikeCode.shouldEqual(typecheckResultJLC(ClassType.Object.toJava))
         }
 
         it("should correctly reflect the instanceof List instruction") {

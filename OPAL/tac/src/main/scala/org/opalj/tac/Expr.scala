@@ -5,6 +5,7 @@ package tac
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.BootstrapMethod
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeFloat
@@ -20,7 +21,6 @@ import org.opalj.br.LongType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodHandle
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
@@ -263,7 +263,7 @@ case class MethodTypeConst(pc: PC, value: MethodDescriptor) extends Const {
     override final def isMethodTypeConst: Boolean = true
     override final def asMethodTypeConst: this.type = this
     override final def astID: Int = MethodTypeConst.ASTID
-    override final def tpe: Type = ObjectType.MethodType
+    override final def tpe: Type = ClassType.MethodType
     override final def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"MethodTypeConst(pc=$pc,${value.toJava})"
 }
@@ -273,7 +273,7 @@ case class MethodHandleConst(pc: PC, value: MethodHandle) extends Const {
     override final def isMethodHandleConst: Boolean = true
     override final def asMethodHandleConst: this.type = this
     override final def astID: Int = MethodHandleConst.ASTID
-    override final def tpe: Type = ObjectType.MethodHandle
+    override final def tpe: Type = ClassType.MethodHandle
     override final def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"MethodHandleConst(pc=$pc,${value.toJava})"
 }
@@ -325,7 +325,7 @@ case class StringConst(pc: PC, value: String) extends SimpleValueConst {
     override final def isStringConst: Boolean = true
     override final def asStringConst: this.type = this
     override final def astID: Int = StringConst.ASTID
-    override final def tpe: Type = ObjectType.String
+    override final def tpe: Type = ClassType.String
     override final def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"StringConst(pc=$pc,$value)"
 }
@@ -335,7 +335,7 @@ case class ClassConst(pc: PC, value: ReferenceType) extends SimpleValueConst {
     override final def isClassConst: Boolean = true
     override final def asClassConst: this.type = this
     override final def astID: Int = ClassConst.ASTID
-    override final def tpe: Type = ObjectType.Class
+    override final def tpe: Type = ClassType.Class
     override final def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"ClassConst(pc=$pc,${value.toJava})"
 }
@@ -360,7 +360,7 @@ case class NullExpr(pc: PC) extends SimpleValueConst {
     override final def isNullExpr: Boolean = true
     override final def asNullExpr: this.type = this
     override final def astID: Int = NullExpr.ASTID
-    override final def tpe: Type = ObjectType.Object // IMPROVE Should we introduce a fake type such as "java.null"?
+    override final def tpe: Type = ClassType.Object // IMPROVE Should we introduce a fake type such as "java.null"?
     override final def cTpe: ComputationalType = ComputationalTypeReference
     override def toString: String = s"NullExpr(pc=$pc)"
 }
@@ -494,7 +494,7 @@ object PrimitiveTypecastExpr { final val ASTID = -16 }
  * is done later and therefore the object is not considered to be properly initialized and –
  * therefore – no further operations other than the call of a constructor are allowed.
  */
-case class New(pc: PC, tpe: ObjectType) extends Expr[Nothing] {
+case class New(pc: PC, tpe: ClassType) extends Expr[Nothing] {
 
     override final def isValueExpression: Boolean = false
     override final def isVar: Boolean = false
@@ -643,7 +643,7 @@ abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
     override final def isFieldRead: Boolean = true
     override final def asFieldRead: this.type = this
 
-    def declaringClass: ObjectType
+    def declaringClass: ClassType
     def name: String
     def declaredFieldType: FieldType
 
@@ -658,7 +658,7 @@ abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
 
 case class GetField[+V <: Var[V]](
     pc:                PC,
-    declaringClass:    ObjectType,
+    declaringClass:    ClassType,
     name:              String,
     declaredFieldType: FieldType,
     objRef:            Expr[V]
@@ -707,7 +707,7 @@ object GetField { final val ASTID = -21 }
 
 case class GetStatic(
     pc:                PC,
-    declaringClass:    ObjectType,
+    declaringClass:    ClassType,
     name:              String,
     declaredFieldType: FieldType
 ) extends FieldRead[Nothing] {
@@ -845,7 +845,7 @@ sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V]
  */
 case class NonVirtualFunctionCall[+V <: Var[V]](
     pc:             PC,
-    declaringClass: ObjectType,
+    declaringClass: ClassType,
     isInterface:    Boolean,
     name:           String,
     descriptor:     MethodDescriptor,
@@ -862,12 +862,12 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
      *
      * @see [ProjectLike#specialCall] for further details.
      */
-    def resolveCallTarget(callerClassType: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+    def resolveCallTarget(callerClassType: ClassType)(implicit p: ProjectLike): Result[Method] = {
         p.specialCall(callerClassType, declaringClass, isInterface, name, descriptor)
     }
 
     override final def resolveCallTargets(
-        callingContext: ObjectType
+        callingContext: ClassType
     )(
         implicit
         p:  ProjectLike,
@@ -972,7 +972,7 @@ object VirtualFunctionCall { final val ASTID = -25 }
 
 case class StaticFunctionCall[+V <: Var[V]](
     pc:             PC,
-    declaringClass: ObjectType,
+    declaringClass: ClassType,
     isInterface:    Boolean,
     name:           String,
     descriptor:     MethodDescriptor,
@@ -1001,12 +1001,12 @@ case class StaticFunctionCall[+V <: Var[V]](
      *
      * @see [ProjectLike#staticCall] for further details.
      */
-    def resolveCallTarget(callingContext: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+    def resolveCallTarget(callingContext: ClassType)(implicit p: ProjectLike): Result[Method] = {
         p.staticCall(callingContext, declaringClass, isInterface, name, descriptor)
     }
 
     override final def resolveCallTargets(
-        callingContext: ObjectType
+        callingContext: ClassType
     )(
         implicit
         p:  ProjectLike,

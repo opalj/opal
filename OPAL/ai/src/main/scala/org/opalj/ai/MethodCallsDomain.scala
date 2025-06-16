@@ -3,8 +3,8 @@ package org.opalj
 package ai
 
 import org.opalj.br.BootstrapMethod
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 
 /**
@@ -26,7 +26,7 @@ trait MethodCallsDomain { this: ValuesDomain =>
 
     def invokeinterface(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -34,7 +34,7 @@ trait MethodCallsDomain { this: ValuesDomain =>
 
     def invokespecial(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -43,7 +43,7 @@ trait MethodCallsDomain { this: ValuesDomain =>
 
     def invokestatic(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,

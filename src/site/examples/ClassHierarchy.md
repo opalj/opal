@@ -9,12 +9,12 @@ One of the most common tasks when implementing static analyses is to get informa
 
 The class hierarchy, e.g., directly makes the information about a type's super/sub types available:
 
-    def subtypeInformation(ObjectType) : SubtypeInformation 
-    def supertypeInformation(ObjectType) : SupertypeInformation 
+    def subtypeInformation(ClassType) : SubtypeInformation 
+    def supertypeInformation(ClassType) : SupertypeInformation 
 
 To get, e.g., all subtypes of `java.io.Serializable`, it is sufficient to query the subtypes information:
 
-    val subtypesOfSerializable = classHierarchy.subtypeInformation(ObjectType("java/io/Serializable"))
+    val subtypesOfSerializable = classHierarchy.subtypeInformation(ClassType("java/io/Serializable"))
 
 >Recall that in Java bytecode package names are separated using "/" and not "." as used in Java/Scala/... source code.
 
@@ -22,4 +22,4 @@ To get, e.g., all subtypes of `java.io.Serializable`, it is sufficient to query 
 
 If you don't know whether a given type is known to the class hierarchy, you should call the `get` method to avoid potential `NoSuchElementExceptions`.
 
-    classHierarchy.subtypeInformation.get(ObjectType("java/io/Serializable")).foreach{subtypeInformation => ... }
+    classHierarchy.subtypeInformation.get(ClassType("java/io/Serializable")).foreach{subtypeInformation => ... }

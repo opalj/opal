@@ -3,8 +3,8 @@ package org.opalj
 package hermes
 package queries
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -24,7 +24,7 @@ class UnsafeAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: List[APIFeature] = {
 
-        val Unsafe = ObjectType("sun/misc/Unsafe")
+        val Unsafe = ClassType("sun/misc/Unsafe")
 
         List(
             StaticAPIMethod(Unsafe, "getUnsafe", MethodDescriptor("()Lsun/misc/Unsafe;")),

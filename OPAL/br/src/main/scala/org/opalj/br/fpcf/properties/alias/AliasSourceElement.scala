@@ -229,7 +229,7 @@ case class AliasFormalParameter(fp: VirtualFormalParameter) extends AliasSourceE
     override def isMethodBound: Boolean = true
 
     override def isReferenceType: Boolean = {
-        if (fp.parameterIndex == -1) fp.method.declaringClassType.isObjectType
+        if (fp.parameterIndex == -1) fp.method.declaringClassType.isClassType
         else fp.method.definedMethod.parameterTypes(fp.parameterIndex).isReferenceType
     }
 

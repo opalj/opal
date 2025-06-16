@@ -25,7 +25,6 @@ import org.opalj.apk.ApkComponentType
 import org.opalj.apk.ApkComponentType.ApkComponentType
 import org.opalj.apk.parser.DexParser.DexParser
 import org.opalj.br.analyses.Project
-import org.opalj.ll.LLVMProjectKey
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -264,15 +263,6 @@ object ApkParser {
 
         project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(_ => apkParser)
         project.get(ApkComponentsKey)
-
-        apkParser.parseNativeCode match {
-            case Some((_, llvmModules)) =>
-                project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(_ =>
-                    llvmModules.map(f => f.toString)
-                )
-                project.get(LLVMProjectKey)
-            case None =>
-        }
 
         apkParser.cleanUp()
 

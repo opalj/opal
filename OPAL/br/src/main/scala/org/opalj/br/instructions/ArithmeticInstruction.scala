@@ -51,6 +51,6 @@ trait ArithmeticInstruction extends Instruction with NoLabels {
  */
 object ArithmeticInstruction {
 
-    final val jvmExceptions = List(ObjectType.ArithmeticException)
+    final val jvmExceptions = List(ClassType.ArithmeticException)
 
 }

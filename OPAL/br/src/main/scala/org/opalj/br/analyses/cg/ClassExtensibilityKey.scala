@@ -43,7 +43,7 @@ object ClassExtensibilityKey extends ProjectInformationKey[ClassExtensibility, N
                 val m = "cannot compute the extensibility of classes; extensibility will be unknown"
                 OPALLogger.error("project configuration", m, t)(project.logContext)
                 new ClassExtensibility {
-                    def isClassExtensible(t: ObjectType): Answer = Unknown
+                    def isClassExtensible(t: ClassType): Answer = Unknown
                 }
         }
     }

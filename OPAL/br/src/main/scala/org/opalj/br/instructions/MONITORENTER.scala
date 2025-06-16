@@ -14,7 +14,7 @@ case object MONITORENTER extends SynchronizationInstruction with InstructionMeta
 
     final val mnemonic = "monitorenter"
 
-    final val jvmExceptions: List[ObjectType] = List(ObjectType.NullPointerException)
+    final val jvmExceptions: List[ClassType] = List(ClassType.NullPointerException)
 
     final def stackSlotsChange: Int = -1
 
@@ -32,7 +32,7 @@ case object MONITORENTER extends SynchronizationInstruction with InstructionMeta
             Instruction.nextInstructionOrExceptionHandler(
                 this,
                 currentPC,
-                ObjectType.NullPointerException
+                ClassType.NullPointerException
             )
     }
 

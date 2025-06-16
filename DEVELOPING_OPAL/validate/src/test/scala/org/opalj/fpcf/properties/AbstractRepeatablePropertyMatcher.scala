@@ -4,7 +4,7 @@ package fpcf
 package properties
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 
 /**
@@ -16,11 +16,11 @@ abstract class AbstractRepeatablePropertyMatcher extends AbstractPropertyMatcher
     /**
      * Type for identifying the single annotation
      */
-    val singleAnnotationType: ObjectType
+    val singleAnnotationType: ClassType
     /**
      * Type for identifying the container annotation
      */
-    val containerAnnotationType: ObjectType
+    val containerAnnotationType: ClassType
 
     /**
      * The name of the field of the container annotation that holds the single annotations
@@ -29,7 +29,7 @@ abstract class AbstractRepeatablePropertyMatcher extends AbstractPropertyMatcher
 
     override def validateProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -62,7 +62,7 @@ abstract class AbstractRepeatablePropertyMatcher extends AbstractPropertyMatcher
      */
     def validateSingleProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]

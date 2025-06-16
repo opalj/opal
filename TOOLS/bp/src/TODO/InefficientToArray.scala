@@ -31,13 +31,13 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
      */
     override def description: String = "Reports inefficient toArray(T[]) calls"
 
-    private val objectArrayType = ArrayType(ObjectType.Object)
+    private val objectArrayType = ArrayType(ClassType.Object)
     private val toArrayDescriptor = MethodDescriptor(
         IndexedSeq(objectArrayType),
         objectArrayType
     )
-    private val collectionInterface = ObjectType("java/util/Collection")
-    private val listInterface = ObjectType("java/util/List")
+    private val collectionInterface = ClassType("java/util/Collection")
+    private val listInterface = ClassType("java/util/List")
 
     /**
      * Checks whether a type inherits from java/util/Collection or is java/util/List.
@@ -48,9 +48,9 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
     private def isCollectionType(
         classHierarchy: ClassHierarchy
     )(checkedType: ReferenceType): Boolean = {
-        checkedType.isObjectType &&
+        checkedType.isClassType &&
             (classHierarchy.isSubtypeOf(
-                checkedType.asObjectType,
+                checkedType.asClassType,
                 collectionInterface
             ).isNoOrUnknown || checkedType == listInterface)
         // TODO needs more heuristic or more analysis

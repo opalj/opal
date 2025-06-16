@@ -27,7 +27,7 @@ trait CodeAttributeBuilder[T] {
      */
     def apply(
         classFileVersion:   UShortPair,
-        declaringClassType: ObjectType,
+        declaringClassType: ClassType,
         accessFlags:        Int,
         name:               String,
         descriptor:         MethodDescriptor

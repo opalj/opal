@@ -11,7 +11,7 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.ValuesCoordinatingDomain
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.TestSupport
 import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet
@@ -39,8 +39,8 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
 
     it should "determine that a value with a single interface as its upper bound abstracts over " +
         "a value that implements multiple interfaces that includes the previous one" in {
-            val t1 = ObjectType("org/omg/CORBA/Object")
-            val t2 = ObjectType("java/rmi/Remote")
+            val t1 = ClassType("org/omg/CORBA/Object")
+            val t2 = ClassType("java/rmi/Remote")
             val domain = ValuesDomain
             val stValue = domain.ReferenceValue(-1, t1)
             val mtValue = domain.ObjectValue(-1, UIDSet(t1, t2))
@@ -51,8 +51,8 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
 
     it should "determine that a value with a single interface as its upper bound abstracts over " +
         "a value that is non-null and that implements multiple interfaces that includes the previous one" in {
-            val t1 = ObjectType("org/omg/CORBA/Object")
-            val t2 = ObjectType("java/rmi/Remote")
+            val t1 = ClassType("org/omg/CORBA/Object")
+            val t2 = ClassType("java/rmi/Remote")
             val domain = ValuesDomain
             val stValue = domain.ReferenceValue(-1, Unknown, false, t1)
             val mtValue = domain.ObjectValue(-1, No, UIDSet(t1, t2))
@@ -63,9 +63,9 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
         }
 
     it should "correctly join a value which implements multiple interfaces with a value that implementes just one interface that is a subtype of one of the previous interfaces" in {
-        val l1 = ObjectType("java/io/Serializable")
-        val l2 = ObjectType("java/util/RandomAccess")
-        val r = ObjectType("java/io/Externalizable")
+        val l1 = ClassType("java/io/Serializable")
+        val l2 = ClassType("java/util/RandomAccess")
+        val r = ClassType("java/io/Externalizable")
         val domain = ValuesDomain
         val lValue = domain.ObjectValue(-1, No, UIDSet(l1, l2))
         val rValue = domain.ReferenceValue(-1, r)
@@ -77,8 +77,8 @@ class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
     }
 
     it should "calculate the correct least upper type bound if one of the types of a MultipleReferenceValues already defines that bound" in {
-        val l = ObjectType("java/util/AbstractCollection")
-        val r = ObjectType("java/util/ArrayList")
+        val l = ClassType("java/util/AbstractCollection")
+        val r = ClassType("java/util/ArrayList")
         val lValue = ValuesDomain.ObjectValue(-1, l)
         val rValue = ValuesDomain.ObjectValue(-2, r)
         val value = ValuesDomain.MultipleReferenceValues(UIDSet2(lValue, rValue))

@@ -8,10 +8,10 @@ package pointsto
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -41,12 +41,12 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] (
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.System,
+        ClassType.System,
         "",
-        ObjectType.System,
+        ClassType.System,
         "arraycopy",
         MethodDescriptor(
-            ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object, IntegerType, IntegerType),
+            ArraySeq(ClassType.Object, IntegerType, ClassType.Object, IntegerType, IntegerType),
             VoidType
         )
     )

@@ -46,7 +46,7 @@ object MethodCallInformation extends ProjectAnalysisApplication {
                 def isPotentiallyRefinable(methodDescriptor: MethodDescriptor): Boolean = {
                     methodDescriptor.parametersCount > 0 &&
                     methodDescriptor.parameterTypes.exists { t =>
-                        t.isArrayType || (t.isObjectType && ch.hasSubtypes(t.asObjectType).isYesOrUnknown)
+                        t.isArrayType || (t.isClassType && ch.hasSubtypes(t.asClassType).isYesOrUnknown)
                     }
                 }
 

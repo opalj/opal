@@ -3,14 +3,14 @@ package org.opalj.fpcf.fixtures.alias;
 
 import org.opalj.fpcf.properties.alias.MayAlias;
 import org.opalj.fpcf.properties.alias.NoAlias;
-
+import org.opalj.tac.fpcf.analyses.alias.pointsto.AllocationSitePointsToBasedAliasAnalysis;
 
 public class StaticFieldAlias {
 
     @MayAlias(reason = "may alias with field and assigned uVar", lineNumber = 41, methodName = "reassignField")
-    @NoAlias(reason = "no alias with field and parameter", id = 1)
-    @NoAlias(reason = "no alias with field and return value", id = 3)
-    @NoAlias(reason = "no alias with field and unrelated uVar", lineNumber = 54, methodName = "noAlias")
+    @NoAlias(reason = "no alias with field and parameter", id = 1, analyses = {AllocationSitePointsToBasedAliasAnalysis.class})
+    @NoAlias(reason = "no alias with field and return value", id = 3, analyses = {AllocationSitePointsToBasedAliasAnalysis.class})
+    @NoAlias(reason = "no alias with field and unrelated uVar", lineNumber = 54, methodName = "noAlias", analyses = {AllocationSitePointsToBasedAliasAnalysis.class})
     @MayAlias(reason = "may alias with field and return value", id = 2)
     @MayAlias(reason = "may alias with field and returned uVar", lineNumber = 65, methodName = "returnMayAliasField")
     @MayAlias(reason = "may alias with field and return value via parameter", id = 5)
@@ -41,9 +41,9 @@ public class StaticFieldAlias {
         mayAliasField = o;
     }
 
-    @NoAlias(reason = "no alias with field and return value", id = 3)
+    @NoAlias(reason = "no alias with field and return value", id = 3, analyses = {AllocationSitePointsToBasedAliasAnalysis.class})
     public static Object noAlias(
-            @NoAlias(reason = "no alias with field and parameter", id = 1)
+            @NoAlias(reason = "no alias with field and parameter", id = 1, analyses = {AllocationSitePointsToBasedAliasAnalysis.class})
             Object a) {
         Object o = new Object();
 

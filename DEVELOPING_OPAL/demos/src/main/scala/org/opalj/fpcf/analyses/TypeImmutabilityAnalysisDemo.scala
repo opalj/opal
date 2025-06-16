@@ -6,7 +6,7 @@ package analyses
 
 import java.net.URL
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -86,7 +86,7 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
         val groupedResults = propertyStore.entities(TypeImmutability.key).filter(x =>
-            allProjectClassTypes.contains(x.asInstanceOf[ObjectType])
+            allProjectClassTypes.contains(x.asInstanceOf[ClassType])
         ).iterator.to(Iterable).groupBy(_.e)
 
         val order = (eps1: EPS[Entity, TypeImmutability], eps2: EPS[Entity, TypeImmutability]) =>

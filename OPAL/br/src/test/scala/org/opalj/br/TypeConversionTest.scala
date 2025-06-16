@@ -126,7 +126,7 @@ class TypeConversionTest extends AnyFunSpec with Matchers {
                         null,
                         null
                     ))
-                    t.adapt(ObjectType.Object) should be(t.boxValue)
+                    t.adapt(ClassType.Object) should be(t.boxValue)
                 }
             }
         }

@@ -12,7 +12,7 @@ import org.opalj.io.processSource
 
 /**
  * Executes all analyses to determine the representativeness of the given projects
- * ([[https://github.com/stg-tud/opal/blob/develop/TOOLS/hermes/src/main/resources/org/opalj/hermes/HermesCLI.txt see HermesCLI.txt for further details]]).
+ * ([[https://github.com/opalj/opal/blob/develop/TOOLS/hermes/src/main/resources/org/opalj/hermes/HermesCLI.txt see HermesCLI.txt for further details]]).
  *
  * @author Michael Eichberg
  */

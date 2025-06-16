@@ -48,26 +48,26 @@ class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnaly
 
     val defaultTransitivelyImmutableTypes = project.config.getStringList(
         "org.opalj.fpcf.analyses.TypeImmutabilityAnalysis.defaultTransitivelyImmutableTypes"
-    ).toArray().toList.map(s => ObjectType(s.asInstanceOf[String])).toSet
+    ).toArray().toList.map(s => ClassType(s.asInstanceOf[String])).toSet
 
     def doDetermineTypeImmutability(
-        typeExtensibility: ObjectType => Answer
+        typeExtensibility: ClassType => Answer
     )(
         e: Entity
     ): ProperPropertyComputationResult = e match {
-        case t: ObjectType => step1(typeExtensibility)(t)
-        case _             => throw new IllegalArgumentException(s"$e is not an ObjectType")
+        case t: ClassType => step1(typeExtensibility)(t)
+        case _            => throw new IllegalArgumentException(s"$e is not a ClassType")
     }
 
     /**
-     * @param t An object type which is not `java.lang.Object`.
+     * @param t A class type which is not `java.lang.Object`.
      */
     def step1(
-        typeExtensibility: ObjectType => Answer
+        typeExtensibility: ClassType => Answer
     )(
-        t: ObjectType
+        t: ClassType
     ): ProperPropertyComputationResult = {
-        if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
+        if (defaultTransitivelyImmutableTypes.contains(t.asClassType))
             return Result(t, TransitivelyImmutableType)
         typeExtensibility(t) match {
             case Yes | Unknown => Result(t, MutableType)
@@ -75,7 +75,7 @@ class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnaly
         }
     }
 
-    def step2(t: ObjectType): ProperPropertyComputationResult = {
+    def step2(t: ClassType): ProperPropertyComputationResult = {
         val directSubtypes = classHierarchy.directSubtypesOf(t)
 
         val cf = project.classFile(t)
@@ -282,7 +282,7 @@ object EagerTypeImmutabilityAnalysis extends TypeImmutabilityAnalysisScheduler
     override def start(project: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new TypeImmutabilityAnalysis(project)
-        val types = project.allClassFiles.iterator.filter(_.thisType ne ObjectType.Object).map(_.thisType)
+        val types = project.allClassFiles.iterator.filter(_.thisType ne ClassType.Object).map(_.thisType)
         ps.scheduleEagerComputationsForEntities(types) {
             analysis.step1(typeExtensibility)
         }

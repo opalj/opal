@@ -14,13 +14,13 @@ import org.opalj.bi.REF_invokeSpecial
 import org.opalj.bi.REF_invokeStatic
 import org.opalj.bi.REF_invokeVirtual
 import org.opalj.bi.REF_newInvokeSpecial
+import org.opalj.br.ClassType.LambdaMetafactory
 import org.opalj.br.InvokeSpecialMethodHandle
 import org.opalj.br.InvokeStaticMethodHandle
 import org.opalj.br.Method
 import org.opalj.br.MethodCallMethodHandle
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType.LambdaMetafactory
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ARETURN

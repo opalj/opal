@@ -11,10 +11,10 @@ import play.api.libs.json.Writes
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.BooleanType
+import org.opalj.br.ClassType
 import org.opalj.br.CTIntType
 import org.opalj.br.LocalVariable
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.Type
 import org.opalj.br.VoidType
 import org.opalj.br.methodAccessFlagsToString
@@ -102,8 +102,8 @@ package object issues {
             case bt: BaseType => Json.obj("bt" -> bt.toJava)
             case CTIntType    => Json.obj("bt" -> "<Computational Type Int>")
 
-            case ot: ObjectType =>
-                Json.obj("ot" -> ot.toJava, "simpleName" -> ot.simpleName)
+            case ct: ClassType =>
+                Json.obj("ct" -> ct.toJava, "simpleName" -> ct.simpleName)
             case at: ArrayType =>
                 Json.obj("at" -> typeToIDL(at.elementType), "dimensions" -> at.dimensions)
 

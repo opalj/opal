@@ -73,14 +73,14 @@ case class ClassFile(
      * The fully qualified name of this class in Java notation (i.e., using dots
      * to seperate packages.)
      */
-    final val thisType: ObjectTypeInfo = cp(this_class).asConstantClass.asJavaClassOrInterfaceType
+    final val thisType: ClassTypeInfo = cp(this_class).asConstantClass.asJavaClassOrInterfaceType
 
     final val superTypes = {
         {
             if (super_class != 0)
                 Seq(
                     Text("extends "),
-                    asJavaObjectType(cp(super_class).toString).asSpan("extends"),
+                    asJavaClassType(cp(super_class).toString).asSpan("extends"),
                     Text(" ")
                 )
             else
@@ -89,8 +89,8 @@ case class ClassFile(
             if (interfaces.nonEmpty)
                 Seq(
                     Text("implements "),
-                    asJavaObjectType(cp(interfaces.head).toString).asSpan("implements"),
-                    interfaces.tail.map { i => Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements")) }
+                    asJavaClassType(cp(interfaces.head).toString).asSpan("implements"),
+                    interfaces.tail.map { i => Seq(Text(", "), asJavaClassType(cp(i).toString).asSpan("implements")) }
                 )
             else
                 NodeSeq.Empty

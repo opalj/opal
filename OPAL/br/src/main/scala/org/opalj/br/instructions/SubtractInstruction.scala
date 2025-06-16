@@ -14,7 +14,7 @@ abstract class SubtractInstruction extends AlwaysSucceedingStackBasedBinaryArith
 
     override final def operator: String = "-"
 
-    override final def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ClassType] = Nil
 
     override final def mayThrowExceptions: Boolean = false
 

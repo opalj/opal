@@ -8,13 +8,13 @@ We will develop the implementation in small steps, but you can get the complete,
 ## Defining a Lattice
 
 As is always the case for fixed-point analyses in OPAL, we need a suitable lattice to represent our analysis' results.  
-In order to represent the set of all classes potentially instantiated, we thus create a lattice of set<sup title="OPAL's UIDSet is an optimized set for several kinds of entities in OPAL, including, e.g., ObjectType which represents the type of a class.">[note]</sup> values:
+In order to represent the set of all classes potentially instantiated, we thus create a lattice of set<sup title="OPAL's UIDSet is an optimized set for several kinds of entities in OPAL, including, e.g., ClassType which represents the type of a class.">[note]</sup> values:
 ```scala
 sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = InstantiatedTypes
 }
 
-case class InstantiatedTypes(classes: UIDSet[ObjectType]) extends InstantiatedTypesPropertyMetaInformation with OrderedProperty {
+case class InstantiatedTypes(classes: UIDSet[ClassType]) extends InstantiatedTypesPropertyMetaInformation with OrderedProperty {
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
         if (!classes.subsetOf(other.classes)) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
@@ -34,7 +34,7 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     )
 }
 ```
-We use a case class here to provide a container for an arbitrary set of [`ObjectType`](/library/api/SNAPSHOT/org/opalj/br/ObjectType.html)s.  
+We use a case class here to provide a container for an arbitrary set of [`ClassType`](/library/api/SNAPSHOT/org/opalj/br/ClassType.html)s.  
 
 Note that for the `key`, we didn't just provide a fallback value, but a small function that is called whenever `InstantiatedTypes` are needed, but have not been computed.  
 This is to distinguish between two cases:  

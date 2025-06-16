@@ -4,8 +4,8 @@ package ai
 package domain
 package l0
 
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 
 /**
  * Implements the handling of field access instructions at the type level.
@@ -25,7 +25,7 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     def getfield(
         pc:             Int,
         objectref:      DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         fieldName:      String,
         fieldType:      FieldType
     ): Computation[DomainValue, ExceptionValue] = {
@@ -50,7 +50,7 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     /*override*/
     def getstatic(
         pc:             Int,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         fieldName:      String,
         fieldType:      FieldType
     ): Computation[DomainValue, Nothing] = {
@@ -74,7 +74,7 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         pc:             Int,
         objectref:      DomainValue,
         value:          DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         fieldName:      String,
         fieldType:      FieldType
     ): Computation[Nothing, ExceptionValue] = {
@@ -90,7 +90,7 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     def putstatic(
         pc:             Int,
         value:          DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         fieldName:      String,
         fieldType:      FieldType
     ): Computation[Nothing, Nothing] = {

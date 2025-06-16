@@ -19,9 +19,9 @@ import org.opalj.util.ScalaMajorVersion
 class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
 
     val singleAnnotationType =
-        ObjectType("org/opalj/br/analyses/properties/declared_methods/DeclaredMethod")
+        ClassType("org/opalj/br/analyses/properties/declared_methods/DeclaredMethod")
     val multiAnnotationType =
-        ObjectType("org/opalj/br/analyses/properties/declared_methods/DeclaredMethods")
+        ClassType("org/opalj/br/analyses/properties/declared_methods/DeclaredMethods")
 
     /**
      * The representation of the fixture project.
@@ -86,13 +86,13 @@ class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
             )
     }
 
-    def checkDeclaredMethod(classType: ObjectType, annotation: Annotation): Unit = {
+    def checkDeclaredMethod(classType: ClassType, annotation: Annotation): Unit = {
         val name = getValue(annotation, "name").asStringValue.value
         val descriptor = MethodDescriptor(getValue(annotation, "descriptor").asStringValue.value)
         val declaringClasses = getValue(annotation, "declaringClass").asArrayValue.values
 
         val methodOs = declaringClasses map { declClass =>
-            val declClassType = declClass.asClassValue.value.asObjectType
+            val declClassType = declClass.asClassValue.value.asClassType
             (declClassType, FixtureProject.classFile(declClassType).get.findMethod(name, descriptor))
         }
 

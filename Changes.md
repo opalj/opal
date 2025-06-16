@@ -31,7 +31,7 @@
     - support for immutability dependent on generic type parameters
   - updated ClassImmutabilityAnalysis and TypeImmutabilityAnalysis to use new FieldImmutability properties
 - added EntrypointsFinder for Android apps
-- allow flushing caches for ObjectTypes/ArrayTypes to free memory when creating many projects in a row
+- allow flushing caches for ClassTypes/ArrayTypes to free memory when creating many projects in a row
 
 ## 4.0.0 - Released May 7th 2021
 
@@ -71,7 +71,7 @@
 - fixed the computation of `allSubtypes` of for `java.lang.Object`
 - fixed several issues related to the handling of methods with subroutines (JSR/RET)
 - fixed the toString method of `StaticMethodCall`
-- fixed the generation of ObjectTypes using `Type(classOf[...])`
+- fixed the generation of ClassTypes using `Type(classOf[...])`
 - added a preliminary FPCF analysis which determines the type of values stored in fields
 - added a preliminary FPCF analysis which determines core properties of the values returned by methods
 - the FPCF framework now has proper support for analyses which refine lower bounds
@@ -82,7 +82,7 @@
 - moved the `isValueASubtypeOf` methods to the _value framework (`org.opalj.value`)_ (i.e., the methods are moved up in the class hierarchy)
 - moved the `verificationTypeInfo` methods to the _value framework_ (i.e., they are moved up in the class hierarchy)
 - the domain classes (e.g., `org.opalj.ai.domain.l0.TypeLevelReferenceValue` or `...l1.ReferenceValues`) which define the framework for handling reference values now use traits instead of classes; the concrete classes are now found in the `...DefaultBinding...` classes
-- `java.*.Comparable|Cloneable|Serializable` now get fixed ObjectType ids
+- `java.*.Comparable|Cloneable|Serializable` now get fixed ClassType ids
 - Java 11 files which do not use Java 11 Bytecode features can be read (Java doesn't make use of the new features so far)
 - we now have a new meta-project `Framework` to facilitate reuse.
 

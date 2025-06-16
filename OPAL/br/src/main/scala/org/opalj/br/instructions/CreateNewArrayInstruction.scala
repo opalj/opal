@@ -20,7 +20,7 @@ abstract class CreateNewArrayInstruction
         (this eq other) || (this == other)
     }
 
-    override final def jvmExceptions: List[ObjectType] = {
+    override final def jvmExceptions: List[ClassType] = {
         CreateNewArrayInstruction.jvmExceptionsAndErrors
     }
 
@@ -53,8 +53,8 @@ abstract class CreateNewArrayInstruction
 
 object CreateNewArrayInstruction {
 
-    val jvmExceptions: List[ObjectType] = List(ObjectType.NegativeArraySizeException)
+    val jvmExceptions: List[ClassType] = List(ClassType.NegativeArraySizeException)
 
-    val jvmExceptionsAndErrors: List[ObjectType] = ObjectType.OutOfMemoryError :: jvmExceptions
+    val jvmExceptionsAndErrors: List[ClassType] = ClassType.OutOfMemoryError :: jvmExceptions
 
 }

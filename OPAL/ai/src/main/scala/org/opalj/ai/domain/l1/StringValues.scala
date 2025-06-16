@@ -6,8 +6,8 @@ package l1
 
 import scala.reflect.ClassTag
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.value.IsStringValue
 import org.opalj.value.TheStringValue
@@ -60,7 +60,7 @@ trait StringValues
                         // Given that the values are different we are no longer able to
                         // derive the concrete value.
                         val newRefId = nextRefId()
-                        val newValue = ObjectValue(origin, No, true, ObjectType.String, newRefId)
+                        val newValue = ObjectValue(origin, No, true, ClassType.String, newRefId)
                         StructuralUpdate(newValue)
                     }
 
@@ -143,18 +143,18 @@ trait StringValues
     }
 
     abstract override def NewObject(
-        origin:     ValueOrigin,
-        objectType: ObjectType
+        origin:    ValueOrigin,
+        classType: ClassType
     ): DomainObjectValue = {
-        if (objectType eq ObjectType.String)
+        if (classType eq ClassType.String)
             StringValue(origin, null)
         else
-            super.NewObject(origin, objectType)
+            super.NewObject(origin, classType)
     }
 
     abstract override def invokespecial(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -167,7 +167,7 @@ trait StringValues
         // (3) invokespecial <init>(...)
         // (4) // do something with the string; e.g., store it in a local variable
 
-        if ((declaringClass eq ObjectType.String) && name == "<init>") {
+        if ((declaringClass eq ClassType.String) && name == "<init>") {
 
             val newStringKindValue = operands(methodDescriptor.parametersCount)
             if (newStringKindValue.isInstanceOf[StringValue]) {
@@ -213,6 +213,6 @@ trait StringValues
 
 object StringValues {
 
-    val ConstructorWithString = MethodDescriptor(ObjectType.String, VoidType)
+    val ConstructorWithString = MethodDescriptor(ClassType.String, VoidType)
 
 }

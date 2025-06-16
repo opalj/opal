@@ -14,7 +14,7 @@ abstract class AddInstruction extends AlwaysSucceedingStackBasedBinaryArithmetic
 
     final def operator: String = "+"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ClassType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 

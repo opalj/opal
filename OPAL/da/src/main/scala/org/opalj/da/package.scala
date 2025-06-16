@@ -104,18 +104,18 @@ package object da {
         if (t.charAt(0) == '[')
             parseFieldType(t)
         else
-            asJavaObjectType(t)
+            asJavaClassType(t)
     }
 
-    def asJavaObjectType(
+    def asJavaClassType(
         cpIndex: Constant_Pool_Index
     )(
         implicit cp: Constant_Pool
-    ): ObjectTypeInfo = {
-        asJavaObjectType(cp(cpIndex).toString(cp))
+    ): ClassTypeInfo = {
+        asJavaClassType(cp(cpIndex).toString(cp))
     }
 
-    def asJavaObjectType(t: String): ObjectTypeInfo = ObjectTypeInfo(t.replace('/', '.'))
+    def asJavaClassType(t: String): ClassTypeInfo = ClassTypeInfo(t.replace('/', '.'))
 
     def returnTypeAsJavaType(
         type_index: Constant_Pool_Index
@@ -155,7 +155,7 @@ package object da {
             case 'J' => LongTypeInfo
             case 'S' => ShortTypeInfo
             case 'Z' => BooleanTypeInfo
-            case 'L' => asJavaObjectType(descriptor.substring(1, descriptor.length - 1))
+            case 'L' => asJavaClassType(descriptor.substring(1, descriptor.length - 1))
             case '[' =>
                 val componentType = descriptor.substring(1)
                 parseFieldType(componentType) match {
@@ -233,7 +233,7 @@ package object da {
             case 'L' =>
                 val endIndex = md.indexOf(';', startIndex + 1)
                 ( // this is the return tuple
-                    ObjectTypeInfo(md.substring(startIndex + 1, endIndex).replace('/', '.')),
+                    ClassTypeInfo(md.substring(startIndex + 1, endIndex).replace('/', '.')),
                     endIndex + 1
                 )
             case '[' =>

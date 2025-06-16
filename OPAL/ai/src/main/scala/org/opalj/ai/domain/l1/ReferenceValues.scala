@@ -13,9 +13,9 @@ import java.util.IdentityHashMap
 import org.opalj.ai.domain.Origin.MultipleOriginsValue
 import org.opalj.ai.domain.Origin.SingleOriginValue
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.collection.IntIterator
@@ -150,14 +150,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (t.isArrayType)
                 return utb;
 
-            if (classHierarchy.isKnownToBeFinal(t.asObjectType))
+            if (classHierarchy.isKnownToBeFinal(t.asClassType))
                 return UIDSet1(t);
         }
         utb
     }
 
     /**
-     * Determines if the runtime object type referred to by the given `values` is always
+     * Determines if the runtime class type referred to by the given `values` is always
      * the same. I.e., it determines if all values are precise and have the same `upperTypeBound`.
      *
      * `Null` values are ignored when determining the precision; i.e., if all values represent
@@ -207,16 +207,16 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             overallUTB.isSingletonSet && overallUTB.head.isArrayType
 
         def asUTBForArrays: ArrayType = overallUTB.head.asArrayType
-        def asUTBForObjects: UIDSet[ObjectType] = overallUTB.asInstanceOf[UIDSet[ObjectType]]
+        def asUTBForObjects: UIDSet[ClassType] = overallUTB.asInstanceOf[UIDSet[ClassType]]
 
         values.tail foreach { value =>
             overallUTB = value match {
 
                 case SObjectValueLike(nextUTB) =>
                     if (currentUTBisUTBForArrays)
-                        classHierarchy.joinAnyArrayTypeWithObjectType(nextUTB)
+                        classHierarchy.joinAnyArrayTypeWithClassType(nextUTB)
                     else
-                        classHierarchy.joinObjectTypes(nextUTB, asUTBForObjects, true)
+                        classHierarchy.joinClassTypes(nextUTB, asUTBForObjects, true)
 
                 case MObjectValueLike(nextUTB) =>
                     if (currentUTBisUTBForArrays)
@@ -458,7 +458,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (supertypes.isSingletonSet) {
                 doRefineUpperTypeBound(supertypes.head)
             } else {
-                val newSupertypes = supertypes.asInstanceOf[UIDSet[ObjectType]]
+                val newSupertypes = supertypes.asInstanceOf[UIDSet[ClassType]]
                 ObjectValue(this.origin, this.isNull, newSupertypes, this.refId)
             }
         }
@@ -786,7 +786,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
     protected trait SObjectValue
         extends super.SObjectValueLike
-        with NonNullSingleOriginSReferenceValue[ObjectType]
+        with NonNullSingleOriginSReferenceValue[ClassType]
         with ObjectValue {
         this: DomainObjectValue =>
 
@@ -836,7 +836,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 }
 
                 // basically, we are adding another type bound
-                val newUTB = UIDSet(supertype.asObjectType, thisUTB)
+                val newUTB = UIDSet(supertype.asClassType, thisUTB)
                 ObjectValue(this.origin, this.isNull, newUTB, refId)
             }
         }
@@ -942,10 +942,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
-            if (supertype.isObjectType) {
-                val theSupertype = supertype.asObjectType
-                var newUTB: UIDSet[ObjectType] = UIDSet.empty
-                this.upperTypeBound foreach { (anUTB: ObjectType) =>
+            if (supertype.isClassType) {
+                val theSupertype = supertype.asClassType
+                var newUTB: UIDSet[ClassType] = UIDSet.empty
+                this.upperTypeBound foreach { (anUTB: ClassType) =>
                     if (domain.isSubtypeOf(supertype, anUTB))
                         newUTB += theSupertype
                     else {
@@ -968,7 +968,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                  * models the upper type bound "Serializable & Cloneable"; otherwise
                  * the refinement is illegal
                  */
-                assert(this.upperTypeBound == ObjectType.SerializableAndCloneable)
+                assert(this.upperTypeBound == ClassType.SerializableAndCloneable)
                 ArrayValue(origin, this.isNull, isPrecise = false, supertype.asArrayType, refId)
             }
         }
@@ -1111,7 +1111,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 s"the given bound $upperTypeBound"
         )
         assert(
-            upperTypeBound.size < 2 || upperTypeBound.forall(_.isObjectType),
+            upperTypeBound.size < 2 || upperTypeBound.forall(_.isClassType),
             s"invalid upper type bound: $upperTypeBound for: ${values.mkString("[", ";", "]")}"
         )
 
@@ -1244,7 +1244,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 case utb =>
                     // We have an UpperTypeBound that has multiple types. Such bounds
                     // cannot contain array types.
-                    ObjectValue(pc, isNull, utb.asInstanceOf[UIDSet[ObjectType]], refId)
+                    ObjectValue(pc, isNull, utb.asInstanceOf[UIDSet[ClassType]], refId)
             }
         }
 
@@ -1334,7 +1334,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             ObjectValue(
                                 refinedValue.origin,
                                 refinedValue.isNull,
-                                thisUpperTypeBound.asInstanceOf[UIDSet[ObjectType]],
+                                thisUpperTypeBound.asInstanceOf[UIDSet[ClassType]],
                                 refinedValue.refId
                             )
                 }
@@ -1529,7 +1529,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 // However, we currently have no support to model the case "Array of <X with Y>";
                 // therefore, we simply accept the target refinement type.
                 val supertypeUTB: UIDSet[_ <: ReferenceType] =
-                    if (supertype.isObjectType &&
+                    if (supertype.isClassType &&
                         !classHierarchy.isSubtypeOf(supertype, this.upperTypeBound)
                     )
                         this.upperTypeBound add supertype
@@ -1699,10 +1699,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     val newIsPrecise =
                         (
                             // The following is necessary if we have an incomplete type hierarchy
-                            // where we join an MObjectType -- which represents a final type, but
+                            // where we join an MClassType -- which represents a final type, but
                             // which also explicitly lists a super type to satisfy the CHECKCAST
                             // contract (the super type is not part of the code base!) -- with
-                            // an SObjectType representing the final type...).
+                            // an SClassType representing the final type...).
                             newUTB.isSingletonSet && classHierarchy.isKnownToBeFinal(newUTB.head)
                         ) || {
                             this.isPrecise && that.isPrecise && (
@@ -1908,7 +1908,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         value match {
             case sov: SObjectValue
                 if sov.isPrecise && sov.isNull.isNo &&
-                    (sov.upperTypeBound.head eq ObjectType.Object) =>
+                    (sov.upperTypeBound.head eq ClassType.Object) =>
                 Some(new Object)
             case _ =>
                 super.toJavaObject(pc, value)
@@ -1919,35 +1919,35 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     // REFINEMENT OF EXISTING DOMAIN VALUE FACTORY METHODS
     //
 
-    override def NonNullObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(pc, No, false, objectType, nextRefId())
+    override def NonNullObjectValue(pc: Int, classType: ClassType): DomainObjectValue = {
+        ObjectValue(pc, No, false, classType, nextRefId())
     }
 
-    override def NewObject(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(pc, No, true, objectType, nextRefId())
+    override def NewObject(pc: Int, classType: ClassType): DomainObjectValue = {
+        ObjectValue(pc, No, true, classType, nextRefId())
     }
 
-    override def UninitializedThis(objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(-1, No, false, objectType, nextRefId())
+    override def UninitializedThis(classType: ClassType): DomainObjectValue = {
+        ObjectValue(-1, No, false, classType, nextRefId())
     }
 
-    override def InitializedObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(pc, No, true, objectType, nextRefId())
+    override def InitializedObjectValue(pc: Int, classType: ClassType): DomainObjectValue = {
+        ObjectValue(pc, No, true, classType, nextRefId())
     }
 
     override def StringValue(pc: Int, value: String): DomainObjectValue = {
-        ObjectValue(pc, No, true, ObjectType.String, nextRefId())
+        ObjectValue(pc, No, true, ClassType.String, nextRefId())
     }
 
     override def ClassValue(pc: Int, t: Type): DomainObjectValue = {
-        ObjectValue(pc, No, true, ObjectType.Class, nextRefId())
+        ObjectValue(pc, No, true, ClassType.Class, nextRefId())
     }
 
-    override def ObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(pc, Unknown, false, objectType, nextRefId())
+    override def ObjectValue(pc: Int, classType: ClassType): DomainObjectValue = {
+        ObjectValue(pc, Unknown, false, classType, nextRefId())
     }
 
-    override def ObjectValue(pc: Int, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue = {
+    override def ObjectValue(pc: Int, upperTypeBound: UIDSet[ClassType]): DomainObjectValue = {
         ObjectValue(pc, Unknown, upperTypeBound, nextRefId())
     }
 
@@ -1974,8 +1974,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         refId:             RefId
     ): DomainSingleOriginReferenceValue = {
         theUpperTypeBound match {
-            case ot: ObjectType => ObjectValue(origin, isNull, isPrecise, ot, refId)
-            case at: ArrayType  => ArrayValue(origin, isNull, isPrecise, at, refId)
+            case ct: ClassType => ObjectValue(origin, isNull, isPrecise, ct, refId)
+            case at: ArrayType => ArrayValue(origin, isNull, isPrecise, at, refId)
         }
     }
 
@@ -1999,7 +1999,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             case UIDSet1(referenceType) =>
                 ReferenceValue(origin, isNull, isPrecise, referenceType, refId)
             case _ =>
-                val utb = upperTypeBound.asInstanceOf[UIDSet[ObjectType]]
+                val utb = upperTypeBound.asInstanceOf[UIDSet[ClassType]]
                 ObjectValue(origin, isNull, utb, refId)
         }
     }
@@ -2007,7 +2007,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     protected[domain] def ObjectValue( // for MObjectValue
         origin:         ValueOrigin,
         isNull:         Answer,
-        upperTypeBound: UIDSet[ObjectType]
+        upperTypeBound: UIDSet[ClassType]
     ): DomainObjectValue = {
         ObjectValue(origin, isNull, upperTypeBound, nextRefId())
     }
@@ -2016,7 +2016,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         origin:            ValueOrigin,
         isNull:            Answer,
         isPrecise:         Boolean,
-        theUpperTypeBound: ObjectType
+        theUpperTypeBound: ClassType
     ): DomainObjectValue = {
         ObjectValue(origin, isNull, isPrecise, theUpperTypeBound, nextRefId())
     }
@@ -2029,14 +2029,14 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         pc:                Int,
         isNull:            Answer,
         isPrecise:         Boolean,
-        theUpperTypeBound: ObjectType,
+        theUpperTypeBound: ClassType,
         refId:             Int
     ): DomainObjectValue
 
     protected[domain] def ObjectValue( // for MObjectValue
         pc:             Int,
         isNull:         Answer,
-        upperTypeBound: UIDSet[ObjectType],
+        upperTypeBound: UIDSet[ClassType],
         refId:          Int
     ): DomainObjectValue
 
@@ -2080,7 +2080,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             case v: IsReferenceValue =>
                 if (v.upperTypeBound.size > 1)
                     // handles MObjectValue
-                    ObjectValue(origin, v.isNull, v.upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
+                    ObjectValue(origin, v.isNull, v.upperTypeBound.asInstanceOf[UIDSet[ClassType]])
                 else if (v.upperTypeBound.isEmpty) {
                     // Should not happen unless we have a MultipleReferenceValue over a
                     // collection of null values.

@@ -38,11 +38,11 @@ trait InnerClasses_attributeBinding
         inner_class_access_flags: Int
     ): InnerClassesEntry = {
         new InnerClassesEntry(
-            cp(inner_class_info_index).asObjectType(cp),
+            cp(inner_class_info_index).asClassType(cp),
             if (outer_class_info_index == 0)
                 None
             else
-                Some(cp(outer_class_info_index).asObjectType(cp)),
+                Some(cp(outer_class_info_index).asClassType(cp)),
             if (inner_name_index == 0)
                 None
             else

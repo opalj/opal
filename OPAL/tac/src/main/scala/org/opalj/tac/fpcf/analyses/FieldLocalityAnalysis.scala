@@ -7,12 +7,12 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 
 import org.opalj.ai.ValueOrigin
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethods
@@ -217,8 +217,8 @@ class FieldLocalityAnalysis private[analyses] (
     /**
      * Determines whether a type is (potentially) cloneable.
      */
-    def isCloneable(tpe: ObjectType): Boolean = {
-        classHierarchy.isASubtypeOf(tpe, ObjectType.Cloneable).isYesOrUnknown
+    def isCloneable(tpe: ClassType): Boolean = {
+        classHierarchy.isASubtypeOf(tpe, ClassType.Cloneable).isYesOrUnknown
     }
 
     /**
@@ -226,8 +226,8 @@ class FieldLocalityAnalysis private[analyses] (
      * class.
      */
     def allSubclassMethods(field: Field): Set[Method] = {
-        classHierarchy.allSubclassTypes(field.classFile.thisType, reflexive = true).flatMap { ot =>
-            project.classFile(ot)
+        classHierarchy.allSubclassTypes(field.classFile.thisType, reflexive = true).flatMap { ct =>
+            project.classFile(ct)
         }.flatMap(_.methodsWithBody.filter(!_.isStatic)).toSet
     }
 

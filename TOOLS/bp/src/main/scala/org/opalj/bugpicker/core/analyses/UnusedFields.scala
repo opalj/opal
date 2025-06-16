@@ -7,7 +7,7 @@ package analyses
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.ClassFile
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.ConstantString
 import org.opalj.br.analyses.StringConstantsInformation
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
@@ -41,7 +41,7 @@ object UnusedFields {
             (field.isSynthetic) ||
                 // These fields are inlined by compilers; hence, even if the field is not accessed
                 // it may be used in the source code.
-                (field.isFinal && (field.fieldType.isBaseType || field.fieldType == ObjectType.String)) ||
+                (field.isFinal && (field.fieldType.isBaseType || field.fieldType == ClassType.String)) ||
                 // The field is read at least once...
                 (fieldAccessInformation.readAccesses(field).nonEmpty) ||
                 // We may have some users of the field in the future...
@@ -54,7 +54,7 @@ object UnusedFields {
 
         val unusedFields = candidateFields.filterNot { field =>
             // Test if the field defines a (probably inlined) constant string.
-            field.isFinal && (field.fieldType eq ObjectType.String) &&
+            field.isFinal && (field.fieldType eq ClassType.String) &&
                 {
                     field.constantFieldValue match {
                         case Some(ConstantString(value)) =>

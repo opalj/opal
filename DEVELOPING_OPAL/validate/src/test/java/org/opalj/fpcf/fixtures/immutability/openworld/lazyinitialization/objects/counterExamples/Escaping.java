@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.immutability.openworld.lazyinitialization.object
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 /**
- * This classes encompasses different counter examples of lazy initialization of field with object types.
+ * This classes encompasses different counter examples of lazy initialization of field with class types.
  */
 public class Escaping {
 

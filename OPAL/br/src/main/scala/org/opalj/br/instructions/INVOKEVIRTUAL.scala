@@ -20,7 +20,7 @@ case class INVOKEVIRTUAL(
 
     final def mnemonic: String = "invokevirtual"
 
-    final def jvmExceptions: List[ObjectType] = MethodInvocationInstruction.jvmExceptions
+    final def jvmExceptions: List[ClassType] = MethodInvocationInstruction.jvmExceptions
 
     final def length: Int = 3
 

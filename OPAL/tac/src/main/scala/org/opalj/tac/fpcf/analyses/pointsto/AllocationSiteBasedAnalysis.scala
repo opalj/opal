@@ -9,11 +9,11 @@ import scala.annotation.switch
 
 import scala.collection.immutable.IntMap
 
-import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.ClassId
-import org.opalj.br.ObjectType.StringBufferId
-import org.opalj.br.ObjectType.StringBuilderId
-import org.opalj.br.ObjectType.StringId
+import org.opalj.br.ClassType
+import org.opalj.br.ClassType.ClassId
+import org.opalj.br.ClassType.StringBufferId
+import org.opalj.br.ClassType.StringBuilderId
+import org.opalj.br.ClassType.StringId
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.AllocationSite
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
@@ -80,7 +80,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
                     createNewPointsToSet()
             case _ =>
                 if (mergeExceptions &&
-                    classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)
+                    classHierarchy.isSubtypeOf(allocatedType, ClassType.Throwable)
                 ) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)
                     if (ptsO.isDefined)
@@ -129,13 +129,13 @@ object AllocationSiteBasedAnalysis {
 
     // TODO: Create merged pointsTo allocation site
     val stringBuilderPointsToSet: AllocationSitePointsToSet =
-        mergedPointsToSetForType(ObjectType.StringBuilder)
+        mergedPointsToSetForType(ClassType.StringBuilder)
     val stringBufferPointsToSet: AllocationSitePointsToSet =
-        mergedPointsToSetForType(ObjectType.StringBuffer)
+        mergedPointsToSetForType(ClassType.StringBuffer)
     val stringConstPointsToSet: AllocationSitePointsToSet =
-        mergedPointsToSetForType(ObjectType.String)
+        mergedPointsToSetForType(ClassType.String)
     val classConstPointsToSet: AllocationSitePointsToSet =
-        mergedPointsToSetForType(ObjectType.Class)
+        mergedPointsToSetForType(ClassType.Class)
     var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
 
 }

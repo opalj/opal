@@ -66,8 +66,8 @@ trait XHTMLTracer extends AITracer {
         val openDialog = "$( \"#dialog" + flowId + "\" ).dialog(\"open\");"
         val instructionAsString =
             instruction match {
-                case NEW(objectType) =>
-                    "new …" + objectType.simpleName;
+                case NEW(classType) =>
+                    "new …" + classType.simpleName;
                 case CHECKCAST(referenceType) =>
                     "checkcast " + referenceType.toJava;
                 case LoadString(s) if s.size < 5 =>

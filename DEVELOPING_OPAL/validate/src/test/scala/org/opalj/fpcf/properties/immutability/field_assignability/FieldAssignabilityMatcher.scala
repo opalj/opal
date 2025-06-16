@@ -6,7 +6,7 @@ package immutability
 package field_assignability
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
@@ -25,22 +25,22 @@ class FieldAssignabilityMatcher(val property: FieldAssignability)
 
     override def isRelevant(
         p:      SomeProject,
-        as:     Set[ObjectType],
+        as:     Set[ClassType],
         entity: Object,
         a:      AnnotationLike
     ): Boolean = {
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         analyses.exists(as.contains)
     }
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]

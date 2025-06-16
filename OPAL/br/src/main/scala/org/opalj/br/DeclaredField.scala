@@ -14,7 +14,7 @@ sealed abstract class DeclaredField {
      * The declaring type; the returned type may not define the field; it could be defined by
      * one or more super classes/interfaces in case of Java 8+.
      */
-    def declaringClassType: ObjectType
+    def declaringClassType: ClassType
     def name: String
     def fieldType: FieldType
     def toJava: String = s"${fieldType.toJava} ${declaringClassType.toJava}.$name"
@@ -41,7 +41,7 @@ sealed abstract class DeclaredField {
  * field definition is not available (in the context of the current analysis).
  */
 final class VirtualDeclaredField private[br] (
-    override val declaringClassType: ObjectType,
+    override val declaringClassType: ClassType,
     override val name:               String,
     override val fieldType:          FieldType,
     override val id:                 Int
@@ -65,7 +65,7 @@ final class DefinedField private[br] (
     override val definedField: Field
 ) extends DeclaredField {
 
-    override def declaringClassType: ObjectType = definedField.declaringClassFile.thisType
+    override def declaringClassType: ClassType = definedField.declaringClassFile.thisType
     override def name: String = definedField.name
     override def fieldType: FieldType = definedField.fieldType
 

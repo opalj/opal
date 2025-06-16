@@ -4,8 +4,8 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -47,10 +47,10 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
             case VirtualFunctionCallStatement(call)
                 if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(
                     call.declaringClass,
-                    ObjectType("java/util/Properties")
+                    ClassType("java/util/Properties")
                 ) =>
                 propertyMap = computeProperties(propertyMap, call.params, stmts)
-            case StaticMethodCall(_, ObjectType.System, _, "setProperty", _, params) =>
+            case StaticMethodCall(_, ClassType.System, _, "setProperty", _, params) =>
                 propertyMap = computeProperties(propertyMap, params, stmts)
             case _ =>
         }

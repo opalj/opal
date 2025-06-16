@@ -4,9 +4,9 @@ package ai
 package domain
 package l2
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.log.Error
@@ -192,7 +192,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
     protected[this] def doInvokeNonVirtual(
         pc:             Int,
-        declaringClass: ObjectType, // ... arrays do not have any static/special methods
+        declaringClass: ClassType, // ... arrays do not have any static/special methods
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
@@ -237,8 +237,8 @@ trait PerformInvocations extends MethodCallsHandling {
                 if refValue.isPrecise &&
                     refValue.isNull.isNo && // IMPROVE support the case that null is unknown
                     refValue.upperTypeBound.isSingletonSet &&
-                    refValue.upperTypeBound.head.isObjectType =>
-                val receiverClass = refValue.upperTypeBound.head.asObjectType
+                    refValue.upperTypeBound.head.isClassType =>
+                val receiverClass = refValue.upperTypeBound.head.asClassType
                 classHierarchy.isInterface(receiverClass) match {
                     case Yes =>
                         doInvokeNonVirtual(
@@ -267,9 +267,9 @@ trait PerformInvocations extends MethodCallsHandling {
             case _ =>
                 val resolvedMethod =
                     if (isInterface)
-                        if (declaringClass.isObjectType)
+                        if (declaringClass.isClassType)
                             project.resolveInterfaceMethodReference(
-                                declaringClass.asObjectType,
+                                declaringClass.asClassType,
                                 name,
                                 descriptor
                             )
@@ -301,7 +301,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
     abstract override def invokeinterface(
         pc:             Int,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         descriptor:     MethodDescriptor,
         operands:       Operands
@@ -314,7 +314,7 @@ trait PerformInvocations extends MethodCallsHandling {
 
     abstract override def invokespecial(
         pc:             Int,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,
@@ -333,7 +333,7 @@ trait PerformInvocations extends MethodCallsHandling {
      */
     abstract override def invokestatic(
         pc:             Int,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         isInterface:    Boolean,
         name:           String,
         descriptor:     MethodDescriptor,

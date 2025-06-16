@@ -169,7 +169,7 @@ The eDSL provides explicit support for adding line numbers in line.  Just add a 
 
 ### Adding Further attributes
 
-The DSL interacts seamlessly with the bytecode representation and all attibutes can always be added to the attributes as expected. For example, the following class file is marked as being `Synthetic` and the origin is set using `SourceFile("...")`. The method is marked as being `Deprecated` and as throwing the exceptions `java.lang.Exception`. In the last case, we use the DSL's `EXCEPTIONS` table builder. It enables us to just specify the names of the exceptions. Alternatively, it would have been possible to directly create the underlying `br.ExceptionsTable` using `ObjectType`s.
+The DSL interacts seamlessly with the bytecode representation and all attibutes can always be added to the attributes as expected. For example, the following class file is marked as being `Synthetic` and the origin is set using `SourceFile("...")`. The method is marked as being `Deprecated` and as throwing the exceptions `java.lang.Exception`. In the last case, we use the DSL's `EXCEPTIONS` table builder. It enables us to just specify the names of the exceptions. Alternatively, it would have been possible to directly create the underlying `br.ExceptionsTable` using `ClassType`s.
 
     val cb = CLASS(
         accessModifiers = PUBLIC SUPER,

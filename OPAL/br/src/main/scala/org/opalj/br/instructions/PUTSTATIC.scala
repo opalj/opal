@@ -12,7 +12,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class PUTSTATIC(
-    declaringClass: ObjectType,
+    declaringClass: ClassType,
     name:           String,
     fieldType:      FieldType
 ) extends FieldWriteAccess {
@@ -21,7 +21,7 @@ case class PUTSTATIC(
 
     final def mnemonic: String = "putstatic"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ClassType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 
@@ -64,7 +64,7 @@ object PUTSTATIC extends InstructionMetaInformation {
      *          syntax.
      */
     def apply(declaringClassName: String, name: String, fieldTypeName: String): PUTSTATIC = {
-        PUTSTATIC(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
+        PUTSTATIC(ClassType(declaringClassName), name, FieldType(fieldTypeName))
     }
 
 }

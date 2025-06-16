@@ -18,7 +18,7 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def mnemonic: String = "iinc"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ClassType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 

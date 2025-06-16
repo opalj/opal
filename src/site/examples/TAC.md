@@ -30,7 +30,7 @@ A very straight forward way to get a method's TAC is to use the respective `Proj
 
 *Step 3* - To get the TAC of a specific method with a body just look it up:
 
-    val cf = p.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
+    val cf = p.classFile(ClassType("ai/domain/IntegerValuesFrenzy")).get
     val m = cf.findMethod("someSwitch").head
     val taCode = tac(m)
 
@@ -149,7 +149,7 @@ We can get the 3-address code (using, e.g., the `sbt console`) as follows (the m
     import org.opalj._
     val p = br.analyses.Project(new java.io.File("OPAL/bi/target/scala-2.13/resource_managed/test/ai.jar"))
     val tacAIKey = p.get(tac.ComputeTACAIKey)
-    val code = tacAIKey(p.classFile(br.ObjectType("ai/MethodsWithTypeChecks")).get.findMethod("requiredCast").head)
+    val code = tacAIKey(p.classFile(br.ClassType("ai/MethodsWithTypeChecks")).get.findMethod("requiredCast").head)
 
 The 3-address code of the above method is shown next:
 

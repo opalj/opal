@@ -16,7 +16,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.fpcf.PropertyStore
 import org.opalj.ai.analyses.cg.CallGraph
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions.NEW
 import org.opalj.issues.Issue
@@ -32,9 +32,9 @@ import org.opalj.issues.Relevance
  */
 object CollectionsUsage {
 
-    final val Collection = ObjectType("java/util/Collection")
+    final val Collection = ClassType("java/util/Collection")
     final val UnmodifiableCollectionMethodDescriptor = MethodDescriptor(Collection, Collection)
-    final val Collections = ObjectType("java/util/Collections")
+    final val Collections = ClassType("java/util/Collections")
 
     def apply(
         theProject:    SomeProject,
@@ -112,8 +112,8 @@ object CollectionsUsage {
                                         foundConstructorCall = true
 
                                     // TODO Support the case of a call to addElement
-                                    case INVOKEVIRTUAL(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) |
-                                        INVOKEINTERFACE(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) =>
+                                    case INVOKEVIRTUAL(_, "add", MethodDescriptor(IndexedSeq(ClassType.Object), _)) |
+                                        INVOKEINTERFACE(_, "add", MethodDescriptor(IndexedSeq(ClassType.Object), _)) =>
                                         // is it the receiver or the parameter (in relation to a different collection?
                                         if (domain.operandOrigin(pc, 1) == origins) {
                                             foundAddCall = true

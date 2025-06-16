@@ -10,7 +10,7 @@ package instructions
  */
 abstract class IntegerRemainderInstruction extends RemainderInstruction {
 
-    final def jvmExceptions: List[ObjectType] = ArithmeticInstruction.jvmExceptions
+    final def jvmExceptions: List[ClassType] = ArithmeticInstruction.jvmExceptions
 
     final def mayThrowExceptions: Boolean = true
 
@@ -28,7 +28,7 @@ abstract class IntegerRemainderInstruction extends RemainderInstruction {
             Instruction.nextInstructionOrExceptionHandler(
                 this,
                 currentPC,
-                ObjectType.ArithmeticException
+                ClassType.ArithmeticException
             )
     }
 

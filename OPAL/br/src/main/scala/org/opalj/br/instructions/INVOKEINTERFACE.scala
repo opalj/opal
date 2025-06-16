@@ -9,7 +9,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEINTERFACE(
-    override val declaringClass:   ObjectType, // an interface type
+    override val declaringClass:   ClassType, // an interface type
     override val name:             String,
     override val methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {
@@ -20,7 +20,7 @@ case class INVOKEINTERFACE(
 
     override final def mnemonic: String = "invokeinterface"
 
-    override final def jvmExceptions: List[ObjectType] = MethodInvocationInstruction.jvmExceptions
+    override final def jvmExceptions: List[ClassType] = MethodInvocationInstruction.jvmExceptions
 
     override final def length: Int = 5
 
@@ -53,6 +53,6 @@ object INVOKEINTERFACE extends InstructionMetaInformation {
         methodName:       String,
         methodDescriptor: String
     ): INVOKEINTERFACE = {
-        INVOKEINTERFACE(ObjectType(declaringClass), methodName, MethodDescriptor(methodDescriptor))
+        INVOKEINTERFACE(ClassType(declaringClass), methodName, MethodDescriptor(methodDescriptor))
     }
 }

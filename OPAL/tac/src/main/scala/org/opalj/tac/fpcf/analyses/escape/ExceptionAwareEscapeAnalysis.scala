@@ -45,7 +45,7 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                             dm.definedMethod.classFile.thisType
                         case (_: Context, VirtualFormalParameter(callee, origin)) =>
                             // we would not end in this case if the parameter is not an object
-                            callee.descriptor.parameterTypes(-2 - origin).asObjectType
+                            callee.descriptor.parameterTypes(-2 - origin).asClassType
                     }
                     pc.asCatchNode.catchType match {
                         case Some(catchType) =>

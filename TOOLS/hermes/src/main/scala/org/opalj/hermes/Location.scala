@@ -3,11 +3,11 @@ package org.opalj
 package hermes
 
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
 import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 
@@ -72,16 +72,16 @@ object ClassFileLocation {
         new ClassFileLocation[S](None, classFile.thisType.toJava)
     }
 
-    def apply[S](objectType: ObjectType): ClassFileLocation[S] = {
-        new ClassFileLocation[S](None, objectType.toJava)
+    def apply[S](classType: ClassType): ClassFileLocation[S] = {
+        new ClassFileLocation[S](None, classType.toJava)
     }
 
     def apply[S](source: S, classFile: ClassFile): ClassFileLocation[S] = {
         new ClassFileLocation[S](Some(source), classFile.thisType.toJava)
     }
 
-    def apply[S](project: Project[S], objectType: ObjectType): ClassFileLocation[S] = {
-        new ClassFileLocation[S](project.source(objectType), objectType.toJava)
+    def apply[S](project: Project[S], classType: ClassType): ClassFileLocation[S] = {
+        new ClassFileLocation[S](project.source(classType), classType.toJava)
     }
 
     final def apply[S](project: Project[S], classFile: ClassFile): ClassFileLocation[S] = {

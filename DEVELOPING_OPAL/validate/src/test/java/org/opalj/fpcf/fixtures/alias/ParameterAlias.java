@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.alias;
 
 import org.opalj.fpcf.properties.alias.MayAlias;
 import org.opalj.fpcf.properties.alias.NoAlias;
-
+import org.opalj.tac.fpcf.analyses.alias.AllocationSiteBasedAliasAnalysis;
 
 public class ParameterAlias {
 
@@ -35,13 +35,13 @@ public class ParameterAlias {
         pa2.noAliasThisParamTwoMethods2();
     }
 
-    public static void noAliasWithLocal(@NoAlias(reason = "noAlias with uVar", lineNumber = 40) Object o1) {
+    public static void noAliasWithLocal(@NoAlias(reason = "noAlias with uVar", lineNumber = 40, analyses = AllocationSiteBasedAliasAnalysis.class) Object o1) {
         Object o2 = new Object();
         o2.hashCode();
     }
 
-    public static void noAliasWithParam(@NoAlias(reason = "noAlias with other parameter", id = 0) Object o1,
-                                        @NoAlias(reason = "noAlias with other parameter", id = 0) Object o2) {}
+    public static void noAliasWithParam(@NoAlias(reason = "noAlias with other parameter", id = 0, analyses = AllocationSiteBasedAliasAnalysis.class) Object o1,
+                                        @NoAlias(reason = "noAlias with other parameter", id = 0, analyses = AllocationSiteBasedAliasAnalysis.class) Object o2) {}
 
     public static void mayAliasWithLocal(@MayAlias(reason = "mayAlias with uVar", lineNumber = 53) Object o1) {
         Object o2 = new Object();
@@ -64,7 +64,8 @@ public class ParameterAlias {
     public void mayAliasThisParam() {}
 
     @NoAlias(reason = "no alias with this parameter and invoked uVar", thisParameter = true,
-            lineNumber = 28, methodName = "main")
+            lineNumber = 28, methodName = "main",
+            analyses = AllocationSiteBasedAliasAnalysis.class)
     public void noAliasThisParam() {}
 
     @MayAlias(reason = "may alias with this parameter of two methods", thisParameter = true, id = 3)
@@ -73,10 +74,12 @@ public class ParameterAlias {
     @MayAlias(reason = "may alias with this parameter of two methods", thisParameter = true, id = 3)
     public void mayAliasThisParamTwoMethods2() {}
 
-    @NoAlias(reason = "no alias with this parameter of two methods", thisParameter = true, id = 4)
+    @NoAlias(reason = "no alias with this parameter of two methods", thisParameter = true, id = 4,
+            analyses = AllocationSiteBasedAliasAnalysis.class)
     public void noAliasThisParamTwoMethods1() {}
 
-    @NoAlias(reason = "no alias with this parameter of two methods", thisParameter = true, id = 4)
+    @NoAlias(reason = "no alias with this parameter of two methods", thisParameter = true, id = 4,
+            analyses = AllocationSiteBasedAliasAnalysis.class)
     public void noAliasThisParamTwoMethods2() {}
 
 }

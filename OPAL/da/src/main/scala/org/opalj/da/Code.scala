@@ -133,7 +133,7 @@ case class Code(instructions: Array[Byte]) {
                 case 189 =>
                     <span>
                         <span class="instruction anewarray">anewarray </span>
-                        {asJavaObjectType(in.readUnsignedShort()).asSpan("")}
+                        {asJavaClassType(in.readUnsignedShort()).asSpan("")}
                     </span>
                 case 176 => <span class="instruction areturn">areturn</span>
                 case 190 => <span class="instruction arraylength">arraylength</span>
@@ -481,10 +481,10 @@ case class Code(instructions: Array[Byte]) {
                         {referenceType.asSpan("")}{dim}
                     </span>
                 case 187 =>
-                    val objectType = asJavaObjectType(in.readUnsignedShort())
+                    val classType = asJavaClassType(in.readUnsignedShort())
                     <span>
                         <span class="instruction new">new </span>
-                        {objectType.asSpan("")}
+                        {classType.asSpan("")}
                     </span>
                 case 188 =>
                     <span>

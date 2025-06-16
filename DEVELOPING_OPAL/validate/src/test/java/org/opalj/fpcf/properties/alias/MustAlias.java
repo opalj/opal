@@ -3,6 +3,9 @@ package org.opalj.fpcf.properties.alias;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
+import org.opalj.tac.fpcf.analyses.alias.IntraProceduralAliasAnalysis;
+import org.opalj.tac.fpcf.analyses.alias.pointsto.AllocationSitePointsToBasedAliasAnalysis;
+import org.opalj.tac.fpcf.analyses.alias.pointsto.TypePointsToBasedAliasAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Repeatable;
@@ -60,7 +63,7 @@ public @interface MustAlias {
     String reason();
 
     /**
-     * The id of this MayAlias relation.
+     * The id of this MustAlias relation.
      * It is used to associate this element with the other element that is part of this relation.
      * <p>
      * The id of the relation must be unique within the class.
@@ -108,5 +111,9 @@ public @interface MustAlias {
     /**
      * All analyses that should be able to correctly detect this relation.
      */
-    Class<? extends FPCFAnalysis>[] analyses() default {};
+    Class<? extends FPCFAnalysis>[] analyses() default {
+            AllocationSitePointsToBasedAliasAnalysis.class,
+            TypePointsToBasedAliasAnalysis.class,
+            IntraProceduralAliasAnalysis.class
+    };
 }

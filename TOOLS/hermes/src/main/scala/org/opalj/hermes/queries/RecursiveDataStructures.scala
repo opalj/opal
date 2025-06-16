@@ -3,7 +3,7 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.graphs.UnidirectionalGraph
 
@@ -31,9 +31,9 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
         rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IterableOnce[Feature[S]] = {
 
-        import project.classHierarchy.getObjectType
+        import project.classHierarchy.getClassType
 
-        val g = new UnidirectionalGraph(ObjectType.objectTypesCount)()
+        val g = new UnidirectionalGraph(ClassType.classTypesCount)()
 
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
@@ -45,12 +45,12 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
             field <- classFile.fields
             fieldType = field.fieldType
         } {
-            if (fieldType.isObjectType) {
-                g add (classType.id, fieldType.asObjectType.id)
+            if (fieldType.isClassType) {
+                g add (classType.id, fieldType.asClassType.id)
             } else if (fieldType.isArrayType) {
                 val elementType = fieldType.asArrayType.elementType
-                if (elementType.isObjectType) {
-                    g add (classType.id, elementType.asObjectType.id)
+                if (elementType.isClassType) {
+                    g add (classType.id, elementType.asClassType.id)
                 }
             }
         }
@@ -61,10 +61,10 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
             if !isInterrupted()
             /* An scc is never empty! */
             sccCategory = Math.min(scc.size, 5) - 1
-            objectTypeID <- scc
-            objectType = getObjectType(objectTypeID)
+            classTypeID <- scc
+            classType = getClassType(classTypeID)
         } {
-            locations(sccCategory) += ClassFileLocation(project, objectType)
+            locations(sccCategory) += ClassFileLocation(project, classType)
         }
 
         for { (locations, index) <- locations.iterator.zipWithIndex } yield {

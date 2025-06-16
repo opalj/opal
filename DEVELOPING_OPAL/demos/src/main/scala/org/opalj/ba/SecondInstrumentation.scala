@@ -6,13 +6,14 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.ArrayList
 
+import org.opalj.ai.AIResult
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bc.Assembler
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.MethodDescriptor.JustTakes
-import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.DUP
@@ -31,12 +32,12 @@ import org.opalj.util.InMemoryClassLoader
  */
 object SecondInstrumentation extends App {
 
-    val PrintStreamType = ObjectType("java/io/PrintStream")
-    val SystemType = ObjectType("java/lang/System")
-    val CollectionType = ObjectType("java/util/Collection")
-    val PrintlnDescriptor = JustTakes(ObjectType.Object)
+    val PrintStreamType = ClassType("java/io/PrintStream")
+    val SystemType = ClassType("java/lang/System")
+    val CollectionType = ClassType("java/util/Collection")
+    val PrintlnDescriptor = JustTakes(ClassType.Object)
 
-    val TheType = ObjectType("org/opalj/ba/SimpleInstrumentationDemo")
+    val TheType = ClassType("org/opalj/ba/SimpleInstrumentationDemo")
 
     // let's load the class
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
@@ -53,7 +54,7 @@ object SecondInstrumentation extends App {
             case Some(code) =>
                 // let's search all "println" calls where the parameter has a specific
                 // type (which is statically known, and which is NOT the parameter type)
-                lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
+                lazy val aiResult: AIResult = BaseAI(m, new TypeCheckingDomain(p, m))
                 val operandsArray = aiResult.operandsArray
                 val lCode = LabeledCode(code)
                 var modified = false
@@ -69,10 +70,10 @@ object SecondInstrumentation extends App {
                         InsertionPosition.Before,
                         Seq(
                             DUP,
-                            INVOKEVIRTUAL(ObjectType.Object, "toString", JustReturnsString),
+                            INVOKEVIRTUAL(ClassType.Object, "toString", JustReturnsString),
                             GETSTATIC(SystemType, "out", PrintStreamType),
                             SWAP,
-                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
+                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ClassType.String))
                         )
                     )
                 }

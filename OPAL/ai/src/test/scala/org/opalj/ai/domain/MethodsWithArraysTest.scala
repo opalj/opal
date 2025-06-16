@@ -90,7 +90,7 @@ class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
                 domain.allReturnedValues.size should be(1)
                 domain.isValueASubtypeOf(
                     domain.allReturnedValues(24),
-                    ObjectType.Object
+                    ClassType.Object
                 ) should be(Yes)
             }
         )

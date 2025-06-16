@@ -11,13 +11,13 @@ package immutable
  * @author Dominik Helm
  */
 case class TypesSet(
-    final val concreteTypes:   Set[ObjectType],
-    final val upperTypeBounds: Set[ObjectType]
+    final val concreteTypes:   Set[ClassType],
+    final val upperTypeBounds: Set[ClassType]
 )(implicit classHierarchy: ClassHierarchy) extends collection.TypesSet {
 
     import classHierarchy.isSubtypeOf
 
-    def ++(tpes: Iterable[ObjectType]): TypesSet = {
+    def ++(tpes: Iterable[ClassType]): TypesSet = {
         var newConcreteTypes = concreteTypes
         tpes foreach { tpe =>
             if (!newConcreteTypes.contains(tpe) &&

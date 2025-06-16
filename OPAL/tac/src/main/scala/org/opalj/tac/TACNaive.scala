@@ -480,7 +480,7 @@ object TACNaive {
                         val stmt =
                             NonVirtualMethodCall(
                                 pc,
-                                declaringClass.asObjectType,
+                                declaringClass.asClassType,
                                 isInterfaceCall,
                                 name,
                                 methodDescriptor,
@@ -494,7 +494,7 @@ object TACNaive {
                         val expr =
                             NonVirtualFunctionCall(
                                 pc,
-                                declaringClass.asObjectType,
+                                declaringClass.asClassType,
                                 isInterfaceCall,
                                 name,
                                 methodDescriptor,
@@ -627,7 +627,7 @@ object TACNaive {
                 case NEW.opcode =>
                     val instr = as[NEW](instruction)
                     val newVal = OperandVar(ComputationalTypeReference, stack)
-                    val stmt = Assignment[IdBasedVar](pc, newVal, New(pc, instr.objectType))
+                    val stmt = Assignment[IdBasedVar](pc, newVal, New(pc, instr.classType))
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 

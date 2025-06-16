@@ -198,7 +198,7 @@ object CFGFactory {
                 catchNode.addPredecessor(currentBB)
             }
 
-            def handleExceptions(currentBB: BasicBlock, jvmExceptions: List[ObjectType]): Unit = {
+            def handleExceptions(currentBB: BasicBlock, jvmExceptions: List[ClassType]): Unit = {
                 var areHandled = true
                 jvmExceptions.foreach { thrownException =>
                     areHandled &= code.handlersFor(pc).exists { eh =>
@@ -260,7 +260,7 @@ object CFGFactory {
                         code.handlersFor(pc).map { eh =>
                             val catchType = eh.catchType
                             isHandled = isHandled ||
-                                catchType.isEmpty || catchType.get == ObjectType.Throwable
+                                catchType.isEmpty || catchType.get == ClassType.Throwable
                             val catchNode = exceptionHandlers(eh)
                             catchNode.addPredecessor(currentBB)
                             catchNode

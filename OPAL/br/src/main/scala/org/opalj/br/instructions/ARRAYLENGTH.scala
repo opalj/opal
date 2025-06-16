@@ -14,7 +14,7 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction with 
 
     final val mnemonic = "arraylength"
 
-    final def jvmExceptions: List[ObjectType] = Instruction.justNullPointerException
+    final def jvmExceptions: List[ClassType] = Instruction.justNullPointerException
 
     final def mayThrowExceptions: Boolean = true
 
@@ -49,7 +49,7 @@ case object ARRAYLENGTH extends Instruction with ConstantLengthInstruction with 
         if (regularSuccessorsOnly)
             List(indexOfNextInstruction(currentPC))
         else
-            Instruction.nextInstructionOrExceptionHandler(this, currentPC, ObjectType.NullPointerException)
+            Instruction.nextInstructionOrExceptionHandler(this, currentPC, ClassType.NullPointerException)
     }
 
     final def expressionResult: Stack.type = Stack

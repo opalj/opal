@@ -218,7 +218,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
                         case Array("Class.newInstance", instantiatedTypeDesc, sourceMethod, sourceLine, _, _) =>
                             val line = if (sourceLine == "") -1 else sourceLine.toInt
-                            val instantiatedType = FieldType(toJVMType(instantiatedTypeDesc)).asObjectType
+                            val instantiatedType = FieldType(toJVMType(instantiatedTypeDesc)).asClassType
                             val oldSet =
                                 classes.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
                             oldSet.add(instantiatedType)
@@ -300,7 +300,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         val regex = "<([^:]+): ([^ ]+) ([^(]+)\\(([^)]*)\\)>".r
         methodDesc match {
             case regex(declaringClass, returnType, name, parameterTypes) =>
-                val declaringClassType = FieldType(toJVMType(declaringClass)).asObjectType
+                val declaringClassType = FieldType(toJVMType(declaringClass)).asClassType
                 val jvmSignature =
                     parameterTypes.split(',').map(toJVMType).mkString("(", "", ")" + toJVMType(returnType))
                 declaredMethods(
@@ -318,7 +318,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         val regex = "<([^:]+): ([^ ]+) ([^>]+)>".r
         fieldDesc match {
             case regex(declaringClass, fieldTypeDesc, name) =>
-                val declaringClassType = FieldType(toJVMType(declaringClass)).asObjectType
+                val declaringClassType = FieldType(toJVMType(declaringClass)).asClassType
                 val fieldType = FieldType(toJVMType(fieldTypeDesc))
                 project.resolveFieldReference(declaringClassType, name, fieldType)
         }

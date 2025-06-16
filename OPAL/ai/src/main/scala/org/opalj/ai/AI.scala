@@ -267,7 +267,7 @@ abstract class AI[D <: Domain](
             if (!method.isStatic) {
                 val thisType = method.classFile.thisType
                 val thisValue =
-                    if (method.isConstructor && (method.classFile.thisType ne ObjectType.Object)) {
+                    if (method.isConstructor && (method.classFile.thisType ne ClassType.Object)) {
                         // ... we have an uninitialized this!
                         domain.UninitializedThis(thisType)
                     } else {
@@ -1750,7 +1750,7 @@ abstract class AI[D <: Domain](
                     def gotoExceptionHandler(
                         pc:             Int,
                         branchTargetPC: Int,
-                        upperBound:     Option[ObjectType]
+                        upperBound:     Option[ClassType]
                     ): Unit = {
                         val newOperands = List(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
@@ -1797,7 +1797,7 @@ abstract class AI[D <: Domain](
                             true
                         } else {
                             val caughtType = catchTypeOption.get
-                            if (caughtType eq ObjectType.Throwable) {
+                            if (caughtType eq ClassType.Throwable) {
                                 // Special handling to improve the overall precision if the
                                 // domain is very imprecise or if the type hierarchy is incomplete.
                                 gotoExceptionHandler(pc, branchTarget, None)
@@ -1976,7 +1976,7 @@ abstract class AI[D <: Domain](
                     fallThrough(operands.tail, newLocals)
                     if (RegisterStoreMayThrowExceptions) {
                         handleException(
-                            // theDomain.NonNullObjectValue(ValueOriginForImmediateVMException(pc), ObjectType.Throwable)
+                            // theDomain.NonNullObjectValue(ValueOriginForImmediateVMException(pc), ClassType.Throwable)
                             theDomain.VMThrowable(pc),
                             testForNullnessOfExceptionValue = false,
                             forceJoin = false
@@ -3359,7 +3359,7 @@ abstract class AI[D <: Domain](
 
                     case 187 /*new*/ =>
                         val newObject = as[NEW](instruction)
-                        fallThrough(theDomain.NewObject(pc, newObject.objectType) :: operands)
+                        fallThrough(theDomain.NewObject(pc, newObject.classType) :: operands)
 
                     case 0 /*nop*/    => fallThrough()
                     case 196 /*wide*/ => fallThrough()

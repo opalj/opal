@@ -5,7 +5,7 @@ package domain
 package l0
 
 import org.opalj.br.ArrayType
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.ReferenceType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
@@ -136,7 +136,7 @@ trait DefaultTypeLevelReferenceValues
             other match {
 
                 case SObjectValueLike(thatUpperTypeBound) =>
-                    classHierarchy.joinAnyArrayTypeWithObjectType(thatUpperTypeBound) match {
+                    classHierarchy.joinAnyArrayTypeWithClassType(thatUpperTypeBound) match {
                         case UIDSet1(newUpperTypeBound) =>
                             if (newUpperTypeBound eq `thatUpperTypeBound`)
                                 StructuralUpdate(other)
@@ -198,7 +198,7 @@ trait DefaultTypeLevelReferenceValues
 
         protected def asStructuralUpdate(
             pc:                Int,
-            newUpperTypeBound: UIDSet[ObjectType]
+            newUpperTypeBound: UIDSet[ClassType]
         ): Update[DomainValue] = {
             if (newUpperTypeBound.isSingletonSet)
                 StructuralUpdate(ObjectValue(pc, newUpperTypeBound.head))
@@ -226,7 +226,7 @@ trait DefaultTypeLevelReferenceValues
 
     protected trait SObjectValueLike
         extends AnObjectValue
-        with SReferenceValue[ObjectType]
+        with SReferenceValue[ClassType]
         with IsSObjectValue { this: DomainObjectValue =>
 
         // WIDENING OPERATION
@@ -235,7 +235,7 @@ trait DefaultTypeLevelReferenceValues
             other match {
 
                 case SObjectValueLike(thatUpperTypeBound) =>
-                    classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
+                    classHierarchy.joinClassTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
                         case UIDSet1(newUpperTypeBound) =>
                             if (newUpperTypeBound eq `thisUpperTypeBound`)
                                 NoUpdate
@@ -248,7 +248,7 @@ trait DefaultTypeLevelReferenceValues
                     }
 
                 case MObjectValueLike(thatUpperTypeBound) =>
-                    classHierarchy.joinObjectTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
+                    classHierarchy.joinClassTypes(thisUpperTypeBound, thatUpperTypeBound, true) match {
                         case `thatUpperTypeBound` =>
                             StructuralUpdate(other)
                         case UIDSet1(`thisUpperTypeBound`) =>
@@ -258,7 +258,7 @@ trait DefaultTypeLevelReferenceValues
                     }
 
                 case _: AnArrayValue =>
-                    classHierarchy.joinAnyArrayTypeWithObjectType(thisUpperTypeBound) match {
+                    classHierarchy.joinAnyArrayTypeWithClassType(thisUpperTypeBound) match {
                         case UIDSet1(newUpperTypeBound) =>
                             if (newUpperTypeBound eq `thisUpperTypeBound`)
                                 NoUpdate
@@ -297,14 +297,14 @@ trait DefaultTypeLevelReferenceValues
     }
 
     object SObjectValueLike {
-        def unapply(that: SObjectValueLike): Some[ObjectType] = Some(that.theUpperTypeBound)
+        def unapply(that: SObjectValueLike): Some[ClassType] = Some(that.theUpperTypeBound)
     }
 
     protected trait MObjectValueLike extends AnObjectValue with IsMObjectValue {
         value: DomainObjectValue =>
 
         override def leastUpperType: Option[ReferenceType] = {
-            Some(classHierarchy.joinObjectTypesUntilSingleUpperBound(upperTypeBound))
+            Some(classHierarchy.joinClassTypesUntilSingleUpperBound(upperTypeBound))
         }
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
@@ -312,7 +312,7 @@ trait DefaultTypeLevelReferenceValues
             other match {
 
                 case SObjectValueLike(thatUTB) =>
-                    classHierarchy.joinObjectTypes(thatUTB, thisUTB, true) match {
+                    classHierarchy.joinClassTypes(thatUTB, thisUTB, true) match {
                         case `thisUTB`          => NoUpdate
                         case UIDSet1(`thatUTB`) => StructuralUpdate(other)
                         case newUTB             => asStructuralUpdate(pc, newUTB)
@@ -351,6 +351,6 @@ trait DefaultTypeLevelReferenceValues
     }
 
     object MObjectValueLike {
-        def unapply(that: MObjectValueLike): Option[UIDSet[ObjectType]] = Some(that.upperTypeBound)
+        def unapply(that: MObjectValueLike): Option[UIDSet[ClassType]] = Some(that.upperTypeBound)
     }
 }

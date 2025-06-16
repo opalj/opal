@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet2
 
@@ -46,11 +46,11 @@ class StringValuesTest extends AnyFlatSpec with Matchers {
     val s1Alt = StringValue(-1, "alt")
     val s2 = StringValue(-2, "test")
 
-    val oN = ObjectValue(-1, No, true, ObjectType.String)
-    val oU = ObjectValue(-1, Unknown, true, ObjectType.String)
+    val oN = ObjectValue(-1, No, true, ClassType.String)
+    val oU = ObjectValue(-1, Unknown, true, ClassType.String)
 
     val msS1t0AndS2 = MultipleReferenceValues(UIDSet2[DomainSingleOriginReferenceValue](s1t0, s2))
-    assert(msS1t0AndS2.upperTypeBound == UIDSet(ObjectType.String))
+    assert(msS1t0AndS2.upperTypeBound == UIDSet(ClassType.String))
 
     behavior of "joining two StringValues"
 

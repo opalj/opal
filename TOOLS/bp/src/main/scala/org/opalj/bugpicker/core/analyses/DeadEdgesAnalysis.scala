@@ -8,7 +8,7 @@ import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.Code
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.PC
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.instructions.ATHROW
@@ -73,7 +73,7 @@ object DeadEdgesAnalysis {
         */
         def isAlwaysExceptionThrowingMethodCall(pc: PC): Boolean = {
             instructions(pc) match {
-                case MethodInvocationInstruction(receiver: ObjectType, isInterface, name, descriptor) =>
+                case MethodInvocationInstruction(receiver: ClassType, isInterface, name, descriptor) =>
                     val callees = domain.callees(method, receiver, isInterface, name, descriptor)
                     if (callees.size != 1)
                         return false;
@@ -283,11 +283,11 @@ object DeadEdgesAnalysis {
                         val throwsError =
                             (
                                 zDomain.asReferenceValue(exceptionValue).
-                                isValueASubtypeOf(ObjectType.Error).
+                                isValueASubtypeOf(ClassType.Error).
                                 isYesOrUnknown
                             ) ||
                                 zDomain.asReferenceValue(exceptionValue).
-                                isValueASubtypeOf(ObjectType("java/lang/IllegalStateException")).
+                                isValueASubtypeOf(ClassType("java/lang/IllegalStateException")).
                                 isYesOrUnknown
 
                         throwsError

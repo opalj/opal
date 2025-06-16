@@ -9,11 +9,11 @@ import scala.annotation.switch
 
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.ContextProviderKey
@@ -88,7 +88,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         var ubPurity: Purity
         val method: Method
         val context: Context
-        val declClass: ObjectType
+        val declClass: ClassType
         var tac: TACode[TACMethodParameter, V]
     }
 
@@ -438,11 +438,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 propertyStore(
                     returnType,
                     ClassImmutability.key
-                ).asInstanceOf[EOptionP[ObjectType, ClassImmutability]]
+                ).asInstanceOf[EOptionP[ClassType, ClassImmutability]]
             checkTypeImmutability(classImmutability, returnValue)
 
         } else { // Precise class unknown, use TypeImmutability
-            // IMPROVE Use ObjectType once we attach the respective information to ObjectTypes
+            // IMPROVE Use ClassType once we attach the respective information to ClassTypes
             val returnTypes = value.upperTypeBound
 
             returnTypes.forall { returnType =>
@@ -450,7 +450,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     propertyStore(
                         returnType,
                         TypeImmutability.key
-                    ).asInstanceOf[EOptionP[ObjectType, TypeImmutability]]
+                    ).asInstanceOf[EOptionP[ClassType, TypeImmutability]]
                 checkTypeImmutability(typeImmutability, returnValue)
             }
         }
@@ -461,7 +461,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * purity.
      */
     def checkTypeImmutability(
-        ep:          EOptionP[ObjectType, Property],
+        ep:          EOptionP[ClassType, Property],
         returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
@@ -483,7 +483,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Analyses must implement this method with the behavior they need, e.g. registering dependees.
      */
     def handleUnknownTypeImmutability(
-        ep:   EOptionP[ObjectType, Property],
+        ep:   EOptionP[ClassType, Property],
         expr: Expr[V]
     )(implicit state: StateType): Unit
 

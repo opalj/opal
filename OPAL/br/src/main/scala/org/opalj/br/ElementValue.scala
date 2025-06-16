@@ -189,7 +189,7 @@ object BooleanValue {
 
 case class StringValue(value: String) extends ElementValue {
 
-    override final def valueType = ObjectType.String
+    override final def valueType = ClassType.String
 
     override def toJava: String = "\"" + value.toString + "\""
 
@@ -211,7 +211,7 @@ object StringValue {
 
 case class ClassValue(value: Type) extends ElementValue {
 
-    override final def valueType = ObjectType.Class
+    override final def valueType = ClassType.Class
 
     override def toJava: String = value.toJava + ".class"
 
@@ -231,7 +231,7 @@ object ClassValue {
 
 }
 
-case class EnumValue(enumType: ObjectType, constName: String) extends ElementValue {
+case class EnumValue(enumType: ClassType, constName: String) extends ElementValue {
 
     override final def valueType = enumType
 

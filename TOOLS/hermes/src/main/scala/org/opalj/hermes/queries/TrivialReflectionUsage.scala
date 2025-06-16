@@ -5,9 +5,9 @@ package queries
 
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
@@ -32,7 +32,7 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
         project:              Project[S],
         rawClassFiles:        Iterable[(ClassFile, S)]
     ): IterableOnce[Feature[S]] = {
-        val Class = ObjectType.Class
+        val Class = ClassType.Class
         val ForName1MD = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
         val ForName3MD =
             MethodDescriptor("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;")

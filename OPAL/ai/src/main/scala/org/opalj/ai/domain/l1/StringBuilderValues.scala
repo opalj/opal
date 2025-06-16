@@ -6,7 +6,7 @@ package l1
 
 import java.lang.{StringBuilder => JStringBuilder}
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 
 /**
  * Enables the tracing of `StringBuilders`.
@@ -44,18 +44,18 @@ trait StringBuilderValues extends StringValues {
     // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(
         val origin:      ValueOrigin,
-        val builderType: ObjectType /*either StringBuilder oder StringBuffer*/,
+        val builderType: ClassType /*either StringBuilder oder StringBuffer*/,
         val builder:     JStringBuilder,
         val refId:       RefId
     ) extends SObjectValue {
         this: DomainStringValue =>
 
         assert(builder != null)
-        assert((builderType eq ObjectType.StringBuffer) || (builderType eq ObjectType.StringBuilder))
+        assert((builderType eq ClassType.StringBuffer) || (builderType eq ClassType.StringBuilder))
 
         override final def isNull: No.type = No
         override final def isPrecise: Boolean = true
-        override final def theUpperTypeBound: ObjectType = builderType
+        override final def theUpperTypeBound: ClassType = builderType
 
         override def doJoinWithNonNullValueWithSameOrigin(
             joinPC: Int,
@@ -135,14 +135,14 @@ trait StringBuilderValues extends StringValues {
 
     final def StringBuilderValue(
         origin:      ValueOrigin,
-        builderType: ObjectType
+        builderType: ClassType
     ): StringBuilderValue = {
         StringBuilderValue(origin, builderType, new JStringBuilder())
     }
 
     def StringBuilderValue(
         origin:      ValueOrigin,
-        builderType: ObjectType,
+        builderType: ClassType,
         builder:     JStringBuilder
     ): StringBuilderValue
 }

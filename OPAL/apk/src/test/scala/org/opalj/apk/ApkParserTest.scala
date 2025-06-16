@@ -10,7 +10,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.opalj.apk.parser.ApkParser
 import org.opalj.br.analyses.Project
-import org.opalj.ll.LLVMProjectKey
 
 /**
  * Tests that the [[ApkParser]] works.
@@ -37,11 +36,6 @@ class ApkParserTest extends AnyFunSuite with BeforeAndAfterAll {
 
     test("java packages parsing") {
         assert(project.packagesCount == 159)
-    }
-
-    test("native functions parsing") {
-        val llvmProject = project.get(LLVMProjectKey)
-        assert(llvmProject.functions.size == 886)
     }
 
     test("context registered broadcast receiver parsing") {

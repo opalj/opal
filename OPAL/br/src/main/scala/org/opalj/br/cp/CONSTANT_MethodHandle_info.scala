@@ -56,14 +56,14 @@ case class CONSTANT_MethodHandle_info(
             case bi.REF_newInvokeSpecial.referenceKind =>
                 val (receiverType, _, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)
                 assert(
-                    receiverType.isObjectType,
-                    "receiver for newInvokeSpecial must be objecttype"
+                    receiverType.isClassType,
+                    "receiver for newInvokeSpecial must be classtype"
                 )
                 assert(
                     name == "<init>",
                     "invalid bytecode: newInvokeSpecial name must be <init> (see JVM spc 4.4.8)"
                 )
-                NewInvokeSpecialMethodHandle(receiverType.asObjectType, methodDescriptor)
+                NewInvokeSpecialMethodHandle(receiverType.asClassType, methodDescriptor)
 
             case bi.REF_invokeInterface.referenceKind =>
                 val (receiverType, _, name, methodDescriptor) = cp(referenceIndex).asMethodref(cp)

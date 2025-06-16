@@ -5,9 +5,9 @@ package ba
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.MethodSignature
 import org.opalj.br.MethodTemplate
-import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UShortPair
 
 /**
@@ -48,9 +48,9 @@ class CLASS[T](
     ): (br.ClassFile, Map[br.Method, T]) = {
 
         val accessFlags = accessModifiers.accessFlags
-        val thisType: ObjectType = br.ObjectType(this.thisType)
-        val superclassType: Option[ObjectType] = this.superclassType.map(br.ObjectType.apply)
-        val interfaceTypes: ArraySeq[ObjectType] = this.interfaceTypes.map[br.ObjectType](br.ObjectType.apply)
+        val thisType: ClassType = br.ClassType(this.thisType)
+        val superclassType: Option[ClassType] = this.superclassType.map(br.ClassType.apply)
+        val interfaceTypes: ArraySeq[ClassType] = this.interfaceTypes.map[br.ClassType](br.ClassType.apply)
         val brFields = fields.result()
 
         val brAnnotatedMethods: ArraySeq[(br.MethodTemplate, Option[T])] = {

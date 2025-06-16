@@ -5,7 +5,7 @@ package ba
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.collection.immutable.UShortPair
 
 /**
@@ -21,7 +21,7 @@ case class METHODS[T](methods: ArraySeq[METHOD[T]]) {
      */
     def result(
         classFileVersion:   UShortPair,
-        declaringClassType: ObjectType
+        declaringClassType: ClassType
     )(
         implicit classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): ArraySeq[(br.MethodTemplate, Option[T])] = {

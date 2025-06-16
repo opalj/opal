@@ -3,7 +3,7 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -20,34 +20,34 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
     override val apiFeatures: List[APIFeature] = {
 
         object Sound {
-            val Clip = ObjectType("javax/sound/sampled/Clip")
-            val DataLine = ObjectType("javax/sound/sampled/DataLine")
-            val TargetDataLine = ObjectType("javax/sound/sampled/TargetDataLine")
-            val SourceDataLine = ObjectType("javax/sound/sampled/SourceDataLine")
-            val MediaPlayer = ObjectType("javafx/scene/media/MediaPlayer")
+            val Clip = ClassType("javax/sound/sampled/Clip")
+            val DataLine = ClassType("javax/sound/sampled/DataLine")
+            val TargetDataLine = ClassType("javax/sound/sampled/TargetDataLine")
+            val SourceDataLine = ClassType("javax/sound/sampled/SourceDataLine")
+            val MediaPlayer = ClassType("javafx/scene/media/MediaPlayer")
         }
 
         object Network {
-            val Socket = ObjectType("java/net/Socket")
-            val SSLSocket = ObjectType("javax/net/ssl/SSLSocket")
-            val ServerSocket = ObjectType("java/net/ServerSocket")
-            val SSLServerSocket = ObjectType("javax/net/ssl/SSLServerSocket")
-            val DatagramSocket = ObjectType("javax/net/DatagramSocket")
-            val MulticastSocket = ObjectType("javax/net/MulticastSocket")
+            val Socket = ClassType("java/net/Socket")
+            val SSLSocket = ClassType("javax/net/ssl/SSLSocket")
+            val ServerSocket = ClassType("java/net/ServerSocket")
+            val SSLServerSocket = ClassType("javax/net/ssl/SSLServerSocket")
+            val DatagramSocket = ClassType("javax/net/DatagramSocket")
+            val MulticastSocket = ClassType("javax/net/MulticastSocket")
 
-            val DatagramPacket = ObjectType("java/net/DatagramPacket")
-            val InetAddress = ObjectType("java/net/InetAddress")
+            val DatagramPacket = ClassType("java/net/DatagramPacket")
+            val InetAddress = ClassType("java/net/InetAddress")
 
-            val URL = ObjectType("java/net/URL")
-            val URI = ObjectType("java/net/URI")
-            val URLConnection = ObjectType("java/net/URLConnection")
+            val URL = ClassType("java/net/URL")
+            val URI = ClassType("java/net/URI")
+            val URLConnection = ClassType("java/net/URLConnection")
         }
 
         val constructor = "<init>"
 
-        val Runtime = ObjectType("java/lang/Runtime")
-        val System = ObjectType("java/lang/System")
-        val ProcessBuilder = ObjectType("java/lang/ProcessBuilder")
+        val Runtime = ClassType("java/lang/Runtime")
+        val System = ClassType("java/lang/System")
+        val ProcessBuilder = ClassType("java/lang/ProcessBuilder")
 
         List(
             // PROCESS

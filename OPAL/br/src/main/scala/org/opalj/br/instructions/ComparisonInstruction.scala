@@ -10,7 +10,7 @@ package instructions
  */
 abstract class ComparisonInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ClassType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 

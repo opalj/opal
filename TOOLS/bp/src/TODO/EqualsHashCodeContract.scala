@@ -40,7 +40,7 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
             var definesEqualsMethod = false
             var definesHashCodeMethod = false
             for (method <- classFile.methods) method match {
-                case Method(_, "equals", MethodDescriptor(Seq(ObjectType.Object),
+                case Method(_, "equals", MethodDescriptor(Seq(ClassType.Object),
                     BooleanType)) =>
                     definesEqualsMethod = true
                 case Method(_, "hashCode", MethodDescriptor(Seq(),

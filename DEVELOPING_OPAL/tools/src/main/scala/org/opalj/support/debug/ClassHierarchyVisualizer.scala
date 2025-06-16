@@ -7,7 +7,7 @@ import java.io.File
 
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.reader.Java7LibraryFramework.ClassFiles
 import org.opalj.graphs.toDot
 import org.opalj.io.writeAndOpen
@@ -36,7 +36,7 @@ object ClassHierarchyVisualizer {
                     args.foldLeft(List.empty[ClassFile]) { (classFiles, filename) =>
                         classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
                     }
-                if (classFiles.forall(cf => cf.thisType != ObjectType.Object))
+                if (classFiles.forall(cf => cf.thisType != ClassType.Object))
                     // load pre-configured class hierarchy...
                     ClassHierarchy(classFiles)(GlobalLogContext)
                 else

@@ -14,10 +14,10 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bc.Assembler
 import org.opalj.bi._
+import org.opalj.br.ClassType
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodAttributeBuilder
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.{ClassFile => J8ClassFile}
 import org.opalj.util.InMemoryClassLoader
@@ -194,7 +194,7 @@ class MethodBuilderTest extends AnyFlatSpec {
         }.get.body.get.exceptionHandlers
         assert(
             exceptionTable(0) ==
-                br.ExceptionHandler(2, 14, 17, Some(br.ObjectType("java/lang/Exception")))
+                br.ExceptionHandler(2, 14, 17, Some(br.ClassType("java/lang/Exception")))
         )
         assert(exceptionTable(1) == br.ExceptionHandler(2, 20, 23, None))
         assert(exceptionTable(2) == br.ExceptionHandler(2, 32, 23, None))
@@ -313,7 +313,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             POP,
             ALOAD_0,
             POP,
-            ACONST_NULL, // INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$1,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
+            ACONST_NULL, // INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ClassType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ClassType(run/parsers/CharParsers),false,minimal$entrypoint$1,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
             POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
             RETURN,
             LabelElement(Symbol("EP1")),
@@ -333,7 +333,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             POP,
             ALOAD_0,
             POP,
-            ACONST_NULL, // INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ObjectType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ObjectType(run/parsers/CharParsers),false,minimal$entrypoint$2,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
+            ACONST_NULL, // INVOKEDYNAMIC(BootstrapMethod(InvokeStaticMethodHandle(ClassType(java/lang/invoke/LambdaMetafactory),false,metafactory,MethodDescriptor((java.lang.invoke.MethodHandles$Lookup, java.lang.String, java.lang.invoke.MethodType, java.lang.invoke.MethodType, java.lang.invoke.MethodHandle, java.lang.invoke.MethodType): java.lang.invoke.CallSite)),Vector(MethodDescriptor((): void), InvokeStaticMethodHandle(ClassType(run/parsers/CharParsers),false,minimal$entrypoint$2,MethodDescriptor((run.parsers.CharParsers): void)), MethodDescriptor((): void))), target=effekt.Frame enter(run.parsers.CharParsers)),
             POP, // INVOKESTATIC(effekt.Effekt{ void push(effekt.Frame) }),
             RETURN,
             /*DEAD*/ LabelElement(Symbol("EP2")),
@@ -358,9 +358,9 @@ class MethodBuilderTest extends AnyFlatSpec {
     }
 
     it should "aggressively remove useless try markers if no exceptions are thrown" in {
-        val SystemType = ObjectType("java/lang/System")
-        val PrintStreamType = ObjectType("java/io/PrintStream")
-        val ExceptionType = ObjectType("java/lang/Exception")
+        val SystemType = ClassType("java/lang/System")
+        val PrintStreamType = ClassType("java/io/PrintStream")
+        val ExceptionType = ClassType("java/lang/Exception")
 
         val c = CODE(
             LabeledGOTO(Symbol("EP1")),
@@ -411,9 +411,9 @@ class MethodBuilderTest extends AnyFlatSpec {
     }
 
     it should "not remove live code in nested exception handlers" in {
-        val SystemType = ObjectType("java/lang/System")
-        val PrintStreamType = ObjectType("java/io/PrintStream")
-        val ExceptionType = ObjectType("java/lang/Exception")
+        val SystemType = ClassType("java/lang/System")
+        val PrintStreamType = ClassType("java/io/PrintStream")
+        val ExceptionType = ClassType("java/lang/Exception")
 
         val c = CODE(
             LabeledGOTO(Symbol("EP1")),

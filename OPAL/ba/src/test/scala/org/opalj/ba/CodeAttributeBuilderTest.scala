@@ -14,10 +14,10 @@ import org.opalj.bc.Assembler
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.BooleanType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustTakes
-import org.opalj.br.ObjectType
 import org.opalj.br.instructions._
 import org.opalj.util.InMemoryClassLoader
 
@@ -29,7 +29,7 @@ import org.opalj.util.InMemoryClassLoader
 @RunWith(classOf[JUnitRunner])
 class CodeAttributeBuilderTest extends AnyFlatSpec {
 
-    final val FakeObjectType = ObjectType("<FAKE_TYPE>") // this type name is NOT valid
+    final val FakeClassType = ClassType("<FAKE_TYPE>") // this type name is NOT valid
 
     behavior of "CodeAttributeBuilder when the code is invalid"
 
@@ -37,7 +37,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         implicit val classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
         val md = MethodDescriptor("(II)I")
         val code = (CODE(ILOAD_2, IRETURN) MAXSTACK 0 MAXLOCALS 0)
-        val (_, (_, warnings)) = code(bi.Java5Version, FakeObjectType, ACC_PUBLIC.mask, "test", md)
+        val (_, (_, warnings)) = code(bi.Java5Version, FakeClassType, ACC_PUBLIC.mask, "test", md)
 
         assert(warnings.size == 2)
     }
@@ -125,7 +125,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
 
     it should "be able to compute the correct stack map table" in {
 
-        val StringType = ObjectType.String
+        val StringType = ClassType.String
         val codeElements = Array[CodeElement[AnyRef]](
             LabelElement(PCLabel(0)),
             ALOAD_0,
@@ -226,8 +226,8 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     }
 
     it should "generate the right stackmap for instance methods with long arguments" in {
-        val LongType = ObjectType.Long
-        val ExceptionType = ObjectType.Exception
+        val LongType = ClassType.Long
+        val ExceptionType = ClassType.Exception
 
         val longValue = INVOKEVIRTUAL(LongType, "longValue", MethodDescriptor.JustReturnsLong)
 
@@ -375,7 +375,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
 
     it should "generate the right stackmap for handlers with returns" in {
         val thisName = "TestClass"
-        val PrintStreamType = ObjectType("java/io/PrintStream")
+        val PrintStreamType = ClassType("java/io/PrintStream")
 
         val otherMethod = METHOD(
             PUBLIC.STATIC,
@@ -401,7 +401,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             ASTORE_1,
             GETSTATIC("java/lang/System", "out", PrintStreamType.toJVMTypeName),
             LoadString("bar"),
-            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String)),
+            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ClassType.String)),
             ALOAD_1,
             POP,
             INVOKESTATIC(thisName, false, "otherMethod", "()Z"),
@@ -468,8 +468,8 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     }
 
     it should "not remove live code after simple conditional branch instructions" in {
-        import ObjectType.{Object => OObject}
-        import ObjectType.{RuntimeException => ORuntimeException}
+        import ClassType.{Object => OObject}
+        import ClassType.{RuntimeException => ORuntimeException}
         val codeElements = Array[CodeElement[AnyRef]](
             LabelElement(0),
             TRY(Symbol("eh")),
@@ -539,18 +539,18 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
                 /* 8 */ IADD,
                 /* 9 */ IRETURN
             ),
-            ArraySeq(ExceptionHandler(7, 10, 3, Some(ObjectType.RuntimeException)))
+            ArraySeq(ExceptionHandler(7, 10, 3, Some(ClassType.RuntimeException)))
         )
         val labeledCode = LabeledCode(code)
         val labeledInstructions = labeledCode.codeElements.toIndexedSeq
-        assert(labeledInstructions(2) == CATCH(Symbol("eh0"), 0, Some(ObjectType.RuntimeException)))
+        assert(labeledInstructions(2) == CATCH(Symbol("eh0"), 0, Some(ClassType.RuntimeException)))
         assert(labeledInstructions(11) == TRY(Symbol("eh0")))
         assert(labeledInstructions(18) == TRYEND(Symbol("eh0")))
     }
 
     it should "allow inline ExceptionHandlers that include the last PC" in {
-        import ObjectType.{RuntimeException => ORuntimeException}
-        import ObjectType.{Object => OObject}
+        import ClassType.{RuntimeException => ORuntimeException}
+        import ClassType.{Object => OObject}
         val codeElements = Array[CodeElement[AnyRef]](
             GOTO(Symbol("NORMAL_CF")), // => 0,1,2
             CATCH(Symbol("eh"), 1, Some(ORuntimeException)),

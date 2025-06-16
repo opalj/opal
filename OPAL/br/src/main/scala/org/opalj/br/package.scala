@@ -73,7 +73,7 @@ package object br {
 
     type InnerClasses = ArraySeq[InnerClass]
 
-    type Interfaces = ArraySeq[ObjectType]
+    type Interfaces = ArraySeq[ClassType]
     final def NoInterfaces: Interfaces = ArraySeq.empty
 
     type Methods = ArraySeq[Method]
@@ -82,7 +82,7 @@ package object br {
     type MethodTemplates = ArraySeq[MethodTemplate]
     final def NoMethodTemplates: MethodTemplates = ArraySeq.empty
 
-    type Exceptions = ArraySeq[ObjectType]
+    type Exceptions = ArraySeq[ClassType]
     type ExceptionHandlers = ArraySeq[ExceptionHandler]
     final def NoExceptionHandlers: ExceptionHandlers = ArraySeq.empty
 
@@ -110,8 +110,8 @@ package object br {
 
     type InstructionLabels = ArraySeq[instructions.InstructionLabel]
 
-    type ObjectTypes = ArraySeq[ObjectType]
-    val ObjectTypes: ArraySeq.type = ArraySeq
+    type ClassTypes = ArraySeq[ClassType]
+    val ClassTypes: ArraySeq.type = ArraySeq
 
     type FieldTypes = ArraySeq[FieldType]
     val FieldTypes: ArraySeq.type = ArraySeq
@@ -122,7 +122,7 @@ package object br {
 
     type Packages = ArraySeq[String]
 
-    type Classes = ArraySeq[ObjectType]
+    type Classes = ArraySeq[ClassType]
 
     type RecordComponents = ArraySeq[RecordComponent]
 
@@ -198,13 +198,13 @@ package object br {
      */
     def typeToXHTML(t: Type, abbreviateType: Boolean = true): Node = {
         t match {
-            case ot: ObjectType =>
+            case ct: ClassType =>
                 if (abbreviateType)
-                    <abbr class="type object_type" title={ot.toJava}>
-                        {ot.simpleName}
+                    <abbr class="type class_type" title={ct.toJava}>
+                        {ct.simpleName}
                     </abbr>
                 else
-                    <span class="type object_type">{ot.toJava}</span>
+                    <span class="type class_type">{ct.toJava}</span>
             case at: ArrayType =>
                 <span class="type array_type">
                     {typeToXHTML(at.elementType, abbreviateType)}{"[]" * at.dimensions}

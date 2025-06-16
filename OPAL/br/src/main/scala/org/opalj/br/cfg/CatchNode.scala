@@ -24,7 +24,7 @@ final class CatchNode(
     val startPC:   Int,
     val endPC:     Int,
     val handlerPC: Int,
-    val catchType: Option[ObjectType]
+    val catchType: Option[ClassType]
 ) extends CFGNode {
 
     /**
@@ -44,11 +44,11 @@ final class CatchNode(
     }
 
     def copy(
-        index:     Int                = this.index,
-        startPC:   Int                = this.startPC,
-        endPC:     Int                = this.endPC,
-        handlerPC: Int                = this.handlerPC,
-        catchType: Option[ObjectType] = this.catchType
+        index:     Int               = this.index,
+        startPC:   Int               = this.startPC,
+        endPC:     Int               = this.endPC,
+        handlerPC: Int               = this.handlerPC,
+        catchType: Option[ClassType] = this.catchType
     ): CatchNode = {
         new CatchNode(index, startPC, endPC, handlerPC, catchType)
     }

@@ -46,7 +46,7 @@ abstract class StackManagementInstruction
 
     override final def toString(currentPC: Int): String = toString()
 
-    override final def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ClassType] = Nil
 
     override final def mayThrowExceptions: Boolean = false
 

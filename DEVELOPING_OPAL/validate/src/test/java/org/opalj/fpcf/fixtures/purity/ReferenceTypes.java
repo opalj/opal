@@ -7,7 +7,7 @@ import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
 
 /**
- * Collection of simple test methods using object and array types for purity analyses that can be
+ * Collection of simple test methods using class and array types for purity analyses that can be
  * analyzed intraprocedurally.
  *
  * @author Dominik Helm

@@ -5,7 +5,7 @@ package properties
 package static_data_usage
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties
 import org.opalj.br.fpcf.properties.StaticDataUsage
@@ -20,7 +20,7 @@ sealed abstract class StaticDataUsageMatcher(val property: StaticDataUsage)
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]

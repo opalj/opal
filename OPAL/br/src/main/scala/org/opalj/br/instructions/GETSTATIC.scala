@@ -11,7 +11,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class GETSTATIC(
-    declaringClass: ObjectType,
+    declaringClass: ClassType,
     name:           String,
     fieldType:      FieldType
 ) extends FieldReadAccess {
@@ -20,7 +20,7 @@ case class GETSTATIC(
 
     final def mnemonic: String = GETSTATIC.mnemonic
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ClassType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 
@@ -65,7 +65,7 @@ object GETSTATIC extends InstructionMetaInformation {
      *          syntax.
      */
     def apply(declaringClassName: String, name: String, fieldTypeName: String): GETSTATIC = {
-        GETSTATIC(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
+        GETSTATIC(ClassType(declaringClassName), name, FieldType(fieldTypeName))
     }
 
 }

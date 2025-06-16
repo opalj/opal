@@ -48,7 +48,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
         codeOfPut collect ({
             case GETFIELD(declaringClass, "last", _) => declaringClass
-        }: PartialFunction[Instruction, ObjectType]) should
+        }: PartialFunction[Instruction, ClassType]) should
             equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
 
         codeOfPut collect ({
@@ -124,7 +124,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
         instructions should be(
             Seq(
                 PCAndInstruction(0, ALOAD_0),
-                PCAndInstruction(1, GETFIELD(immutbleListClass, "e", ObjectType.Object)),
+                PCAndInstruction(1, GETFIELD(immutbleListClass, "e", ClassType.Object)),
                 PCAndInstruction(4, ARETURN)
             )
         )
@@ -190,7 +190,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's localVariable method"
 
     it should "be able to return the correct local variable" in {
-        val thisVariable = LocalVariable(0, 55, "this", ObjectType("code/BoundedBuffer"), 0)
+        val thisVariable = LocalVariable(0, 55, "this", ClassType("code/BoundedBuffer"), 0)
         codeOfPut.localVariable(32, 0) should be(Some(thisVariable))
         codeOfPut.localVariable(0, 0) should be(Some(thisVariable))
         codeOfPut.localVariable(54, 0) should be(Some(thisVariable))
@@ -235,12 +235,12 @@ private object CodeAttributeTest {
         )
 
     val nestedCatch =
-        project.classFile(ObjectType("controlflow/ExceptionCode")).get.methods
+        project.classFile(ClassType("controlflow/ExceptionCode")).get.methods
             .find(_.name == "nestedCatch").get.body.get
 
-    val boundedBufferClass = ObjectType("code/BoundedBuffer")
-    val immutbleListClass = ObjectType("code/ImmutableList")
-    val quickSortClass = ObjectType("code/Quicksort")
+    val boundedBufferClass = ClassType("code/BoundedBuffer")
+    val immutbleListClass = ClassType("code/ImmutableList")
+    val quickSortClass = ClassType("code/Quicksort")
 
     //
     //

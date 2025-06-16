@@ -139,8 +139,8 @@ trait Domain
             case _: IsNullValue => NullValue(origin)
 
             case v: IsReferenceValue =>
-                if (v.isNull.isNo && v.asReferenceType.isObjectType) {
-                    val t = v.leastUpperType.get.asObjectType
+                if (v.isNull.isNo && v.asReferenceType.isClassType) {
+                    val t = v.leastUpperType.get.asClassType
                     if (v.isPrecise)
                         InitializedObjectValue(origin, t)
                     else

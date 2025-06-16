@@ -12,10 +12,10 @@ import org.opalj.br.Attributes
 import org.opalj.br.ChopFrame
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.FullFrame
 import org.opalj.br.Method
 import org.opalj.br.Methods
-import org.opalj.br.ObjectType
 import org.opalj.br.SameFrame
 import org.opalj.br.SameFrameExtended
 import org.opalj.br.SameLocals1StackItemFrame
@@ -144,7 +144,7 @@ class CodeAttributeBuilder[T] private[ba] (
      */
     def apply(
         classFileVersion:   UShortPair,
-        declaringClassType: ObjectType,
+        declaringClassType: ClassType,
         accessFlags:        Int,
         name:               String,
         descriptor:         br.MethodDescriptor

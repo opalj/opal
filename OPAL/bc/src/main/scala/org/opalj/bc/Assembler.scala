@@ -796,7 +796,7 @@ object Assembler {
     }
 
     /**
-     * `serializeAs` makes it possible to specify the object type of the given parameter `t` and
+     * `serializeAs` makes it possible to specify the class type of the given parameter `t` and
      * that type will then be used to pick up the implicit class file element value.
      */
     def serializeAs[T](

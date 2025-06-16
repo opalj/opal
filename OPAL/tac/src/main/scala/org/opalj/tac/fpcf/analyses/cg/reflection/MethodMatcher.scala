@@ -9,10 +9,10 @@ package reflection
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.value.IsReferenceValue
@@ -45,7 +45,7 @@ final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends Metho
 }
 
 class ClassBasedMethodMatcher(
-    val possibleClasses:           Set[ObjectType],
+    val possibleClasses:           Set[ClassType],
     val onlyMethodsExactlyInClass: Boolean
 ) extends MethodMatcher {
 

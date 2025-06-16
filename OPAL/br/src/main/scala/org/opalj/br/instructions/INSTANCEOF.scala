@@ -16,7 +16,7 @@ case class INSTANCEOF(
 
     final def mnemonic: String = "instanceof"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ClassType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 

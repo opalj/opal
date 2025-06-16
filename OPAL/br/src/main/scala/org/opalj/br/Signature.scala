@@ -193,14 +193,14 @@ sealed trait ThrowsSignature extends SignatureElement
  * val SimpleGenericType = org.opalj.br.SimpleGenericType
  * val BasicClassTypeSignature = org.opalj.br.BasicClassTypeSignature
  *
- * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case BasicClassTypeSignature(ot) => ot.toJava; case _ => null}
+ * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case BasicClassTypeSignature(ct) => ct.toJava; case _ => null}
  * // res: String = Col
  *
  * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case SimpleGenericType(bt,gt) => bt.toJava+"<"+gt.toJava+">"; case _ => null}
  * //res11: String = null
  *
  * scala> SignatureParser.parseFieldTypeSignature("LCol<Ljava/lang/Object;>;") match { case SimpleGenericType(bt,ta) => bt.toJava+"<"+ta+">"; case _ => null}
- * res1: String = Col<ObjectType(java/lang/Object)>
+ * res1: String = Col<ClassType(java/lang/Object)>
  *
  * scala> SignatureParser.parseFieldTypeSignature("LCol<Ljava/lang/Object;>;") match { case GenericType(bt,ta) => bt.toJava+"<"+ta+">"; case _ => null}
  * res2: String = Col<List(ProperTypeArgument(variance=None,signature=ClassTypeSignature(Some(java/lang/),SimpleClassTypeSignature(Object,List()),List())))>
@@ -335,7 +335,7 @@ case class ClassTypeSignature(
     classTypeSignatureSuffix: List[SimpleClassTypeSignature]
 ) extends FieldTypeSignature with ThrowsSignature {
 
-    def objectType: ObjectType = {
+    def classType: ClassType = {
         val className =
             if (packageIdentifier.isDefined)
                 new java.lang.StringBuilder(packageIdentifier.get)
@@ -347,7 +347,7 @@ case class ClassTypeSignature(
             className.append(ctss.simpleName)
         }
 
-        ObjectType(className.toString)
+        ClassType(className.toString)
     }
 
     def accept[T](sv: SignatureVisitor[T]) = sv.visit(this)
@@ -521,15 +521,15 @@ sealed abstract class Wildcard extends TypeArgument {
 case object Wildcard extends Wildcard
 
 /**
- * Extractor/Matcher of the (potentially erased) `ObjectType` that is defined by a
+ * Extractor/Matcher of the (potentially erased) `ClassType` that is defined by a
  * `ClassTypeSignature`; ignores all further potential type parameters.
  *
  * @see For matching signatures see [[Signature]].
  */
 object BasicClassTypeSignature {
 
-    def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
-        Some(cts.objectType)
+    def unapply(cts: ClassTypeSignature): Option[ClassType] = {
+        Some(cts.classType)
     }
 }
 
@@ -541,11 +541,11 @@ object BasicClassTypeSignature {
  */
 object ConcreteType {
 
-    def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
+    def unapply(cts: ClassTypeSignature): Option[ClassType] = {
         cts match {
 
             case ClassTypeSignature(cpn, SimpleClassTypeSignature(csn, Nil), Nil) =>
-                Some(ObjectType(cpn.getOrElse("") + csn))
+                Some(ClassType(cpn.getOrElse("") + csn))
 
             case _ =>
                 None
@@ -563,9 +563,9 @@ object ConcreteType {
  */
 object ConcreteTypeArgument {
 
-    def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
+    def unapply(pta: ProperTypeArgument): Option[ClassType] = {
         pta match {
-            case ProperTypeArgument(None, ConcreteType(ot)) => Some(ot)
+            case ProperTypeArgument(None, ConcreteType(ct)) => Some(ct)
             case _                                          => None
         }
     }
@@ -580,7 +580,7 @@ object ConcreteTypeArgument {
  * {{{
  *  val scts : SimpleClassTypeSignature = ...
  *  scts.typeArguments.head match {
- *      case UpperTypeBound(objectType) => ...
+ *      case UpperTypeBound(classType) => ...
  *      case _ => ...
  *  }
  * }}}
@@ -589,8 +589,8 @@ object ConcreteTypeArgument {
  */
 object UpperTypeBound {
 
-    def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
-        case ProperTypeArgument(Some(CovariantIndicator), ConcreteType(ot)) => Some(ot)
+    def unapply(pta: ProperTypeArgument): Option[ClassType] = pta match {
+        case ProperTypeArgument(Some(CovariantIndicator), ConcreteType(ct)) => Some(ct)
         case _                                                              => None
     }
 }
@@ -605,7 +605,7 @@ object UpperTypeBound {
  *  {{{
  *  val scts : SimpleClassTypeSignature = ...
  *  scts.typeArguments.head match {
- *      case LowerTypeBound(objectType) => ...
+ *      case LowerTypeBound(classType) => ...
  *      case _ => ...
  *  }
  * }}}
@@ -614,14 +614,14 @@ object UpperTypeBound {
  */
 object LowerTypeBound {
 
-    def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
-        case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ot)) => Some(ot)
+    def unapply(pta: ProperTypeArgument): Option[ClassType] = pta match {
+        case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ct)) => Some(ct)
         case _                                                                  => None
     }
 }
 
 /**
- * Facilitates matching the (`VarianceIndicator`, `ObjectType`) that is defined
+ * Facilitates matching the (`VarianceIndicator`, `ClassType`) that is defined
  * within a `ProperTypeArgument`. It matches ProperTypeArguments which define
  * `TypeArgument`s in the inner ClassTypeSignature.
  *
@@ -630,7 +630,7 @@ object LowerTypeBound {
  * {{{
  *  val scts : SimpleClassTypeSignature = ...
  *  scts.typeArguments match {
- *      case GenericTypeArgument(varInd, objectType) => ...
+ *      case GenericTypeArgument(varInd, classType) => ...
  *      case _ => ...
  *  }
  * }}}
@@ -658,7 +658,7 @@ object GenericTypeArgument {
  */
 object GenericType {
 
-    def unapply(cts: ClassTypeSignature): Option[(ObjectType, List[TypeArgument])] = {
+    def unapply(cts: ClassTypeSignature): Option[(ClassType, List[TypeArgument])] = {
         cts match {
 
             case ClassTypeSignature(
@@ -666,7 +666,7 @@ object GenericType {
                     SimpleClassTypeSignature(_, typeArgs),
                     Nil
                 ) if typeArgs.nonEmpty =>
-                Some((cts.objectType, typeArgs))
+                Some((cts.classType, typeArgs))
 
             case _ =>
                 None
@@ -687,7 +687,7 @@ object GenericTypeWithClassSuffix {
 
     def unapply(
         cts: ClassTypeSignature
-    ): Option[(ObjectType, List[TypeArgument], List[SimpleClassTypeSignature])] = {
+    ): Option[(ClassType, List[TypeArgument], List[SimpleClassTypeSignature])] = {
         cts match {
 
             case ClassTypeSignature(
@@ -695,7 +695,7 @@ object GenericTypeWithClassSuffix {
                     SimpleClassTypeSignature(_, typeArgs),
                     suffix
                 ) if suffix.nonEmpty =>
-                Some((cts.objectType, typeArgs, suffix))
+                Some((cts.classType, typeArgs, suffix))
 
             case _ =>
                 None
@@ -721,7 +721,7 @@ object GenericTypeWithClassSuffix {
  */
 object SimpleGenericType {
 
-    def unapply(cts: ClassTypeSignature): Option[(ObjectType, ObjectType)] = {
+    def unapply(cts: ClassTypeSignature): Option[(ClassType, ClassType)] = {
         cts match {
 
             case ClassTypeSignature(
@@ -732,7 +732,7 @@ object SimpleGenericType {
                     ),
                     Nil
                 ) =>
-                Some((ObjectType(cpn.getOrElse("") + csn), tp))
+                Some((ClassType(cpn.getOrElse("") + csn), tp))
 
             case _ =>
                 None

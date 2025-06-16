@@ -5,7 +5,7 @@ package collection
 package mutable
 
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 
 /**
  * An efficient representation of a set of types if some types are actually upper type bounds
@@ -20,20 +20,20 @@ class TypesSet(final val classHierarchy: ClassHierarchy) extends collection.Type
 
     import classHierarchy.isSubtypeOf
 
-    protected[this] var theConcreteTypes: Set[ObjectType] = Set.empty
-    protected[this] var theUpperTypeBounds: Set[ObjectType] = Set.empty
+    protected[this] var theConcreteTypes: Set[ClassType] = Set.empty
+    protected[this] var theUpperTypeBounds: Set[ClassType] = Set.empty
 
     /**
      * The set of concrete types which are not subtypes of any type which
      * is returned by `upperTypeBounds`.
      */
-    final def concreteTypes: Set[ObjectType] = theConcreteTypes
-    final def upperTypeBounds: Set[ObjectType] = theUpperTypeBounds
+    final def concreteTypes: Set[ClassType] = theConcreteTypes
+    final def upperTypeBounds: Set[ClassType] = theUpperTypeBounds
 
     def toImmutableTypesSet: immutable.TypesSet =
         immutable.TypesSet(theConcreteTypes, theUpperTypeBounds)(classHierarchy)
 
-    def +=(tpe: ObjectType): Unit = {
+    def +=(tpe: ClassType): Unit = {
         if (!theConcreteTypes.contains(tpe) &&
             !theUpperTypeBounds.exists(utb => isSubtypeOf(tpe, utb))
         ) {
@@ -41,9 +41,9 @@ class TypesSet(final val classHierarchy: ClassHierarchy) extends collection.Type
         }
     }
 
-    def ++=(tpes: Iterable[ObjectType]): Unit = tpes.foreach { += }
+    def ++=(tpes: Iterable[ClassType]): Unit = tpes.foreach { += }
 
-    def ++<:=(tpes: Iterable[ObjectType]): Unit = tpes.foreach { +<:= }
+    def ++<:=(tpes: Iterable[ClassType]): Unit = tpes.foreach { +<:= }
 
     /**
      * Adds the given upper type bound to this `TypesSet` unless a supertype
@@ -51,7 +51,7 @@ class TypesSet(final val classHierarchy: ClassHierarchy) extends collection.Type
      *
      * All subtypes – whether concrete or upper types bounds – are removed.
      */
-    def +<:=(tpe: ObjectType): Unit = {
+    def +<:=(tpe: ClassType): Unit = {
         if (theConcreteTypes.contains(tpe)) {
             theConcreteTypes -= tpe
             theUpperTypeBounds =

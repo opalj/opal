@@ -5,7 +5,7 @@ package properties
 package alias
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.alias.Alias
 import org.opalj.br.fpcf.properties.alias.MayAlias
@@ -21,14 +21,14 @@ abstract class AliasPropertyMatcher(val property: Alias) extends AbstractPropert
 
     override def isRelevant(
         p:      Project[_],
-        as:     Set[ObjectType],
+        as:     Set[ClassType],
         entity: Any,
         a:      AnnotationLike
     ): Boolean = {
         val analysesElementValues =
-            getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
+            getValue(p, a.annotationType.asClassType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues map {
-            _.asClassValue.value.asObjectType
+            _.asClassValue.value.asClassType
         }
 
         analyses.exists(as.contains)
@@ -36,7 +36,7 @@ abstract class AliasPropertyMatcher(val property: Alias) extends AbstractPropert
 
     override def validateProperty(
         p:          Project[_],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]

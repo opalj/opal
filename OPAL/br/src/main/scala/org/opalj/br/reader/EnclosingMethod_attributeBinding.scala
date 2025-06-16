@@ -25,11 +25,11 @@ trait EnclosingMethod_attributeBinding
     ): EnclosingMethod_attribute = {
 
         if (method_index == 0)
-            new EnclosingMethod_attribute(cp(class_index).asObjectType(cp), None, None)
+            new EnclosingMethod_attribute(cp(class_index).asClassType(cp), None, None)
         else {
             val nameAndType = cp(method_index).asNameAndType
             new EnclosingMethod_attribute(
-                cp(class_index).asObjectType(cp),
+                cp(class_index).asClassType(cp),
                 Some(nameAndType.name(cp)),
                 Some(nameAndType.methodDescriptor(cp))
             )

@@ -7,13 +7,13 @@ import org.opalj.util.{Nanoseconds => NS}
 
 object UIDSetDemo extends App {
 
-    val o1 = ObjectType("o1")
-    val o2 = ObjectType("o2")
-    val o3 = ObjectType("o3")
-    val o4 = ObjectType("o4")
-    val o5 = ObjectType("o5")
-    val o6 = ObjectType("o6")
-    val o7 = ObjectType("o7")
+    val o1 = ClassType("o1")
+    val o2 = ClassType("o2")
+    val o3 = ClassType("o3")
+    val o4 = ClassType("o4")
+    val o5 = ClassType("o5")
+    val o6 = ClassType("o6")
+    val o7 = ClassType("o7")
 
     val s1 = UIDSet(o1)
     val s2 = UIDSet(o2)
@@ -39,7 +39,7 @@ object UIDSetDemo extends App {
     s12.find(_.id > 10).isDefined
     !s12.find(_.id < 10).isDefined
 
-    val se = UIDSet.empty[ObjectType]
+    val se = UIDSet.empty[ClassType]
     !se.exists(_ == o2)
     !se.contains(o2)
     se.filter(_.id < 20).map(_.id)

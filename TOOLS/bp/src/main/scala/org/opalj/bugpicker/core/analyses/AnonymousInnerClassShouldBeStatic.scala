@@ -164,7 +164,7 @@ object AnonymousInnerClassShouldBeStatic {
         if (classFile.interfaceTypes.nonEmpty) {
             val superInterfacetypes = classFile.interfaceTypes.map(_.toJava).mkString(" with ")
 
-            if (classFile.superclassType.get == ObjectType.Object)
+            if (classFile.superclassType.get == ClassType.Object)
                 supertype = superInterfacetypes
             else
                 supertype += " implements "+superInterfacetypes

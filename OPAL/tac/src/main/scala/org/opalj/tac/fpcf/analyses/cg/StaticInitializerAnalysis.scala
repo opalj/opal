@@ -7,9 +7,9 @@ package cg
 
 import scala.language.existentials
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -135,7 +135,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     }
 
     private[this] def retrieveStaticInitializers(
-        declaringClassType: ObjectType
+        declaringClassType: ClassType
     ): Iterator[DefinedMethod] = {
         // TODO only for interfaces with default methods
         ch.allSuperclassesIterator(declaringClassType, reflexive = true).flatMap { cf =>

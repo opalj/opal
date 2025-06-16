@@ -29,7 +29,7 @@ object ExceptionUsage extends ProjectAnalysisApplication {
 
         implicit val ch: ClassHierarchy = theProject.classHierarchy
 
-        if (theProject.classFile(ObjectType("java/lang/Object")).isEmpty) {
+        if (theProject.classFile(ClassType("java/lang/Object")).isEmpty) {
             Console.err.println(
                 "[warn] It seems as if the JDK was not loaded" +
                     "(use: -libcp=<PATH TO THE JRE>); " +
@@ -55,7 +55,7 @@ object ExceptionUsage extends ProjectAnalysisApplication {
             //    to analyze the operands.)
             def collectExceptions(value: result.domain.DomainSingleOriginReferenceValue): Unit = {
                 if (value.isNull.isNoOrUnknown &&
-                    value.isValueASubtypeOf(ObjectType.Throwable).isYes
+                    value.isValueASubtypeOf(ClassType.Throwable).isYes
                 ) {
                     val key = (value.origin, typeName(value))
                     if (!exceptionUsages.contains(key)) {

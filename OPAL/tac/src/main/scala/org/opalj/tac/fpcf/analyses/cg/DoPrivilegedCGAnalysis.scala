@@ -8,9 +8,9 @@ package cg
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -72,8 +72,10 @@ class DoPrivilegedMethodAnalysis private[cg] (
         if (params.nonEmpty && params.head.isDefined) {
             val param = params.head.get.asVar
 
-            implicit val state: CGState[ContextType] =
-                new CGState[ContextType](callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac)))
+            implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
+                callerContext,
+                FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
+            )
 
             val thisActual = persistentUVar(param)(state.tac.stmts)
 
@@ -93,8 +95,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
         thisVar:    V,
         thisActual: Some[(ValueInformation, IntTrieSet)],
         calls:      IndirectCalls
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
-
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val partialResults = calls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -127,7 +128,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
     }
 
     def c(
-        state:      CGState[ContextType],
+        state:      TACAIBasedCGState[ContextType],
         thisVar:    V,
         thisActual: Some[(ValueInformation, IntTrieSet)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -159,11 +160,11 @@ class DoPrivilegedCGAnalysis private[cg] (
     def analyze(p: SomeProject): PropertyComputationResult = {
         var analyses: List[DoPrivilegedMethodAnalysis] = Nil
 
-        val accessControllerType = ObjectType("java/security/AccessController")
-        val privilegedActionType = ObjectType("java/security/PrivilegedAction")
-        val privilegedExceptionActionType = ObjectType("java/security/PrivilegedExceptionAction")
-        val accessControlContextType = ObjectType("java/security/AccessControlContext")
-        val permissionType = ObjectType("java/security/Permission")
+        val accessControllerType = ClassType("java/security/AccessController")
+        val privilegedActionType = ClassType("java/security/PrivilegedAction")
+        val privilegedExceptionActionType = ClassType("java/security/PrivilegedExceptionAction")
+        val accessControlContextType = ClassType("java/security/AccessControlContext")
+        val permissionType = ClassType("java/security/Permission")
         val permissionsArray = ArrayType(permissionType)
 
         val declaredMethods = p.get(DeclaredMethodsKey)
@@ -180,7 +181,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "java/security",
             accessControllerType,
             "doPrivileged",
-            MethodDescriptor(privilegedActionType, ObjectType.Object)
+            MethodDescriptor(privilegedActionType, ClassType.Object)
         )
         if (doPrivileged1.hasSingleDefinedMethod)
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged1, runMethod, p)
@@ -192,7 +193,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "doPrivileged",
             MethodDescriptor(
                 ArraySeq(privilegedActionType, accessControlContextType),
-                ObjectType.Object
+                ClassType.Object
             )
         )
         if (doPrivileged2.hasSingleDefinedMethod)
@@ -205,7 +206,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "doPrivileged",
             MethodDescriptor(
                 ArraySeq(privilegedActionType, accessControlContextType, permissionsArray),
-                ObjectType.Object
+                ClassType.Object
             )
         )
         if (doPrivileged3.hasSingleDefinedMethod)
@@ -216,7 +217,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "java/security",
             accessControllerType,
             "doPrivileged",
-            MethodDescriptor(privilegedExceptionActionType, ObjectType.Object)
+            MethodDescriptor(privilegedExceptionActionType, ClassType.Object)
         )
         if (doPrivileged4.hasSingleDefinedMethod)
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged4, runMethod, p)
@@ -228,7 +229,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "doPrivileged",
             MethodDescriptor(
                 ArraySeq(privilegedExceptionActionType, accessControlContextType),
-                ObjectType.Object
+                ClassType.Object
             )
         )
         if (doPrivileged5.hasSingleDefinedMethod)
@@ -241,7 +242,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "doPrivileged",
             MethodDescriptor(
                 ArraySeq(privilegedExceptionActionType, accessControlContextType, permissionsArray),
-                ObjectType.Object
+                ClassType.Object
             )
         )
         if (doPrivileged6.hasSingleDefinedMethod)
@@ -252,7 +253,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "java/security",
             accessControllerType,
             "doPrivilegedWithCombiner",
-            MethodDescriptor(privilegedActionType, ObjectType.Object)
+            MethodDescriptor(privilegedActionType, ClassType.Object)
         )
         if (doPrivilegedWithCombiner1.hasSingleDefinedMethod)
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner1, runMethod, p)
@@ -264,7 +265,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "doPrivilegedWithCombiner",
             MethodDescriptor(
                 ArraySeq(privilegedActionType, accessControlContextType, permissionsArray),
-                ObjectType.Object
+                ClassType.Object
             )
         )
         if (doPrivilegedWithCombiner2.hasSingleDefinedMethod)
@@ -277,7 +278,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "doPrivilegedWithCombiner",
             MethodDescriptor(
                 ArraySeq(privilegedExceptionActionType),
-                ObjectType.Object
+                ClassType.Object
             )
         )
         if (doPrivilegedWithCombiner3.hasSingleDefinedMethod)
@@ -290,7 +291,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             "doPrivilegedWithCombiner",
             MethodDescriptor(
                 ArraySeq(privilegedExceptionActionType, accessControlContextType, permissionsArray),
-                ObjectType.Object
+                ClassType.Object
             )
         )
         if (doPrivilegedWithCombiner4.hasSingleDefinedMethod)

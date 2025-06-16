@@ -61,7 +61,7 @@ Of course, you may need to implement any methods defined in your trait above.
 The second common type of lattices in OPAL is set-based lattices.
 They typically consist of one (or sometimes several) case classes that hold the set of values:
 ```scala
-case class InstantiatedTypes(classes: UIDSet[ObjectType]) extends InstantiatedTypesPropertyMetaInformation {
+case class InstantiatedTypes(classes: UIDSet[ClassType]) extends InstantiatedTypesPropertyMetaInformation {
     final def key: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
 }
 ```

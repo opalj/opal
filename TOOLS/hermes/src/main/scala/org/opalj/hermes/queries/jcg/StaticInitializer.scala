@@ -8,7 +8,7 @@ import scala.collection.immutable.ArraySeq
 
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.LDC
@@ -25,8 +25,8 @@ import org.opalj.da.ClassFile
  */
 class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
-    val Object = ObjectType.Object
-    val String = ObjectType.String
+    val Object = ClassType.Object
+    val String = ClassType.String
 
     override def featureIDs: Seq[String] = {
         Seq(

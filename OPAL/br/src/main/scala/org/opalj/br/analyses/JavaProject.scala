@@ -42,17 +42,17 @@ class JavaProject(final val project: Project[java.net.URL]) {
         })
 
     /**
-     * Returns the list of all classes that derive from `objectType`.
+     * Returns the list of all classes that derive from `classType`.
      *
-     * @param objectType The object type in jvm annotation (using "/" instead of ".", e.g.
+     * @param classType The class type in jvm notation (using "/" instead of ".", e.g.
      *                   "java/util/List")
-     * @return A list of classes that derive from objectType.
+     * @return A list of classes that derive from classType.
      */
-    def getAllSubclassesOfObjectType(objectType: String): java.util.List[String] = {
+    def getAllSubclassesOfClassType(classType: String): java.util.List[String] = {
         project
             .classHierarchy
-            .allSubtypes(ObjectType(objectType), reflexive = false)
-            .map(ot => ot.toJava)
+            .allSubtypes(ClassType(classType), reflexive = false)
+            .map(ct => ct.toJava)
             .toList
             .asJava
     }

@@ -46,8 +46,8 @@ class MethodDescriptorTest extends AnyFunSuite {
         assert(md.parameterTypes.size.toInt == 3)
         assert(md.parameterTypes(0).isIntegerType)
         assert(md.parameterTypes(1).isDoubleType)
-        assert(md.parameterTypes(2).isObjectType)
-        assert(md.returnType.isObjectType)
+        assert(md.parameterTypes(2).isClassType)
+        assert(md.returnType.isClassType)
     }
 
     test("Parsing: (IDLjava/lang/Thread;[J)[Ljava/lang/Object;") {
@@ -55,7 +55,7 @@ class MethodDescriptorTest extends AnyFunSuite {
         assert(md.parameterTypes.size.toInt == 4)
         assert(md.parameterTypes(0).isIntegerType)
         assert(md.parameterTypes(1).isDoubleType)
-        assert(md.parameterTypes(2).isObjectType)
+        assert(md.parameterTypes(2).isClassType)
         assert(md.parameterTypes(3).isArrayType)
         assert(md.returnType.isArrayType)
         assert(md match {
@@ -63,10 +63,10 @@ class MethodDescriptorTest extends AnyFunSuite {
                     Seq(
                         _: BaseType,
                         DoubleType,
-                        ObjectType(_),
+                        ClassType(_),
                         ArrayType(LongType)
                     ),
-                    ArrayType(ObjectType("java/lang/Object"))
+                    ArrayType(ClassType("java/lang/Object"))
                 ) => true
             case _ => false
         })

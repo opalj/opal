@@ -3,7 +3,7 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -18,9 +18,9 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
 class ThreadAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
     override val apiFeatures: List[APIFeature] = {
 
-        val Thread = ObjectType("java/lang/Thread")
-        val ThreadGroup = ObjectType("java/lang/ThreadGroup")
-        val Object = ObjectType("java/lang/Object")
+        val Thread = ClassType("java/lang/Thread")
+        val ThreadGroup = ClassType("java/lang/ThreadGroup")
+        val Object = ClassType("java/lang/Object")
 
         val constructor = "<init>"
 

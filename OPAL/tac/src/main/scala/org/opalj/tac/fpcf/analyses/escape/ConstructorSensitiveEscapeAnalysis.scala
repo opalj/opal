@@ -5,8 +5,8 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.br.ClassType
 import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.Context
@@ -57,7 +57,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         assert(state.usesDefSite(call.receiver), "call receiver does not use def-site")
 
         // the object constructor will not escape the this local
-        if (call.declaringClass eq ObjectType.Object)
+        if (call.declaringClass eq ClassType.Object)
             return;
 
         // resolve the constructor

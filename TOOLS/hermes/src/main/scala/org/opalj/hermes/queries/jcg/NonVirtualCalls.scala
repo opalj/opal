@@ -6,8 +6,8 @@ package jcg
 
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -99,7 +99,7 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
                     } else {
                         val superTypes = project.classHierarchy.directSupertypes(declType)
                         val isSuperConstructor = superTypes.contains(declaringClass)
-                        if ((declaringClass ne ObjectType.Object) && !isSuperConstructor) {
+                        if ((declaringClass ne ClassType.Object) && !isSuperConstructor) {
                             1 /* constructor call */
                         } else -1
                     }

@@ -7,8 +7,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor.JustReturnsString
-import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -36,9 +36,9 @@ object CipherGetInstanceStringUsage extends ProjectAnalysisApplication {
 
     // #################### CONSTANTS ####################
 
-    val Cipher = ObjectType("javax/crypto/Cipher")
+    val Cipher = ClassType("javax/crypto/Cipher")
 
-    val Key = ObjectType("java/security/Key")
+    val Key = ClassType("java/security/Key")
 
     // #################### ANALYSIS ####################
 

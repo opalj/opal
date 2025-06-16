@@ -52,9 +52,9 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
         minorVersion = 1,
         majorVersion = 2,
         accessFlags = ACC_PUBLIC.mask,
-        thisType = ObjectType.Boolean,
-        superclassType = Some(ObjectType.Object),
-        interfaceTypes = ArraySeq(ObjectType.Byte, ObjectType.Float),
+        thisType = ClassType.Boolean,
+        superclassType = Some(ClassType.Object),
+        interfaceTypes = ArraySeq(ClassType.Byte, ClassType.Float),
         fields = simpleFields,
         methods = simpleMethods,
         attributes = ArraySeq(SourceFile("abc"), Deprecated)

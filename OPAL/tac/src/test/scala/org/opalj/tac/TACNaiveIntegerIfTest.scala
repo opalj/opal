@@ -15,7 +15,7 @@ import org.opalj.br.TestSupport.biProject
 @RunWith(classOf[JUnitRunner])
 class TACNaiveIntegerIfTest extends TACNaiveTest {
 
-    val ControlSequencesType = ObjectType("tactest/ControlSequences")
+    val ControlSequencesType = ClassType("tactest/ControlSequences")
 
     val project = biProject("tactest-8-preserveAllLocals.jar")
 

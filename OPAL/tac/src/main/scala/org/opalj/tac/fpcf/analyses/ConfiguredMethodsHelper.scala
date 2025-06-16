@@ -8,11 +8,11 @@ import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
@@ -42,7 +42,7 @@ case class ConfiguredMethodData(
     def method(
         implicit declaredMethods: DeclaredMethods
     ): DeclaredMethod = {
-        val classType = ObjectType(cf)
+        val classType = ClassType(cf)
         val descriptor = MethodDescriptor(desc)
         declaredMethods(classType, classType.packageName, classType, name, descriptor)
     }
@@ -119,7 +119,7 @@ object EntityDescription {
 
 case class MethodDescription(cf: String, name: String, desc: String) extends EntityDescription {
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
-        val classType = ObjectType(cf)
+        val classType = ClassType(cf)
         declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
     }
 }
@@ -135,13 +135,13 @@ object MethodDescription {
 
 case class StaticFieldDescription(cf: String, name: String, fieldType: String) extends EntityDescription {
     def fieldOption(project: SomeProject): Option[Field] = {
-        project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType))
+        project.resolveFieldReference(ClassType(cf), name, FieldType(fieldType))
     }
 }
 
 case class ParameterDescription(cf: String, name: String, desc: String, index: Int) extends EntityDescription {
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
-        val classType = ObjectType(cf)
+        val classType = ClassType(cf)
         declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
     }
 
@@ -163,7 +163,7 @@ case class AllocationSiteDescription(
     arrayComponentTypes: scala.collection.Seq[String]
 ) extends EntityDescription {
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
-        val classType = ObjectType(cf)
+        val classType = ClassType(cf)
         declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
     }
 }

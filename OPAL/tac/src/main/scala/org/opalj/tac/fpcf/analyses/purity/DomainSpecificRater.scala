@@ -6,8 +6,8 @@ package analyses
 package purity
 
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DPure
 import org.opalj.br.fpcf.properties.Pure
@@ -98,7 +98,7 @@ class BaseDomainSpecificRater extends DomainSpecificRater {
  * Mixin that rates whether a call or GetStatic is part of using `System.out` or `System.err`
  */
 trait SystemOutErrRater extends DomainSpecificRater {
-    private final val printStream = ObjectType("java/io/PrintStream")
+    private final val printStream = ClassType("java/io/PrintStream")
 
     abstract override def handleCall(
         call:     Call[V],
@@ -121,7 +121,7 @@ trait SystemOutErrRater extends DomainSpecificRater {
         code:    Array[Stmt[V]]
     ): Option[Purity] = {
         val GetStatic(_, declaringClass, name, _) = expr
-        if (declaringClass == ObjectType.System && (name == "out" || name == "err"))
+        if (declaringClass == ClassType.System && (name == "out" || name == "err"))
             Some(Pure)
         else super.handleGetStatic(expr)
     }
@@ -139,7 +139,7 @@ trait SystemOutErrRater extends DomainSpecificRater {
                 if (stmt.asAssignment.expr.astID != GetStatic.ASTID) false
                 else {
                     val GetStatic(_, declaringClass, name, _) = stmt.asAssignment.expr
-                    declaringClass == ObjectType.System && (name == "out" || name == "err")
+                    declaringClass == ClassType.System && (name == "out" || name == "err")
                 }
             }
         }
@@ -152,18 +152,18 @@ trait SystemOutErrRater extends DomainSpecificRater {
 trait LoggingRater extends DomainSpecificRater {
 
     private final val loggers = Set(
-        ObjectType("org/apache/logging/log4j/LogManager"),
-        ObjectType("org/apache/logging/log4j/Logger"),
-        ObjectType("org/slf4j/LoggerFactory"),
-        ObjectType("org/slf4j/Log"),
-        ObjectType("java/util/logging/LogManager"),
-        ObjectType("java/util/logging/Logger"),
-        ObjectType("org/pmw/tinylog/Logger")
+        ClassType("org/apache/logging/log4j/LogManager"),
+        ClassType("org/apache/logging/log4j/Logger"),
+        ClassType("org/slf4j/LoggerFactory"),
+        ClassType("org/slf4j/Log"),
+        ClassType("java/util/logging/LogManager"),
+        ClassType("java/util/logging/Logger"),
+        ClassType("org/pmw/tinylog/Logger")
     )
 
     private final val logLevels = Set(
-        ObjectType("org/apache/logging/log4j/Level"),
-        ObjectType("java/util/logging/Level")
+        ClassType("org/apache/logging/log4j/Level"),
+        ClassType("java/util/logging/Level")
     )
 
     abstract override def handleCall(
@@ -174,8 +174,8 @@ trait LoggingRater extends DomainSpecificRater {
         project: SomeProject,
         code:    Array[Stmt[V]]
     ): Option[Purity] = {
-        if (call.declaringClass.isObjectType) {
-            val declClass = call.declaringClass.asObjectType
+        if (call.declaringClass.isClassType) {
+            val declClass = call.declaringClass.asClassType
             if (loggers.exists(declClass.isSubtypeOf(_)(project.classHierarchy)))
                 Some(DPure)
             else super.handleCall(call, receiver)
@@ -210,14 +210,14 @@ trait ExceptionRater extends DomainSpecificRater {
     ): Option[Purity] = {
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
         val declClass = call.declaringClass
-        if (declClass.isObjectType && call.name == "<init>" &&
-            declClass.asObjectType.isSubtypeOf(ObjectType.Throwable) &&
-            !org.opalj.control.find(project.instanceMethods(declClass.asObjectType))(mdc =>
+        if (declClass.isClassType && call.name == "<init>" &&
+            declClass.asClassType.isSubtypeOf(ClassType.Throwable) &&
+            !org.opalj.control.find(project.instanceMethods(declClass.asClassType))(mdc =>
                 mdc.method.compare(
                     "fillInStackTrace",
-                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                    MethodDescriptor.withNoArgs(ClassType.Throwable)
                 )
-            ).exists(_.method.classFile.thisType != ObjectType.Throwable)
+            ).exists(_.method.classFile.thisType != ClassType.Throwable)
         )
             Some(DPure)
         else super.handleCall(call, receiver)
@@ -245,9 +245,9 @@ trait ExceptionRater extends DomainSpecificRater {
 trait AssertionExceptionRater extends DomainSpecificRater {
 
     private final val exceptionTypes = Set(
-        ObjectType("java/lang/AssertionError"),
-        ObjectType("java/lang/IllegalArgumentException"),
-        ObjectType("java/lang/IllegalStateException")
+        ClassType("java/lang/AssertionError"),
+        ClassType("java/lang/IllegalArgumentException"),
+        ClassType("java/lang/IllegalStateException")
     )
 
     abstract override def handleCall(
@@ -259,8 +259,8 @@ trait AssertionExceptionRater extends DomainSpecificRater {
         code:    Array[Stmt[V]]
     ): Option[Purity] = {
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
-        if (call.declaringClass.isObjectType && call.name == "<init>" &&
-            exceptionTypes.exists(call.declaringClass.asObjectType.isSubtypeOf)
+        if (call.declaringClass.isClassType && call.name == "<init>" &&
+            exceptionTypes.exists(call.declaringClass.asClassType.isSubtypeOf)
         )
             Some(DPure)
         else super.handleCall(call, receiver)

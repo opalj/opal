@@ -5,7 +5,7 @@ package properties
 package thrown_exceptions
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
@@ -19,15 +19,15 @@ class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
-        val requiredAnalysis = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val requiredAnalysis = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         // Succeed either if the required analysis did NOT run, or the property is correct
         val isPropertyValid = !requiredAnalysis.exists(as.contains) ||

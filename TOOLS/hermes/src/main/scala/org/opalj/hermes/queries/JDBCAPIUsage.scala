@@ -3,7 +3,7 @@ package org.opalj
 package hermes
 package queries
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -18,11 +18,11 @@ import org.opalj.hermes.queries.util.StaticAPIMethod
 class JDBCAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
     override val apiFeatures: List[APIFeature] = {
-        val DriverManager = ObjectType("java/sql/DriverManager")
-        val Connection = ObjectType("java/sql/Connection")
-        val Statement = ObjectType("java/sql/Statement")
-        val PreparedStatement = ObjectType("java/sql/PreparedStatement")
-        val CallableStatement = ObjectType("java/sql/CallableStatement")
+        val DriverManager = ClassType("java/sql/DriverManager")
+        val Connection = ClassType("java/sql/Connection")
+        val Statement = ClassType("java/sql/Statement")
+        val PreparedStatement = ClassType("java/sql/PreparedStatement")
+        val CallableStatement = ClassType("java/sql/CallableStatement")
 
         List(
             StaticAPIMethod(DriverManager, "getConnection"),

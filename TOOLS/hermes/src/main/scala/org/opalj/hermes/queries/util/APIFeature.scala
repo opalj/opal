@@ -4,8 +4,8 @@ package hermes
 package queries
 package util
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
@@ -33,7 +33,7 @@ sealed abstract class APIFeature {
  */
 sealed abstract class ClassExtension extends APIFeature {
 
-    def declClass: ObjectType
+    def declClass: ClassType
 
     override def apiMethods: List[APIMethod] = List()
 }
@@ -41,14 +41,14 @@ sealed abstract class ClassExtension extends APIFeature {
 /**
  * Represents an extension of a specific class
  */
-case class APIClassExtension(featureID: String, declClass: ObjectType) extends ClassExtension
+case class APIClassExtension(featureID: String, declClass: ClassType) extends ClassExtension
 
 /**
  * Common trait that abstracts over instance and static api methods.
  */
 sealed abstract class APIMethod(private val fID: Option[String] = None) extends APIFeature {
 
-    def declClass: ObjectType
+    def declClass: ClassType
 
     def name: String
 
@@ -81,13 +81,13 @@ sealed abstract class APIMethod(private val fID: Option[String] = None) extends 
 /**
  * Represents an instance API call.
  *
- * @param  declClass ObjectType of the receiver.
+ * @param  declClass ClassType of the receiver.
  * @param  name Name of the API method.
  * @param  descriptor Optional method descriptor, is no descriptor assigned, it represents
  *         all methods with the same name, declared in the same class.
  */
 case class InstanceAPIMethod(
-    declClass:  ObjectType,
+    declClass:  ClassType,
     name:       String,
     descriptor: Option[MethodDescriptor],
     fID:        Option[String] = None
@@ -107,14 +107,14 @@ case class InstanceAPIMethod(
 object InstanceAPIMethod {
 
     def apply(
-        declClass: ObjectType,
+        declClass: ClassType,
         name:      String
     ): InstanceAPIMethod = {
         InstanceAPIMethod(declClass, name, None)
     }
 
     def apply(
-        declClass: ObjectType,
+        declClass: ClassType,
         name:      String,
         featureID: String
     ): InstanceAPIMethod = {
@@ -122,7 +122,7 @@ object InstanceAPIMethod {
     }
 
     def apply(
-        declClass:  ObjectType,
+        declClass:  ClassType,
         name:       String,
         descriptor: MethodDescriptor
     ): InstanceAPIMethod = {
@@ -133,13 +133,13 @@ object InstanceAPIMethod {
 /**
  * Represents a static API call.
  *
- * @param  declClass ObjectType of the receiver.
+ * @param  declClass ClassType of the receiver.
  * @param  name Name of the API method.
  * @param  descriptor Optional method descriptor, is no descriptor assigned, it represents
  *         all methods with the same name, declared in the same class.
  */
 case class StaticAPIMethod(
-    declClass:  ObjectType,
+    declClass:  ClassType,
     name:       String,
     descriptor: Option[MethodDescriptor],
     fID:        Option[String] = None
@@ -158,16 +158,16 @@ case class StaticAPIMethod(
  */
 object StaticAPIMethod {
 
-    def apply(declClass: ObjectType, name: String): StaticAPIMethod = {
+    def apply(declClass: ClassType, name: String): StaticAPIMethod = {
         StaticAPIMethod(declClass, name, None)
     }
 
-    def apply(declClass: ObjectType, name: String, featureID: String): StaticAPIMethod = {
+    def apply(declClass: ClassType, name: String, featureID: String): StaticAPIMethod = {
         StaticAPIMethod(declClass, name, None, Some(featureID))
     }
 
     def apply(
-        declClass:  ObjectType,
+        declClass:  ClassType,
         name:       String,
         descriptor: MethodDescriptor
     ): StaticAPIMethod = {

@@ -17,7 +17,7 @@ import org.opalj.br.TestSupport.biProject
 @RunWith(classOf[JUnitRunner])
 class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
 
-    val StackAndSynchronizeType = ObjectType("tactest/StackManipulationAndSynchronization")
+    val StackAndSynchronizeType = ClassType("tactest/StackManipulationAndSynchronization")
 
     val project = biProject("tactest-8-preserveAllLocals.jar")
 
@@ -54,7 +54,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                     SimpleVar(0, ComputationalTypeInt),
                     VirtualFunctionCall(
                         1,
-                        ObjectType("tactest/StackManipulationAndSynchronization"),
+                        ClassType("tactest/StackManipulationAndSynchronization"),
                         false,
                         "returnInt",
                         MethodDescriptor(NoFieldTypes, IntegerType),
@@ -89,7 +89,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                     SimpleVar(0, ComputationalTypeDouble),
                     VirtualFunctionCall(
                         1,
-                        ObjectType("tactest/StackManipulationAndSynchronization"),
+                        ClassType("tactest/StackManipulationAndSynchronization"),
                         false,
                         "returnDouble",
                         MethodDescriptor(NoFieldTypes, DoubleType),
@@ -118,11 +118,11 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType.Object)),
+                Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ClassType.Object)),
                 Nop(3),
                 NonVirtualMethodCall(
                     4,
-                    ObjectType.Object,
+                    ClassType.Object,
                     false,
                     "<init>",
                     MethodDescriptor(NoFieldTypes, VoidType),
@@ -160,7 +160,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 Assignment(4, SimpleVar(0, ComputationalTypeReference), SimpleVar(-1, ComputationalTypeReference)),
                 VirtualMethodCall(
                     5,
-                    ObjectType("tactest/StackManipulationAndSynchronization"),
+                    ClassType("tactest/StackManipulationAndSynchronization"),
                     false,
                     "pop",
                     MethodDescriptor("()V"),
@@ -211,7 +211,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                     SimpleVar(0, ComputationalTypeInt),
                     StaticFunctionCall(
                         2,
-                        ObjectType("tactest/StackManipulationAndSynchronization"),
+                        ClassType("tactest/StackManipulationAndSynchronization"),
                         false,
                         "staticMethod",
                         MethodDescriptor(ArraySeq(IntegerType, IntegerType), IntegerType),
@@ -242,11 +242,11 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
-                Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ObjectType("java/util/ArrayList"))),
+                Assignment(0, SimpleVar(0, ComputationalTypeReference), New(0, ClassType("java/util/ArrayList"))),
                 Nop(3),
                 NonVirtualMethodCall(
                     4,
-                    ObjectType("java/util/ArrayList"),
+                    ClassType("java/util/ArrayList"),
                     false,
                     "<init>",
                     MethodDescriptor(NoFieldTypes, VoidType),
@@ -255,11 +255,11 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 ),
                 Assignment(7, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(8, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
-                Assignment(9, SimpleVar(1, ComputationalTypeReference), New(9, ObjectType.Object)),
+                Assignment(9, SimpleVar(1, ComputationalTypeReference), New(9, ClassType.Object)),
                 Nop(12),
                 NonVirtualMethodCall(
                     13,
-                    ObjectType.Object,
+                    ClassType.Object,
                     false,
                     "<init>",
                     MethodDescriptor(NoFieldTypes, VoidType),
@@ -271,10 +271,10 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                     SimpleVar(0, ComputationalTypeInt),
                     VirtualFunctionCall(
                         16,
-                        ObjectType("java/util/List"),
+                        ClassType("java/util/List"),
                         true,
                         "add",
-                        MethodDescriptor(ArraySeq(ObjectType.Object), BooleanType),
+                        MethodDescriptor(ArraySeq(ClassType.Object), BooleanType),
                         SimpleVar(0, ComputationalTypeReference),
                         List(SimpleVar(1, ComputationalTypeReference))
                     )

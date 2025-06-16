@@ -24,13 +24,13 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
         "Detects calls to setAccessible() outside of doPrivileged blocks."
 
     private val ReflectFieldType =
-        ObjectType("java/lang/reflect/Field")
+        ClassType("java/lang/reflect/Field")
     private val ReflectMethodType =
-        ObjectType("java/lang/reflect/Method")
+        ClassType("java/lang/reflect/Method")
     private val PriviledgedActionType =
-        ObjectType("java/security/PrivilegedAction")
+        ClassType("java/security/PrivilegedAction")
     private val PriviledgedExceptionActionType =
-        ObjectType("java/security/PrivilegedExceptionAction")
+        ClassType("java/security/PrivilegedExceptionAction")
 
     /**
      * Runs this analysis on the given project.

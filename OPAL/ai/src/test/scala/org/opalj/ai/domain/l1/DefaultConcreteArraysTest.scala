@@ -15,11 +15,11 @@ import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
+import org.opalj.br.ClassType
 import org.opalj.br.DoubleType
 import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
-import org.opalj.br.ObjectType
 import org.opalj.br.ShortType
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.io.OpeningFileFailedException
@@ -243,7 +243,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueASubtypeOf(varray, ArrayType(ObjectType.String)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ClassType.String)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -272,7 +272,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ClassType.Object)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(4)))
 
@@ -289,7 +289,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ClassType.Object)) should be(Yes)
 
                 arraylength(returnIndex, varray) should be(ComputedValue(IntegerRange(5)))
 
@@ -299,7 +299,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         IntegerValue(10, 0),
                         varray
                     ).result,
-                    ObjectType.Integer
+                    ClassType.Integer
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -308,7 +308,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         IntegerValue(17, 1),
                         varray
                     ).result,
-                    ObjectType.Float
+                    ClassType.Float
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -317,7 +317,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         IntegerValue(26, 2),
                         varray
                     ).result,
-                    ObjectType.Double
+                    ClassType.Double
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -326,7 +326,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         IntegerValue(33, 3),
                         varray
                     ).result,
-                    ObjectType.Boolean
+                    ClassType.Boolean
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -335,7 +335,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         IntegerValue(41, 4),
                         varray
                     ).result,
-                    ObjectType.Character
+                    ClassType.Character
                 ) should be(Yes)
 
                 isValueASubtypeOf(
@@ -344,7 +344,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                         IntegerValue(41, 4),
                         varray
                     ).result,
-                    ObjectType.Character
+                    ClassType.Character
                 ) should be(Yes)
 
                 arrayload(
@@ -469,7 +469,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                 val varray = allReturnedValues(returnIndex)
                 val expectedException =
                     ThrowsException(List(
-                        InitializedObjectValue(-100021, ObjectType.ArrayIndexOutOfBoundsException)
+                        InitializedObjectValue(-100021, ClassType.ArrayIndexOutOfBoundsException)
                     ))
 
                 allReturnedValues.size should be(1)
@@ -489,15 +489,15 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
                 val returnIndex = 26
                 val varray = allReturnedValues(returnIndex)
                 val expectedException =
-                    ThrowsException(List(InitializedObjectValue(-100026, ObjectType.ArrayStoreException)))
+                    ThrowsException(List(InitializedObjectValue(-100026, ClassType.ArrayStoreException)))
 
                 // make sure the class hierarchy is as expected
-                assert(domain.classHierarchy.isKnown(ObjectType.Class))
-                assert(domain.classHierarchy.isKnown(ObjectType.String))
-                assert(!isSubtypeOf(ObjectType.Class, ObjectType.String))
-                assert(!isSubtypeOf(ObjectType.String, ObjectType.Class))
+                assert(domain.classHierarchy.isKnown(ClassType.Class))
+                assert(domain.classHierarchy.isKnown(ClassType.String))
+                assert(!isSubtypeOf(ClassType.Class, ClassType.String))
+                assert(!isSubtypeOf(ClassType.String, ClassType.Class))
 
-                val array = InitializedObjectValue(returnIndex, ObjectType.Class)
+                val array = InitializedObjectValue(returnIndex, ClassType.Class)
                 val index = IntegerValue(returnIndex, 3)
                 arraystore(returnIndex, array, index, varray) should be(expectedException)
             }
@@ -544,10 +544,10 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueASubtypeOf(varray, ArrayType(ObjectType.Cloneable)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ClassType.Cloneable)) should be(Yes)
 
                 val returnedValue = arrayload(returnIndex, IntegerValue(returnIndex, 0), varray)
-                val exceptions = List(ObjectType.ArrayStoreException)
+                val exceptions = List(ClassType.ArrayStoreException)
                 returnedValue should be(ComputedValueOrException(null, exceptions))
             }
         }
@@ -564,16 +564,16 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ClassType.Object)) should be(Yes)
 
                 arraylength(returnIndex, varray) should
-                    be(throws(InitializedObjectValue(-100007, ObjectType.NullPointerException)))
+                    be(throws(InitializedObjectValue(-100007, ClassType.NullPointerException)))
 
                 arraystore(returnIndex, IntegerValue(20), IntegerValue(12, 0), varray) should
-                    be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
+                    be(ThrowsException(List(InitializedObjectValue(-100007, ClassType.NullPointerException))))
 
                 arrayload(returnIndex, IntegerValue(1), varray) should
-                    be(ThrowsException(List(InitializedObjectValue(-100007, ObjectType.NullPointerException))))
+                    be(ThrowsException(List(InitializedObjectValue(-100007, ClassType.NullPointerException))))
 
             }
         }
@@ -588,7 +588,7 @@ class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
                 allReturnedValues.size should be(1)
 
-                isValueASubtypeOf(varray, ArrayType(ObjectType.Object)) should be(Yes)
+                isValueASubtypeOf(varray, ArrayType(ClassType.Object)) should be(Yes)
 
             }
         }
@@ -624,7 +624,7 @@ class DefaultConcreteArraysTestDomain(
     // array, hence we can track the contents
     override protected def reifyArray(pc: Int, count: Int, arrayType: ArrayType): Boolean = {
         super.reifyArray(pc, count, arrayType) ||
-        arrayType.componentType.isObjectType && count < maxTrackedArraySize
+        arrayType.componentType.isClassType && count < maxTrackedArraySize
     }
 }
 

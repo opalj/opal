@@ -37,9 +37,9 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
                 val typeName = "ProxyValidation$" + t.fqn + ":" + m.name + m.descriptor.toJVMDescriptor + "$"
                 val definingType =
                     TypeDeclaration(
-                        ObjectType(typeName),
+                        ClassType(typeName),
                         false,
-                        Some(ObjectType.Object),
+                        Some(ClassType.Object),
                         UIDSet.empty
                     )
                 val proxyMethodName = m.name + '$' + "proxy"

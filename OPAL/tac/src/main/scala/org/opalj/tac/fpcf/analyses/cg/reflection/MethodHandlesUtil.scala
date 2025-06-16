@@ -6,9 +6,9 @@ package analyses
 package cg
 package reflection
 
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
@@ -19,7 +19,7 @@ object MethodHandlesUtil {
         receiver:            ReferenceType,
         name:                String,
         desc:                MethodDescriptor,
-        actualReceiverTypes: Option[Set[ObjectType]],
+        actualReceiverTypes: Option[Set[ClassType]],
         isVirtual:           Boolean,
         isStatic:            Boolean,
         isConstructor:       Boolean
@@ -39,7 +39,7 @@ object MethodHandlesUtil {
             new NameBasedMethodMatcher(Set(name)),
             if (receiver.isArrayType)
                 new ClassBasedMethodMatcher(
-                    Set(ObjectType.Object),
+                    Set(ClassType.Object),
                     onlyMethodsExactlyInClass = false
                 )
             else if (isVirtual)
@@ -50,12 +50,12 @@ object MethodHandlesUtil {
                     )
                 else
                     new ClassBasedMethodMatcher(
-                        project.classHierarchy.allSubtypes(receiver.asObjectType, true),
+                        project.classHierarchy.allSubtypes(receiver.asClassType, true),
                         onlyMethodsExactlyInClass = false
                     )
             else
                 new ClassBasedMethodMatcher(
-                    Set(receiver.asObjectType),
+                    Set(receiver.asClassType),
                     onlyMethodsExactlyInClass = false
                 )
         )
@@ -113,7 +113,7 @@ object MethodHandlesUtil {
 
         def isMethodType(expr: Expr[V]): Boolean = {
             expr.isStaticFunctionCall &&
-            (expr.asStaticFunctionCall.declaringClass eq ObjectType.MethodType) &&
+            (expr.asStaticFunctionCall.declaringClass eq ClassType.MethodType) &&
             expr.asStaticFunctionCall.name == "methodType"
         }
 
@@ -203,7 +203,7 @@ object MethodHandlesUtil {
                         returnType <- returnTypes
                     } yield MethodDescriptor(otherParamTypes, returnType)
                 Some(possibleMethodDescriptorsIterator)
-            } else if (secondParamType == ObjectType.Class) { // methodType(T1, T2) => (T2)T2
+            } else if (secondParamType == ClassType.Class) { // methodType(T1, T2) => (T2)T2
                 val paramTypesOpt =
                     TypesUtil.getPossibleClasses(params(1), stmts, project)
                 if (paramTypesOpt.isEmpty) {

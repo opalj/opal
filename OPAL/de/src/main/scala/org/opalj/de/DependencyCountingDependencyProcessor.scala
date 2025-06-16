@@ -46,11 +46,11 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     }
     def currentDependencyOnPrimitivesCount: Int = dependencyOnPrimitivesCount.get
 
-    final val DummyClassType = ObjectType("<-DUMMY_CLASSTYPE->")
+    final val DummyClassType = ClassType("<-DUMMY_CLASSTYPE->")
 
     final val DummyVirtualClass = VirtualClass(DummyClassType)
 
-    override def asVirtualClass(objectType: ObjectType): VirtualClass = {
+    override def asVirtualClass(classType: ClassType): VirtualClass = {
         DummyVirtualClass
     }
 
@@ -58,7 +58,7 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
         VirtualField(DummyClassType, "<-DUMMY_FIELD->", DummyClassType)
 
     override def asVirtualField(
-        declaringClassType: ObjectType, // Recall...new Int[]{1,2,3,...}.length => arraylength
+        declaringClassType: ClassType, // Recall...new Int[]{1,2,3,...}.length => arraylength
         name:               String,
         fieldType:          FieldType
     ): VirtualField = {

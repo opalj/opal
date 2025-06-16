@@ -10,7 +10,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKESPECIAL(
-    declaringClass:   ObjectType, // an interface or class type to be precise
+    declaringClass:   ClassType, // an interface or class type to be precise
     isInterface:      Boolean,
     name:             String, // an interface or class type to be precise
     methodDescriptor: MethodDescriptor
@@ -26,7 +26,7 @@ case class INVOKESPECIAL(
 
     final def mnemonic: String = "invokespecial"
 
-    final def jvmExceptions: List[ObjectType] = MethodInvocationInstruction.jvmExceptions
+    final def jvmExceptions: List[ClassType] = MethodInvocationInstruction.jvmExceptions
 
     final def length: Int = 3
 
@@ -66,7 +66,7 @@ object INVOKESPECIAL extends InstructionMetaInformation {
         methodName:       String,
         methodDescriptor: String
     ): INVOKESPECIAL = {
-        val declaringClassType = ObjectType(declaringClass)
+        val declaringClassType = ClassType(declaringClass)
         INVOKESPECIAL(declaringClassType, isInterface, methodName, MethodDescriptor(methodDescriptor))
     }
 

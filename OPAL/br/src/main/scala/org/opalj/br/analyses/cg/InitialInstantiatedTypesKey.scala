@@ -23,13 +23,13 @@ import net.ceedubs.ficus.Ficus._
  *
  * @author Florian Kuebler
  */
-object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[ObjectType], Nothing] {
+object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[ClassType], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey."
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(ClosedPackagesKey)
 
-    override def compute(project: SomeProject): Iterable[ObjectType] = {
+    override def compute(project: SomeProject): Iterable[ClassType] = {
         val key = ConfigKeyPrefix + "analysis"
         val configuredAnalysis = project.config.as[Option[String]](key)
         if (configuredAnalysis.isEmpty) {

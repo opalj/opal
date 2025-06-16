@@ -461,13 +461,13 @@
         </restriction>
     </simpleType>
 
-  	<simpleType name="FormatElement-ushort_cp_index-to-object_type">
+  	<simpleType name="FormatElement-ushort_cp_index-to-class_type">
         <annotation>
             <documentation>An index in the constant pool referring to a
             Constant_class entry that identifies either a class or interface type .</documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
-            <enumeration value="ushort_cp_index->objectType"/>
+            <enumeration value="ushort_cp_index->classType"/>
         </restriction>
     </simpleType>
 

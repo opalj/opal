@@ -48,11 +48,11 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
         Project(jarFile, GlobalLogContext, config)
     }
 
-    val StaticMethods = ObjectType("proxy/StaticMethods")
-    val InstanceMethods = ObjectType("proxy/InstanceMethods")
-    val Constructors = ObjectType("proxy/Constructors")
-    val PrivateInstanceMethods = ObjectType("proxy/PrivateInstanceMethods")
-    val InterfaceMethods = ObjectType("proxy/InterfaceMethods")
+    val StaticMethods = ClassType("proxy/StaticMethods")
+    val InstanceMethods = ClassType("proxy/InstanceMethods")
+    val Constructors = ClassType("proxy/Constructors")
+    val PrivateInstanceMethods = ClassType("proxy/PrivateInstanceMethods")
+    val InterfaceMethods = ClassType("proxy/InterfaceMethods")
 
     /**
      * ********************************************************************************************
@@ -61,9 +61,9 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
      */
 
     private def getMethods(
-        classType:  ObjectType,
+        classType:  ClassType,
         repository: ClassFileRepository
-    ): Iterable[(ObjectType, Method)] = {
+    ): Iterable[(ClassType, Method)] = {
         repository.classFile(classType) match {
             case Some(cf) => cf.methods.map { (classType, _) }
             case None     => fail(s"${classType.toJava} cannot be found")
@@ -113,7 +113,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             interfaceMethods should not be (Symbol("Empty"))
             val staticMethods = getMethods(StaticMethods, testProject)
             staticMethods should not be (Symbol("Empty"))
-            val methods: Iterable[(ObjectType, Method)] = instanceMethods ++
+            val methods: Iterable[(ClassType, Method)] = instanceMethods ++
                 constructors ++ privateInstanceMethods ++ interfaceMethods ++
                 staticMethods
 
@@ -146,7 +146,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         instructions should be(Array(
                             ALOAD_0,
                             INVOKESPECIAL(
-                                ObjectType.Object,
+                                ClassType.Object,
                                 false,
                                 "<init>",
                                 NoArgumentAndNoReturnValueMethodDescriptor
@@ -402,9 +402,9 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         testProject.classFile(StaticMethods).get.thisType,
                         testProject.classFile(StaticMethods).get.isInterfaceDeclaration,
                         TypeDeclaration(
-                            ObjectType("StaticMethods$ProxyWithFiveArguments"),
+                            ClassType("StaticMethods$ProxyWithFiveArguments"),
                             false,
-                            Some(ObjectType.Object),
+                            Some(ClassType.Object),
                             UIDSet.empty
                         ),
                         methodWithFiveDoubleParameters.name,
@@ -509,9 +509,9 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                             testProject.classFile(StaticMethods).get.thisType,
                             testProject.classFile(StaticMethods).get.isInterfaceDeclaration,
                             TypeDeclaration(
-                                ObjectType(s"TestProxy$$${theType}$$${method.name}"),
+                                ClassType(s"TestProxy$$${theType}$$${method.name}"),
                                 false,
-                                Some(ObjectType.Object),
+                                Some(ClassType.Object),
                                 UIDSet.empty
                             ),
                             "theProxy",
@@ -604,9 +604,9 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                             testProject.classFile(StaticMethods).get.thisType,
                             testProject.classFile(StaticMethods).get.isInterfaceDeclaration,
                             TypeDeclaration(
-                                ObjectType(s"TestProxy$$${theType}$$${method.name}"),
+                                ClassType(s"TestProxy$$${theType}$$${method.name}"),
                                 false,
-                                Some(ObjectType.Object),
+                                Some(ClassType.Object),
                                 UIDSet.empty
                             ),
                             "theProxy",
@@ -680,7 +680,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                                     method.name,
                                     MethodDescriptor(
                                         method.parameterTypes,
-                                        ObjectType.Object
+                                        ClassType.Object
                                     )
                                 )
                             )
@@ -693,7 +693,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                                     method.name,
                                     MethodDescriptor(
                                         method.parameterTypes,
-                                        ObjectType.Object
+                                        ClassType.Object
                                     )
                                 )
                             )
@@ -706,7 +706,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                                     method.name,
                                     MethodDescriptor(
                                         method.parameterTypes,
-                                        ObjectType.Object
+                                        ClassType.Object
                                     )
                                 )
                             )
@@ -718,7 +718,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                                     method.name,
                                     MethodDescriptor(
                                         method.parameterTypes,
-                                        ObjectType.Object
+                                        ClassType.Object
                                     )
                                 )
                             )
@@ -728,9 +728,9 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                             testProject.classFile(StaticMethods).get.thisType,
                             testProject.classFile(StaticMethods).get.isInterfaceDeclaration,
                             TypeDeclaration(
-                                ObjectType(s"TestProxy$$${theType}$$${method.name}"),
+                                ClassType(s"TestProxy$$${theType}$$${method.name}"),
                                 false,
-                                Some(ObjectType.Object),
+                                Some(ClassType.Object),
                                 UIDSet.empty
                             ),
                             "theProxy",
@@ -792,7 +792,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                             invokedynamic.bootstrapMethod.arguments(2).asInstanceOf[MethodDescriptor]
                         assert(!ClassFileFactory.isVirtualMethodReference(
                             targetMethodHandle.opcodeOfUnderlyingInstruction,
-                            targetMethodHandle.receiverType.asObjectType,
+                            targetMethodHandle.receiverType.asClassType,
                             targetMethodHandle.methodDescriptor,
                             proxyInterfaceMethodDescriptor
                         ))
@@ -834,25 +834,25 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     assert(ClassFileFactory.isNewInvokeSpecial(opcode, methodName))
                 }
 
-                val SomeType = ObjectType("SomeType")
+                val SomeType = ClassType("SomeType")
                 val proxy = ClassFileFactory.Proxy(
                     MethodReferences.thisType,
                     MethodReferences.isInterfaceDeclaration,
                     TypeDeclaration(
-                        ObjectType("MethodRefConstructorProxy"),
+                        ClassType("MethodRefConstructorProxy"),
                         false,
-                        Some(ObjectType.Object),
+                        Some(ClassType.Object),
                         UIDSet.empty
                     ),
                     "get",
-                    MethodDescriptor(ObjectType.String, SomeType),
+                    MethodDescriptor(ClassType.String, SomeType),
                     SomeType,
                     false,
                     InvokeSpecialMethodHandle(
                         SomeType,
                         false,
                         "<init>",
-                        MethodDescriptor(ObjectType.String, SomeType)
+                        MethodDescriptor(ClassType.String, SomeType)
                     ),
                     INVOKESPECIAL.opcode,
                     MethodDescriptor.NoArgsAndReturnVoid, // not tested...
@@ -887,20 +887,20 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         invokedynamic.bootstrapMethod.arguments(2).asInstanceOf[MethodDescriptor]
                     assert(ClassFileFactory.isVirtualMethodReference(
                         targetMethodHandle.opcodeOfUnderlyingInstruction,
-                        targetMethodHandle.receiverType.asObjectType,
+                        targetMethodHandle.receiverType.asClassType,
                         targetMethodHandle.methodDescriptor,
                         proxyInterfaceMethodDescriptor
                     ))
                 }
 
-                val SomeOtherType = ObjectType("SomeOtherType")
+                val SomeOtherType = ClassType("SomeOtherType")
                 val proxy = ClassFileFactory.Proxy(
                     MethodReferences.thisType,
                     MethodReferences.isInterfaceDeclaration,
                     TypeDeclaration(
-                        ObjectType("InstanceMethodRefProxy"),
+                        ClassType("InstanceMethodRefProxy"),
                         false,
-                        Some(ObjectType.Object),
+                        Some(ClassType.Object),
                         UIDSet.empty
                     ),
                     "isFull",
@@ -933,15 +933,15 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
         describe("should be able to profixy $newInstance methods") {
             it("by picking an alternate name for the factory method") {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
-                val theType = ObjectType("ClassFileFactoryTest$newInstanceName")
+                val theType = ClassType("ClassFileFactoryTest$newInstanceName")
                 val proxy =
                     ClassFileFactory.Proxy(
                         lambdas.thisType,
                         lambdas.isInterfaceDeclaration,
                         TypeDeclaration(
-                            ObjectType(theType.toJava + '$' + "Proxy"),
+                            ClassType(theType.toJava + '$' + "Proxy"),
                             false,
-                            Some(ObjectType.Object),
+                            Some(ClassType.Object),
                             UIDSet.empty
                         ),
                         "$newInstance",
@@ -967,15 +967,15 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
             it("the bridge method should stack & cast parameters and call the forwarding method") {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
-                val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
-                val proxyType = ObjectType(receiverType.simpleName + '$' + "Proxy")
+                val receiverType = ClassType("ClassFileFactoryTest$BridgeCast")
+                val proxyType = ClassType(receiverType.simpleName + '$' + "Proxy")
                 val methodDescriptor =
-                    MethodDescriptor(ArraySeq(ObjectType.String, DoubleType), IntegerType)
+                    MethodDescriptor(ArraySeq(ClassType.String, DoubleType), IntegerType)
                 val proxy =
                     ClassFileFactory.Proxy(
                         lambdas.thisType,
                         lambdas.isInterfaceDeclaration,
-                        TypeDeclaration(proxyType, false, Some(ObjectType.Object), UIDSet.empty),
+                        TypeDeclaration(proxyType, false, Some(ClassType.Object), UIDSet.empty),
                         "method",
                         methodDescriptor,
                         receiverType,
@@ -987,7 +987,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         ),
                         INVOKESTATIC.opcode,
                         MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
-                        ArraySeq(MethodDescriptor(ArraySeq(ObjectType.Object, DoubleType), IntegerType))
+                        ArraySeq(MethodDescriptor(ArraySeq(ClassType.Object, DoubleType), IntegerType))
                     )
                 val bridge = proxy.methods.find(m => ACC_BRIDGE.isSet(m.accessFlags))
                 bridge shouldBe defined
@@ -999,7 +999,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     Array(
                         ALOAD_0,
                         ALOAD_1,
-                        CHECKCAST(ObjectType.String),
+                        CHECKCAST(ClassType.String),
                         null,
                         null,
                         DLOAD_2,
@@ -1013,15 +1013,15 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
             it("should be able to add multiple bridge methods") {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
-                val receiverType = ObjectType("ClassFileFactoryTest$BridgeCast")
-                val proxyType = ObjectType(receiverType.simpleName + '$' + "Proxy")
+                val receiverType = ClassType("ClassFileFactoryTest$BridgeCast")
+                val proxyType = ClassType(receiverType.simpleName + '$' + "Proxy")
                 val methodDescriptor =
-                    MethodDescriptor(ArraySeq(ObjectType.String, DoubleType), IntegerType)
+                    MethodDescriptor(ArraySeq(ClassType.String, DoubleType), IntegerType)
                 val proxy =
                     ClassFileFactory.Proxy(
                         lambdas.thisType,
                         lambdas.isInterfaceDeclaration,
-                        TypeDeclaration(proxyType, false, Some(ObjectType.Object), UIDSet.empty),
+                        TypeDeclaration(proxyType, false, Some(ClassType.Object), UIDSet.empty),
                         "method",
                         methodDescriptor,
                         receiverType,
@@ -1034,8 +1034,8 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         INVOKESTATIC.opcode,
                         MethodDescriptor.NoArgsAndReturnVoid, // <= Not relevant...
                         ArraySeq(
-                            MethodDescriptor(ArraySeq(ObjectType.Object, DoubleType), IntegerType),
-                            MethodDescriptor(ArraySeq(ObjectType.Serializable, DoubleType), IntegerType)
+                            MethodDescriptor(ArraySeq(ClassType.Object, DoubleType), IntegerType),
+                            MethodDescriptor(ArraySeq(ClassType.Serializable, DoubleType), IntegerType)
                         )
                     )
                 val bridges = proxy.methods.filter(m => ACC_BRIDGE.isSet(m.accessFlags))
@@ -1049,7 +1049,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         Array(
                             ALOAD_0,
                             ALOAD_1,
-                            CHECKCAST(ObjectType.String),
+                            CHECKCAST(ClassType.String),
                             null,
                             null,
                             DLOAD_2,
@@ -1066,9 +1066,9 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
         describe("should compute correct constructor stack and local values") {
             val definingType =
                 TypeDeclaration(
-                    ObjectType("SomeRandomType"),
+                    ClassType("SomeRandomType"),
                     false,
-                    Some(ObjectType.Object),
+                    Some(ClassType.Object),
                     UIDSet.empty
                 )
 
@@ -1093,7 +1093,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
 
             it("for a single reference value field") {
-                testConstructor(ArraySeq(ObjectType.Object), 2, 2)
+                testConstructor(ArraySeq(ClassType.Object), 2, 2)
             }
 
             it("for primitive value fields") {
@@ -1105,7 +1105,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
 
             it("for multiple simple primitive and reference value fields") {
-                testConstructor(ArraySeq(ObjectType.Object, IntegerType, IntegerType), 4, 2)
+                testConstructor(ArraySeq(ClassType.Object, IntegerType, IntegerType), 4, 2)
             }
 
             it("for multiple wide primitive value fields") {
@@ -1113,7 +1113,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
 
             it("for everything together") {
-                testConstructor(ArraySeq(ObjectType.Object, LongType, IntegerType), 5, 3)
+                testConstructor(ArraySeq(ClassType.Object, LongType, IntegerType), 5, 3)
             }
         }
 
@@ -1125,27 +1125,27 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     NoArgumentAndNoReturnValueMethodDescriptor,
                     0,
                     Seq.empty,
-                    ObjectType.Object
+                    ClassType.Object
                 )
                 instructions should have size (0)
             }
 
             it("should forward all parameters for identical, non-empty descriptors") {
-                var d = MethodDescriptor(ArraySeq(IntegerType, ObjectType.String), VoidType)
-                ClassFileFactory.parameterForwardingInstructions(d, d, 0, Seq.empty, ObjectType.Object) should be(
+                var d = MethodDescriptor(ArraySeq(IntegerType, ClassType.String), VoidType)
+                ClassFileFactory.parameterForwardingInstructions(d, d, 0, Seq.empty, ClassType.Object) should be(
                     Array(
                         ILOAD_0,
                         ALOAD_1
                     )
                 )
-                d = MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
-                ClassFileFactory.parameterForwardingInstructions(d, d, 0, Seq.empty, ObjectType.Object) should be(
+                d = MethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object)
+                ClassFileFactory.parameterForwardingInstructions(d, d, 0, Seq.empty, ClassType.Object) should be(
                     Array(
                         ALOAD_0
                     )
                 )
                 d = MethodDescriptor(ArraySeq.fill[FieldType](10)(ByteType), VoidType)
-                ClassFileFactory.parameterForwardingInstructions(d, d, 0, Seq.empty, ObjectType.Object) should be(
+                ClassFileFactory.parameterForwardingInstructions(d, d, 0, Seq.empty, ClassType.Object) should be(
                     Array(
                         ILOAD_0,
                         ILOAD_1,
@@ -1167,10 +1167,10 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 )
                 d =
                     MethodDescriptor(
-                        ArraySeq(DoubleType, ObjectType.String, ByteType, LongType, DoubleType, FloatType),
+                        ArraySeq(DoubleType, ClassType.String, ByteType, LongType, DoubleType, FloatType),
                         VoidType
                     )
-                ClassFileFactory.parameterForwardingInstructions(d, d, 0, Seq.empty, ObjectType.Object) should be(
+                ClassFileFactory.parameterForwardingInstructions(d, d, 0, Seq.empty, ClassType.Object) should be(
                     Array(
                         DLOAD_0,
                         ALOAD_2,
@@ -1195,7 +1195,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         ArraySeq(ShortType, ShortType, IntegerType, LongType, DoubleType, DoubleType),
                         VoidType
                     )
-                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ObjectType.Object) should be(
+                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ClassType.Object) should be(
                     Array(
                         ILOAD_0,
                         ILOAD_1,
@@ -1226,53 +1226,53 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 val d2 =
                     MethodDescriptor(
                         ArraySeq(
-                            ObjectType.Byte,
-                            ObjectType.Character,
-                            ObjectType.Short,
-                            ObjectType.Integer,
-                            ObjectType.Float,
-                            ObjectType.Long
+                            ClassType.Byte,
+                            ClassType.Character,
+                            ClassType.Short,
+                            ClassType.Integer,
+                            ClassType.Float,
+                            ClassType.Long
                         ),
                         VoidType
                     )
-                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ObjectType.Object) should be(
+                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ClassType.Object) should be(
                     Array(
                         ILOAD_0,
-                        INVOKESTATIC(ObjectType.Byte, false, "valueOf", valueOfDescriptor(ByteType)),
+                        INVOKESTATIC(ClassType.Byte, false, "valueOf", valueOfDescriptor(ByteType)),
                         null,
                         null,
                         ILOAD_1,
-                        INVOKESTATIC(ObjectType.Character, false, "valueOf", valueOfDescriptor(CharType)),
+                        INVOKESTATIC(ClassType.Character, false, "valueOf", valueOfDescriptor(CharType)),
                         null,
                         null,
                         ILOAD_2,
-                        INVOKESTATIC(ObjectType.Short, false, "valueOf", valueOfDescriptor(ShortType)),
+                        INVOKESTATIC(ClassType.Short, false, "valueOf", valueOfDescriptor(ShortType)),
                         null,
                         null,
                         ILOAD_3,
-                        INVOKESTATIC(ObjectType.Integer, false, "valueOf", valueOfDescriptor(IntegerType)),
+                        INVOKESTATIC(ClassType.Integer, false, "valueOf", valueOfDescriptor(IntegerType)),
                         null,
                         null,
                         FLOAD(4),
                         null,
-                        INVOKESTATIC(ObjectType.Float, false, "valueOf", valueOfDescriptor(FloatType)),
+                        INVOKESTATIC(ClassType.Float, false, "valueOf", valueOfDescriptor(FloatType)),
                         null,
                         null,
                         LLOAD(5),
                         null,
-                        INVOKESTATIC(ObjectType.Long, false, "valueOf", valueOfDescriptor(LongType)),
+                        INVOKESTATIC(ClassType.Long, false, "valueOf", valueOfDescriptor(LongType)),
                         null,
                         null
                     )
                 )
             }
             it("should create unboxing instructions for wrapper types") {
-                val d1 = MethodDescriptor(ObjectType.Integer, VoidType)
+                val d1 = MethodDescriptor(ClassType.Integer, VoidType)
                 val d2 = MethodDescriptor(IntegerType, VoidType)
-                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ObjectType.Object) should be(
+                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ClassType.Object) should be(
                     Array(
                         ALOAD_0,
-                        INVOKEVIRTUAL(ObjectType.Integer, "intValue", MethodDescriptor.JustReturnsInteger),
+                        INVOKEVIRTUAL(ClassType.Integer, "intValue", MethodDescriptor.JustReturnsInteger),
                         null,
                         null
                     )
@@ -1281,18 +1281,18 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             it("should cast arbitrary reference types") {
                 val d1 =
                     MethodDescriptor(
-                        ArraySeq(ObjectType.Object, ObjectType.Object),
+                        ArraySeq(ClassType.Object, ClassType.Object),
                         VoidType
                     )
                 val d2 =
                     MethodDescriptor(
-                        ArraySeq(ObjectType.String, ArrayType.ArrayOfObject),
+                        ArraySeq(ClassType.String, ArrayType.ArrayOfObject),
                         VoidType
                     )
-                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ObjectType.Object) should be(
+                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ClassType.Object) should be(
                     Array(
                         ALOAD_0,
-                        CHECKCAST(ObjectType.String),
+                        CHECKCAST(ClassType.String),
                         null,
                         null,
                         ALOAD_1,
@@ -1308,27 +1308,27 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     MethodDescriptor(
                         ArraySeq(
                             IntegerType,
-                            ObjectType.String,
+                            ClassType.String,
                             ByteType,
                             BooleanType,
-                            ObjectType.Integer,
+                            ClassType.Integer,
                             LongType,
                             ShortType
                         ),
                         VoidType
                     )
-                val d2 = MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
-                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ObjectType.Object) should be(
+                val d2 = MethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object)
+                ClassFileFactory.parameterForwardingInstructions(d1, d2, 0, Seq.empty, ClassType.Object) should be(
                     Array(
                         BIPUSH(7),
                         null,
-                        ANEWARRAY(ObjectType.Object),
+                        ANEWARRAY(ClassType.Object),
                         null,
                         null,
                         DUP,
                         ICONST_0,
                         ILOAD_0,
-                        INVOKESTATIC(ObjectType.Integer, false, "valueOf", valueOfDescriptor(IntegerType)),
+                        INVOKESTATIC(ClassType.Integer, false, "valueOf", valueOfDescriptor(IntegerType)),
                         null,
                         null,
                         AASTORE,
@@ -1339,14 +1339,14 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         DUP,
                         ICONST_2,
                         ILOAD_2,
-                        INVOKESTATIC(ObjectType.Byte, false, "valueOf", valueOfDescriptor(ByteType)),
+                        INVOKESTATIC(ClassType.Byte, false, "valueOf", valueOfDescriptor(ByteType)),
                         null,
                         null,
                         AASTORE,
                         DUP,
                         ICONST_3,
                         ILOAD_3,
-                        INVOKESTATIC(ObjectType.Boolean, false, "valueOf", valueOfDescriptor(BooleanType)),
+                        INVOKESTATIC(ClassType.Boolean, false, "valueOf", valueOfDescriptor(BooleanType)),
                         null,
                         null,
                         AASTORE,
@@ -1359,7 +1359,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         ICONST_5,
                         LLOAD(5),
                         null,
-                        INVOKESTATIC(ObjectType.Long, false, "valueOf", valueOfDescriptor(LongType)),
+                        INVOKESTATIC(ClassType.Long, false, "valueOf", valueOfDescriptor(LongType)),
                         null,
                         null,
                         AASTORE,
@@ -1368,7 +1368,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         null,
                         ILOAD(7),
                         null,
-                        INVOKESTATIC(ObjectType.Short, false, "valueOf", valueOfDescriptor(ShortType)),
+                        INVOKESTATIC(ClassType.Short, false, "valueOf", valueOfDescriptor(ShortType)),
                         null,
                         null,
                         AASTORE
@@ -1383,7 +1383,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 BaseType.baseTypes foreach { t =>
                     val name = s"${t.toJava}Value"
                     val desc = new NoArgumentMethodDescriptor(t)
-                    val conv = ClassFileFactory.returnAndConvertInstructions(t, ObjectType.Object)
+                    val conv = ClassFileFactory.returnAndConvertInstructions(t, ClassType.Object)
                     conv should have size (7)
                     conv(0) should be(CHECKCAST(t.WrapperType))
                     conv(3) should be(INVOKEVIRTUAL(t.WrapperType, name, desc))
@@ -1392,15 +1392,15 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
 
             it("should convert Object to any reference type by casting") {
-                Seq(ObjectType.String, ArrayType(LongType), ObjectType.Integer).foreach(t =>
-                    ClassFileFactory.returnAndConvertInstructions(t, ObjectType.Object) should be(
+                Seq(ClassType.String, ArrayType(LongType), ClassType.Integer).foreach(t =>
+                    ClassFileFactory.returnAndConvertInstructions(t, ClassType.Object) should be(
                         Array(CHECKCAST(t.asReferenceType), null, null, ARETURN)
                     )
                 )
             }
 
             it("should convert other types if possible, e.g. base types to wrappers") {
-                import ObjectType.Byte
+                import ClassType.Byte
                 ClassFileFactory.returnAndConvertInstructions(Byte, ByteType) should be(
                     Array(
                         INVOKESTATIC(Byte, false, "valueOf", MethodDescriptor(ByteType, Byte)),
@@ -1421,28 +1421,28 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             ).get
             val deserializedLambdaMethodDescriptor =
                 MethodDescriptor(
-                    ArraySeq(ObjectType.SerializedLambda),
-                    ObjectType.Object
+                    ArraySeq(ClassType.SerializedLambda),
+                    ClassType.Object
                 )
             val implMethod = InvokeSpecialMethodHandle(
                 IntersectionTypes.thisType,
                 false,
                 "lambda$1",
                 MethodDescriptor(
-                    ArraySeq(ObjectType.Float, ObjectType.String, ObjectType.Integer),
-                    ObjectType.String
+                    ArraySeq(ClassType.Float, ClassType.String, ClassType.Integer),
+                    ClassType.String
                 )
             )
-            val samMethodType = MethodDescriptor(ObjectType.Object, ObjectType.Object)
-            val instantiatedMethodType = MethodDescriptor(ObjectType.String, ObjectType.Object)
+            val samMethodType = MethodDescriptor(ClassType.Object, ClassType.Object)
+            val instantiatedMethodType = MethodDescriptor(ClassType.String, ClassType.Object)
             val proxy = ClassFileFactory.Proxy(
                 IntersectionTypes.thisType,
                 IntersectionTypes.isInterfaceDeclaration,
                 TypeDeclaration(
-                    ObjectType("SerializableProxy"),
+                    ClassType("SerializableProxy"),
                     false,
-                    Some(ObjectType.Object),
-                    UIDSet(ObjectType("java/util/Function"), ObjectType.Serializable)
+                    Some(ClassType.Object),
+                    UIDSet(ClassType("java/util/Function"), ClassType.Serializable)
                 ),
                 "apply",
                 instantiatedMethodType,
@@ -1482,13 +1482,13 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
                 wr.body shouldBe defined
                 wr.body.get.instructions should be(Array(
-                    NEW(ObjectType.SerializedLambda),
+                    NEW(ClassType.SerializedLambda),
                     null,
                     null,
                     DUP,
-                    LoadClass(ObjectType("SerializableProxy")),
+                    LoadClass(ClassType("SerializableProxy")),
                     null,
-                    LDC(ConstantString(ObjectType("java/util/Function").fqn)),
+                    LDC(ConstantString(ClassType("java/util/Function").fqn)),
                     null,
                     LDC(ConstantString("apply")),
                     null,
@@ -1496,7 +1496,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     null,
                     LDC(ConstantInteger(implMethod.referenceKind.referenceKind)),
                     null,
-                    LDC(ConstantString(implMethod.receiverType.asObjectType.fqn)),
+                    LDC(ConstantString(implMethod.receiverType.asClassType.fqn)),
                     null,
                     LDC(ConstantString(implMethod.name)),
                     null,
@@ -1507,14 +1507,14 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     // Add the caputeredArgs
                     BIPUSH(2),
                     null,
-                    ANEWARRAY(ObjectType.Object),
+                    ANEWARRAY(ClassType.Object),
                     null,
                     null,
                     DUP,
                     BIPUSH(0),
                     null,
                     ALOAD_0,
-                    GETFIELD(ObjectType("SerializableProxy"), "staticParameter0", ObjectType.Float),
+                    GETFIELD(ClassType("SerializableProxy"), "staticParameter0", ClassType.Float),
                     null,
                     null,
                     AASTORE,
@@ -1522,26 +1522,26 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     BIPUSH(1),
                     null,
                     ALOAD_0,
-                    GETFIELD(ObjectType("SerializableProxy"), "staticParameter1", ObjectType.String),
+                    GETFIELD(ClassType("SerializableProxy"), "staticParameter1", ClassType.String),
                     null,
                     null,
                     AASTORE,
                     INVOKESPECIAL(
-                        ObjectType.SerializedLambda,
+                        ClassType.SerializedLambda,
                         isInterface = false,
                         "<init>",
                         MethodDescriptor(
                             ArraySeq(
-                                ObjectType.Class,
-                                ObjectType.String,
-                                ObjectType.String,
-                                ObjectType.String,
+                                ClassType.Class,
+                                ClassType.String,
+                                ClassType.String,
+                                ClassType.String,
                                 IntegerType,
-                                ObjectType.String,
-                                ObjectType.String,
-                                ObjectType.String,
-                                ObjectType.String,
-                                ArrayType(ObjectType.Object)
+                                ClassType.String,
+                                ClassType.String,
+                                ClassType.String,
+                                ClassType.String,
+                                ArrayType(ClassType.Object)
                             ),
                             VoidType
                         )
@@ -1647,10 +1647,10 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
      * test function.
      */
     private def testMethods(
-        methods:    Iterable[(ObjectType, Method)],
+        methods:    Iterable[(ClassType, Method)],
         repository: ClassFileRepository
     )(
-        test: (ClassFile, (ObjectType, Method)) => Unit
+        test: (ClassFile, (ClassType, Method)) => Unit
     ): Unit = {
         for {
             (calleeType, calleeMethod) <- methods
@@ -1660,20 +1660,20 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
     }
 
     private def testMethod(
-        calleeType:   ObjectType,
+        calleeType:   ClassType,
         calleeMethod: Method,
         repository:   ClassFileRepository
     )(
-        test: (ClassFile, (ObjectType, Method)) => Unit
+        test: (ClassFile, (ClassType, Method)) => Unit
     ): Unit = {
         val calleeMethodName = calleeMethod.name
         val calleeMethodDescriptor = calleeMethod.descriptor
         val definingTypeName = calleeType.simpleName + "$" + calleeMethodName
         val definingType =
             TypeDeclaration(
-                ObjectType(definingTypeName),
+                ClassType(definingTypeName),
                 false,
-                Some(ObjectType.Object),
+                Some(ClassType.Object),
                 UIDSet.empty
             )
         val methodName = calleeMethodName + "$Forwarded"

@@ -26,7 +26,7 @@ object CountClassForNameCalls extends ProjectAnalysisApplication {
         isInterrupted: () => Boolean
     ): BasicReport = {
 
-        import ObjectType.{String, Class}
+        import ClassType.{String, Class}
         // Next, we create a descriptor of a method that takes a single parameter of
         // type "String" and that returns a value of type Class.
         val descriptor = MethodDescriptor(String, Class)

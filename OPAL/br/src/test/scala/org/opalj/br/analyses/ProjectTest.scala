@@ -44,11 +44,11 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     }
 
     it should "not find the class java.lang.Object" in {
-        classFile(ObjectType.Object) should not be defined
+        classFile(ClassType.Object) should not be defined
     }
 
     it should "identify the class java.lang.Object as belonging to the library" in {
-        isLibraryType(ObjectType.Object) should be(true)
+        isLibraryType(ClassType.Object) should be(true)
     }
 
     it should "identify the class methods.a.Super as belonging to the core code" in {
@@ -66,13 +66,13 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     it should "create a new Project that contains all class files" in {
         overallProject.source(SuperType) shouldBe defined
         overallProject.source(DeprecatedByAnnotation) shouldBe defined
-        overallProject.source(ObjectType("code/Quicksort")) shouldBe defined
+        overallProject.source(ClassType("code/Quicksort")) shouldBe defined
     }
 
     it should "create a Project with the correct classification for the class files" in {
         overallProject.isLibraryType(SuperType) should be(false)
         overallProject.isLibraryType(DeprecatedByAnnotation) should be(true)
-        overallProject.isLibraryType(ObjectType("code/Quicksort")) should be(false)
+        overallProject.isLibraryType(ClassType("code/Quicksort")) should be(false)
     }
 
     behavior of "a Project's resolveMethodReference method"
@@ -141,7 +141,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             forceLookupInSuperinterfacesOnFailure = true
         )
         r shouldBe defined
-        assert(r.get.classFile.thisType === ObjectType("methods/b/SubI"))
+        assert(r.get.classFile.thisType === ClassType("methods/b/SubI"))
     }
 
     it should "find a method declared by an indirectly implemented interface" in {
@@ -152,7 +152,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             forceLookupInSuperinterfacesOnFailure = true
         )
         r shouldBe defined
-        assert(r.get.classFile.thisType === ObjectType("methods/b/SuperI"))
+        assert(r.get.classFile.thisType === ClassType("methods/b/SuperI"))
     }
 
     behavior of "a Project's instance methods"
@@ -352,19 +352,19 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         import fieldsProject.classFile
         import fieldsProject.resolveFieldReference
 
-        val SuperSuperType = ObjectType("fields/SuperSuper")
+        val SuperSuperType = ClassType("fields/SuperSuper")
         val SuperSuperClass = classFile(SuperSuperType).get
-        val SuperType = ObjectType("fields/Super")
+        val SuperType = ClassType("fields/Super")
         val SuperClass = classFile(SuperType).get
 
-        val SuperIType = ObjectType("fields/SuperI")
+        val SuperIType = ClassType("fields/SuperI")
         val SuperIClass = classFile(SuperIType).get
-        val SubIType = ObjectType("fields/SubI")
+        val SubIType = ClassType("fields/SubI")
         val SubIClass = classFile(SubIType).get
 
-        val SubType = ObjectType("fields/Sub")
+        val SubType = ClassType("fields/Sub")
         val SubClass = classFile(SubType).get
-        val SubSubType = ObjectType("fields/SubSub")
+        val SubSubType = ClassType("fields/SubSub")
         // val SubSubClass = classFile(SubSubType).get
 
         behavior of "a Project's methods to resolve field references"
@@ -411,7 +411,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         it should "not fail if the type cannot be found" in {
             resolveFieldReference(
-                ObjectType("NOT/DEFINED"),
+                ClassType("NOT/DEFINED"),
                 "NOT_DEFINED",
                 IntegerType
             ) should be(None)
@@ -431,7 +431,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             Project(classFiles, Iterable.empty, true)
         }
 
-        val superI = ObjectType("methods/b/SuperI")
+        val superI = ClassType("methods/b/SuperI")
 
         behavior of "a Project's methods to resolve method references"
 
@@ -447,7 +447,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "find a method in a super class" in {
-            val classType = ObjectType("methods/b/B")
+            val classType = ClassType("methods/b/B")
             val implementingMethods =
                 methodsProject.virtualCall(
                     classType,
@@ -460,12 +460,12 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             implementingMethods.head should have(
                 Symbol("name")("publicMethod"),
                 Symbol("descriptor")(MethodDescriptor.NoArgsAndReturnVoid),
-                Symbol("declaringClassFile")(methodsProject.classFile(ObjectType("methods/b/DirectSub")).get)
+                Symbol("declaringClassFile")(methodsProject.classFile(ClassType("methods/b/DirectSub")).get)
             )
         }
 
         it should "find private method for virtual calls" in {
-            val classType = ObjectType("methods/c/Super")
+            val classType = ClassType("methods/c/Super")
             val implementingMethods =
                 methodsProject.virtualCall(
                     classType,
@@ -483,7 +483,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "not find private method for virtual calls on subclasses" in {
-            val classType = ObjectType("methods/c/Sub1")
+            val classType = ClassType("methods/c/Sub1")
             val implementingMethods =
                 methodsProject.virtualCall(
                     classType,
@@ -501,7 +501,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "not find private method for virtual calls declared on subclasses" in {
-            val classType = ObjectType("methods/c/Sub2")
+            val classType = ClassType("methods/c/Sub2")
             val implementingMethods =
                 methodsProject.virtualCall(
                     classType,
@@ -514,7 +514,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         }
 
         it should "find private method for instance calls" in {
-            val classType = ObjectType("methods/c/Super")
+            val classType = ClassType("methods/c/Super")
             val implementingMethods =
                 methodsProject.instanceCall(
                     classType,
@@ -786,18 +786,18 @@ private object ProjectTest {
     //
     //
 
-    val SuperType = ObjectType("methods/a/Super")
-    val DirectSub = ObjectType("methods/a/DirectSub")
-    val AbstractB = ObjectType("methods/b/AbstractB")
-    val DeprecatedByAnnotation = ObjectType("deprecated/DeprecatedByAnnotation")
+    val SuperType = ClassType("methods/a/Super")
+    val DirectSub = ClassType("methods/a/DirectSub")
+    val AbstractB = ClassType("methods/b/AbstractB")
+    val DeprecatedByAnnotation = ClassType("deprecated/DeprecatedByAnnotation")
 
-    val SubSub = ObjectType("interfaces/SubSub")
-    val SubSub2 = ObjectType("interfaces/SubSub2")
-    val Subclass1 = ObjectType("interfaces/Subclass1")
-    val Subclass2 = ObjectType("interfaces/Subclass2")
+    val SubSub = ClassType("interfaces/SubSub")
+    val SubSub2 = ClassType("interfaces/SubSub2")
+    val Subclass1 = ClassType("interfaces/Subclass1")
+    val Subclass2 = ClassType("interfaces/Subclass2")
 
-    val NestHost = ObjectType("java11nests/NestHost")
-    val NestMember1Type = ObjectType("""java11nests/NestHost$NestMember1""")
-    val NestMember2Type = ObjectType("java11nests/NestHost$NestMember2")
-    val NoNestMember = ObjectType("java11nests/NoNestMember")
+    val NestHost = ClassType("java11nests/NestHost")
+    val NestMember1Type = ClassType("""java11nests/NestHost$NestMember1""")
+    val NestMember2Type = ClassType("java11nests/NestHost$NestMember2")
+    val NoNestMember = ClassType("java11nests/NoNestMember")
 }

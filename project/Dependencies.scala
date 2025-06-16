@@ -27,9 +27,6 @@ object Dependencies {
     val apkparser = "2.6.10"
 
     val openjfx = "16"
-
-    val javacpp = "1.5.8"
-    val javacpp_llvm = "15.0.3"
   }
 
   object library {
@@ -57,8 +54,6 @@ object Dependencies {
     val javafxBase = "org.openjfx"                          % "javafx-base"                 % version.openjfx classifier osName
     val apkparser = "net.dongliu"                           % "apk-parser"                  % version.apkparser
 
-    val javacpp = "org.bytedeco" % "javacpp" % version.javacpp
-    val javacpp_llvm =  "org.bytedeco" % "llvm-platform" % (version.javacpp_llvm + "-" + version.javacpp)
     // --- test related dependencies
 
     val junit =          "junit"              % "junit"           % version.junit          % "test,it"
@@ -80,6 +75,4 @@ object Dependencies {
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
   val apk = Seq(apkparser, scalaxml)
-
-  val llvm = Seq(javacpp, javacpp_llvm)
 }

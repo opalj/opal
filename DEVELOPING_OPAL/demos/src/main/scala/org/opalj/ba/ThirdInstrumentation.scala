@@ -13,9 +13,9 @@ import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.bc.Assembler
 import org.opalj.br.ClassFileRepository
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustTakes
-import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.Project
 import org.opalj.br.cfg.CFGFactory
@@ -45,13 +45,13 @@ import org.opalj.log.LogContext
  */
 object ThirdInstrumentation extends App {
 
-    val PrintStreamType = ObjectType("java/io/PrintStream")
-    val SystemType = ObjectType.System
-    val CollectionType = ObjectType("java/util/Collection")
-    val RuntimeExceptionType = ObjectType.RuntimeException
-    val PrintlnDescriptor = JustTakes(ObjectType.Object)
+    val PrintStreamType = ClassType("java/io/PrintStream")
+    val SystemType = ClassType.System
+    val CollectionType = ClassType("java/util/Collection")
+    val RuntimeExceptionType = ClassType.RuntimeException
+    val PrintlnDescriptor = JustTakes(ClassType.Object)
 
-    val TheType = ObjectType("org/opalj/ba/SimpleInstrumentationDemo")
+    val TheType = ClassType("org/opalj/ba/SimpleInstrumentationDemo")
 
     // Let's load the class ( we need the RT Jar to compute appropriate supertypes for
     // local variables and stack values during instrumentation.
@@ -123,7 +123,7 @@ object ThirdInstrumentation extends App {
                     Seq(
                         GETSTATIC(SystemType, "out", PrintStreamType),
                         LoadString(m.toJava),
-                        INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
+                        INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ClassType.String))
                     )
                 )
 
@@ -148,7 +148,7 @@ object ThirdInstrumentation extends App {
                             DUP,
                             GETSTATIC(SystemType, "out", PrintStreamType),
                             SWAP,
-                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.Object))
+                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ClassType.Object))
                         )
                     )
                 }
@@ -172,7 +172,7 @@ object ThirdInstrumentation extends App {
                             gtTarget, // this Symbol has to be unique across all instrumentations of this method
                             LoadString("positive"),
                             printlnTarget,
-                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String))
+                            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ClassType.String))
                         )
                     )
                 }
@@ -203,11 +203,11 @@ object ThirdInstrumentation extends App {
     // instrumented method)
     val cfr = new ClassFileRepository {
         implicit def logContext: LogContext = GlobalLogContext
-        def classFile(objectType: ObjectType): Option[br.ClassFile] = {
-            if (TheType == objectType)
+        def classFile(classType: ClassType): Option[br.ClassFile] = {
+            if (TheType == classType)
                 Some(newCF)
             else
-                p.classFile(objectType)
+                p.classFile(classType)
         }
     }
     val cl = new ProjectBasedInMemoryClassLoader(cfr)

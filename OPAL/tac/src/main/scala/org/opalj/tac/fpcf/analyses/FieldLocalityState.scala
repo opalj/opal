@@ -6,11 +6,11 @@ package analyses
 
 import scala.collection.mutable
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
@@ -50,7 +50,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     var potentialCloneCallers: Set[Method] = Set.empty
     var overridesClone: Boolean = true
 
-    val thisType: ObjectType = field.classFile.thisType
+    val thisType: ClassType = field.classFile.thisType
 
     private[this] var clonedDependees: Set[(Context, DefinitionSiteLike)] = Set.empty
 

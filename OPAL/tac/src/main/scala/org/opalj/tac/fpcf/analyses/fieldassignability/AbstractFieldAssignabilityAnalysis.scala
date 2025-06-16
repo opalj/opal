@@ -8,6 +8,7 @@ package fieldassignability
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.DoubleType
@@ -16,7 +17,6 @@ import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
@@ -139,7 +139,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         val thisType = field.classFile.thisType
 
         if (field.isPublic) {
-            if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
+            if (typeExtensibility(ClassType.Object).isYesOrUnknown) {
                 return Result(field, Assignable);
             }
         } else if (field.isProtected) {
@@ -347,19 +347,19 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
      * Returns the initialization value of a given type.
      */
     def getDefaultValues()(implicit state: AnalysisState): Set[Any] = state.field.fieldType match {
-        case FloatType | ObjectType.Float     => Set(0.0f)
-        case DoubleType | ObjectType.Double   => Set(0.0d)
-        case LongType | ObjectType.Long       => Set(0L)
-        case CharType | ObjectType.Character  => Set('\u0000')
-        case BooleanType | ObjectType.Boolean => Set(false)
+        case FloatType | ClassType.Float     => Set(0.0f)
+        case DoubleType | ClassType.Double   => Set(0.0d)
+        case LongType | ClassType.Long       => Set(0L)
+        case CharType | ClassType.Character  => Set('\u0000')
+        case BooleanType | ClassType.Boolean => Set(false)
         case IntegerType |
-            ObjectType.Integer |
+            ClassType.Integer |
             ByteType |
-            ObjectType.Byte |
+            ClassType.Byte |
             ShortType |
-            ObjectType.Short => Set(0)
-        case ObjectType.String => Set("", null)
-        case _: ReferenceType  => Set(null)
+            ClassType.Short => Set(0)
+        case ClassType.String => Set("", null)
+        case _: ReferenceType => Set(null)
     }
 }
 

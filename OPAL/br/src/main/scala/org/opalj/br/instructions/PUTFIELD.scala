@@ -12,7 +12,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class PUTFIELD(
-    declaringClass: ObjectType,
+    declaringClass: ClassType,
     name:           String,
     fieldType:      FieldType
 ) extends FieldWriteAccess {
@@ -21,7 +21,7 @@ case class PUTFIELD(
 
     final def mnemonic: String = "putfield"
 
-    final def jvmExceptions: List[ObjectType] = FieldAccess.jvmExceptions
+    final def jvmExceptions: List[ClassType] = FieldAccess.jvmExceptions
 
     final def mayThrowExceptions: Boolean = true
 
@@ -43,7 +43,7 @@ case class PUTFIELD(
             Instruction.nextInstructionOrExceptionHandler(
                 this,
                 currentPC,
-                ObjectType.NullPointerException
+                ClassType.NullPointerException
             )
     }
 
@@ -70,7 +70,7 @@ object PUTFIELD extends InstructionMetaInformation {
      *          syntax.
      */
     def apply(declaringClassName: String, name: String, fieldTypeName: String): PUTFIELD = {
-        PUTFIELD(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
+        PUTFIELD(ClassType(declaringClassName), name, FieldType(fieldTypeName))
     }
 
 }

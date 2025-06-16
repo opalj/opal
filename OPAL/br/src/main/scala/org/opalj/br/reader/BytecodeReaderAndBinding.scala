@@ -139,11 +139,11 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 70  => FSTORE_3
                 case 102 => FSUB
                 case 180 =>
-                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                    val (declaringClass, name, fieldType): (ClassType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     GETFIELD(declaringClass, name, fieldType)
                 case 178 =>
-                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                    val (declaringClass, name, fieldType): (ClassType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     GETSTATIC(declaringClass, name, fieldType)
                 case 167 => GOTO(in.readShort.toInt /* branchoffset */ )
@@ -224,15 +224,15 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
                     val (declaringClass, _, name, methodDescriptor) = methodRef
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
-                    INVOKEINTERFACE(declaringClass.asObjectType, name, methodDescriptor)
+                    INVOKEINTERFACE(declaringClass.asClassType, name, methodDescriptor)
                 case 183 =>
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, isInterface, name, methodDescriptor) = methodRef
-                    INVOKESPECIAL(declaringClass.asObjectType, isInterface, name, methodDescriptor)
+                    INVOKESPECIAL(declaringClass.asClassType, isInterface, name, methodDescriptor)
                 case 184 =>
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, isInterface, name, methodDescriptor) = methodRef
-                    INVOKESTATIC(declaringClass.asObjectType, isInterface, name, methodDescriptor)
+                    INVOKESTATIC(declaringClass.asClassType, isInterface, name, methodDescriptor)
                 case 182 =>
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, _, name, methodDescriptor) = methodRef
@@ -352,17 +352,17 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
                         //  dimensions
                         in.readUnsignedByte
                     )
-                case 187 => NEW(cp(in.readUnsignedShort).asObjectType(cp))
+                case 187 => NEW(cp(in.readUnsignedShort).asClassType(cp))
                 case 188 => NEWARRAY(in.readByte.toInt)
                 case 0   => NOP
                 case 87  => POP
                 case 88  => POP2
                 case 181 =>
-                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                    val (declaringClass, name, fieldType): (ClassType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     PUTFIELD(declaringClass, name, fieldType)
                 case 179 =>
-                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                    val (declaringClass, name, fieldType): (ClassType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     PUTSTATIC(declaringClass, name, fieldType)
                 case 169 =>

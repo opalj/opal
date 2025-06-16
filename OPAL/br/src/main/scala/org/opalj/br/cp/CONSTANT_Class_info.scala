@@ -15,7 +15,7 @@ case class CONSTANT_Class_info(name_index: Constant_Pool_Index) extends Constant
 
     override def tag: Int = ConstantPoolTags.CONSTANT_Class_ID
 
-    override def asObjectType(cp: Constant_Pool): ObjectType = ObjectType(cp(name_index).asString)
+    override def asClassType(cp: Constant_Pool): ClassType = ClassType(cp(name_index).asString)
 
     override def asReferenceType(cp: Constant_Pool): ReferenceType = {
         ReferenceType(cp(name_index).asString)

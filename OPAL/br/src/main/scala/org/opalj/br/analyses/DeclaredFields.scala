@@ -14,7 +14,7 @@ class DeclaredFields(
     private[this] val project:          SomeProject,
     private[this] var id2declaredField: Array[DeclaredField],
     private[this] val declaredInformation2id: ConcurrentHashMap[
-        ObjectType,
+        ClassType,
         ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]
     ],
     private[this] val nextId: AtomicInteger
@@ -43,7 +43,7 @@ class DeclaredFields(
     }
 
     def apply(
-        declaringClassType: ObjectType,
+        declaringClassType: ClassType,
         name:               String,
         fieldType:          FieldType
     ): DeclaredField = {
@@ -59,7 +59,7 @@ class DeclaredFields(
     }
 
     private def getDeclaredField(
-        declaringClassType:   ObjectType,
+        declaringClassType:   ClassType,
         name:                 String,
         fieldType:            FieldType,
         declaredFieldFactory: Int => DeclaredField

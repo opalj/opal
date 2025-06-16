@@ -17,10 +17,10 @@ class IsInnerClassPropertyTest extends AnyFlatSpec with Matchers {
 
     val project = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature")
 
-    val myRootClass$Formatter = ObjectType("innerclasses/MyRootClass$Formatter")
-    val myRootClass = ObjectType("innerclasses/MyRootClass")
-    val myRootClass$1 = ObjectType("innerclasses/MyRootClass$1")
-    val myRootClass$1$1 = ObjectType("innerclasses/MyRootClass$1$1")
+    val myRootClass$Formatter = ClassType("innerclasses/MyRootClass$Formatter")
+    val myRootClass = ClassType("innerclasses/MyRootClass")
+    val myRootClass$1 = ClassType("innerclasses/MyRootClass$1")
+    val myRootClass$1$1 = ClassType("innerclasses/MyRootClass$1$1")
 
     behavior of "a named inner class"
 

@@ -132,7 +132,7 @@ object Instruction {
      *
      * @return Returns the triple `Some((opcode,mnemonic,list of jvm exceptions))`.
      */
-    def unapply(instruction: Instruction): Some[(Int, String, List[ObjectType])] = {
+    def unapply(instruction: Instruction): Some[(Int, String, List[ClassType])] = {
         Some((instruction.opcode, instruction.mnemonic, instruction.jvmExceptions))
     }
 
@@ -150,7 +150,7 @@ object Instruction {
     private[instructions] def nextInstructionOrExceptionHandlers(
         instruction: Instruction,
         currentPC:   Int,
-        exceptions:  List[ObjectType]
+        exceptions:  List[ClassType]
     )(
         implicit
         code:           Code,
@@ -166,7 +166,7 @@ object Instruction {
     private[instructions] def nextInstructionOrExceptionHandler(
         instruction: Instruction,
         currentPC:   Int,
-        exception:   ObjectType
+        exception:   ClassType
     )(
         implicit
         code:           Code,
@@ -176,7 +176,7 @@ object Instruction {
         nextInstruction :: (code.handlersForException(currentPC, exception).map(_.handlerPC))
     }
 
-    final val justNullPointerException: List[org.opalj.br.ObjectType] = {
-        List(ObjectType.NullPointerException)
+    final val justNullPointerException: List[org.opalj.br.ClassType] = {
+        List(ClassType.NullPointerException)
     }
 }

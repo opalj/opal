@@ -5,8 +5,8 @@ package properties
 package callgraph
 
 import org.opalj.br.AnnotationLike
+import org.opalj.br.ClassType
 import org.opalj.br.ElementValue
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.Property
@@ -16,17 +16,17 @@ class VMReachableMethodMatcher extends AbstractPropertyMatcher {
 
     override def validateProperty(
         p:          Project[_],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
 
         // Get call graph analyses for which this annotation applies.
         val analysesElementValues: Seq[ElementValue] =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         // If none of the annotated analyses match the executed ones, return...
         // If the list of specified analyses is empty, we assume the annotation applies to all

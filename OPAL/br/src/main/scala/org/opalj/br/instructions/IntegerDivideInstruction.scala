@@ -10,7 +10,7 @@ package instructions
  */
 abstract class IntegerDivideInstruction extends DivideInstruction {
 
-    final def jvmExceptions: List[ObjectType] = ArithmeticInstruction.jvmExceptions
+    final def jvmExceptions: List[ClassType] = ArithmeticInstruction.jvmExceptions
 
     final def mayThrowExceptions: Boolean = true
 
@@ -28,7 +28,7 @@ abstract class IntegerDivideInstruction extends DivideInstruction {
             Instruction.nextInstructionOrExceptionHandler(
                 this,
                 currentPC,
-                ObjectType.ArithmeticException
+                ClassType.ArithmeticException
             )
     }
 

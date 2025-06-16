@@ -6,8 +6,8 @@ package vta
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -32,7 +32,7 @@ abstract class VTAMatcher extends AbstractPropertyMatcher {
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -70,7 +70,7 @@ abstract class VTAMatcher extends AbstractPropertyMatcher {
     ): Option[String]
 
     def referenceTypeToString(t: ReferenceType): String = t match {
-        case objectType: ObjectType => objectType.simpleName
+        case classType: ClassType => classType.simpleName
         case arrayType: ArrayType =>
             referenceTypeToString(arrayType.elementType.asReferenceType) + "[]"
     }

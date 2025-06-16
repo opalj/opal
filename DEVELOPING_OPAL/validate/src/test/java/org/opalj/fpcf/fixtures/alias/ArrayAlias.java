@@ -3,14 +3,14 @@ package org.opalj.fpcf.fixtures.alias;
 
 import org.opalj.fpcf.properties.alias.MayAlias;
 import org.opalj.fpcf.properties.alias.NoAlias;
-
+import org.opalj.tac.fpcf.analyses.alias.AllocationSiteBasedAliasAnalysis;
 
 public class ArrayAlias {
 
     @NoAlias(reason = "no alias with array and uVar that is not stored to array",
             lineNumber = 20,
             secondLineNumber = 22,
-            analyses = {/*AllocationSiteBasedAliasAnalysis.class*/})
+            analyses = AllocationSiteBasedAliasAnalysis.class)
     public static void notStoredToArray() {
 
         Object[] arr = new Object[10];

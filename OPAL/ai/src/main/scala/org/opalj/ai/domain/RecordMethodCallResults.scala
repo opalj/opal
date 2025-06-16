@@ -6,7 +6,7 @@ package domain
 import scala.collection.Set
 import scala.collection.immutable
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 
@@ -127,24 +127,24 @@ trait RecordMethodCallResults
         if (allThrownExceptions.isEmpty) {
             Iterable.empty
         } else {
-            var exceptionValuesPerType: Map[ObjectType, immutable.Set[ExceptionValue]] = Map.empty
+            var exceptionValuesPerType: Map[ClassType, immutable.Set[ExceptionValue]] = Map.empty
 
             def handleExceptionValue(exceptionValue: ExceptionValue): Unit = {
                 exceptionValue.upperTypeBound match {
                     case EmptyUpperTypeBound =>
                         exceptionValuesPerType = exceptionValuesPerType.updated(
-                            ObjectType.Throwable,
-                            exceptionValuesPerType.getOrElse(ObjectType.Throwable, immutable.Set.empty) + exceptionValue
+                            ClassType.Throwable,
+                            exceptionValuesPerType.getOrElse(ClassType.Throwable, immutable.Set.empty) + exceptionValue
                         )
-                    case UIDSet1(exceptionType: ObjectType) =>
+                    case UIDSet1(exceptionType: ClassType) =>
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,
                             exceptionValuesPerType.getOrElse(exceptionType, immutable.Set.empty) + exceptionValue
                         )
                     case utb =>
                         val exceptionType =
-                            classHierarchy.joinObjectTypesUntilSingleUpperBound(
-                                utb.asInstanceOf[UIDSet[ObjectType]]
+                            classHierarchy.joinClassTypesUntilSingleUpperBound(
+                                utb.asInstanceOf[UIDSet[ClassType]]
                             )
                         exceptionValuesPerType = exceptionValuesPerType.updated(
                             exceptionType,

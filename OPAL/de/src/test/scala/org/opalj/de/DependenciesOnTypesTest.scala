@@ -26,7 +26,7 @@ class DependenciesOnTypesTest extends AnyFlatSpec with Matchers {
     //
     val extractedBaseTypes = scala.collection.mutable.Set.empty[BaseType]
     val extractedArrayTypes = scala.collection.mutable.Set.empty[ArrayType]
-    val extractedObjectTypes = scala.collection.mutable.Set.empty[ObjectType]
+    val extractedClassTypes = scala.collection.mutable.Set.empty[ClassType]
 
     def dependencyExtractor: DependencyExtractor = {
         new DependencyExtractor(
@@ -39,7 +39,7 @@ class DependenciesOnTypesTest extends AnyFlatSpec with Matchers {
                 ): Unit = {
                     if (target.isClass) {
                         val VirtualClass(targetType) = target
-                        extractedObjectTypes += targetType
+                        extractedClassTypes += targetType
                     }
                 }
 
@@ -81,17 +81,17 @@ class DependenciesOnTypesTest extends AnyFlatSpec with Matchers {
 
     it should "extract a dependency to java.lang.Object" in {
         assert(
-            extractedObjectTypes contains ObjectType.Object,
+            extractedClassTypes contains ClassType.Object,
             "the extractor did no report an existing dependency to java.lang.Object"
         )
     }
 
     it should "extract a dependency to the type java.lang.Object[]" in {
-        assert(extractedArrayTypes contains ArrayType(ObjectType.Object))
+        assert(extractedArrayTypes contains ArrayType(ClassType.Object))
     }
 
     it should "extract a dependency to the type java.lang.Object[][]" in {
-        assert(extractedArrayTypes contains ArrayType(ArrayType(ObjectType.Object)))
+        assert(extractedArrayTypes contains ArrayType(ArrayType(ClassType.Object)))
     }
 
     it should "extract dependencies to byte" in {
