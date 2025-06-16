@@ -424,9 +424,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             // the set of successor can be (at the same time) a RegularBB or an ExitNode
             var successorPCs = IntTrieSet.empty
             bb.successors foreach {
-                case bb: BasicBlock => successorPCs += bb.startPC
-                case cb: CatchNode  => successorPCs += cb.handlerPC
-                case _              =>
+                case succ: BasicBlock => successorPCs += succ.startPC
+                case cb: CatchNode    => successorPCs += cb.handlerPC
+                case _                =>
             }
             successorPCs
         }
@@ -446,10 +446,10 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         } else {
             // the set of successors can be (at the same time) a RegularBB or an ExitNode
             var visited = IntTrieSet.empty
-            bb.successors foreach { bb =>
+            bb.successors foreach { succ =>
                 val nextPC =
-                    if (bb.isBasicBlock) bb.asBasicBlock.startPC
-                    else if (bb.isCatchNode) bb.asCatchNode.handlerPC
+                    if (succ.isBasicBlock) succ.asBasicBlock.startPC
+                    else if (succ.isCatchNode) succ.asCatchNode.handlerPC
                     else -1
                 if (nextPC != -1 && !visited.contains(nextPC)) {
                     visited += nextPC
@@ -483,8 +483,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             // The set of successors can be (at the same time) a RegularBB, a CatchBB or an ExitNode
             var visited = IntTrieSet.empty
             bb.successors foreach {
-                case bb: BasicBlock =>
-                    val nextPC = bb.startPC
+                case succ: BasicBlock =>
+                    val nextPC = succ.startPC
                     if (!visited.contains(nextPC)) {
                         visited += nextPC
                         f(nextPC)
@@ -509,10 +509,10 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         if (bb.startPC == pc) {
             var predecessorPCs = IntTrieSet.empty
             bb.predecessors foreach {
-                case bb: BasicBlock =>
-                    predecessorPCs += bb.endPC
+                case pred: BasicBlock =>
+                    predecessorPCs += pred.endPC
                 case cn: CatchNode =>
-                    cn.predecessors.foreach { bb => predecessorPCs += bb.asBasicBlock.endPC }
+                    cn.predecessors.foreach { pred => predecessorPCs += pred.asBasicBlock.endPC }
             }
             predecessorPCs
         } else {
@@ -527,11 +527,11 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         val bb = this.bb(pc)
         if (bb.startPC == pc) {
             var visited = IntTrieSet.empty
-            bb.predecessors foreach { bb =>
-                if (bb.isBasicBlock) {
-                    f(bb.asBasicBlock.endPC)
-                } else if (bb.isCatchNode) {
-                    bb.asCatchNode.predecessors foreach { predBB =>
+            bb.predecessors foreach { pred =>
+                if (pred.isBasicBlock) {
+                    f(pred.asBasicBlock.endPC)
+                } else if (pred.isCatchNode) {
+                    pred.asCatchNode.predecessors foreach { predBB =>
                         val nextPC = predBB.asBasicBlock.endPC
                         if (!visited.contains(nextPC)) {
                             visited += nextPC
