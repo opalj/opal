@@ -972,43 +972,39 @@ trait RecordCFG
         }
 
         val infiniteLoopHeaders = this.infiniteLoopHeaders
-        if (infiniteLoopHeaders.nonEmpty) {
-            val dominatorTree = this.dominatorTree
-            var additionalExitNodes = infiniteLoopHeaders flatMap { loopHeaderPC =>
-                predecessors(loopHeaderPC).withFilter { predecessorPC =>
-                    // 1. let's ensure that the predecessor actually belongs to the loop...
-                    loopHeaderPC == predecessorPC ||
-                    dominatorTree.strictlyDominates(loopHeaderPC, predecessorPC)
+        val additionalExitNodes =
+            if (infiniteLoopHeaders.isEmpty) {
+                IntTrieSet.empty
+            } else {
+                val dominatorTree = this.dominatorTree
+                var loopExitNodes = infiniteLoopHeaders flatMap { loopHeaderPC =>
+                    predecessors(loopHeaderPC).withFilter { predecessorPC =>
+                        // 1. let's ensure that the predecessor actually belongs to the loop...
+                        loopHeaderPC == predecessorPC ||
+                        dominatorTree.strictlyDominates(loopHeaderPC, predecessorPC)
+                    }
                 }
+                // Now we have to ensure to select the outermost exit pcs which are dominated by
+                // other additional exit nodes...
+                loopExitNodes foreachPair { (exitPC1, exitPC2) =>
+                    if (dominatorTree.strictlyDominates(exitPC1, exitPC2))
+                        loopExitNodes -= exitPC1
+                    else if (dominatorTree.strictlyDominates(exitPC2, exitPC1))
+                        loopExitNodes -= exitPC2
+                }
+
+                loopExitNodes
             }
-            // Now we have to ensure to select the outer most exit pcs which are dominated by
-            // other additional exit nodes...
-            additionalExitNodes foreachPair { (exitPC1, exitPC2) =>
-                if (dominatorTree.strictlyDominates(exitPC1, exitPC2))
-                    additionalExitNodes -= exitPC1
-                else if (dominatorTree.strictlyDominates(exitPC2, exitPC1))
-                    additionalExitNodes -= exitPC2
-            }
-            PostDominatorTree(
-                uniqueExitNode,
-                exitPCs.contains,
-                additionalExitNodes,
-                exitPCs.foreach,
-                foreachSuccessorOf,
-                foreachPredecessorOf,
-                maxNode = code.instructions.length - 1
-            )
-        } else {
-            PostDominatorTree(
-                uniqueExitNode,
-                exitPCs.contains,
-                IntTrieSet.empty,
-                exitPCs.foreach,
-                foreachSuccessorOf,
-                foreachPredecessorOf,
-                maxNode = code.instructions.length - 1
-            )
-        }
+
+        PostDominatorTree(
+            uniqueExitNode,
+            exitPCs.contains,
+            additionalExitNodes,
+            exitPCs.foreach,
+            foreachSuccessorOf,
+            foreachPredecessorOf,
+            maxNode = code.instructions.length - 1
+        )
 
     }
 
