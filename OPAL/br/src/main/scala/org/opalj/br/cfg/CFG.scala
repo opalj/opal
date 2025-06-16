@@ -136,7 +136,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             "predecessors and successors are inconsistent; e.g., " +
                 allBBsSet.find(bb => !bb.predecessors.forall { predBB => predBB.successors.contains(bb) }).map(bb =>
                     bb.predecessors.find(predBB => !predBB.successors.contains(bb)).map(predBB =>
-                        s"predBB is a predecessor of $bb, but does not list it as a successor"
+                        s"$predBB is a predecessor of $bb, but does not list it as a successor"
                     ).get
                 ).get
         )
