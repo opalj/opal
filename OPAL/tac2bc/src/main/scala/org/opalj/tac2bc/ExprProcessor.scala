@@ -34,7 +34,7 @@ import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.instructions._
@@ -255,7 +255,7 @@ object ExprProcessor {
     }
 
     def processNewExpr(
-        tpe:  ObjectType,
+        tpe:  ClassType,
         code: mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         code += NEW(tpe)
@@ -275,12 +275,12 @@ object ExprProcessor {
         code += {
             call match {
                 case _: VirtualMethodCall[V] | _: VirtualFunctionCall[V] =>
-                    if (isInterface) INVOKEINTERFACE(declaringClass.asObjectType, methodName, methodDescriptor)
+                    if (isInterface) INVOKEINTERFACE(declaringClass.asClassType, methodName, methodDescriptor)
                     else INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
                 case _: NonVirtualMethodCall[V] | _: NonVirtualFunctionCall[V] =>
-                    INVOKESPECIAL(declaringClass.asObjectType, isInterface, methodName, methodDescriptor)
+                    INVOKESPECIAL(declaringClass.asClassType, isInterface, methodName, methodDescriptor)
                 case _: StaticMethodCall[V] | _: StaticFunctionCall[V] =>
-                    INVOKESTATIC(declaringClass.asObjectType, isInterface, methodName, methodDescriptor)
+                    INVOKESTATIC(declaringClass.asClassType, isInterface, methodName, methodDescriptor)
             }
         }
     }

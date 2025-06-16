@@ -28,7 +28,7 @@ import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.PCs
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
@@ -366,7 +366,7 @@ object StmtProcessor {
     }
 
     def processCaughtException(
-        exceptionType: Option[ObjectType],
+        exceptionType: Option[ClassType],
         throwingStmts: IntTrieSet,
         code:          mutable.ListBuffer[CodeElement[Nothing]],
         labels:        Array[RewriteLabel]
@@ -428,7 +428,7 @@ object StmtProcessor {
     }
 
     def processPutStatic(
-        declaringClass:    ObjectType,
+        declaringClass:    ClassType,
         name:              String,
         declaredFieldType: FieldType,
         value:             Expr[V],
@@ -440,7 +440,7 @@ object StmtProcessor {
     }
 
     def processPutField(
-        declaringClass:    ObjectType,
+        declaringClass:    ClassType,
         name:              String,
         declaredFieldType: FieldType,
         objRef:            Expr[V],
