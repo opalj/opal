@@ -20,11 +20,11 @@ package cfg
  * @author Michael Eichberg
  */
 final class CatchNode(
-    val index:     Int, // primarily used to compute a unique id
-    val startPC:   Int,
-    val endPC:     Int,
-    val handlerPC: Int,
-    val catchType: Option[ClassType]
+    val index:          Int, // primarily used to compute a unique id
+    val startPC:        Int,
+    override val endPC: Int,
+    val handlerPC:      Int,
+    val catchType:      Option[ClassType]
 ) extends CFGNode {
 
     /**
