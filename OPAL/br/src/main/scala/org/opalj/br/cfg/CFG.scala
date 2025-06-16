@@ -566,7 +566,11 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * @see [[PostDominatorTree.apply]]
      */
     lazy val postDominatorTree: PostDominatorTree = {
-        val exitNodes = normalReturnNode.predecessors.map(_.nodeId) ++ abnormalReturnNode.predecessors.map(_.nodeId)
+        val exitNodes = (normalReturnNode.predecessors ++ abnormalReturnNode.predecessors).map {
+            case bb: BasicBlock => bb.endPC
+            case cn: CatchNode  => cn.endPC
+            case _: ExitNode    => throw new IllegalArgumentException()
+        }
 
         PostDominatorTree(
             if (exitNodes.size == 1) exitNodes.headOption else None,
