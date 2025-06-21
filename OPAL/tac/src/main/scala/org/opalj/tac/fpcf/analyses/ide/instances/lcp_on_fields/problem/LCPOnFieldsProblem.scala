@@ -584,13 +584,19 @@ class LCPOnFieldsProblem(
     ): LinearConstantPropagationValue = {
         property
             .results
-            .collect {
-                case (linear_constant_propagation.problem.VariableFact(_, definedAtIndex), value)
-                    if var0.definedBy.contains(definedAtIndex) => value
-            }
-            .fold(linear_constant_propagation.problem.UnknownValue: LinearConstantPropagationValue)(
-                LinearConstantPropagationLattice.meet
-            )
+            .fold[Object](linear_constant_propagation.problem.UnknownValue: LinearConstantPropagationValue) {
+                case (
+                        (linear_constant_propagation.problem.VariableFact(_, dAI), v: LinearConstantPropagationValue),
+                        value: LinearConstantPropagationValue
+                    ) if var0.definedBy.contains(dAI) => LinearConstantPropagationLattice.meet(v, value)
+                case (
+                        value: LinearConstantPropagationValue,
+                        (linear_constant_propagation.problem.VariableFact(_, dAI), v: LinearConstantPropagationValue)
+                    ) if var0.definedBy.contains(dAI) => LinearConstantPropagationLattice.meet(v, value)
+
+                case (_, value: LinearConstantPropagationValue) => value
+                case (value: LinearConstantPropagationValue, _) => value
+            }.asInstanceOf[LinearConstantPropagationValue]
     }
 
     override def getCallEdgeFunction(
