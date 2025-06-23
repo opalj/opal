@@ -11,14 +11,18 @@ import scala.jdk.CollectionConverters._
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.log.Error
@@ -67,47 +71,45 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(method: Method): ProperPropertyComputationResult = {
-        val state = MethodStringFlowAnalysisState(method, declaredMethods(method), ps(method, TACAI.key))
-
         if (excludedPackages.exists(method.classFile.thisType.packageName.startsWith(_))) {
-            Result(
-                state.entity,
+            return Result(
+                method,
                 if (highSoundness) MethodStringFlow.lb
                 else MethodStringFlow.ub
-            )
-        } else if (state.tacDependee.isRefinable) {
+            );
+        }
+
+        val tacDependee = ps(method, TACAI.key)
+        if (tacDependee.isRefinable) {
             InterimResult(
-                state.entity,
+                method,
                 MethodStringFlow.lb,
                 MethodStringFlow.ub,
-                Set(state.tacDependee),
-                continuation(state)
+                Set(tacDependee),
+                continuationForTAC(method)
             )
-        } else if (state.tacDependee.ub.tac.isEmpty) {
+        } else if (tacDependee.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
             Result(
-                state.entity,
+                method,
                 if (highSoundness) MethodStringFlow.lb
                 else MethodStringFlow.ub
             )
         } else {
-            determinePossibleStrings(state)
+            determinePossibleStrings(method, tacDependee.ub.tac.get)
         }
     }
 
-    private def determinePossibleStrings(implicit
-        state: MethodStringFlowAnalysisState
-    ): ProperPropertyComputationResult = {
-        implicit val tac: TAC = state.tac
+    private def determinePossibleStrings(implicit method: Method, tac: TAC): ProperPropertyComputationResult = {
 
-        state.flowGraph = FlowGraph(tac.cfg)
-        val (_, superFlowGraph, controlTree) =
-            StructuralAnalysis.analyze(state.flowGraph, FlowGraph.entry)
-        state.superFlowGraph = superFlowGraph
-        state.controlTree = controlTree
-        state.flowAnalysis = new DataFlowAnalysis(state.controlTree, state.superFlowGraph, highSoundness)
+        val flowGraph = FlowGraph(tac.cfg)
+        val (_, superFlowGraph, controlTree) = StructuralAnalysis.analyze(flowGraph, FlowGraph.entry)
+        val flowAnalysis = new DataFlowAnalysis(controlTree, superFlowGraph, highSoundness)
 
-        state.flowGraph.nodes.toOuter.foreach {
+        implicit val state: MethodStringFlowAnalysisState =
+            MethodStringFlowAnalysisState(method, declaredMethods(method), tac, flowAnalysis)
+
+        flowGraph.nodes.toOuter.foreach {
             case Statement(pc) if pc >= 0 =>
                 state.updateDependee(pc, propertyStore(MethodPC(pc, state.dm), StringFlowFunctionProperty.key))
 
@@ -117,12 +119,21 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
         computeResults
     }
 
+    private def continuationForTAC(method: Method)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+        case FinalP(tacai: TACAI) =>
+            determinePossibleStrings(method, tacai.tac.get)
+        case tacDependee =>
+            InterimResult(
+                method,
+                MethodStringFlow.lb,
+                MethodStringFlow.ub,
+                Set(tacDependee),
+                continuationForTAC(method)
+            )
+    }
+
     private def continuation(state: MethodStringFlowAnalysisState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case FinalP(_: TACAI) if eps.pk.equals(TACAI.key) =>
-                state.tacDependee = eps.asInstanceOf[FinalEP[Method, TACAI]]
-                determinePossibleStrings(state)
-
             case EUBP(e: MethodPC, _: StringFlowFunctionProperty) if eps.pk.equals(StringFlowFunctionProperty.key) =>
                 state.updateDependee(e.pc, eps.asInstanceOf[EOptionP[MethodPC, StringFlowFunctionProperty]])
                 computeResults(state)
@@ -152,6 +163,33 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
 }
 
 object MethodStringFlowAnalysis {
-
     final val ExcludedPackagesConfigKey = "org.opalj.fpcf.analyses.string.MethodStringFlowAnalysis.excludedPackages"
+}
+
+/**
+ * A shared scheduler trait for analyses that analyse the string flow of given methods.
+ *
+ * @see [[MethodStringFlowAnalysis]]
+ *
+ * @author Maximilian Rüsch
+ */
+sealed trait MethodStringFlowAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
+    final def derivedProperty: PropertyBounds = PropertyBounds.ub(MethodStringFlow)
+
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI, StringFlowFunctionProperty)
+}
+
+object LazyMethodStringFlowAnalysis
+    extends MethodStringFlowAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
+
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new MethodStringFlowAnalysis(p)
+        ps.registerLazyPropertyComputation(MethodStringFlow.key, analysis.analyze)
+        analysis
+    }
 }

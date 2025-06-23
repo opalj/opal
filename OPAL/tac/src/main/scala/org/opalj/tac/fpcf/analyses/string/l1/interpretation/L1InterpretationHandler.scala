@@ -39,15 +39,11 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
         case Assignment(_, _, _: New) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
-        case stmt @ Assignment(_, _, expr: VirtualFunctionCall[V]) =>
-            new L1VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
-        case stmt @ ExprStmt(_, expr: VirtualFunctionCall[V]) =>
-            new L1VirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+        case stmt @ AssignmentLikeStmt(_, expr: VirtualFunctionCall[V]) =>
+            new L1VirtualFunctionCallInterpreter().interpretExpr(stmt.asAssignmentLike, expr)
 
-        case stmt @ Assignment(_, _, expr: NonVirtualFunctionCall[V]) =>
-            L1NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
-        case stmt @ ExprStmt(_, expr: NonVirtualFunctionCall[V]) =>
-            L1NonVirtualFunctionCallInterpreter().interpretExpr(stmt, expr)
+        case stmt @ AssignmentLikeStmt(_, expr: NonVirtualFunctionCall[V]) =>
+            L1NonVirtualFunctionCallInterpreter().interpretExpr(stmt.asAssignmentLike, expr)
 
         case stmt @ Assignment(_, _, expr: StaticFunctionCall[V]) =>
             L1StaticFunctionCallInterpreter().interpretExpr(stmt, expr)

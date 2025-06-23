@@ -32,7 +32,7 @@ class StringConstancyProperty(
         val level = tree.constancyLevel
         val strings = if (level == StringConstancyLevel.Invalid) {
             "No possible strings - Invalid Flow"
-        } else tree.sorted.toRegex
+        } else tree.sorted.regex
 
         s"Level: ${level.toString.toLowerCase}, Possible Strings: $strings"
     }

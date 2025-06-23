@@ -33,7 +33,7 @@ sealed trait SystemPropertiesPropertyMetaInformation extends PropertyMetaInforma
 case class SystemProperties(values: Set[StringTreeNode])
     extends Property with SystemPropertiesPropertyMetaInformation {
 
-    def mergeWith(other: SystemProperties): SystemProperties = {
+    def meet(other: SystemProperties): SystemProperties = {
         if (values == other.values) this
         else SystemProperties(values ++ other.values)
     }

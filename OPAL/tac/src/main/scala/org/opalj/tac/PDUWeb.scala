@@ -7,7 +7,7 @@ import org.opalj.br.PUVar
 import org.opalj.collection.immutable.IntTrieSet
 
 /**
- * Identifies a variable inside a given fixed method. A methods webs can be constructed through the maximal unions of
+ * Identifies a variable inside a given fixed method. A method's webs can be constructed through the maximal unions of
  * all intersecting DU-UD-chains of the method.
  *
  * @param defPCs The def PCs of the variable that is identified through this web.

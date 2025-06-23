@@ -189,7 +189,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
 
                     Tuple3(
                         vc,
-                        { s: String => s"${am._2(s)} (#$index)" },
+                        { (s: String) => s"${am._2(s)} (#$index)" },
                         annotationsByIndex(index).toList
                     )
             }

@@ -19,12 +19,12 @@ import scala.util.matching.Regex
  */
 sealed trait StringTreeNode {
 
-    val children: Seq[StringTreeNode]
+    val children: Iterable[StringTreeNode]
 
     /**
      * The depth of the string tree measured by the count of nodes on the longest path from the root to a leaf.
      */
-    lazy val depth: Int = children.map(_.depth).maxOption.getOrElse(0) + 1
+    lazy val depth: Int = children.maxByOption(_.depth).map(_.depth).getOrElse(0) + 1
 
     /**
      * Replaces string tree nodes at the target depth if they have children. In case a [[SimpleStringTreeNode]] is given
@@ -37,30 +37,27 @@ sealed trait StringTreeNode {
     final def replaceAtDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
         if (targetDepth >= depth)
             this
+        else if (targetDepth == 1)
+            replacement
         else
-            _replaceAtDepth(targetDepth, replacement)
+            replaceInChildren(targetDepth - 1, replacement)
     }
-    protected def _replaceAtDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode
+
+    protected def replaceInChildren(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
+        createNew(children.map(_.replaceAtDepth(targetDepth, replacement)))
+    }
 
     /**
      * @return The string tree sorted with a stable ordering over its canonical reduction.
      */
     def sorted: StringTreeNode
 
-    private var _regex: Option[String] = None
-
     /**
      * @return The canonical reduction of the string tree, i.e. a regex representing the same set of string values as
      *         the tree itself.
      */
-    final def toRegex: String = {
-        if (_regex.isEmpty) {
-            _regex = Some(_toRegex)
-        }
-
-        _regex.get
-    }
-    protected def _toRegex: String
+    final lazy val regex: String = toRegex
+    protected def toRegex: String
 
     /**
      * Simplifies the string tree by e.g. flattening nested [[StringTreeOr]] instances.
@@ -69,7 +66,7 @@ sealed trait StringTreeNode {
      *
      * @see [[CachedSimplifyNode]]
      */
-    def simplify: StringTreeNode
+    def simplified: StringTreeNode
 
     /**
      * @return The constancy level of the string tree.
@@ -92,15 +89,24 @@ sealed trait StringTreeNode {
      * @return The modified string tree if something could be replaced or the same instance otherwise.
      */
     final def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
-        if (parameters.isEmpty ||
-            parameterIndices.isEmpty ||
-            parameters.keySet.intersect(parameterIndices).isEmpty
-        )
+        assert(parameters.nonEmpty)
+        if (parameterIndices.isEmpty || parameters.keySet.intersect(parameterIndices).isEmpty)
             this
         else
-            _replaceParameters(parameters)
+            replaceParametersInChildren(parameters)
     }
-    protected def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode
+
+    protected def replaceParametersInChildren(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
+        var hasChanges = false
+        val newChildren = children.map { c =>
+            val nc = c.replaceParameters(parameters)
+            hasChanges |= c ne nc
+            nc
+        }
+
+        if (hasChanges) createNew(newChildren)
+        else this
+    }
 
     /**
      * @return True if this string tree node represents an empty string, false otherwise.
@@ -111,38 +117,41 @@ sealed trait StringTreeNode {
      * @return True if this string tree node represents no string, false otherwise.
      */
     def isInvalid: Boolean = false
+
+    /**
+     * @return A new StringTreeNode (of the same type if applicable) with the given children
+     */
+    protected def createNew(children: Iterable[StringTreeNode]): StringTreeNode
 }
 
 object StringTreeNode {
-
     def lb: StringTreeNode = StringTreeDynamicString
     def ub: StringTreeNode = StringTreeInvalidElement
 }
 
 sealed trait CachedSimplifyNode extends StringTreeNode {
 
-    private var _simplified = false
-    final def simplify: StringTreeNode = {
-        if (_simplified) {
+    private var isSimplified = false
+
+    final def simplified: StringTreeNode = {
+        if (isSimplified) {
             this
         } else {
-            _simplify match {
+            simplify match {
                 case cr: CachedSimplifyNode =>
-                    cr._simplified = true
+                    cr.isSimplified = true
                     cr
                 case r => r
             }
         }
     }
 
-    protected def _simplify: StringTreeNode
+    protected def simplify: StringTreeNode
 }
 
 sealed trait CachedHashCode extends Product {
-
-    private lazy val _hashCode = scala.util.hashing.MurmurHash3.productHash(this)
-    override def hashCode(): Int = _hashCode
-    override def canEqual(obj: Any): Boolean = obj.hashCode() == _hashCode
+    override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
+    override def canEqual(obj: Any): Boolean = obj.hashCode() == hashCode
 }
 
 /**
@@ -150,57 +159,40 @@ sealed trait CachedHashCode extends Product {
  */
 case class StringTreeConcat(override val children: Seq[StringTreeNode]) extends CachedSimplifyNode with CachedHashCode {
 
-    override protected def _toRegex: String = {
-        children.size match {
-            case 0 => throw new IllegalStateException("Tried to convert StringTreeConcat with no children to a regex!")
-            case 1 => children.head.toRegex
-            case _ => s"${children.map(_.toRegex).reduceLeft((o, n) => s"$o$n")}"
-        }
+    override protected def toRegex: String = children.tail.foldLeft(children.head.regex) { (regex, child) =>
+        s"$regex${child.regex}"
     }
 
     override def sorted: StringTreeNode = StringTreeConcat(children.map(_.sorted))
 
-    override def _simplify: StringTreeNode = {
-        val nonEmptyChildren = children.map(_.simplify).filterNot(_.isEmpty)
-        if (nonEmptyChildren.exists(_.isInvalid)) {
-            StringTreeInvalidElement
-        } else {
-            nonEmptyChildren.size match {
-                case 0 => StringTreeEmptyConst
-                case 1 => nonEmptyChildren.head
-                case _ =>
-                    var newChildren = Seq.empty[StringTreeNode]
-                    nonEmptyChildren.foreach {
-                        case concatChild: StringTreeConcat => newChildren :++= concatChild.children
-                        case child                         => newChildren :+= child
-                    }
-                    StringTreeConcat(newChildren)
+    override protected def simplify: StringTreeNode = {
+        var hasInvalidChildren = false
+        val newChildren = children.flatMap { c =>
+            c.simplified match {
+                case nc if nc.isInvalid =>
+                    hasInvalidChildren |= true
+                    None
+                case nc if nc.isEmpty              => None
+                case concatChild: StringTreeConcat => concatChild.children
+                case nc                            => Some(nc)
             }
         }
-    }
 
-    override def constancyLevel: StringConstancyLevel =
-        children.map(_.constancyLevel).reduceLeft(StringConstancyLevel.determineForConcat)
-
-    def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
-        val childrenWithChange = children.map { c =>
-            val nc = c.replaceParameters(parameters)
-            (nc, c ne nc)
-        }
-
-        if (childrenWithChange.exists(_._2)) {
-            StringTreeConcat(childrenWithChange.map(_._1))
-        } else {
-            this
+        if (hasInvalidChildren) StringTreeInvalidElement
+        else newChildren.size match {
+            case 0 => StringTreeEmptyConst
+            case 1 => newChildren.head
+            case _ => StringTreeConcat(newChildren)
         }
     }
 
-    def _replaceAtDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
-        if (targetDepth == 1)
-            replacement
-        else
-            StringTreeConcat(children.map(_.replaceAtDepth(targetDepth - 1, replacement)))
-    }
+    override lazy val constancyLevel: StringConstancyLevel =
+        children.foldLeft(children.head.constancyLevel) {
+            (level, child) => StringConstancyLevel.determineForConcat(level, child.constancyLevel)
+        }
+
+    override protected def createNew(children: Iterable[StringTreeNode]): StringTreeNode =
+        StringTreeConcat(children.toSeq)
 }
 
 object StringTreeConcat {
@@ -220,22 +212,20 @@ object StringTreeConcat {
  */
 trait StringTreeOr extends CachedSimplifyNode with CachedHashCode {
 
-    protected val _children: Iterable[StringTreeNode]
+    override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.iterator.map(_.sorted).toSeq.sortBy(_.regex))
 
-    override final lazy val children: Seq[StringTreeNode] = _children.toSeq
-
-    override protected def _toRegex: String = {
+    override protected def toRegex: String = {
         children.size match {
             case 0 => throw new IllegalStateException("Tried to convert StringTreeOr with no children to a regex!")
-            case 1 => children.head.toRegex
-            case _ => s"(${children.map(_.toRegex).reduceLeft((o, n) => s"$o|$n")})"
+            case 1 => children.head.regex
+            case _ => s"(${children.tail.foldLeft(children.head.regex) { (regex, child) => s"$regex|${child.regex}" }})"
         }
     }
 
-    override def constancyLevel: StringConstancyLevel =
-        _children.map(_.constancyLevel).reduceLeft(StringConstancyLevel.meet)
-
-    override lazy val parameterIndices: Set[Int] = _children.flatMap(_.parameterIndices).toSet
+    override lazy val constancyLevel: StringConstancyLevel =
+        children.foldLeft[StringConstancyLevel](StringConstancyLevel.Invalid) { (level, child) =>
+            StringConstancyLevel.meet(level, child.constancyLevel)
+        }
 }
 
 object StringTreeOr {
@@ -261,47 +251,22 @@ object StringTreeOr {
  * Based on a [[Seq]] for children storage. To be used if the order of children is important for e.g. reduction to a
  * regex and subsequent comparison to another string tree.
  */
-private case class SeqBasedStringTreeOr(override val _children: Seq[StringTreeNode]) extends StringTreeOr {
+private case class SeqBasedStringTreeOr(override val children: Seq[StringTreeNode]) extends StringTreeOr {
 
-    override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.map(_.sorted).sortBy(_.toRegex))
+    override protected def simplify: StringTreeNode = {
+        val newChildren = children.flatMap { c =>
+            c.simplified match {
+                case nc if nc.isInvalid => None
+                case or: StringTreeOr   => or.children
+                case nc                 => Some(nc)
+            }
+        }.distinct
 
-    override def _simplify: StringTreeNode = {
-        val validChildren = _children.map(_.simplify).filterNot(_.isInvalid)
-        validChildren.size match {
-            case 0 => StringTreeInvalidElement
-            case 1 => validChildren.head
-            case _ =>
-                val newChildren = validChildren.flatMap {
-                    case orChild: StringTreeOr => orChild.children
-                    case child                 => Set(child)
-                }
-                val distinctNewChildren = newChildren.distinct
-                distinctNewChildren.size match {
-                    case 1 => distinctNewChildren.head
-                    case _ => SeqBasedStringTreeOr(distinctNewChildren)
-                }
-        }
+        SeqBasedStringTreeOr(newChildren)
     }
 
-    def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
-        val childrenWithChange = _children.map { c =>
-            val nc = c.replaceParameters(parameters)
-            (nc, c ne nc)
-        }
-
-        if (childrenWithChange.exists(_._2)) {
-            SeqBasedStringTreeOr(childrenWithChange.map(_._1))
-        } else {
-            this
-        }
-    }
-
-    def _replaceAtDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
-        if (targetDepth == 1)
-            replacement
-        else
-            SeqBasedStringTreeOr(children.map(_.replaceAtDepth(targetDepth - 1, replacement)))
-    }
+    override protected def createNew(children: Iterable[StringTreeNode]): StringTreeNode =
+        SeqBasedStringTreeOr(children.toSeq)
 }
 
 object SeqBasedStringTreeOr {
@@ -322,35 +287,12 @@ object SeqBasedStringTreeOr {
  *
  * Based on a [[Set]] for children storage. To be used if the order of children is NOT important.
  */
-case class SetBasedStringTreeOr(override val _children: Set[StringTreeNode]) extends StringTreeOr {
+case class SetBasedStringTreeOr(override val children: Set[StringTreeNode]) extends StringTreeOr {
 
-    override lazy val depth: Int = _children.map(_.depth).maxOption.getOrElse(0) + 1
+    override protected def simplify: StringTreeNode = SetBasedStringTreeOr.createWithSimplify(children.map(_.simplified))
 
-    override def sorted: StringTreeNode = SeqBasedStringTreeOr(children.map(_.sorted).sortBy(_.toRegex))
-
-    override def _simplify: StringTreeNode = SetBasedStringTreeOr._simplifySelf {
-        _children.map(_.simplify).filterNot(_.isInvalid)
-    }
-
-    def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
-        val childrenWithChange = _children.map { c =>
-            val nc = c.replaceParameters(parameters)
-            (nc, c ne nc)
-        }
-
-        if (childrenWithChange.exists(_._2)) {
-            SetBasedStringTreeOr(childrenWithChange.map(_._1))
-        } else {
-            this
-        }
-    }
-
-    def _replaceAtDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
-        if (targetDepth == 1)
-            replacement
-        else
-            SetBasedStringTreeOr(_children.map(_.replaceAtDepth(targetDepth - 1, replacement)))
-    }
+    override protected def createNew(children: Iterable[StringTreeNode]): StringTreeNode =
+        SetBasedStringTreeOr(children.toSet)
 }
 
 object SetBasedStringTreeOr {
@@ -365,25 +307,18 @@ object SetBasedStringTreeOr {
         }
     }
 
-    def createWithSimplify(children: Set[StringTreeNode]): StringTreeNode =
-        _simplifySelf(children.filterNot(_.isInvalid))
-
-    private def _simplifySelf(_children: Set[StringTreeNode]): StringTreeNode = {
-        _children.size match {
+    def createWithSimplify(children: Set[StringTreeNode]): StringTreeNode = {
+        children.size match {
             case 0 => StringTreeInvalidElement
-            case 1 => _children.head
+            case 1 => children.head
             case _ =>
                 val newChildrenBuilder = Set.newBuilder[StringTreeNode]
-                _children.foreach {
-                    case setOrChild: SetBasedStringTreeOr => newChildrenBuilder.addAll(setOrChild._children)
-                    case orChild: StringTreeOr            => newChildrenBuilder.addAll(orChild.children)
-                    case child                            => newChildrenBuilder.addOne(child)
+                children.foreach {
+                    case orChild: StringTreeOr    => newChildrenBuilder.addAll(orChild.children)
+                    case child if child.isInvalid =>
+                    case child                    => newChildrenBuilder.addOne(child)
                 }
-                val newChildren = newChildrenBuilder.result()
-                newChildren.size match {
-                    case 1 => newChildren.head
-                    case _ => SetBasedStringTreeOr(newChildren)
-                }
+                SetBasedStringTreeOr(newChildrenBuilder.result())
         }
     }
 }
@@ -394,22 +329,24 @@ object SetBasedStringTreeOr {
  */
 sealed trait SimpleStringTreeNode extends StringTreeNode {
 
-    override final val children: Seq[StringTreeNode] = Seq.empty
+    override final val children: Iterable[StringTreeNode] = Iterable.empty
+
+    override final lazy val depth = 1
 
     override final def sorted: StringTreeNode = this
-    override final def simplify: StringTreeNode = this
+    override final def simplified: StringTreeNode = this
 
-    override def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = this
-    override def _replaceAtDepth(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
-        if (targetDepth == 1)
-            replacement
-        else
-            replaceAtDepth(targetDepth - 1, replacement)
+    override protected def replaceParametersInChildren(parameters: Map[Int, StringTreeNode]): StringTreeNode = this
+    override protected def replaceInChildren(targetDepth: Int, replacement: StringTreeNode): StringTreeNode = {
+        throw new UnsupportedOperationException()
     }
+
+    override protected def createNew(children: Iterable[StringTreeNode]): StringTreeNode =
+        throw new UnsupportedOperationException()
 }
 
 case class StringTreeConst(string: String) extends SimpleStringTreeNode {
-    override protected def _toRegex: String = Regex.quoteReplacement(string).replaceAll("\\[", "\\\\[")
+    override protected def toRegex: String = Regex.quoteReplacement(string).replaceAll("\\[", "\\\\[")
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Constant
 
@@ -419,7 +356,6 @@ case class StringTreeConst(string: String) extends SimpleStringTreeNode {
 }
 
 object StringTreeEmptyConst extends StringTreeConst("") {
-
     override def isEmpty: Boolean = true
 }
 
@@ -430,29 +366,28 @@ object StringTreeEmptyConst extends StringTreeConst("") {
  * @param index The method parameter index that is being represented.
  */
 case class StringTreeParameter(index: Int) extends SimpleStringTreeNode {
-    override protected def _toRegex: String = ".*"
+    override protected def toRegex: String = ".*"
 
     override lazy val parameterIndices: Set[Int] = Set(index)
 
-    override def _replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode =
+    override protected def replaceParametersInChildren(parameters: Map[Int, StringTreeNode]): StringTreeNode =
         parameters.getOrElse(index, this)
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }
 
 object StringTreeParameter {
-
     def forParameterPC(paramPC: Int): StringTreeParameter = {
         if (paramPC >= -1) {
             throw new IllegalArgumentException(s"Invalid parameter pc given: $paramPC")
         }
         // Parameters start at PC -2 downwards
-        StringTreeParameter(Math.abs(paramPC + 2))
+        StringTreeParameter(-2 - paramPC)
     }
 }
 
 object StringTreeInvalidElement extends SimpleStringTreeNode {
-    override protected def _toRegex: String = throw new UnsupportedOperationException()
+    override protected def toRegex: String = throw new UnsupportedOperationException()
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Invalid
 
@@ -462,13 +397,13 @@ object StringTreeInvalidElement extends SimpleStringTreeNode {
 object StringTreeNull extends SimpleStringTreeNode {
     // IMPROVE Using this element nested in some other element might lead to unexpected results since it contains regex
     // matching characters for the beginning and end of a string.
-    override protected def _toRegex: String = "^null$"
+    override protected def toRegex: String = "^null$"
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Constant
 }
 
 object StringTreeDynamicString extends SimpleStringTreeNode {
-    override protected def _toRegex: String = ".*"
+    override protected def toRegex: String = ".*"
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }
@@ -476,7 +411,7 @@ object StringTreeDynamicString extends SimpleStringTreeNode {
 object StringTreeDynamicInt extends SimpleStringTreeNode {
     // IMPROVE Using this element nested in some other element might lead to unexpected results since it contains regex
     // matching characters for the beginning and end of a string.
-    override protected def _toRegex: String = "^-?\\d+$"
+    override protected def toRegex: String = "^-?\\d+$"
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }
@@ -484,7 +419,7 @@ object StringTreeDynamicInt extends SimpleStringTreeNode {
 object StringTreeDynamicFloat extends SimpleStringTreeNode {
     // IMPROVE Using this element nested in some other element might lead to unexpected results since it contains regex
     // matching characters for the beginning and end of a string.
-    override protected def _toRegex: String = "^-?\\d*\\.{0,1}\\d+$"
+    override protected def toRegex: String = "^-?\\d*\\.{0,1}\\d+$"
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }

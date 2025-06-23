@@ -31,7 +31,7 @@ public class Complex {
     @Failure(n = 0, levels = Level.L0)
     @Invalid(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW)
     @PartiallyConstant(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-.*)")
-    public void complexDependencyResolve(String s, Class clazz) {
+    public void complexDependencyResolve(String s, Class<?> clazz) {
         String properName = s.length() == 1 ? s.substring(0, 1) :
                 getHelloWorld() + "-" + getRuntimeClassName();
         String getterName = "get-" + properName;
@@ -40,7 +40,7 @@ public class Complex {
             m = clazz.getMethod(getterName);
             System.out.println(m);
             analyzeString(getterName);
-        } catch (NoSuchMethodException var13) {
+        } catch (NoSuchMethodException ignored) {
         }
     }
 

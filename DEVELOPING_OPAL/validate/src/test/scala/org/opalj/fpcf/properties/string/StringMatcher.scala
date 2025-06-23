@@ -22,11 +22,11 @@ sealed trait StringMatcher extends AbstractPropertyMatcher {
 
     protected def getActualValues: Property => Option[(String, String)] = {
         case prop: StringConstancyProperty =>
-            val tree = prop.tree.simplify.sorted
+            val tree = prop.tree.simplified.sorted
             if (tree.isInvalid) {
                 None
             } else {
-                Some((tree.constancyLevel.toString.toLowerCase, tree.toRegex))
+                Some((tree.constancyLevel.toString.toLowerCase, tree.regex))
             }
         case p => throw new IllegalArgumentException(s"Tried to extract values from non string property: $p")
     }

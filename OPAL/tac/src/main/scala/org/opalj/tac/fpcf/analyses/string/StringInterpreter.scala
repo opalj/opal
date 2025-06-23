@@ -84,9 +84,8 @@ trait ParameterEvaluatingStringInterpreter extends StringInterpreter {
 
     protected def getParametersForPC(pc: Int)(implicit state: InterpretationState): Seq[Expr[V]] = {
         state.tac.stmts(state.tac.pcToIndex(pc)) match {
-            case ExprStmt(_, vfc: FunctionCall[V])     => vfc.params
-            case Assignment(_, _, fc: FunctionCall[V]) => fc.params
-            case _                                     => Seq.empty
+            case AssignmentLikeStmt(_, fc: FunctionCall[V]) => fc.params
+            case _                                          => Seq.empty
         }
     }
 }

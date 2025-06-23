@@ -17,11 +17,14 @@ import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
+import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeNull
 import org.opalj.br.fpcf.properties.string.StringTreeOr
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyStore
@@ -49,15 +52,13 @@ class L3FieldReadInterpreter(
     override type E = FieldRead[V]
 
     private case class FieldReadState(
-        target:                        PV,
-        var fieldAccessDependee:       EOptionP[DeclaredField, FieldWriteAccessInformation],
-        var seenDirectFieldAccesses:   Int                                                        = 0,
-        var seenIndirectFieldAccesses: Int                                                        = 0,
-        var hasWriteInSameMethod:      Boolean                                                    = false,
-        var hasInit:                   Boolean                                                    = false,
-        var hasUnresolvableAccess:     Boolean                                                    = false,
-        var accessDependees:           Seq[EOptionP[VariableDefinition, StringConstancyProperty]] = Seq.empty,
-        previousResults:               ListBuffer[StringTreeNode]                                 = ListBuffer.empty
+        target:                    PV,
+        var fieldAccessDependee:   EOptionP[DeclaredField, FieldWriteAccessInformation],
+        var hasWriteInSameMethod:  Boolean                                                    = false,
+        var hasInit:               Boolean                                                    = false,
+        var hasUnresolvableAccess: Boolean                                                    = false,
+        var accessDependees:       Seq[EOptionP[VariableDefinition, StringConstancyProperty]] = Seq.empty,
+        previousResults:           ListBuffer[StringTreeNode]                                 = ListBuffer.empty
     ) {
 
         def updateAccessDependee(newDependee: EOptionP[VariableDefinition, StringConstancyProperty]): Unit = {
@@ -87,9 +88,10 @@ class L3FieldReadInterpreter(
         val field = declaredFields(fieldRead.declaringClass, fieldRead.name, fieldRead.declaredFieldType)
         val fieldAccessEOptP = ps(field, FieldWriteAccessInformation.key)
 
-        implicit val accessState: FieldReadState = FieldReadState(target, fieldAccessEOptP)
+        implicit val accessState: FieldReadState =
+            FieldReadState(target, InterimEUBP(field, NoFieldWriteAccessInformation))
         if (fieldAccessEOptP.hasUBP) {
-            handleFieldAccessInformation(fieldAccessEOptP.ub)
+            handleFieldAccessInformation(fieldAccessEOptP.asEPS)
         } else {
             InterimResult.forUB(
                 InterpretationHandler.getEntity,
@@ -100,12 +102,14 @@ class L3FieldReadInterpreter(
         }
     }
 
-    private def handleFieldAccessInformation(accessInformation: FieldWriteAccessInformation)(
+    private def handleFieldAccessInformation(accessDependee: EPS[DeclaredField, FieldWriteAccessInformation])(
         implicit
         accessState: FieldReadState,
         state:       InterpretationState
     ): ProperPropertyComputationResult = {
-        if (accessState.fieldAccessDependee.isFinal && accessInformation.accesses.isEmpty) {
+        val accessInformation = accessDependee.ub
+
+        if (accessDependee.isFinal && accessInformation.accesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
             return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
                 state.pc,
@@ -115,8 +119,8 @@ class L3FieldReadInterpreter(
         }
 
         accessInformation.getNewestAccesses(
-            accessInformation.numDirectAccesses - accessState.seenDirectFieldAccesses,
-            accessInformation.numIndirectAccesses - accessState.seenIndirectFieldAccesses
+            accessInformation.numDirectAccesses - accessState.fieldAccessDependee.ub.numDirectAccesses,
+            accessInformation.numIndirectAccesses - accessState.fieldAccessDependee.ub.numIndirectAccesses
         ).foreach {
             case (contextId, pc, _, parameter) =>
                 val method = contextProvider.contextFromId(contextId).method.definedMethod
@@ -125,7 +129,7 @@ class L3FieldReadInterpreter(
                     accessState.hasWriteInSameMethod = true
                 }
 
-                if (method.name == "<init>" || method.name == "<clinit>") {
+                if (method.isInitializer) {
                     accessState.hasInit = true
                 }
 
@@ -140,8 +144,7 @@ class L3FieldReadInterpreter(
                 }
         }
 
-        accessState.seenDirectFieldAccesses = accessInformation.numDirectAccesses
-        accessState.seenIndirectFieldAccesses = accessInformation.numIndirectAccesses
+        accessState.fieldAccessDependee = accessDependee
 
         tryComputeFinalResult
     }
@@ -196,9 +199,11 @@ class L3FieldReadInterpreter(
         state:       InterpretationState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case UBP(ub: FieldWriteAccessInformation) =>
-                accessState.fieldAccessDependee = eps.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]]
-                handleFieldAccessInformation(ub)(accessState, state)
+            case UBP(_: FieldWriteAccessInformation) =>
+                handleFieldAccessInformation(eps.asInstanceOf[EPS[DeclaredField, FieldWriteAccessInformation]])(
+                    accessState,
+                    state
+                )
 
             case UBP(_: StringConstancyProperty) =>
                 accessState.updateAccessDependee(eps.asInstanceOf[EOptionP[VariableDefinition, StringConstancyProperty]])

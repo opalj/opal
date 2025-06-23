@@ -15,7 +15,6 @@ import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
 import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
-import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
@@ -28,19 +27,7 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
  *
  * @author Maximilian Rüsch
  */
-case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, var tacDependee: EOptionP[Method, TACAI]) {
-
-    def tac: TAC = {
-        if (tacDependee.hasUBP && tacDependee.ub.tac.isDefined)
-            tacDependee.ub.tac.get
-        else
-            throw new IllegalStateException("Cannot get a TAC from a TACAI with no or empty upper bound!")
-    }
-
-    var flowGraph: FlowGraph = _
-    var superFlowGraph: SuperFlowGraph = _
-    var controlTree: ControlTree = _
-    var flowAnalysis: DataFlowAnalysis = _
+case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, tac: TAC, flowAnalysis: DataFlowAnalysis) {
 
     private val pcToDependeeMapping: mutable.Map[Int, EOptionP[MethodPC, StringFlowFunctionProperty]] =
         mutable.Map.empty

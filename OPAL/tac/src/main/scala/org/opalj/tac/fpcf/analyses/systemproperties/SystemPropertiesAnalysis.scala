@@ -59,9 +59,8 @@ class SystemPropertiesAnalysis private[analyses] (
                     classHierarchy.isSubtypeOf(call.declaringClass, ClassType("java/util/Properties")) =>
                 values ++= getPossibleStrings(call.pc, call.params(1))
 
-            case StaticFunctionCallStatement(call)
-                if call.name == "setProperty" && call.declaringClass == ClassType.System =>
-                values ++= getPossibleStrings(call.pc, call.params(1))
+            case StaticFunctionCallStatement(StaticFunctionCall(pc, ClassType.System, _, "setProperty", _, params)) =>
+                values ++= getPossibleStrings(pc, params(1))
 
             case StaticMethodCall(pc, ClassType.System, _, "setProperty", _, params) =>
                 values ++= getPossibleStrings(pc, params(1))
@@ -76,7 +75,7 @@ class SystemPropertiesAnalysis private[analyses] (
         def update(currentVal: EOptionP[SomeProject, SystemProperties]): Option[InterimEP[SomeProject, SystemProperties]] = {
             currentVal match {
                 case UBP(ub) =>
-                    val newUB = ub.mergeWith(SystemProperties(values))
+                    val newUB = ub.meet(SystemProperties(values))
                     if (newUB eq ub) None
                     else Some(InterimEUBP(project, newUB))
 

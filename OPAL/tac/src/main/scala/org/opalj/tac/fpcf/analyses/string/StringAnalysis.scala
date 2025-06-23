@@ -183,7 +183,7 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
 
         state.stringFlowDependee.get match {
             case UBP(methodStringFlow) =>
-                val tree = methodStringFlow(state.entity.pc, state.entity.pv).simplify
+                val tree = methodStringFlow(state.entity.pc, state.entity.pv).simplified
                 if (tree.depth >= depthThreshold) {
                     // String constancy information got too complex, abort. This guard can probably be removed once
                     // recursing functions are properly handled using e.g. the widen-converge approach.

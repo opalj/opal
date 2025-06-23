@@ -77,6 +77,7 @@ private[string] class ContextStringAnalysisState private (
 
         updateParamDependee(dependee)
     }
+
     def updateParamDependee(dependee: EOptionP[MethodParameterContext, StringConstancyProperty]): Unit =
         _paramDependees(dependee.e) = dependee
 
@@ -90,7 +91,10 @@ private[string] class ContextStringAnalysisState private (
                 )
             }.toMap
 
-            _stringDependee.ub.tree.replaceParameters(paramTrees).simplify
+            if (paramTrees.nonEmpty)
+                _stringDependee.ub.tree.replaceParameters(paramTrees).simplified
+            else
+                _stringDependee.ub.tree.simplified
         } else {
             StringTreeNode.ub
         }
@@ -151,7 +155,9 @@ private[string] case class MethodParameterContextStringAnalysisState(
             case Some(prev) => Some(callerContext +: prev)
         }
     }
+
     def getCallerContexts(m: Method): Seq[CallerContext] = _callerContextsByMethod(m)
+
     def addCallExprInformationForContext(callerContext: CallerContext, expr: Call[V]): Option[Call[V]] =
         _callerContexts.put(callerContext, Some(expr)).flatten
 
@@ -160,6 +166,7 @@ private[string] case class MethodParameterContextStringAnalysisState(
     var discoveredUnknownTAC: Boolean = false
 
     def updateTacaiDependee(tacEOptP: EOptionP[Method, TACAI]): Unit = _tacaiDependees(tacEOptP.e) = tacEOptP
+
     def getTacaiForContext(callerContext: CallerContext)(implicit ps: PropertyStore): EOptionP[Method, TACAI] = {
         val m = callerContext._1.method.definedMethod
 
@@ -171,6 +178,7 @@ private[string] case class MethodParameterContextStringAnalysisState(
             tacEOptP
         }
     }
+
     def getTACForContext(callerContext: CallerContext)(implicit ps: PropertyStore): TAC =
         getTacaiForContext(callerContext).ub.tac.get
 
@@ -194,6 +202,7 @@ private[string] case class MethodParameterContextStringAnalysisState(
 
         updateParamDependee(dependee)
     }
+
     def updateParamDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit =
         _paramDependees(dependee.e) = dependee
 
@@ -215,7 +224,7 @@ private[string] case class MethodParameterContextStringAnalysisState(
             paramOptions :+= StringTreeNode.lb
         }
 
-        StringTreeOr(paramOptions).simplify
+        StringTreeOr(paramOptions).simplified
     }
 
     def hasDependees: Boolean = _callersDependee.exists(_.isRefinable) ||

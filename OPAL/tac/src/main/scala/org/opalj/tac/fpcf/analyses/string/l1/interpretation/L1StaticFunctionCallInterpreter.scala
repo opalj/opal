@@ -89,7 +89,7 @@ private[string] trait L1StringValueOfFunctionCallInterpreter extends AssignmentB
         val pc = state.pc
         val pp = call.params.head.asVar.toPersistentForm(state.tac.stmts)
 
-        val flowFunction: StringFlowFunction = if (call.descriptor.parameterType(0).toJava == "char") {
+        val flowFunction: StringFlowFunction = if (call.descriptor.parameterTypes.head.isCharType) {
             (env: StringTreeEnvironment) =>
                 {
                     env(pc, pp) match {

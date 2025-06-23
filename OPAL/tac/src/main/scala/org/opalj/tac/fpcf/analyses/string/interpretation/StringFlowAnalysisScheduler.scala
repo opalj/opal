@@ -26,6 +26,8 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  */
 sealed trait StringFlowAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(StringFlowFunctionProperty)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI)
@@ -39,16 +41,12 @@ sealed trait StringFlowAnalysisScheduler extends FPCFAnalysisScheduler {
     override def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 }
 
-trait LazyStringFlowAnalysis
-    extends StringFlowAnalysisScheduler with FPCFLazyAnalysisScheduler {
+trait LazyStringFlowAnalysis extends StringFlowAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
-    override def register(p: SomeProject, ps: PropertyStore, initData: InitializationData): FPCFAnalysis = {
-        ps.registerLazyPropertyComputation(StringFlowFunctionProperty.key, initData.analyze)
-
-        initData
+    override def register(p: SomeProject, ps: PropertyStore, handler: InterpretationHandler): FPCFAnalysis = {
+        ps.registerLazyPropertyComputation(StringFlowFunctionProperty.key, handler.analyze)
+        handler
     }
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 }
