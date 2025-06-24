@@ -47,8 +47,8 @@ class ConfiguredPurity(
 
             if conditions forall {
                 _ forall { typeName =>
-                    val ot = ClassType(typeName)
-                    project.classHierarchy.hasSubtypes(ot).isNo && classExtensibility(ot).isNo
+                    val ct = ClassType(typeName)
+                    project.classHierarchy.hasSubtypes(ct).isNo && classExtensibility(ct).isNo
                 }
             }
 

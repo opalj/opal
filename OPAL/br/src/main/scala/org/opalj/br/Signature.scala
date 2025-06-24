@@ -193,7 +193,7 @@ sealed trait ThrowsSignature extends SignatureElement
  * val SimpleGenericType = org.opalj.br.SimpleGenericType
  * val BasicClassTypeSignature = org.opalj.br.BasicClassTypeSignature
  *
- * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case BasicClassTypeSignature(ot) => ot.toJava; case _ => null}
+ * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case BasicClassTypeSignature(ct) => ct.toJava; case _ => null}
  * // res: String = Col
  *
  * SignatureParser.parseClassSignature("<E:Ljava/lang/Error;>Ljava/lang/Object;LCol<TE;>;").superInterfacesSignature.head match { case SimpleGenericType(bt,gt) => bt.toJava+"<"+gt.toJava+">"; case _ => null}
@@ -565,7 +565,7 @@ object ConcreteTypeArgument {
 
     def unapply(pta: ProperTypeArgument): Option[ClassType] = {
         pta match {
-            case ProperTypeArgument(None, ConcreteType(ot)) => Some(ot)
+            case ProperTypeArgument(None, ConcreteType(ct)) => Some(ct)
             case _                                          => None
         }
     }
@@ -590,7 +590,7 @@ object ConcreteTypeArgument {
 object UpperTypeBound {
 
     def unapply(pta: ProperTypeArgument): Option[ClassType] = pta match {
-        case ProperTypeArgument(Some(CovariantIndicator), ConcreteType(ot)) => Some(ot)
+        case ProperTypeArgument(Some(CovariantIndicator), ConcreteType(ct)) => Some(ct)
         case _                                                              => None
     }
 }
@@ -615,7 +615,7 @@ object UpperTypeBound {
 object LowerTypeBound {
 
     def unapply(pta: ProperTypeArgument): Option[ClassType] = pta match {
-        case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ot)) => Some(ot)
+        case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ct)) => Some(ct)
         case _                                                                  => None
     }
 }

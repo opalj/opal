@@ -65,8 +65,8 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
             // We chose "/." to identify all subtypes, because we can only use a character
             // (sequence) that contains an invalid character in a JVM identifier.
             if (fqn.endsWith("/.")) {
-                val ot = ClassType(fqn.substring(0, fqn.length - 2))
-                classHierarchy.allSubtypes(ot, reflexive = true)
+                val ct = ClassType(fqn.substring(0, fqn.length - 2))
+                classHierarchy.allSubtypes(ct, reflexive = true)
             } else {
                 List(ClassType(fqn))
             }
@@ -79,8 +79,8 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
 
         val configuredTypes: mutable.LongMap[Answer] =
             mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
-                val (ot, answer) = e
-                (ot.id.toLong, answer)
+                val (ct, answer) = e
+                (ct.id.toLong, answer)
             }
 
         val allClassFiles = project.allClassFiles

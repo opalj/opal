@@ -198,13 +198,13 @@ package object br {
      */
     def typeToXHTML(t: Type, abbreviateType: Boolean = true): Node = {
         t match {
-            case ot: ClassType =>
+            case ct: ClassType =>
                 if (abbreviateType)
-                    <abbr class="type class_type" title={ot.toJava}>
-                        {ot.simpleName}
+                    <abbr class="type class_type" title={ct.toJava}>
+                        {ct.simpleName}
                     </abbr>
                 else
-                    <span class="type class_type">{ot.toJava}</span>
+                    <span class="type class_type">{ct.toJava}</span>
             case at: ArrayType =>
                 <span class="type array_type">
                     {typeToXHTML(at.elementType, abbreviateType)}{"[]" * at.dimensions}

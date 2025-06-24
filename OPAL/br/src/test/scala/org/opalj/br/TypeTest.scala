@@ -26,13 +26,13 @@ class TypeTest extends AnyFunSpec {
             ClassType.flushTypeCache()
             assert(ClassType.classTypesCount == ClassType.highestPredefinedTypeId + 1)
 
-            // Create 100 dummy OTs and assert their ID assignment is correct
+            // Create 100 dummy CTs and assert their ID assignment is correct
             for (i <- 1 to 100) {
                 val t = ClassType(s"some/type/name$i")
                 assert(t.id == ClassType.highestPredefinedTypeId + i, "invalid id for newly constructed type")
             }
 
-            // Check that highest OT ID is in fact present and can be looked up
+            // Check that highest CT ID is in fact present and can be looked up
             try {
                 ClassType.lookup(ClassType.highestPredefinedTypeId + 99)
             } catch {
@@ -40,11 +40,11 @@ class TypeTest extends AnyFunSpec {
                     fail(s"defined type with id ${ClassType.highestPredefinedTypeId + 99} was not found in cache")
             }
 
-            // Flush OT cache and assert ID counter is reset
+            // Flush CT cache and assert ID counter is reset
             ClassType.flushTypeCache()
             assert(ClassType.classTypesCount == ClassType.highestPredefinedTypeId + 1)
 
-            // Assert ID was properly reset and new OTs are assigned an id starting from the predefined types
+            // Assert ID was properly reset and new CTs are assigned an id starting from the predefined types
             val newType = ClassType("some/other/type")
             assert(
                 newType.id == ClassType.highestPredefinedTypeId + 1,
@@ -58,7 +58,7 @@ class TypeTest extends AnyFunSpec {
         it("should not remove predefined types on flush") {
             ClassType.flushTypeCache()
 
-            // Check that first and last predefined OT are still present after flush
+            // Check that first and last predefined CT are still present after flush
             val obj = ClassType.lookup(ClassType.ObjectId)
             assert(obj.fqn.equals("java/lang/Object"))
 

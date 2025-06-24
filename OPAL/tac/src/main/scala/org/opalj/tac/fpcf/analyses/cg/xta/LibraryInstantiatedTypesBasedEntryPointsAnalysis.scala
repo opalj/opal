@@ -107,9 +107,9 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
 
     def analyzeTypes(types: Iterator[ReferenceType]): Iterator[DeclaredMethod] = {
         types.flatMap {
-            case ot: ClassType if !globallySeenTypes.containsKey(ot) =>
-                globallySeenTypes.put(ot, true)
-                project.classFile(ot).map { cf => cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic) }
+            case ct: ClassType if !globallySeenTypes.containsKey(ct) =>
+                globallySeenTypes.put(ct, true)
+                project.classFile(ct).map { cf => cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic) }
                     .getOrElse(Iterator.empty)
             case _ => Iterator.empty
         }.map(declaredMethods(_))

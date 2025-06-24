@@ -159,8 +159,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         getDefSite(defSite)
     }
 
-    private[this] def canBeInstantiated(ot: ClassType): Boolean = {
-        val cfOption = project.classFile(ot)
+    private[this] def canBeInstantiated(ct: ClassType): Boolean = {
+        val cfOption = project.classFile(ct)
         cfOption.isDefined && {
             val cf = cfOption.get
             !cf.isInterfaceDeclaration && !cf.isAbstract
