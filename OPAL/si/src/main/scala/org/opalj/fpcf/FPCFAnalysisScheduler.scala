@@ -1,15 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
 package fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
+import org.opalj.si.Project
+import org.opalj.si.ProjectInformationKeys
 
 /**
  * Specification of the properties of an analysis.
@@ -20,10 +16,10 @@ import org.opalj.fpcf.PropertyStore
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+trait FPCFAnalysisScheduler[P <: Project] extends ComputationSpecification[FPCFAnalysis] {
 
     /**
-     * Returns all [[org.opalj.br.analyses.ProjectInformationKey]]s required by the analyses.
+     * Returns all [[org.opalj.si.ProjectInformationKey]]s required by the analyses.
      *
      * This information is in particular required by keys which - when the key is computed - make use of
      * other keys which are not statically known at compile time. If a single key that is (transitively)
@@ -39,32 +35,32 @@ trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
     final val uniqueId: Int = FPCFAnalysisScheduler.nextId
 
     override final def init(ps: PropertyStore): InitializationData = {
-        init(ps.context(classOf[SomeProject]), ps)
+        init(ps.context(classOf[Project]).asInstanceOf[P], ps)
     }
 
     override final def uses(ps: PropertyStore): Set[PropertyBounds] = {
-        uses ++ uses(ps.context(classOf[SomeProject]), ps)
+        uses ++ uses(ps.context(classOf[Project]).asInstanceOf[P], ps)
     }
 
     override final def beforeSchedule(ps: PropertyStore): Unit = {
-        beforeSchedule(ps.context(classOf[SomeProject]), ps)
+        beforeSchedule(ps.context(classOf[Project]).asInstanceOf[P], ps)
     }
 
     override final def afterPhaseCompletion(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {
-        afterPhaseCompletion(ps.context(classOf[SomeProject]), ps, analysis)
+        afterPhaseCompletion(ps.context(classOf[Project]).asInstanceOf[P], ps, analysis)
     }
 
-    def init(p: SomeProject, ps: PropertyStore): InitializationData
+    def init(p: P, ps: PropertyStore): InitializationData
 
     /** The uses that are configuration (project) dependent. */
-    def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = Set.empty
+    def uses(p: P, ps: PropertyStore): Set[PropertyBounds] = Set.empty
 
     /** The uses that are configuration independent. */
     def uses: Set[PropertyBounds]
 
-    def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit
+    def beforeSchedule(p: P, ps: PropertyStore): Unit
 
-    def afterPhaseCompletion(p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis): Unit
+    def afterPhaseCompletion(p: P, ps: PropertyStore, analysis: FPCFAnalysis): Unit
 
 }
 

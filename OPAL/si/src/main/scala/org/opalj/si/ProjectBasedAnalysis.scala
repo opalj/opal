@@ -1,7 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
-package analyses
+package si
+
+import org.opalj.log.LogContext
 
 /**
  * Common super trait of all analyses that use the fixpoint
@@ -12,12 +13,11 @@ package analyses
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait ProjectBasedAnalysis extends org.opalj.si.ProjectBasedAnalysis {
+trait ProjectBasedAnalysis {
 
-    val project: SomeProject
-    override implicit def p: SomeProject = project
+    val project: Project
+    implicit def p: Project = project
 
-    implicit final def classHierarchy: ClassHierarchy = project.classHierarchy
-    final def ch: ClassHierarchy = classHierarchy
+    implicit final def logContext: LogContext = project.logContext
 
 }

@@ -9,10 +9,10 @@ import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.L0SelfReferenceLeakageAnalysis
 import org.opalj.br.fpcf.properties.DoesNotLeakSelfReference
 import org.opalj.br.fpcf.properties.SelfReferenceLeakage
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 

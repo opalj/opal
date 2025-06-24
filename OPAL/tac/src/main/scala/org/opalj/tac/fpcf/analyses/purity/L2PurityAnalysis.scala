@@ -20,11 +20,11 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.CompileTimePure
@@ -977,33 +977,19 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         )
     }
 
-    override final type InitializationData = L2PurityAnalysis
-    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = {
-        new L2PurityAnalysis(p)
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
-
 }
 
-object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation :+ CallGraphKey
 
     override def start(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): FPCFAnalysis = {
+        val analysis = new L2PurityAnalysis(p)
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods().collect {
             case c @ Context(dm)
@@ -1026,13 +1012,14 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
 
-object LazyL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL2PurityAnalysis extends L2PurityAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
 
     override def register(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): FPCFAnalysis = {
+        val analysis = new L2PurityAnalysis(p)
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }

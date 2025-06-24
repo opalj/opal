@@ -17,8 +17,8 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
@@ -232,7 +232,7 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
 }
 
-trait LibraryPointsToAnalysisScheduler extends FPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
+trait LibraryPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => LibraryPointsToAnalysis
@@ -241,32 +241,17 @@ trait LibraryPointsToAnalysisScheduler extends FPCFEagerAnalysisScheduler with P
         super.requiredProjectInformation :++
             Seq(DeclaredMethodsKey, ClosedPackagesKey, InitialEntryPointsKey, InitialInstantiatedTypesKey)
 
-    override type InitializationData = LibraryPointsToAnalysis
-
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(propertyKind)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def start(p: SomeProject, ps: PropertyStore, analysis: LibraryPointsToAnalysis): FPCFAnalysis = {
-        analysis
-    }
-
-    override def init(p: SomeProject, ps: PropertyStore): LibraryPointsToAnalysis = {
+    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = createAnalysis(p)
         analysis.assignInitialPointsToSets(p, ps)
         analysis
     }
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
 }
 
 object TypeBasedLibraryPointsToAnalysisScheduler extends LibraryPointsToAnalysisScheduler {

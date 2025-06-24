@@ -1,16 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
 package fpcf
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
+import org.opalj.si.Project
 
 /**
  * @author Michael Eichberg
  */
-trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
+trait FPCFLazyLikeAnalysisScheduler[P <: Project] extends FPCFAnalysisScheduler[P] {
 
     override def derivesLazily: Some[PropertyBounds]
 
@@ -22,10 +19,10 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
         ps: PropertyStore,
         i:  InitializationData
     ): FPCFAnalysis = {
-        register(ps.context(classOf[SomeProject]), ps, i)
+        register(ps.context(classOf[Project]).asInstanceOf[P], ps, i)
     }
 
-    final def register(project: SomeProject, i: InitializationData): FPCFAnalysis = {
+    final def register(project: P, i: InitializationData): FPCFAnalysis = {
         register(project, project.get(PropertyStoreKey), i)
     }
 
@@ -41,7 +38,7 @@ trait FPCFLazyLikeAnalysisScheduler extends FPCFAnalysisScheduler {
      *       `scheduleEagerComputationForEntity`.
      */
     def register(
-        project:       SomeProject,
+        project:       P,
         propertyStore: PropertyStore,
         i:             InitializationData
     ): FPCFAnalysis

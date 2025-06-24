@@ -10,7 +10,6 @@ import java.io.File
 import java.lang.ref.SoftReference
 import java.net.URL
 import java.util.Arrays.{sort => sortArray}
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
 import scala.collection.Map
 import scala.collection.Set
@@ -150,13 +149,13 @@ class Project[Source] private (
     final val overridingMethods:                  Map[Method, immutable.Set[Method]],
     final val nests:                              Map[ClassType, ClassType],
     // Note that the referenced array will never shrink!
-    @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] =
+    @volatile protected[this] var projectInformation: AtomicReferenceArray[AnyRef] =
         new AtomicReferenceArray[AnyRef](32)
 )(
     implicit
     final val logContext: LogContext,
     final val config:     Config
-) extends ProjectLike {
+) extends si.Project with ProjectLike {
 
     /**
      * Returns a shallow clone of this project with an updated log context and (optionally)
@@ -431,181 +430,6 @@ class Project[Source] private (
 
         UIDSet.empty[ClassType] ++ functionalInterfaces.keys
     } { t => info("project setup", s"computing functional interfaces took ${t.toSeconds}") }
-
-    // --------------------------------------------------------------------------------------------
-    //
-    //    CODE TO MAKE IT POSSIBLE TO ATTACH SOME INFORMATION TO A PROJECT (ON DEMAND)
-    //
-    // --------------------------------------------------------------------------------------------
-
-    /**
-     * Here, the usage of the project information key does not lead to its initialization!
-     */
-    private[this] val projectInformationKeyInitializationData = {
-        new ConcurrentHashMap[ProjectInformationKey[AnyRef, AnyRef], AnyRef]()
-    }
-
-    /**
-     * Returns the project specific initialization information for the given project information
-     * key.
-     */
-    def getProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
-        key: ProjectInformationKey[T, I]
-    ): Option[I] = {
-        Option(projectInformationKeyInitializationData.get(key).asInstanceOf[I])
-    }
-
-    /**
-     * Gets the project information key specific initialization object. If an object is already
-     * registered, that object will be used otherwise `info` will be evaluated and that value
-     * will be added and also returned.
-     *
-     * @note    Initialization data is discarded once the key is used.
-     */
-    def getOrCreateProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
-        key:  ProjectInformationKey[T, I],
-        info: => I
-    ): I = {
-        projectInformationKeyInitializationData.computeIfAbsent(
-            key.asInstanceOf[ProjectInformationKey[AnyRef, AnyRef]],
-            new java.util.function.Function[ProjectInformationKey[AnyRef, AnyRef], I] {
-                def apply(key: ProjectInformationKey[AnyRef, AnyRef]): I = info
-            }
-        ).asInstanceOf[I]
-    }
-
-    /**
-     * Updates project information key specific initialization object. If an object is already
-     * registered, that object will be given to `info`.
-     *
-     * @note    Initialization data is discarded once the key is used.
-     */
-    def updateProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
-        key: ProjectInformationKey[T, I]
-    )(
-        info: Option[I] => I
-    ): I = {
-        projectInformationKeyInitializationData.compute(
-            key.asInstanceOf[ProjectInformationKey[AnyRef, AnyRef]],
-            (_, current: AnyRef) =>
-                {
-                    info(Option(current.asInstanceOf[I]))
-                }: I
-        ).asInstanceOf[I]
-    }
-
-    /**
-     * Returns the additional project information that is ''currently'' available.
-     *
-     * If some analyses are still running it may be possible that additional
-     * information will be made available as part of the execution of those
-     * analyses.
-     *
-     * @note This method redetermines the available project information on each call.
-     */
-    def availableProjectInformation: List[AnyRef] = {
-        var pis = List.empty[AnyRef]
-        val projectInformation = this.projectInformation
-        for (i <- (0 until projectInformation.length())) {
-            val pi = projectInformation.get(i)
-            if (pi != null) {
-                pis = pi :: pis
-            }
-        }
-        pis
-    }
-
-    /**
-     * Returns the information attached to this project that is identified by the
-     * given `ProjectInformationKey`.
-     *
-     * If the information was not yet required, the information is computed and
-     * returned. Subsequent calls will directly return the information.
-     *
-     * @note    (Development Time)
-     *          Every analysis using [[ProjectInformationKey]]s must list '''All
-     *          requirements; failing to specify a requirement can end up in a deadlock.'''
-     *
-     * @see     [[ProjectInformationKey]] for further information.
-     */
-    def get[T <: AnyRef](pik: ProjectInformationKey[T, _]): T = {
-        val pikUId = pik.uniqueId
-
-        /* Synchronization is done by the caller! */
-        def derive(projectInformation: AtomicReferenceArray[AnyRef]): T = {
-            var className = pik.getClass.getSimpleName
-            if (className.endsWith("Key"))
-                className = className.substring(0, className.length - 3)
-            else if (className.endsWith("Key$"))
-                className = className.substring(0, className.length - 4)
-
-            for (requiredProjectInformationKey <- pik.requirements(this)) {
-                get(requiredProjectInformationKey)
-            }
-            val pi = time {
-                val pi = pik.compute(this)
-                // we don't need the initialization data anymore
-                projectInformationKeyInitializationData.remove(pik)
-                pi
-            } { t => info("project", s"initialization of $className took ${t.toSeconds}") }
-            projectInformation.set(pikUId, pi)
-            pi
-        }
-
-        val projectInformation = this.projectInformation
-        if (pikUId < projectInformation.length()) {
-            val pi = projectInformation.get(pikUId)
-            if (pi ne null) {
-                pi.asInstanceOf[T]
-            } else {
-                this.synchronized {
-                    // It may be the case that the underlying array was replaced!
-                    val projectInformation = this.projectInformation
-                    // double-checked locking (works with Java >=6)
-                    val pi = projectInformation.get(pikUId)
-                    if (pi ne null) {
-                        pi.asInstanceOf[T]
-                    } else {
-                        derive(projectInformation)
-                    }
-                }
-            }
-        } else {
-            // We have to synchronize w.r.t. "this" object on write accesses
-            // to make sure that we do not loose a concurrent update or
-            // derive an information more than once.
-            this.synchronized {
-                val projectInformation = this.projectInformation
-                if (pikUId >= projectInformation.length()) {
-                    val newLength = Math.max(projectInformation.length * 2, pikUId * 2)
-                    val newProjectInformation = new AtomicReferenceArray[AnyRef](newLength)
-                    org.opalj.control.iterateUntil(0, projectInformation.length()) { i =>
-                        newProjectInformation.set(i, projectInformation.get(i))
-                    }
-                    this.projectInformation = newProjectInformation
-                    return derive(newProjectInformation);
-                }
-            }
-            // else (pikUId < projectInformation.length()) => the underlying array is "large enough"
-            get(pik)
-        }
-    }
-
-    /**
-     * Tests if the information identified by the given [[ProjectInformationKey]]
-     * is available. If the information is not (yet) available, the information
-     * will not be computed; `None` will be returned.
-     *
-     * @see [[ProjectInformationKey]] for further information.
-     */
-    def has[T <: AnyRef](pik: ProjectInformationKey[T, _]): Option[T] = {
-        val pikUId = pik.uniqueId
-
-        if (pikUId < this.projectInformation.length())
-            Option(this.projectInformation.get(pikUId).asInstanceOf[T])
-        else
-            None
-    }
 
     OPALLogger.debug("progress", s"project created (${logContext.logContextId})")
 
