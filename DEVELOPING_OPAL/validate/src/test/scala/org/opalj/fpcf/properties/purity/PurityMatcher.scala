@@ -6,11 +6,10 @@ package purity
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.BooleanValue
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.FieldLocality
 import org.opalj.br.fpcf.properties.Purity
@@ -22,6 +21,7 @@ import org.opalj.br.fpcf.properties.immutability.FieldImmutability
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.PropertyStoreKey
 
 /**
  * Base trait for matchers that match a method's `Purity` property.
@@ -32,15 +32,15 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
     override def isRelevant(
         p:  SomeProject,
-        as: Set[ObjectType],
+        as: Set[ClassType],
         e:  Entity,
         a:  AnnotationLike
     ): Boolean = {
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         val eps = getValue(p, annotationType, a.elementValuePairs, "eps").asArrayValue.values.map(ev =>
             ev.asAnnotationValue.annotation
@@ -52,13 +52,13 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
     def evaluateEP(
         project: SomeProject,
-        as:      Set[ObjectType],
+        as:      Set[ClassType],
         ep:      AnnotationLike,
         negate:  Boolean
     ): Boolean = {
-        val annotationType = ep.annotationType.asObjectType
+        val annotationType = ep.annotationType.asClassType
 
-        val classType = getValue(project, annotationType, ep.elementValuePairs, "cf").asClassValue.value.asObjectType
+        val classType = getValue(project, annotationType, ep.elementValuePairs, "cf").asClassValue.value.asClassType
 
         val field =
             getValue(project, annotationType, ep.elementValuePairs, "field").asStringValue.value
@@ -67,7 +67,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         val analysesElementValues =
             getValue(project, annotationType, ep.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         if (analyses.nonEmpty && !analyses.exists(as.contains)) {
             return !negate // Analysis specific ep requirement, but analysis was not executed
@@ -120,7 +120,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
     def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -142,12 +142,12 @@ sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet =>
     extends PurityMatcher(null) {
     override def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
 
         val annotated =
             getValue(p, annotationType, a.elementValuePairs, "modifies").asArrayValue.values
@@ -236,7 +236,7 @@ class ImpureMatcher extends PurityMatcher(null) {
 
     override def validateProperty(
         p:          SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]

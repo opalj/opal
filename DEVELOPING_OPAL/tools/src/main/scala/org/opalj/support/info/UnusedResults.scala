@@ -8,8 +8,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters._
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
@@ -18,8 +18,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.{Purity => PurityProperty}
@@ -31,7 +29,9 @@ import org.opalj.br.fpcf.properties.VirtualMethodPurity.VCompileTimePure
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VPure
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
 import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.NonVirtualFunctionCall
@@ -168,16 +168,16 @@ object UnusedResults extends ProjectAnalysisApplication {
         if (receiverType.isEmpty) {
             None // Receiver is null, call will never be executed
         } else if (receiverType.get.isArrayType) {
-            val callee = project.instanceCall(callerType, ObjectType.Object, name, descr)
+            val callee = project.instanceCall(callerType, ClassType.Object, name, descr)
             handleCall(caller, callee, call.pc)
         } else if (value.isPrecise) {
             val callee = project.instanceCall(callerType, receiverType.get, name, descr)
             handleCall(caller, callee, call.pc)
         } else {
             val callee = declaredMethods(
-                dc.asObjectType,
+                dc.asClassType,
                 callerType.packageName,
-                receiverType.get.asObjectType,
+                receiverType.get.asClassType,
                 name,
                 descr
             )

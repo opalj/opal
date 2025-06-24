@@ -44,7 +44,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
 
         import project.classHierarchy.isSubtypeOf
 
-        val Serializable = ObjectType.Serializable
+        val Serializable = ClassType.Serializable
 
         // If it's unknown, it's neither possible nor necessary to collect subtypes
         if (project.classHierarchy.isUnknown(Serializable)) {

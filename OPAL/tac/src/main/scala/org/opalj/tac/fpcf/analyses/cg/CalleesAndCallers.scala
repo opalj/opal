@@ -8,10 +8,10 @@ package cg
 import scala.collection.immutable.IntMap
 
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
@@ -238,7 +238,7 @@ trait IndirectCallsBase extends Calls {
         pc:                 Int,
         callee:             org.opalj.Result[Method],
         callerPackage:      String,
-        fallbackType:       ObjectType,
+        fallbackType:       ClassType,
         fallbackName:       String,
         fallbackDescriptor: MethodDescriptor,
         parameters:         Seq[Option[(ValueInformation, IntTrieSet)]],

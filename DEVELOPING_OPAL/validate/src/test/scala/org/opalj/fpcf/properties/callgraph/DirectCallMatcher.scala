@@ -8,74 +8,36 @@ import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ArrayValue
+import org.opalj.br.ClassType
 import org.opalj.br.ClassValue
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementValue
 import org.opalj.br.ElementValuePair
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.fpcf.PropertyStoreKey
 
-class DirectCallMatcher extends AbstractPropertyMatcher {
+class DirectCallMatcher extends AbstractRepeatablePropertyMatcher {
+    override val singleAnnotationType: ClassType = ClassType("org/opalj/fpcf/properties/callgraph/DirectCall")
+    override val containerAnnotationType: ClassType = ClassType("org/opalj/fpcf/properties/callgraph/DirectCalls")
 
-    override def validateProperty(
+    override def validateSingleProperty(
         p:          Project[_],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        // If the entity is annotated with a single annotation, we receive a DirectCall annotation.
-        // If it is annotated with multiple DirectCall annotations, we receive a single DirectCalls
-        // container annotation.
-        val singleAnnotation = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCall")
-        val containerAnnotation = ObjectType("org/opalj/fpcf/properties/callgraph/DirectCalls")
-
-        if (a.annotationType == singleAnnotation) {
-            validateSingleAnnotation(p, as, entity, a, properties)
-
-        } else if (a.annotationType == containerAnnotation) {
-            // Get sub-annotations from the container annotation.
-            val subAnnotations: ArraySeq[AnnotationLike] =
-                getValue(p, containerAnnotation, a.elementValuePairs, "value")
-                    .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
-
-            // Validate each sub-annotation individually.
-            val validationResults =
-                subAnnotations.map(validateSingleAnnotation(p, as, entity, _, properties))
-            val errors = validationResults.filter(_.isDefined)
-
-            if (errors.nonEmpty) {
-                Some(errors.mkString(", "))
-            } else {
-                None
-            }
-
-        } else {
-            Some("Invalid annotation.")
-        }
-    }
-
-    private def validateSingleAnnotation(
-        p:          Project[_],
-        as:         Set[ObjectType],
-        entity:     Any,
-        a:          AnnotationLike,
-        properties: Iterable[Property]
-    ): Option[String] = {
-        val annotationType = a.annotationType.asObjectType
-
         // Get call graph analyses for which this annotation applies.
         val analysesElementValues: Seq[ElementValue] =
-            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+            getValue(p, singleAnnotationType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         // If none of the annotated analyses match the executed ones, return...
         // If the list of specified analyses is empty, we assume the annotation applies to all
@@ -119,8 +81,8 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         // Fetch values from the annotation.
         // TODO clean these up and move them into some helper?
         // note: there is a helper class in JCG that does something similar
-        val lineNumber = getValue(p, annotationType, a.elementValuePairs, "line").asIntValue.value
-        val methodName = getValue(p, annotationType, a.elementValuePairs, "name").asStringValue.value
+        val lineNumber = getValue(p, singleAnnotationType, a.elementValuePairs, "line").asIntValue.value
+        val methodName = getValue(p, singleAnnotationType, a.elementValuePairs, "name").asStringValue.value
         val resolvedTargets = {
             val av = a.elementValuePairs collectFirst {
                 case ElementValuePair("resolvedTargets", ArrayValue(ab)) =>

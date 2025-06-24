@@ -14,7 +14,7 @@ case object NOP extends ConstantLengthInstruction with NoLabels with Instruction
 
     final val mnemonic = "nop"
 
-    final def jvmExceptions: List[ObjectType] = Nil
+    final def jvmExceptions: List[ClassType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 

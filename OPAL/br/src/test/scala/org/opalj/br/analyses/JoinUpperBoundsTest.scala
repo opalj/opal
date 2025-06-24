@@ -25,20 +25,20 @@ class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
             List(() => this.getClass.getResourceAsStream("ClassHierarchyUpperBounds.ths"))
         )(GlobalLogContext)
 
-    implicit def stringToUIDSetObjectType(str: String): UIDSet[ObjectType] = UIDSet(ObjectType(str))
+    implicit def stringToUIDSetClassType(str: String): UIDSet[ClassType] = UIDSet(ClassType(str))
 
-    implicit def setToUIDSet(s: Set[String]): UIDSet[ObjectType] = {
-        UIDSet.fromSpecific(s.map(ObjectType.apply))
+    implicit def setToUIDSet(s: Set[String]): UIDSet[ClassType] = {
+        UIDSet.fromSpecific(s.map(ClassType.apply))
     }
 
     def testJoinUpperTypeBounds(
-        param1:    UIDSet[ObjectType],
-        param2:    UIDSet[ObjectType],
+        param1:    UIDSet[ClassType],
+        param2:    UIDSet[ClassType],
         reflexive: Boolean,
-        expected:  UIDSet[ObjectType]
+        expected:  UIDSet[ClassType]
     ) = {
         // should always be the same value if parameters are swapped
-        def mkString(param: UIDSet[ObjectType]) = {
+        def mkString(param: UIDSet[ClassType]) = {
             param.toSeq.map(_.toJava).mkString("{", ",", "}")
         }
         val result1_2 = classhierachy.joinUpperTypeBounds(param1, param2, reflexive)

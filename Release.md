@@ -10,7 +10,8 @@
  1. turn off assertions in `scalac.options.local`
  1. run tests and integration tests (to ensure that everything works without assertions)
  1. publish to maven (`sbt publishSigned`)
- 1. go to [Sonatype](https://oss.sonatype.org/) to release the build
+ 1. upload the build (`sbt sonatypeCentralUpload`)
+ 1. go to [Sonatype](https://central.sonatype.com/) to release the build
  1. generate the webpage (`sbt generateSite`)
  1. upload the new webpage to www.opal-project.de 
  1. upload the generated ScalaDoc to `library/api/SNAPSHOT`

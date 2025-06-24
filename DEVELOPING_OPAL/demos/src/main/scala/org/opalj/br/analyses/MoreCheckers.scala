@@ -115,7 +115,7 @@ object MoreCheckers {
         )
         val classHierarchy = ClassHierarchy(classFiles)(GlobalLogContext)
 
-        val getClassFile: Map[ObjectType, ClassFile] = classFiles.map(cf => (cf.thisType, cf)).toMap // SAME AS IN PROJECT
+        val getClassFile: Map[ClassType, ClassFile] = classFiles.map(cf => (cf.thisType, cf)).toMap // SAME AS IN PROJECT
         println("Press return to continue."); System.in.read()
 
         // println("Number of class files: "+classFilesCount)
@@ -133,14 +133,14 @@ object MoreCheckers {
         val cloneableNoClone = time {
             // Weakness: We will not identify cloneable classes in projects, where we extend a predefined
             // class (of the JDK) that indirectly inherits from Cloneable.
-            val cloneable = ObjectType("java/lang/Cloneable")
+            val cloneable = ClassType("java/lang/Cloneable")
             if (classHierarchy.isKnown(cloneable)) {
                 for {
                     cloneables <- classHierarchy.allSubtypes(cloneable, false)
                     classFile <- getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
-                        case Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) => true
-                        case _                                                              => false
+                        case Method(_, "clone", MethodDescriptor(Seq(), ClassType.Object)) => true
+                        case _                                                             => false
                     })
                 } yield classFile.thisType.fqn
             } else
@@ -155,7 +155,7 @@ object MoreCheckers {
                 classFile <- classFiles
                 if !classFile.isInterfaceDeclaration && !classFile.isAnnotationDeclaration
                 superClass <- classFile.superclassType.toList
-                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) <- classFile.methods
+                method @ Method(_, "clone", MethodDescriptor(Seq(), ClassType.Object)) <- classFile.methods
                 if !method.isAbstract
                 if !method.body.get.instructions.exists {
                     case INVOKESPECIAL(`superClass`, _, "clone", JustReturnsObject) => true
@@ -171,8 +171,8 @@ object MoreCheckers {
                 classFile <- classFiles
                 if !classFile.isAnnotationDeclaration
                 if classFile.superclassType.isDefined
-                method @ Method(_, "clone", MethodDescriptor(Seq(), ObjectType.Object)) <- classFile.methods
-                if classHierarchy.isASubtypeOf(classFile.thisType, ObjectType("java/lang/Cloneable")).isYesOrUnknown
+                method @ Method(_, "clone", MethodDescriptor(Seq(), ClassType.Object)) <- classFile.methods
+                if classHierarchy.isASubtypeOf(classFile.thisType, ClassType("java/lang/Cloneable")).isYesOrUnknown
             } yield (classFile.thisType.fqn, method.name)
         }(t => collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ + cloneButNotCloneable.size)
@@ -186,10 +186,10 @@ object MoreCheckers {
             // we will not be able to identify this issue unless we have identified the whole
             // class hierarchy.
             for {
-                comparable <- classHierarchy.allSubtypes(ObjectType("java/lang/Comparable"), false)
+                comparable <- classHierarchy.allSubtypes(ClassType("java/lang/Comparable"), false)
                 classFile <- getClassFile.get(comparable).toList
                 method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) <- classFile.methods
-                if parameterType != ObjectType("java/lang/Object")
+                if parameterType != ClassType("java/lang/Object")
             } yield (classFile, method)
         }(t => collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ + covariantCompareToMethods.size)
@@ -205,8 +205,8 @@ object MoreCheckers {
                 instruction <- method.body.get.instructions
             } {
                 instruction match {
-                    case INVOKESTATIC(ObjectType("java/lang/System"), false, "gc", NoArgsAndReturnVoid) |
-                        INVOKEVIRTUAL(ObjectType("java/lang/Runtime"), "gc", NoArgsAndReturnVoid) =>
+                    case INVOKESTATIC(ClassType("java/lang/System"), false, "gc", NoArgsAndReturnVoid) |
+                        INVOKEVIRTUAL(ClassType("java/lang/Runtime"), "gc", NoArgsAndReturnVoid) =>
                         garbageCollectingMethods = (classFile, method, instruction) :: garbageCollectingMethods
                     case _ =>
                 }
@@ -224,8 +224,8 @@ object MoreCheckers {
                 instruction <- method.body.get.instructions
             } {
                 instruction match {
-                    case INVOKESTATIC(ObjectType("java/lang/System"), false, "runFinalizersOnExit", JustTakesBoolean) |
-                        INVOKESTATIC(ObjectType("java/lang/Runtime"), false, "runFinalizersOnExit", JustTakesBoolean) =>
+                    case INVOKESTATIC(ClassType("java/lang/System"), false, "runFinalizersOnExit", JustTakesBoolean) |
+                        INVOKESTATIC(ClassType("java/lang/Runtime"), false, "runFinalizersOnExit", JustTakesBoolean) =>
                         methodsThatCallRunFinalizersOnExit =
                             (classFile, method, instruction) :: methodsThatCallRunFinalizersOnExit
                     case _ =>
@@ -239,7 +239,7 @@ object MoreCheckers {
         //        var abstractClassThatDefinesCovariantEquals = time(t => println("EQ_ABSTRACT_SELF: "+nsToSecs(t))) {
         //            for (
         //                classFile <- classFiles if classFile.isAbstract;
-        //                method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) <- classFile.methods if parameterType != ObjectType("java/lang/Object")
+        //                method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) <- classFile.methods if parameterType != ClassType("java/lang/Object")
         //            ) yield (classFile, method);
         //        }
         //        println("\tViolations: "+abstractClassThatDefinesCovariantEquals.size)
@@ -284,7 +284,7 @@ object MoreCheckers {
         //        }
         val classesWithoutDefaultConstructor = time {
             for {
-                serializableClasses <- classHierarchy.allSubtypes(ObjectType("java/io/Serializable"), false)
+                serializableClasses <- classHierarchy.allSubtypes(ClassType("java/io/Serializable"), false)
                 superclass <- classHierarchy.allSupertypes(serializableClasses)
                 if getClassFile.isDefinedAt(superclass) // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
                 superClassFile = getClassFile(superclass)
@@ -315,9 +315,9 @@ object MoreCheckers {
             }
         }(t => collect("UUF_UNUSED_FIELD", t /*nsToSecs(t)*/ ))
         println(", " + /*"\tViolations: "+*/ unusedFields.size)
-        //            var allFields = List[(ObjectType, String)]()
-        //            var readFields = Set[(ObjectType, String)]()
-        //            var writtenFields = Set[(ObjectType, String)]()
+        //            var allFields = List[(ClassType, String)]()
+        //            var readFields = Set[(ClassType, String)]()
+        //            var writtenFields = Set[(ClassType, String)]()
         //            time(t ",t"UUF_UNUSED_FIELD (public, protected, default and private), "+t/*nsToSecs(t)*/)) {
         //                allFields = for (
         //                    classFile <- classFiles.toList if !classFile.isInterfaceDeclaration;
@@ -345,7 +345,7 @@ object MoreCheckers {
 
         // FINDBUGS: (IMSE_DONT_CATCH_IMSE) http://code.google.com/p/findbugs/source/browse/branches/2.0_gui_rework/findbugs/src/java/edu/umd/cs/findbugs/detect/DontCatchIllegalMonitorStateException.java
         // Dubious catching of IllegalMonitorStateException.
-        val IllegalMonitorStateExceptionType = ObjectType.IllegalMonitorStateException
+        val IllegalMonitorStateExceptionType = ClassType.IllegalMonitorStateException
         val catchesIllegalMonitorStateException = time {
             for {
                 classFile <- classFiles if classFile.isClassDeclaration

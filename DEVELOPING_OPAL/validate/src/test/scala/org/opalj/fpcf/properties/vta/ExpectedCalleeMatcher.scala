@@ -7,11 +7,11 @@ package vta
 import org.opalj.br.AnnotationLike
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.ifds.CalleeType
 import org.opalj.fpcf.ifds.IFDSBasedVariableTypeAnalysisScheduler
 import org.opalj.fpcf.ifds.VTAResult

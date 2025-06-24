@@ -24,7 +24,7 @@ import org.opalj.br.reader.Java8LibraryFramework
 @RunWith(classOf[JUnitRunner])
 class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
 
-    val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
+    val InvokedMethod = ClassType("annotations/target/InvokedMethod")
 
     val project: SomeProject = {
         val testResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature", "bi")
@@ -49,8 +49,8 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
             val methodIdentifier = invokedMethod.get.signatureToJava(false)
             it(s"«$methodIdentifier» should resolve to Object's method") {
                 val declaringClass = invokevirtual.declaringClass
-                declaringClass should be(Symbol("ObjectType"))
-                val declaringClassFile = project.classFile(declaringClass.asObjectType)
+                declaringClass should be(Symbol("ClassType"))
+                val declaringClassFile = project.classFile(declaringClass.asClassType)
                 declaringClassFile shouldBe defined
                 val actualName = invokevirtual.name
                 val actualDescriptor = invokevirtual.methodDescriptor
@@ -81,7 +81,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
             pairs = invokedMethod.elementValuePairs
             ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
             ElementValuePair("name", StringValue(methodName)) <- pairs
-            classFile <- project.classFile(ObjectType(receiverType))
+            classFile <- project.classFile(ClassType(receiverType))
         } yield {
             val parameterTypes = getParameterTypes(pairs)
             val returnType = getReturnType(pairs)
@@ -94,9 +94,9 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
     private def getParameterTypes(pairs: ElementValuePairs): FieldTypes = {
         pairs.find(_.name == "parameterTypes").map { p =>
             p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
-                case ClassValue(x: ObjectType) => x
-                case ClassValue(x: BaseType)   => x
-                case x: ElementValue           => x.valueType
+                case ClassValue(x: ClassType) => x
+                case ClassValue(x: BaseType)  => x
+                case x: ElementValue          => x.valueType
             }
         }.getOrElse(NoFieldTypes)
     }
@@ -106,7 +106,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
     }
 
     describe("invocations of inherited methods on instances of functional interfaces") {
-        val testClassType = ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")
+        val testClassType = ClassType("lambdas/ObjectMethodsOnFunctionalInterfaces")
         val testClass = project.classFile(testClassType).get
         val annotatedMethods = testClass.methods.filter(_.runtimeVisibleAnnotations.nonEmpty)
         annotatedMethods.foreach(m => testMethod(testClass, m.name))

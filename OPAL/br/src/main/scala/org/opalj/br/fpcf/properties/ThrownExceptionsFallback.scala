@@ -4,7 +4,7 @@ package br
 package fpcf
 package properties
 
-import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsNative
@@ -50,6 +50,7 @@ import org.opalj.fpcf.PropertyComputation
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
+import org.opalj.si.Project
 
 /**
  * A very straight forward flow-insensitive analysis which can successfully analyze methods
@@ -70,7 +71,7 @@ import org.opalj.fpcf.Result
  */
 object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity) => ThrownExceptions) {
 
-    final val ObjectEqualsMethodDescriptor = MethodDescriptor(ObjectType.Object, BooleanType)
+    final val ObjectEqualsMethodDescriptor = MethodDescriptor(ClassType.Object, BooleanType)
 
     def apply(ps: PropertyStore, reason: FallbackReason, e: Entity): ThrownExceptions = {
         e match { case m: Method => this(ps, m) }
@@ -97,7 +98,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val exceptions = new BRMutableTypesSet(ps.context(classOf[Project[_]]).classHierarchy)
+        val exceptions = new BRMutableTypesSet(ps.context(classOf[Project]).asInstanceOf[SomeProject].classHierarchy)
 
         var result: ThrownExceptions = null
 
@@ -119,7 +120,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                     false
                 case INVOKESPECIAL.opcode =>
                     val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
-                    if ((declaringClass eq ObjectType.Object) && (
+                    if ((declaringClass eq ClassType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
                             (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
                             (name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
@@ -244,10 +245,10 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
         if (fieldAccessMayThrowNullPointerException ||
             (isFieldAccessed && isLocalVariable0Updated)
         ) {
-            exceptions += ObjectType.NullPointerException
+            exceptions += ClassType.NullPointerException
         }
         if (isSynchronizationUsed) {
-            exceptions += ObjectType.IllegalMonitorStateException
+            exceptions += ClassType.IllegalMonitorStateException
         }
 
         if (exceptions.isEmpty)
