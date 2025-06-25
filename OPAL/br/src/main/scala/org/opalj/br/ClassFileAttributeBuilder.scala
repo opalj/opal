@@ -18,9 +18,9 @@ trait ClassFileAttributeBuilder {
     def apply(
         version:        UShortPair,
         accessFlags:    Int,
-        thisType:       ObjectType,
-        superclassType: Option[ObjectType],
-        interfaceTypes: ArraySeq[ObjectType],
+        thisType:       ClassType,
+        superclassType: Option[ClassType],
+        interfaceTypes: ArraySeq[ClassType],
         fields:         ArraySeq[FieldTemplate],
         methods:        ArraySeq[MethodTemplate]
     ): Attribute

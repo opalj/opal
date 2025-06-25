@@ -40,7 +40,7 @@ class AliasEntity(
      * A copy of two contexts of this [[AliasEntity]]. It uses the same order as the elements.
      */
     private[this] val (_context1, _context2) = (c1, c2) match {
-        case (c1, c2) if e1 == _element1 => (c1, c2)
+        case (c1, c2) if e1 eq _element1 => (c1, c2)
         case (c1, c2)                    => (c2, c1)
     }
 

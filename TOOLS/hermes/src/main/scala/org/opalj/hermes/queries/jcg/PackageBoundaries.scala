@@ -7,9 +7,9 @@ package jcg
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKEVIRTUAL
@@ -60,9 +60,9 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
             val name = invoke.name
             val methodDescriptor = invoke.methodDescriptor
 
-            if (receiver.isObjectType && (receiver.asObjectType.packageName eq callerPackage)) {
-                val rtOt = receiver.asObjectType
-                val rcf = project.classFile(rtOt)
+            if (receiver.isClassType && (receiver.asClassType.packageName eq callerPackage)) {
+                val rtCt = receiver.asClassType
+                val rcf = project.classFile(rtCt)
 
                 val isPackageVisibleMethod = rcf.map {
                     _.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
@@ -71,17 +71,17 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                 val matchesPreconditions = isPackageVisibleMethod &&
                     isMethodOverriddenInDiffPackage(
                         callerPackage,
-                        rtOt,
+                        rtCt,
                         name,
                         methodDescriptor,
                         project
                     )
 
                 if (matchesPreconditions) {
-                    if (project.classHierarchy.existsSubclass(rtOt, project) { cf =>
-                            val ot = cf.thisType
-                            if (ot.packageName eq callerPackage) {
-                                isMethodOverriddenInDiffPackage(rtOt, ot, name, methodDescriptor, project)
+                    if (project.classHierarchy.existsSubclass(rtCt, project) { cf =>
+                            val ct = cf.thisType
+                            if (ct.packageName eq callerPackage) {
+                                isMethodOverriddenInDiffPackage(rtCt, ct, name, methodDescriptor, project)
                             } else false
                         }
                     ) {
@@ -102,20 +102,20 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
 
     private def isMethodOverriddenInDiffPackage[S](
         callerPackage:    String,
-        rtOt:             ObjectType,
+        rtCt:             ClassType,
         name:             String,
         methodDescriptor: MethodDescriptor,
         project:          Project[S]
     ) = {
-        project.classHierarchy.existsSubclass(rtOt, project) { sot =>
-            (sot.thisType.packageName ne callerPackage) &&
-            sot.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
+        project.classHierarchy.existsSubclass(rtCt, project) { sct =>
+            (sct.thisType.packageName ne callerPackage) &&
+            sct.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
         }
     }
 
     private[this] def isMethodOverriddenInDiffPackage[S](
-        declaredType:     ObjectType,
-        targetType:       ObjectType,
+        declaredType:     ClassType,
+        targetType:       ClassType,
         name:             String,
         methodDescriptor: MethodDescriptor,
         project:          Project[S]
@@ -125,18 +125,18 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         val callingPackage = declaredType.packageName
 
         val worklist = ArrayBuffer[Int]()
-        classHierarchy.directSupertypes(targetType).foreach { sot => worklist.append(sot.id) }
+        classHierarchy.directSupertypes(targetType).foreach { sct => worklist.append(sct.id) }
         while (worklist.nonEmpty) {
             val cur = worklist.remove(0)
-            val ot = classHierarchy.getObjectType(cur)
-            if (ot.packageName ne callingPackage) {
-                val cf = project.classFile(ot).get
+            val ct = classHierarchy.getClassType(cur)
+            if (ct.packageName ne callingPackage) {
+                val cf = project.classFile(ct).get
                 val mo = cf.findMethod(name, methodDescriptor)
                 if (mo.isDefined && mo.get.isPackagePrivate) {
                     return true;
                 }
             }
-            classHierarchy.directSupertypes(ot).foreach { sot => worklist.append(sot.id) }
+            classHierarchy.directSupertypes(ct).foreach { sct => worklist.append(sct.id) }
         }
 
         false

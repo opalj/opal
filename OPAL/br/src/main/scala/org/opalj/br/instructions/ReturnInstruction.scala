@@ -25,7 +25,7 @@ abstract class ReturnInstruction
     /**
      * @see [[ReturnInstruction$.jvmExceptions]]
      */
-    final def jvmExceptions: List[ObjectType] = ReturnInstruction.jvmExceptions
+    final def jvmExceptions: List[ClassType] = ReturnInstruction.jvmExceptions
 
     final def mayThrowExceptions: Boolean = true
 
@@ -75,7 +75,7 @@ abstract class ReturnInstruction
  */
 object ReturnInstruction {
 
-    val jvmExceptions = List(ObjectType.IllegalMonitorStateException)
+    val jvmExceptions = List(ClassType.IllegalMonitorStateException)
 
     def apply(theType: Type): ReturnInstruction = {
         (theType.id: @switch) match {

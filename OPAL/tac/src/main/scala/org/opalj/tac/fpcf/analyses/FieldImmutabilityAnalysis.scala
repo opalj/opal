@@ -7,6 +7,7 @@ package analyses
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br.ArrayTypeSignature
+import org.opalj.br.ClassType
 import org.opalj.br.ClassTypeSignature
 import org.opalj.br.ConstantDouble
 import org.opalj.br.ConstantFloat
@@ -17,7 +18,6 @@ import org.opalj.br.DeclaredField
 import org.opalj.br.Deprecated
 import org.opalj.br.Field
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 import org.opalj.br.ProperTypeArgument
 import org.opalj.br.ReferenceType
 import org.opalj.br.RuntimeInvisibleAnnotationTable
@@ -90,8 +90,8 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         var lowerBound:                 FieldImmutability               = MutableField,
         var upperBound:                 FieldImmutability               = TransitivelyImmutableField
     ) extends BaseAnalysisState with TypeIteratorState {
-        def hasFieldImmutabilityDependees: Boolean = fieldImmutabilityDependees.nonEmpty || super.hasOpenDependencies
-        def getFieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = fieldImmutabilityDependees
+        override def hasOpenDependencies: Boolean = fieldImmutabilityDependees.nonEmpty || super.hasOpenDependencies
+        override def dependees: Set[EOptionP[Entity, Property]] = fieldImmutabilityDependees ++ super.dependees
     }
 
     final val typeExtensibility = project.get(TypeExtensibilityKey)
@@ -155,9 +155,9 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                 case Some(prepackageIdentifier) => prepackageIdentifier + innerPackageIdentifier
                                 case _                          => innerPackageIdentifier
                             }
-                            val objectType = ObjectType(objectPath)
-                            state.innerTypes += objectType
-                            checkTypeImmutability(propertyStore(objectType, TypeImmutability.key))
+                            val classType = ClassType(objectPath)
+                            state.innerTypes += classType
+                            checkTypeImmutability(propertyStore(classType, TypeImmutability.key))
                         case ProperTypeArgument(_, ArrayTypeSignature(_)) =>
                             state.upperBound = NonTransitivelyImmutableField
                         case Wildcard =>
@@ -174,7 +174,7 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         }
 
         def determineTypeImmutability(implicit state: State): Unit = {
-            if (state.field.fieldType == ObjectType.Object) {
+            if (state.field.fieldType == ClassType.Object) {
                 // in case of a field with type object: field immutability stays NonTransitivelyImmutable
                 if (state.genericTypeParameters.isEmpty)
                     state.upperBound = NonTransitivelyImmutableField
@@ -232,7 +232,7 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         // if a field as a dep imm type that is refinable it could get worse and therefor dependencies are stored
                         state.fieldImmutabilityDependees += ep
 
-                case EUBP(c, MutableClass) if (field.fieldType == ObjectType.Object && c == ObjectType.Object) => {
+                case EUBP(c, MutableClass) if (field.fieldType == ClassType.Object && c == ClassType.Object) => {
 
                     state.field.definedField.attributes.foreach {
                         case TypeVariableSignature(_) =>
@@ -260,10 +260,10 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          * If there are no dependencies left, this method can be called to create the result.
          */
         def createResult()(implicit state: State): ProperPropertyComputationResult = {
-            if (state.lowerBound == state.upperBound || !state.hasFieldImmutabilityDependees)
+            if (state.lowerBound == state.upperBound || !state.hasOpenDependencies)
                 Result(field, state.upperBound)
             else
-                InterimResult(field, state.lowerBound, state.upperBound, state.getFieldImmutabilityDependees, c)
+                InterimResult(field, state.lowerBound, state.upperBound, state.dependees, c)
         }
 
         def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
@@ -274,7 +274,7 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 else
                     state.updateDependency(eps)
                 typeIterator.continuation(state.field, eps) {
-                    actualType => determineClassImmutability(actualType.asObjectType)
+                    actualType => determineClassImmutability(actualType.asClassType)
                 }
             } else {
 
@@ -283,9 +283,9 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
                 eps.ub.key match {
                     case TypeImmutability.key =>
-                        checkTypeImmutability(eps.asInstanceOf[EOptionP[ObjectType, TypeImmutability]])
+                        checkTypeImmutability(eps.asInstanceOf[EOptionP[ClassType, TypeImmutability]])
                     case ClassImmutability.key =>
-                        checkClassImmutability(eps.asInstanceOf[EOptionP[ObjectType, ClassImmutability]])
+                        checkClassImmutability(eps.asInstanceOf[EOptionP[ClassType, ClassImmutability]])
                     case FieldAssignability.key =>
                         checkFieldAssignability(eps.asInstanceOf[EOptionP[Field, FieldAssignability]])
                     case ep =>
@@ -320,7 +320,7 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         determineDependentImmutability()
 
         if (field.fieldType.isReferenceType) {
-            if (typeExtensibility(ObjectType.Object).isNo)
+            if (typeExtensibility(ClassType.Object).isNo)
                 queryTypeIterator
             else
                 determineTypeImmutability
@@ -339,8 +339,12 @@ trait FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(FieldImmutability)
     )
 
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
+
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(TypeIteratorKey, DeclaredFieldsKey, TypeExtensibilityKey)
+
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
 }
 

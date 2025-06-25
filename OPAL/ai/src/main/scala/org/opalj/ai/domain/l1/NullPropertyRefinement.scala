@@ -6,7 +6,7 @@ package l1
 
 import scala.annotation.switch
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ARRAYLENGTH
@@ -74,7 +74,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                         // the objectRef is (assumed to be) null
                         val exception = newOperands.head
                         val TypeOfReferenceValue(utb) = exception
-                        (utb.head eq ObjectType.NullPointerException) && {
+                        (utb.head eq ClassType.NullPointerException) && {
                             val origins = originsIterator(exception)
                             origins.nonEmpty && {
                                 val origin = origins.next()

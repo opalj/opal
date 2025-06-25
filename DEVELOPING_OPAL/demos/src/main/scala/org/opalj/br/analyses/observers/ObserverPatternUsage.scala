@@ -43,20 +43,20 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
         // PART 0 - Identifying Observers
         // Collect all classes that end with "Observer" or "Listener" or which are
         // subclasses of them.
-        var allObserverInterfaces: Set[ObjectType] = Set.empty
-        var appObserverInterfaces: Set[ObjectType] = Set.empty
-        var appObserverClasses: Set[ObjectType] = Set.empty
+        var allObserverInterfaces: Set[ClassType] = Set.empty
+        var appObserverInterfaces: Set[ClassType] = Set.empty
+        var appObserverClasses: Set[ClassType] = Set.empty
         val allObservers = {
-            var observers = Set.empty[ObjectType]
-            classHierarchy foreachKnownType { objectType =>
+            var observers = Set.empty[ClassType]
+            classHierarchy foreachKnownType { classType =>
                 // this is the Fully Qualified binary Name (fqn) e.g., java/lang/Object
-                val fqn = objectType.fqn
-                if (!observers.contains(objectType) &&
+                val fqn = classType.fqn
+                if (!observers.contains(classType) &&
                     (fqn.endsWith("Observer") || fqn.endsWith("Listener"))
                 ) {
-                    val observerTypes = allSubtypes(objectType, true)
+                    val observerTypes = allSubtypes(classType, true)
                     observers ++= observerTypes
-                    observerTypes foreach { objectType =>
+                    observerTypes foreach { classType =>
                         // If this class is "just" an interface and this type is later
                         // used in the code, it is extremely likely that we have a
                         // relationship to the pattern; the error margin is very low.
@@ -64,11 +64,11 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
                         // a class as being observable, because it has a field of type,
                         // e.g., JButton (which is an observer, but for different
                         // elements.)
-                        if (isInterface(objectType).isYes) {
-                            allObserverInterfaces += objectType
-                            if (appTypes.contains(objectType)) appObserverInterfaces += objectType
+                        if (isInterface(classType).isYes) {
+                            allObserverInterfaces += classType
+                            if (appTypes.contains(classType)) appObserverInterfaces += classType
                         } else {
-                            if (appTypes.contains(objectType)) appObserverClasses += objectType
+                            if (appTypes.contains(classType)) appObserverClasses += classType
                         }
                     }
                 }
@@ -115,14 +115,14 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
                 if field.fieldType.isReferenceType
             } {
                 field.fieldType match {
-                    case ArrayType(ot: ObjectType) if (allObserverTypes.contains(ot)) =>
+                    case ArrayType(ct: ClassType) if (allObserverTypes.contains(ct)) =>
                         observerFields += ((classFile, field))
-                    case ot: ObjectType =>
-                        if (allObserverTypes.contains(ot))
+                    case ct: ClassType =>
+                        if (allObserverTypes.contains(ct))
                             observerFields += ((classFile, field))
                         else { // check if it is a container type
                             field.fieldTypeSignature match {
-                                case Some(SimpleGenericType(_, ot: ObjectType)) if allObserverTypes.contains(ot) =>
+                                case Some(SimpleGenericType(_, ct: ClassType)) if allObserverTypes.contains(ct) =>
                                     observerFields += ((classFile, field))
                                 case _ =>
                                 /* Ignore */
@@ -150,9 +150,7 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
             method <- observable.methods
         } {
             val hasMethodObserverParameter =
-                method.parameterTypes exists { pt =>
-                    pt.isObjectType && allObserverInterfaces.contains(pt.asObjectType)
-                }
+                method.parameterTypes exists { pt => pt.isClassType && allObserverInterfaces.contains(pt.asClassType) }
             if (hasMethodObserverParameter) {
                 observerManagementMethods += ((observable, method))
             } else if (method.body.isDefined &&

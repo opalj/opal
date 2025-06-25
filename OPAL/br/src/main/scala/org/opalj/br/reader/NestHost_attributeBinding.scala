@@ -27,7 +27,7 @@ trait NestHost_attributeBinding
         attribute_name_index: Constant_Pool_Index,
         host_class_index:     Constant_Pool_Index // CONSTANT_Class_info
     ): NestHost_attribute = {
-        new NestHost(cp(host_class_index).asObjectType(cp))
+        new NestHost(cp(host_class_index).asClassType(cp))
     }
 
 }

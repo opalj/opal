@@ -7,17 +7,17 @@ package taint
 
 import java.io.File
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.ifds.Callable
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
@@ -53,7 +53,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      */
     override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
         p.allProjectClassFiles.flatMap {
-            case cf if cf.thisType == ObjectType.Class =>
+            case cf if cf.thisType == ClassType.Class =>
                 cf.methods.collect {
                     case m if m.name == "forName" => (m, new IFDSFact(Variable(-2)))
                 }
@@ -137,8 +137,11 @@ object BackwardClassForNameTaintAnalysisScheduler
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
 
-    override def uses: Set[PropertyBounds] =
-        Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
+    override def uses: Set[PropertyBounds] = PropertyBounds.finalPs(TACAI, Callers)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
+        p.get(TypeIteratorKey).usedPropertyKinds
+    }
 
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)

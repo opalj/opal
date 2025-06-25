@@ -8,12 +8,12 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.properties.ExtensibleLocalField
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.br.fpcf.properties.LocalField
 import org.opalj.br.fpcf.properties.LocalFieldWithGetter
 import org.opalj.br.fpcf.properties.NoLocalField
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis

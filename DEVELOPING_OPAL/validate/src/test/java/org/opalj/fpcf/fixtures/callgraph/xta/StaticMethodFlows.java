@@ -117,7 +117,7 @@ public class StaticMethodFlows {
 
     @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A;")
     public static A[] arrayTest_alloc() {
-        // These are not arrays of object types, therefore they should not be tracked.
+        // These are not arrays of class types, therefore they should not be tracked.
         int[] foo = new int[10];
         int[][] foo2 = new int[10][10];
 

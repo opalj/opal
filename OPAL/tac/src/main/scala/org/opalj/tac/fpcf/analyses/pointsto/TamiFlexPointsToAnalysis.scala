@@ -9,10 +9,10 @@ import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethods
@@ -93,106 +93,106 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
             new TamiFlexPointsToNewInstanceAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Array,
+                    ClassType.Array,
                     "",
-                    ObjectType.Array,
+                    ClassType.Array,
                     "newInstance",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, IntegerType), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ClassType.Class, IntegerType), ClassType.Object)
                 ),
                 "Array.newInstance"
             ) with PointsToBase,
             new TamiFlexPointsToNewInstanceAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Array,
+                    ClassType.Array,
                     "",
-                    ObjectType.Array,
+                    ClassType.Array,
                     "newInstance",
-                    MethodDescriptor(ArraySeq(ObjectType.Class, ArrayType(IntegerType)), ObjectType.Object)
+                    MethodDescriptor(ArraySeq(ClassType.Class, ArrayType(IntegerType)), ClassType.Object)
                 ),
                 "Array.newInstance"
             ) with PointsToBase,
             new TamiFlexPointsToNewInstanceAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Class,
+                    ClassType.Class,
                     "",
-                    ObjectType.Class,
+                    ClassType.Class,
                     "newInstance",
                     MethodDescriptor.JustReturnsObject
                 ),
                 "Class.newInstance"
             ) with PointsToBase,
-            new TamiFlexPointsToClassGetMemberAnalysis(project, "forName", ObjectType.Class)() with PointsToBase,
-            new TamiFlexPointsToClassGetMemberAnalysis(project, "forName", ObjectType.Class)(
+            new TamiFlexPointsToClassGetMemberAnalysis(project, "forName", ClassType.Class)() with PointsToBase,
+            new TamiFlexPointsToClassGetMemberAnalysis(project, "forName", ClassType.Class)(
                 declaredMethods(
-                    ObjectType.Class,
+                    ClassType.Class,
                     "",
-                    ObjectType.Class,
+                    ClassType.Class,
                     "forName",
                     MethodDescriptor(
-                        ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
-                        ObjectType.Class
+                        ArraySeq(ClassType.String, BooleanType, ClassType("java/lang/ClassLoader")),
+                        ClassType.Class
                     )
                 )
             ) with PointsToBase,
-            new TamiFlexPointsToClassGetMemberAnalysis(project, "getField", ObjectType.Field)() with PointsToBase,
-            new TamiFlexPointsToClassGetMemberAnalysis(project, "getDeclaredField", ObjectType.Field)()
+            new TamiFlexPointsToClassGetMemberAnalysis(project, "getField", ClassType.Field)() with PointsToBase,
+            new TamiFlexPointsToClassGetMemberAnalysis(project, "getDeclaredField", ClassType.Field)()
                 with PointsToBase,
-            new TamiFlexPointsToClassGetMembersAnalysis(project, "getFields", ObjectType.Field) with PointsToBase,
-            new TamiFlexPointsToClassGetMembersAnalysis(project, "getDeclaredFields", ObjectType.Field)
+            new TamiFlexPointsToClassGetMembersAnalysis(project, "getFields", ClassType.Field) with PointsToBase,
+            new TamiFlexPointsToClassGetMembersAnalysis(project, "getDeclaredFields", ClassType.Field)
                 with PointsToBase,
-            new TamiFlexPointsToClassGetMemberAnalysis(project, "getConstructor", ObjectType.Constructor)(
+            new TamiFlexPointsToClassGetMemberAnalysis(project, "getConstructor", ClassType.Constructor)(
                 declaredMethods(
-                    ObjectType.Class,
+                    ClassType.Class,
                     "",
-                    ObjectType.Class,
+                    ClassType.Class,
                     "getConstructor",
-                    MethodDescriptor(ArrayType(ObjectType.Class), ObjectType.Constructor)
+                    MethodDescriptor(ArrayType(ClassType.Class), ClassType.Constructor)
                 )
             ) with PointsToBase,
-            new TamiFlexPointsToClassGetMemberAnalysis(project, "getDeclaredConstructor", ObjectType.Constructor)(
+            new TamiFlexPointsToClassGetMemberAnalysis(project, "getDeclaredConstructor", ClassType.Constructor)(
                 declaredMethods(
-                    ObjectType.Class,
+                    ClassType.Class,
                     "",
-                    ObjectType.Class,
+                    ClassType.Class,
                     "getDeclaredConstructor",
-                    MethodDescriptor(ArrayType(ObjectType.Class), ObjectType.Constructor)
+                    MethodDescriptor(ArrayType(ClassType.Class), ClassType.Constructor)
                 )
             ) with PointsToBase,
-            new TamiFlexPointsToClassGetMembersAnalysis(project, "getConstructors", ObjectType.Constructor)
+            new TamiFlexPointsToClassGetMembersAnalysis(project, "getConstructors", ClassType.Constructor)
                 with PointsToBase,
-            new TamiFlexPointsToClassGetMembersAnalysis(project, "getDeclaredConstructors", ObjectType.Constructor)
+            new TamiFlexPointsToClassGetMembersAnalysis(project, "getDeclaredConstructors", ClassType.Constructor)
                 with PointsToBase,
-            new TamiFlexPointsToClassGetMemberAnalysis(project, "getMethod", ObjectType.Method)(
+            new TamiFlexPointsToClassGetMemberAnalysis(project, "getMethod", ClassType.Method)(
                 declaredMethods(
-                    ObjectType.Class,
+                    ClassType.Class,
                     "",
-                    ObjectType.Class,
+                    ClassType.Class,
                     "getMethod",
-                    MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
+                    MethodDescriptor(ArraySeq(ClassType.String, ArrayType(ClassType.Class)), ClassType.Method)
                 )
             ) with PointsToBase,
-            new TamiFlexPointsToClassGetMemberAnalysis(project, "getDeclaredMethod", ObjectType.Method)(
+            new TamiFlexPointsToClassGetMemberAnalysis(project, "getDeclaredMethod", ClassType.Method)(
                 declaredMethods(
-                    ObjectType.Class,
+                    ClassType.Class,
                     "",
-                    ObjectType.Class,
+                    ClassType.Class,
                     "getDeclaredMethod",
-                    MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)), ObjectType.Method)
+                    MethodDescriptor(ArraySeq(ClassType.String, ArrayType(ClassType.Class)), ClassType.Method)
                 )
             ) with PointsToBase,
-            new TamiFlexPointsToClassGetMembersAnalysis(project, "getMethods", ObjectType.Method) with PointsToBase,
-            new TamiFlexPointsToClassGetMembersAnalysis(project, "getDeclaredMethods", ObjectType.Method)
+            new TamiFlexPointsToClassGetMembersAnalysis(project, "getMethods", ClassType.Method) with PointsToBase,
+            new TamiFlexPointsToClassGetMembersAnalysis(project, "getDeclaredMethods", ClassType.Method)
                 with PointsToBase,
             new TamiFlexPointsToNewInstanceAnalysis(
                 project,
                 declaredMethods(
-                    ObjectType.Constructor,
+                    ClassType.Constructor,
                     "",
-                    ObjectType.Constructor,
+                    ClassType.Constructor,
                     "newInstance",
-                    MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+                    MethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object)
                 ),
                 "Constructor.newInstance"
             ) with PointsToBase,
@@ -204,13 +204,13 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
     }
 }
 
-trait TamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait TamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler with PointsToBasedAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
     val createAnalysis: SomeProject => TamiFlexPointsToAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :++ Seq(DeclaredMethodsKey, TamiFlexKey)
+        super.requiredProjectInformation :++ Seq(DeclaredMethodsKey, TamiFlexKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 
@@ -244,11 +244,11 @@ abstract class TamiFlexPointsToArrayGetAnalysis(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.Array,
+        ClassType.Array,
         "",
-        ObjectType.Array,
+        ClassType.Array,
         "get",
-        MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType), ObjectType.Object)
+        MethodDescriptor(ArraySeq(ClassType.Object, IntegerType), ClassType.Object)
     )
 
     private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
@@ -290,11 +290,11 @@ abstract class TamiFlexPointsToArraySetAnalysis(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.Array,
+        ClassType.Array,
         "",
-        ObjectType.Array,
+        ClassType.Array,
         "set",
-        MethodDescriptor(ArraySeq(ObjectType.Object, IntegerType, ObjectType.Object), VoidType)
+        MethodDescriptor(ArraySeq(ClassType.Object, IntegerType, ClassType.Object), VoidType)
     )
 
     private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
@@ -365,14 +365,14 @@ abstract class TamiFlexPointsToNewInstanceAnalysis(
 abstract class TamiFlexPointsToClassGetMemberAnalysis(
     final val project: SomeProject,
     val method:        String,
-    val memberType:    ObjectType
+    val memberType:    ClassType
 )(
     override val apiMethod: DeclaredMethod = project.get(DeclaredMethodsKey)(
-        ObjectType.Class,
+        ClassType.Class,
         "",
-        ObjectType.Class,
+        ClassType.Class,
         method,
-        MethodDescriptor(ObjectType.String, memberType)
+        MethodDescriptor(ClassType.String, memberType)
     )
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
@@ -387,11 +387,11 @@ abstract class TamiFlexPointsToClassGetMemberAnalysis(
         val line = callerContext.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
 
         val members = memberType match {
-            case ObjectType.Class =>
+            case ClassType.Class =>
                 tamiFlexLogData.classes(callerContext.method, s"Class.$method", line)
-            case ObjectType.Field =>
+            case ClassType.Field =>
                 tamiFlexLogData.fields(callerContext.method, s"Class.$method", line)
-            case ObjectType.Method | ObjectType.Constructor =>
+            case ClassType.Method | ClassType.Constructor =>
                 tamiFlexLogData.methods(callerContext.method, s"Class.$method", line)
         }
         if (members.nonEmpty) {
@@ -414,13 +414,13 @@ abstract class TamiFlexPointsToClassGetMemberAnalysis(
 abstract class TamiFlexPointsToClassGetMembersAnalysis(
     final val project: SomeProject,
     method:            String,
-    val memberType:    ObjectType
+    val memberType:    ClassType
 ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = project.get(DeclaredMethodsKey)(
-        ObjectType.Class,
+        ClassType.Class,
         "",
-        ObjectType.Class,
+        ClassType.Class,
         method,
         MethodDescriptor.withNoArgs(ArrayType(memberType))
     )
@@ -458,11 +458,11 @@ abstract class TamiFlexPointsToFieldGetAnalysis(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.Field,
+        ClassType.Field,
         "",
-        ObjectType.Field,
+        ClassType.Field,
         "get",
-        MethodDescriptor(ObjectType.Object, ObjectType.Object)
+        MethodDescriptor(ClassType.Object, ClassType.Object)
     )
 
     private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
@@ -504,11 +504,11 @@ abstract class TamiFlexPointsToFieldSetAnalysis(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.Field,
+        ClassType.Field,
         "",
-        ObjectType.Field,
+        ClassType.Field,
         "set",
-        MethodDescriptor(ArraySeq(ObjectType.Object, ObjectType.Object), VoidType)
+        MethodDescriptor(ArraySeq(ClassType.Object, ClassType.Object), VoidType)
     )
 
     private[this] final val tamiFlexLogData = project.get(TamiFlexKey)

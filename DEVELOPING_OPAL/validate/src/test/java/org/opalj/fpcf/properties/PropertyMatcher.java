@@ -7,7 +7,7 @@ import scala.collection.immutable.Set;
 
 import org.opalj.fpcf.Property;
 import org.opalj.br.AnnotationLike;
-import org.opalj.br.ObjectType;
+import org.opalj.br.ClassType;
 import org.opalj.br.analyses.Project;
 
 /**
@@ -28,10 +28,10 @@ public interface PropertyMatcher {
      * This test is used to filter the creation of useless test cases.
      *
      * @param p The project.
-     * @param as The OPAL `ObjectType`'s of the executed analyses.
+     * @param as The OPAL `ClassType`'s of the executed analyses.
      */
     default boolean isRelevant(
-            Project<?> p, Set<ObjectType> as,
+            Project<?> p, Set<ClassType> as,
             Object entity, AnnotationLike a) {
         return true;
     }
@@ -40,7 +40,7 @@ public interface PropertyMatcher {
      * Tests if the computed property is matched by this matcher.
      *
      * @param p The project.
-     * @param as The OPAL `ObjectType`'s of the executed analyses.
+     * @param as The OPAL `ClassType`'s of the executed analyses.
      * @param entity The annotated entity.
      * @param a The annotation.
      * @param properties '''All''' properties associated with the given entity.
@@ -50,7 +50,7 @@ public interface PropertyMatcher {
      *          why the analysis failed.
      */
     Option<String> validateProperty(
-            Project<?> p, Set<ObjectType> as,
+            Project<?> p, Set<ClassType> as,
             Object entity, AnnotationLike a, Iterable<Property> properties);
 
 }

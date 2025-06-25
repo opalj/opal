@@ -115,7 +115,7 @@ trait AnnotationsBinding
         const_name_index: Constant_Pool_Index
     ): ElementValue = {
         new EnumValue(
-            cp(type_name_index).asFieldType /*<= triggers the lookup in the CP*/ .asObjectType,
+            cp(type_name_index).asFieldType /*<= triggers the lookup in the CP*/ .asClassType,
             cp(const_name_index).asString
         )
     }

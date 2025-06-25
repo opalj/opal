@@ -13,9 +13,9 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation
 
@@ -75,7 +75,7 @@ object Values extends ProjectAnalysisApplication {
         }
 
         val objectValuesReturningMethodsCount =
-            project.allMethodsWithBody.filter(_.returnType.isObjectType).size
+            project.allMethodsWithBody.filter(_.returnType.isClassType).size
 
         val mMethods =
             methodReturnValues

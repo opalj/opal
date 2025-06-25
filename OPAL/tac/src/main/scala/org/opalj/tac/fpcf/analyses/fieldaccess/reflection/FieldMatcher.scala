@@ -8,9 +8,9 @@ package reflection
 
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.br.ClassType
 import org.opalj.br.Field
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.value.IsReferenceValue
@@ -39,7 +39,7 @@ final class NameBasedFieldMatcher(val possibleNames: Set[String]) extends FieldM
 }
 
 class ClassBasedFieldMatcher(
-    val possibleClasses:          Set[ObjectType],
+    val possibleClasses:          Set[ClassType],
     val onlyFieldsExactlyInClass: Boolean
 ) extends FieldMatcher {
 
