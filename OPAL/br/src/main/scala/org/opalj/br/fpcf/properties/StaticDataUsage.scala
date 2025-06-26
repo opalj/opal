@@ -5,6 +5,7 @@ package fpcf
 package properties
 
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.IndividualProperty
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
