@@ -4,6 +4,7 @@ package br
 package fpcf
 package properties
 
+import org.opalj.fpcf.AggregatedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 

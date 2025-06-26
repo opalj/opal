@@ -1,10 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
 package fpcf
-package properties
-
-import org.opalj.fpcf.Property
 
 /**
  * A trait to conveniently implement properties that need aggregated values.
