@@ -8,10 +8,10 @@ package xta
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.FieldType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
@@ -68,9 +68,15 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             .map { v => (v.method, v.pointsTo.get) }
             .toMap
 
-    override final val processesMethodsWithoutBody: Boolean = true
+    override def processMethodWithoutBody(callContext: ContextType): ProperPropertyComputationResult = {
+        processMethodInternal(callContext)
+    }
 
     override def processMethod(callContext: ContextType, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
+        processMethodInternal(callContext)
+    }
+
+    private def processMethodInternal(callContext: ContextType): ProperPropertyComputationResult = {
         if (!nativeMethodData.contains(callContext.method)) {
             // We have nothing to contribute to this method
             return Results()
@@ -100,7 +106,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     private def processStaticConfigurations(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
         state.configurationData.foreach {
             case PointsToRelation(StaticFieldDescription(cf, name, fieldType), asd: AllocationSiteDescription) =>
-                val theField = declaredFields(ObjectType(cf), name, FieldType(fieldType))
+                val theField = declaredFields(ClassType(cf), name, FieldType(fieldType))
                 val allocatedType = FieldType(asd.instantiatedType)
 
                 val fieldSetEntity = typeSetEntitySelector(theField)
@@ -154,12 +160,12 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         state.configurationData.foreach {
 
             case PointsToRelation(StaticFieldDescription(cf, name, fieldType), pd: ParameterDescription) =>
-                val theField = declaredFields(ObjectType(cf), name, FieldType(fieldType))
+                val theField = declaredFields(ClassType(cf), name, FieldType(fieldType))
                 val fieldSetEntity = typeSetEntitySelector(theField)
                 val theParameter = pd.fp(state.callContext.method, virtualFormalParameters)
 
                 val theParameterType = if (theParameter.origin == -1) {
-                    ObjectType(pd.cf)
+                    ClassType(pd.cf)
                 } else {
                     val paramIdx = -theParameter.origin - 2
                     state.callContext.method.descriptor.parameterType(paramIdx)
@@ -246,11 +252,11 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             // definitive Yes/No answer before. Since we didn't get one, the candidate type probably has a supertype
             // which is not a project type. In that case, the above argument applies similarly.
 
-            val filterTypeIsProjectType = if (filterType.isObjectType) {
-                project.isProjectType(filterType.asObjectType)
+            val filterTypeIsProjectType = if (filterType.isClassType) {
+                project.isProjectType(filterType.asClassType)
             } else {
                 val at = filterType.asArrayType
-                project.isProjectType(at.elementType.asObjectType)
+                project.isProjectType(at.elementType.asClassType)
             }
 
             !filterTypeIsProjectType

@@ -31,6 +31,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -41,6 +42,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -64,8 +66,10 @@ final class TypePropagationAnalysis private[analyses] (
 
     private[this] implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
-    // We need to also propagate types if the method has no body, e.g. for native methods with configured data
-    override protected val processesMethodsWithoutBody: Boolean = true
+    // We need to also propagate types if the method has no body, e.g. for native methods with configured data.
+    // Those methods set the TAC EPS to null. Access to state.tac will always be guarded by if(state.methodHasBody).
+    override def processMethodWithoutBody(callContext: ContextType): ProperPropertyComputationResult =
+        processMethod(callContext, FinalEP(null, NoTACAI))
 
     override def processMethod(
         callContext: ContextType,
