@@ -13,6 +13,7 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.si.Project
 import org.opalj.value.ValueInformation
 
 sealed trait FieldValueMetaInformation extends PropertyMetaInformation {
@@ -56,7 +57,7 @@ object FieldValue extends FieldValueMetaInformation {
         "opalj.FieldValue",
         // fallback property computation...
         (ps: PropertyStore, r: FallbackReason, f: Field) => {
-            val p = ps.context(classOf[SomeProject])
+            val p = ps.context(classOf[Project]).asInstanceOf[SomeProject]
             val vi = ValueInformation.forProperValue(f.fieldType)(p.classHierarchy)
             ValueBasedFieldValueInformation(vi)
         }

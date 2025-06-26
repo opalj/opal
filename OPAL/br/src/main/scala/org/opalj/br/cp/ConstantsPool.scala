@@ -79,12 +79,12 @@ class ConstantsPool(
     }
 
     override def CPEFieldRef(
-        objectType: ObjectType,
-        fieldName:  String,
-        fieldType:  String
+        classType: ClassType,
+        fieldName: String,
+        fieldType: String
     ): Int = {
         val nameAndTypeRef = CPENameAndType(fieldName, fieldType)
-        val cpeClass = CPEClass(objectType, false)
+        val cpeClass = CPEClass(classType, false)
         constantPool(CONSTANT_Fieldref_info(cpeClass, nameAndTypeRef))
     }
 
@@ -99,29 +99,29 @@ class ConstantsPool(
     }
 
     override def CPEMethodRef(
-        objectType: ReferenceType,
+        classType:  ReferenceType,
         name:       String,
         descriptor: MethodDescriptor
     ): Int = {
-        CPEMethodRef(objectType, name, descriptor.toJVMDescriptor)
+        CPEMethodRef(classType, name, descriptor.toJVMDescriptor)
     }
 
     def CPEInterfaceMethodRef(
-        objectType: ReferenceType,
+        classType:  ReferenceType,
         methodName: String,
         descriptor: String
     ): Int = {
-        val class_index = CPEClass(objectType, false)
+        val class_index = CPEClass(classType, false)
         val name_and_type_index = CPENameAndType(methodName, descriptor)
         constantPool(CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index))
     }
 
     override def CPEInterfaceMethodRef(
-        objectType: ReferenceType,
+        classType:  ReferenceType,
         name:       String,
         descriptor: MethodDescriptor
     ): Int = {
-        CPEInterfaceMethodRef(objectType, name, descriptor.toJVMDescriptor)
+        CPEInterfaceMethodRef(classType, name, descriptor.toJVMDescriptor)
     }
 
     def CPEInvokeDynamic(

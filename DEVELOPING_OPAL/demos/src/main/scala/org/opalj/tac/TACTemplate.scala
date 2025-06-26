@@ -8,8 +8,8 @@ import java.net.URL
 import org.opalj.ai.Domain
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.log.LogContext
@@ -128,7 +128,7 @@ object TACTemplate {
             c = tac(m)
             VirtualFunctionCallStatement(VirtualFunctionCall(
                 pc,
-                declaringClass: ObjectType,
+                declaringClass: ClassType,
                 _,
                 name,
                 descriptor,

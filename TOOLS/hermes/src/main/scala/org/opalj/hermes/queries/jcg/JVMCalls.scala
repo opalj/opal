@@ -6,7 +6,7 @@ package jcg
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
@@ -22,8 +22,8 @@ import org.opalj.da.ClassFile
  */
 class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
-    val Runtime = ObjectType("java/lang/Runtime")
-    val Thread = ObjectType("java/lang/Thread")
+    val Runtime = ClassType("java/lang/Runtime")
+    val Thread = ClassType("java/lang/Thread")
 
     override def featureIDs: Seq[String] = {
         Seq(
@@ -70,8 +70,8 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                     val pc = pcAndInvocation.pc
                     val mii = pcAndInvocation.value
                     val declClass = mii.declaringClass
-                    if (declClass.isObjectType
-                        && relevantTypes.contains(declClass.asObjectType)
+                    if (declClass.isClassType
+                        && relevantTypes.contains(declClass.asClassType)
                     ) {
                         val name = mii.name
                         if (name eq "addShutdownHook") {

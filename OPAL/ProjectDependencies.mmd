@@ -1,31 +1,29 @@
 %%{ init: { 'flowchart': { 'curve': 'linear' } } }%%
 flowchart BT
-    
-    common[Common\n common]
+    common[Common<br>common]
 
-    si[Static Analysis Infrastructure\n si]
-    bi[Bytecode Infrastructure\n bi]
+    si[Static Analysis Infrastructure<br>si]
+    bi[Bytecode Infrastructure<br>bi]
 
-    br[Bytecode Representation\n br]
-    da[Bytecode Disassembler\n da]
+    br[Bytecode Representation<br>br]
+    da[Bytecode Disassembler<br>da]
 
-    ifds[IFDS\n ifds]
-    ai[Abstract Interpretation Framework\n ai]
-    bc[Bytecode Creator\n bc]
+    ifds[IFDS<br>ifds]
+    ai[Abstract Interpretation Framework<br>ai]
+    bc[Bytecode Creator<br>bc]
 
-    tac[Three Address Code\n tac]
-    de[Dependency Extraction\n de]
-    ba[Bytecode Assembler\n ba]
+    tac[Three Address Code<br>tac]
+    de[Dependency Extraction<br>de]
+    ba[Bytecode Assembler<br>ba]
 
-    ll[LLVM\n ll]
-    apk[APK\n apk]
-    av[Architecture Validation\n av]
+    apk[APK<br>apk]
+    av[Architecture Validation<br>av]
 
     framework[Framework]
 
     demos[Demos]
-    bp[BugPicker\n bp]
-    hermes[Hermes\n hermes]
+    bp[BugPicker<br>bp]
+    hermes[Hermes<br>hermes]
 
     style common fill:#9cbecc,color:black
     style framework fill:#c0ffc0
@@ -52,10 +50,7 @@ flowchart BT
     tac --> ifds
     tac --> ai
 
-    ll --> tac
-
-    apk --> br
-    apk --> ll
+    apk --> tac
 
     ba --> ai
     ba --> bc

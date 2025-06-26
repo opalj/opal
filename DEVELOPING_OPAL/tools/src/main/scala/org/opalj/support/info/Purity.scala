@@ -21,11 +21,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -74,8 +69,13 @@ import org.opalj.commandlinebase.ThreadsNumCommand
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysis
+import org.opalj.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
 import org.opalj.support.parser.AnalysisCommandParser
@@ -105,15 +105,15 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
 import org.rogach.scallop.ScallopConf
-import org.rogach.scallop.Subcommand
 
 /**
  * `PurityConf` is a configuration class for parsing and managing command-line arguments related to purity analysis
  * in the OPAL framework. It extends `ScallopConf` and mixes in `OpalConf`, providing structured options for various
  * analysis settings, such as paths, analysis schedulers, and specific analysis configurations.
  */
-
 class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
+
+    import org.rogach.scallop._
 
     private object analysis extends Subcommand(AnalysisCommand.name) {
         val runnerCommand = opt[String](
@@ -165,7 +165,7 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
     val libraryDirectory = parseCommandWithInternalParser(libDirCommand, LibraryDirectoryCommand)
     val analysisScheduler =
         AnalysisCommandParser.parse(parseCommand(analysis.runnerCommand), parseCommand(analysis.analysisLevelCommand))
-    var support: Option[List[FPCFAnalysisScheduler]] = None
+    var support: Option[List[FPCFAnalysisScheduler[_]]] = None
 
     if (fieldAssignabilityCommand.isDefined && escapeCommand.isDefined && eagerCommand.isDefined && analysisScheduler != null)
         support = Some(parseArgumentsForSupport(
@@ -200,7 +200,7 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
         eager:              Boolean,
         analysisScheduler:  Any
     ) = {
-        var support: List[FPCFAnalysisScheduler] = Nil
+        var support: List[FPCFAnalysisScheduler[_]] = Nil
 
         if (analysis == "L2") support = List(
             LazyFieldImmutabilityAnalysis,
@@ -273,7 +273,7 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
  */
 object Purity {
 
-    val JDKPackages = List(
+    private val JDKPackages = List(
         "java/",
         "javax",
         "javafx",
@@ -293,8 +293,8 @@ object Purity {
         cp:                    File,
         projectDir:            Option[String],
         libDir:                Option[String],
-        analysis:              FPCFLazyAnalysisScheduler,
-        support:               List[FPCFAnalysisScheduler],
+        analysis:              FPCFLazyAnalysisScheduler[_],
+        support:               List[FPCFAnalysisScheduler[_]],
         domain:                Class[_ <: Domain with RecordDefUse],
         configurationName:     Option[String],
         schedulingStrategy:    Option[String],
@@ -438,7 +438,7 @@ object Purity {
         }
 
         val projectEntitiesWithPurity = entitiesWithPurity.filter { ep =>
-            val pn = ep.e.asInstanceOf[Context].method.declaringClassType.asObjectType.packageName
+            val pn = ep.e.asInstanceOf[Context].method.declaringClassType.asClassType.packageName
             packages match {
                 case None     => isJDK || !JDKPackages.exists(pn.startsWith)
                 case Some(ps) => ps.exists(pn.startsWith)

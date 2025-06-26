@@ -33,12 +33,12 @@ trait Module_attributeBinding
 
     type OpensToIndexEntry = String // module name
 
-    type UsesEntry = ObjectType
+    type UsesEntry = ClassType
 
     type ProvidesEntry = br.Provides
     override implicit val providesEntryType: ClassTag[ProvidesEntry] = ClassTag(classOf[br.Provides])
 
-    type ProvidesWithIndexEntry = ObjectType
+    type ProvidesWithIndexEntry = ClassType
 
     override def Module_attribute(
         cp:                   Constant_Pool,
@@ -61,7 +61,7 @@ trait Module_attributeBinding
             requires,
             exports,
             opens,
-            ArraySeq.from(uses).map(cp(_).asObjectType(cp)),
+            ArraySeq.from(uses).map(cp(_).asClassType(cp)),
             provides
         )
     }
@@ -111,8 +111,8 @@ trait Module_attributeBinding
         provides_with_index_table: ProvidesWithIndexTable
     ): ProvidesEntry = {
         br.Provides(
-            cp(provides_index).asObjectType(cp),
-            ArraySeq.from(provides_with_index_table).map(cp(_).asObjectType(cp))
+            cp(provides_index).asClassType(cp),
+            ArraySeq.from(provides_with_index_table).map(cp(_).asClassType(cp))
         )
     }
 

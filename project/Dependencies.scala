@@ -24,12 +24,10 @@ object Dependencies {
     val txtmark = "0.16"
     val jacksonDF = "2.12.2"
     val fastutil = "8.5.4"
+    val scallop = "5.1.0"
     val apkparser = "2.6.10"
 
     val openjfx = "16"
-
-    val javacpp = "1.5.8"
-    val javacpp_llvm = "15.0.3"
   }
 
   object library {
@@ -54,12 +52,9 @@ object Dependencies {
     val txtmark = "es.nitaur.markdown"                      % "txtmark"                     % version.txtmark withSources () withJavadoc ()
     val jacksonDF = "com.fasterxml.jackson.dataformat"      % "jackson-dataformat-csv"      % version.jacksonDF withSources () withJavadoc ()
     val fastutil = "it.unimi.dsi"                           % "fastutil"                    % version.fastutil withSources () withJavadoc ()
+    val scallop = "org.rogach"                              %% "scallop"                    % version.scallop
     val javafxBase = "org.openjfx"                          % "javafx-base"                 % version.openjfx classifier osName
     val apkparser = "net.dongliu"                           % "apk-parser"                  % version.apkparser
-
-    val javacpp = "org.bytedeco" % "javacpp" % version.javacpp
-    val javacpp_llvm =  "org.bytedeco" % "llvm-platform" % (version.javacpp_llvm + "-" + version.javacpp)
-    val scallop = "org.rogach" %% "scallop" % "5.1.0"
 
     // --- test related dependencies
 
@@ -82,5 +77,4 @@ object Dependencies {
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
   val apk = Seq(apkparser, scalaxml)
-  val llvm = Seq(javacpp, javacpp_llvm)
 }

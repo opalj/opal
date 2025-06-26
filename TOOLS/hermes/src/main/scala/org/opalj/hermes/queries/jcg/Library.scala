@@ -7,11 +7,11 @@ package jcg
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
+import org.opalj.br.ClassType
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectIndex
 import org.opalj.br.analyses.ProjectIndexKey
@@ -175,7 +175,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
             val cbsCalleeDeclaringType = cbsCalleeDeclaringClass.thisType
 
-            if (cbsCalleeDeclaringType eq ObjectType.Object)
+            if (cbsCalleeDeclaringType eq ClassType.Object)
                 return;
 
             if (project.classHierarchy.isSubtypeOf(
@@ -209,8 +209,8 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     }
 
     private[this] def hasSubclassWhichInheritsFromInterface(
-        classType:        ObjectType,
-        interfaceType:    ObjectType,
+        classType:        ClassType,
+        interfaceType:    ClassType,
         methodName:       String,
         methodDescriptor: MethodDescriptor,
         project:          SomeProject

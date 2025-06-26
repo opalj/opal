@@ -5,15 +5,15 @@ package info
 
 import java.net.URL
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -57,13 +57,13 @@ object ImmutabilityAnalysis extends ProjectAnalysisApplication {
 
         val immutableClasses =
             ps.entities(ClassImmutability.key).toSeq.filter(ep =>
-                project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo
+                project.classHierarchy.isInterface(ep.e.asInstanceOf[ClassType]).isNo
             ).groupBy { _.ub }.map { kv =>
                 (
                     kv._1,
                     kv._2.toList.sortWith { (a, b) =>
-                        val cfA = a.e.asInstanceOf[ObjectType]
-                        val cfB = b.e.asInstanceOf[ObjectType]
+                        val cfA = a.e.asInstanceOf[ClassType]
+                        val cfB = b.e.asInstanceOf[ClassType]
                         cfA.toJava < cfB.toJava
                     }
                 )
@@ -74,16 +74,16 @@ object ImmutabilityAnalysis extends ProjectAnalysisApplication {
 
         val immutableTypes =
             ps.entities(TypeImmutability.key).toSeq.filter(ep =>
-                project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo
+                project.classHierarchy.isInterface(ep.e.asInstanceOf[ClassType]).isNo
             ).groupBy { _.ub }.map { kv => (kv._1, kv._2.size) }
         val immutableTypesPerCategory =
             immutableTypes.map(kv => "\t\t" + kv._1 + ": " + kv._2).toList.sorted.mkString("\n")
 
         val immutableClassesInfo =
             immutableClasses.values.flatten
-                .filter(ep => project.classHierarchy.isInterface(ep.e.asInstanceOf[ObjectType]).isNo)
+                .filter(ep => project.classHierarchy.isInterface(ep.e.asInstanceOf[ClassType]).isNo)
                 .map { ep =>
-                    ep.e.asInstanceOf[ObjectType].toJava +
+                    ep.e.asInstanceOf[ClassType].toJava +
                         " => " + ep.ub +
                         " => " + ps(ep.e, TypeImmutability.key).ub
                 }

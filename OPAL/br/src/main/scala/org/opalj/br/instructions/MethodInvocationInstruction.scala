@@ -61,6 +61,6 @@ object MethodInvocationInstruction {
         ))
     }
 
-    val jvmExceptions = List(ObjectType.NullPointerException)
+    val jvmExceptions = List(ClassType.NullPointerException)
 
 }

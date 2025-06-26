@@ -4,9 +4,9 @@ package ai
 package domain
 
 import org.opalj.br.BootstrapMethod
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 
 /**
@@ -64,7 +64,7 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/
     def invokeinterface(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -75,7 +75,7 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/
     def invokespecial(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -87,7 +87,7 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/
     def invokestatic(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -111,7 +111,7 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     def getfield(
         pc:             Int,
         objectref:      DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         fieldType:      FieldType
     ): Computation[DomainValue, ExceptionValue] = {
@@ -121,7 +121,7 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     /*override*/
     def getstatic(
         pc:             Int,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         fieldType:      FieldType
     ): Computation[DomainValue, Nothing] = {
@@ -133,7 +133,7 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
         pc:             Int,
         objectref:      DomainValue,
         value:          DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         fieldType:      FieldType
     ): Computation[Nothing, ExceptionValue] = {
@@ -144,7 +144,7 @@ trait ValuesCoordinatingDomain extends CorrelationalDomain with Configuration {
     def putstatic(
         pc:             Int,
         value:          DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         fieldType:      FieldType
     ): Computation[Nothing, Nothing] = {

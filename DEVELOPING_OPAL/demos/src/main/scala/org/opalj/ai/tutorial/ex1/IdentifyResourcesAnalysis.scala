@@ -6,8 +6,8 @@ package ex1
 
 import java.net.URL
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.SingleArgumentMethodDescriptor
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.BasicReport
@@ -67,10 +67,10 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                     m.body.get.foldLeft(List.empty[Int /*PC*/ ]) { (pcs, pc, instruction) =>
                         instruction match {
                             case INVOKESPECIAL(
-                                    ObjectType("java/io/File"),
+                                    ClassType("java/io/File"),
                                     false /* = isInterface*/,
                                     "<init>",
-                                    SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
+                                    SingleArgumentMethodDescriptor((ClassType.String, VoidType))
                                 ) =>
                                 pc :: pcs
                             case _ =>

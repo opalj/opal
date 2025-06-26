@@ -25,7 +25,7 @@ class SignaturesTest extends AnyFunSuite {
         val visitor = new TypesVisitor(t => { types = types + t })
         visitor.visit(parseClassSignature("<E:Ljava/Object;>Lde/Iterator<TE;>;"))
 
-        assert(types == Set(ObjectType("java/Object"), ObjectType("de/Iterator")))
+        assert(types == Set(ClassType("java/Object"), ClassType("de/Iterator")))
     }
 
     test("traversing a class type signature") {
@@ -35,11 +35,11 @@ class SignaturesTest extends AnyFunSuite {
 
         assert(
             types == Set(
-                ObjectType("Default"),
-                ObjectType("de/Collection"),
-                ObjectType("de/Type"),
-                ObjectType("AnotherDefault"),
-                ObjectType("de/MyObject")
+                ClassType("Default"),
+                ClassType("de/Collection"),
+                ClassType("de/Type"),
+                ClassType("AnotherDefault"),
+                ClassType("de/MyObject")
             )
         )
     }
@@ -191,7 +191,7 @@ class SignaturesTest extends AnyFunSuite {
     Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ExceptionTableEntryTerm;>;
     Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/KeyValueTerm;>;
     Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/LineNumberTableEntryTerm;>;
-    Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;
+    Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;
     Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ValueTerm;>;
     Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/sae/IntegerAtom;>;
     Lde/tud/cs/st/sae/GroundTerms<TT;>;
@@ -214,7 +214,7 @@ class SignaturesTest extends AnyFunSuite {
     Ljava/util/ArrayList<Lde/tud/bat/quadruples/Statement;>;
     Ljava/util/ArrayList<Lde/tud/bat/quadruples/Switch$$Case;>;
     Ljava/util/ArrayList<Lde/tud/bat/type/FormalTypeParameter;>;
-    Ljava/util/ArrayList<Lde/tud/bat/type/ObjectType;>;
+    Ljava/util/ArrayList<Lde/tud/bat/type/ClassType;>;
     Ljava/util/ArrayList<Lde/tud/cs/se/flashcards/model/Flashcard;>;
     Ljava/util/ArrayList<Ljava/lang/Integer;>;
     Ljava/util/ArrayList<Ljava/lang/String;>;
@@ -223,7 +223,7 @@ class SignaturesTest extends AnyFunSuite {
     Ljava/util/Comparator<Ljava/lang/Integer;>;
     Ljava/util/HashMap<Lde/tud/bat/type/ReferenceType;Ljava/lang/Integer;>;
     Ljava/util/HashMap<Ljava/lang/Object;Ljava/lang/Integer;>;
-    Ljava/util/HashMap<Ljava/lang/String;Lde/tud/bat/type/ObjectType;>;
+    Ljava/util/HashMap<Ljava/lang/String;Lde/tud/bat/type/ClassType;>;
     Ljava/util/HashMap<Ljava/lang/String;Ljava/lang/Integer;>;
     Ljava/util/HashMap<Ljava/lang/String;Ljava/lang/Object;>;
     Ljava/util/Hashtable<Lde/tud/bat/instruction/executiongraph/BasicBlock;Ljava/lang/String;>;
@@ -286,13 +286,13 @@ class SignaturesTest extends AnyFunSuite {
     Lscala/collection/mutable/Map<Lde/tud/cs/st/bat/prolog/MethodRefTerm;Lde/tud/cs/st/bat/prolog/MethodRefTerm;>;
     Lscala/collection/mutable/Map<Lde/tud/cs/st/bat/prolog/TypeTerm;Lde/tud/cs/st/bat/prolog/ArrayTypeTerm;>;
     Lscala/collection/mutable/Map<Lde/tud/cs/st/bat/resolved/FieldType;Lde/tud/cs/st/bat/resolved/ArrayType;>;
-    Lscala/collection/mutable/Map<Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;>;
-    Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;
-    Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/bat/resolved/ObjectType;>;
+    Lscala/collection/mutable/Map<Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;>;
+    Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;
+    Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/bat/resolved/ClassType;>;
     Lscala/collection/mutable/Map<Lscala/Tuple2<Ljava/lang/Object;Ljava/lang/Integer;>;Lscala/List<Lde/tud/cs/st/sae/Fact;>;>;
     Lscala/collection/mutable/Map<Lscala/Tuple2<Ljava/lang/Object;Ljava/lang/Integer;>;Lscala/List<Lde/tud/cs/st/sae/Rule;>;>;
     Lscala/Function1<Lde/tud/cs/st/prolog/ISOProlog;Ljava/lang/Object;>;
-    Lscala/List<Lde/tud/cs/st/bat/resolved/ObjectType;>;
+    Lscala/List<Lde/tud/cs/st/bat/resolved/ClassType;>;
     Lscala/List<Lde/tud/cs/st/sae/Fact;>;
     Lscala/List<Lde/tud/cs/st/sae/Query;>;
     Lscala/List<Lde/tud/cs/st/sae/Rule;>;
@@ -329,7 +329,7 @@ class SignaturesTest extends AnyFunSuite {
     Lscala/Seq<Lde/tud/cs/st/bat/native/ElementValue;>;
     Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;
     Lscala/Seq<Lde/tud/cs/st/bat/resolved/FieldType;>;
-    Lscala/Seq<Lde/tud/cs/st/bat/resolved/ObjectType;>;
+    Lscala/Seq<Lde/tud/cs/st/bat/resolved/ClassType;>;
     Lscala/Seq<Lde/tud/cs/st/sae/GroundTerm;>;
     Lscala/Seq<Lde/tud/cs/st/sae/Term;>;
     TA;
@@ -344,11 +344,11 @@ class SignaturesTest extends AnyFunSuite {
     ()Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/ParameterAnnotation;>;
     ()Lde/tud/bat/util/BATIterator<Lde/tud/bat/instruction/Instruction;>;
     ()Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/FormalTypeParameter;>;
-    ()Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/ObjectType;>;
+    ()Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/ClassType;>;
     ()Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/Type;>;
     ()Lde/tud/bat/util/BATIterator<Ljava/lang/String;>;
     ()Lde/tud/cs/st/bat/resolved/ConstantValue<*>;
-    ()Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;
+    ()Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;
     ()Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ValueTerm;>;
     ()Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/sae/IntegerAtom;>;
     ()Lde/tud/cs/st/sae/GroundTerms<TT;>;
@@ -392,9 +392,9 @@ class SignaturesTest extends AnyFunSuite {
     ()Lscala/collection/mutable/Map<Lde/tud/cs/st/bat/prolog/MethodRefTerm;Lde/tud/cs/st/bat/prolog/MethodRefTerm;>;
     ()Lscala/collection/mutable/Map<Lde/tud/cs/st/bat/prolog/TypeTerm;Lde/tud/cs/st/bat/prolog/ArrayTypeTerm;>;
     ()Lscala/collection/mutable/Map<Lde/tud/cs/st/bat/resolved/FieldType;Lde/tud/cs/st/bat/resolved/ArrayType;>;
-    ()Lscala/collection/mutable/Map<Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;>;
-    ()Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;
-    ()Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/bat/resolved/ObjectType;>;
+    ()Lscala/collection/mutable/Map<Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;>;
+    ()Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;
+    ()Lscala/collection/mutable/Map<Ljava/lang/String;Lde/tud/cs/st/bat/resolved/ClassType;>;
     ()Lscala/collection/mutable/Map<Lscala/Tuple2<Ljava/lang/Object;Ljava/lang/Integer;>;Lscala/List<Lde/tud/cs/st/sae/Fact;>;>;
     ()Lscala/collection/mutable/Map<Lscala/Tuple2<Ljava/lang/Object;Ljava/lang/Integer;>;Lscala/List<Lde/tud/cs/st/sae/Rule;>;>;
     ()Lscala/Collection<Lde/tud/cs/st/util/trees/TreeNode;>;
@@ -402,7 +402,7 @@ class SignaturesTest extends AnyFunSuite {
     ()Lscala/Function3<Ljava/io/DataInputStream;Lscala/RandomAccessSeq<TA;>;Ljava/lang/Integer;Ljava/lang/Object;>;
     ()Lscala/Iterator<Lscala/Enumeration$$Value;>;
     ()Lscala/Iterator<TA;>;
-    ()Lscala/List<Lde/tud/cs/st/bat/resolved/ObjectType;>;
+    ()Lscala/List<Lde/tud/cs/st/bat/resolved/ClassType;>;
     ()Lscala/List<Lde/tud/cs/st/sae/Fact;>;
     ()Lscala/List<Lde/tud/cs/st/sae/Query;>;
     ()Lscala/List<Lde/tud/cs/st/sae/Rule;>;
@@ -420,7 +420,7 @@ class SignaturesTest extends AnyFunSuite {
     ()Lscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;>;>;
     ()Lscala/RandomAccessSeq<Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Annotation;>;>;
     ()Lscala/RandomAccessSeq<Lscala/Tuple2<Ljava/lang/Integer;Ljava/lang/Integer;>;>;
-    ()Lscala/Seq<Lde/tud/cs/st/bat/resolved/ObjectType;>;
+    ()Lscala/Seq<Lde/tud/cs/st/bat/resolved/ClassType;>;
     ()Lscala/Seq<Lde/tud/cs/st/sae/Fact;>;
     ()Lscala/Seq<Lde/tud/cs/st/sae/GroundTerm;>;
     ()Lscala/Seq<Lde/tud/cs/st/sae/Term;>;
@@ -473,7 +473,7 @@ class SignaturesTest extends AnyFunSuite {
     (IIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/ExceptionTableEntry;
     (IIIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/InnerClassesEntry;
     (IIII[Lde/tud/cs/st/bat/resolved/Instruction;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/ExceptionTableEntry;>;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/Code_attribute;
-    (IIILde/tud/cs/st/bat/resolved/ObjectType;Lde/tud/cs/st/bat/resolved/ObjectType;Lscala/Seq<Lde/tud/cs/st/bat/resolved/ObjectType;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Field_Info;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Method_Info;>;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)V
+    (IIILde/tud/cs/st/bat/resolved/ClassType;Lde/tud/cs/st/bat/resolved/ClassType;Lscala/Seq<Lde/tud/cs/st/bat/resolved/ClassType;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Field_Info;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/Method_Info;>;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)V
     (IIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$EnclosingMethod_attribute;
     (IIILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/EnclosingMethod_attribute;
     (IIILscala/RandomAccessSeq<Ljava/lang/Integer;>;)V
@@ -538,22 +538,22 @@ class SignaturesTest extends AnyFunSuite {
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Deprecated_attribute;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Synthetic_attribute;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/VerificationTypeInfo;
-    (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;
+    (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/prolog/ClassTypeTerm;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/prolog/TypeTerm;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/ConstantValue<*>;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/Deprecated_attribute;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/ElementValue;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/FieldDescriptor;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/MethodDescriptor;
-    (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/ObjectType;
+    (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/ClassType;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/ObjectVariableInfo;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/Synthetic_attribute;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/sae/StringAtom;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Ljava/lang/String;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Tuple2<Ljava/lang/String;Lde/tud/cs/st/bat/resolved/FieldType;>;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Tuple2<Ljava/lang/String;Lde/tud/cs/st/bat/resolved/MethodDescriptor;>;
-    (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Tuple3<Lde/tud/cs/st/bat/resolved/ObjectType;Ljava/lang/String;Lde/tud/cs/st/bat/resolved/FieldType;>;
-    (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Tuple3<Lde/tud/cs/st/bat/resolved/ObjectType;Ljava/lang/String;Lde/tud/cs/st/bat/resolved/MethodDescriptor;>;
+    (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Tuple3<Lde/tud/cs/st/bat/resolved/ClassType;Ljava/lang/String;Lde/tud/cs/st/bat/resolved/FieldType;>;
+    (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Tuple3<Lde/tud/cs/st/bat/resolved/ClassType;Ljava/lang/String;Lde/tud/cs/st/bat/resolved/MethodDescriptor;>;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ElementValuePair;>;)V
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$ElementValuePair;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;
     (ILscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$InnerClassesEntry;>;)V
@@ -591,12 +591,12 @@ class SignaturesTest extends AnyFunSuite {
     (Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/Annotation;>;)I
     (Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/Type;>;)Z
     (Lde/tud/cs/st/bat/native/reader/BasicJava6Framework$$Annotation;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/native/ElementValue;
-    (Lde/tud/cs/st/bat/prolog/ClassCategoryAtom;Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;Lde/tud/cs/st/bat/prolog/VisibilityAtom;Lde/tud/cs/st/bat/prolog/FinalTerm;Lde/tud/cs/st/bat/prolog/AbstractTerm;Lde/tud/cs/st/bat/prolog/SyntheticTerm;Lde/tud/cs/st/bat/prolog/DeprecatedTerm;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/prolog/FieldFact;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/prolog/MethodFact;>;)V
+    (Lde/tud/cs/st/bat/prolog/ClassCategoryAtom;Lde/tud/cs/st/bat/prolog/ClassTypeTerm;Lde/tud/cs/st/bat/prolog/ClassTypeTerm;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;Lde/tud/cs/st/bat/prolog/VisibilityAtom;Lde/tud/cs/st/bat/prolog/FinalTerm;Lde/tud/cs/st/bat/prolog/AbstractTerm;Lde/tud/cs/st/bat/prolog/SyntheticTerm;Lde/tud/cs/st/bat/prolog/DeprecatedTerm;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/prolog/FieldFact;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/prolog/MethodFact;>;)V
     (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ExceptionTableEntryTerm;>;)V
     (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/LineNumberTableEntryTerm;>;)Lde/tud/cs/st/bat/prolog/LineNumbersTableFact;
     (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/LineNumberTableEntryTerm;>;)V
-    (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;)Lde/tud/cs/st/bat/prolog/MethodExceptionsFact;
-    (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ObjectTypeTerm;>;)V
+    (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;)Lde/tud/cs/st/bat/prolog/MethodExceptionsFact;
+    (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ClassTypeTerm;>;)V
     (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/IntegerAtom;Lde/tud/cs/st/sae/IntegerAtom;Lde/tud/cs/st/sae/IntegerAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/KeyValueTerm;>;)V
     (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lde/tud/cs/st/sae/IntegerAtom;Lde/tud/cs/st/sae/IntegerAtom;Lde/tud/cs/st/sae/IntegerAtom;Lde/tud/cs/st/sae/IntegerAtom;Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/sae/IntegerAtom;>;)V
     (Lde/tud/cs/st/bat/prolog/MethodKeyAtom;Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)V
@@ -610,7 +610,7 @@ class SignaturesTest extends AnyFunSuite {
     (Lde/tud/cs/st/bat/resolved/FieldDescriptor;)Lscala/Option<Lde/tud/cs/st/bat/resolved/FieldType;>;
     (Lde/tud/cs/st/bat/resolved/FieldType;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/resolved/ElementValuePair;>;)V
     (Lde/tud/cs/st/bat/resolved/Instruction;ILjava/io/DataInputStream;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lde/tud/cs/st/bat/resolved/AALOAD;
-    (Lde/tud/cs/st/bat/resolved/ObjectType;)Lscala/Option<Ljava/lang/String;>;
+    (Lde/tud/cs/st/bat/resolved/ClassType;)Lscala/Option<Ljava/lang/String;>;
     (Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/TypeTerm;>;Lde/tud/cs/st/bat/prolog/TypeTerm;)Lde/tud/cs/st/bat/prolog/MethodDescriptorTerm;
     (Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/TypeTerm;>;Lde/tud/cs/st/bat/prolog/TypeTerm;)V
     (Lde/tud/cs/st/sae/GroundTerms<Lde/tud/cs/st/bat/prolog/ValueTerm;>;)Lde/tud/cs/st/bat/prolog/ArrayValueTerm;
@@ -631,7 +631,7 @@ class SignaturesTest extends AnyFunSuite {
     (Ljava/io/DataOutputStream;Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/InnerClass;>;Lde/tud/bat/io/writer/ConstantPoolCreator;)V
     (Ljava/io/DataOutputStream;Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/LineNumber;>;Lde/tud/bat/io/writer/ConstantPoolCreator;Ljava/util/Hashtable<Lde/tud/bat/instruction/Instruction;Ljava/lang/Integer;>;)V
     (Ljava/io/DataOutputStream;Lde/tud/bat/util/BATIterator<Lde/tud/bat/classfile/structure/LocalVariable;>;Lde/tud/bat/io/writer/ConstantPoolCreator;Ljava/util/Hashtable<Lde/tud/bat/instruction/Instruction;Ljava/lang/Integer;>;)V
-    (Ljava/io/DataOutputStream;Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/ObjectType;>;Lde/tud/bat/io/writer/ConstantPoolCreator;)V
+    (Ljava/io/DataOutputStream;Lde/tud/bat/util/BATIterator<Lde/tud/bat/type/ClassType;>;Lde/tud/bat/io/writer/ConstantPoolCreator;)V
     (Ljava/io/DataOutputStream;Ljava/util/ArrayList<Lde/tud/bat/classfile/structure/Annotation;>;Lde/tud/bat/io/writer/ConstantPoolCreator;)V
     (Ljava/lang/Class<*>;[Ljava/lang/Class<*>;)V
     (Ljava/lang/Object;Ljava/util/Map<Lde/tud/bat/instruction/Instruction;Lde/tud/bat/quadruples/CodeElement;>;)Ljava/lang/Object;
@@ -714,10 +714,10 @@ class SignaturesTest extends AnyFunSuite {
     (Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)Lde/tud/cs/st/bat/prolog/DeprecatedTerm;
     (Lscala/Seq<Lde/tud/cs/st/bat/resolved/Attribute;>;)Z
     (Lscala/Seq<Lde/tud/cs/st/bat/resolved/FieldType;>;Lde/tud/cs/st/bat/resolved/Type;)V
-    (Lscala/Seq<Lde/tud/cs/st/bat/resolved/ObjectType;>;)V
+    (Lscala/Seq<Lde/tud/cs/st/bat/resolved/ClassType;>;)V
     (Lscala/Seq<Lde/tud/cs/st/sae/Fact;>;)V
     (Lscala/Seq<Lde/tud/cs/st/sae/Rule;>;)V
-    (Lscala/Seq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Seq<Lde/tud/cs/st/bat/resolved/ObjectType;>;
+    (Lscala/Seq<Ljava/lang/Integer;>;Lscala/RandomAccessSeq<Lde/tud/cs/st/bat/native/Constant_Pool_Entry;>;)Lscala/Seq<Lde/tud/cs/st/bat/resolved/ClassType;>;
     (Lscala/Seq<[Lde/tud/cs/st/sae/Term;>;)V
     (Lscala/Tuple2<Ljava/lang/Integer;Ljava/lang/Integer;>;)Lde/tud/cs/st/bat/prolog/KeyValueTerm;
     (Lscala/Tuple2<Ljava/lang/Integer;Ljava/lang/Integer;>;)Lscala/xml/Elem;
