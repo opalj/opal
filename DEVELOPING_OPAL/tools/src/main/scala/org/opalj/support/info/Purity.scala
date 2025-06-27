@@ -3,24 +3,20 @@ package org.opalj
 package support
 package info
 
+import scala.language.postfixOps
+
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.util.Calendar
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
-
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.ai.domain.DomainCommand
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.br.analyses.ProjectBasedCommandLineConfig
 import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -42,167 +38,87 @@ import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.bytecode.JDKCommand
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.cli.AnalysisLevelCommand
+import org.opalj.cli.ClassPathCommand
+import org.opalj.cli.ClosedWorldCommand
+import org.opalj.cli.ConfigurationNameCommand
+import org.opalj.cli.EagerCommand
+import org.opalj.cli.EvalDirCommand
+import org.opalj.cli.IndividualCommand
+import org.opalj.cli.LibraryCommand
+import org.opalj.cli.MultiProjectsCommand
+import org.opalj.cli.PackagesCommand
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.commandlinebase.AnalysisCommand
-import org.opalj.commandlinebase.AnalysisNameCommand
-import org.opalj.commandlinebase.CallGraphCommand
-import org.opalj.commandlinebase.ClassPathCommand
-import org.opalj.commandlinebase.CloseWorldCommand
-import org.opalj.commandlinebase.DebugCommand
-import org.opalj.commandlinebase.DomainCommand
-import org.opalj.commandlinebase.EagerCommand
-import org.opalj.commandlinebase.EscapeCommand
-import org.opalj.commandlinebase.EvalDirCommand
-import org.opalj.commandlinebase.FieldAssignabilityCommand
-import org.opalj.commandlinebase.IndividualCommand
-import org.opalj.commandlinebase.JDKCommand
-import org.opalj.commandlinebase.LibraryCommand
-import org.opalj.commandlinebase.LibraryDirectoryCommand
-import org.opalj.commandlinebase.MultiProjectsCommand
-import org.opalj.commandlinebase.OpalConf
-import org.opalj.commandlinebase.PackagesCommand
-import org.opalj.commandlinebase.ProjectDirectoryCommand
-import org.opalj.commandlinebase.RaterCommand
-import org.opalj.commandlinebase.SchedulingStrategyCommand
-import org.opalj.commandlinebase.ThreadsNumCommand
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.FPCFAnalysis
-import org.opalj.fpcf.FPCFAnalysisScheduler
-import org.opalj.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.log.LogContext
-import org.opalj.support.parser.AnalysisCommandParser
-import org.opalj.support.parser.CallGraphCommandExternalParser
-import org.opalj.support.parser.ClassPathCommandExternalParser
-import org.opalj.support.parser.DomainCommandExternalParser
-import org.opalj.support.parser.RaterCommandExternalParser
-import org.opalj.tac.cg.CallGraphKey
+import org.opalj.fpcf.par.SchedulingStrategyCommand
+import org.opalj.tac.cg.CallGraphCommand
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.escape.EscapeCommand
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
-import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.FieldAssignabilityCommand
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.PurityCommand
+import org.opalj.tac.fpcf.analyses.purity.RaterCommand
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
 import org.rogach.scallop.ScallopConf
 
-/**
- * `PurityConf` is a configuration class for parsing and managing command-line arguments related to purity analysis
- * in the OPAL framework. It extends `ScallopConf` and mixes in `OpalConf`, providing structured options for various
- * analysis settings, such as paths, analysis schedulers, and specific analysis configurations.
- */
-class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
+class PurityConfig(args: Array[String]) extends ScallopConf(args) with ProjectBasedCommandLineConfig
+    with PropertyStoreBasedCommandLineConfig {
 
-    import org.rogach.scallop._
-
-    private object analysis extends Subcommand(AnalysisCommand.name) {
-        val runnerCommand = opt[String](
-            name = AnalysisCommand.getRunnerCommand().name,
-            descr = AnalysisCommand.getRunnerCommand().description,
-            argName = AnalysisCommand.getRunnerCommand().argName,
-            default = AnalysisCommand.getRunnerCommand().defaultValue,
-            noshort = AnalysisCommand.getRunnerCommand().noshort
-        )
-
-        val analysisLevelCommand = choice(
-            name = AnalysisCommand.getAnalysisLevelCommand().name,
-            descr = AnalysisCommand.getAnalysisLevelCommand().description,
-            argName = AnalysisCommand.getAnalysisLevelCommand().argName,
-            default = AnalysisCommand.getAnalysisLevelCommand().defaultValue,
-            noshort = AnalysisCommand.getAnalysisLevelCommand().noshort,
-            choices = AnalysisCommand.getAnalysisLevelCommand().choices
-        )
+    private val analysisLevelCommand = new AnalysisLevelCommand(PurityCommand.description, PurityCommand.levels *) {
+        override def defaultValue: Option[String] = Some("L2")
+        override val withNone = false
     }
-    addSubcommand(analysis)
 
-    // Commands
-    private val classPathCommand = getPlainScallopOption(ClassPathCommand)
-    private val projectDirCommand = getPlainScallopOption(ProjectDirectoryCommand)
-    private val libDirCommand = getPlainScallopOption(LibraryDirectoryCommand)
-    private val fieldAssignabilityCommand = getChoiceScallopOption(FieldAssignabilityCommand)
-    private val escapeCommand = getChoiceScallopOption(EscapeCommand)
-    private val eagerCommand = getPlainScallopOption(EagerCommand)
-    private val domainCommand = getPlainScallopOption(DomainCommand)
-    private val raterCommand = getPlainScallopOption(RaterCommand)
-    private val callGraphCommand = getPlainScallopOption(CallGraphCommand)
-    private val jdkCommand = getPlainScallopOption(JDKCommand)
-    private val individualCommand = getPlainScallopOption(IndividualCommand)
-    private val closedWorldCommand = getPlainScallopOption(CloseWorldCommand)
-    private val libraryCommand = getPlainScallopOption(LibraryCommand)
-    private val debugCommand = getPlainScallopOption(DebugCommand)
-    private val multiProjectsCommand = getPlainScallopOption(MultiProjectsCommand)
-    private val evaluationDirCommand = getPlainScallopOption(EvalDirCommand)
-    private val packagesCommand = getPlainScallopOption(PackagesCommand)
-    private val threadsNumCommand = getPlainScallopOption(ThreadsNumCommand)
-    private val analysisNameCommand = getPlainScallopOption(AnalysisNameCommand)
-    private val schedulingStrategyCommand = getPlainScallopOption(SchedulingStrategyCommand)
+    commands(
+        analysisLevelCommand !,
+        FieldAssignabilityCommand,
+        EscapeCommand,
+        EagerCommand !,
+        DomainCommand,
+        ConfigurationNameCommand !,
+        RaterCommand !,
+        CallGraphCommand !,
+        IndividualCommand !,
+        ClosedWorldCommand,
+        MultiProjectsCommand !,
+        EvalDirCommand,
+        PackagesCommand,
+        SchedulingStrategyCommand
+    )
+    init()
 
-    verify()
+    val analysis = getScheduler(apply(analysisLevelCommand), false).asInstanceOf[FPCFAnalysisScheduler]
 
-    // Parsed data
-    val classPathFiles = parseCommandWithExternalParser(classPathCommand, ClassPathCommandExternalParser)
-    val projectDirectory = parseCommandWithInternalParser(projectDirCommand, ProjectDirectoryCommand)
-    val libraryDirectory = parseCommandWithInternalParser(libDirCommand, LibraryDirectoryCommand)
-    val analysisScheduler =
-        AnalysisCommandParser.parse(parseCommand(analysis.runnerCommand), parseCommand(analysis.analysisLevelCommand))
-    var support: Option[List[FPCFAnalysisScheduler[_]]] = None
-
-    if (fieldAssignabilityCommand.isDefined && escapeCommand.isDefined && eagerCommand.isDefined && analysisScheduler != null)
-        support = Some(parseArgumentsForSupport(
-            analysis.analysisLevelCommand.apply(),
-            fieldAssignabilityCommand.apply(),
-            escapeCommand.apply(),
-            eagerCommand.apply(),
-            analysisScheduler
-        ))
-    else
-        support = None
-
-    val domain = parseCommandWithExternalParser(domainCommand, DomainCommandExternalParser)
-    val rater = parseCommandWithExternalParser(raterCommand, RaterCommandExternalParser)
-    val callGraph = parseCommandWithExternalParser(callGraphCommand, CallGraphCommandExternalParser)
-    val jdk = parseCommand(jdkCommand)
-    val individual = parseCommand(individualCommand)
-    val closedWorld = parseCommand(closedWorldCommand)
-    val library = parseCommand(libraryCommand)
-    val debug = parseCommand(debugCommand)
-    val multiProjects = parseCommand(multiProjectsCommand)
-    val evaluationDir = parseCommandWithInternalParser(evaluationDirCommand, EvalDirCommand)
-    val packages = parseCommandWithInternalParser(packagesCommand, PackagesCommand)
-    val threadsNum = parseCommand(threadsNumCommand)
-    val configurationName = parseCommand(analysisNameCommand)
-    val schedulingStrategy = parseCommand(schedulingStrategyCommand)
+    val supportingAnalyses: List[FPCFAnalysisScheduler] = parseArgumentsForSupport(
+        get(FieldAssignabilityCommand),
+        get(EscapeCommand),
+        apply(EagerCommand)
+    )
 
     private def parseArgumentsForSupport(
-        analysis:           String,
-        fieldAssignability: String,
-        escape:             String,
-        eager:              Boolean,
-        analysisScheduler:  Any
+        fieldAssignability: Option[String],
+        escape:             Option[String],
+        eager:              Boolean
     ) = {
-        var support: List[FPCFAnalysisScheduler[_]] = Nil
+        var support: List[org.opalj.fpcf.FPCFAnalysisScheduler[_]] = Nil
 
-        if (analysis == "L2") support = List(
+        if (analysis eq LazyL2PurityAnalysis) support = List(
             LazyFieldImmutabilityAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
@@ -221,48 +137,22 @@ class PurityConf(args: Array[String]) extends ScallopConf(args) with OpalConf {
         }
 
         escape match {
-            case "L0" =>
-                support ::= LazySimpleEscapeAnalysis
-
-            case null | "L1" =>
-                support ::= LazyInterProceduralEscapeAnalysis
-
-            case "none" =>
-
+            case Some("") =>
             case _ =>
-                Console.println(s"unknown escape analysis: $escape")
-                printHelp()
+                escape.orElse(Some(EscapeCommand.parse("L1"))).foreach { e => support ::= getScheduler(e, eager) }
         }
 
         fieldAssignability match {
-            case "L0" if eager => support ::= EagerL0FieldAssignabilityAnalysis
-
-            case "L0" => support ::= LazyL0FieldAssignabilityAnalysis
-
-            case "L1" if eager => support ::= EagerL1FieldAssignabilityAnalysis
-
-            case "L1" => support ::= LazyL1FieldAssignabilityAnalysis
-
-            case "L2" if eager =>
-                support ::= EagerL2FieldAssignabilityAnalysis
-
-            case "L2" =>
-                support ::= LazyL2FieldAssignabilityAnalysis
-
-            case "none" =>
-
-            case null => analysisScheduler match {
+            case Some("") =>
+            case Some(fA) => support ::= getScheduler(fA, eager)
+            case None => analysis match {
                     case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
                     case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
                     case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
                 }
-
-            case _ =>
-                Console.println(s"unknown field assignability analysis: $fieldAssignability")
-                printHelp()
         }
 
-        support
+        support.asInstanceOf[List[FPCFAnalysisScheduler]]
     }
 }
 
@@ -290,41 +180,12 @@ object Purity {
     )
 
     def evaluate(
-        cp:                    File,
-        projectDir:            Option[String],
-        libDir:                Option[String],
-        analysis:              FPCFLazyAnalysisScheduler[_],
-        support:               List[FPCFAnalysisScheduler[_]],
-        domain:                Class[_ <: Domain with RecordDefUse],
-        configurationName:     Option[String],
-        schedulingStrategy:    Option[String],
-        rater:                 DomainSpecificRater,
-        callGraphKey:          CallGraphKey,
-        jdk:                   Boolean,
-        individual:            Boolean,
-        numThreads:            Int,
-        closedWorldAssumption: Boolean,
-        isLibrary:             Boolean,
-        debug:                 Boolean,
-        evaluationDir:         Option[File],
-        packages:              Option[Array[String]]
+        analysisConfig: PurityConfig,
+        cp:             File
     ): Unit = {
-        val classFiles = projectDir match {
-            case Some(dir) => JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
-            case None      => JavaClassFileReader().ClassFiles(cp)
-        }
-
-        val libFiles = libDir match {
-            case Some(dir) => JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
-            case None      => Iterable.empty
-        }
-
-        val JDKFiles = if (!jdk) Iterable.empty
-        else JavaClassFileReader().ClassFiles(JRELibraryFolder)
-
         val isJDK: Boolean = cp eq JRELibraryFolder
         val dirName = if (isJDK) "JDK" else cp.getName
-        val projectEvalDir = evaluationDir.map(new File(_, dirName))
+        val projectEvalDir = analysisConfig.get(EvalDirCommand).map(new File(_, dirName))
         if (projectEvalDir.isDefined && !projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
 
         var projectTime: Seconds = Seconds.None
@@ -332,59 +193,18 @@ object Purity {
         var analysisTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
 
-        // TODO: use variables for the constants
-        implicit var config: Config =
-            if (isLibrary)
-                ConfigFactory.load("LibraryProject.conf")
-            else
-                ConfigFactory.load("CommandLineProject.conf")
-
-        // TODO: in case of application this value is already set
-        if (closedWorldAssumption) {
-            config = config.withValue(
-                "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
-            )
-        }
-
-        if (schedulingStrategy.isDefined) {
-            config = config.withValue(
-                PKESequentialPropertyStore.TasksManagerKey,
-                ConfigValueFactory.fromAnyRef(schedulingStrategy.get)
-            )
-        }
-
+        val isLibrary = analysisConfig(LibraryCommand) || isJDK
         val project = time {
-            Project(
-                classFiles,
-                libFiles ++ JDKFiles,
-                libraryClassFilesAreInterfacesOnly = false,
-                Iterable.empty
-            )
+            analysisConfig.setupProject(cp, isLibrary)
         } { t => projectTime = t.toSeconds }
 
-        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               => Set(domain)
-            case Some(requirements) => requirements + domain
-        }
+        val ps = time {
+            analysisConfig.setupPropertyStore()
+            project.get(PropertyStoreKey)
+        } { t => propertyStoreTime = t.toSeconds }
 
-        project.getOrCreateProjectInformationKeyInitializationData(
-            PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) => {
-                implicit val lg: LogContext = project.logContext
-                if (numThreads == 0) {
-                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                } else {
-                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
-                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                }
-            }
-        )
-
-        PropertyStore.updateDebug(debug)
-        val ps = time { project.get(PropertyStoreKey) } { t => propertyStoreTime = t.toSeconds }
-
-        analysis match {
+        val rater = analysisConfig(RaterCommand)
+        analysisConfig.analysis match {
             case LazyL0PurityAnalysis =>
             case LazyL1PurityAnalysis => L1PurityAnalysis.setRater(Some(rater))
             case LazyL2PurityAnalysis => L2PurityAnalysis.setRater(Some(rater))
@@ -395,6 +215,8 @@ object Purity {
         val allMethods: Iterable[DefinedMethod] =
             for (cf <- project.allProjectClassFiles; m <- cf.methodsWithBody)
                 yield declaredMethods(m)
+
+        val packages = analysisConfig.get(PackagesCommand)
 
         val projMethods = allMethods.filter { m =>
             val pn = m.definedMethod.classFile.thisType.packageName
@@ -408,7 +230,7 @@ object Purity {
         val manager = project.get(FPCFAnalysesManagerKey)
 
         time {
-            project.get(callGraphKey)
+            project.get(analysisConfig(CallGraphCommand))
         } { t => callGraphTime = t.toSeconds }
 
         val reachableMethods =
@@ -420,12 +242,12 @@ object Purity {
         val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
 
         time {
-            val analyses = analysis :: support
+            val analyses = analysisConfig.analysis :: analysisConfig.supportingAnalyses
 
             manager.runAll(
                 analyses,
-                (css: List[ComputationSpecification[FPCFAnalysis]]) =>
-                    if (css.contains(analysis)) {
+                css =>
+                    if (css.contains(analysisConfig.analysis)) {
                         analyzedContexts.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
                     }
             )
@@ -486,6 +308,7 @@ object Purity {
         }
 
         if (projectEvalDir.isDefined) {
+            val configurationName = analysisConfig(ConfigurationNameCommand)
 
             // WRITE ANALYSIS OUTPUT
 
@@ -509,7 +332,7 @@ object Purity {
                 }
                 val totalTime = projectTime + propertyStoreTime + callGraphTime + analysisTime
                 outputWriter.println(
-                    s"${configurationName.get};${projectTime.toString(false)};" +
+                    s"$configurationName;${projectTime.toString(false)};" +
                         s"${propertyStoreTime.toString(false)};" +
                         s"${callGraphTime.toString(false)};" +
                         s"${analysisTime.toString(false)};" +
@@ -530,13 +353,15 @@ object Purity {
 
             // WRITE CONTENT INFORMATION
 
+            val aggregated = !analysisConfig(IndividualCommand)
+
             val results = new File(projectEvalDir.get, "method-results.csv")
             val resultsNew = !results.exists()
-            val resultsWriter = new PrintWriter(new FileOutputStream(results, !individual))
+            val resultsWriter = new PrintWriter(new FileOutputStream(results, aggregated))
             try {
                 if (resultsNew) {
                     results.createNewFile()
-                    if (!individual)
+                    if (aggregated)
                         resultsWriter.println("analysisName;compile time pure;pure;" +
                             "domain-specific pure;side-effect free;" +
                             "domain-specific side-effect free;externally pure;" +
@@ -547,9 +372,9 @@ object Purity {
                             "side-effect free;impure;count")
                 }
 
-                if (!individual) {
+                if (aggregated) {
                     resultsWriter.println(
-                        s"${configurationName.get};${compileTimePure.size};${pure.size};${dPure.size};" +
+                        s"$configurationName;${compileTimePure.size};${pure.size};${dPure.size};" +
                             s"${sideEffectFree.size};${dSideEffectFree.size};" +
                             s"${externallyPure.size};${dExternallyPure.size};" +
                             s"${contextuallyPure.size};${dContextuallyPure.size};" +
@@ -636,57 +461,20 @@ object Purity {
 
     def main(args: Array[String]): Unit = {
 
-        val purityConf = new PurityConf(args)
+        val analysisConfig = new PurityConfig(args)
 
         val begin = Calendar.getInstance()
         Console.println(begin.getTime)
 
         time {
-            if (purityConf.multiProjects.get) {
-                for (subp <- purityConf.classPathFiles.get.flatMap(_.listFiles).filter(_.isDirectory)) {
+            if (analysisConfig(MultiProjectsCommand)) {
+                for (subp <- analysisConfig(ClassPathCommand).flatMap(_.listFiles).filter(_.isDirectory)) {
                     println(s"${subp.getName}: ${Calendar.getInstance().getTime}")
-                    evaluate(
-                        subp,
-                        purityConf.projectDirectory,
-                        purityConf.libraryDirectory,
-                        purityConf.analysisScheduler.get,
-                        purityConf.support.getOrElse(List()),
-                        purityConf.domain.get,
-                        purityConf.configurationName,
-                        purityConf.schedulingStrategy,
-                        purityConf.rater.get,
-                        purityConf.callGraph.get,
-                        purityConf.jdk.get,
-                        purityConf.individual.get,
-                        purityConf.threadsNum.get,
-                        purityConf.closedWorld.get,
-                        purityConf.library.get || (subp eq JRELibraryFolder),
-                        purityConf.debug.get,
-                        purityConf.evaluationDir,
-                        purityConf.packages
-                    )
+                    evaluate(analysisConfig, subp)
                 }
             } else {
-                evaluate(
-                    purityConf.classPathFiles.get.head,
-                    purityConf.projectDirectory,
-                    purityConf.libraryDirectory,
-                    purityConf.analysisScheduler.get,
-                    purityConf.support.getOrElse(List()),
-                    purityConf.domain.get,
-                    purityConf.configurationName,
-                    purityConf.schedulingStrategy,
-                    purityConf.rater.get,
-                    purityConf.callGraph.get,
-                    purityConf.jdk.get,
-                    purityConf.individual.get,
-                    purityConf.threadsNum.get,
-                    purityConf.closedWorld.get,
-                    purityConf.library.get || (purityConf.classPathFiles.get.head eq JRELibraryFolder),
-                    purityConf.debug.get,
-                    purityConf.evaluationDir,
-                    purityConf.packages
-                )
+                val cp = analysisConfig.get(JDKCommand).getOrElse(analysisConfig(ClassPathCommand).head)
+                evaluate(analysisConfig, cp)
             }
         }(t => println("evaluation time: " + t.toSeconds))
 

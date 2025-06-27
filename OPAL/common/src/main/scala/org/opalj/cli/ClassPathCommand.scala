@@ -1,22 +1,21 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package support
-package parser
+package cli
 
 import java.io.File
 
-import org.opalj.ba.CODE.logContext
-import org.opalj.commandlinebase.OpalCommandExternalParser
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
-/**
- * `ClassPathCommandExternalParser` parses and validates a class path string.
- * It processes the class path provided as a command-line argument, splitting it by the system path
- * separator (":" on UNIX, ";" on Windows), and verifies each entry, returning a sequence of valid
- * `File` objects.
- */
-object ClassPathCommandExternalParser extends OpalCommandExternalParser[String, Seq[File]] {
+import org.rogach.scallop.stringConverter
+
+object ClassPathCommand extends ParsedCommand[String, Seq[File]] {
+    override val name: String = "cp"
+    override val argName: String = "classPath"
+    override val description: String = "Directories or JAR/class files to process"
+    override val defaultValue: Option[String] = Some(System.getProperty("user.dir"))
+
     override def parse(arg: String): Seq[File] = {
         var cp = IndexedSeq.empty[String]
 
@@ -24,7 +23,7 @@ object ClassPathCommandExternalParser extends OpalCommandExternalParser[String, 
 
         if (cp.isEmpty) cp = IndexedSeq(System.getProperty("user.dir"))
 
-        info("project configuration", s"the classpath is ${cp.mkString}")
+        info("project configuration", s"the classpath is ${cp.mkString}")(GlobalLogContext)
         verifyFiles(cp)
     }
 
@@ -57,5 +56,5 @@ object ClassPathCommandExternalParser extends OpalCommandExternalParser[String, 
             Some(file)
     }
 
-    private def showError(message: String): Unit = error("project configuration", message)
+    private def showError(message: String): Unit = error("project configuration", message)(GlobalLogContext)
 }
