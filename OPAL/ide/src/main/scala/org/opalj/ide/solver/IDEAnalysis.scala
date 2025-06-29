@@ -35,9 +35,24 @@ import org.opalj.ide.problem.IDEValue
 import org.opalj.ide.problem.InterimEdgeFunction
 
 /**
- * Basic solver for IDE problems. Uses the exhaustive algorithm that was presented in the original IDE paper from 1996
- * as base. For an example problem have a look at `LinearConstantPropagationProblem` in the TAC module. For an example
- * of interacting IDE problems have a look at `LCPOnFieldsProblem` and `LinearConstantPropagationProblemExtended`.
+ * This is a solver for IDE problems. It is based on the exhaustive algorithm that was presented in the original IDE
+ * paper from 1996 as base. The paper can be found [[https://doi.org/10.1016/0304-3975(96)00072-2 here]]. Naming of
+ * methods and variables follows the naming used in the original paper as far as possible.
+ * The original solver is enhanced with several extensions/features as part of the master thesis of Robin Körkemeier.
+ * The most important enhancements are:
+ *  - The possibility to specify additional analysis seeds (allowing for more precise analysis results).
+ *  - The possibility to provide custom summaries for arbitrary call statements (allowing to retain precision in
+ *    presence of unavailable code as well as to improve performance).
+ *  - On-demand solver execution, to fully integrate into OPAL as a lazy analysis (improves performance especially in
+ *    interacting analysis scenarios; does not affect how IDE problems are specified).
+ *  - The possibility to define interacting IDE analysis (resp. IDE problems that make use of analysis interaction)
+ *    using the blackboard architecture provided by OPAL.
+ *
+ * For a simple example IDE problem definition have a look at `LinearConstantPropagationProblem` in the TAC module of
+ * this project. It implements a basic linear constant propagation as described in the original IDE paper.
+ * For an example of interacting IDE problems have a look at `LCPOnFieldsProblem` and
+ * `LinearConstantPropagationProblemExtended`. These are an extension of the basic linear constant propagation and
+ * capable of detecting and tracking constants in fields. They also are an example for cyclic analysis interaction.
  *
  * @author Robin Körkemeier
  */
@@ -47,24 +62,43 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     val icfg:                    ICFG[Statement, Callable],
     val propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable]
 ) extends FPCFAnalysis {
+    /**
+     * Type of a node in the exploded supergraph, denoted by the corresponding statement and IDE fact
+     */
     private type Node = (Statement, Fact)
     /**
-     * A 'path' in the graph, denoted by it's start and end node as done in the IDE algorithm
+     * Type of a path in the exploded supergraph, denoted by its start and end node
      */
     private type Path = (Node, Node)
 
+    /**
+     * Type of the path worklist used in the first phase of the algorithm
+     */
     private type PathWorkList = MutableQueue[Path]
 
+    /**
+     * Type of a jump function
+     */
     private type JumpFunction = EdgeFunction[Value]
     private type JumpFunctions = MutableMap[(Statement, Statement), MutableMap[(Fact, Fact), JumpFunction]]
+    /**
+     * Type of a summary function
+     */
     private type SummaryFunction = EdgeFunction[Value]
     private type SummaryFunctions = MutableMap[Path, SummaryFunction]
 
+    /**
+     * Type of the node worklist used in the second phase of the algorithm
+     */
     private type NodeWorkList = MutableQueue[Node]
 
     private type Values = MutableMap[Node, Value]
 
-    private val allTopEdgeFunction = new AllTopEdgeFunction[Value](problem.lattice.top) {
+    /**
+     * An instance of a [[AllTopEdgeFunction]] to use in the algorithm (so it doesn't need to be provided as a
+     * parameter)
+     */
+    private val allTopEdgeFunction: AllTopEdgeFunction[Value] = new AllTopEdgeFunction[Value](problem.lattice.top) {
         override def composeWith[V >: Value <: IDEValue](secondEdgeFunction: EdgeFunction[V]): EdgeFunction[V] = {
             /* This method cannot be implemented correctly without knowledge about the other possible edge functions.
              * It will never be called on this instance anyway. However, we throw an exception here to be safe. */
@@ -107,51 +141,59 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         private val callablesWithChanges = MutableSet.empty[Callable]
 
         /**
-         * The work list for paths used in P1
+         * The work list for paths used in the first phase
          */
         private val pathWorkList: PathWorkList = MutableQueue.empty
 
         /**
-         * The jump functions (incrementally calculated) in P1
+         * The jump functions (incrementally calculated) in the first phase
          */
         private val jumpFunctions: JumpFunctions = MutableMap.empty
 
         /**
-         * The summary functions (incrementally calculated) in P1
+         * The summary functions (incrementally calculated) in the first phase
          */
         private val summaryFunctions: SummaryFunctions = MutableMap.empty
 
         /**
-         * Collection of seen end nodes with corresponding jump function (needed for endSummaries extension)
+         * A map of visited end nodes with corresponding jump function for a given start node (needed for endSummaries
+         * extension)
          */
         private val endSummaries = MutableMap.empty[Node, MutableSet[(Node, JumpFunction)]]
 
         /**
-         * Map call targets to all seen call sources (similar to a call graph but reversed; needed for endSummaries
-         * extension)
+         * A map of call targets to visited call sources (basically a reverse call graph/caller graph; needed for
+         * endSummaries extension)
          */
         private val callTargetsToSources = MutableMap.empty[Node, MutableSet[Node]]
 
         /**
-         * The work list for nodes used in P2
+         * The work list for nodes used in the second phase
          */
         private val nodeWorkList: NodeWorkList = MutableQueue.empty
 
         /**
-         * Store all calculated (intermediate) values. Associated by callable for performant access.
+         * A data structure storing all calculated (intermediate) values. Additionally grouped by callable for more
+         * performant access.
          */
         private val values: MutableMap[Callable, Values] = MutableMap.empty
 
         /**
-         * Map outstanding EPKs to the last processed property result and the continuations to be executed when a new
-         * result is available
+         * A data structure mapping outstanding EPKs to the last processed property result as well as the continuations
+         * to be executed when a new result is available (needed to integrate IDE into OPAL)
          */
         private val dependees = MutableMap.empty[SomeEPK, (SomeEOptionP, MutableSet[() => Unit])]
 
+        /**
+         * Get the callables the IDE analysis should compute results for
+         */
         def getTargetCallables: scala.collection.Set[Callable] = {
             targetCallables
         }
 
+        /**
+         * Get the last processed result of the target callables property
+         */
         def getTargetCallablesEOptionP: EOptionP[
             IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
             IDETargetCallablesProperty[Callable]
@@ -159,6 +201,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             targetCallablesEOptionP
         }
 
+        /**
+         * Process a new target callables property result. This adds all new callables to [[targetCallables]] and
+         * remembers them in [[callablesWithChanges]].
+         */
         def processTargetCallablesEOptionP(newTargetCallablesEOptionP: EOptionP[
             IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
             IDETargetCallablesProperty[Callable]
@@ -172,30 +218,52 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             }
         }
 
+        /**
+         * Remove all callables from the [[callablesWithChanges]] collection
+         */
         def clearCallablesWithChanges(): Unit = {
             callablesWithChanges.clear()
         }
 
+        /**
+         * Add a callable to the [[callablesWithChanges]] collection
+         */
         def rememberCallableWithChanges(callable: Callable): Unit = {
             callablesWithChanges.add(callable)
         }
 
+        /**
+         * Get the callables that are remembered as having received changes during analysis execution
+         */
         def getCallablesWithChanges: scala.collection.Set[Callable] = {
             callablesWithChanges
         }
 
+        /**
+         * Enqueue a path in the path work list
+         */
         def enqueuePath(path: Path): Unit = {
             pathWorkList.enqueue(path)
         }
 
+        /**
+         * Dequeue a path from the path work list
+         */
         def dequeuePath(): Path = {
             pathWorkList.dequeue()
         }
 
+        /**
+         * Check whether the path work list is empty
+         */
         def isPathWorkListEmpty: Boolean = {
             pathWorkList.isEmpty
         }
 
+        /**
+         * Store a jump function for a path. Existing jump functions for the path are overwritten (meeting, ... needs to
+         * be done before calling this method).
+         */
         def setJumpFunction(path: Path, jumpFunction: JumpFunction): Unit = {
             val ((source, sourceFact), (target, targetFact)) = path
             jumpFunctions
@@ -203,6 +271,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 .put((sourceFact, targetFact), jumpFunction)
         }
 
+        /**
+         * Get the jump function for a path. Returns the [[allTopEdgeFunction]] if no jump function can be found for the
+         * path.
+         */
         def getJumpFunction(path: Path): JumpFunction = {
             val ((source, sourceFact), (target, targetFact)) = path
             jumpFunctions
@@ -210,6 +282,13 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 .getOrElse((sourceFact, targetFact), allTopEdgeFunction) // else part handles IDE lines 1 - 2
         }
 
+        /**
+         * Get the jump functions for an incompletely specified path. Does not add the [[allTopEdgeFunction]] in
+         * contrast to [[getJumpFunction]].
+         *
+         * @param sourceFactOption Fact to filter the source fact of a path against. Matches all facts if empty.
+         * @param targetFactOption Fact to filter the target fact of a path against. Matches all facts if empty.
+         */
         def lookupJumpFunctions(
             source:           Statement,
             sourceFactOption: Option[Fact] = None,
@@ -218,6 +297,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         ): scala.collection.Map[(Fact, Fact), JumpFunction] = {
             val subMap = jumpFunctions.getOrElse((source, target), Map.empty[(Fact, Fact), JumpFunction])
 
+            // Case distinction on optional parameters for more efficient filtering
             (sourceFactOption, targetFactOption) match {
                 case (Some(sourceFact), Some(targetFact)) =>
                     subMap.filter { case ((sF, tF), _) => sF == sourceFact && tF == targetFact }
@@ -230,24 +310,42 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             }
         }
 
+        /**
+         * Store a summary function for a path. Existing summary functions for the path are overwritten (meeting, ...
+         * needs to be done before calling this method).
+         */
         def setSummaryFunction(path: Path, summaryFunction: SummaryFunction): Unit = {
             summaryFunctions.put(path, summaryFunction)
         }
 
+        /**
+         * Get the summary function for a path. Returns the [[allTopEdgeFunction]] if no summary function can be found
+         * for the path.
+         */
         def getSummaryFunction(path: Path): SummaryFunction = {
             summaryFunctions.getOrElse(path, allTopEdgeFunction) // else part handels IDE lines 3 - 4
         }
 
+        /**
+         * Add a jump function as end summary for a given path (starting and ending in the same callable)
+         */
         def addEndSummary(path: Path, jumpFunction: JumpFunction): Unit = {
             val (start, end) = path
             val set = endSummaries.getOrElseUpdate(start, MutableSet.empty)
             set.add((end, jumpFunction))
         }
 
+        /**
+         * Get all end summaries for a given start node (of a callable)
+         */
         def getEndSummaries(start: Node): scala.collection.Set[(Node, JumpFunction)] = {
             endSummaries.getOrElse(start, Set.empty)
         }
 
+        /**
+         * Remember a visited call edge (which is an edge from a call-site node to a start node). This adds the
+         * call-site node as possible caller of the start node.
+         */
         def rememberCallEdge(path: Path): Unit = {
             val (source, target) = path
 
@@ -255,39 +353,67 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             set.add(source)
         }
 
+        /**
+         * Get all call-site nodes (that have been visited so far) that target the given start node
+         */
         def lookupCallSourcesForTarget(target: Statement, targetFact: Fact): scala.collection.Set[Node] = {
             callTargetsToSources.getOrElse((target, targetFact), Set.empty)
         }
 
+        /**
+         * Enqueue a node in the node work list
+         */
         def enqueueNode(node: Node): Unit = {
             nodeWorkList.enqueue(node)
         }
 
+        /**
+         * Dequeue a node from the node work list
+         */
         def dequeueNode(): Node = {
             nodeWorkList.dequeue()
         }
 
+        /**
+         * Check whether the node work list is empty
+         */
         def isNodeWorkListEmpty: Boolean = {
             nodeWorkList.isEmpty
         }
 
+        /**
+         * Get the value for a node. Returns the lattice's top element if no value can be found for the node.
+         *
+         * @param callable the callable belonging to the node
+         */
         def getValue(node: Node, callable: Callable): Value = {
             values.getOrElse(callable, MutableMap.empty).getOrElse(node, problem.lattice.top) // else part handles IDE line 1
         }
 
+        /**
+         * Get the value for a node. Returns the lattice's top element if no value can be found for the node.
+         */
         def getValue(node: Node): Value = {
             getValue(node, icfg.getCallable(node._1))
         }
 
+        /**
+         * Set the value for a node. Existing values are overwritten (meeting needs to be done before calling this
+         * method).
+         */
         def setValue(node: Node, newValue: Value, callable: Callable): Unit = {
             values.getOrElseUpdate(callable, { MutableMap.empty }).put(node, newValue)
         }
 
+        /**
+         * Remove all stored values
+         */
         def clearValues(): Unit = {
             values.clear()
         }
 
         /**
+         * Collect the analysis results for a set of callables
          * @return a map from statements to results and the results for the callable in total (both per requested
          *         callable)
          */
@@ -325,6 +451,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             }
         }
 
+        /**
+         * Add a dependency
+         */
         def addDependee(eOptionP: SomeEOptionP, c: () => Unit): Unit = {
             // The eOptionP is only inserted the first time the corresponding EPK occurs. Consequently, it is the most
             // precise property result that is seen by all dependents.
@@ -332,14 +461,25 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
             set.add(c)
         }
 
+        /**
+         * Check whether there are outstanding dependencies
+         * @return
+         */
         def hasDependees: Boolean = {
             dependees.nonEmpty
         }
 
+        /**
+         * Get all dependencies
+         * @return
+         */
         def getDependees: scala.collection.Set[SomeEOptionP] = {
             dependees.values.map(_._1).toSet
         }
 
+        /**
+         * Get the stored continuations for a dependency and remove them
+         */
         def getAndRemoveDependeeContinuations(eOptionP: SomeEOptionP): scala.collection.Set[() => Unit] = {
             dependees.remove(eOptionP.toEPK).map(_._2).getOrElse(Set.empty).toSet
         }
@@ -377,6 +517,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
+     * Perform the first phase of the algorithm. This phase computes the jump and summary functions.
      * @return whether the phase is finished or has to be continued once the dependees are resolved
      */
     private def performPhase1()(implicit s: State): Boolean = {
@@ -387,6 +528,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
+     * Continue the first phase of the algorithm. Like [[performPhase1]] but without the seeding part.
      * @return whether the phase is finished or has to be continued once the dependees are resolved
      */
     private def continuePhase1()(implicit s: State): Boolean = {
@@ -396,7 +538,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
-     * Perform phase 2 from scratch
+     * Perform the second phase of the algorithm. This phase computes the result values.
      */
     private def performPhase2()(implicit s: State): Unit = {
         s.clearValues()
@@ -406,19 +548,26 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
-     * Continue phase 2 from based on previous result
+     * Continue the second phase of the algorithm. Like [[performPhase2]] but based on the previously computed result
+     * values.
      */
     private def continuePhase2()(implicit s: State): Unit = {
         seedPhase2()
         computeValues()
     }
 
+    /**
+     * Creates an OPAL result after the algorithm did terminate. The result contains values for the callables from
+     * [[State.getTargetCallables]]. For subsequent calls this method omits values that did not change compared to the
+     * previous execution.
+     */
     private def createResult()(
         implicit s: State
     ): ProperPropertyComputationResult = {
         // Only create results for target callables whose values could have changed
         val callables = s.getCallablesWithChanges.intersect(s.getTargetCallables)
         val collectedResults = s.collectResults(callables)
+        // Results for all callables of interest
         val callableResults = callables.map { callable =>
             val (resultsByStatement, resultsForExit) =
                 collectedResults.getOrElse(
@@ -446,6 +595,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
 
         Results(
             callableResults ++ Seq(
+                // Result for continuing execution on dependee changes
                 InterimPartialResult(
                     None,
                     s.getDependees.toSet ++ Set(s.getTargetCallablesEOptionP),
@@ -464,24 +614,36 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         )
     }
 
+    /**
+     * Continuation to run when the target callables property changes
+     */
     private def onTargetCallablesUpdateContinuation(eps: EPS[
         IDEPropertyMetaInformation[Fact, Value, Statement, Callable],
         IDETargetCallablesProperty[Callable]
     ])(implicit s: State): ProperPropertyComputationResult = {
+        // New iteration, so no changes at the beginning
         s.clearCallablesWithChanges()
 
+        // Process the new result
         s.processTargetCallablesEOptionP(eps)
 
+        // Re-seed the first phase
         seedPhase1()
+
+        // Re-seeding can have enqueued paths to the path worklist
         continuePhase1()
         continuePhase2()
 
         createResult()
     }
 
+    /**
+     * Continuation to run when a dependee changes
+     */
     private def onDependeeUpdateContinuation(eps: SomeEPS)(
         implicit s: State
     ): ProperPropertyComputationResult = {
+        // New iteration, so no changes at the beginning
         s.clearCallablesWithChanges()
 
         // Get and remove all continuations that are remembered for the EPS
@@ -497,6 +659,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         createResult()
     }
 
+    /**
+     * The seeding algorithm for the first phase of the algorithm. Only enqueues the seed paths if the corresponding
+     * jump function is different from the stored one returned by [[State.getJumpFunction]].
+     */
     private def seedPhase1()(implicit s: State): Unit = {
         def propagateSeed(e: Path, callable: Callable, f: EdgeFunction[Value]): Unit = {
             val oldJumpFunction = s.getJumpFunction(e)
@@ -513,9 +679,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         callables.foreach { callable =>
             // IDE P1 lines 5 - 6
             icfg.getStartStatements(callable).foreach { stmt =>
+                // Process null fact as in the original algorithm
                 val path = ((stmt, problem.nullFact), (stmt, problem.nullFact))
                 propagateSeed(path, callable, IdentityEdgeFunction)
 
+                // Deal with additional seeds
                 problem.getAdditionalSeeds(stmt, callable).foreach { fact =>
                     val path = ((stmt, problem.nullFact), (stmt, fact))
                     propagateSeed(path, callable, IdentityEdgeFunction)
@@ -535,6 +703,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * Process the path work list. This is the main loop of the first phase of the algorithm.
+     */
     private def processPathWorkList()(implicit s: State): Unit = {
         while (!s.isPathWorkListEmpty) { // IDE P1 line 7
             val path = s.dequeuePath() // IDE P1 line 8
@@ -551,14 +722,23 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * Process a call flow found in the first phase of the algorithm
+     *
+     * @param path the path
+     * @param f the current jump function
+     * @param qs the callees of the call-site node
+     */
     private def processCallFlow(path: Path, f: JumpFunction, qs: scala.collection.Set[Callable])(
         implicit s: State
     ): Unit = {
         val ((sp, d1), (n, d2)) = path
 
+        // Possible statements for the return-site node
         val rs = icfg.getNextStatements(n) // IDE P1 line 14
 
         if (qs.isEmpty) {
+            // If there are no callees, precomputed summaries are required
             rs.foreach { r =>
                 val d5s = handleFlowFunctionResult(problem.getPrecomputedFlowFunction(n, d2, r).compute(), path)
 
@@ -577,10 +757,9 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                 }
             }
         } else {
-
             qs.foreach { q =>
                 if (problem.hasPrecomputedFlowAndSummaryFunction(n, d2, q)) {
-                    /* Handling for precomputed summaries */
+                    /* Precomputed summaries are provided by the problem definition for this scenario */
                     rs.foreach { r =>
                         val d5s =
                             handleFlowFunctionResult(problem.getPrecomputedFlowFunction(n, d2, q, r).compute(), path)
@@ -612,6 +791,8 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                             // Handling for end summaries extension
                             if (endSummaries.nonEmpty) {
                                 endSummaries.foreach { case ((eq, d4), fEndSummary) =>
+                                    // End summaries are from start to end nodes, so we need to apply call and exit flow
+                                    // accordingly
                                     val f4 =
                                         handleEdgeFunctionResult(problem.getCallEdgeFunction(n, d2, sq, d3, q), path)
                                     rs.foreach { r =>
@@ -645,6 +826,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                     }
                 }
 
+                // Default algorithm behavior
                 rs.foreach { r =>
                     val d3s = handleFlowFunctionResult(problem.getCallToReturnFlowFunction(n, d2, q, r).compute(), path)
 
@@ -671,6 +853,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * Process an exit flow found in the first phase of the algorithm
+     *
+     * @param path the path
+     * @param f the current jump function
+     */
     private def processExitFlow(path: Path, f: JumpFunction)(implicit s: State): Unit = {
         val ((sp, d1), (n, d2)) = path
         val p = icfg.getCallable(n)
@@ -717,6 +905,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * Process a normal flow (neither call nor exit) found in the first phase of the algorithm
+     *
+     * @param path the path
+     * @param f the current jump function
+     */
     private def processNormalFlow(path: Path, f: JumpFunction)(implicit s: State): Unit = {
         val ((sp, d1), (n, d2)) = path
 
@@ -733,6 +927,13 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * Examine given path and jump function and decide whether this change needs to be propagated. This basically is
+     * done by comparing the jump function to the old jump function for the path.
+     *
+     * @param e the new path
+     * @param f the new jump function
+     */
     private def propagate(e: Path, f: EdgeFunction[Value])(implicit s: State): Unit = {
         // IDE P1 lines 34 - 37
         val oldJumpFunction = s.getJumpFunction(e)
@@ -746,6 +947,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
+     * Function for simpler integration of the interaction extensions into the original algorithm. Accepts the result of
+     * computing a flow function (which is a set of facts and a set of dependees), adjusts the internal state to
+     * correctly handle the dependees, and returns only the facts (which is what flow functions do in the original
+     * algorithm).
+     *
+     * @param factsAndDependees the result of computing a flow function
      * @param path the path to re-enqueue when encountering an interim flow function
      * @return the (interim) generated flow facts
      */
@@ -766,7 +973,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
-     * @param path the path to re-enqueue when getting an interim edge function
+     * Function for simpler integration of the interaction extensions into the original algorithm. Accepts an edge
+     * function result, adjusts the internal state to correctly handle the dependees, and returns the contained
+     * (interim) edge function.
+     *
+     * @param path the path to re-enqueue when encountering an interim edge function
      * @return the (interim) edge function from the result
      */
     private def handleEdgeFunctionResult(
@@ -777,6 +988,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
     }
 
     /**
+     * Function for simpler integration of the interaction extensions into the original algorithm. Accepts an edge
+     * function result, adjusts the internal state to correctly handle the dependees, and returns the contained
+     * (interim) edge function.
+     *
      * @param continuation the continuation to execute when the dependee changes (in case of an interim edge function)
      * @return the (interim) edge function from the result
      */
@@ -798,6 +1013,10 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * The seeding algorithm for the second phase of the algorithm. Only considers callables that are remembered as
+     * being changed during the first phase so far ([[State.getCallablesWithChanges]]).
+     */
     private def seedPhase2()(implicit s: State): Unit = {
         val callables = s.getCallablesWithChanges
         callables.foreach { callable =>
@@ -810,6 +1029,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * Computes the analysis values. Like the original algorithm, this is made up of two sub-phases. The first one
+     * computing and propagating values from call-site nodes to the reachable start nodes. This is done by processing
+     * the node work list. The second sub-phase then simply computes the values for every other statement.
+     */
     private def computeValues()(implicit s: State): Unit = {
         // IDE P2 part (i)
         while (!s.isNodeWorkListEmpty) { // IDE P2 line 4
@@ -905,6 +1129,11 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * Process a start node found in the first sub-phase of the second phase of the algorithm
+     *
+     * @param node the node
+     */
     private def processStartNode(node: Node)(implicit s: State): Unit = {
         val (n, d) = node
 
@@ -923,6 +1152,12 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * Process a call-site node found in the first sub-phase of the second phase of the algorithm
+     *
+     * @param node the node
+     * @param qs the callees of the call-site node
+     */
     private def processCallNode(node: Node, qs: scala.collection.Set[Callable])(implicit s: State): Unit = {
         val (n, d) = node
 
@@ -944,6 +1179,13 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
         }
     }
 
+    /**
+     * Examine a given node and value and decide whether this change needs to be propagated. This is basically done by
+     * comparing the given value to the old value for the node.
+     *
+     * @param nSharp the new node
+     * @param v the new value
+     */
     private def propagateValue(nSharp: Node, v: Value)(implicit s: State): Unit = {
         val callable = icfg.getCallable(nSharp._1)
 
