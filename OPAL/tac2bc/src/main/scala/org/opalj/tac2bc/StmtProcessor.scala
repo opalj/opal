@@ -4,7 +4,6 @@ package tac2bc
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
-
 import org.opalj.RelationalOperator
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.GE
@@ -12,7 +11,7 @@ import org.opalj.RelationalOperators.GT
 import org.opalj.RelationalOperators.LE
 import org.opalj.RelationalOperators.LT
 import org.opalj.RelationalOperators.NE
-import org.opalj.ba.CodeElement
+import org.opalj.ba.{CATCH, CodeElement, LabelElement, TRY, TRYEND}
 import org.opalj.br.BooleanType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.ByteType
@@ -374,47 +373,47 @@ object StmtProcessor {
         // TODO: handle CaughtExceptions correctly
         // below is an idea on how to handle caught exceptions - but its not working yet:
         // somethings wrong with the stack map frames (for the exception tests only)
-        throw new UnsupportedOperationException("Caught Exception not yet supported")
-//        println("DEBUG")
-//        var minPC = Int.MaxValue
-//        var maxPC = Int.MinValue
-//        var pc = 0
-//        throwingStmts.foreach(stmt => {
-//            if (ai.isImmediateVMException(stmt)) {
-//                pc = ai.pcOfImmediateVMException(stmt)
-//                println("ImmediateVMException")
-//            } else if (ai.isMethodExternalExceptionOrigin(stmt)) {
-//                pc = ai.pcOfMethodExternalException(stmt)
-//                println("MethodExternalException")
-//            } else {
-//                pc = stmt
-//                println("throw")
-//            }
-//            if (pc > maxPC) maxPC = pc
-//            if (pc < minPC) minPC = pc
-//        })
-//        maxPC = maxPC + 1
-//        val minPCLabel = labels(minPC)
-//        val maxPCLabel = labels(maxPC)
-//        println(s"$minPCLabel $maxPCLabel")
-//
-//        val minIndex = code.indexWhere {
-//            case LabelElement(label: RewriteLabel) => label == minPCLabel
-//            case _                                 => false
-//        }
-//        val maxIndex = code.indexWhere {
-//            case LabelElement(label: RewriteLabel) => label == maxPCLabel
-//            case _                                 => false
-//        }
-//        if (minIndex != -1 && maxIndex != -1) {
-//            val preMinInstr = TRY(Symbol("test"))
-//            val postMaxInstr = TRYEND(Symbol("test"))
-//            code.insert(minIndex + 1, preMinInstr)
-//            code += postMaxInstr
-//            code += CATCH(Symbol("test"), 0, exceptionType)
-//        } else {
-//            println("ERROR: minPCLabel oder maxPCLabel nicht gefunden!")
-//        }
+        //throw new UnsupportedOperationException("Caught Exception not yet supported")
+        println("DEBUG")
+        var minPC = Int.MaxValue
+        var maxPC = Int.MinValue
+        var pc = 0
+        throwingStmts.foreach(stmt => {
+            if (ai.isImmediateVMException(stmt)) {
+                pc = ai.pcOfImmediateVMException(stmt)
+                println("ImmediateVMException")
+            } else if (ai.isMethodExternalExceptionOrigin(stmt)) {
+                pc = ai.pcOfMethodExternalException(stmt)
+                println("MethodExternalException")
+            } else {
+                pc = stmt
+                println("throw")
+            }
+            if (pc > maxPC) maxPC = pc
+            if (pc < minPC) minPC = pc
+        })
+        maxPC = maxPC + 1
+        val minPCLabel = labels(minPC)
+        val maxPCLabel = labels(maxPC)
+        println(s"$minPCLabel $maxPCLabel")
+
+        val minIndex = code.indexWhere {
+            case LabelElement(label: RewriteLabel) => label == minPCLabel
+            case _                                 => false
+        }
+        val maxIndex = code.indexWhere {
+            case LabelElement(label: RewriteLabel) => label == maxPCLabel
+            case _                                 => false
+        }
+        if (minIndex != -1 && maxIndex != -1) {
+            val preMinInstr = TRY(Symbol("test"))
+            val postMaxInstr = TRYEND(Symbol("test"))
+            code.insert(minIndex + 1, preMinInstr)
+            code += postMaxInstr
+            code += CATCH(Symbol("test"), 0, exceptionType)
+        } else {
+            println("ERROR: minPCLabel oder maxPCLabel nicht gefunden!")
+        }
 
     }
 
