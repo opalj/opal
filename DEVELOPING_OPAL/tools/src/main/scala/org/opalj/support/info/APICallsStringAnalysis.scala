@@ -55,12 +55,12 @@ import org.opalj.tac.fpcf.analyses.systemproperties.TriggeredSystemPropertiesAna
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
- * Analyzes a project for calls provided by the Java Reflection API and tries to determine which string values are /
- * could be passed to these calls. Includes an option to also analyze relevant JavaX Crypto API calls.
+ * Determines which String values can be passed to calls of critical APIs such as the Java Reflection and MethodHandle
+ * API and JavaX Crypto API.
  *
  * @author Maximilian Rüsch
  */
-object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
+object APICallsStringAnalysis extends ProjectAnalysisApplication {
 
     /**
      * @param detectedValues Stores a list of pairs where the first element corresponds to the entities passed to the analysis and the second
@@ -68,10 +68,18 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
      */
     private case class State(detectedValues: ListBuffer[(VariableContext, String)])
 
+    /**
+     * Provides all relevant method names, i.e., those methods from the APIs that have at least one string
+     * argument and shall be considered by this analysis. The string are supposed to have the format as produced
+     * by [[buildFQMethodName]].
+     */
     private case class Configuration(
-        includeCrypto:              Boolean,
+        relevantMethodNames:        List[String],
         private val analysisConfig: Configuration.AnalysisConfig
     ) {
+
+        private val relevantMethodNamesSet: Set[String] = relevantMethodNames.toSet
+        @inline def isRelevant(methodName: String): Boolean = relevantMethodNamesSet.contains(methodName)
 
         def analyses: Seq[FPCFLazyAnalysisScheduler] = {
             analysisConfig match {
@@ -88,6 +96,43 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
 
     private object Configuration {
 
+        private val relevantReflectionMethodNames = List(
+            "java.lang.Class#forName",
+            "java.lang.ClassLoader#loadClass",
+            "java.lang.Class#getField",
+            "java.lang.Class#getDeclaredField",
+            "java.lang.Class#getMethod",
+            "java.lang.Class#getDeclaredMethod"
+        )
+
+        private val relevantMethodHandleMethodNames = List(
+            "java.lang.invoke.MethodHandles$Lookup#findGetter",
+            "java.lang.invoke.MethodHandles$Lookup#findStaticGetter",
+            "java.lang.invoke.MethodHandles$Lookup#findSetter",
+            "java.lang.invoke.MethodHandles$Lookup#findStaticSetter",
+            "java.lang.invoke.MethodHandles$Lookup#findVirtual",
+            "java.lang.invoke.MethodHandles$Lookup#findStatic",
+            "java.lang.invoke.MethodHandles$Lookup#findSpecial",
+            "java.lang.invoke.MethodHandles$Lookup#findConstructor"
+        )
+
+        private val relevantCryptoMethodNames = List(
+            "javax.crypto.Cipher#getInstance",
+            "javax.crypto.Cipher#getMaxAllowedKeyLength",
+            "javax.crypto.Cipher#getMaxAllowedParameterSpec",
+            "javax.crypto.Cipher#unwrap",
+            "javax.crypto.CipherSpi#engineSetMode",
+            "javax.crypto.CipherSpi#engineSetPadding",
+            "javax.crypto.CipherSpi#engineUnwrap",
+            "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
+            "javax.crypto.ExemptionMechanism#getInstance",
+            "javax.crypto.KeyAgreement#getInstance",
+            "javax.crypto.KeyGenerator#getInstance",
+            "javax.crypto.Mac#getInstance",
+            "javax.crypto.SealedObject#getObject",
+            "javax.crypto.SecretKeyFactory#getInstance"
+        )
+
         private[Configuration] trait AnalysisConfig
         private[Configuration] case object TrivialAnalysis extends AnalysisConfig
         private[Configuration] case class LevelAnalysis(level: Int) extends AnalysisConfig
@@ -100,42 +145,30 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         )
 
         def apply(parameters: Seq[String]): Configuration = {
-            val includeCrypto = parameters.contains("-includeCryptoApi")
+            val onlyReflection = parameters.contains("-onlyReflection")
+            val onlyTraditionalReflection = parameters.contains("-onlyTraditionalReflection")
+            val onlyMethodHandle = parameters.contains("-onlyMethodHandle")
+            val onlyCrypto = parameters.contains("-onlyCrypto")
+            if (Seq(onlyReflection, onlyTraditionalReflection, onlyMethodHandle, onlyCrypto).count(o => o) > 1)
+                throw new IllegalArgumentException("Cannot set more than one -onlyX argument")
+
             val levelParameter = parameters.find(_.startsWith("-level=")).getOrElse("-level=trivial")
             val analysisConfig = levelParameter.replace("-level=", "") match {
                 case "trivial" => TrivialAnalysis
                 case string    => LevelAnalysis(string.toInt)
             }
 
-            new Configuration(includeCrypto, analysisConfig)
+            var relevantMethodNames = List.empty[String]
+            if (!(onlyCrypto || onlyMethodHandle))
+                relevantMethodNames ++= relevantReflectionMethodNames
+            if (!(onlyCrypto || onlyTraditionalReflection))
+                relevantMethodNames ++= relevantMethodHandleMethodNames
+            if (!(onlyReflection || onlyTraditionalReflection || onlyMethodHandle))
+                relevantMethodNames ++= relevantCryptoMethodNames
+
+            new Configuration(relevantMethodNames, analysisConfig)
         }
     }
-
-    private val relevantCryptoMethodNames = List(
-        "javax.crypto.Cipher#getInstance",
-        "javax.crypto.Cipher#getMaxAllowedKeyLength",
-        "javax.crypto.Cipher#getMaxAllowedParameterSpec",
-        "javax.crypto.Cipher#unwrap",
-        "javax.crypto.CipherSpi#engineSetMode",
-        "javax.crypto.CipherSpi#engineSetPadding",
-        "javax.crypto.CipherSpi#engineUnwrap",
-        "javax.crypto.EncryptedPrivateKeyInfo#getKeySpec",
-        "javax.crypto.ExemptionMechanism#getInstance",
-        "javax.crypto.KeyAgreement#getInstance",
-        "javax.crypto.KeyGenerator#getInstance",
-        "javax.crypto.Mac#getInstance",
-        "javax.crypto.SealedObject#getObject",
-        "javax.crypto.SecretKeyFactory#getInstance"
-    )
-
-    private val relevantReflectionMethodNames = List(
-        "java.lang.Class#forName",
-        "java.lang.ClassLoader#loadClass",
-        "java.lang.Class#getField",
-        "java.lang.Class#getDeclaredField",
-        "java.lang.Class#getMethod",
-        "java.lang.Class#getDeclaredMethod"
-    )
 
     override def title: String = "String Analysis for Reflective Calls"
 
@@ -145,20 +178,27 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
 
     override def analysisSpecificParametersDescription: String =
         s"""
-          | [-includeCryptoApi]
+          | [-onlyReflection]
+          | [-onlyTraditionalReflection]
+          | [-onlyMethodHandle]
+          | [-onlyCrypto]
           | [-level=trivial|${Configuration.LevelToSchedulerMapping.keys.toSeq.sorted.mkString("|")}]
           |""".stripMargin
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         parameters.flatMap {
-            case "-includeCryptoApi" => None
+            case "-onlyReflection"            => None
+            case "-onlyTraditionalReflection" => None
+            case "-onlyMethodHandle"          => None
+            case "-onlyCrypto"                => None
             case levelParameter if levelParameter.startsWith("-level=") =>
                 levelParameter.replace("-level=", "") match {
                     case "trivial" =>
                         None
                     case string
-                        if Try(string.toInt).isSuccess
-                            && Configuration.LevelToSchedulerMapping.keySet.contains(string.toInt) =>
+                        if Try(string.toInt).isSuccess && Configuration.LevelToSchedulerMapping.keySet.contains(
+                            string.toInt
+                        ) =>
                         None
                     case value =>
                         Some(s"Unknown level parameter value: $value")
@@ -166,19 +206,6 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
 
             case param => Some(s"unknown parameter: $param")
         }
-    }
-
-    /**
-     * Retrieves all relevant method names, i.e., those methods from the Reflection API that have at least one string
-     * argument and shall be considered by this analysis. The string are supposed to have the format as produced
-     * by [[buildFQMethodName]]. If the 'crypto' parameter is set, relevant methods of the javax.crypto API are
-     * included, too.
-     */
-    private def relevantMethodNames(implicit configuration: Configuration) = {
-        if (configuration.includeCrypto)
-            relevantReflectionMethodNames ++ relevantCryptoMethodNames
-        else
-            relevantReflectionMethodNames
     }
 
     /**
@@ -192,13 +219,10 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
     /**
      * Taking the `declaringClass` and the `methodName` into consideration, this function checks
      * whether a method is relevant for this analysis.
-     *
-     * @note Internally, this method makes use of [[relevantMethodNames]]. A method can only be
-     *       relevant if it occurs in [[relevantMethodNames]].
      */
     @inline private final def isRelevantCall(declaringClass: ReferenceType, methodName: String)(
         implicit configuration: Configuration
-    ): Boolean = relevantMethodNames.contains(buildFQMethodName(declaringClass, methodName))
+    ): Boolean = configuration.isRelevant(buildFQMethodName(declaringClass, methodName))
 
     /**
      * Helper function that checks whether an array of [[Instruction]]s contains at least one
@@ -208,11 +232,10 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
         implicit configuration: Configuration
     ): Boolean = {
         instructions
-            .filter(_ != null)
             .exists {
-                case INVOKESTATIC(declClass, _, methodName, _) if isRelevantCall(declClass, methodName) => true
-                case INVOKEVIRTUAL(declClass, methodName, _) if isRelevantCall(declClass, methodName)   => true
-                case _                                                                                  => false
+                case INVOKESTATIC(declClass, _, methodName, _) => isRelevantCall(declClass, methodName)
+                case INVOKEVIRTUAL(declClass, methodName, _)   => isRelevantCall(declClass, methodName)
+                case _                                         => false
             }
     }
 
@@ -313,7 +336,8 @@ object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
             )
         } { t => println(s"Elapsed Time: ${t.toMilliseconds}") }
 
-        val resultMap = Map.from(relevantMethodNames.map((_, ListBuffer.empty[FinalEP[_, StringConstancyProperty]])))
+        val resultMap =
+            Map.from(configuration.relevantMethodNames.map((_, ListBuffer.empty[FinalEP[_, StringConstancyProperty]])))
         state.detectedValues.foreach {
             case (e, callName) =>
                 resultMap(callName).append(propertyStore(e, StringConstancyProperty.key).asFinal)
