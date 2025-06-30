@@ -31,7 +31,7 @@ case class L1VirtualMethodCallInterpreter()(
         val pReceiver = call.receiver.asVar.toPersistentForm(state.tac.stmts)
 
         call.name match {
-            case "setLength" =>
+            case "setLength" if isStringBuilderBufferCall(call) =>
                 call.params.head.asVar.value match {
                     case TheIntegerValue(intVal) if intVal == 0 =>
                         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(

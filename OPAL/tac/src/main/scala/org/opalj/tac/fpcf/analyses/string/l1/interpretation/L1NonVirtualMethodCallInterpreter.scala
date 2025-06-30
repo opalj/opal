@@ -26,14 +26,12 @@ case class L1NonVirtualMethodCallInterpreter()(
 
     override type T = NonVirtualMethodCall[V]
 
-    override def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
-        instr.name match {
-            case "<init>"
-                if instr.declaringClass.asReferenceType == ClassType.StringBuffer ||
-                    instr.declaringClass.asReferenceType == ClassType.StringBuilder ||
-                    instr.declaringClass.asReferenceType == ClassType.String =>
-                interpretInit(instr)
-            case _ => computeFinalResult(StringFlowFunctionProperty.identity)
+    override def interpret(call: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
+        call.name match {
+            case "<init>" if isStringBuilderBufferCall(call) || (call.declaringClass eq ClassType.String) =>
+                interpretInit(call)
+            case _ =>
+                computeFinalResult(StringFlowFunctionProperty.identity)
         }
     }
 

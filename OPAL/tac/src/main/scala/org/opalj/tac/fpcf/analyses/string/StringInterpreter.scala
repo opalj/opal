@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package string
 
+import org.opalj.br.ClassType
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -49,6 +50,9 @@ trait StringInterpreter {
 
     protected[this] def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
         StringInterpreter.computeFinalResult(p)
+
+    protected[this] def isStringBuilderBufferCall(call: Call[V]): Boolean =
+        (call.declaringClass eq ClassType.StringBuilder) || (call.declaringClass eq ClassType.StringBuffer)
 }
 
 object StringInterpreter {
