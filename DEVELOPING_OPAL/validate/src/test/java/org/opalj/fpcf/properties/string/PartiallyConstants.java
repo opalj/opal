@@ -4,7 +4,9 @@ package org.opalj.fpcf.properties.string;
 import java.lang.annotation.*;
 
 /**
- * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ * The given string variables contain strings which have some constant part concatenated with some dynamic part. Their
+ * sets of possible values are constrained but not enumerable within finite time.
+ *
  * @author Maximilian Rüsch
  */
 @Documented

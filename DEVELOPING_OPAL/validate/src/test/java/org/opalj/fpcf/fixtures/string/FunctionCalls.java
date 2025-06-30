@@ -20,25 +20,25 @@ public class FunctionCalls {
      */
     public void analyzeString(String s) {}
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.String")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 1, levels = Level.TRUTH, value = "java.lang.Object")
-    @Failure(n = 1, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.String")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "java.lang.Object")
+    @Failure(sinkIndex = 1, levels = Level.L0)
     public void simpleStringConcatWithStaticFunctionCalls() {
         analyzeString(StringProvider.concat("java.lang.", "String"));
         analyzeString(StringProvider.concat("java.", StringProvider.concat("lang.", "Object")));
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
-    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
     public void fromFunctionCall() {
         analyzeString(getStringBuilderClassName());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
-    @Failure(n = 0, levels = Level.L0)
-    @Invalid(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW)
-    @PartiallyConstant(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "java.lang..*")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Invalid(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.LOW)
+    @PartiallyConstant(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "java.lang..*")
     public void fromConstantAndFunctionCall() {
         String className = "java.lang.";
         System.out.println(className);
@@ -46,13 +46,13 @@ public class FunctionCalls {
         analyzeString(className);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.Integer")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.Integer")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void fromStaticMethodWithParamTest() {
         analyzeString(StringProvider.getFQClassNameWithStringBuilder("java.lang", "Integer"));
     }
 
-    @Invalid(n = 0, levels = Level.TRUTH, reason = "the function has no return value, thus it does not return a string")
+    @Invalid(sinkIndex = 0, levels = Level.TRUTH, reason = "the function has no return value, thus it does not return a string")
     public void functionWithNoReturnValue() {
         analyzeString(noReturnFunction());
     }
@@ -62,18 +62,18 @@ public class FunctionCalls {
         throw new RuntimeException();
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "Hello, World!")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 1, levels = Level.TRUTH, value = "Hello, World?")
-    @Failure(n = 1, levels = { Level.L0, Level.L1 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Hello, World!")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "Hello, World?")
+    @Failure(sinkIndex = 1, levels = { Level.L0, Level.L1 })
     public void functionWithFunctionParameter() {
         analyzeString(addExclamationMark(getHelloWorld()));
         analyzeString(addQuestionMark(getHelloWorld()));
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(ERROR|java.lang.Object|java.lang.StringBuilder)")
-    @Constant(n = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.LOW, value = "ERROR")
-    @Dynamic(n = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(ERROR|java.lang.Object|java.lang.StringBuilder)")
+    @Constant(sinkIndex = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.LOW, value = "ERROR")
+    @Dynamic(sinkIndex = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
     public void simpleNonVirtualFunctionCallTestWithIf(int i) {
         String s;
         if (i == 0) {
@@ -86,10 +86,10 @@ public class FunctionCalls {
         analyzeString(s);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(ERROR|java.lang.Object|java.lang.StringBuilder)")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "ERROR")
-    @Dynamic(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(ERROR|java.lang.Object|java.lang.StringBuilder)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "ERROR")
+    @Dynamic(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
     public void initFromNonVirtualFunctionCallTest(int i) {
         String s;
         if (i == 0) {
@@ -103,8 +103,8 @@ public class FunctionCalls {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "It is (Hello, World|great)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "It is (Hello, World|great)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void appendWithTwoDefSitesWithFuncCallTest(int i) {
         String s;
         if (i > 0) {
@@ -115,15 +115,15 @@ public class FunctionCalls {
         analyzeString(new StringBuilder("It is ").append(s).toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "Hello World")
-    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Hello World")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
     public void knownHierarchyInstanceTest() {
         StringFactory sf = new ParameterDependentStringFactory();
         analyzeString(sf.getString("World"));
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello|Hello World)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(Hello|Hello World)")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
     public void unknownHierarchyInstanceTest(StringFactory stringFactory) {
         analyzeString(stringFactory.getString("World"));
     }
@@ -131,9 +131,9 @@ public class FunctionCalls {
     /**
      * A case where the single valid return value of the called function can be resolved without calling the function.
      */
-    @Constant(n = 0, levels = Level.TRUTH, value = "val")
-    @Failure(n = 0, levels = { Level.L0, Level.L1 }, domains = DomainLevel.L1)
-    @Constant(n = 0, levels = { Level.L2, Level.L3 }, domains = DomainLevel.L1, value = "(One|java.lang.Object|val)")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "val")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 }, domains = DomainLevel.L1)
+    @Constant(sinkIndex = 0, levels = { Level.L2, Level.L3 }, domains = DomainLevel.L1, value = "(One|java.lang.Object|val)")
     public void resolvableReturnValue() {
         analyzeString(resolvableReturnValueFunction("val", 42));
     }
@@ -149,8 +149,8 @@ public class FunctionCalls {
         }
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(One|java.lang.Object|val)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(One|java.lang.Object|val)")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
     public void severalReturnValuesTest1() {
         analyzeString(severalReturnValuesWithSwitchFunction("val", 42));
     }
@@ -164,8 +164,8 @@ public class FunctionCalls {
         }
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(Hello, World|that's odd)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(Hello, World|that's odd)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void severalReturnValuesTest2() {
         analyzeString(severalReturnValuesWithIfElseFunction(42));
     }
@@ -180,16 +180,16 @@ public class FunctionCalls {
         }
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(Hello, World|my.helper.Class)")
-    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|Hello, World|my.helper.Class)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(Hello, World|my.helper.Class)")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|Hello, World|my.helper.Class)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public String calleeWithFunctionParameter(String s, float i) {
         analyzeString(s);
         return s;
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "Hello, World")
-    @Failure(n = 0, levels = { Level.L0, Level.L1 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Hello, World")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
     public void firstCallerForCalleeWithFunctionParameter() {
         String s = calleeWithFunctionParameter(getHelloWorldProxy(), 900);
         analyzeString(s);
@@ -199,9 +199,9 @@ public class FunctionCalls {
         calleeWithFunctionParameter(getHelperClassProxy(), 900);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(Hello, World|my.helper.Class)")
-    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|Hello, World|my.helper.Class)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(Hello, World|my.helper.Class)")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|Hello, World|my.helper.Class)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public String calleeWithFunctionParameterMultipleCallsInSameMethodTest(String s, float i) {
         analyzeString(s);
         return s;
@@ -212,8 +212,8 @@ public class FunctionCalls {
         calleeWithFunctionParameterMultipleCallsInSameMethodTest(getHelperClassProxy(), 900);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(string.1|string.2)")
-    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|string.1|string.2)")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(string.1|string.2)")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|string.1|string.2)")
     public String calleeWithStringParameterMultipleCallsInSameMethodTest(String s, float i) {
         analyzeString(s);
         return s;

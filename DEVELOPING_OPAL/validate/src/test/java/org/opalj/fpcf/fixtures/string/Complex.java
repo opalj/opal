@@ -26,11 +26,11 @@ public class Complex {
     /**
      * Taken from com.sun.javafx.property.PropertyReference#reflect.
      */
-    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "get-Hello, World-java.lang.Runtime")
-    @PartiallyConstant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-java.lang.Runtime)")
-    @Failure(n = 0, levels = Level.L0)
-    @Invalid(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW)
-    @PartiallyConstant(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-.*)")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "get-Hello, World-java.lang.Runtime")
+    @PartiallyConstant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-java.lang.Runtime)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Invalid(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.LOW)
+    @PartiallyConstant(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(get-.*|get-Hello, World-.*)")
     public void complexDependencyResolve(String s, Class<?> clazz) {
         String properName = s.length() == 1 ? s.substring(0, 1) :
                 getHelloWorld() + "-" + getRuntimeClassName();
@@ -47,10 +47,10 @@ public class Complex {
     /**
      * Taken from com.sun.prism.impl.ps.BaseShaderContext#getPaintShader and slightly adapted
      */
-    @Constant(n = 0, levels = Level.TRUTH, value = "Hello, World_paintName(_PAD|_REFLECT|_REPEAT)?(_AlphaTest)?")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Hello, World_paintName(_PAD|_REFLECT|_REPEAT)?(_AlphaTest)?")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     // or-cases are currently not collapsed into simpler conditionals / or-cases using prefix checking
-    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, value = "((Hello, World_paintName|Hello, World_paintName_PAD|Hello, World_paintName_REFLECT|Hello, World_paintName_REPEAT)_AlphaTest|Hello, World_paintName|Hello, World_paintName_PAD|Hello, World_paintName_REFLECT|Hello, World_paintName_REPEAT)")
+    @Constant(sinkIndex = 0, levels = { Level.L1, Level.L2, Level.L3 }, value = "((Hello, World_paintName|Hello, World_paintName_PAD|Hello, World_paintName_REFLECT|Hello, World_paintName_REPEAT)_AlphaTest|Hello, World_paintName|Hello, World_paintName_PAD|Hello, World_paintName_REFLECT|Hello, World_paintName_REPEAT)")
     public void getPaintShader(boolean getPaintType, int spreadMethod, boolean alphaTest) {
         String shaderName = getHelloWorld() + "_" + "paintName";
         if (getPaintType) {
@@ -68,8 +68,8 @@ public class Complex {
         analyzeString(shaderName);
     }
 
-    @Failure(n = 0, levels = Level.TRUTH)
-    @Failure(n = 1, levels = Level.TRUTH)
+    @Failure(sinkIndex = 0, levels = Level.TRUTH)
+    @Failure(sinkIndex = 1, levels = Level.TRUTH)
     public void unknownCharValue() {
         int charCode = new Random().nextInt(200);
         char c = (char) charCode;
@@ -81,8 +81,8 @@ public class Complex {
         analyzeString(sb.toString());
     }
 
-    @Failure(n = 0, levels = { Level.L0, Level.L1 })
-    @Constant(n = 0, levels = { Level.L2, Level.L3 }, value = "value")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
+    @Constant(sinkIndex = 0, levels = { Level.L2, Level.L3 }, value = "value")
     public String cyclicDependencyTest(String s) {
         String value = getProperty(s);
         analyzeString(value);
@@ -92,10 +92,10 @@ public class Complex {
     /**
      * Methods are called that return a string but are not within this project => cannot / will not interpret
      */
-    @Dynamic(n = 0, levels = Level.TRUTH, value = "(.*)*")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 })
-    @Invalid(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
-    @Dynamic(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = ".*")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "(.*)*")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 })
+    @Invalid(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
+    @Dynamic(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = ".*")
     public void methodsOutOfScopeTest() throws FileNotFoundException {
         File file = new File("my-file.txt");
         Scanner sc = new Scanner(file);

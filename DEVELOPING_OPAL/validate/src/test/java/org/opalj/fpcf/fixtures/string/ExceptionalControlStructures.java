@@ -21,15 +21,15 @@ public class ExceptionalControlStructures {
      */
     public void analyzeString(String s) {}
 
-    @Invalid(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
-    @PartiallyConstant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "File Content:.*")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "File Content:")
-    @PartiallyConstant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(File Content:|File Content:.*)")
-    @Failure(n = 1, levels = Level.L0)
-    @Constant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "File Content:")
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(File Content:|File Content:.*)")
-    @Failure(n = 2, levels = Level.L0)
+    @Invalid(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
+    @PartiallyConstant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "File Content:.*")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "File Content:")
+    @PartiallyConstant(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(File Content:|File Content:.*)")
+    @Failure(sinkIndex = 1, levels = Level.L0)
+    @Constant(sinkIndex = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "File Content:")
+    @PartiallyConstant(sinkIndex = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(File Content:|File Content:.*)")
+    @Failure(sinkIndex = 2, levels = Level.L0)
     public void tryFinally(String filename) {
         StringBuilder sb = new StringBuilder("File Content:");
         try {
@@ -41,21 +41,21 @@ public class ExceptionalControlStructures {
         }
     }
 
-    @Invalid(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
-    @PartiallyConstant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "=====.*")
-    @Failure(n = 0, levels = Level.L0)
+    @Invalid(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
+    @PartiallyConstant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "=====.*")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     // Exception case without own thrown exception
-    @Constant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "==========")
-    @PartiallyConstant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(=====.*=====|==========)")
-    @Failure(n = 1, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "==========")
+    @PartiallyConstant(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(=====.*=====|==========)")
+    @Failure(sinkIndex = 1, levels = Level.L0)
     // The following cases are detected:
     // 1. Code around Files.readAllBytes failing, throwing a non-exception Throwable -> no append (Pos 1)
     // 2. Code around Files.readAllBytes failing, throwing an exception Throwable -> exception case append (Pos 4)
     // 3. First append succeeds, throws no exception -> only first append (Pos 2)
     // 4. First append is executed but throws an exception Throwable -> both appends (Pos 3)
-    @Constant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(=====|==========)")
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(=====|=====.*|=====.*=====|==========)")
-    @Failure(n = 2, levels = Level.L0)
+    @Constant(sinkIndex = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(=====|==========)")
+    @PartiallyConstant(sinkIndex = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(=====|=====.*|=====.*=====|==========)")
+    @Failure(sinkIndex = 2, levels = Level.L0)
     public void tryCatchFinally(String filename) {
         StringBuilder sb = new StringBuilder("=====");
         try {
@@ -68,15 +68,15 @@ public class ExceptionalControlStructures {
         }
     }
 
-    @Invalid(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
-    @PartiallyConstant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "BOS:.*")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "BOS::EOS")
-    @PartiallyConstant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(BOS:.*:EOS|BOS::EOS)")
-    @Failure(n = 1, levels = Level.L0)
-    @Constant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "BOS::EOS")
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(BOS:.*:EOS|BOS::EOS)")
-    @Failure(n = 2, levels = Level.L0)
+    @Invalid(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW)
+    @PartiallyConstant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "BOS:.*")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "BOS::EOS")
+    @PartiallyConstant(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(BOS:.*:EOS|BOS::EOS)")
+    @Failure(sinkIndex = 1, levels = Level.L0)
+    @Constant(sinkIndex = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "BOS::EOS")
+    @PartiallyConstant(sinkIndex = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(BOS:.*:EOS|BOS::EOS)")
+    @Failure(sinkIndex = 2, levels = Level.L0)
     public void tryCatchFinallyWithThrowable(String filename) {
         StringBuilder sb = new StringBuilder("BOS:");
         try {

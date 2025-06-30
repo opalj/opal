@@ -4,7 +4,9 @@ package org.opalj.fpcf.properties.string;
 import java.lang.annotation.*;
 
 /**
- * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ * The given string variables do not contain any string analyzable by the string analysis. Usually used as a fallback in
+ * low-soundness mode.
+ *
  * @author Maximilian Rüsch
  */
 @Documented

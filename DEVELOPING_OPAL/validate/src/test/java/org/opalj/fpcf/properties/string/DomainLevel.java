@@ -2,7 +2,9 @@
 package org.opalj.fpcf.properties.string;
 
 /**
+ * Restricts an annotation to certain domain level configurations.
  * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ *
  * @author Maximilian Rüsch
  */
 public enum DomainLevel {

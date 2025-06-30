@@ -42,20 +42,20 @@ public class FieldAccesses {
      */
     public void analyzeString(String s) {}
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "private l0 non-final string field")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "private l0 non-final string field")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
     public void nonFinalFieldRead() {
         analyzeString(nonFinalNonStaticField);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "will not be revealed here")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "will not be revealed here")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
     public void nonFinalStaticFieldRead() {
         analyzeString(nonFinalStaticField);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "Field Value:mine")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Field Value:mine")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void publicFinalStaticFieldRead() {
         StringBuilder sb = new StringBuilder("Field Value:");
         System.out.println(sb);
@@ -63,53 +63,53 @@ public class FieldAccesses {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "init field value")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "init field value")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
     public void fieldWithInitRead() {
         analyzeString(fieldWithSelfInit.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(Impl_Stub_1|Impl_Stub_2)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(Impl_Stub_1|Impl_Stub_2)")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
     public void fieldWithInitWithOutOfScopeRead() {
         analyzeString(fieldWithSelfInitWithComplexInit);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "initialized by constructor")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "initialized by constructor")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
     public void fieldInitByConstructorRead() {
         analyzeString(fieldWithConstructorInit.toString());
     }
 
-    @Dynamic(n = 0, levels = Level.TRUTH, value = "^-?\\d*\\.{0,1}\\d+$")
-    @Failure(n = 0, levels = Level.L0)
-    @Failure(n = 0, levels = Level.L1, domains = DomainLevel.L1)
-    @Invalid(n = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.LOW)
-    @Dynamic(n = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.HIGH,
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "^-?\\d*\\.{0,1}\\d+$")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Failure(sinkIndex = 0, levels = Level.L1, domains = DomainLevel.L1)
+    @Invalid(sinkIndex = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.LOW)
+    @Dynamic(sinkIndex = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.HIGH,
         value = "^-?\\d*\\.{0,1}\\d+$", reason = "the field value is inlined using L2 domains")
-    @Invalid(n = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.LOW)
+    @Invalid(sinkIndex = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.LOW)
     public void fieldInitByConstructorParameter() {
         analyzeString(new StringBuilder().append(fieldWithConstructorParameterInit).toString());
     }
 
     // Contains a field write in the same method which cannot be captured by flow functions
-    @Constant(n = 0, levels = Level.TRUTH, value = "(some value|^null$)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
-    @Constant(n = 0, levels = Level.L3, soundness = SoundnessMode.LOW, value = "some value")
-    @Dynamic(n = 0, levels = Level.L3, soundness = SoundnessMode.HIGH, value = ".*")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(some value|^null$)")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.L3, soundness = SoundnessMode.LOW, value = "some value")
+    @Dynamic(sinkIndex = 0, levels = Level.L3, soundness = SoundnessMode.HIGH, value = ".*")
     public void fieldWriteInSameMethod() {
         writeInSameMethodField = "some value";
         analyzeString(writeInSameMethodField);
     }
 
-    @Dynamic(n = 0, levels = Level.TRUTH, value = "(.*|^null$)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2 })
-    @Constant(n = 0, levels = Level.L3, soundness = SoundnessMode.LOW, value = "^null$")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "(.*|^null$)")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.L3, soundness = SoundnessMode.LOW, value = "^null$")
     public void fieldWithNoWriteTest() {
         analyzeString(noWriteField);
     }
 
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 })
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 })
     public void nonSupportedFieldTypeRead() {
         analyzeString(unsupportedTypeField.toString());
     }

@@ -6,7 +6,9 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import java.lang.annotation.*;
 
 /**
- * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ * The given string variable contains strings which have some constant part concatenated with some dynamic part. Its set
+ * of possible values is constrained but not enumerable within finite time.
+ *
  * @author Maximilian Rüsch
  */
 @PropertyValidator(key = "StringConstancy", validator = PartiallyConstantStringMatcher.class)
@@ -16,7 +18,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.METHOD })
 public @interface PartiallyConstant {
 
-    int n();
+    int sinkIndex();
 
     String reason() default "N/A";
 

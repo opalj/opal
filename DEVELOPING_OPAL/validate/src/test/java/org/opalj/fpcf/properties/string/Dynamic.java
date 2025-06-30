@@ -6,7 +6,10 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import java.lang.annotation.*;
 
 /**
- * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ * The given string variable contains strings which only consist of dynamic information.
+ * Its set of possible values may be constrained but is definitely not enumerable within finite time.
+ * Usually used as a fallback in high-soundness mode.
+ *
  * @author Maximilian Rüsch
  */
 @PropertyValidator(key = "StringConstancy", validator = DynamicStringMatcher.class)
@@ -16,7 +19,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.METHOD })
 public @interface Dynamic {
 
-    int n();
+    int sinkIndex();
 
     String reason() default "N/A";
 

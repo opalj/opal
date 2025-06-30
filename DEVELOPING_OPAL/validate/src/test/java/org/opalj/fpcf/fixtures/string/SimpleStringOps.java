@@ -44,7 +44,9 @@ import org.opalj.fpcf.properties.string.*;
  *     exactly one such annotation should be defined for each test function. For every annotation, the following
  *     information should / can be given:
  *     <ul>
- *       <li> (Required) <code>n = ?</code>: The index of the sink call that this annotation is defined for. </li>
+ *       <li>
+ *         (Required) <code>sinkIndex = ?</code>: The index of the sink call that this annotation is defined for.
+ *       </li>
  *       <li>
  *         (Required) <code>value = "?"</code>: The expected value (see below for format).
  *         Cannot be defined for {@link Invalid} annotations.
@@ -105,8 +107,8 @@ public class SimpleStringOps {
      */
     public void analyzeString(String s) {}
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.String")
-    @Constant(n = 1, levels = Level.TRUTH, value = "java.lang.String")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.String")
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "java.lang.String")
     public void constantStringReads() {
         analyzeString("java.lang.String");
 
@@ -114,22 +116,22 @@ public class SimpleStringOps {
         analyzeString(className);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "c")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 1, levels = Level.TRUTH, value = "42.3")
-    @Failure(n = 1, levels = Level.L0)
-    @Constant(n = 2, levels = Level.TRUTH, value = "java.lang.Runtime")
-    @Failure(n = 2, levels = { Level.L0, Level.L1 })
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "c")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "42.3")
+    @Failure(sinkIndex = 1, levels = Level.L0)
+    @Constant(sinkIndex = 2, levels = Level.TRUTH, value = "java.lang.Runtime")
+    @Failure(sinkIndex = 2, levels = { Level.L0, Level.L1 })
     public void valueOfTest() {
         analyzeString(String.valueOf('c'));
         analyzeString(String.valueOf((float) 42.3));
         analyzeString(String.valueOf(getRuntimeClassName()));
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.String")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 1, levels = Level.TRUTH, value = "java.lang.Object")
-    @Failure(n = 1, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.String")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "java.lang.Object")
+    @Failure(sinkIndex = 1, levels = Level.L0)
     public void simpleStringConcat() {
         String className1 = "java.lang.";
         System.out.println(className1);
@@ -144,17 +146,17 @@ public class SimpleStringOps {
         analyzeString(className2);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "va.")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 1, levels = Level.TRUTH, value = "va.lang.")
-    @Failure(n = 1, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "va.")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "va.lang.")
+    @Failure(sinkIndex = 1, levels = Level.L0)
     public void simpleSubstring() {
         String someString = "java.lang.";
         analyzeString(someString.substring(2, 5));
         analyzeString(someString.substring(2));
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.Runtime|java.lang.System)")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(java.lang.Runtime|java.lang.System)")
     public void multipleConstantDefSites(boolean cond) {
         String s;
         if (cond) {
@@ -165,8 +167,8 @@ public class SimpleStringOps {
         analyzeString(s);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "It is (great|not great)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "It is (great|not great)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void appendWithTwoDefSites(int i) {
         String s;
         if (i > 0) {
@@ -177,12 +179,12 @@ public class SimpleStringOps {
         analyzeString(new StringBuilder("It is ").append(s).toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(Some|SomeOther)")
-    @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "Some")
-    @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|Some)")
-    @Constant(n = 1, levels = Level.TRUTH, value = "(Impostor|Some)")
-    @Constant(n = 2, levels = Level.TRUTH, value = "(SomeImpostor|SomeOther)")
-    @Failure(n = 2, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(Some|SomeOther)")
+    @Constant(sinkIndex = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "Some")
+    @Dynamic(sinkIndex = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|Some)")
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "(Impostor|Some)")
+    @Constant(sinkIndex = 2, levels = Level.TRUTH, value = "(SomeImpostor|SomeOther)")
+    @Failure(sinkIndex = 2, levels = Level.L0)
     public void ternaryOperators(boolean flag) {
         String s1 = "Some";
         String s2 = s1 + "Other";
@@ -197,13 +199,13 @@ public class SimpleStringOps {
      * A more comprehensive case where multiple definition sites have to be considered each with a different string
      * generation mechanism
      */
-    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.Runtime|java.lang.System|java.lang.StringBuilder)")
-    @Constant(n = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "java.lang.System")
-    @Dynamic(n = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System)")
-    @Constant(n = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "java.lang.System")
-    @Dynamic(n = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|java.lang..*|java.lang.System)")
-    @Constant(n = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "(java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
-    @Dynamic(n = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(java.lang.Object|java.lang.Runtime|java.lang.System|java.lang.StringBuilder)")
+    @Constant(sinkIndex = 0, levels = Level.L0, soundness = SoundnessMode.LOW, value = "java.lang.System")
+    @Dynamic(sinkIndex = 0, levels = Level.L0, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.System)")
+    @Constant(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "java.lang.System")
+    @Dynamic(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|java.lang..*|java.lang.System)")
+    @Constant(sinkIndex = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "(java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
+    @Dynamic(sinkIndex = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "(.*|java.lang.StringBuilder|java.lang.StringBuilder|java.lang.System)")
     public void multipleDefSites(int value) {
         String[] arr = new String[] { "java.lang.Object", getRuntimeClassName() };
 

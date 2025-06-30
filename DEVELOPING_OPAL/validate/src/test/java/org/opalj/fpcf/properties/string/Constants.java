@@ -4,7 +4,8 @@ package org.opalj.fpcf.properties.string;
 import java.lang.annotation.*;
 
 /**
- * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ * The given string variables contain only constant strings and their sets of possible values are thus enumerable within
+ * finite time.
  * @author Maximilian Rüsch
  */
 @Documented

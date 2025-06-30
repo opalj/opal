@@ -6,7 +6,8 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import java.lang.annotation.*;
 
 /**
- * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ * The given string variable does not contain any string analyzable by the string analysis. Usually used as a fallback
+ * in low-soundness mode.
  * @author Maximilian Rüsch
  */
 @PropertyValidator(key = "StringConstancy", validator = InvalidStringMatcher.class)
@@ -16,7 +17,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.METHOD })
 public @interface Invalid {
 
-    int n();
+    int sinkIndex();
 
     String reason() default "N/A";
 

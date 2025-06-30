@@ -17,11 +17,11 @@ public class SimpleControlStructures {
      */
     public void analyzeString(String s) {}
 
-    @Dynamic(n = 0, levels = Level.TRUTH, value = "(^-?\\d+$|x)")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "x")
-    @Constant(n = 1, levels = Level.TRUTH, value = "(42-42|x)")
-    @Failure(n = 1, levels = Level.L0)
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "(^-?\\d+$|x)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "x")
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "(42-42|x)")
+    @Failure(sinkIndex = 1, levels = Level.L0)
     public void ifElseWithStringBuilderWithIntExpr() {
         StringBuilder sb1 = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
@@ -38,9 +38,9 @@ public class SimpleControlStructures {
         analyzeString(sb2.toString());
     }
 
-    @PartiallyConstant(n = 0, levels = Level.TRUTH, value = "(3.142.71828|^-?\\d*\\.{0,1}\\d+$2.71828)")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "3.142.71828")
+    @PartiallyConstant(sinkIndex = 0, levels = Level.TRUTH, value = "(3.142.71828|^-?\\d*\\.{0,1}\\d+$2.71828)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "3.142.71828")
     public void ifElseWithStringBuilderWithFloatExpr() {
         StringBuilder sb1 = new StringBuilder();
         int i = new Random().nextInt();
@@ -54,10 +54,10 @@ public class SimpleControlStructures {
         analyzeString(sb1.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|b)")
-    @Failure(n = 0, levels = Level.L0)
-    @Constant(n = 1, levels = Level.TRUTH, value = "(ab|ac)")
-    @Failure(n = 1, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(a|b)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "(ab|ac)")
+    @Failure(sinkIndex = 1, levels = Level.L0)
     public void ifElseWithStringBuilder() {
         StringBuilder sb1;
         StringBuilder sb2 = new StringBuilder("a");
@@ -74,8 +74,8 @@ public class SimpleControlStructures {
         analyzeString(sb2.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(abcd|axyz)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(abcd|axyz)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void ifElseWithStringBuilderWithMultipleAppends() {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
@@ -91,8 +91,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|abcd|axyz)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(a|abcd|axyz)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void ifElseWithStringBuilderWithMultipleAppendsAndNonUsedElseIf() {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
@@ -110,8 +110,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(a|ab)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void ifWithoutElse() {
         StringBuilder sb = new StringBuilder("a");
         int i = new Random().nextInt();
@@ -121,8 +121,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.Runtime")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.Runtime")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void ifConditionAppendsToString(String className) {
         StringBuilder sb = new StringBuilder();
         if (sb.append("java.lang.Runtime").toString().equals(className)) {
@@ -131,8 +131,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void switchRelevantAndIrrelevant(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -150,8 +150,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void switchRelevantAndIrrelevantWithRelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -172,8 +172,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(a|ab|ac)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void switchRelevantAndIrrelevantWithIrrelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -193,8 +193,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|ad)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(ab|ac|ad)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void switchRelevantWithRelevantDefault(int value) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -211,8 +211,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad|af)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(a|ab|ac|ad|af)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void switchNestedNoNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {
@@ -236,8 +236,8 @@ public class SimpleControlStructures {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(ab|ac|ad|ae|af)")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(ab|ac|ad|ae|af)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void switchNestedWithNestedDefault(int value, int value2) {
         StringBuilder sb = new StringBuilder("a");
         switch (value) {

@@ -17,8 +17,8 @@ public class SystemProperties {
      */
     public void analyzeString(String s) {}
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "some.test.value")
-    @Failure(n = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "some.test.value")
+    @Failure(sinkIndex = 0, levels = Level.L0)
     public void systemPropertiesIntegrationTest() {
         System.setProperty("some.test.property", "some.test.value");
         String s = System.getProperty("some.test.property");

@@ -2,7 +2,11 @@
 package org.opalj.fpcf.properties.string;
 
 /**
+ * Restricts an annotation to certain string analysis level configurations. The value {@link Level#TRUTH } may be used
+ * to explicitly define the ground truth that all test run configurations will fall back to if no more specific
+ * annotation is found.
  * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ *
  * @author Maximilian Rüsch
  */
 public enum Level {

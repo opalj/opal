@@ -15,7 +15,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.METHOD })
 public @interface Failure {
 
-    int n();
+    int sinkIndex();
 
     Level[] levels();
 

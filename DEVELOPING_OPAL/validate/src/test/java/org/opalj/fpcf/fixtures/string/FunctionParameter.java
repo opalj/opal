@@ -21,21 +21,21 @@ public class FunctionParameter {
         this.parameterRead("some-param-value", new StringBuilder("some-other-param-value"));
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "some-param-value")
-    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|some-param-value)",
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "some-param-value")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|some-param-value)",
             reason = "method is an entry point and thus has callers with unknown context")
-    @Constant(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "some-other-param-value")
-    @Dynamic(n = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|some-other-param-value)",
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "some-other-param-value")
+    @Dynamic(sinkIndex = 1, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|some-other-param-value)",
             reason = "method is an entry point and thus has callers with unknown context")
-    @Failure(n = 1, levels = Level.L0)
-    @Constant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "value=some-param-value")
-    @PartiallyConstant(n = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "value=(.*|some-param-value)",
+    @Failure(sinkIndex = 1, levels = Level.L0)
+    @Constant(sinkIndex = 2, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "value=some-param-value")
+    @PartiallyConstant(sinkIndex = 2, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "value=(.*|some-param-value)",
             reason = "method is an entry point and thus has callers with unknown context")
-    @Failure(n = 2, levels = Level.L0)
-    @Constant(n = 3, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "value=some-param-value-some-other-param-value")
-    @PartiallyConstant(n = 3, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "value=(.*|some-param-value)-(.*|some-other-param-value)",
+    @Failure(sinkIndex = 2, levels = Level.L0)
+    @Constant(sinkIndex = 3, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "value=some-param-value-some-other-param-value")
+    @PartiallyConstant(sinkIndex = 3, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "value=(.*|some-param-value)-(.*|some-other-param-value)",
             reason = "method is an entry point and thus has callers with unknown context")
-    @Failure(n = 3, levels = Level.L0)
+    @Failure(sinkIndex = 3, levels = Level.L0)
     public void parameterRead(String stringValue, StringBuilder sbValue) {
         analyzeString(stringValue);
         analyzeString(sbValue.toString());
@@ -50,7 +50,7 @@ public class FunctionParameter {
         analyzeString(sb.toString());
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "java.lang.String")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.String")
     public void noParameterInformationRequiredTest(String s) {
         System.out.println(s);
         analyzeString("java.lang.String");

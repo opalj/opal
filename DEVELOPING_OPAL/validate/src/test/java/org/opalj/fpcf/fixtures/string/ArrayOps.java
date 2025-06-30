@@ -19,8 +19,8 @@ public class ArrayOps {
      */
     public void analyzeString(String s) {}
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(java.lang.String|java.lang.StringBuilder|java.lang.System|java.lang.Runnable)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 }, reason = "arrays are not supported")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(java.lang.String|java.lang.StringBuilder|java.lang.System|java.lang.Runnable)")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 }, reason = "arrays are not supported")
     public void fromStringArray(int index) {
         String[] classes = {
                 "java.lang.String", "java.lang.StringBuilder",
@@ -31,11 +31,11 @@ public class ArrayOps {
         }
     }
 
-    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW,
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW,
             value = "(java.lang.Object|java.lang.Runtime|java.lang.Integer)")
-    @Dynamic(n = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH,
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH,
             value = "(java.lang.Object|java.lang.Runtime|java.lang.Integer|.*)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 }, reason = "arrays are not supported")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 }, reason = "arrays are not supported")
     public void arrayStaticAndVirtualFunctionCalls(int i) {
         String[] classes = {
                 "java.lang.Object",
@@ -46,8 +46,8 @@ public class ArrayOps {
         analyzeString(classes[i]);
     }
 
-    @Constant(n = 0, levels = Level.TRUTH, value = "(January|February|March|April)")
-    @Failure(n = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 }, reason = "arrays are not supported")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(January|February|March|April)")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2, Level.L3 }, reason = "arrays are not supported")
     public void getStringArrayField(int i) {
         analyzeString(monthNames[i]);
     }

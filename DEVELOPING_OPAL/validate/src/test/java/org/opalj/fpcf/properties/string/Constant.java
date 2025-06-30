@@ -6,7 +6,9 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import java.lang.annotation.*;
 
 /**
- * @see org.opalj.fpcf.fixtures.string.SimpleStringOps
+ * The given string variable contains only constant strings and its set of possible values is thus enumerable within
+ * finite time.
+ *
  * @author Maximilian Rüsch
  */
 @PropertyValidator(key = "StringConstancy", validator = ConstantStringMatcher.class)
@@ -16,7 +18,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.METHOD, ElementType.LOCAL_VARIABLE })
 public @interface Constant {
 
-    int n();
+    int sinkIndex();
 
     String reason() default "N/A";
 
