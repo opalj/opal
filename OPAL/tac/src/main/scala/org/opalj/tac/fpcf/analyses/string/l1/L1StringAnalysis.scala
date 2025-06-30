@@ -14,19 +14,17 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.LazyStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1InterpretationHandler
 
 /**
- * @see [[L1InterpretationHandler]]
+ * A string analysis that handles some calls in addition to constant and binary expressions.
+ *
  * @author Maximilian Rüsch
  */
-object LazyL1StringAnalysis {
+object LazyL1StringFlowAnalysis extends LazyStringFlowAnalysis {
 
     def allRequiredAnalyses: Seq[FPCFLazyAnalysisScheduler] = Seq(
         LazyStringAnalysis,
         LazyMethodStringFlowAnalysis,
         LazyL1StringFlowAnalysis
     )
-}
-
-object LazyL1StringFlowAnalysis extends LazyStringFlowAnalysis {
 
     override def init(p: SomeProject, ps: PropertyStore): InitializationData = L1InterpretationHandler(p)
 }

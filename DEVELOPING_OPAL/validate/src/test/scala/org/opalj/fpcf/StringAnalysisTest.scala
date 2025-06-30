@@ -55,10 +55,10 @@ import org.opalj.tac.fpcf.analyses.string.StringAnalysis
 import org.opalj.tac.fpcf.analyses.string.StringAnalysisConfig
 import org.opalj.tac.fpcf.analyses.string.VariableContext
 import org.opalj.tac.fpcf.analyses.string.flowanalysis.MethodStringFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis
-import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis
-import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis
-import org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringAnalysis
+import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringFlowAnalysis
+import org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.systemproperties.TriggeredSystemPropertiesAnalysisScheduler
 
 // IMPROVE the test runner structure is far from optimal and could be reduced down to a simple test matrix. This however
@@ -294,7 +294,7 @@ sealed abstract class L0StringAnalysisTest extends StringAnalysisTest {
     override final def level = Level.L0
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] =
-        LazyL0StringAnalysis.allRequiredAnalyses
+        LazyL0StringFlowAnalysis.allRequiredAnalyses
 }
 
 class L0StringAnalysisWithL1DefaultDomainTest extends L0StringAnalysisTest {
@@ -326,7 +326,7 @@ sealed abstract class L1StringAnalysisTest extends StringAnalysisTest {
     override final def level = Level.L1
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
-        LazyL1StringAnalysis.allRequiredAnalyses :+
+        LazyL1StringFlowAnalysis.allRequiredAnalyses :+
             TriggeredSystemPropertiesAnalysisScheduler
     }
 }
@@ -360,7 +360,7 @@ sealed abstract class L2StringAnalysisTest extends StringAnalysisTest {
     override def level = Level.L2
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
-        LazyL2StringAnalysis.allRequiredAnalyses :+
+        LazyL2StringFlowAnalysis.allRequiredAnalyses :+
             TriggeredSystemPropertiesAnalysisScheduler
     }
 }
@@ -394,7 +394,7 @@ sealed abstract class L3StringAnalysisTest extends StringAnalysisTest {
     override def level = Level.L3
 
     override final def analyses: Iterable[ComputationSpecification[FPCFAnalysis]] = {
-        LazyL3StringAnalysis.allRequiredAnalyses :+
+        LazyL3StringFlowAnalysis.allRequiredAnalyses :+
             EagerFieldAccessInformationAnalysis :+
             TriggeredSystemPropertiesAnalysisScheduler
     }

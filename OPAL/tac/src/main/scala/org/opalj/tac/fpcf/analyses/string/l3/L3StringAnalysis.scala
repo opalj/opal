@@ -19,19 +19,17 @@ import org.opalj.tac.fpcf.analyses.string.interpretation.LazyStringFlowAnalysis
 import org.opalj.tac.fpcf.analyses.string.l3.interpretation.L3InterpretationHandler
 
 /**
- * @see [[L3InterpretationHandler]]
+ * A string analysis that handles field read accesses, calls, and constant and binary expressions.
+ *
  * @author Maximilian Rüsch
  */
-object LazyL3StringAnalysis {
+object LazyL3StringFlowAnalysis extends LazyStringFlowAnalysis {
 
     def allRequiredAnalyses: Seq[FPCFLazyAnalysisScheduler] = Seq(
         LazyStringAnalysis,
         LazyMethodStringFlowAnalysis,
         LazyL3StringFlowAnalysis
     )
-}
-
-object LazyL3StringFlowAnalysis extends LazyStringFlowAnalysis {
 
     override final def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(
         Callees,
