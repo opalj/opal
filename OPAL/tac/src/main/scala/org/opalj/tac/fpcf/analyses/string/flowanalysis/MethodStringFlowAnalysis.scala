@@ -6,7 +6,7 @@ package analyses
 package string
 package flowanalysis
 
-import scala.jdk.CollectionConverters.*
+import scala.jdk.CollectionConverters._
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
@@ -109,7 +109,7 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
     private def determinePossibleStrings(implicit method: Method, tac: TAC): ProperPropertyComputationResult = {
 
         val flowGraph = FlowGraph(tac.cfg)
-        val (_, superFlowGraph, controlTree) = StructuralAnalysis.analyze(flowGraph, FlowGraph.entry)
+        val (_, superFlowGraph, controlTree) = StructuralAnalysis.analyze(flowGraph, FlowGraph.entry)(project.config)
         val flowAnalysis =
             new DataFlowAnalysis[StringTreeNode, StringTreeEnvironment](controlTree, superFlowGraph, highSoundness)
 

@@ -5,6 +5,8 @@ package flowanalysis
 
 import scala.collection.mutable
 
+import com.typesafe.config.Config
+
 import org.opalj.graphs.DominatorTree
 
 import scalax.collection.GraphTraversal.DepthFirst
@@ -49,13 +51,15 @@ import scalax.collection.mutable.{Graph => MutableGraph}
  */
 object StructuralAnalysis {
 
-    private final val maxIterations = 1000
+    final val MaxIterationsKey = "org.opalj.si.flowanalysis.StructuralAnalysis.maxIterations"
 
     private type MFlowGraph = MutableGraph[FlowGraphNode, DiEdge[FlowGraphNode]]
     private type MControlTree = MutableGraph[FlowGraphNode, DiEdge[FlowGraphNode]]
     private type MSuperFlowGraph = MutableGraph[FlowGraphNode, Edge[FlowGraphNode]]
 
-    def analyze(initialGraph: FlowGraph, entry: FlowGraphNode): (FlowGraph, SuperFlowGraph, ControlTree) = {
+    def analyze(initialGraph: FlowGraph, entry: FlowGraphNode)(implicit
+        config: Config
+    ): (FlowGraph, SuperFlowGraph, ControlTree) = {
         val flowGraph: MFlowGraph = MutableGraph.from(initialGraph.edges.outerIterable)
         val superFlowGraph: MSuperFlowGraph =
             MutableGraph.from(initialGraph.edges.outerIterable).asInstanceOf[MSuperFlowGraph]
@@ -84,6 +88,8 @@ object StructuralAnalysis {
                 }
             }
         }
+
+        val maxIterations = config.getInt(MaxIterationsKey)
 
         var iterations = 0
         while (flowGraph.order > 1 && iterations < maxIterations) {
