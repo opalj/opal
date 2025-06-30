@@ -30,15 +30,14 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
         case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter().interpretExpr(stmt, expr)
 
-        case ExprStmt(_, expr: VirtualFunctionCall[V])    => StringInterpreter.failure(expr.receiver.asVar)
-        case ExprStmt(_, expr: NonVirtualFunctionCall[V]) => StringInterpreter.failure(expr.receiver.asVar)
-
-        // Static function calls without return value usage are irrelevant
-        case ExprStmt(_, _: StaticFunctionCall[V]) =>
-            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
+        case ExprStmt(_, expr: InstanceFunctionCall[V]) => StringInterpreter.failure(expr.receiver.asVar)
 
         case vmc: VirtualMethodCall[V]     => StringInterpreter.failure(vmc.receiver.asVar)
         case nvmc: NonVirtualMethodCall[V] => StringInterpreter.failure(nvmc.receiver.asVar)
+
+        // Static calls without return value usage are irrelevant
+        case ExprStmt(_, _: StaticFunctionCall[V]) | _: StaticMethodCall[V] =>
+            StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
         case Assignment(_, target, _) => StringInterpreter.failure(target)
 

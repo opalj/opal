@@ -78,10 +78,17 @@ class L3FieldReadInterpreter(
         }
     }
 
+    /**
+     * Checks whether the given type is supported by the field read analysis, i.e. if it may contain values desirable
+     * AND resolvable by the string analysis as a whole.
+     */
+    @inline
+    private def isSupportedType(fieldType: FieldType): Boolean = fieldType.isBaseType || (fieldType eq ClassType.String)
+
     override def interpretExpr(target: PV, fieldRead: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        if (!L3FieldReadInterpreter.isSupportedType(fieldRead.declaredFieldType)) {
+        if (!isSupportedType(fieldRead.declaredFieldType)) {
             return failure(target)
         }
 
@@ -212,13 +219,4 @@ class L3FieldReadInterpreter(
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }
     }
-}
-
-object L3FieldReadInterpreter {
-
-    /**
-     * Checks whether the given type is supported by the field read analysis, i.e. if it may contain values desirable
-     * AND resolvable by the string analysis as a whole.
-     */
-    private def isSupportedType(fieldType: FieldType): Boolean = fieldType.isBaseType || (fieldType eq ClassType.String)
 }

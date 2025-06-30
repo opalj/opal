@@ -32,13 +32,7 @@ abstract class InterpretationHandler extends FPCFAnalysis with StringAnalysisCon
         implicit val state: InterpretationState = InterpretationState(entity.pc, entity.dm, tacaiEOptP)
 
         if (tacaiEOptP.isRefinable) {
-            InterimResult(
-                InterpretationHandler.getEntity,
-                StringFlowFunctionProperty.lb,
-                StringFlowFunctionProperty.ub,
-                Set(state.tacDependee),
-                continuation(state)
-            )
+            createResult()
         } else if (tacaiEOptP.ub.tac.isEmpty) {
             // No TAC available, e.g., because the method has no body
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.constForAll(StringInterpreter.failureTree))
@@ -54,13 +48,18 @@ abstract class InterpretationHandler extends FPCFAnalysis with StringAnalysisCon
                 processStatementForState(state)
 
             case _ =>
-                InterimResult.forUB(
-                    InterpretationHandler.getEntity(state),
-                    StringFlowFunctionProperty.ub,
-                    Set(state.tacDependee),
-                    continuation(state)
-                )
+                createResult()(state)
         }
+    }
+
+    private def createResult()(implicit state: InterpretationState): ProperPropertyComputationResult = {
+        InterimResult(
+            InterpretationHandler.getEntity,
+            StringFlowFunctionProperty.lb,
+            StringFlowFunctionProperty.ub,
+            Set(state.tacDependee),
+            continuation(state)
+        )
     }
 
     private def processStatementForState(implicit state: InterpretationState): ProperPropertyComputationResult = {
