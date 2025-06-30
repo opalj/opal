@@ -12,7 +12,7 @@ import org.opalj.fpcf.PropertyMetaInformation
 
 /**
  * An FPCF property that captures the string flow results of an entire method based on the final [[StringTreeEnvironment]]
- * after executing the [[org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis]].
+ * after executing the [[org.opalj.si.flowanalysis.DataFlowAnalysis]].
  *
  * @see [[StringTreeEnvironment]]
  *

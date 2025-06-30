@@ -8,18 +8,24 @@ package string
 import org.opalj.br.PDVar
 import org.opalj.br.PUVar
 import org.opalj.br.fpcf.properties.string.SetBasedStringTreeOr
+import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
+import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
 import org.opalj.br.fpcf.properties.string.StringTreeNode
+import org.opalj.si.flowanalysis.DataFlowEnvironment
 
 /**
  * A mapping from [[PDUWeb]] to [[StringTreeNode]], used to identify the state of string variables during a given fixed
- * point of the [[org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis]].
+ * point of the [[org.opalj.si.flowanalysis.DataFlowAnalysis]].
  *
  * @author Maximilian Rüsch
  */
 case class StringTreeEnvironment private (
     private val map:      Map[PDUWeb, StringTreeNode],
     private val pcToWebs: Map[Int, Set[PDUWeb]]
-) {
+) extends DataFlowEnvironment[StringTreeNode, StringTreeEnvironment] {
+
+    override val top: StringTreeNode = StringTreeDynamicString
+    override val bottom: StringTreeNode = StringTreeInvalidElement
 
     private def getWebsFor(pc: Int, pv: PV): Set[PDUWeb] = {
         pv match {
@@ -66,20 +72,10 @@ case class StringTreeEnvironment private (
 
     def updateAll(value: StringTreeNode): StringTreeEnvironment = recreate(map.transform((_, _) => value))
 
+    def recreate(newMap: Map[PDUWeb, StringTreeNode]): StringTreeEnvironment = StringTreeEnvironment(newMap, pcToWebs)
+
     def join(other: StringTreeEnvironment): StringTreeEnvironment = {
         recreate(map.transform { (web, tree) => SetBasedStringTreeOr.createWithSimplify(Set(tree, other.map(web))) })
-    }
-
-    def recreate(newMap: Map[PDUWeb, StringTreeNode]): StringTreeEnvironment = StringTreeEnvironment(newMap, pcToWebs)
-}
-
-object StringTreeEnvironment {
-
-    def apply(map: Map[PDUWeb, StringTreeNode]): StringTreeEnvironment = {
-        val pcToWebs =
-            map.keySet.flatMap(web => web.defPCs.map((_, web))).groupMap(_._1)(_._2)
-                .withDefaultValue(Set.empty)
-        StringTreeEnvironment(map, pcToWebs)
     }
 
     def joinMany(envs: Iterable[StringTreeEnvironment]): StringTreeEnvironment = {
@@ -96,5 +92,15 @@ object StringTreeEnvironment {
                     SetBasedStringTreeOr.createWithSimplify(envs.map(_.map(web)).toSet)
                 })
         }
+    }
+}
+
+object StringTreeEnvironment {
+
+    def apply(map: Map[PDUWeb, StringTreeNode]): StringTreeEnvironment = {
+        val pcToWebs =
+            map.keySet.flatMap(web => web.defPCs.map((_, web))).groupMap(_._1)(_._2)
+                .withDefaultValue(Set.empty)
+        StringTreeEnvironment(map, pcToWebs)
     }
 }

@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  *
  * @note [[InterpretationHandler]]s of any level may use [[StringInterpreter]]s from their level or any level below.
  *
- * @see [[StringFlowFunctionProperty]], [[org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis]]
+ * @see [[StringFlowFunctionProperty]], [[org.opalj.si.flowanalysis.DataFlowAnalysis]]
  *
  * @author Maximilian Rüsch
  */

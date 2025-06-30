@@ -1,9 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package tac
-package fpcf
-package analyses
-package string
+package si
 package flowanalysis
 
 import scala.collection.mutable
@@ -46,7 +43,7 @@ import scalax.collection.mutable.{Graph => MutableGraph}
  * This algorithm is adapted from Muchnick, S.S. (1997). Advanced Compiler Design and Implementation and optimized for
  * performance.
  *
- * @see [[MethodStringFlowAnalysis]], [[FlowGraphNode]], [[DataFlowAnalysis]]
+ * @see [[FlowGraphNode]], [[DataFlowAnalysis]]
  *
  * @author Maximilian Rüsch
  */

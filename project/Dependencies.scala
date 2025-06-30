@@ -72,10 +72,10 @@ object Dependencies {
 
   def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaparallelcollections, scalaxml, playjson, ficus, fastutil)
 
-  val si = Seq()
+  val si = Seq(scalagraphcore, scalagraphdot)
   val bi = Seq(commonstext)
   val br = Seq(scalaparsercombinators, scalaxml)
-  val tac = Seq(scalagraphcore, scalagraphdot)
+  val tac = Seq()
   val ifds = Seq()
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)

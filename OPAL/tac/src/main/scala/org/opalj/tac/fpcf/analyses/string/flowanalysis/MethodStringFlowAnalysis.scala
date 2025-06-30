@@ -6,7 +6,7 @@ package analyses
 package string
 package flowanalysis
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
@@ -16,6 +16,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.FinalP
@@ -28,9 +29,14 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.log.Error
 import org.opalj.log.Info
 import org.opalj.log.OPALLogger.logOnce
+import org.opalj.si.flowanalysis.DataFlowAnalysis
+import org.opalj.si.flowanalysis.Statement
+import org.opalj.si.flowanalysis.StructuralAnalysis
+import org.opalj.tac.common.FlowGraph
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.string.MethodStringFlow
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
+import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 /**
  * Analyzes a methods string flow results by applying a [[StructuralAnalysis]] to identify all control flow regions of
@@ -104,7 +110,8 @@ class MethodStringFlowAnalysis(override val project: SomeProject) extends FPCFAn
 
         val flowGraph = FlowGraph(tac.cfg)
         val (_, superFlowGraph, controlTree) = StructuralAnalysis.analyze(flowGraph, FlowGraph.entry)
-        val flowAnalysis = new DataFlowAnalysis(controlTree, superFlowGraph, highSoundness)
+        val flowAnalysis =
+            new DataFlowAnalysis[StringTreeNode, StringTreeEnvironment](controlTree, superFlowGraph, highSoundness)
 
         implicit val state: MethodStringFlowAnalysisState =
             MethodStringFlowAnalysisState(method, declaredMethods(method), tac, flowAnalysis)

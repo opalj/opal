@@ -1,59 +1,53 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package tac
-package fpcf
-package analyses
-package string
+package si
 package flowanalysis
 
 import scala.collection.mutable
-
-import org.opalj.br.fpcf.properties.string.StringTreeDynamicString
-import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
-import org.opalj.tac.fpcf.properties.string.StringFlowFunction
-import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
 
 import scalax.collection.GraphTraversal.BreadthFirst
 import scalax.collection.GraphTraversal.Parameters
 
 /**
- * Performs structural string data flow analysis based on the results of a [[StructuralAnalysis]]. In more detail, this
- * means that the control tree produced by the [[StructuralAnalysis]] is traversed recursively in a depth-first manner.
- * Individual regions are processed by piping a [[StringTreeEnvironment]] through their nodes and joining the
+ * Performs structural data flow analysis based on the results of a [[StructuralAnalysis]]. In more detail, this means
+ * that the control tree produced by the [[StructuralAnalysis]] is traversed recursively in a depth-first manner.
+ * Individual regions are processed by piping an [[Environment]] through their nodes and joining the
  * environments where paths meet up. Thus, the individual flow functions defined at the statement PCs of a method are
- * combined using region-type-specific patterns to effectively act as a string flow function of the entire region, which
- * is then processed itself due to the recursive nature of the algorithm.
+ * combined using region-type-specific patterns to effectively act as a flow function of the entire region, which is
+ * then processed itself due to the recursive nature of the algorithm.
  *
  * @param controlTree The control tree from the structural analysis.
  * @param superFlowGraph The super flow graph from the structural analysis
  * @param highSoundness Whether to use high soundness mode or not. Currently, this influences the handling of loops,
  *                      i.e. whether they are approximated by one execution of the loop body (low soundness) or via
- *                      "any string" on all variables in the method (high soundness).
+ *                      a top value on all variables in the method (high soundness).
  *
- * @see [[StructuralAnalysis]], [[StringTreeEnvironment]]
+ * @see [[StructuralAnalysis]], [[Environment]]
  *
  * @author Maximilian Rüsch
  */
-class DataFlowAnalysis(
+class DataFlowAnalysis[Data, Environment <: DataFlowEnvironment[Data, Environment]](
     private val controlTree:    ControlTree,
     private val superFlowGraph: SuperFlowGraph,
     private val highSoundness:  Boolean
 ) {
 
+    type FlowFunction = (Environment => Environment)
+
     private val _nodeOrderings = mutable.Map.empty[FlowGraphNode, Seq[SuperFlowGraph#NodeT]]
     private val _removedBackEdgesGraphs = mutable.Map.empty[FlowGraphNode, (Boolean, SuperFlowGraph)]
 
     /**
-     * Computes the resulting string tree environment after the data flow analysis.
+     * Computes the resulting environment after the data flow analysis.
      *
      * @param flowFunctionByPc A mapping from PC to the flow functions to be used
      * @param startEnv The base environment which is piped into the first region to be processed.
-     * @return The resulting [[StringTreeEnvironment]] after execution of all string flow functions using the region
+     * @return The resulting [[Environment]] after execution of all flow functions using the region
      *         hierarchy given in the control tree.
      */
     def compute(
-        flowFunctionByPc: Map[Int, StringFlowFunction]
-    )(startEnv: StringTreeEnvironment): StringTreeEnvironment = {
+        flowFunctionByPc: Map[Int, FlowFunction]
+    )(startEnv: Environment): Environment = {
         val startNodeCandidates = controlTree.nodes.filter(!_.hasPredecessors)
         if (startNodeCandidates.size != 1) {
             throw new IllegalStateException("Found more than one start node in the control tree!")
@@ -63,14 +57,14 @@ class DataFlowAnalysis(
         pipeThroughNode(flowFunctionByPc)(startNode, startEnv)
     }
 
-    private def pipeThroughNode(flowFunctionByPc: Map[Int, StringFlowFunction])(
+    private def pipeThroughNode(flowFunctionByPc: Map[Int, FlowFunction])(
         node: FlowGraphNode,
-        env:  StringTreeEnvironment
-    ): StringTreeEnvironment = {
+        env:  Environment
+    ): Environment = {
         val pipe = pipeThroughNode(flowFunctionByPc) _
         val innerChildNodes = controlTree.get(node).diSuccessors.map(n => superFlowGraph.get(n.outer))
 
-        def processBlock(entry: FlowGraphNode): StringTreeEnvironment = {
+        def processBlock(entry: FlowGraphNode): Environment = {
             var currentEnv = env
             for {
                 currentNode <- superFlowGraph.innerNodeTraverser(
@@ -83,7 +77,7 @@ class DataFlowAnalysis(
             currentEnv
         }
 
-        def processIfThenElse(entry: FlowGraphNode): StringTreeEnvironment = {
+        def processIfThenElse(entry: FlowGraphNode): Environment = {
             val entryNode = superFlowGraph.get(entry)
             val successors = entryNode.diSuccessors.intersect(innerChildNodes).map(_.outer).toList.sorted
             val branches = (successors.head, successors.tail.head)
@@ -94,7 +88,7 @@ class DataFlowAnalysis(
             envAfterBranches._1.join(envAfterBranches._2)
         }
 
-        def processIfThen(entry: FlowGraphNode): StringTreeEnvironment = {
+        def processIfThen(entry: FlowGraphNode): Environment = {
             val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
             val entryNode = limitedFlowGraph.get(entry)
             val (yesBranch, noBranch) = if (entryNode.diSuccessors.head.diSuccessors.nonEmpty) {
@@ -116,7 +110,7 @@ class DataFlowAnalysis(
             g:          G,
             innerNodes: Set[G#NodeT],
             entry:      A
-        ): StringTreeEnvironment = {
+        ): Environment = {
             val entryNode = g.get(entry)
             val sortedNodes = _nodeOrderings.getOrElseUpdate(
                 node, {
@@ -137,24 +131,24 @@ class DataFlowAnalysis(
                 val previousEnvs = currentNode.diPredecessors.toList.map { dp =>
                     pipe(currentNode.outer, currentNodeEnvs(dp))
                 }
-                currentNodeEnvs.update(currentNode, StringTreeEnvironment.joinMany(previousEnvs))
+                currentNodeEnvs.update(currentNode, env.joinMany(previousEnvs))
             }
 
             currentNodeEnvs(sortedNodes.last.asInstanceOf[g.NodeT])
         }
 
-        def processProper(entry: FlowGraphNode): StringTreeEnvironment = {
+        def processProper(entry: FlowGraphNode): Environment = {
             handleProperSubregion[FlowGraphNode, superFlowGraph.type](superFlowGraph, innerChildNodes, entry)
         }
 
-        def processSelfLoop(entry: FlowGraphNode): StringTreeEnvironment = {
+        def processSelfLoop(entry: FlowGraphNode): Environment = {
             val resultEnv = pipe(entry, env)
             // IMPROVE only update affected variables instead of all
-            if (resultEnv != env && highSoundness) env.updateAll(StringTreeDynamicString)
+            if (resultEnv != env && highSoundness) env.updateAll(env.top)
             else resultEnv
         }
 
-        def processWhileLoop(entry: FlowGraphNode): StringTreeEnvironment = {
+        def processWhileLoop(entry: FlowGraphNode): Environment = {
             val entryNode = superFlowGraph.get(entry)
             val envAfterEntry = pipe(entry, env)
 
@@ -170,11 +164,11 @@ class DataFlowAnalysis(
             }
 
             // IMPROVE only update affected variables instead of all
-            if (resultEnv != envAfterEntry && highSoundness) envAfterEntry.updateAll(StringTreeDynamicString)
+            if (resultEnv != envAfterEntry && highSoundness) envAfterEntry.updateAll(env.top)
             else resultEnv
         }
 
-        def processNaturalLoop(entry: FlowGraphNode): StringTreeEnvironment = {
+        def processNaturalLoop(entry: FlowGraphNode): Environment = {
             val (isCyclic, removedBackEdgesGraph) = _removedBackEdgesGraphs.getOrElseUpdate(
                 node, {
                     val limitedFlowGraph = superFlowGraph.filter(innerChildNodes.contains)
@@ -190,8 +184,8 @@ class DataFlowAnalysis(
 
             if (isCyclic) {
                 // IMPROVE only update affected variables instead of all
-                if (highSoundness) env.updateAll(StringTreeDynamicString)
-                else env.updateAll(StringTreeInvalidElement)
+                if (highSoundness) env.updateAll(env.top)
+                else env.updateAll(env.bottom)
             } else {
                 // Handle resulting acyclic region
                 val resultEnv = handleProperSubregion[FlowGraphNode, removedBackEdgesGraph.type](
@@ -200,7 +194,7 @@ class DataFlowAnalysis(
                     entry
                 )
                 // IMPROVE only update affected variables instead of all
-                if (resultEnv != env && highSoundness) env.updateAll(StringTreeDynamicString)
+                if (resultEnv != env && highSoundness) env.updateAll(env.top)
                 else resultEnv
             }
         }

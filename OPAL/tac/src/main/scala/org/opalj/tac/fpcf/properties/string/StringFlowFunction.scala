@@ -12,7 +12,7 @@ import org.opalj.fpcf.PropertyMetaInformation
 
 /**
  * An FPCF property representing a string flow function at a fixed [[org.opalj.tac.fpcf.analyses.string.MethodPC]] to be
- * used during [[org.opalj.tac.fpcf.analyses.string.flowanalysis.DataFlowAnalysis]]. Can be produced by e.g.
+ * used during [[org.opalj.si.flowanalysis.DataFlowAnalysis]]. Can be produced by e.g.
  * [[org.opalj.tac.fpcf.analyses.string.StringInterpreter]]s.
  *
  * @author Maximilian Rüsch

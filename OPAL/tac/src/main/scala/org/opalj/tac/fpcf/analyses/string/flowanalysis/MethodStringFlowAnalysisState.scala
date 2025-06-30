@@ -12,9 +12,11 @@ import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.string.StringTreeInvalidElement
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeParameter
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
+import org.opalj.si.flowanalysis.DataFlowAnalysis
 import org.opalj.tac.fpcf.properties.string.StringFlowFunction
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
 import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
@@ -27,7 +29,12 @@ import org.opalj.tac.fpcf.properties.string.StringTreeEnvironment
  *
  * @author Maximilian Rüsch
  */
-case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, tac: TAC, flowAnalysis: DataFlowAnalysis) {
+case class MethodStringFlowAnalysisState(
+    entity:       Method,
+    dm:           DefinedMethod,
+    tac:          TAC,
+    flowAnalysis: DataFlowAnalysis[StringTreeNode, StringTreeEnvironment]
+) {
 
     private val pcToDependeeMapping: mutable.Map[Int, EOptionP[MethodPC, StringFlowFunctionProperty]] =
         mutable.Map.empty
@@ -90,7 +97,7 @@ case class MethodStringFlowAnalysisState(entity: Method, dm: DefinedMethod, tac:
             }
 
             val startMap = indexedWebs.filter(_ != null)
-                .map { web: PDUWeb =>
+                .map { (web: PDUWeb) =>
                     val defPC = web.defPCs.toList.min
 
                     if (defPC >= 0) {

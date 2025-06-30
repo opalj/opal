@@ -1,9 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package tac
-package fpcf
-package analyses
-package string
+package si
 package flowanalysis
 
 sealed trait RegionType extends Product
