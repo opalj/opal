@@ -9,7 +9,6 @@ import org.opalj.br.ClassType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
@@ -19,6 +18,7 @@ import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.MutableClass
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableClass
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis

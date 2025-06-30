@@ -11,12 +11,12 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.ifds.ICFG
 import org.opalj.tac.Assignment
 import org.opalj.tac.DUVar

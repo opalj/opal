@@ -3,8 +3,6 @@ package org.opalj
 package br
 package analyses
 
-import org.opalj.log.LogContext
-
 /**
  * Common super trait of all analyses that use the fixpoint
  * computations framework. In general, an analysis computes a
@@ -14,14 +12,12 @@ import org.opalj.log.LogContext
  * @author Michael Reif
  * @author Michael Eichberg
  */
-trait ProjectBasedAnalysis {
+trait ProjectBasedAnalysis extends org.opalj.si.ProjectBasedAnalysis {
 
     val project: SomeProject
-    implicit final def p: SomeProject = project
+    override implicit def p: SomeProject = project
 
     implicit final def classHierarchy: ClassHierarchy = project.classHierarchy
     final def ch: ClassHierarchy = classHierarchy
-
-    implicit final def logContext: LogContext = project.logContext
 
 }

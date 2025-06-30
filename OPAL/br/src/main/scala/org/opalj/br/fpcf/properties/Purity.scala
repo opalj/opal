@@ -6,7 +6,6 @@ package properties
 
 import scala.annotation.switch
 
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.Purity.ContextuallyPureFlags
 import org.opalj.br.fpcf.properties.Purity.ContextuallySideEffectFreeFlags
@@ -21,9 +20,11 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.IndividualProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.si.Project
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -196,7 +197,7 @@ object Purity extends PurityPropertyMetaInformation {
         (ps: PropertyStore, _: FallbackReason, e: Entity) => {
             e match {
                 case Context(dm) =>
-                    val conf = ps.context(classOf[SomeProject]).has(ConfiguredPurityKey)
+                    val conf = ps.context(classOf[Project]).has(ConfiguredPurityKey)
                     if (conf.isDefined && conf.get.wasSet(dm)) conf.get.purity(dm)
                     else ImpureByLackOfInformation
                 case x =>

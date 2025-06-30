@@ -3,22 +3,22 @@ package org.opalj
 package apk
 
 import org.opalj.apk.parser.ApkParser
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
+import org.opalj.si.Project
+import org.opalj.si.ProjectInformationKey
 
 /**
  * Key for a list of [[ApkComponent]] to link them to a [[org.opalj.br.analyses.Project]].
  *
  * @author Nicolas Gross
  */
-object ApkComponentsKey extends ProjectInformationKey[Seq[ApkComponent], ApkParser] {
+object ApkComponentsKey extends ProjectInformationKey[Project, Seq[ApkComponent], ApkParser] {
 
     /**
      * The computation of the APK's components / entry points has no special prerequisites.
      *
      * @return `Nil`.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: Project): Seq[ProjectInformationKey[Project, Nothing, Nothing]] = Nil
 
     /**
      * Computes the APK's components / static entry points.
@@ -33,7 +33,7 @@ object ApkComponentsKey extends ProjectInformationKey[Seq[ApkComponent], ApkPars
      *
      * @return a Seq of [[ApkComponent]].
      */
-    override def compute(project: SomeProject): Seq[ApkComponent] = {
+    override def compute(project: Project): Seq[ApkComponent] = {
         project.getOrCreateProjectInformationKeyInitializationData(
             this,
             new ApkParser("")(project.config)
