@@ -25,9 +25,8 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.properties.string.Constant
 import org.opalj.fpcf.properties.string.Constants
 import org.opalj.fpcf.properties.string.DomainLevel
