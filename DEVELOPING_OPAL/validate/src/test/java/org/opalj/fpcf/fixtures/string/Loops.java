@@ -47,7 +47,7 @@ public class Loops {
         analyzeString(sb.toString());
     }
 
-    @PartiallyConstant(sinkIndex = 0, levels = Level.TRUTH, value = "((x|^-?\\d+$))*yz")
+    @PartiallyConstant(sinkIndex = 0, levels = Level.TRUTH, value = "((x|-?\\d+))*yz")
     @Failure(sinkIndex = 0, levels = Level.L0)
     @Constant(sinkIndex = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "xyz")
     @Dynamic(sinkIndex = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "(.*|.*yz)")
@@ -79,7 +79,7 @@ public class Loops {
         }
     }
 
-    @PartiallyConstant(sinkIndex = 0, value = "((x|^-?\\d+$))*yz", levels = Level.TRUTH)
+    @PartiallyConstant(sinkIndex = 0, value = "((x|-?\\d+))*yz", levels = Level.TRUTH)
     @Failure(sinkIndex = 0, levels = Level.L0)
     @Constant(sinkIndex = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "xyz")
     @Dynamic(sinkIndex = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.HIGH, value = "(.*|.*yz)")

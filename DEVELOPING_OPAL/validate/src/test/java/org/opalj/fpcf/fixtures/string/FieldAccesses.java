@@ -81,19 +81,19 @@ public class FieldAccesses {
         analyzeString(fieldWithConstructorInit.toString());
     }
 
-    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "^-?\\d*\\.{0,1}\\d+$")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "-?\\d*\\.{0,1}\\d+")
     @Failure(sinkIndex = 0, levels = Level.L0)
     @Failure(sinkIndex = 0, levels = Level.L1, domains = DomainLevel.L1)
     @Invalid(sinkIndex = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.LOW)
     @Dynamic(sinkIndex = 0, levels = Level.L1, domains = DomainLevel.L2, soundness = SoundnessMode.HIGH,
-        value = "^-?\\d*\\.{0,1}\\d+$", reason = "the field value is inlined using L2 domains")
+        value = "-?\\d*\\.{0,1}\\d+", reason = "the field value is inlined using L2 domains")
     @Invalid(sinkIndex = 0, levels = { Level.L2, Level.L3 }, soundness = SoundnessMode.LOW)
     public void fieldInitByConstructorParameter() {
         analyzeString(new StringBuilder().append(fieldWithConstructorParameterInit).toString());
     }
 
     // Contains a field write in the same method which cannot be captured by flow functions
-    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(some value|^null$)")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(some value|null)")
     @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
     @Constant(sinkIndex = 0, levels = Level.L3, soundness = SoundnessMode.LOW, value = "some value")
     @Dynamic(sinkIndex = 0, levels = Level.L3, soundness = SoundnessMode.HIGH, value = ".*")
@@ -102,9 +102,9 @@ public class FieldAccesses {
         analyzeString(writeInSameMethodField);
     }
 
-    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "(.*|^null$)")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "(.*|null)")
     @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
-    @Constant(sinkIndex = 0, levels = Level.L3, soundness = SoundnessMode.LOW, value = "^null$")
+    @Constant(sinkIndex = 0, levels = Level.L3, soundness = SoundnessMode.LOW, value = "null")
     public void fieldWithNoWriteTest() {
         analyzeString(noWriteField);
     }

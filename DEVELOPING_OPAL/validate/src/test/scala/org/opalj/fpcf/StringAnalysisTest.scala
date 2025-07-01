@@ -26,7 +26,6 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
-import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.properties.string.Constant
 import org.opalj.fpcf.properties.string.Constants
 import org.opalj.fpcf.properties.string.DomainLevel
@@ -283,7 +282,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
 }
 
 /**
- * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringAnalysis]] works correctly with
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringFlowAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
  * @author Maximilian Rüsch
@@ -315,7 +314,7 @@ class HighSoundnessL0StringAnalysisWithL2DefaultDomainTest extends L0StringAnaly
 }
 
 /**
- * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringAnalysis]] works correctly with
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringFlowAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
  * @author Maximilian Rüsch
@@ -349,7 +348,7 @@ class HighSoundnessL1StringAnalysisWithL2DefaultDomainTest extends L1StringAnaly
 }
 
 /**
- * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringAnalysis]] works correctly with
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringFlowAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
  * @author Maximilian Rüsch
@@ -383,7 +382,7 @@ class HighSoundnessL2StringAnalysisWithL2DefaultDomainTest extends L2StringAnaly
 }
 
 /**
- * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringAnalysis]] works correctly with
+ * Tests whether the [[org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringFlowAnalysis]] works correctly with
  * respect to some well-defined tests.
  *
  * @author Maximilian Rüsch

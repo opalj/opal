@@ -17,7 +17,7 @@ public class SimpleControlStructures {
      */
     public void analyzeString(String s) {}
 
-    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "(^-?\\d+$|x)")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, value = "(-?\\d+|x)")
     @Failure(sinkIndex = 0, levels = Level.L0)
     @Constant(sinkIndex = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "x")
     @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "(42-42|x)")
@@ -38,7 +38,7 @@ public class SimpleControlStructures {
         analyzeString(sb2.toString());
     }
 
-    @PartiallyConstant(sinkIndex = 0, levels = Level.TRUTH, value = "(3.142.71828|^-?\\d*\\.{0,1}\\d+$2.71828)")
+    @PartiallyConstant(sinkIndex = 0, levels = Level.TRUTH, value = "(-?\\d*\\.{0,1}\\d+2.71828|3.142.71828)")
     @Failure(sinkIndex = 0, levels = Level.L0)
     @Constant(sinkIndex = 0, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW, value = "3.142.71828")
     public void ifElseWithStringBuilderWithFloatExpr() {

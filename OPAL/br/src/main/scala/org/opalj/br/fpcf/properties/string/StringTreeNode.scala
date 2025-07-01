@@ -397,7 +397,7 @@ object StringTreeInvalidElement extends SimpleStringTreeNode {
 object StringTreeNull extends SimpleStringTreeNode {
     // IMPROVE Using this element nested in some other element might lead to unexpected results since it contains regex
     // matching characters for the beginning and end of a string.
-    override protected def toRegex: String = "^null$"
+    override protected def toRegex: String = "null"
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Constant
 }
@@ -411,7 +411,7 @@ object StringTreeDynamicString extends SimpleStringTreeNode {
 object StringTreeDynamicInt extends SimpleStringTreeNode {
     // IMPROVE Using this element nested in some other element might lead to unexpected results since it contains regex
     // matching characters for the beginning and end of a string.
-    override protected def toRegex: String = "^-?\\d+$"
+    override protected def toRegex: String = "-?\\d+"
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }
@@ -419,7 +419,7 @@ object StringTreeDynamicInt extends SimpleStringTreeNode {
 object StringTreeDynamicFloat extends SimpleStringTreeNode {
     // IMPROVE Using this element nested in some other element might lead to unexpected results since it contains regex
     // matching characters for the beginning and end of a string.
-    override protected def toRegex: String = "^-?\\d*\\.{0,1}\\d+$"
+    override protected def toRegex: String = "-?\\d*\\.{0,1}\\d+"
 
     override def constancyLevel: StringConstancyLevel = StringConstancyLevel.Dynamic
 }

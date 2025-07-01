@@ -81,12 +81,12 @@ import org.opalj.fpcf.properties.string.*;
  *        </li>
  *        <li> Brackets ("(" and ")") are used for nesting and grouping string expressions. </li>
  *        <li>
- *          The string "^-?\d+$" represents (positive and negative) integer numbers. This RegExp has been taken from
+ *          The string "-?\d+" represents (positive and negative) integer numbers. This RegExp has been taken from
  *          <a href="https://www.freeformatter.com/java-regex-tester.html#examples">www.freeformatter.com/java-regex-tester.html</a>
  *          as of 2019-02-02.
  *        </li>
  *        <li>
- *          The string "^-?\\d*\\.{0,1}\\d+$" represents (positive and negative) float and double numbers. This RegExp
+ *          The string "-?\\d*\\.{0,1}\\d+" represents (positive and negative) float and double numbers. This RegExp
  *          has been taken from
  *          <a href="https://www.freeformatter.com/java-regex-tester.html#examples">www.freeformatter.com/java-regex-tester.html</a>
  *          as of 2019-02-02.
