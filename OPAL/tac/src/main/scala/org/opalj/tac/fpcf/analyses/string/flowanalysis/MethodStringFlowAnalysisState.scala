@@ -58,7 +58,10 @@ case class MethodStringFlowAnalysisState(
         else StringFlowFunctionProperty.ub.flow
     }
 
-    private def webs: IndexedSeq[PDUWeb] = {
+    /**
+     * Collects def-use-webs from all dependees and for the parameters.
+     */
+    private def webs(): IndexedSeq[PDUWeb] = {
         pcToDependeeMapping.values.flatMap { v =>
             if (v.hasUBP) v.ub.webs
             else StringFlowFunctionProperty.ub.webs
@@ -68,47 +71,60 @@ case class MethodStringFlowAnalysisState(
         })
     }
 
-    private var _startEnv: StringTreeEnvironment = StringTreeEnvironment(Map.empty)
-    def getStartEnvAndReset(implicit highSoundness: Boolean): StringTreeEnvironment = {
-        if (pcToWebChangeMapping.exists(_._2)) {
-            val indexedWebs = mutable.ArrayBuffer.empty[PDUWeb]
-            val defPCToWebIndex = mutable.Map.empty[Int, Int]
-            webs.foreach { web =>
-                val existingDefPCs = web.defPCs.filter(defPCToWebIndex.contains)
-                if (existingDefPCs.nonEmpty) {
-                    val indices = existingDefPCs.toList.map(defPCToWebIndex).distinct
-                    if (indices.size == 1) {
-                        val index = indices.head
-                        indexedWebs.update(index, indexedWebs(index).combine(web))
-                        web.defPCs.foreach(defPCToWebIndex.update(_, index))
-                    } else {
-                        val newIndex = indices.head
-                        val originalWebs = indices.map(indexedWebs)
-                        indexedWebs.update(newIndex, originalWebs.reduce(_.combine(_)).combine(web))
-                        indices.tail.foreach(indexedWebs.update(_, null))
-                        originalWebs.foreach(_.defPCs.foreach(defPCToWebIndex.update(_, newIndex)))
-                        web.defPCs.foreach(defPCToWebIndex.update(_, newIndex))
-                    }
-                } else {
-                    val newIndex = indexedWebs.length
-                    indexedWebs.append(web)
+    private def mergeWebs(webs: IndexedSeq[PDUWeb]): Array[PDUWeb] = {
+        val indexedWebs = mutable.ArrayBuffer.empty[PDUWeb]
+        val defPCToWebIndex = mutable.Map.empty[Int, Int]
+        // Combine all webs that share common definitions (defPC)
+        webs.foreach { web =>
+            val existingDefPCs = web.defPCs.filter(defPCToWebIndex.contains)
+            if (existingDefPCs.nonEmpty) { // At least one already processed web with a common defPC exist
+                val indices = existingDefPCs.iterator.map(defPCToWebIndex).distinct.toSeq
+                if (indices.size == 1) { // Exactly one already processed web has a common defPC, merge with that
+                    val index = indices.head
+                    indexedWebs.update(index, indexedWebs(index).combine(web))
+                    web.defPCs.foreach(defPCToWebIndex.update(_, index))
+                } else { // More than one already processed web has a common defPC, merge all of them
+                    val newIndex = indices.head
+                    val originalWebs = indices.map(indexedWebs)
+                    indexedWebs.update(newIndex, originalWebs.reduce(_.combine(_)).combine(web))
+                    indices.tail.foreach(indexedWebs.update(_, null))
+                    originalWebs.foreach(_.defPCs.foreach(defPCToWebIndex.update(_, newIndex)))
                     web.defPCs.foreach(defPCToWebIndex.update(_, newIndex))
                 }
+            } else { // No already processed web with a common defPC exists, store this web as a distinct one
+                val newIndex = indexedWebs.length
+                indexedWebs.append(web)
+                web.defPCs.foreach(defPCToWebIndex.update(_, newIndex))
             }
+        }
+        indexedWebs.toArray
+    }
 
-            val startMap = indexedWebs.filter(_ != null)
+    private var _startEnv: StringTreeEnvironment = StringTreeEnvironment(Map.empty)
+
+    /**
+     * Computes the starting environment for the data-flow analysis
+     */
+    def getStartEnvAndReset(implicit highSoundness: Boolean): StringTreeEnvironment = {
+        // Only compute a new starting environment if dependees have changed
+        if (pcToWebChangeMapping.exists(_._2)) {
+            val allWebs = webs()
+            val mergedWebs = mergeWebs(allWebs)
+
+            val startMap = mergedWebs.filter(_ != null)
                 .map { (web: PDUWeb) =>
                     val defPC = web.defPCs.toList.min
 
                     if (defPC >= 0) {
-                        (web, StringTreeInvalidElement)
+                        (web, StringTreeInvalidElement) // local variables start as Invalid
                     } else if (defPC < -1 && defPC > ImmediateVMExceptionsOriginOffset) {
-                        (web, StringTreeParameter.forParameterPC(defPC))
+                        (web, StringTreeParameter.forParameterPC(defPC)) // parameters start as placeholders
                     } else {
                         // IMPROVE interpret "this" (parameter pc -1) with reference to String and StringBuilder classes
-                        (web, StringInterpreter.failureTree)
+                        (web, StringInterpreter.failureTree) // "this" starts as failure since it can't be handled yet
                     }
                 }.toMap
+
             _startEnv = StringTreeEnvironment(startMap)
             pcToWebChangeMapping.mapValuesInPlace((_, _) => false)
         }

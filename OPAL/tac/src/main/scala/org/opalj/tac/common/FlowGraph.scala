@@ -46,6 +46,7 @@ object FlowGraph extends TypedGraphFactory[FlowGraphNode, DiEdge[FlowGraphNode]]
     /**
      * Converts a given CFG to a flow graph with additional global entry and exit nodes.
      *
+     * @see [[org.opalj.si.flowanalysis.FlowGraph]]
      * @see [[FlowGraphNode]]
      *
      * @param cfg The CFG to convert to a flow graph.

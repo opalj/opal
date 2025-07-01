@@ -187,6 +187,7 @@ private[string] class ContextFreeStringAnalysis(override val project: SomeProjec
                 if (tree.depth >= depthThreshold) {
                     // String constancy information got too complex, abort. This guard can probably be removed once
                     // recursing functions are properly handled using e.g. the widen-converge approach.
+                    // Setting this flags will finalize the result, preventing further replacement in recursive calls.
                     state.hitDepthThreshold = true
                     if (highSoundness) {
                         tree.replaceAtDepth(depthThreshold, StringTreeNode.lb)
