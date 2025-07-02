@@ -52,9 +52,9 @@ class L1VirtualFunctionCallInterpreter(
         val pt = call.receiver.asVar.toPersistentForm(state.tac.stmts)
 
         call.name match {
-            case "append" if isStringBuilderBufferCall(call)  => interpretAppendCall(at, pt, call)
-            case "toString"                                   => interpretToStringCall(at, pt)
-            case "replace" if isStringBuilderBufferCall(call) => interpretReplaceCall(pt)
+            case "append" if StringInterpreter.isStringBuilderBufferCall(call)  => interpretAppendCall(at, pt, call)
+            case "toString"                                                     => interpretToStringCall(at, pt)
+            case "replace" if StringInterpreter.isStringBuilderBufferCall(call) => interpretReplaceCall(pt)
             case "substring" if call.descriptor.returnType eq ClassType.String =>
                 interpretSubstringCall(at, pt, call)
             case _ =>
@@ -76,7 +76,7 @@ class L1VirtualFunctionCallInterpreter(
                     case _ if at.isDefined =>
                         interpretArbitraryCall(at.get, call)
                     case _ =>
-                        computeFinalResult(StringFlowFunctionProperty.identity)
+                        StringInterpreter.uninterpretedCall(call)
                 }
         }
     }

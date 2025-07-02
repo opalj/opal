@@ -44,7 +44,7 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
         case stmt @ Assignment(_, _, expr: StaticFunctionCall[V]) =>
             L1StaticFunctionCallInterpreter().interpretExpr(stmt, expr)
 
-        case vmc: VirtualMethodCall[V]     => L1VirtualMethodCallInterpreter().interpret(vmc)
+        case vmc: VirtualMethodCall[V]     => new L1VirtualMethodCallInterpreter().interpret(vmc)
         case nvmc: NonVirtualMethodCall[V] => L1NonVirtualMethodCallInterpreter().interpret(nvmc)
 
         case stmt => super.processStatement(state)(stmt)

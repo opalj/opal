@@ -153,10 +153,10 @@ class L3FieldReadInterpreter(
 
         accessState.fieldAccessDependee = accessDependee
 
-        tryComputeFinalResult
+        computeResult
     }
 
-    private def tryComputeFinalResult(implicit
+    private def computeResult(implicit
         accessState: FieldReadState,
         state:       InterpretationState
     ): ProperPropertyComputationResult = {
@@ -214,7 +214,7 @@ class L3FieldReadInterpreter(
 
             case UBP(_: StringConstancyProperty) =>
                 accessState.updateAccessDependee(eps.asInstanceOf[EOptionP[VariableDefinition, StringConstancyProperty]])
-                tryComputeFinalResult(accessState, state)
+                computeResult(accessState, state)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }

@@ -50,9 +50,6 @@ trait StringInterpreter {
 
     protected[this] def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
         StringInterpreter.computeFinalResult(p)
-
-    protected[this] def isStringBuilderBufferCall(call: Call[V]): Boolean =
-        (call.declaringClass eq ClassType.StringBuilder) || (call.declaringClass eq ClassType.StringBuffer)
 }
 
 object StringInterpreter {
@@ -76,6 +73,32 @@ object StringInterpreter {
 
     def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
         Result(FinalEP(InterpretationHandler.getEntity(state), p))
+
+    def invalidEntitiesForUnknownCall(call: Call[V], target: Option[PV] = None)(implicit
+        state: InterpretationState
+    ): Set[PV] = {
+        val relevantParameters = call.descriptor.parameterTypes.iterator.zipWithIndex.collect {
+            case (p, index)
+                if p.isClassType && ((p.asClassType eq ClassType.StringBuilder) || (p.asClassType eq ClassType.StringBuffer)) =>
+                call.params(index)
+        }
+        val relevantReceiver = call.receiverOption.filter { _ => isStringBuilderBufferCall(call) }
+        (relevantParameters ++ relevantReceiver).map(_.asVar.toPersistentForm(state.tac.stmts)).toSet ++ target
+    }
+
+    def uninterpretedCall(call: Call[V], target: Option[PV] = None)(implicit
+        state:         InterpretationState,
+        highSoundness: Boolean
+    ): Result = {
+        val relevantEntities = invalidEntitiesForUnknownCall(call, target)
+        val webs = relevantEntities.map(PDUWeb(state.pc, _))
+        val flow = StringFlowFunctionProperty.constForEntities(state.pc, relevantEntities, failureTree)
+        val p = StringFlowFunctionProperty(webs, flow)
+        Result(FinalEP(InterpretationHandler.getEntity(state), p))
+    }
+
+    def isStringBuilderBufferCall(call: Call[V]): Boolean =
+        (call.declaringClass eq ClassType.StringBuilder) || (call.declaringClass eq ClassType.StringBuffer)
 }
 
 /**

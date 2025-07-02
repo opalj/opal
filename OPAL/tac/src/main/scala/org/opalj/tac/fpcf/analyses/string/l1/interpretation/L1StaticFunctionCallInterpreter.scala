@@ -48,7 +48,7 @@ case class L1StaticFunctionCallInterpreter()(
             case _
                 if (call.descriptor.returnType eq ClassType.String) || (call.descriptor.returnType eq ClassType.Object) =>
                 interpretArbitraryCall(target, call)
-            case _ => failure(target)
+            case _ => StringInterpreter.uninterpretedCall(call, Some(target))
         }
     }
 }
@@ -67,7 +67,7 @@ private[string] trait L1ArbitraryStaticFunctionCallInterpreter
     ): ProperPropertyComputationResult = {
         val calleeMethod = call.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
         if (calleeMethod.isEmpty) {
-            return failure(target)
+            return StringInterpreter.uninterpretedCall(call, Some(target))
         }
 
         val m = calleeMethod.value

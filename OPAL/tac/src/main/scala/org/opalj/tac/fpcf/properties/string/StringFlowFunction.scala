@@ -64,6 +64,15 @@ object StringFlowFunctionProperty extends StringFlowFunctionPropertyMetaInformat
 
     def constForAll(result: StringTreeNode): StringFlowFunctionProperty =
         StringFlowFunctionProperty(Set.empty[PDUWeb], ConstForAllFlow(result))
+
+    def constForEntities(pc: Int, entities: Iterable[PV], result: StringTreeNode): StringFlowFunction = {
+        (env: StringTreeEnvironment) =>
+            {
+                var updatedEnv = env
+                entities.foreach { p => updatedEnv = updatedEnv.update(pc, p, result) }
+                updatedEnv
+            }
+    }
 }
 
 trait StringFlowFunction extends (StringTreeEnvironment => StringTreeEnvironment)

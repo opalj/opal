@@ -28,10 +28,11 @@ case class L1NonVirtualMethodCallInterpreter()(
 
     override def interpret(call: T)(implicit state: InterpretationState): ProperPropertyComputationResult = {
         call.name match {
-            case "<init>" if isStringBuilderBufferCall(call) || (call.declaringClass eq ClassType.String) =>
+            case "<init>"
+                if StringInterpreter.isStringBuilderBufferCall(call) || (call.declaringClass eq ClassType.String) =>
                 interpretInit(call)
             case _ =>
-                computeFinalResult(StringFlowFunctionProperty.identity)
+                StringInterpreter.uninterpretedCall(call)
         }
     }
 
@@ -49,7 +50,7 @@ case class L1NonVirtualMethodCallInterpreter()(
                     (env: StringTreeEnvironment) => env.update(pc, targetVar, env(pc, paramVar))
                 )
             case _ =>
-                failure(targetVar)
+                StringInterpreter.uninterpretedCall(init)
         }
     }
 }

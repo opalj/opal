@@ -35,7 +35,10 @@ case class L1NonVirtualFunctionCallInterpreter()(
         val target = expr.receiver.asVar.toPersistentForm(state.tac.stmts)
         val calleeMethod = expr.resolveCallTarget(state.dm.definedMethod.classFile.thisType)
         if (calleeMethod.isEmpty) {
-            return failure(target)
+            return StringInterpreter.uninterpretedCall(
+                expr,
+                expr.receiverOption.map { _.asVar.toPersistentForm(state.tac.stmts) }
+            )
         }
 
         val m = calleeMethod.value

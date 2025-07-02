@@ -105,10 +105,10 @@ trait L1FunctionCallInterpreter
             }
         }
 
-        tryComputeFinalResult
+        computeResult
     }
 
-    private def tryComputeFinalResult(
+    private def computeResult(
         implicit
         state:     InterpretationState,
         callState: CallState
@@ -172,7 +172,7 @@ trait L1FunctionCallInterpreter
             case EUBP(_, _: StringConstancyProperty) =>
                 val contextEPS = eps.asInstanceOf[EOptionP[VariableDefinition, StringConstancyProperty]]
                 callState.updateReturnDependee(contextEPS.e.m, contextEPS)
-                tryComputeFinalResult(state, callState)
+                computeResult(state, callState)
 
             case _ => throw new IllegalArgumentException(s"Encountered unknown eps: $eps")
         }

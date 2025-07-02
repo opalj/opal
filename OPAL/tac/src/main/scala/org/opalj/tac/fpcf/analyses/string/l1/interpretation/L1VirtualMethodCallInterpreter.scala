@@ -21,7 +21,7 @@ import org.opalj.value.TheIntegerValue
  *
  * @author Maximilian Rüsch
  */
-case class L1VirtualMethodCallInterpreter()(
+class L1VirtualMethodCallInterpreter()(
     implicit val highSoundness: Boolean
 ) extends StringInterpreter {
 
@@ -31,7 +31,7 @@ case class L1VirtualMethodCallInterpreter()(
         val pReceiver = call.receiver.asVar.toPersistentForm(state.tac.stmts)
 
         call.name match {
-            case "setLength" if isStringBuilderBufferCall(call) =>
+            case "setLength" if StringInterpreter.isStringBuilderBufferCall(call) =>
                 call.params.head.asVar.value match {
                     case TheIntegerValue(intVal) if intVal == 0 =>
                         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
@@ -63,7 +63,12 @@ case class L1VirtualMethodCallInterpreter()(
                 }
 
             case _ =>
-                computeFinalResult(StringFlowFunctionProperty.identity)
+                interpretArbitraryCall(call)
         }
     }
+
+    protected def interpretArbitraryCall(call: T)(implicit
+        state: InterpretationState
+    ): ProperPropertyComputationResult =
+        StringInterpreter.uninterpretedCall(call)
 }
