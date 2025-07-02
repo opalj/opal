@@ -29,6 +29,18 @@ public class SimpleStringBuilderOps {
         analyzeString(sb.toString());
     }
 
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Some")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "Other")
+    @Failure(sinkIndex = 1, levels = Level.L0)
+    public void stringBuilderBufferInitArguments() {
+        StringBuilder sb = new StringBuilder("Some");
+        analyzeString(sb.toString());
+
+        StringBuffer sb2 = new StringBuffer("Other");
+        analyzeString(sb2.toString());
+    }
+
     @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "SomeOther")
     @Failure(sinkIndex = 0, levels = Level.L0)
     @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "SomeOther")
@@ -188,7 +200,34 @@ public class SimpleStringBuilderOps {
         analyzeString(sb.toString());
     }
 
+    public static StringBuilder modify(StringBuilder sb) { sb.setLength(0); return sb; }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Some")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "")
+    @Failure(sinkIndex = 1, levels = Level.L0 )
+    @Failure(sinkIndex = 1, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW )
+    @Dynamic(sinkIndex = 1, levels = { Level.L1, Level.L2, Level.L3 }, value = ".*", soundness = SoundnessMode.HIGH )
+    public void modifiedStringBuilder() {
+        StringBuilder sb = new StringBuilder("Some");
+        analyzeString(sb.toString());
+        modify(sb);
+        analyzeString(sb.toString());
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Some")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "")
+    @Failure(sinkIndex = 1, levels = Level.L0 )
+    @Failure(sinkIndex = 1, levels = { Level.L1, Level.L2, Level.L3 }, soundness = SoundnessMode.LOW )
+    @Dynamic(sinkIndex = 1, levels = { Level.L1, Level.L2, Level.L3 }, value = ".*", soundness = SoundnessMode.HIGH )
+    public void modifiedReturnedStringBuilder() {
+        StringBuilder sb = new StringBuilder("Some");
+        analyzeString(sb.toString());
+        StringBuilder sb2 = modify(sb);
+        analyzeString(sb2.toString());
+    }
+
     // IMPROVE Add the following tests
-    // - Passing string builders as call parameters should result in a failure (called method can modify string builder)
     // - Support generic function calls, in particular with upper return type bounds that are non-object
 }

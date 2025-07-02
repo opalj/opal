@@ -22,4 +22,6 @@ public @interface Failure {
     String reason() default "N/A";
 
     DomainLevel[] domains() default { DomainLevel.L1, DomainLevel.L2 };
+
+    SoundnessMode[] soundness() default { SoundnessMode.LOW, SoundnessMode.HIGH };
 }
