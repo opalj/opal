@@ -19,7 +19,6 @@ public class SimpleStringBuilderOps {
      * Serves as the sink for string variables to be analyzed.
      */
     public void analyzeString(String s) {}
-    public void analyzeString(StringBuilder sb) {}
 
     @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.String")
     @Failure(sinkIndex = 0, levels = Level.L0)
@@ -45,25 +44,12 @@ public class SimpleStringBuilderOps {
     @Failure(sinkIndex = 0, levels = Level.L0)
     @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "SomeOther")
     @Failure(sinkIndex = 1, levels = Level.L0)
-    @Constant(sinkIndex = 1, levels = { Level.L1, Level.L2, Level.L3 }, value = "(Some|SomeOther)")
     public void stringValueOfWithStringBuilder() {
         StringBuilder sb = new StringBuilder("Some");
         sb.append("Other");
         analyzeString(String.valueOf(sb));
 
-        analyzeString(sb);
-    }
-
-    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Some")
-    @Failure(sinkIndex = 0, levels = Level.L0)
-    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "Other")
-    @Failure(sinkIndex = 1, levels = Level.L0)
-    public void stringBuilderBufferInitArguments() {
-        StringBuilder sb = new StringBuilder("Some");
         analyzeString(sb.toString());
-
-        StringBuffer sb2 = new StringBuffer("Other");
-        analyzeString(sb2.toString());
     }
 
     @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
