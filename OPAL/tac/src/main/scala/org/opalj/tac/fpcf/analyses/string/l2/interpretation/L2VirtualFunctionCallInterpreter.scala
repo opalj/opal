@@ -54,7 +54,7 @@ class L2VirtualFunctionCallInterpreter(
         if (call.name == "getProperty" && (call.declaringClass eq propertiesType)) {
             interpretGetSystemPropertiesCall(target)
         } else {
-            interpretArbitraryCallWithCallees(target)
+            interpretArbitraryCallWithCallees(target, call)
         }
     }
 }
@@ -67,25 +67,27 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
     override type CallState = CalleeDepender
 
     protected[this] case class CalleeDepender(
+        override val call:       E,
         override val target:     PV,
         override val parameters: Seq[PV],
         methodContext:           Context,
         var calleeDependee:      EOptionP[DefinedMethod, Callees],
         var seenDirectCallees:   Int = 0,
         var seenIndirectCallees: Int = 0
-    ) extends FunctionCallState(target, parameters) {
+    ) extends FunctionCallState(call, target, parameters, invalidatesParameters = true) {
 
         override def hasDependees: Boolean = calleeDependee.isRefinable || super.hasDependees
 
         override def dependees: Iterable[SomeEOptionP] = super.dependees ++ Seq(calleeDependee).filter(_.isRefinable)
     }
 
-    protected def interpretArbitraryCallWithCallees(target: PV)(implicit
+    protected def interpretArbitraryCallWithCallees(target: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
         // IMPROVE pass the actual method context through the entity - needs to be differentiated from "upward" entities
-        val depender = CalleeDepender(target, params, contextProvider.newContext(state.dm), ps(state.dm, Callees.key))
+        val depender =
+            CalleeDepender(call, target, params, contextProvider.newContext(state.dm), ps(state.dm, Callees.key))
 
         if (depender.calleeDependee.isEPK) {
             InterimResult.forUB(

@@ -43,8 +43,6 @@ class L2InterpretationHandler(implicit override val project: SomeProject) extend
         case stmt @ AssignmentLikeStmt(_, expr: VirtualFunctionCall[V]) =>
             new L2VirtualFunctionCallInterpreter().interpretExpr(stmt.asAssignmentLike, expr)
 
-        case vmc: VirtualMethodCall[V] => L2VirtualMethodCallInterpreter().interpret(vmc)
-
         // IMPROVE add call-graph based interpreters for other call types than virtual function calls to L2
 
         case stmt => super.processStatement(state)(stmt)

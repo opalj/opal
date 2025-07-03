@@ -72,7 +72,8 @@ private[string] trait L1ArbitraryStaticFunctionCallInterpreter
 
         val m = calleeMethod.value
         val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
-        val callState = new FunctionCallState(target, params, Seq(m), Map((m, ps(m, TACAI.key))))
+        val callState =
+            new FunctionCallState(call, target, params, Seq(m), Map((m, ps(m, TACAI.key))), invalidatesParameters = true)
 
         interpretArbitraryCallToFunctions(state, callState)
     }

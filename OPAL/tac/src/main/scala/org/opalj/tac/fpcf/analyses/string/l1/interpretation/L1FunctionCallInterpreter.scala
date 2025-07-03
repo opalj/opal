@@ -43,11 +43,13 @@ trait L1FunctionCallInterpreter
     type CallState <: FunctionCallState
 
     protected[this] class FunctionCallState(
-        val target:          PV,
-        val parameters:      Seq[PV],
-        var calleeMethods:   Seq[Method]                                                             = Seq.empty,
-        var tacDependees:    Map[Method, EOptionP[Method, TACAI]]                                    = Map.empty,
-        var returnDependees: Map[Method, Seq[EOptionP[VariableDefinition, StringConstancyProperty]]] = Map.empty
+        val call:                  E,
+        val target:                PV,
+        val parameters:            Seq[PV],
+        var calleeMethods:         Seq[Method]                                                             = Seq.empty,
+        var tacDependees:          Map[Method, EOptionP[Method, TACAI]]                                    = Map.empty,
+        var returnDependees:       Map[Method, Seq[EOptionP[VariableDefinition, StringConstancyProperty]]] = Map.empty,
+        val invalidatesParameters: Boolean                                                                 = false
     ) {
         var hasUnresolvableReturnValue: Map[Method, Boolean] = Map.empty.withDefaultValue(false)
 
@@ -116,7 +118,7 @@ trait L1FunctionCallInterpreter
         val pc = state.pc
         val parameters = callState.parameters.zipWithIndex.map(x => (x._2, x._1)).toMap
 
-        val flowFunction: StringFlowFunction = (env: StringTreeEnvironment) =>
+        val targetFlowFunction: StringFlowFunction = (env: StringTreeEnvironment) =>
             env.update(
                 pc,
                 callState.target,
@@ -142,6 +144,18 @@ trait L1FunctionCallInterpreter
                     }
                 }
             )
+
+        val flowFunction: StringFlowFunction =
+            if (callState.invalidatesParameters)
+                (env: StringTreeEnvironment) => {
+                    val updatedEnv = targetFlowFunction(env)
+                    // Improve: We could use purity to determine unmodified parameters that don't need invalidation
+                    // Improve: Implement tracking of actual modifications in higher analysis levels
+                    val parameters = StringInterpreter.invalidEntitiesForUnknownCall(callState.call)
+                    StringFlowFunctionProperty.constForEntities(state.pc, parameters, failureTree)(updatedEnv)
+                }
+            else
+                targetFlowFunction
 
         val newUB = StringFlowFunctionProperty(
             callState.parameters.map(PDUWeb(pc, _)).toSet + PDUWeb(pc, callState.target),
