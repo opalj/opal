@@ -13,9 +13,9 @@ import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -103,9 +103,16 @@ sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: org.opalj.fpcf.FPCFAnalysis): Unit = {}
+
+    override def afterPhaseCompletion(
+        p:        SomeProject,
+        ps:       PropertyStore,
+        analysis: org.opalj.fpcf.FPCFAnalysis
+    ): Unit = {}
 }
 
-object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with BasicFPCFEagerAnalysisScheduler {
+object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -119,7 +126,7 @@ object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with BasicFPCFEager
     }
 }
 
-object LazyL0TACAIAnalysis extends L0TACAIAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
+object LazyL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

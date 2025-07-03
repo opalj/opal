@@ -803,8 +803,6 @@ trait AbstractPointsToAnalysisScheduler extends BasicFPCFTriggeredAnalysisSchedu
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => AbstractPointsToAnalysis
 
-    override type InitializationData = Null
-
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation :+ DeclaredMethodsKey
 
@@ -820,12 +818,6 @@ trait AbstractPointsToAnalysisScheduler extends BasicFPCFTriggeredAnalysisSchedu
     override def derivesCollaboratively: Set[PropertyBounds] = Set(PropertyBounds.ub(propertyKind))
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
-
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        null
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def register(
         p:      SomeProject,

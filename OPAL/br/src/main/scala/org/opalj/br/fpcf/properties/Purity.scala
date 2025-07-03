@@ -20,6 +20,7 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.IndividualProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore

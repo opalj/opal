@@ -48,7 +48,9 @@ object PropertyStoreKey
         implicit val logContext: LogContext = project.logContext
 
         val context: List[PropertyStoreContext[AnyRef]] = List(
+            // The project is stored twice, once as a generic [[org.opalj.si.Project]] and once for its concrete class
             PropertyStoreContext(classOf[Project], project),
+            PropertyStoreContext(project.getClass.asInstanceOf[Class[Project]], project),
             PropertyStoreContext(classOf[Config], project.config)
         )
         project.getProjectInformationKeyInitializationData(this) match {
