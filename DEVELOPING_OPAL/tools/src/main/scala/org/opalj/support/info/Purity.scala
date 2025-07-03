@@ -468,9 +468,13 @@ object Purity {
 
         time {
             if (analysisConfig(MultiProjectsCommand)) {
-                for (subp <- analysisConfig(ClassPathCommand).flatMap(_.listFiles).filter(_.isDirectory)) {
-                    println(s"${subp.getName}: ${Calendar.getInstance().getTime}")
-                    evaluate(analysisConfig, subp)
+                for {
+                    cpEntry <- analysisConfig(ClassPathCommand)
+                    subProject <- cpEntry.listFiles()
+                    if subProject.isDirectory
+                } {
+                    println(s"${subProject.getName}: ${Calendar.getInstance().getTime}")
+                    evaluate(analysisConfig, subProject)
                 }
             } else {
                 val cp = analysisConfig.get(JDKCommand).getOrElse(analysisConfig(ClassPathCommand).head)

@@ -5,6 +5,10 @@ package cli
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.ScallopOption
 import org.rogach.scallop.ValueConverter
@@ -169,16 +173,17 @@ trait OPALCommandLineConfig {
     appendDefaultToDescription = true
 
     override protected def onError(e: Throwable): Unit = {
+        implicit val logContext: LogContext = GlobalLogContext
         e match {
             case Help("") =>
                 printHelp()
             case Help(_) =>
                 subcommand.foreach(_.printHelp())
             case ScallopException(message) =>
-                println(s"Error: $message")
+                OPALLogger.error("analysis configuration", message)
                 printHelp()
-            case _ =>
-                println(s"Unexpected error: ${e.getMessage}")
+            case throwable =>
+                OPALLogger.error("analysis configuration", "", throwable)
         }
         sys.exit(0)
     }
