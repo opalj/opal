@@ -1,13 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package tac
+package br
 package fpcf
-package analyses
-package purity
+package cli
 
-import org.opalj.cli.AnalysisLevelCommand
+import org.opalj.cli.AnalysisLevelArg
 
-object PurityCommand extends AnalysisLevelCommand(
+object PurityArg extends AnalysisLevelArg(
         "Purity analysis used.",
         "L0" -> "L0PurityAnalysis",
         "L1" -> "L1PurityAnalysis",

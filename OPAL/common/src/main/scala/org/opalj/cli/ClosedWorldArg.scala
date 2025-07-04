@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigValueFactory
 
 import org.rogach.scallop.flagConverter
 
-object ClosedWorldCommand extends PlainCommand[Boolean] {
+object ClosedWorldArg extends PlainArg[Boolean] {
     override val name: String = "cwa"
     override val argName: String = "cwa"
     override val description: String = "Use closed world assumption, i.e., no class can be extended"

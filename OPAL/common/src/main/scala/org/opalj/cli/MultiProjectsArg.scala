@@ -4,7 +4,7 @@ package cli
 
 import org.rogach.scallop.flagConverter
 
-object MultiProjectsCommand extends PlainCommand[Boolean] {
+object MultiProjectsArg extends PlainArg[Boolean] {
     override val name: String = "multiProjects"
     override val description: String = "Analyzes multiple projects in the subdirectories of --cp"
 }

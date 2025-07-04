@@ -6,7 +6,6 @@ package analyses
 package pointsto
 
 import scala.collection.immutable.ArraySeq
-
 import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
 import org.opalj.br.ClassType
@@ -21,6 +20,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike

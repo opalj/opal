@@ -4,11 +4,11 @@ package bytecode
 
 import java.io.File
 
-import org.opalj.cli.ParsedCommand
+import org.opalj.cli.ParsedArg
 
 import org.rogach.scallop.flagConverter
 
-object JDKCommand extends ParsedCommand[Boolean, Option[Iterable[File]]] {
+object JDKArg extends ParsedArg[Boolean, Option[Iterable[File]]] {
     override val name: String = "JDK"
     override val description: String = "Analyze the JDK instead of a --cp"
     override val defaultValue: Option[Boolean] = Some(false)

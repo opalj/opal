@@ -5,14 +5,12 @@ package domain
 
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.analyses.ProjectBasedCommand
 import org.opalj.br.analyses.SomeProject
-import org.opalj.cli.ParsedCommand
-
+import org.opalj.br.fpcf.cli.ProjectBasedArg
+import org.opalj.cli.ParsedArg
 import org.rogach.scallop.stringConverter
 
-object DomainCommand extends ParsedCommand[String, Class[_ <: Domain]]
-    with ProjectBasedCommand[String, Class[_ <: Domain]] {
+object DomainArg extends ParsedArg[String, Class[_ <: Domain]] with ProjectBasedArg[String, Class[_ <: Domain]] {
     override val name: String = "domain"
     override val argName: String = "fqn"
     override val description: String = "Fully-qualified class name of the abstract interpretation domain to use"

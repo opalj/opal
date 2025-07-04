@@ -4,7 +4,7 @@ package cli
 
 import org.rogach.scallop.flagConverter
 
-object LibrariesAsInterfacesCommand extends PlainCommand[Boolean] {
+object LibrariesAsInterfacesArg extends PlainArg[Boolean] {
     override val name: String = "libsAsInterfaces"
     override val description: String = "Load only interfaces of libraries, no implementations"
     override val defaultValue: Option[Boolean] = Some(false)

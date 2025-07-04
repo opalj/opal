@@ -4,10 +4,8 @@ package tac
 package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
-
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
-
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -21,6 +19,7 @@ import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
@@ -32,7 +31,6 @@ import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 
 /**
  * An abstract [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]].

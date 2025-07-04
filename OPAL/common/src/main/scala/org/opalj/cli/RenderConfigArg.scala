@@ -4,8 +4,8 @@ package cli
 
 import org.rogach.scallop.flagConverter
 
-object NoJDKCommand extends PlainCommand[Boolean] {
-    override val name: String = "noJDK"
-    override val description: String = "Do not analyze any JDK methods"
+object RenderConfigArg extends PlainArg[Boolean] {
+    override val name: String = "renderConfig"
+    override val description: String = "Print the configuration"
     override val defaultValue: Option[Boolean] = Some(false)
 }

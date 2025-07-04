@@ -6,7 +6,7 @@ import com.typesafe.config.Config
 
 import org.rogach.scallop.ValueConverter
 
-trait Command[T, R] {
+trait Arg[T, R] {
     def name: String
     def argName: String = name
     def description: String
@@ -23,25 +23,25 @@ trait Command[T, R] {
 
     def apply(opalConfig: Config, value: Option[R]): Config = opalConfig
 
-    def commands(): IterableOnce[Command[_, _]] = Iterator(this)
+    def commands(): IterableOnce[Arg[_, _]] = Iterator(this)
 }
 
-abstract class ConvertedCommand[T: ValueConverter, R] extends Command[T, R] {
+abstract class ConvertedArg[T: ValueConverter, R] extends Arg[T, R] {
     val conv: ValueConverter[T] = implicitly[ValueConverter[T]]
 }
 
-abstract class PlainCommand[T: ValueConverter] extends ConvertedCommand[T, T] {
+abstract class PlainArg[T: ValueConverter] extends ConvertedArg[T, T] {
     override final val choices = Seq.empty
 }
 
-abstract class ParsedCommand[T: ValueConverter, R] extends ConvertedCommand[T, R] {
+abstract class ParsedArg[T: ValueConverter, R] extends ConvertedArg[T, R] {
     def parse(arg: T): R
 }
 
-trait ChoiceCommand[R] extends Command[String, R]
+trait ChoiceArg[R] extends Arg[String, R]
 
-trait ForwardingCommand[T, S, R] extends Command[T, R] {
-    val command: Command[T, S]
+trait ForwardingArg[T, S, R] extends Arg[T, R] {
+    val command: Arg[T, S]
     def name: String = command.name
     override def argName: String = command.argName
     def description: String = command.description
@@ -51,5 +51,5 @@ trait ForwardingCommand[T, S, R] extends Command[T, R] {
     override def choices: Seq[String] = command.choices
 }
 
-abstract class ExternalParser[T: ValueConverter, R](val command: Command[T, T]) extends ParsedCommand[T, R]
-    with ForwardingCommand[T, T, R]
+abstract class ExternalParser[T: ValueConverter, R](val command: Arg[T, T]) extends ParsedArg[T, R]
+    with ForwardingArg[T, T, R]

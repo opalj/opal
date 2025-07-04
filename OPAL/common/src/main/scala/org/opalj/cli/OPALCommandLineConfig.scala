@@ -10,6 +10,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.ScallopOption
+import org.rogach.scallop.ScallopOptionGroup
 import org.rogach.scallop.ValueConverter
 import org.rogach.scallop.exceptions.Help
 import org.rogach.scallop.exceptions.ScallopException
@@ -23,31 +24,36 @@ import org.rogach.scallop.exceptions.ScallopException
 trait OPALCommandLineConfig {
     self: ScallopConf =>
 
-    private var commands: Set[Command[_, _]] = Set(NoLogsCommand, RenderConfigCommand)
-    private var generalCommands: Set[Command[_, _]] = commands
-    def commandsIterator: Iterator[Command[_, _]] = commands.iterator
+    private var definedArgs: Set[Arg[_, _]] = Set.empty
+    def argsIterator: Iterator[Arg[_, _]] = definedArgs.iterator
+
+    private val runnerSpecificGroup = group("Runner-specific arguments:")
+    private val generalConfigGroup = group("General configuration:")
+    protected var argGroups: Map[Arg[_, _], ScallopOptionGroup] = Map.empty
+
+    generalArgs(NoLogsArg, RenderConfigArg)
 
     /**
-     * Defines (additional) commands for this configuration
+     * Defines (additional) args for this configuration
      */
-    protected def commands(cs: Command[_, _]*): Unit = {
-        commands ++= cs
+    protected def args(as: Arg[_, _]*): Unit = {
+        definedArgs ++= as
     }
     /**
-     * Defines (additional) general commands for this configuration
+     * Defines (additional) general args for this configuration
      */
-    protected def generalCommands(cs: Command[_, _]*): Unit = {
-        commands ++= cs
-        generalCommands ++= cs.flatMap(_.commands())
+    protected def generalArgs(as: Arg[_, _]*): Unit = {
+        definedArgs ++= as
+        argGroups ++= as.iterator.flatMap(_.commands()).map(c => c -> generalConfigGroup)
     }
 
-    private var required: Set[Command[_, _]] = Set.empty
-    private var values: Map[Command[_, _], Any] = _
+    private var required: Set[Arg[_, _]] = Set.empty
+    private var values: Map[Arg[_, _], Any] = _
 
     /**
      * Gets the value of an (optional) argument or None if the argument was not supplied
      */
-    def get[R](command: Command[_, R]): Option[R] = {
+    def get[R](command: Arg[_, R]): Option[R] = {
         values.get(command).asInstanceOf[Option[R]]
     }
 
@@ -56,124 +62,119 @@ trait OPALCommandLineConfig {
      *
      * @throws NoSuchElementException if the argument was not supplied (which means it was not marked as required!)
      */
-    def apply[R](command: Command[_, R]): R = {
-        values(command).asInstanceOf[R]
+    def apply[R](arg: Arg[_, R]): R = {
+        values(arg).asInstanceOf[R]
     }
 
-    protected implicit class CommandExt(c: Command[_, _]) {
+    protected implicit class CommandExt(a: Arg[_, _]) {
 
         /**
          * Makes an argument required
          */
-        def ! : Command[_, _] = {
-            required += c
-            c
+        def ! : Arg[_, _] = {
+            required += a
+            a
         }
 
         /**
          * Makes an argument optional (if it was required by a super class)
          */
-        def ? : Command[_, _] = {
-            required -= c
-            c
+        def ? : Arg[_, _] = {
+            required -= a
+            a
         }
 
         /**
          * Requires exactly one of the given arguments
          */
-        def ^(c2: Command[_, _]): Command[_, _] = {
-            MutuallyExclusive(c, c2)
+        def ^(a2: Arg[_, _]): Arg[_, _] = {
+            MutuallyExclusive(a, a2)
         }
     }
 
-    private case class MutuallyExclusive(cs: Command[_, _]*) extends Command[Any, Any] {
+    private case class MutuallyExclusive(as: Arg[_, _]*) extends Arg[Any, Any] {
         override val name: String = ""
         override val description: String = ""
 
-        override def commands(): IterableOnce[Command[_, _]] = cs.iterator.flatMap(_.commands())
+        override def commands(): IterableOnce[Arg[_, _]] = as.iterator.flatMap(_.commands())
     }
 
     private object MutuallyExclusive {
-        def apply(c1: Command[_, _], c2: Command[_, _]): MutuallyExclusive = (c1, c2) match {
-            case (r1: MutuallyExclusive, r2: MutuallyExclusive) => new MutuallyExclusive((r1.cs ++ r2.cs) *)
-            case (r1: MutuallyExclusive, _)                     => new MutuallyExclusive((r1.cs :+ c2) *)
-            case (_, r2: MutuallyExclusive)                     => new MutuallyExclusive((r2.cs :+ c1) *)
-            case _                                              => new MutuallyExclusive(Seq(c1, c2) *)
+        def apply(a1: Arg[_, _], a2: Arg[_, _]): MutuallyExclusive = (a1, a2) match {
+            case (r1: MutuallyExclusive, r2: MutuallyExclusive) => new MutuallyExclusive((r1.as ++ r2.as) *)
+            case (r1: MutuallyExclusive, _)                     => new MutuallyExclusive((r1.as :+ a2) *)
+            case (_, r2: MutuallyExclusive)                     => new MutuallyExclusive((r2.as :+ a1) *)
+            case _                                              => new MutuallyExclusive(Seq(a1, a2) *)
         }
     }
 
     protected def init(): Unit = {
 
-        def getScallopOptionFlat(c: Command[_, _]): ScallopOption[_] = c match {
-            case choiceCommand: ChoiceCommand[_] => getChoiceScallopOption(choiceCommand)
-            case convertedCommand: ConvertedCommand[_, _] =>
-                getRegularScallopOption(convertedCommand)(convertedCommand.conv)
+        def getScallopOptionFlat(a: Arg[_, _]): ScallopOption[_] = a match {
+            case choiceArg: ChoiceArg[_] => getChoiceScallopOption(choiceArg)
+            case convertedArg: ConvertedArg[_, _] =>
+                getRegularScallopOption(convertedArg)(convertedArg.conv)
             case _: MutuallyExclusive => throw new IllegalArgumentException("Cannot nest mutually exclusive arguments")
         }
 
-        def getScallopOption(c: Command[_, _]): IterableOnce[(Command[_, _], ScallopOption[_])] = c match {
+        def getScallopOption(a: Arg[_, _]): IterableOnce[(Arg[_, _], ScallopOption[_])] = a match {
             case me: MutuallyExclusive => {
-                val options = me.cs.map { c => c -> getScallopOptionFlat(c) }
-                if (required.contains(c))
+                val options = me.as.map { c => c -> getScallopOptionFlat(c) }
+                if (required.contains(a))
                     requireOne(options.map(_._2) *)
                 else
                     mutuallyExclusive(options.map(_._2) *)
                 options
             }
-            case _ => Iterator(c -> getScallopOptionFlat(c))
+            case _ => Iterator(a -> getScallopOptionFlat(a))
         }
 
-        val rawValues = commands.iterator.flatMap(getScallopOption).toMap
+        val rawValues = definedArgs.iterator.flatMap(getScallopOption).toMap
 
         verify()
 
         values = rawValues.collect {
-            case (command, value) if value.isDefined =>
+            case (arg, value) if value.isDefined =>
                 (
-                    command,
-                    command match {
-                        case parsedCommand: ParsedCommand[_, _] => parseCommandWithParser(value, parsedCommand.parse)
-                        case _: Command[_, _]                   => value()
+                    arg,
+                    arg match {
+                        case parsedArg: ParsedArg[_, _] => parseArgWithParser(value, parsedArg.parse)
+                        case _: Arg[_, _]                   => value()
                     }
                 )
         }
     }
 
-    private val runnerSpecificGroup = group("Runner-specific arguments:")
-    private val generalConfigGroup = group("General configuration:")
-
-    private def getRegularScallopOption[T](command: ConvertedCommand[T, _])(implicit
-        conv: ValueConverter[T]
-    ): ScallopOption[T] =
+    private def getRegularScallopOption[T](arg: ConvertedArg[T, _])(implicit conv: ValueConverter[T]): ScallopOption[T] =
         opt[T](
-            name = command.name,
-            argName = command.argName,
-            descr = command.description,
-            default = command.defaultValue,
-            short = command.short,
-            noshort = command.noshort,
-            required = required.contains(command),
-            group = if (generalCommands.contains(command)) generalConfigGroup else runnerSpecificGroup
-        )
+            name = arg.name,
+            argName = arg.argName,
+            descr = arg.description,
+            default = arg.defaultValue,
+            short = arg.short,
+            noshort = arg.noshort,
+            required = required.contains(arg),
+            group = argGroups.getOrElse(arg, runnerSpecificGroup)
+            )
 
-    private def getChoiceScallopOption(command: Command[String, _]): ScallopOption[String] =
+    private def getChoiceScallopOption(arg: Arg[String, _]): ScallopOption[String] =
         choice(
-            name = command.name,
-            argName = command.argName,
-            descr = command.description,
-            default = command.defaultValue,
-            short = command.short,
-            noshort = command.noshort,
-            choices = command.choices,
-            required = required.contains(command),
-            group = if (generalCommands.contains(command)) generalConfigGroup else runnerSpecificGroup
-        )
+            name = arg.name,
+            argName = arg.argName,
+            descr = arg.description,
+            default = arg.defaultValue,
+            short = arg.short,
+            noshort = arg.noshort,
+            choices = arg.choices,
+            required = required.contains(arg),
+            group = argGroups.getOrElse(arg, runnerSpecificGroup)
+            )
 
-    private def parseCommandWithParser[T, R](value: ScallopOption[_], parse: T => R): R =
+    private def parseArgWithParser[T, R](value: ScallopOption[_], parse: T => R): R =
         parse(value.apply().asInstanceOf[T])
 
     def setupConfig(isLibrary: Boolean): Config = {
-        if(get(NoLogsCommand).getOrElse(false))
+        if(get(NoLogsArg).getOrElse(false))
             OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
         var config: Config =
@@ -182,8 +183,8 @@ trait OPALCommandLineConfig {
             else
                 ConfigFactory.load("CommandLineProject.conf")
 
-        for (command <- commands)
-            config = command(config, this)
+        for (arg <- definedArgs)
+            config = arg(config, this)
 
         config
     }

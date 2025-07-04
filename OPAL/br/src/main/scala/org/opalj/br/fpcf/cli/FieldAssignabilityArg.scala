@@ -1,13 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package tac
+package br
 package fpcf
-package analyses
-package fieldassignability
+package cli
 
-import org.opalj.cli.AnalysisLevelCommand
+import org.opalj.cli.AnalysisLevelArg
 
-object FieldAssignabilityCommand extends AnalysisLevelCommand(
+object FieldAssignabilityArg extends AnalysisLevelArg(
         "Field-assignability analysis used.",
         "L0" -> "L0FieldAssignabilityAnalysis",
         "L1" -> "L1FieldAssignabilityAnalysis",

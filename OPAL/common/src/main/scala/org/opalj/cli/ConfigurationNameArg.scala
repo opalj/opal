@@ -4,7 +4,7 @@ package cli
 
 import java.util.Calendar
 
-object ConfigurationNameCommand extends PlainCommand[String] {
+object ConfigurationNameArg extends PlainArg[String] {
     override val name: String = "configName"
     override val argName: String = "name"
     override val description: String = "Name of the configuration run to be printed to the results file"

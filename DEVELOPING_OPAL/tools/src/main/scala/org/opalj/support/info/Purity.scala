@@ -3,18 +3,11 @@ package org.opalj
 package support
 package info
 
-import scala.language.postfixOps
-
-import java.io.File
-import java.io.FileOutputStream
-import java.io.PrintWriter
-import java.util.Calendar
-
-import org.opalj.ai.domain.DomainCommand
+import org.opalj.ai.domain.DomainArg
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.MultiProjectAnalysisConfig
+import org.opalj.br.analyses.MultiProjectAnalysisApplication
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
@@ -24,6 +17,10 @@ import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.cli.EscapeArg
+import org.opalj.br.fpcf.cli.FieldAssignabilityArg
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.br.fpcf.cli.PurityArg
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ContextuallyPure
@@ -38,81 +35,81 @@ import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.bytecode.JDKCommand
-import org.opalj.cli.AnalysisLevelCommand
-import org.opalj.cli.ClosedWorldCommand
-import org.opalj.cli.ConfigurationNameCommand
-import org.opalj.cli.EagerCommand
-import org.opalj.cli.EvalDirCommand
-import org.opalj.cli.IndividualCommand
-import org.opalj.cli.PackagesCommand
+import org.opalj.bytecode.JDKArg
+import org.opalj.cli.AnalysisLevelArg
+import org.opalj.cli.ClosedWorldArg
+import org.opalj.cli.ConfigurationNameArg
+import org.opalj.cli.EagerArg
+import org.opalj.cli.IndividualArg
+import org.opalj.cli.OutputDirArg
+import org.opalj.cli.PackagesArg
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
-import org.opalj.tac.cg.CallGraphCommand
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.escape.EscapeCommand
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
-import org.opalj.tac.fpcf.analyses.fieldassignability.FieldAssignabilityCommand
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.PurityCommand
-import org.opalj.tac.fpcf.analyses.purity.RaterCommand
+import org.opalj.tac.fpcf.analyses.purity.RaterArg
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
 import org.rogach.scallop.ScallopConf
+
+import java.io.File
+import java.io.FileOutputStream
+import java.io.PrintWriter
+import scala.language.postfixOps
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
  *
  * @author Dominik Helm
  */
-object Purity {
+object Purity extends MultiProjectAnalysisApplication {
 
     class PurityConfig(args: Array[String]) extends ScallopConf(args) with MultiProjectAnalysisConfig[PurityConfig]
-        with PropertyStoreBasedCommandLineConfig {
+        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
 
         banner("Compute method purity information\n")
 
-        private val analysisLevelCommand = new AnalysisLevelCommand(PurityCommand.description, PurityCommand.levels *) {
+        private val analysisLevelArg = new AnalysisLevelArg(PurityArg.description, PurityArg.levels *) {
             override val defaultValue: Option[String] = Some("L2")
             override val withNone = false
         }
 
-        commands(
-            analysisLevelCommand !,
-            FieldAssignabilityCommand,
-            EscapeCommand,
-            EagerCommand !,
-            ConfigurationNameCommand !,
-            RaterCommand !,
-            CallGraphCommand !,
-            IndividualCommand !,
-            EvalDirCommand,
-            PackagesCommand
-        )
-        generalCommands(
-            ClosedWorldCommand,
-            DomainCommand
-        )
+        args(
+            analysisLevelArg !,
+            FieldAssignabilityArg,
+            EscapeArg,
+            EagerArg !,
+            ConfigurationNameArg !,
+            RaterArg !,
+            IndividualArg !,
+            OutputDirArg,
+            PackagesArg
+            )
+        generalArgs(
+            ClosedWorldArg,
+            DomainArg
+            )
         init()
 
-        val analysis = getScheduler(apply(analysisLevelCommand), false).asInstanceOf[FPCFAnalysisScheduler]
+        val analysis: FPCFAnalysisScheduler = getScheduler(apply(analysisLevelArg), eager = false).asInstanceOf[FPCFAnalysisScheduler]
 
         val supportingAnalyses: List[FPCFAnalysisScheduler] = parseArgumentsForSupport(
-            get(FieldAssignabilityCommand),
-            get(EscapeCommand),
-            apply(EagerCommand)
-        )
+            get(FieldAssignabilityArg),
+            get(EscapeArg),
+            apply(EagerArg)
+            )
 
         private def parseArgumentsForSupport(
             fieldAssignability: Option[String],
@@ -142,7 +139,7 @@ object Purity {
             escape match {
                 case Some("") =>
                 case _ =>
-                    escape.orElse(Some(EscapeCommand.parse("L1"))).foreach { e => support ::= getScheduler(e, eager) }
+                    escape.orElse(Some(EscapeArg.parse("L1"))).foreach { e => support ::= getScheduler(e, eager) }
             }
 
             fieldAssignability match {
@@ -175,13 +172,17 @@ object Purity {
         "org/xml/sax"
     )
 
+    override type ConfigType = PurityConfig
+
+    def createConfig(args: Array[String]): PurityConfig = new PurityConfig(args)
+
     def evaluate(
         cp:             Iterable[File],
         analysisConfig: PurityConfig
     ): Unit = {
-        val isJDK = analysisConfig(JDKCommand).isDefined
+        val isJDK = analysisConfig(JDKArg).isDefined
         val dirName = if (isJDK) "JDK" else cp.head.getName
-        val projectEvalDir = analysisConfig.get(EvalDirCommand).map(new File(_, dirName))
+        val projectEvalDir = analysisConfig.get(OutputDirArg).map(new File(_, dirName))
         if (projectEvalDir.isDefined && !projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
 
         var projectTime: Seconds = Seconds.None
@@ -197,7 +198,7 @@ object Purity {
             analysisConfig.setupPropertyStore(project)
         } { t => propertyStoreTime = t.toSeconds }
 
-        val rater = analysisConfig(RaterCommand)
+        val rater = analysisConfig(RaterArg)
         analysisConfig.analysis match {
             case LazyL0PurityAnalysis =>
             case LazyL1PurityAnalysis => L1PurityAnalysis.setRater(Some(rater))
@@ -210,7 +211,7 @@ object Purity {
             for (cf <- project.allProjectClassFiles; m <- cf.methodsWithBody)
                 yield declaredMethods(m)
 
-        val packages = analysisConfig.get(PackagesCommand)
+        val packages = analysisConfig.get(PackagesArg)
 
         val projMethods = allMethods.filter { m =>
             val pn = m.definedMethod.classFile.thisType.packageName
@@ -224,7 +225,7 @@ object Purity {
         val manager = project.get(FPCFAnalysesManagerKey)
 
         time {
-            project.get(analysisConfig(CallGraphCommand))
+            analysisConfig.setupCallGaph(project)
         } { t => callGraphTime = t.toSeconds }
 
         val reachableMethods =
@@ -302,7 +303,7 @@ object Purity {
         }
 
         if (projectEvalDir.isDefined) {
-            val configurationName = analysisConfig(ConfigurationNameCommand)
+            val configurationName = analysisConfig(ConfigurationNameArg)
 
             // WRITE ANALYSIS OUTPUT
 
@@ -347,7 +348,7 @@ object Purity {
 
             // WRITE CONTENT INFORMATION
 
-            val aggregated = !analysisConfig(IndividualCommand)
+            val aggregated = !analysisConfig(IndividualArg)
 
             val results = new File(projectEvalDir.get, "method-results.csv")
             val resultsNew = !results.exists()
@@ -451,20 +452,5 @@ object Purity {
             Console.println(s"Call-graph time: $callGraphTime")
             Console.println(s"Analysis time: $analysisTime")
         }
-    }
-
-    def main(args: Array[String]): Unit = {
-
-        val analysisConfig = new PurityConfig(args)
-
-        val begin = Calendar.getInstance()
-        Console.println(begin.getTime)
-
-        time {
-            analysisConfig.foreachProject(evaluate)
-        }(t => println("evaluation time: " + t.toSeconds))
-
-        val end = Calendar.getInstance()
-        Console.println(end.getTime)
     }
 }

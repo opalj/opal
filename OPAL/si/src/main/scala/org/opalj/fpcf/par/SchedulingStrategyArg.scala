@@ -6,12 +6,12 @@ package par
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.cli.PlainCommand
+import org.opalj.cli.PlainArg
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 
 import org.rogach.scallop.stringConverter
 
-object SchedulingStrategyCommand extends PlainCommand[String] {
+object SchedulingStrategyArg extends PlainArg[String] {
     override val name: String = "schedulingStrategy"
     override val argName: String = "strategy"
     override val description: String = "Scheduling strategy to be used with the parallel PropertyStore"

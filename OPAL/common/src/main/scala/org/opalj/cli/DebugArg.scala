@@ -4,7 +4,7 @@ package cli
 
 import org.rogach.scallop.flagConverter
 
-object DebugCommand extends PlainCommand[Boolean] {
+object DebugArg extends PlainArg[Boolean] {
     override val name: String = "debug"
     override val description: String = "Enable additional debug output"
     override val defaultValue: Option[Boolean] = Some(false)

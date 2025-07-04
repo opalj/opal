@@ -4,8 +4,8 @@ package cli
 
 import org.rogach.scallop.flagConverter
 
-object EagerCommand extends PlainCommand[Boolean] {
-    override val name: String = "eager"
-    override val description: String = "Execute all analyses eagerly"
+object NoJDKArg extends PlainArg[Boolean] {
+    override val name: String = "noJDK"
+    override val description: String = "Do not analyze any JDK methods"
     override val defaultValue: Option[Boolean] = Some(false)
 }

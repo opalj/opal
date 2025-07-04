@@ -4,8 +4,8 @@ package cli
 
 import org.rogach.scallop.flagConverter
 
-object LibraryCommand extends PlainCommand[Boolean] {
-    override val name: String = "library"
-    override val description: String = "Assumes that the target is a library"
+object IndividualArg extends PlainArg[Boolean] {
+    override val name: String = "individual"
+    override val description: String = "Report results individually instead of in aggregated form"
     override val defaultValue: Option[Boolean] = Some(false)
 }

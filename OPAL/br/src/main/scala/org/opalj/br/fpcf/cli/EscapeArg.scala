@@ -1,13 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package tac
+package br
 package fpcf
-package analyses
-package escape
+package cli
 
-import org.opalj.cli.AnalysisLevelCommand
+import org.opalj.cli.AnalysisLevelArg
 
-object EscapeCommand extends AnalysisLevelCommand(
+object EscapeArg extends AnalysisLevelArg(
         "Escape analysis used.",
         "L1" -> "SimpleEscapeAnalysis",
         "L2" -> "InterproceduralEscapeAnalysis"

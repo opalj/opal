@@ -6,7 +6,7 @@ import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 import org.rogach.scallop.intConverter
 
-object ThreadsNumCommand extends PlainCommand[Int] {
+object ThreadsNumArg extends PlainArg[Int] {
     override val name: String = "threads"
     override val argName: String = "threadsNum"
     override val description: String = "Number of threads to be used; 0 for entirely sequential execution"

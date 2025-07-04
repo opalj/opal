@@ -1,45 +1,42 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package br
-package analyses
-
-import scala.language.postfixOps
-import scala.reflect.internal.util.NoPosition.showError
-
-import java.io.File
-import java.net.URL
-import java.util.Calendar
-import scala.util.control.ControlThrowable
+package fpcf
+package cli
 
 import com.typesafe.config.Config
-
+import org.opalj.br.ClassFile
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.reader
 import org.opalj.br.reader.Source
-import org.opalj.bytecode.JDKCommand
+import org.opalj.bytecode.JDKArg
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.cli.ClassPathCommand
-import org.opalj.cli.Command
-import org.opalj.cli.ConvertedCommand
-import org.opalj.cli.ForwardingCommand
-import org.opalj.cli.LibrariesAsInterfacesCommand
-import org.opalj.cli.LibraryClassPathCommand
-import org.opalj.cli.LibraryCommand
-import org.opalj.cli.LibraryDirectoryCommand
-import org.opalj.cli.MultiProjectsCommand
-import org.opalj.cli.NoJDKCommand
+import org.opalj.cli.Arg
+import org.opalj.cli.ClassPathArg
+import org.opalj.cli.LibrariesAsInterfacesArg
+import org.opalj.cli.LibraryArg
+import org.opalj.cli.LibraryClassPathArg
+import org.opalj.cli.LibraryDirectoryArg
+import org.opalj.cli.MultiProjectsArg
+import org.opalj.cli.NoJDKArg
 import org.opalj.cli.OPALCommandLineConfig
-import org.opalj.cli.ProjectDirectoryCommand
-import org.opalj.cli.RenderConfigCommand
-import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.fpcf.PropertyStoreKey
+import org.opalj.cli.ProjectDirectoryArg
+import org.opalj.cli.RenderConfigArg
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-
 import org.rogach.scallop.ScallopConf
-import org.rogach.scallop.intConverter
 
-trait ProjectBasedCommand[T, R] extends Command[T, R] {
+import java.io.File
+import java.net.URL
+import java.util.Calendar
+import scala.language.postfixOps
+import scala.reflect.internal.util.NoPosition.showError
+import scala.util.control.ControlThrowable
+
+trait ProjectBasedArg[T, R] extends Arg[T, R] {
 
     final def apply(project: SomeProject, cliConfig: OPALCommandLineConfig): Unit = {
         this(project, cliConfig.get(this))
@@ -48,47 +45,25 @@ trait ProjectBasedCommand[T, R] extends Command[T, R] {
     def apply(project: SomeProject, value: Option[R]): Unit = {}
 }
 
-object PropertyStoreThreadsNumCommand extends ConvertedCommand[Int, Int] with ForwardingCommand[Int, Int, Int]
-    with ProjectBasedCommand[Int, Int] {
-    val command = org.opalj.cli.ThreadsNumCommand
-
-    override def apply(project: SomeProject, value: Option[Int]): Unit = {
-        val numThreads = value.get
-        project.getOrCreateProjectInformationKeyInitializationData(
-            PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) => {
-                implicit val lg: LogContext = project.logContext
-                if (numThreads == 0) {
-                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                } else {
-                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
-                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                }
-            }
-        )
-    }
-}
-
 trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
     self: ScallopConf =>
 
-    generalCommands(
-        ClassPathCommand ^ JDKCommand !,
-        LibraryCommand !,
-        LibraryClassPathCommand,
-        ProjectDirectoryCommand,
-        LibraryDirectoryCommand,
-        NoJDKCommand !,
-        LibrariesAsInterfacesCommand,
-        PropertyStoreThreadsNumCommand
-    )
+    generalArgs(
+        ClassPathArg ^ JDKArg !,
+        LibraryArg !,
+        LibraryClassPathArg,
+        ProjectDirectoryArg,
+        LibraryDirectoryArg,
+        NoJDKArg !,
+        LibrariesAsInterfacesArg
+        )
 
     def setupProject(
-        cp:    Iterable[File] = apply(JDKCommand).getOrElse(apply(ClassPathCommand)),
-        libCP: Iterable[File] = get(LibraryClassPathCommand).getOrElse(Iterable.empty)
+                        cp:    Iterable[File] = apply(JDKArg).getOrElse(apply(ClassPathArg)),
+                        libCP: Iterable[File] = get(LibraryClassPathArg).getOrElse(Iterable.empty)
     )(
-        isLibrary:             Boolean = get(LibraryCommand).getOrElse(cp.head eq JRELibraryFolder),
-        librariesAsInterfaces: Boolean = get(LibrariesAsInterfacesCommand).getOrElse(false)
+                        isLibrary:             Boolean = get(LibraryArg).getOrElse(cp.head eq JRELibraryFolder),
+                        librariesAsInterfaces: Boolean = get(LibrariesAsInterfacesArg).getOrElse(false)
     )(implicit initialLogContext: LogContext = GlobalLogContext): SomeProject = {
 
         implicit val config: Config = setupConfig(isLibrary)
@@ -99,7 +74,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
 
         info("project configuration", s"the classpath is ${cp.mkString}")
 
-        val cpFiles = resolveDirToCP(get(ProjectDirectoryCommand), cp, cp)
+        val cpFiles = resolveDirToCP(get(ProjectDirectoryArg), cp, cp)
         if (cpFiles.isEmpty) {
             showError("Nothing to analyze.")
             printHelp()
@@ -107,10 +82,10 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
         }
         val (classFiles, exceptions1) = readClassFiles("project", cpFiles)
 
-        val libcpFiles = resolveDirToCP(get(LibraryDirectoryCommand), if (libCP.isEmpty) cp else libCP, libCP)
+        val libcpFiles = resolveDirToCP(get(LibraryDirectoryArg), if (libCP.isEmpty) cp else libCP, libCP)
         val (libraryClassFiles, exceptions2) = readClassFiles("library", libcpFiles, !librariesAsInterfaces)
 
-        val jdkFiles = if (this(NoJDKCommand)) Iterable.empty else Iterable(JRELibraryFolder)
+        val jdkFiles = if (this(NoJDKArg)) Iterable.empty else Iterable(JRELibraryFolder)
         val (jdkClassFiles, exceptions3) = readClassFiles("JDK", jdkFiles, !librariesAsInterfaces)
 
         val project =
@@ -137,12 +112,12 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
                 .mkString("project statistics:\n\t", "\n\t", "\n")
         info("project", statistics)(project.logContext)
 
-        commandsIterator.foreach {
-            case command: ProjectBasedCommand[_, _] => command(project, this)
+        argsIterator.foreach {
+            case arg: ProjectBasedArg[_, _] => arg(project, this)
             case _                                  =>
         }
 
-        if (get(RenderConfigCommand).getOrElse(false)) {
+        if (get(RenderConfigArg).getOrElse(false)) {
             val effectiveConfiguration =
                 "Effective configuration:\n" + org.opalj.util.renderConfig(project.config)
             info("project configuration", effectiveConfiguration)
@@ -204,15 +179,15 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
 
 trait MultiProjectAnalysisConfig[T <: ScallopConf] extends ProjectBasedCommandLineConfig { self: T =>
 
-    generalCommands(MultiProjectsCommand)
+    generalArgs(MultiProjectsArg)
 
     /**
      * Executes a function for every project directory of a muti-project analysis
      */
     def foreachProject(f: (Iterable[File], T) => Unit): Unit = {
-        if (apply(MultiProjectsCommand)) {
+        if (apply(MultiProjectsArg)) {
             for {
-                cpEntry <- apply(ClassPathCommand)
+                cpEntry <- apply(ClassPathArg)
                 subProject <- cpEntry.listFiles()
                 if subProject.isDirectory
             } {
@@ -220,7 +195,7 @@ trait MultiProjectAnalysisConfig[T <: ScallopConf] extends ProjectBasedCommandLi
                 f(Iterable(subProject), this)
             }
         } else {
-            val cp = apply(JDKCommand).getOrElse(apply(ClassPathCommand))
+            val cp = apply(JDKArg).getOrElse(apply(ClassPathArg))
             f(cp, this)
         }
     }

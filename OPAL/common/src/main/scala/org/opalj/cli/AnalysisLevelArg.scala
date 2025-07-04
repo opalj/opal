@@ -4,8 +4,8 @@ package cli
 
 import org.rogach.scallop.stringConverter
 
-case class AnalysisLevelCommand(override val description: String, val levels: (String, String)*)
-    extends ParsedCommand[String, String] with ChoiceCommand[String] {
+case class AnalysisLevelArg(override val description: String, val levels: (String, String)*)
+    extends ParsedArg[String, String] with ChoiceArg[String] {
     override val name: String = "level"
     override val argName: String = "level"
 

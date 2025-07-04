@@ -5,11 +5,11 @@ package fpcf
 package analyses
 package purity
 
-import org.opalj.cli.ParsedCommand
+import org.opalj.cli.ParsedArg
 
 import org.rogach.scallop.stringConverter
 
-object RaterCommand extends ParsedCommand[String, DomainSpecificRater] {
+object RaterArg extends ParsedArg[String, DomainSpecificRater] {
     override val name: String = "rater"
     override val argName: String = "fqn"
     override val description: String = "Fully-qualified class name of the rater for domain-specific actions"
