@@ -4,8 +4,8 @@ package cli
 
 import org.rogach.scallop.flagConverter
 
-object LibraryCommand extends PlainCommand[Boolean] {
-    override val name: String = "library"
-    override val description: String = "Assumes that the target is a library"
+object RenderConfigCommand extends PlainCommand[Boolean] {
+    override val name: String = "renderConfig"
+    override val description: String = "Print the configuration"
     override val defaultValue: Option[Boolean] = Some(false)
 }

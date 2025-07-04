@@ -11,7 +11,7 @@ case class AnalysisLevelCommand(override val description: String, val levels: (S
 
     val withNone = true
 
-    override def choices = {
+    override val choices = {
         if (withNone)
             Seq("none") :++ levels.map(_._1)
         else levels.map(_._1)

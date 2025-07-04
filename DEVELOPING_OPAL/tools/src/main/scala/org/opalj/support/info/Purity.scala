@@ -14,7 +14,7 @@ import org.opalj.ai.domain.DomainCommand
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectBasedCommandLineConfig
+import org.opalj.br.analyses.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
@@ -39,24 +39,18 @@ import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JDKCommand
-import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.cli.AnalysisLevelCommand
-import org.opalj.cli.ClassPathCommand
 import org.opalj.cli.ClosedWorldCommand
 import org.opalj.cli.ConfigurationNameCommand
 import org.opalj.cli.EagerCommand
 import org.opalj.cli.EvalDirCommand
 import org.opalj.cli.IndividualCommand
-import org.opalj.cli.LibraryCommand
-import org.opalj.cli.MultiProjectsCommand
 import org.opalj.cli.PackagesCommand
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.par.SchedulingStrategyCommand
 import org.opalj.tac.cg.CallGraphCommand
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -77,91 +71,93 @@ import org.opalj.util.Seconds
 
 import org.rogach.scallop.ScallopConf
 
-class PurityConfig(args: Array[String]) extends ScallopConf(args) with ProjectBasedCommandLineConfig
-    with PropertyStoreBasedCommandLineConfig {
-
-    private val analysisLevelCommand = new AnalysisLevelCommand(PurityCommand.description, PurityCommand.levels *) {
-        override def defaultValue: Option[String] = Some("L2")
-        override val withNone = false
-    }
-
-    commands(
-        analysisLevelCommand !,
-        FieldAssignabilityCommand,
-        EscapeCommand,
-        EagerCommand !,
-        DomainCommand,
-        ConfigurationNameCommand !,
-        RaterCommand !,
-        CallGraphCommand !,
-        IndividualCommand !,
-        ClosedWorldCommand,
-        MultiProjectsCommand !,
-        EvalDirCommand,
-        PackagesCommand,
-        SchedulingStrategyCommand
-    )
-    init()
-
-    val analysis = getScheduler(apply(analysisLevelCommand), false).asInstanceOf[FPCFAnalysisScheduler]
-
-    val supportingAnalyses: List[FPCFAnalysisScheduler] = parseArgumentsForSupport(
-        get(FieldAssignabilityCommand),
-        get(EscapeCommand),
-        apply(EagerCommand)
-    )
-
-    private def parseArgumentsForSupport(
-        fieldAssignability: Option[String],
-        escape:             Option[String],
-        eager:              Boolean
-    ) = {
-        var support: List[org.opalj.fpcf.FPCFAnalysisScheduler[_]] = Nil
-
-        if (analysis eq LazyL2PurityAnalysis) support = List(
-            LazyFieldImmutabilityAnalysis,
-            LazyL0CompileTimeConstancyAnalysis,
-            LazyStaticDataUsageAnalysis,
-            LazyReturnValueFreshnessAnalysis,
-            LazyFieldLocalityAnalysis
-        )
-
-        support ::= EagerFieldAccessInformationAnalysis
-
-        if (eager) {
-            support ::= EagerClassImmutabilityAnalysis
-            support ::= EagerTypeImmutabilityAnalysis
-        } else {
-            support ::= LazyClassImmutabilityAnalysis
-            support ::= LazyTypeImmutabilityAnalysis
-        }
-
-        escape match {
-            case Some("") =>
-            case _ =>
-                escape.orElse(Some(EscapeCommand.parse("L1"))).foreach { e => support ::= getScheduler(e, eager) }
-        }
-
-        fieldAssignability match {
-            case Some("") =>
-            case Some(fA) => support ::= getScheduler(fA, eager)
-            case None => analysis match {
-                    case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
-                    case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
-                    case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
-                }
-        }
-
-        support.asInstanceOf[List[FPCFAnalysisScheduler]]
-    }
-}
-
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
  *
  * @author Dominik Helm
  */
 object Purity {
+
+    class PurityConfig(args: Array[String]) extends ScallopConf(args) with MultiProjectAnalysisConfig[PurityConfig]
+        with PropertyStoreBasedCommandLineConfig {
+
+        banner("Compute method purity information\n")
+
+        private val analysisLevelCommand = new AnalysisLevelCommand(PurityCommand.description, PurityCommand.levels *) {
+            override val defaultValue: Option[String] = Some("L2")
+            override val withNone = false
+        }
+
+        commands(
+            analysisLevelCommand !,
+            FieldAssignabilityCommand,
+            EscapeCommand,
+            EagerCommand !,
+            ConfigurationNameCommand !,
+            RaterCommand !,
+            CallGraphCommand !,
+            IndividualCommand !,
+            EvalDirCommand,
+            PackagesCommand
+        )
+        generalCommands(
+            ClosedWorldCommand,
+            DomainCommand
+        )
+        init()
+
+        val analysis = getScheduler(apply(analysisLevelCommand), false).asInstanceOf[FPCFAnalysisScheduler]
+
+        val supportingAnalyses: List[FPCFAnalysisScheduler] = parseArgumentsForSupport(
+            get(FieldAssignabilityCommand),
+            get(EscapeCommand),
+            apply(EagerCommand)
+        )
+
+        private def parseArgumentsForSupport(
+            fieldAssignability: Option[String],
+            escape:             Option[String],
+            eager:              Boolean
+        ) = {
+            var support: List[org.opalj.fpcf.FPCFAnalysisScheduler[_]] = Nil
+
+            if (analysis eq LazyL2PurityAnalysis) support = List(
+                LazyFieldImmutabilityAnalysis,
+                LazyL0CompileTimeConstancyAnalysis,
+                LazyStaticDataUsageAnalysis,
+                LazyReturnValueFreshnessAnalysis,
+                LazyFieldLocalityAnalysis
+            )
+
+            support ::= EagerFieldAccessInformationAnalysis
+
+            if (eager) {
+                support ::= EagerClassImmutabilityAnalysis
+                support ::= EagerTypeImmutabilityAnalysis
+            } else {
+                support ::= LazyClassImmutabilityAnalysis
+                support ::= LazyTypeImmutabilityAnalysis
+            }
+
+            escape match {
+                case Some("") =>
+                case _ =>
+                    escape.orElse(Some(EscapeCommand.parse("L1"))).foreach { e => support ::= getScheduler(e, eager) }
+            }
+
+            fieldAssignability match {
+                case Some("") =>
+                case Some(fA) => support ::= getScheduler(fA, eager)
+                case None => analysis match {
+                        case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
+                        case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                        case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                    }
+            }
+
+            support.asInstanceOf[List[FPCFAnalysisScheduler]]
+        }
+    }
 
     private val JDKPackages = List(
         "java/",
@@ -180,11 +176,11 @@ object Purity {
     )
 
     def evaluate(
-        analysisConfig: PurityConfig,
-        cp:             File
+        cp:             Iterable[File],
+        analysisConfig: PurityConfig
     ): Unit = {
-        val isJDK: Boolean = cp eq JRELibraryFolder
-        val dirName = if (isJDK) "JDK" else cp.getName
+        val isJDK = analysisConfig(JDKCommand).isDefined
+        val dirName = if (isJDK) "JDK" else cp.head.getName
         val projectEvalDir = analysisConfig.get(EvalDirCommand).map(new File(_, dirName))
         if (projectEvalDir.isDefined && !projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
 
@@ -193,14 +189,12 @@ object Purity {
         var analysisTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
 
-        val isLibrary = analysisConfig(LibraryCommand) || isJDK
         val project = time {
-            analysisConfig.setupProject(cp, isLibrary)
+            analysisConfig.setupProject(cp)()
         } { t => projectTime = t.toSeconds }
 
         val ps = time {
-            analysisConfig.setupPropertyStore()
-            project.get(PropertyStoreKey)
+            analysisConfig.setupPropertyStore(project)
         } { t => propertyStoreTime = t.toSeconds }
 
         val rater = analysisConfig(RaterCommand)
@@ -467,19 +461,7 @@ object Purity {
         Console.println(begin.getTime)
 
         time {
-            if (analysisConfig(MultiProjectsCommand)) {
-                for {
-                    cpEntry <- analysisConfig(ClassPathCommand)
-                    subProject <- cpEntry.listFiles()
-                    if subProject.isDirectory
-                } {
-                    println(s"${subProject.getName}: ${Calendar.getInstance().getTime}")
-                    evaluate(analysisConfig, subProject)
-                }
-            } else {
-                val cp = analysisConfig.get(JDKCommand).getOrElse(analysisConfig(ClassPathCommand).head)
-                evaluate(analysisConfig, cp)
-            }
+            analysisConfig.foreachProject(evaluate)
         }(t => println("evaluation time: " + t.toSeconds))
 
         val end = Calendar.getInstance()

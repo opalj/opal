@@ -11,6 +11,7 @@ trait Command[T, R] {
     def argName: String = name
     def description: String
     def defaultValue: Option[T] = None
+    def short: Char = '\u0000'
     def noshort: Boolean = true
     def choices: Seq[String] = Seq.empty
 
@@ -21,6 +22,8 @@ trait Command[T, R] {
     }
 
     def apply(opalConfig: Config, value: Option[R]): Config = opalConfig
+
+    def commands(): IterableOnce[Command[_, _]] = Iterator(this)
 }
 
 abstract class ConvertedCommand[T: ValueConverter, R] extends Command[T, R] {
@@ -43,6 +46,7 @@ trait ForwardingCommand[T, S, R] extends Command[T, R] {
     override def argName: String = command.argName
     def description: String = command.description
     override def defaultValue: Option[T] = command.defaultValue
+    override def short: Char = command.short
     override def noshort: Boolean = command.noshort
     override def choices: Seq[String] = command.choices
 }

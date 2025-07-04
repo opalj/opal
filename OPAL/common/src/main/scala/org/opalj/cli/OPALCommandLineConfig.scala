@@ -4,11 +4,10 @@ package cli
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-
+import org.opalj.log.DevNullLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.ScallopOption
 import org.rogach.scallop.ValueConverter
@@ -24,7 +23,8 @@ import org.rogach.scallop.exceptions.ScallopException
 trait OPALCommandLineConfig {
     self: ScallopConf =>
 
-    private var commands: Set[Command[_, _]] = Set.empty
+    private var commands: Set[Command[_, _]] = Set(NoLogsCommand, RenderConfigCommand)
+    private var generalCommands: Set[Command[_, _]] = commands
     def commandsIterator: Iterator[Command[_, _]] = commands.iterator
 
     /**
@@ -32,6 +32,13 @@ trait OPALCommandLineConfig {
      */
     protected def commands(cs: Command[_, _]*): Unit = {
         commands ++= cs
+    }
+    /**
+     * Defines (additional) general commands for this configuration
+     */
+    protected def generalCommands(cs: Command[_, _]*): Unit = {
+        commands ++= cs
+        generalCommands ++= cs.flatMap(_.commands())
     }
 
     private var required: Set[Command[_, _]] = Set.empty
@@ -80,8 +87,10 @@ trait OPALCommandLineConfig {
     }
 
     private case class MutuallyExclusive(cs: Command[_, _]*) extends Command[Any, Any] {
-        override def name: String = ???
-        override def description: String = ???
+        override val name: String = ""
+        override val description: String = ""
+
+        override def commands(): IterableOnce[Command[_, _]] = cs.iterator.flatMap(_.commands())
     }
 
     private object MutuallyExclusive {
@@ -130,6 +139,9 @@ trait OPALCommandLineConfig {
         }
     }
 
+    private val runnerSpecificGroup = group("Runner-specific arguments:")
+    private val generalConfigGroup = group("General configuration:")
+
     private def getRegularScallopOption[T](command: ConvertedCommand[T, _])(implicit
         conv: ValueConverter[T]
     ): ScallopOption[T] =
@@ -138,8 +150,10 @@ trait OPALCommandLineConfig {
             argName = command.argName,
             descr = command.description,
             default = command.defaultValue,
+            short = command.short,
             noshort = command.noshort,
-            required = required.contains(command)
+            required = required.contains(command),
+            group = if (generalCommands.contains(command)) generalConfigGroup else runnerSpecificGroup
         )
 
     private def getChoiceScallopOption(command: Command[String, _]): ScallopOption[String] =
@@ -148,15 +162,20 @@ trait OPALCommandLineConfig {
             argName = command.argName,
             descr = command.description,
             default = command.defaultValue,
+            short = command.short,
             noshort = command.noshort,
             choices = command.choices,
-            required = required.contains(command)
+            required = required.contains(command),
+            group = if (generalCommands.contains(command)) generalConfigGroup else runnerSpecificGroup
         )
 
     private def parseCommandWithParser[T, R](value: ScallopOption[_], parse: T => R): R =
         parse(value.apply().asInstanceOf[T])
 
     def setupConfig(isLibrary: Boolean): Config = {
+        if(get(NoLogsCommand).getOrElse(false))
+            OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
+
         var config: Config =
             if (isLibrary)
                 ConfigFactory.load("LibraryProject.conf")

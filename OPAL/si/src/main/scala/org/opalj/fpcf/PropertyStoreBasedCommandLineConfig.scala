@@ -1,10 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
-import org.opalj.cli.Command
+import com.typesafe.config.Config
+
 import org.opalj.cli.ConvertedCommand
 import org.opalj.cli.ForwardingCommand
 import org.opalj.cli.OPALCommandLineConfig
+import org.opalj.fpcf.par.SchedulingStrategyCommand
+import org.opalj.si.Project
 
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.flagConverter
@@ -16,31 +20,20 @@ trait FPCFBasedCommandLineConfig extends OPALCommandLineConfig { self: ScallopCo
     }
 }
 
-trait PropertyStoreBasedCommand[T, R] extends Command[T, R] {
-
-    final def apply(cliConfig: OPALCommandLineConfig): Unit = {
-        this(cliConfig.get(this))
-    }
-
-    def apply(value: Option[R]): Unit = {}
-}
-
 object PropertyStoreDebugCommand extends ConvertedCommand[Boolean, Boolean]
-    with ForwardingCommand[Boolean, Boolean, Boolean] with PropertyStoreBasedCommand[Boolean, Boolean] {
+    with ForwardingCommand[Boolean, Boolean, Boolean] {
     val command = org.opalj.cli.DebugCommand
 
-    override def apply(value: Option[Boolean]): Unit = {
-        PropertyStore.updateDebug(value.get)
+    override def apply(config: Config, value: Option[Boolean]): Config = {
+        PropertyStore.updateDebug(value.getOrElse(false))
+        config
     }
 }
 
 trait PropertyStoreBasedCommandLineConfig extends FPCFBasedCommandLineConfig { self: ScallopConf =>
-    commands(PropertyStoreDebugCommand)
+    generalCommands(PropertyStoreDebugCommand, SchedulingStrategyCommand)
 
-    def setupPropertyStore(): Unit = {
-        commandsIterator.foreach {
-            case command: PropertyStoreBasedCommand[_, _] => command(this)
-            case _                                        =>
-        }
+    def setupPropertyStore(project: Project): PropertyStore = {
+        project.get(PropertyStoreKey)
     }
 }

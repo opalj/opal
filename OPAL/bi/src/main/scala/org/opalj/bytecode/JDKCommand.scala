@@ -8,10 +8,13 @@ import org.opalj.cli.ParsedCommand
 
 import org.rogach.scallop.flagConverter
 
-object JDKCommand extends ParsedCommand[Boolean, File] {
+object JDKCommand extends ParsedCommand[Boolean, Option[Iterable[File]]] {
     override val name: String = "JDK"
     override val description: String = "Analyze the JDK instead of a --cp"
     override val defaultValue: Option[Boolean] = Some(false)
 
-    override def parse(arg: Boolean): File = JRELibraryFolder
+    override def parse(arg: Boolean): Option[Iterable[File]] = {
+        if (arg) Some(Iterable(JRELibraryFolder))
+        else None
+    }
 }

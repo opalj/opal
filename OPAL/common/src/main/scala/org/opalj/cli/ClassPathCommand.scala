@@ -3,6 +3,7 @@ package org.opalj
 package cli
 
 import java.io.File
+import scala.collection.immutable.ArraySeq
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
@@ -10,20 +11,44 @@ import org.opalj.log.OPALLogger.info
 
 import org.rogach.scallop.stringConverter
 
-object ClassPathCommand extends ParsedCommand[String, Seq[File]] {
+object ClassPathCommand extends ClassPathLikeCommand {
     override val name: String = "cp"
     override val argName: String = "classPath"
     override val description: String = "Directories or JAR/class files to process"
+}
+
+object ProjectDirectoryCommand extends ParsedCommand[String, String] {
+    override val name: String = "projectDir"
+    override val description: String = "Directory with project class files relative to --cp"
+
+    override def parse(projectDir: String): String = {
+        projectDir
+    }
+}
+
+object LibraryClassPathCommand extends ClassPathLikeCommand {
+    override val name: String = "libcp"
+    override val argName: String = "libraryClassPath"
+    override val description: String = "Directories or JAR/class files to process as libraries"
+}
+
+object LibraryDirectoryCommand extends PlainCommand[String] {
+    override val name: String = "libDir"
+    override val description: String = "Directory with library class files relative to --(lib)cp"
+}
+
+abstract class ClassPathLikeCommand extends ParsedCommand[String, Iterable[File]] {
+
     override val defaultValue: Option[String] = Some(System.getProperty("user.dir"))
 
-    override def parse(arg: String): Seq[File] = {
+    override def parse(arg: String): Iterable[File] = {
         var cp = IndexedSeq.empty[String]
 
         cp = arg.substring(arg.indexOf('=') + 1).split(File.pathSeparator).toIndexedSeq
 
-        if (cp.isEmpty) cp = IndexedSeq(System.getProperty("user.dir"))
+        if (cp.isEmpty) cp = ArraySeq.unsafeWrapArray(Array(System.getProperty("user.dir")))
 
-        info("project configuration", s"the classpath is ${cp.mkString}")(GlobalLogContext)
+        info("project configuration", s"the $argName is ${cp.mkString}")(GlobalLogContext)
         verifyFiles(cp)
     }
 
