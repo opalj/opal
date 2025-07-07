@@ -3,48 +3,63 @@ package org.opalj
 package support
 package info
 
-import java.net.URL
+import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.ExtensibleLocalField
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.br.fpcf.properties.LocalField
 import org.opalj.br.fpcf.properties.LocalFieldWithGetter
 import org.opalj.br.fpcf.properties.NoLocalField
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.util.PerformanceEvaluation.time
+
+import org.rogach.scallop.ScallopConf
 
 /**
  * Computes the field locality; see [[org.opalj.br.fpcf.properties.FieldLocality]] for details.
  *
  * @author Florian Kuebler
  */
-object FieldLocality extends ProjectAnalysisApplication {
+object FieldLocality extends MultiProjectAnalysisApplication {
 
-    override def title: String = "Field Locality"
+    protected class FieldLocalityConfig(args: Array[String]) extends ScallopConf(args)
+        with MultiProjectAnalysisConfig[FieldLocalityConfig]
+        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
 
-    override def description: String = {
-        "Provides lifetime information about the values stored in instance fields."
+        banner("Computes information about field locality\n")
+
+        init()
     }
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = FieldLocalityConfig
 
-        project.get(RTACallGraphKey)
+    protected def createConfig(args: Array[String]): FieldLocalityConfig = new FieldLocalityConfig(args)
 
-        val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
-            LazyInterProceduralEscapeAnalysis,
-            LazyReturnValueFreshnessAnalysis,
-            EagerFieldLocalityAnalysis
-        )
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: FieldLocalityConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+        val (ps, _) = analysisConfig.setupPropertyStore(project)
+        analysisConfig.setupCallGaph(project)
+
+        time {
+            project.get(FPCFAnalysesManagerKey).runAll(
+                LazyInterProceduralEscapeAnalysis,
+                LazyReturnValueFreshnessAnalysis,
+                EagerFieldLocalityAnalysis
+            )
+        } { t => println(s"Analysis took $t.") }
 
         val local = ps.finalEntities(LocalField).toSeq
         val nolocal = ps.finalEntities(NoLocalField).toSeq
@@ -60,6 +75,6 @@ object FieldLocality extends ProjectAnalysisApplication {
                 |# of extensible local fields with getter: ${extGetter.size}
                 |"""
 
-        BasicReport(message.stripMargin('|'))
+        (project, BasicReport(message.stripMargin('|')))
     }
 }

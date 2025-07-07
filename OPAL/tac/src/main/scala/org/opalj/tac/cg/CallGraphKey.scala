@@ -4,8 +4,10 @@ package tac
 package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
+
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
+
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey

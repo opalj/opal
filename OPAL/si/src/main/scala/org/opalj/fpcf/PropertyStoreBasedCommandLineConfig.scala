@@ -3,13 +3,18 @@ package org.opalj
 package fpcf
 
 import com.typesafe.config.Config
+
 import org.opalj.cli.Arg
 import org.opalj.cli.ConvertedArg
 import org.opalj.cli.ForwardingArg
 import org.opalj.cli.OPALCommandLineConfig
 import org.opalj.fpcf.par.SchedulingStrategyArg
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.si.Project
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
+
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.flagConverter
 import org.rogach.scallop.intConverter
@@ -56,7 +61,7 @@ object PropertyStoreThreadsNumArg extends ConvertedArg[Int, Int] with Forwarding
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
             }
-            )
+        )
     }
 }
 
@@ -65,13 +70,20 @@ trait PropertyStoreBasedCommandLineConfig extends FPCFBasedCommandLineConfig { s
         PropertyStoreThreadsNumArg,
         PropertyStoreDebugArg,
         SchedulingStrategyArg
-        )
+    )
 
-    def setupPropertyStore(project: Project): PropertyStore = {
-        argsIterator.foreach {
-            case arg: PropertyStoreBasedArg[_, _] => arg(project, this)
-            case _                                        =>
+    def setupPropertyStore(project: Project): (PropertyStore, Seconds) = {
+        var propertyStoreTime = Seconds.None
+        val propertyStore = time {
+            argsIterator.foreach {
+                case arg: PropertyStoreBasedArg[_, _] => arg(project, this)
+                case _                                =>
+            }
+            project.get(PropertyStoreKey)
+        } { t =>
+            OPALLogger.info("analysis progress", s"setting up property store took ${t.toSeconds} ")(project.logContext)
+            propertyStoreTime = t.toSeconds
         }
-        project.get(PropertyStoreKey)
+        (propertyStore, propertyStoreTime)
     }
 }

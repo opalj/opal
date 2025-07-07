@@ -3,7 +3,13 @@ package org.opalj
 package support
 package info
 
-import org.opalj.ai.domain.DomainArg
+import scala.language.existentials
+import scala.language.postfixOps
+
+import java.io.File
+import java.io.FileOutputStream
+import java.io.PrintWriter
+
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.VirtualDeclaredMethod
@@ -11,6 +17,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
@@ -18,33 +25,23 @@ import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.cli.ClosedWorldArg
 import org.opalj.cli.ConfigurationNameArg
 import org.opalj.cli.OutputFileArg
 import org.opalj.cli.PlainArg
 import org.opalj.cli.ResultFileArg
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
-import org.opalj.log.LogMessage
-import org.opalj.log.OPALLogger
-import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.cg.CallGraphArg
 import org.opalj.tac.cg.CallGraphSerializer
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.cg.PointsToCallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.util.Seconds
+
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.stringListConverter
-
-import java.io.File
-import java.io.FileOutputStream
-import java.io.PrintWriter
-import scala.language.postfixOps
 
 /**
  * Computes a call graph and reports its size.
@@ -58,7 +55,8 @@ import scala.language.postfixOps
  */
 object CallGraph extends MultiProjectAnalysisApplication {
 
-    class CallGraphConfig(args: Array[String]) extends ScallopConf(args) with MultiProjectAnalysisConfig[CallGraphConfig]
+    protected class CallGraphConfig(args: Array[String]) extends ScallopConf(args)
+        with MultiProjectAnalysisConfig[CallGraphConfig]
         with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
 
         banner("Compute the number of reachable methods and call edges in the given project\n")
@@ -70,65 +68,43 @@ object CallGraph extends MultiProjectAnalysisApplication {
             ConfigurationNameArg !,
             ResultFileArg,
             OutputFileArg
-            )
-        generalArgs(
-            ClosedWorldArg,
-            DomainArg
-            )
+        )
         init()
 
         object CalleesArg extends PlainArg[List[String]] {
             override val name: String = "callees"
             override val argName: String = "method"
-            override val description: String = "Signatures of methods for which callees should be printed (e.g., toString()java.lang.String"
+            override val description: String =
+                "Signatures of methods for which callees should be printed (e.g., toString()java.lang.String"
         }
 
         object CallersArg extends PlainArg[List[String]] {
             override val name: String = "callers"
             override val argName: String = "method"
-            override val description: String = "s of methods for which callers should be printed (e.g., toString()java.lang.String"
+            override val description: String =
+                "s of methods for which callers should be printed (e.g., toString()java.lang.String"
         }
 
     }
 
-    override type ConfigType = CallGraphConfig
+    protected type ConfigType = CallGraphConfig
 
-    override def createConfig(args: Array[String]): CallGraphConfig = new CallGraphConfig(args)
+    protected def createConfig(args: Array[String]): CallGraphConfig = new CallGraphConfig(args)
 
-    def evaluate(
-                    cp:             Iterable[File],
-                    analysisConfig: CallGraphConfig
-                ): Unit = {
-
-        var projectTime: Seconds = Seconds.None
-        var propertyStoreTime: Seconds = Seconds.None
-        var callGraphTime: Seconds = Seconds.None
-
-        val project = time {
-            analysisConfig.setupProject()()
-        } { t => projectTime = t.toSeconds }
-
-        implicit val ps: PropertyStore = time {
-            analysisConfig.setupPropertyStore(project)
-        } { t => propertyStoreTime = t.toSeconds }
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: CallGraphConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, projectTime) = analysisConfig.setupProject()
+        implicit val (ps, propertyStoreTime) = analysisConfig.setupPropertyStore(project)
+        val (cg, callGraphTime) = analysisConfig.setupCallGaph(project)
 
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm =>
             dm.hasSingleDefinedMethod &&
             (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
         }.to(Iterable)
-
-        val cg = time {
-            analysisConfig.setupCallGaph(project)
-        } { t => callGraphTime = t.toSeconds }
-
-        try {
-            ps.shutdown()
-        } catch {
-            case t: Throwable =>
-                Console.err.println("PropertyStore shutdown failed: ")
-                t.printStackTrace()
-        }
 
         val algorithm = analysisConfig(CallGraphArg)
 
@@ -181,7 +157,7 @@ object CallGraph extends MultiProjectAnalysisApplication {
         for (m <- allMethods) {
             val mSig = m.descriptor.toJava(m.name)
 
-            for (methodSignature <- analysisConfig.get(analysisConfig.CalleesArg).getOrElse(Iterable.empty)) {
+            for (methodSignature <- analysisConfig.get(analysisConfig.CalleesArg, List.empty)) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callees of ${m.toJava}:")
                     val calleesProperty = ps(m, Callees.key).ub
@@ -192,7 +168,7 @@ object CallGraph extends MultiProjectAnalysisApplication {
                     })
                 }
             }
-            for (methodSignature <- analysisConfig.get(analysisConfig.CallersArg).getOrElse(Iterable.empty)) {
+            for (methodSignature <- analysisConfig.get(analysisConfig.CallersArg, List.empty)) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callers of ${m.toJava}:")
                     println(ps(m, Callers.key).ub.callers(m).iterator.map {
@@ -204,11 +180,11 @@ object CallGraph extends MultiProjectAnalysisApplication {
         }
 
         if (analysisConfig.get(ResultFileArg).isDefined) {
-            CallGraphSerializer.writeCG(cg, analysisConfig(ResultFileArg))
+            CallGraphSerializer.writeCG(cg, ResultFileArg.getResultFile(analysisConfig, execution))
         }
 
         if (analysisConfig.get(OutputFileArg).isDefined) {
-            val output = analysisConfig(OutputFileArg)
+            val output = OutputFileArg.getOutputFile(analysisConfig, execution)
             val newOutputFile = !output.exists()
             val outputWriter = new PrintWriter(new FileOutputStream(output, true))
             try {
@@ -241,6 +217,6 @@ object CallGraph extends MultiProjectAnalysisApplication {
                 |# of call edges: $numEdges
                 |"""
 
-        OPALLogger.log(LogMessage.plainInfo(BasicReport(message.stripMargin('|')).toConsoleString))(project.logContext)
+        (project, BasicReport(message.stripMargin('|')))
     }
 }

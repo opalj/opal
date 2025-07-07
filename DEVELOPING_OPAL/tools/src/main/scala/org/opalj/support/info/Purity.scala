@@ -3,6 +3,12 @@ package org.opalj
 package support
 package info
 
+import scala.language.postfixOps
+
+import java.io.File
+import java.io.FileOutputStream
+import java.io.PrintWriter
+
 import org.opalj.ai.domain.DomainArg
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -37,16 +43,15 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JDKArg
 import org.opalj.cli.AnalysisLevelArg
-import org.opalj.cli.ClosedWorldArg
 import org.opalj.cli.ConfigurationNameArg
 import org.opalj.cli.EagerArg
 import org.opalj.cli.IndividualArg
 import org.opalj.cli.OutputDirArg
 import org.opalj.cli.PackagesArg
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
@@ -62,12 +67,8 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.RaterArg
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.rogach.scallop.ScallopConf
 
-import java.io.File
-import java.io.FileOutputStream
-import java.io.PrintWriter
-import scala.language.postfixOps
+import org.rogach.scallop.ScallopConf
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -76,7 +77,8 @@ import scala.language.postfixOps
  */
 object Purity extends MultiProjectAnalysisApplication {
 
-    class PurityConfig(args: Array[String]) extends ScallopConf(args) with MultiProjectAnalysisConfig[PurityConfig]
+    protected class PurityConfig(args: Array[String]) extends ScallopConf(args)
+        with MultiProjectAnalysisConfig[PurityConfig]
         with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
 
         banner("Compute method purity information\n")
@@ -93,29 +95,20 @@ object Purity extends MultiProjectAnalysisApplication {
             EagerArg !,
             ConfigurationNameArg !,
             RaterArg !,
-            IndividualArg !,
+            IndividualArg,
             OutputDirArg,
             PackagesArg
-            )
+        )
         generalArgs(
-            ClosedWorldArg,
             DomainArg
-            )
+        )
         init()
 
-        val analysis: FPCFAnalysisScheduler = getScheduler(apply(analysisLevelArg), eager = false).asInstanceOf[FPCFAnalysisScheduler]
+        val analysis: FPCFAnalysisScheduler =
+            getScheduler(apply(analysisLevelArg), eager = false).asInstanceOf[FPCFAnalysisScheduler]
 
-        val supportingAnalyses: List[FPCFAnalysisScheduler] = parseArgumentsForSupport(
-            get(FieldAssignabilityArg),
-            get(EscapeArg),
-            apply(EagerArg)
-            )
-
-        private def parseArgumentsForSupport(
-            fieldAssignability: Option[String],
-            escape:             Option[String],
-            eager:              Boolean
-        ) = {
+        val supportingAnalyses: List[FPCFAnalysisScheduler] = {
+            val eager = apply(EagerArg)
             var support: List[org.opalj.fpcf.FPCFAnalysisScheduler[_]] = Nil
 
             if (analysis eq LazyL2PurityAnalysis) support = List(
@@ -136,13 +129,12 @@ object Purity extends MultiProjectAnalysisApplication {
                 support ::= LazyTypeImmutabilityAnalysis
             }
 
-            escape match {
-                case Some("") =>
-                case _ =>
-                    escape.orElse(Some(EscapeArg.parse("L1"))).foreach { e => support ::= getScheduler(e, eager) }
+            get(EscapeArg, EscapeArg.parse("L1")) match {
+                case ""     =>
+                case escape => support ::= getScheduler(escape, eager)
             }
 
-            fieldAssignability match {
+            get(FieldAssignabilityArg) match {
                 case Some("") =>
                 case Some(fA) => support ::= getScheduler(fA, eager)
                 case None => analysis match {
@@ -172,31 +164,18 @@ object Purity extends MultiProjectAnalysisApplication {
         "org/xml/sax"
     )
 
-    override type ConfigType = PurityConfig
+    protected type ConfigType = PurityConfig
 
-    def createConfig(args: Array[String]): PurityConfig = new PurityConfig(args)
+    protected def createConfig(args: Array[String]): PurityConfig = new PurityConfig(args)
 
-    def evaluate(
+    override protected def evaluate(
         cp:             Iterable[File],
-        analysisConfig: PurityConfig
+        analysisConfig: PurityConfig,
+        execution:      Int
     ): Unit = {
-        val isJDK = analysisConfig(JDKArg).isDefined
-        val dirName = if (isJDK) "JDK" else cp.head.getName
-        val projectEvalDir = analysisConfig.get(OutputDirArg).map(new File(_, dirName))
-        if (projectEvalDir.isDefined && !projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
-
-        var projectTime: Seconds = Seconds.None
-        var propertyStoreTime: Seconds = Seconds.None
-        var analysisTime: Seconds = Seconds.None
-        var callGraphTime: Seconds = Seconds.None
-
-        val project = time {
-            analysisConfig.setupProject(cp)()
-        } { t => projectTime = t.toSeconds }
-
-        val ps = time {
-            analysisConfig.setupPropertyStore(project)
-        } { t => propertyStoreTime = t.toSeconds }
+        val (project, projectTime) = analysisConfig.setupProject(cp)
+        val (ps, propertyStoreTime) = analysisConfig.setupPropertyStore(project)
+        val (_, callGraphTime) = analysisConfig.setupCallGaph(project)
 
         val rater = analysisConfig(RaterArg)
         analysisConfig.analysis match {
@@ -211,22 +190,17 @@ object Purity extends MultiProjectAnalysisApplication {
             for (cf <- project.allProjectClassFiles; m <- cf.methodsWithBody)
                 yield declaredMethods(m)
 
+        val isJDK = analysisConfig(JDKArg).isDefined
+
         val packages = analysisConfig.get(PackagesArg)
 
         val projMethods = allMethods.filter { m =>
             val pn = m.definedMethod.classFile.thisType.packageName
             packages match {
-                case None => isJDK || !JDKPackages.exists(pn.startsWith)
-                case Some(ps) =>
-                    ps.exists(pn.startsWith)
+                case None     => isJDK || !JDKPackages.exists(pn.startsWith)
+                case Some(ps) => ps.exists(pn.startsWith)
             }
         }
-
-        val manager = project.get(FPCFAnalysesManagerKey)
-
-        time {
-            analysisConfig.setupCallGaph(project)
-        } { t => callGraphTime = t.toSeconds }
 
         val reachableMethods =
             ps.entities(Callers.key).collect {
@@ -236,10 +210,11 @@ object Purity extends MultiProjectAnalysisApplication {
         val contextProvider = project.get(ContextProviderKey)
         val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
 
+        var analysisTime: Seconds = Seconds.None
         time {
             val analyses = analysisConfig.analysis :: analysisConfig.supportingAnalyses
 
-            manager.runAll(
+            project.get(FPCFAnalysesManagerKey).runAll(
                 analyses,
                 css =>
                     if (css.contains(analysisConfig.analysis)) {
@@ -247,7 +222,6 @@ object Purity extends MultiProjectAnalysisApplication {
                     }
             )
         } { t => analysisTime = t.toSeconds }
-        ps.shutdown()
 
         val entitiesWithPurity = ps(analyzedContexts, br.fpcf.properties.Purity.key).filter {
             case FinalP(p) => p ne ImpureByLackOfInformation
@@ -302,12 +276,18 @@ object Purity extends MultiProjectAnalysisApplication {
             m
         }
 
+        val projectEvalDir = analysisConfig.get(OutputDirArg).map(new File(_, if (isJDK) "JDK" else cp.head.getName))
         if (projectEvalDir.isDefined) {
+            if (!projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
             val configurationName = analysisConfig(ConfigurationNameArg)
 
             // WRITE ANALYSIS OUTPUT
 
-            val output = new File(projectEvalDir.get, "purityResults.csv")
+            var outputFileName = "purityResults"
+            if (execution != 1) {
+                outputFileName += s"_$execution"
+            }
+            val output = new File(projectEvalDir.get, s"$outputFileName.csv")
             val newFile = !output.exists()
             val outputWriter = new PrintWriter(new FileOutputStream(output, true))
             try {
@@ -348,9 +328,13 @@ object Purity extends MultiProjectAnalysisApplication {
 
             // WRITE CONTENT INFORMATION
 
-            val aggregated = !analysisConfig(IndividualArg)
+            val aggregated = !analysisConfig.get(IndividualArg, false)
 
-            val results = new File(projectEvalDir.get, "method-results.csv")
+            var resultFileName = "method-results"
+            if (execution != 1) {
+                resultFileName += s"_$execution"
+            }
+            val results = new File(projectEvalDir.get, s"$resultFileName.csv")
             val resultsNew = !results.exists()
             val resultsWriter = new PrintWriter(new FileOutputStream(results, aggregated))
             try {

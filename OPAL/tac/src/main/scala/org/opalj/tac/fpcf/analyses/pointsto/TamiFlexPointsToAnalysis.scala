@@ -6,6 +6,7 @@ package analyses
 package pointsto
 
 import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
 import org.opalj.br.ClassType

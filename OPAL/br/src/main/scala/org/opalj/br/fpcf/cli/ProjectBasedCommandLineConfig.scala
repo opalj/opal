@@ -4,7 +4,16 @@ package br
 package fpcf
 package cli
 
+import scala.language.postfixOps
+import scala.reflect.internal.util.NoPosition.showError
+
+import java.io.File
+import java.net.URL
+import java.util.Calendar
+import scala.util.control.ControlThrowable
+
 import com.typesafe.config.Config
+
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
@@ -14,6 +23,8 @@ import org.opalj.bytecode.JDKArg
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.cli.Arg
 import org.opalj.cli.ClassPathArg
+import org.opalj.cli.ClosedWorldArg
+import org.opalj.cli.ExecutionsArg
 import org.opalj.cli.LibrariesAsInterfacesArg
 import org.opalj.cli.LibraryArg
 import org.opalj.cli.LibraryClassPathArg
@@ -25,16 +36,13 @@ import org.opalj.cli.ProjectDirectoryArg
 import org.opalj.cli.RenderConfigArg
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-import org.rogach.scallop.ScallopConf
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 
-import java.io.File
-import java.net.URL
-import java.util.Calendar
-import scala.language.postfixOps
-import scala.reflect.internal.util.NoPosition.showError
-import scala.util.control.ControlThrowable
+import org.rogach.scallop.ScallopConf
 
 trait ProjectBasedArg[T, R] extends Arg[T, R] {
 
@@ -55,42 +63,57 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
         ProjectDirectoryArg,
         LibraryDirectoryArg,
         NoJDKArg !,
-        LibrariesAsInterfacesArg
-        )
+        LibrariesAsInterfacesArg,
+        ClosedWorldArg,
+        ExecutionsArg !
+    )
 
     def setupProject(
-                        cp:    Iterable[File] = apply(JDKArg).getOrElse(apply(ClassPathArg)),
-                        libCP: Iterable[File] = get(LibraryClassPathArg).getOrElse(Iterable.empty)
-    )(
-                        isLibrary:             Boolean = get(LibraryArg).getOrElse(cp.head eq JRELibraryFolder),
-                        librariesAsInterfaces: Boolean = get(LibrariesAsInterfacesArg).getOrElse(false)
-    )(implicit initialLogContext: LogContext = GlobalLogContext): SomeProject = {
+        cp:    Iterable[File] = apply(JDKArg).getOrElse(apply(ClassPathArg)),
+        libCP: Iterable[File] = get(LibraryClassPathArg, Iterable.empty)
+    )(implicit initialLogContext: LogContext = GlobalLogContext): (SomeProject, Seconds) = {
+        setupProject(
+            cp,
+            libCP,
+            get(LibraryArg, cp.head eq JRELibraryFolder),
+            get(LibrariesAsInterfacesArg, false)
+        )
+    }
 
-        implicit val config: Config = setupConfig(isLibrary)
+    def setupProject(
+        cp:                    Iterable[File],
+        libCP:                 Iterable[File],
+        isLibrary:             Boolean,
+        librariesAsInterfaces: Boolean
+    )(implicit initialLogContext: LogContext): (SomeProject, Seconds) = {
+        var projectTime: Seconds = Seconds.None
+        var project: SomeProject = null
+        time {
 
-        info("creating project", "reading project class files")
-        implicit val JavaClassFileReader: (File, (Source, Throwable) => Unit) => Iterable[(ClassFile, URL)] =
-            Project.JavaClassFileReader(initialLogContext, config).ClassFiles
+            implicit val config: Config = setupConfig(isLibrary)
 
-        info("project configuration", s"the classpath is ${cp.mkString}")
+            info("creating project", "reading project class files")
+            implicit val JavaClassFileReader: (File, (Source, Throwable) => Unit) => Iterable[(ClassFile, URL)] =
+                Project.JavaClassFileReader(initialLogContext, config).ClassFiles
 
-        val cpFiles = resolveDirToCP(get(ProjectDirectoryArg), cp, cp)
-        if (cpFiles.isEmpty) {
-            showError("Nothing to analyze.")
-            printHelp()
-            sys.exit(1)
-        }
-        val (classFiles, exceptions1) = readClassFiles("project", cpFiles)
+            info("project configuration", s"the classpath is ${cp.mkString}")
 
-        val libcpFiles = resolveDirToCP(get(LibraryDirectoryArg), if (libCP.isEmpty) cp else libCP, libCP)
-        val (libraryClassFiles, exceptions2) = readClassFiles("library", libcpFiles, !librariesAsInterfaces)
+            val cpFiles = resolveDirToCP(get(ProjectDirectoryArg), cp, cp)
+            if (cpFiles.isEmpty) {
+                showError("Nothing to analyze.")
+                printHelp()
+                sys.exit(1)
+            }
+            val (classFiles, exceptions1) = readClassFiles("project", cpFiles)
 
-        val jdkFiles = if (this(NoJDKArg)) Iterable.empty else Iterable(JRELibraryFolder)
-        val (jdkClassFiles, exceptions3) = readClassFiles("JDK", jdkFiles, !librariesAsInterfaces)
+            val libcpFiles = resolveDirToCP(get(LibraryDirectoryArg), if (libCP.isEmpty) cp else libCP, libCP)
+            val (libraryClassFiles, exceptions2) = readClassFiles("library", libcpFiles, !librariesAsInterfaces)
 
-        val project =
+            val jdkFiles = if (this(NoJDKArg)) Iterable.empty else Iterable(JRELibraryFolder)
+            val (jdkClassFiles, exceptions3) = readClassFiles("JDK", jdkFiles, !librariesAsInterfaces)
+
             try {
-                Project(
+                project = Project(
                     classFiles,
                     libraryClassFiles ++ jdkClassFiles,
                     libraryClassFilesAreInterfacesOnly = librariesAsInterfaces,
@@ -103,27 +126,31 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
                     printHelp()
                     sys.exit(2)
             }
-        handleParsingExceptions(project, exceptions1 ++ exceptions2 ++ exceptions3)
 
-        val statistics =
-            project
-                .statistics.map(kv => "- " + kv._1 + ": " + kv._2)
-                .toList.sorted.reverse
-                .mkString("project statistics:\n\t", "\n\t", "\n")
-        info("project", statistics)(project.logContext)
+            handleParsingExceptions(project, exceptions1 ++ exceptions2 ++ exceptions3)
 
-        argsIterator.foreach {
-            case arg: ProjectBasedArg[_, _] => arg(project, this)
-            case _                                  =>
+            val statistics =
+                project
+                    .statistics.map(kv => "- " + kv._1 + ": " + kv._2)
+                    .toList.sorted.reverse
+                    .mkString("project statistics:\n\t", "\n\t", "\n")
+            info("project", statistics)(project.logContext)
+
+            argsIterator.foreach {
+                case arg: ProjectBasedArg[_, _] => arg(project, this)
+                case _                          =>
+            }
+
+            if (get(RenderConfigArg, false)) {
+                val effectiveConfiguration =
+                    "Effective configuration:\n" + org.opalj.util.renderConfig(project.config)
+                info("project configuration", effectiveConfiguration)
+            }
+        } { t =>
+            OPALLogger.info("analysis progress", s"setting up project took ${t.toSeconds} ")(project.logContext)
+            projectTime = t.toSeconds
         }
-
-        if (get(RenderConfigArg).getOrElse(false)) {
-            val effectiveConfiguration =
-                "Effective configuration:\n" + org.opalj.util.renderConfig(project.config)
-            info("project configuration", effectiveConfiguration)
-        }
-
-        project
+        (project, projectTime)
     }
 
     protected def resolveDirToCP(
@@ -184,7 +211,7 @@ trait MultiProjectAnalysisConfig[T <: ScallopConf] extends ProjectBasedCommandLi
     /**
      * Executes a function for every project directory of a muti-project analysis
      */
-    def foreachProject(f: (Iterable[File], T) => Unit): Unit = {
+    def foreachProject(f: (Iterable[File], T, Int) => Unit, execution: Int): Unit = {
         if (apply(MultiProjectsArg)) {
             for {
                 cpEntry <- apply(ClassPathArg)
@@ -192,11 +219,11 @@ trait MultiProjectAnalysisConfig[T <: ScallopConf] extends ProjectBasedCommandLi
                 if subProject.isDirectory
             } {
                 println(s"${subProject.getName}: ${Calendar.getInstance().getTime}")
-                f(Iterable(subProject), this)
+                f(Iterable(subProject), this, execution)
             }
         } else {
             val cp = apply(JDKArg).getOrElse(apply(ClassPathArg))
-            f(cp, this)
+            f(cp, this, execution)
         }
     }
 

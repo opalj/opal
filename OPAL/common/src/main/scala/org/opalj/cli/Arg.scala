@@ -38,7 +38,9 @@ abstract class ParsedArg[T: ValueConverter, R] extends ConvertedArg[T, R] {
     def parse(arg: T): R
 }
 
-trait ChoiceArg[R] extends Arg[String, R]
+trait ChoiceArg[R] extends Arg[String, R] {
+    override def choices: Seq[String] = ???
+}
 
 trait ForwardingArg[T, S, R] extends Arg[T, R] {
     val command: Arg[T, S]

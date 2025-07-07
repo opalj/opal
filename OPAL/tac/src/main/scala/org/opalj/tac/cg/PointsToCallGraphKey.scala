@@ -4,6 +4,7 @@ package tac
 package cg
 
 import scala.jdk.CollectionConverters._
+
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject

@@ -3,31 +3,38 @@ package org.opalj
 package support
 package info
 
-import java.net.URL
+import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.StringConstantsInformationKey
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+
+import org.rogach.scallop.ScallopConf
 
 /**
  * Prints out all string constants found in the bytecode.
  *
  * @author Michael Eichberg
  */
-object StringConstants extends ProjectAnalysisApplication {
+object StringConstants extends MultiProjectAnalysisApplication {
 
-    override def title: String = "String Constants"
-
-    override def description: String = {
-        "Collects all constant strings (based on LDC instructions) found in the specified code."
+    protected class StringConstantsConfig(args: Array[String]) extends ScallopConf(args)
+        with MultiProjectAnalysisConfig[StringConstantsConfig] {
+        banner("Collects all constant strings (based on LDC instructions) found in the specified code\n")
     }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = StringConstantsConfig
+
+    protected def createConfig(args: Array[String]): StringConstantsConfig = new StringConstantsConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: StringConstantsConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val data = project.get(StringConstantsInformationKey)
         val mappedData: Iterable[String] = data.map { kv =>
@@ -41,6 +48,6 @@ object StringConstants extends ProjectAnalysisApplication {
             }.mkString("\"" + escapedString + "\":\n\t - ", "\n\t - ", "\n")
         }
 
-        BasicReport(mappedData.mkString(s"\nFound ${data.size} strings:\n", "\n", "\n"))
+        (project, BasicReport(mappedData.mkString(s"\nFound ${data.size} strings:\n", "\n", "\n")))
     }
 }

@@ -3,7 +3,7 @@ package org.opalj
 package support
 package info
 
-import java.net.URL
+import java.io.File
 
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.MethodReturnValue
@@ -11,47 +11,51 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation
+
+import org.rogach.scallop.ScallopConf
 
 /**
  * Computes information regarding the values stored in fields and returned by methods.
  *
  * @author Michael Eichberg
  */
-object Values extends ProjectAnalysisApplication {
+object Values extends MultiProjectAnalysisApplication {
 
-    override def title: String = "Values stored in fields and returned by methods"
-
-    override def description: String = {
-        "Provides information about the values returned by methods and those stored in fields."
+    protected class ValuesConfig(args: Array[String]) extends ScallopConf(args)
+        with MultiProjectAnalysisConfig[ValuesConfig]
+        with PropertyStoreBasedCommandLineConfig {
+        banner("Collects information about values returned by methods or stored in fields\n")
     }
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = ValuesConfig
+
+    protected def createConfig(args: Array[String]): ValuesConfig = new ValuesConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ValuesConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+        val (ps, _) = analysisConfig.setupPropertyStore(project)
+
+        PerformanceEvaluation.time {
+            project.get(FPCFAnalysesManagerKey).runAll(
+                org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
+                org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
+            )
+        } { t => OPALLogger.info("analysis progress", s"finished in ${t.toSeconds} ")(project.logContext) }
 
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
-
-        val (ps, _) =
-            PerformanceEvaluation.time {
-                project.get(FPCFAnalysesManagerKey).runAll(
-                    org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
-                    org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
-                )
-            } { t =>
-                OPALLogger.info(
-                    "analysis progress",
-                    s"finished in ${t.toSeconds} "
-                )(project.logContext)
-            }
 
         val fieldValues: List[EPS[Entity, FieldValue]] = ps.entities(FieldValue.key).toList
 
@@ -70,12 +74,9 @@ object Values extends ProjectAnalysisApplication {
                 .sorted
                 .mkString("Field Values:\n\t", "\n\t", s"\n(Overall: ${fieldValues.size})")
 
-        val methodReturnValues: List[EPS[Entity, MethodReturnValue]] = {
-            ps.entities(MethodReturnValue.key).toList
-        }
+        val methodReturnValues: List[EPS[Entity, MethodReturnValue]] = ps.entities(MethodReturnValue.key).toList
 
-        val objectValuesReturningMethodsCount =
-            project.allMethodsWithBody.filter(_.returnType.isClassType).size
+        val objectValuesReturningMethodsCount = project.allMethodsWithBody.count(_.returnType.isClassType)
 
         val mMethods =
             methodReturnValues
@@ -97,7 +98,6 @@ object Values extends ProjectAnalysisApplication {
                     "\n\t",
                     s"\n(Overall: ${methodReturnValues.size}/$objectValuesReturningMethodsCount)"
                 )
-        BasicReport(mFields + "\n\n" + mMethods)
-
+        (project, BasicReport(mFields + "\n\n" + mMethods))
     }
 }

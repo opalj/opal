@@ -7,6 +7,7 @@ package cg
 package reflection
 
 import scala.collection.immutable.ArraySeq
+
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod

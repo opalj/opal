@@ -2,9 +2,10 @@
 package org.opalj
 package cli
 
+import java.io.File
+
 import com.typesafe.config.Config
 
-import java.io.File
 import org.rogach.scallop.fileConverter
 
 object OutputDirArg extends PlainArg[File] {
@@ -13,9 +14,7 @@ object OutputDirArg extends PlainArg[File] {
     override val description: String = "Directory to write output files to"
 
     override def apply(config: Config, value: Option[File]): Config = {
-        value.foreach { evaluationDir =>
-            if (!evaluationDir.exists()) evaluationDir.mkdir
-        }
+        value.foreach { evaluationDir => if (!evaluationDir.exists()) evaluationDir.mkdir }
         config
     }
 }

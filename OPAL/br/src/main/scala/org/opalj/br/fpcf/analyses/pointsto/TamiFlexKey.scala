@@ -5,6 +5,9 @@ package fpcf
 package analyses
 package pointsto
 
+import scala.collection.mutable
+import scala.io.Source
+
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
@@ -12,9 +15,6 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.io.processSource
 import org.opalj.log.OPALLogger
-
-import scala.collection.mutable
-import scala.io.Source
 
 /**
  * Container class, to represent a tamiflex log:

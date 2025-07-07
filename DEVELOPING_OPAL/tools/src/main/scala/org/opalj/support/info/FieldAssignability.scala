@@ -3,23 +3,28 @@ package org.opalj
 package support
 package info
 
-import java.net.URL
+import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
+import org.opalj.util.PerformanceEvaluation.time
+
+import org.rogach.scallop.ScallopConf
 
 /**
  * Computes the field assignability.
@@ -27,28 +32,39 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAn
  * @author Dominik Helm
  * @author Tobias Roth
  */
-object FieldAssignabilityRunner extends ProjectAnalysisApplication {
+object FieldAssignability extends MultiProjectAnalysisApplication {
 
-    override def title: String = "Field immutability"
+    protected class FieldAssignabilityConfig(args: Array[String]) extends ScallopConf(args)
+        with MultiProjectAnalysisConfig[FieldAssignabilityConfig]
+        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
 
-    override def description: String = { "Provides information about the immutability of fields." }
+        banner("Computes information about the immutability of fields\n")
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+        init()
+    }
 
-        project.get(RTACallGraphKey)
-        val (ps, _) = project
-            .get(FPCFAnalysesManagerKey)
-            .runAll(
+    protected type ConfigType = FieldAssignabilityConfig
+
+    protected def createConfig(args: Array[String]): FieldAssignabilityConfig = new FieldAssignabilityConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: FieldAssignabilityConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+        val (ps, _) = analysisConfig.setupPropertyStore(project)
+        analysisConfig.setupCallGaph(project)
+
+        time {
+            project.get(FPCFAnalysesManagerKey).runAll(
                 EagerFieldAccessInformationAnalysis,
                 LazyL2FieldAssignabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazySimpleEscapeAnalysis
             )
+        } { t => println(s"Analysis took $t.") }
 
         val nonAssignable = ps.finalEntities(NonAssignable).toSeq
         val effectivelyNonAssignable = ps.finalEntities(EffectivelyNonAssignable).toSeq
@@ -64,6 +80,6 @@ object FieldAssignabilityRunner extends ProjectAnalysisApplication {
                 |# assignable fields ${assignable.size}
                 |"""
 
-        BasicReport(message.stripMargin('|'))
+        (project, BasicReport(message.stripMargin('|')))
     }
 }

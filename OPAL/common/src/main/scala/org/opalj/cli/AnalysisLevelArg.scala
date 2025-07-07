@@ -7,7 +7,6 @@ import org.rogach.scallop.stringConverter
 case class AnalysisLevelArg(override val description: String, val levels: (String, String)*)
     extends ParsedArg[String, String] with ChoiceArg[String] {
     override val name: String = "level"
-    override val argName: String = "level"
 
     val withNone = true
 

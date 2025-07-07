@@ -4,10 +4,12 @@ package cli
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+
 import org.opalj.log.DevNullLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.ScallopOption
 import org.rogach.scallop.ScallopOptionGroup
@@ -53,8 +55,15 @@ trait OPALCommandLineConfig {
     /**
      * Gets the value of an (optional) argument or None if the argument was not supplied
      */
-    def get[R](command: Arg[_, R]): Option[R] = {
-        values.get(command).asInstanceOf[Option[R]]
+    def get[R](arg: Arg[_, R]): Option[R] = {
+        values.get(arg).asInstanceOf[Option[R]]
+    }
+
+    /**
+     * Gets the value of an (optional) argument or a default value if the argument was not supplied
+     */
+    def get[R](arg: Arg[_, R], default: => R): R = {
+        get(arg).getOrElse(default)
     }
 
     /**
@@ -139,13 +148,15 @@ trait OPALCommandLineConfig {
                     arg,
                     arg match {
                         case parsedArg: ParsedArg[_, _] => parseArgWithParser(value, parsedArg.parse)
-                        case _: Arg[_, _]                   => value()
+                        case _: Arg[_, _]               => value()
                     }
                 )
         }
     }
 
-    private def getRegularScallopOption[T](arg: ConvertedArg[T, _])(implicit conv: ValueConverter[T]): ScallopOption[T] =
+    private def getRegularScallopOption[T](arg: ConvertedArg[T, _])(implicit
+        conv: ValueConverter[T]
+    ): ScallopOption[T] =
         opt[T](
             name = arg.name,
             argName = arg.argName,
@@ -155,7 +166,7 @@ trait OPALCommandLineConfig {
             noshort = arg.noshort,
             required = required.contains(arg),
             group = argGroups.getOrElse(arg, runnerSpecificGroup)
-            )
+        )
 
     private def getChoiceScallopOption(arg: Arg[String, _]): ScallopOption[String] =
         choice(
@@ -168,13 +179,13 @@ trait OPALCommandLineConfig {
             choices = arg.choices,
             required = required.contains(arg),
             group = argGroups.getOrElse(arg, runnerSpecificGroup)
-            )
+        )
 
     private def parseArgWithParser[T, R](value: ScallopOption[_], parse: T => R): R =
         parse(value.apply().asInstanceOf[T])
 
     def setupConfig(isLibrary: Boolean): Config = {
-        if(get(NoLogsArg).getOrElse(false))
+        if (get(NoLogsArg, false))
             OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
         var config: Config =

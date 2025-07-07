@@ -5,20 +5,22 @@ package cg
 
 import org.opalj.cli.ChoiceArg
 import org.opalj.cli.ParsedArg
+
 import org.rogach.scallop.stringConverter
 
 object CallGraphArg extends ParsedArg[String, CallGraphKey] with ChoiceArg[CallGraphKey] {
 
     override val name: String = "callGraph"
     override val argName: String = "algorithm"
-    override val choices = Seq("CHA", "RTA", "MTA", "FTA", "CTA", "XTA", "TypeBasedPointsTo", "PointsTo", "1-0-CFA", "1-1-CFA")
+    override val choices =
+        Seq("CHA", "RTA", "MTA", "FTA", "CTA", "XTA", "TypeBasedPointsTo", "PointsTo", "1-0-CFA", "1-1-CFA")
     override val description: String = "Call-graph algorithm used. "
     override val defaultValue: Option[String] = Some("RTA")
 
     override def parse(callGraph: String): CallGraphKey = {
         callGraph match {
-            case "CHA"      => CHACallGraphKey
-            case "RTA"      => RTACallGraphKey
+            case "CHA"               => CHACallGraphKey
+            case "RTA"               => RTACallGraphKey
             case "MTA"               => MTACallGraphKey
             case "FTA"               => FTACallGraphKey
             case "CTA"               => CTACallGraphKey

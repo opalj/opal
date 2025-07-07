@@ -3,21 +3,25 @@ package org.opalj
 package support
 package info
 
-import java.net.URL
+import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.FreshReturnValue
 import org.opalj.br.fpcf.properties.Getter
 import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+
+import org.rogach.scallop.ScallopConf
 
 /**
  * Computes return value freshness information; see
@@ -25,24 +29,31 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
  *
  * @author Florian Kuebler
  */
-object ReturnValueFreshness extends ProjectAnalysisApplication {
+object ReturnValueFreshness extends MultiProjectAnalysisApplication {
 
-    override def title: String = "\"Freshness\" of Return Values"
+    protected class ReturnValueFreshnessConfig(args: Array[String]) extends ScallopConf(args)
+        with MultiProjectAnalysisConfig[ReturnValueFreshnessConfig]
+        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
 
-    override def description: String = {
-        "Describes whether a method returns a value that is allocated in that method or its " +
-            "callees and only has escape state EscapeViaReturn"
+        banner("Computes whether a method returns a value that is allocated in that method or its callees and has not yet escaped\n")
+
+        init()
     }
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = ReturnValueFreshnessConfig
 
-        project.get(RTACallGraphKey)
+    protected def createConfig(args: Array[String]): ReturnValueFreshnessConfig = new ReturnValueFreshnessConfig(args)
 
-        val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ReturnValueFreshnessConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+        val (ps, _) = analysisConfig.setupPropertyStore(project)
+        analysisConfig.setupCallGaph(project)
+
+        project.get(FPCFAnalysesManagerKey).runAll(
             LazyInterProceduralEscapeAnalysis,
             LazyFieldLocalityAnalysis,
             EagerReturnValueFreshnessAnalysis
@@ -67,6 +78,6 @@ object ReturnValueFreshness extends ProjectAnalysisApplication {
                 |# of methods that are extensible getters: ${extGetter.size}
                 |"""
 
-        BasicReport(message.stripMargin('|'))
+        (project, BasicReport(message.stripMargin('|')))
     }
 }
