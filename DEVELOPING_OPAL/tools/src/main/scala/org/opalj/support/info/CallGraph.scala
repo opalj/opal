@@ -3,12 +3,12 @@ package org.opalj
 package support
 package info
 
-import scala.language.existentials
 import scala.language.postfixOps
 
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
+import java.net.URL
 
 import org.rogach.scallop.stringListConverter
 
@@ -18,8 +18,8 @@ import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
@@ -91,7 +91,7 @@ object CallGraph extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: CallGraphConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, projectTime) = analysisConfig.setupProject()
         implicit val (ps, propertyStoreTime) = analysisConfig.setupPropertyStore(project)
         val (cg, callGraphTime) = analysisConfig.setupCallGaph(project)

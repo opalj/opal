@@ -5,14 +5,15 @@ package tac
 import scala.language.postfixOps
 
 import java.io.File
+import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.opalj.ai.common.AIBasedCommandLineConfig
 import org.opalj.ai.common.SimpleAIKey
-import org.opalj.ai.util.AIBasedCommandLineConfig
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.bytecode.JDKArg
 import org.opalj.cli.MultiProjectsArg
@@ -40,7 +41,7 @@ object TACAItoGraphs extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ConfigType,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val methodCount = new AtomicInteger(0)

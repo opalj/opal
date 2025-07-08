@@ -6,11 +6,12 @@ package info
 import scala.language.postfixOps
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.collection.TypesSet
 import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.br.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
@@ -38,7 +39,7 @@ object ThrownExceptions extends ProjectsAnalysisApplication {
         val description = "Computes the set of the execeptions (in)directly thrown by methods"
 
         private val analysisLevelArg =
-            new AnalysisLevelArg("Thrown-exceptions analysis level", Seq("L0" -> "L0", "L1" -> "L1") *) {
+            new AnalysisLevelArg("Thrown-exceptions analysis level", Seq("L0" -> "L0", "L1" -> "L1"): _*) {
                 override val defaultValue: Option[String] = Some("L1")
                 override val withNone = false
             }
@@ -60,7 +61,7 @@ object ThrownExceptions extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ThrownExceptionsConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (ps, _) = analysisConfig.setupPropertyStore(project)
         var executionTime: Nanoseconds = Nanoseconds.None

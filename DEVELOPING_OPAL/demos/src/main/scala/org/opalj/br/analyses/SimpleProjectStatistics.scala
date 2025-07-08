@@ -4,6 +4,7 @@ package br
 package analyses
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
@@ -27,7 +28,7 @@ object SimpleProjectStatistics extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: StatisticsConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         // the following is highly inefficient

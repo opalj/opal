@@ -3,10 +3,11 @@ package org.opalj
 package br
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 /**
@@ -28,7 +29,7 @@ object NativeMethodsCounter extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: NativeMethodsConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val nativeMethods = project.allClassFiles.flatMap(_.methods.filter(_.isNative).map(_.toJava))
         (project, BasicReport(nativeMethods.mkString(s"${nativeMethods.size} native methods found:\n\t", "\n\t", "\n")))

@@ -5,14 +5,14 @@ package ai
 import scala.language.existentials
 
 import java.io.File
+import java.net.URL
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
 
-import org.rogach.scallop.ScallopConf
-
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
@@ -44,7 +44,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: InfiniteRecursionConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         // In a real application we should take this from a parameter

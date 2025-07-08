@@ -5,6 +5,7 @@ package analyses
 package observers
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.FieldReadAccess
@@ -31,7 +32,7 @@ object ObserverPatternUsage extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ObserverPatternConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val appClassFiles = project.allProjectClassFiles

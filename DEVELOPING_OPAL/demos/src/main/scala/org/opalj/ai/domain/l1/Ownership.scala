@@ -14,7 +14,6 @@ import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.ANEWARRAY
@@ -45,7 +44,7 @@ object OwnershipAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: OwnershipConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val Private___Not_Static = (AccessFlagsMatcher.NOT_STATIC && ACC_PRIVATE)

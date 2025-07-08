@@ -7,13 +7,14 @@ import scala.annotation.switch
 import scala.language.postfixOps
 
 import java.io.File
+import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cli.ClassNameArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.cli.GranularityArg
@@ -103,7 +104,7 @@ object ClassUsageAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ClassUsageConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val classNames = analysisConfig(ClassNameArg).toSet
         val isFineGrainedAnalysis = analysisConfig.get(GranularityArg, false)
 

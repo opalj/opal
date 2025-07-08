@@ -71,7 +71,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
     def setupProject(
         cp:    Iterable[File] = apply(JDKArg).getOrElse(apply(ClassPathArg)),
         libCP: Iterable[File] = get(LibraryClassPathArg, Iterable.empty)
-    )(implicit initialLogContext: LogContext = GlobalLogContext): (SomeProject, Seconds) = {
+    )(implicit initialLogContext: LogContext = GlobalLogContext): (Project[URL], Seconds) = {
         setupProject(
             cp,
             libCP,
@@ -85,9 +85,9 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
         libCP:                 Iterable[File],
         isLibrary:             Boolean,
         librariesAsInterfaces: Boolean
-    )(implicit initialLogContext: LogContext): (SomeProject, Seconds) = {
+    )(implicit initialLogContext: LogContext): (Project[URL], Seconds) = {
         var projectTime: Seconds = Seconds.None
-        var project: SomeProject = null
+        var project: Project[URL] = null
         time {
             implicit val config: Config = setupConfig(isLibrary)
 

@@ -4,10 +4,11 @@ package support
 package info
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.FreshReturnValue
@@ -42,7 +43,7 @@ object ReturnValueFreshness extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ReturnValueFreshnessConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (ps, _) = analysisConfig.setupPropertyStore(project)
         analysisConfig.setupCallGaph(project)

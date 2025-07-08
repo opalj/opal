@@ -5,14 +5,14 @@ package tutorial
 package base
 
 import java.io.File
-
-import org.rogach.scallop.ScallopConf
+import java.net.URL
 
 import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.SingleArgumentMethodDescriptor
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
@@ -60,7 +60,7 @@ object IdentifyResourcesAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ResourcesConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         // Step 1

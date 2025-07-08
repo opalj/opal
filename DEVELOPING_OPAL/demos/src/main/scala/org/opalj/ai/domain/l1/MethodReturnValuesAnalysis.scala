@@ -5,8 +5,7 @@ package domain
 package l1
 
 import java.io.File
-
-import org.rogach.scallop.ScallopConf
+import java.net.URL
 
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
@@ -15,6 +14,7 @@ import org.opalj.ai.domain
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
@@ -110,7 +110,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: MethodReturnValueConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject()
         val refinedMethods = time {
             for {

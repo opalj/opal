@@ -4,15 +4,14 @@ package fpcf
 package analyses
 
 import java.io.File
-
-import org.rogach.scallop.ScallopConf
+import java.net.URL
 
 import org.opalj.br.DeclaredField
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredFieldsKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
@@ -52,7 +51,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: FieldAccessConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (propertyStore, _) = analysisConfig.setupPropertyStore(project)
 

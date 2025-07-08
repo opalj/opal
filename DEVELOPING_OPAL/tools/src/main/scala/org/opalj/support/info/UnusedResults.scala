@@ -4,6 +4,7 @@ package support
 package info
 
 import java.io.File
+import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters._
@@ -14,6 +15,7 @@ import org.opalj.br.PC
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
@@ -69,7 +71,7 @@ object UnusedResults extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: UnusedResultsConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         implicit val (project, _) = analysisConfig.setupProject(cp)()
         implicit val (ps, _) = analysisConfig.setupPropertyStore(project)
         analysisConfig.setupCallGaph(project)

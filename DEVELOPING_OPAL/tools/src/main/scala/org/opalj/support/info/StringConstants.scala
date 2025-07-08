@@ -4,10 +4,11 @@ package support
 package info
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
@@ -30,7 +31,7 @@ object StringConstants extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: StringConstantsConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val data = project.get(StringConstantsInformationKey)

@@ -13,8 +13,8 @@ import scala.xml.NodeSeq
 
 import org.opalj.ai.Domain
 import org.opalj.ai.InstructionCountBoundedAI
-import org.opalj.ai.domain.DomainArg
-import org.opalj.ai.util.AIBasedCommandLineConfig
+import org.opalj.ai.common.AIBasedCommandLineConfig
+import org.opalj.ai.common.DomainArg
 import org.opalj.ai.util.XHTML
 import org.opalj.br._
 import org.opalj.br.analyses._
@@ -48,7 +48,7 @@ object InterpretMethods extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: MethodAnnotationsConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val verbose = analysisConfig(DebugArg)

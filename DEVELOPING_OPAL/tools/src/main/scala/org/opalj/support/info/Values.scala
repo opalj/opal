@@ -4,6 +4,7 @@ package support
 package info
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.MethodReturnValue
@@ -11,8 +12,8 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -41,7 +42,7 @@ object Values extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ValuesConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (ps, _) = analysisConfig.setupPropertyStore(project)
 

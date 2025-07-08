@@ -11,8 +11,6 @@ import scala.Console.RESET
 import scala.collection.Set
 import scala.collection.immutable.LongMap
 
-import org.rogach.scallop.ScallopConf
-
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.domain
@@ -20,7 +18,6 @@ import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -64,7 +61,7 @@ object IfNullParameterAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: NullParametersConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         // Explicitly specifies that all reference values are not null.
