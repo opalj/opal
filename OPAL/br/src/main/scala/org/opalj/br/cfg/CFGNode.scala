@@ -26,6 +26,8 @@ trait CFGNode extends Node {
 
     def isStartOfSubroutine: Boolean
 
+    def endPC: Int = throw new UnsupportedOperationException();
+
     //
     // MANAGING PREDECESSORS
     //

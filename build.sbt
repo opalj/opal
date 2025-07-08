@@ -95,6 +95,7 @@ addCommandAlias(
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
 
 addCommandAlias("format", "; scalafmt; Test / scalafmt; IntegrationTest / scalafmt")
+addCommandAlias("checkFormat", "; scalafmtCheck; Test / scalafmtCheck; IntegrationTest / scalafmtCheck")
 
 lazy val IntegrationTest = config("it") extend Test
 
@@ -308,7 +309,8 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
       .title("OPAL - Three Address Code") ++ Seq("-groups", "-implicits")),
     assembly / assemblyJarName := "OPALTACDisassembler.jar",
     assembly / mainClass := Some("org.opalj.tac.TAC"),
-    run / fork := true
+    run / fork := true,
+    libraryDependencies ++= Dependencies.tac
   )
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   .dependsOn(ifds % "it->it;it->test;test->test;compile->compile")
