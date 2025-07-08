@@ -6,7 +6,7 @@ package info
 import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.ExtensibleGetter
@@ -15,13 +15,10 @@ import org.opalj.br.fpcf.properties.Getter
 import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-
-import org.rogach.scallop.ScallopConf
 
 /**
  * Computes return value freshness information; see
@@ -29,15 +26,12 @@ import org.rogach.scallop.ScallopConf
  *
  * @author Florian Kuebler
  */
-object ReturnValueFreshness extends MultiProjectAnalysisApplication {
+object ReturnValueFreshness extends ProjectsAnalysisApplication {
 
-    protected class ReturnValueFreshnessConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[ReturnValueFreshnessConfig]
-        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
-
-        banner("Computes whether a method returns a value that is allocated in that method or its callees and has not yet escaped\n")
-
-        init()
+    protected class ReturnValueFreshnessConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
+        val description =
+            "Computes whether a method returns a value that is allocated in that method or its callees and has not yet escaped"
     }
 
     protected type ConfigType = ReturnValueFreshnessConfig

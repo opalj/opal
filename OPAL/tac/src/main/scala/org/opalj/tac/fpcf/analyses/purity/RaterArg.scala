@@ -5,9 +5,9 @@ package fpcf
 package analyses
 package purity
 
-import org.opalj.cli.ParsedArg
-
 import org.rogach.scallop.stringConverter
+
+import org.opalj.cli.ParsedArg
 
 object RaterArg extends ParsedArg[String, DomainSpecificRater] {
     override val name: String = "rater"

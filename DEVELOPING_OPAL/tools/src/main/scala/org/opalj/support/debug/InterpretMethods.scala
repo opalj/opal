@@ -13,10 +13,13 @@ import scala.xml.NodeSeq
 
 import org.opalj.ai.Domain
 import org.opalj.ai.InstructionCountBoundedAI
-import org.opalj.ai.domain
+import org.opalj.ai.domain.DomainArg
+import org.opalj.ai.util.AIBasedCommandLineConfig
 import org.opalj.ai.util.XHTML
 import org.opalj.br._
 import org.opalj.br.analyses._
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.cli.DebugArg
 import org.opalj.io.writeAndOpen
 import org.opalj.log.LogContext
 
@@ -28,83 +31,41 @@ import org.opalj.log.LogContext
  *
  * @author Michael Eichberg
  */
-object InterpretMethods extends AnalysisApplication {
+object InterpretMethods extends ProjectsAnalysisApplication {
 
-    override def analysisSpecificParametersDescription: String =
-        "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n" +
-            "[-verbose={true,false} If true, extensive information is shown.]\n"
+    protected class MethodAnnotationsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with AIBasedCommandLineConfig {
+        val description = "Performs an abstract interpretation of all methods"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
-        def isDomainParameter(parameter: String) =
-            parameter.startsWith("-domain=") && parameter.length() > 8
-        def isVerbose(parameter: String) =
-            parameter == "-verbose=true" || parameter == "-verbose=false"
-
-        parameters match {
-            case Nil => Iterable.empty
-            case Seq(parameter) =>
-                if (isDomainParameter(parameter) || isVerbose(parameter))
-                    Iterable.empty
-                else
-                    Iterable("unknown parameter: " + parameter)
-            case Seq(parameter1, parameter2) =>
-                if (!isDomainParameter(parameter1))
-                    Seq("the first parameter does not specify the domain: " + parameter1)
-                else if (!isVerbose(parameter2))
-                    Seq("the second parameter has to be \"verbose\": " + parameter2)
-                else
-                    Iterable.empty
-
-        }
+        args(DebugArg)
     }
 
-    override val analysis = new InterpretMethodsAnalysis[URL]
+    protected type ConfigType = MethodAnnotationsConfig
 
-}
+    protected def createConfig(args: Array[String]): MethodAnnotationsConfig = new MethodAnnotationsConfig(args)
 
-/**
- * An analysis that analyzes all methods of all class files of a project using a
- * custom domain.
- *
- * @author Michael Eichberg
- */
-class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: MethodAnnotationsConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
-    override def title: String = "interpret methods"
+        val verbose = analysisConfig(DebugArg)
 
-    override def description: String = "performs an abstract interpretation of all methods"
-
-    override def analyze(
-        project:                Project[Source],
-        parameters:             Seq[String] = List.empty,
-        initProgressManagement: (Int) => ProgressManagement
-    ): BasicReport = {
-        implicit val logContext: LogContext = project.logContext
-
-        val verbose = parameters.nonEmpty &&
-            (parameters.head == "-verbose=true" ||
-            (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
         val (message, detailedErrorInformationFile) =
-            if (parameters.nonEmpty && parameters.head.startsWith("-domain")) {
-                InterpretMethodsAnalysis.interpret(
-                    project,
-                    Class.forName(parameters.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
-                    verbose,
-                    initProgressManagement,
-                    6d
-                )
-            } else {
-                InterpretMethodsAnalysis.interpret(
-                    project,
-                    classOf[domain.l0.BaseDomain[java.net.URL]],
-                    verbose,
-                    initProgressManagement,
-                    6d
-                )
+            InterpretMethodsAnalysis.interpret(
+                project,
+                analysisConfig(DomainArg),
+                verbose,
+                6d
+            )(project.logContext)
 
-            }
-        BasicReport(
-            message + detailedErrorInformationFile.map(" (See " + _ + " for details.)").getOrElse("")
+        (
+            project,
+            BasicReport(
+                message + detailedErrorInformationFile.map(" (See " + _ + " for details.)").getOrElse("")
+            )
         )
     }
 }
@@ -117,11 +78,10 @@ object InterpretMethodsAnalysis {
     }
 
     def interpret[Source](
-        project:                Project[Source],
-        domainClass:            Class[_ <: Domain],
-        beVerbose:              Boolean,
-        initProgressManagement: (Int) => ProgressManagement,
-        maxEvaluationFactor:    Double = 3d
+        project:             Project[Source],
+        domainClass:         Class[_ <: Domain],
+        beVerbose:           Boolean,
+        maxEvaluationFactor: Double = 3d
     )(
         implicit logContext: LogContext
     ): (String, Option[File]) = {

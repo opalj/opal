@@ -2,9 +2,9 @@
 package org.opalj
 package cli
 
-import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-
 import org.rogach.scallop.intConverter
+
+import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 object ThreadsNumArg extends PlainArg[Int] {
     override val name: String = "threads"

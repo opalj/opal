@@ -6,7 +6,7 @@ package info
 import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -17,14 +17,11 @@ import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
-
-import org.rogach.scallop.ScallopConf
 
 /**
  * Computes the field assignability.
@@ -32,15 +29,11 @@ import org.rogach.scallop.ScallopConf
  * @author Dominik Helm
  * @author Tobias Roth
  */
-object FieldAssignability extends MultiProjectAnalysisApplication {
+object FieldAssignability extends ProjectsAnalysisApplication {
 
-    protected class FieldAssignabilityConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[FieldAssignabilityConfig]
-        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
-
-        banner("Computes information about the immutability of fields\n")
-
-        init()
+    protected class FieldAssignabilityConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
+        val description = "Computes information about the immutability of fields"
     }
 
     protected type ConfigType = FieldAssignabilityConfig

@@ -9,11 +9,13 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 
+import org.rogach.scallop.ScallopConf
+
 import org.opalj.ai.domain.DomainArg
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
@@ -42,6 +44,7 @@ import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JDKArg
+import org.opalj.bytecode.JDKPackages
 import org.opalj.cli.AnalysisLevelArg
 import org.opalj.cli.ConfigurationNameArg
 import org.opalj.cli.EagerArg
@@ -52,7 +55,6 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -68,20 +70,17 @@ import org.opalj.tac.fpcf.analyses.purity.RaterArg
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
-import org.rogach.scallop.ScallopConf
-
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
  *
  * @author Dominik Helm
  */
-object Purity extends MultiProjectAnalysisApplication {
+object Purity extends ProjectsAnalysisApplication {
 
-    protected class PurityConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[PurityConfig]
-        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
+    protected class PurityConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
 
-        banner("Compute method purity information\n")
+        val description = "Compute method purity information"
 
         private val analysisLevelArg = new AnalysisLevelArg(PurityArg.description, PurityArg.levels *) {
             override val defaultValue: Option[String] = Some("L2")
@@ -147,22 +146,6 @@ object Purity extends MultiProjectAnalysisApplication {
             support.asInstanceOf[List[FPCFAnalysisScheduler]]
         }
     }
-
-    private val JDKPackages = List(
-        "java/",
-        "javax",
-        "javafx",
-        "jdk",
-        "sun",
-        "oracle",
-        "com/sun",
-        "netscape",
-        "org/ietf/jgss",
-        "org/jcp/xml/dsig/internal",
-        "org/omg",
-        "org/w3c/dom",
-        "org/xml/sax"
-    )
 
     protected type ConfigType = PurityConfig
 
@@ -278,7 +261,7 @@ object Purity extends MultiProjectAnalysisApplication {
 
         val projectEvalDir = analysisConfig.get(OutputDirArg).map(new File(_, if (isJDK) "JDK" else cp.head.getName))
         if (projectEvalDir.isDefined) {
-            if (!projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
+            if (!projectEvalDir.get.exists()) projectEvalDir.get.mkdirs()
             val configurationName = analysisConfig(ConfigurationNameArg)
 
             // WRITE ANALYSIS OUTPUT

@@ -5,11 +5,11 @@ package cli
 import java.io.File
 import scala.collection.immutable.ArraySeq
 
+import org.rogach.scallop.stringConverter
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-
-import org.rogach.scallop.stringConverter
 
 object ClassPathArg extends ClassPathLikeArg {
     override val name: String = "cp"

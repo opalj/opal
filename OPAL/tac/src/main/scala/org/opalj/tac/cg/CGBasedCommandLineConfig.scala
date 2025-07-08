@@ -5,33 +5,37 @@ package cg
 
 import scala.language.postfixOps
 
+import org.rogach.scallop.ScallopConf
+
 import org.opalj.ai.util.AIBasedCommandLineConfig
+import org.opalj.br.android.AndroidManifestArg
 import org.opalj.br.fpcf.cli.cg.DisabledCGModulesArg
 import org.opalj.br.fpcf.cli.cg.EnabledCGModulesArg
 import org.opalj.br.fpcf.cli.cg.EntryPointsArg
 import org.opalj.br.fpcf.cli.cg.MainClassArg
 import org.opalj.br.fpcf.cli.cg.TamiFlexArg
+import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.log.OPALLogger
 import org.opalj.si.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
-import org.rogach.scallop.ScallopConf
+trait CGBasedCommandLineConfig extends AIBasedCommandLineConfig with PropertyStoreBasedCommandLineConfig {
+    self: ScallopConf =>
 
-trait CGBasedCommandLineConfig extends AIBasedCommandLineConfig { self: ScallopConf =>
+    private val cgArgGroup = group("Call-Graph related arguments:")
 
-    val cgArgGroup = group("Call-Graph related arguments:")
-
-    val cgArgs = Seq(
+    private val cgArgs = Seq(
         CallGraphArg !,
         MainClassArg,
         EntryPointsArg,
         EnabledCGModulesArg,
         DisabledCGModulesArg,
-        TamiFlexArg
+        TamiFlexArg,
+        AndroidManifestArg
     )
 
-    args(cgArgs *)
+    args(cgArgs: _*)
 
     cgArgs.foreach { arg => argGroups += arg -> cgArgGroup }
 

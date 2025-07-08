@@ -14,7 +14,7 @@ import org.opalj.br.PC
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
@@ -31,7 +31,6 @@ import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.NonVirtualFunctionCall
@@ -48,19 +47,16 @@ import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
-import org.rogach.scallop.ScallopConf
-
 /**
  * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
  *
  * @author Dominik Helm
  */
-object UnusedResults extends MultiProjectAnalysisApplication {
+object UnusedResults extends ProjectsAnalysisApplication {
 
-    protected class UnusedResultsConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[UnusedResultsConfig]
-        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
-        banner("Finds invocations of pure/side-effect free methods where the result is not used\n")
+    protected class UnusedResultsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
+        val description = "Finds invocations of pure/side-effect free methods where the result is not used"
     }
 
     protected type ConfigType = UnusedResultsConfig

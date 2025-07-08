@@ -2,9 +2,15 @@
 package org.opalj
 package cli
 
+import org.rogach.scallop.stringConverter
 import org.rogach.scallop.stringListConverter
 
 object PackagesArg extends PlainArg[List[String]] {
-    override val name: String = "packages"
-    override val description: String = "List of packages to process, e.g. java/util javax"
+    override val name: String = "package"
+    override val description: String = "Packages to process (including subpackages), e.g. java/util javax"
+}
+
+object MainPackageArg extends PlainArg[String] {
+    override val name: String = "mainPackage"
+    override val description: String = "Main package to process"
 }

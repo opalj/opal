@@ -5,17 +5,17 @@ package cli
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
-import org.opalj.log.DevNullLogger
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.ScallopOption
 import org.rogach.scallop.ScallopOptionGroup
 import org.rogach.scallop.ValueConverter
 import org.rogach.scallop.exceptions.Help
 import org.rogach.scallop.exceptions.ScallopException
+
+import org.opalj.log.DevNullLogger
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * `OpalConf` is a utility trait designed to enhance the `ScallopConf` functionality by providing additional methods
@@ -25,6 +25,9 @@ import org.rogach.scallop.exceptions.ScallopException
  */
 trait OPALCommandLineConfig {
     self: ScallopConf =>
+
+    val description: String
+    banner(description + "\n")
 
     private var definedArgs: Set[Arg[_, _]] = Set.empty
     def argsIterator: Iterator[Arg[_, _]] = definedArgs.iterator
@@ -97,11 +100,11 @@ trait OPALCommandLineConfig {
          * Requires exactly one of the given arguments
          */
         def ^(a2: Arg[_, _]): Arg[_, _] = {
-            MutuallyExclusive(a, a2)
+            MutuallyExclusive(Seq(a, a2))
         }
     }
 
-    private case class MutuallyExclusive(as: Arg[_, _]*) extends Arg[Any, Any] {
+    private case class MutuallyExclusive(as: Seq[Arg[_, _]]) extends Arg[Any, Any] {
         override val name: String = ""
         override val description: String = ""
 
@@ -110,14 +113,14 @@ trait OPALCommandLineConfig {
 
     private object MutuallyExclusive {
         def apply(a1: Arg[_, _], a2: Arg[_, _]): MutuallyExclusive = (a1, a2) match {
-            case (r1: MutuallyExclusive, r2: MutuallyExclusive) => new MutuallyExclusive((r1.as ++ r2.as) *)
-            case (r1: MutuallyExclusive, _)                     => new MutuallyExclusive((r1.as :+ a2) *)
-            case (_, r2: MutuallyExclusive)                     => new MutuallyExclusive((r2.as :+ a1) *)
-            case _                                              => new MutuallyExclusive(Seq(a1, a2) *)
+            case (r1: MutuallyExclusive, r2: MutuallyExclusive) => new MutuallyExclusive(r1.as ++ r2.as)
+            case (r1: MutuallyExclusive, _)                     => new MutuallyExclusive(r1.as :+ a2)
+            case (_, r2: MutuallyExclusive)                     => new MutuallyExclusive(r2.as :+ a1)
+            case _                                              => new MutuallyExclusive(Seq(a1, a2))
         }
     }
 
-    protected def init(): Unit = {
+    def init(): Unit = {
 
         def getScallopOptionFlat(a: Arg[_, _]): ScallopOption[_] = a match {
             case choiceArg: ChoiceArg[_] => getChoiceScallopOption(choiceArg)
@@ -130,9 +133,9 @@ trait OPALCommandLineConfig {
             case me: MutuallyExclusive => {
                 val options = me.as.map { c => c -> getScallopOptionFlat(c) }
                 if (required.contains(a))
-                    requireOne(options.map(_._2) *)
+                    requireOne(options.map(_._2): _*)
                 else
-                    mutuallyExclusive(options.map(_._2) *)
+                    mutuallyExclusive(options.map(_._2): _*)
                 options
             }
             case _ => Iterator(a -> getScallopOptionFlat(a))

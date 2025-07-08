@@ -2,11 +2,12 @@
 package org.opalj
 package br
 
-import java.net.URL
+import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -16,18 +17,24 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  *
  * @author Michael Eichberg
  */
-object PrivateMethodsWithClassTypeParameterCounter extends ProjectAnalysisApplication {
+object PrivateMethodsWithClassTypeParameterCounter extends ProjectsAnalysisApplication {
 
-    override def description: String = {
-        "counts the number of package private and private methods " +
-            "with a body with at least one parameter that is a class type"
+    protected class MethodsWithClassTypeParameterConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Counts (package) private methods with at least one parameter that is a class type"
     }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = MethodsWithClassTypeParameterConfig
+
+    protected def createConfig(args: Array[String]): MethodsWithClassTypeParameterConfig =
+        new MethodsWithClassTypeParameterConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: MethodsWithClassTypeParameterConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+
         val overallPotential = new java.util.concurrent.atomic.AtomicInteger(0)
         val methods = (
             for {
@@ -46,11 +53,14 @@ object PrivateMethodsWithClassTypeParameterCounter extends ProjectAnalysisApplic
             }
         ).seq
 
-        BasicReport(
-            methods.mkString(
-                "Methods:\n\t",
-                "\n\t",
-                s"\n\t${methods.size} methods found with an overall refinement potential of ${overallPotential.get}.\n"
+        (
+            project,
+            BasicReport(
+                methods.mkString(
+                    "Methods:\n\t",
+                    "\n\t",
+                    s"\n\t${methods.size} methods found with an overall refinement potential of ${overallPotential.get}.\n"
+                )
             )
         )
     }

@@ -6,10 +6,10 @@ package par
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
+import org.rogach.scallop.stringConverter
+
 import org.opalj.cli.PlainArg
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
-
-import org.rogach.scallop.stringConverter
 
 object SchedulingStrategyArg extends PlainArg[String] {
     override val name: String = "schedulingStrategy"

@@ -2,25 +2,33 @@
 package org.opalj
 package ai
 
-import java.net.URL
+import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.IFICMPInstruction
 
 /**
- * A shallow analysis that tries to identify useless computations; here, "ifs" where the condition
- * is constant.
+ * A shallow analysis that tries to identify useless computations; here, "ifs" where the condition is constant.
  *
  * @author Michael Eichberg
  */
-object UselessComputationsMinimal extends ProjectAnalysisApplication {
+object ConstantIfs extends ProjectsAnalysisApplication {
 
-    class AnalysisDomain(val project: Project[URL], val method: Method)
+    protected class ConstantIfsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Collects ifs where the condition is constant"
+    }
+
+    protected type ConfigType = ConstantIfsConfig
+
+    protected def createConfig(args: Array[String]): ConstantIfsConfig = new ConstantIfsConfig(args)
+
+    class AnalysisDomain(val project: SomeProject, val method: Method)
         extends CorrelationalDomain
         with domain.DefaultSpecialDomainValuesBinding
         with domain.DefaultHandlingOfMethodResults
@@ -39,16 +47,17 @@ object UselessComputationsMinimal extends ProjectAnalysisApplication {
         with domain.TheProject
         with domain.TheMethod
 
-    def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ConstantIfsConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val results = new ConcurrentLinkedQueue[String]()
-        theProject.parForeachMethodWithBody(isInterrupted) { m =>
+        project.parForeachMethodWithBody() { m =>
             val method = m.method
-            val result = BaseAI(method, new AnalysisDomain(theProject, method))
+            val result = BaseAI(method, new AnalysisDomain(project, method))
             import result.domain.ConcreteIntegerValue
             collectPCWithOperands(result.domain)(method.body.get, result.operandsArray) {
                 case (
@@ -62,6 +71,6 @@ object UselessComputationsMinimal extends ProjectAnalysisApplication {
             }
         }
 
-        BasicReport(results.asScala.mkString(s"${results.size} useless computations:\n", "\n", "\n"))
+        (project, BasicReport(results.asScala.mkString(s"${results.size} useless computations:\n", "\n", "\n")))
     }
 }

@@ -10,11 +10,11 @@ import scala.jdk.CollectionConverters._
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.cli.PlainArg
-
 import org.rogach.scallop.stringConverter
 import org.rogach.scallop.stringListConverter
+
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.cli.PlainArg
 
 object EntryPointsArg extends PlainArg[List[String]] with EntryPointsArgLike {
 
@@ -48,16 +48,15 @@ trait EntryPointsArgLike {
         val currentValues = config.getList(key).unwrapped()
         entryPoints.foreach { entryPoint =>
             val descriptorIndex = entryPoint.indexOf('(')
-            val (classAndMethod, descriptor) = if (descriptorIndex >= 0)
-                (entryPoint.substring(0, descriptorIndex), Some(entryPoint.substring(descriptorIndex)))
-            else (entryPoint, None)
+            val (classAndMethod, descriptor) =
+                if (descriptorIndex >= 0) entryPoint.splitAt(descriptorIndex) else (entryPoint, "")
             val methodNameIndex = classAndMethod.lastIndexOf('.')
-            var configValue = Map(
-                "declaringClass" -> classAndMethod.substring(0, methodNameIndex).replace('.', '/'),
-                "name" -> classAndMethod.substring(methodNameIndex + 1)
+            val configValue = Map(
+                "declaringClass" -> classAndMethod.take(methodNameIndex).replace('.', '/'),
+                "name" -> classAndMethod.drop(methodNameIndex + 1)
             ).asJava
-            if (descriptor.isDefined)
-                configValue.put("descriptor", descriptor.get)
+            if (descriptor.nonEmpty)
+                configValue.put("descriptor", descriptor)
             currentValues.add(ConfigValueFactory.fromMap(configValue))
         }
         var newConfig = config.withValue(key, ConfigValueFactory.fromIterable(currentValues))

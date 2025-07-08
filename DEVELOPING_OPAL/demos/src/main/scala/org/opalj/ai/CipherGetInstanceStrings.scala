@@ -2,7 +2,7 @@
 package org.opalj
 package ai
 
-import java.net.URL
+import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
@@ -11,8 +11,9 @@ import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESTATIC
@@ -28,11 +29,15 @@ import org.opalj.br.instructions.LoadString
  *
  * @author Michael Reif
  */
-object CipherGetInstanceStringUsage extends ProjectAnalysisApplication {
+object CipherGetInstanceStrings extends ProjectsAnalysisApplication {
 
-    override def title: String = "input value analysis for Chipher.getInstance calls"
+    protected class CipherInstanceConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Collects parameter values of Cipher.getInstance calls"
+    }
 
-    override def description: String = "Analyzes the input values of Chipher.getInstance calls."
+    protected type ConfigType = CipherInstanceConfig
+
+    protected def createConfig(args: Array[String]): CipherInstanceConfig = new CipherInstanceConfig(args)
 
     // #################### CONSTANTS ####################
 
@@ -42,11 +47,12 @@ object CipherGetInstanceStringUsage extends ProjectAnalysisApplication {
 
     // #################### ANALYSIS ####################
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: CipherInstanceConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val report = new ConcurrentLinkedQueue[String]
 
@@ -71,6 +77,6 @@ object CipherGetInstanceStringUsage extends ProjectAnalysisApplication {
             }
         }
 
-        BasicReport(report.asScala.mkString("\n"))
+        (project, BasicReport(report.asScala.mkString("\n")))
     }
 }

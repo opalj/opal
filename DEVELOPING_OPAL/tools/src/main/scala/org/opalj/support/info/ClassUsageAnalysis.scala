@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cli.ClassNameArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
@@ -26,8 +26,6 @@ import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.value.ValueInformation
-
-import org.rogach.scallop.ScallopConf
 
 /**
  * Analyzes a project for how a particular class is used within that project. Collects information
@@ -47,18 +45,16 @@ import org.rogach.scallop.ScallopConf
  * @author Patrick Mell
  * @author Dominik Helm
  */
-object ClassUsageAnalysis extends MultiProjectAnalysisApplication {
+object ClassUsageAnalysis extends ProjectsAnalysisApplication {
 
-    protected class ClassUsageConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[ClassUsageConfig] {
-
-        banner("Analyzes a project for how a particular class is used within it, i.e., which methods of instances of that class are called\n")
+    protected class ClassUsageConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description =
+            "Analyzes a project for how a particular class is used within it, i.e., which methods of instances of that class are called"
 
         args(
             ClassNameArg !,
             GranularityArg
         )
-
     }
 
     protected type ConfigType = ClassUsageConfig
@@ -91,11 +87,11 @@ object ClassUsageAnalysis extends MultiProjectAnalysisApplication {
     private def processCall(
         call:                  Call[V],
         map:                   ConcurrentHashMap[String, AtomicInteger],
-        className:             String,
+        classNames:            Set[String],
         isFineGrainedAnalysis: Boolean
     ): Unit = {
         val declaringClassName = call.declaringClass.toJava
-        if (declaringClassName == className) {
+        if (classNames.contains(declaringClassName)) {
             val methodDescriptor = assembleMethodDescriptor(call, isFineGrainedAnalysis)
             if (map.putIfAbsent(methodDescriptor, new AtomicInteger(1)) != null) {
                 map.get(methodDescriptor).addAndGet(1)
@@ -108,7 +104,7 @@ object ClassUsageAnalysis extends MultiProjectAnalysisApplication {
         analysisConfig: ClassUsageConfig,
         execution:      Int
     ): (SomeProject, BasicReport) = {
-        val className = analysisConfig(ClassNameArg)
+        val classNames = analysisConfig(ClassNameArg).toSet
         val isFineGrainedAnalysis = analysisConfig.get(GranularityArg, false)
 
         val resultMap: ConcurrentHashMap[String, AtomicInteger] = new ConcurrentHashMap()
@@ -123,12 +119,12 @@ object ClassUsageAnalysis extends MultiProjectAnalysisApplication {
                     case Assignment.ASTID | ExprStmt.ASTID =>
                         stmt.asAssignmentLike.expr match {
                             case c: Call[V] @unchecked =>
-                                processCall(c, resultMap, className, isFineGrainedAnalysis)
+                                processCall(c, resultMap, classNames, isFineGrainedAnalysis)
                             case _ =>
                         }
                     case NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID |
                         StaticMethodCall.ASTID =>
-                        processCall(stmt.asMethodCall, resultMap, className, isFineGrainedAnalysis)
+                        processCall(stmt.asMethodCall, resultMap, classNames, isFineGrainedAnalysis)
                     case _ =>
                 }
             }

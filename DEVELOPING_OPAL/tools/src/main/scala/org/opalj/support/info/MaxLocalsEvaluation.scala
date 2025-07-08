@@ -7,11 +7,9 @@ import java.io.File
 
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
-
-import org.rogach.scallop.ScallopConf
 
 /**
  * Computes some statistics related to the number of parameters and locals
@@ -19,11 +17,10 @@ import org.rogach.scallop.ScallopConf
  *
  * @author Michael Eichberg
  */
-object MaxLocalsEvaluation extends MultiProjectAnalysisApplication {
+object MaxLocalsEvaluation extends ProjectsAnalysisApplication {
 
-    protected class MaxLocalsConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[MaxLocalsConfig] {
-        banner("Computes information about the maximum number of registers required per method\n")
+    protected class MaxLocalsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Computes information about the maximum number of registers required per method"
     }
 
     protected type ConfigType = MaxLocalsConfig

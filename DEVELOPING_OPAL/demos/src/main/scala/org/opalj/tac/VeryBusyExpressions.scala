@@ -2,8 +2,7 @@
 package org.opalj
 package tac
 
-import java.net.URL
-
+import org.opalj.ai.util.AIBasedCommandLineConfig
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.cfg._
@@ -16,13 +15,20 @@ import org.opalj.value._
  * This analysis can, e.g., be run against the demo code using sbt. After starting sbt type:
  *  `; project Demos ; console`
  * then start the analysis:
- * `run -cp=target/scala-2.12/classes/org/opalj/tac -class=org.opalj.tac.VeryBusyExpressionsDemo -method=n_n_h`
+ * `run --cp=target/scala-2.12/classes/org/opalj/tac --method=org.opalj.tac.VeryBusyExpressionsDemo.n_n_h`
  *
  * @author Michael Eichberg
  */
 object VeryBusyExpressions extends MethodAnalysisApplication {
 
-    override def description: String = "Identifies very busy binary arithmetic expressions."
+    protected class VeryBusyExpressionsConfig(args: Array[String]) extends MethodAnalysisConfig(args)
+        with AIBasedCommandLineConfig {
+        val description = "Collects very busy binary arithmetic expressions"
+    }
+
+    protected type ConfigType = VeryBusyExpressionsConfig
+
+    protected def createConfig(args: Array[String]): VeryBusyExpressionsConfig = new VeryBusyExpressionsConfig(args)
 
     final type TACAICode = TACode[TACMethodParameter, DUVar[ValueInformation]]
     final type Result = (TACAICode, Array[Facts], Facts)
@@ -31,7 +37,7 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
     final type Fact = (BinaryArithmeticOperator, IntTrieSet /*Def-Sites*/, IntTrieSet /*Def-Sites*/ )
     final type Facts = Set[Fact]
 
-    override def analyzeMethod(p: Project[URL], m: Method): Result = {
+    override def analyzeMethod(p: SomeProject, m: Method, analysisConfig: VeryBusyExpressionsConfig): Result = {
         // Get the SSA-like three-address code.
         // Please note that using the naive three-address code wouldn't be useful given that all
         // operands based variables are always immediately redefined!

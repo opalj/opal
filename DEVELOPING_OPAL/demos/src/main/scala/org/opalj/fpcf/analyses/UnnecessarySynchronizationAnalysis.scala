@@ -3,23 +3,22 @@ package org.opalj
 package fpcf
 package analyses
 
-import java.net.URL
+import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.tac.Assignment
 import org.opalj.tac.DVar
 import org.opalj.tac.MonitorEnter
 import org.opalj.tac.New
 import org.opalj.tac.NewArray
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
@@ -30,33 +29,32 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @author Florian Kuebler
  */
-object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
+object UnnecessarySynchronizationAnalysis extends ProjectsAnalysisApplication {
 
-    override def title: String = {
-        "Unnecessary Synchronization Analysis"
+    protected class UnnecessarySynchronizationConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
+        val description = "Finds synchronized(o){ ... } statements where the object o does not escape the thread"
     }
 
-    override def description: String = {
-        "Finds synchronized(o){ ... } statements where the object o does not escape the thread."
-    }
+    protected type ConfigType = UnnecessarySynchronizationConfig
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
-        implicit val logContext: LogContext = project.logContext
+    protected def createConfig(args: Array[String]): UnnecessarySynchronizationConfig =
+        new UnnecessarySynchronizationConfig(args)
 
-        val propertyStore = project.get(PropertyStoreKey)
-        val manager = project.get(FPCFAnalysesManagerKey)
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: UnnecessarySynchronizationConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+        val (propertyStore, _) = analysisConfig.setupPropertyStore(project)
+        analysisConfig.setupCallGaph(project)
+
         time {
-            project.get(RTACallGraphKey)
-        } { t => info("progress", s"computing call graph and tac took ${t.toSeconds}") }
-        time {
-            manager.runAll(
+            project.get(FPCFAnalysesManagerKey).runAll(
                 EagerInterProceduralEscapeAnalysis
             )
-        } { t => info("progress", s"escape analysis took ${t.toSeconds}") }
+        } { t => info("progress", s"escape analysis took ${t.toSeconds}")(project.logContext) }
 
         val allocationSites = project.get(DefinitionSitesKey).getAllocationSites
         val objects = time {
@@ -79,14 +77,14 @@ object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
                     }
                 }
             } yield as
-        } { t => info("progress", s"unnecessary synchronization analysis took ${t.toSeconds}") }
+        } { t => info("progress", s"unnecessary synchronization analysis took ${t.toSeconds}")(project.logContext) }
 
         val message =
             s"""|Objects that were unnecessarily synchronized:
                 |${objects.mkString("\n|")}
              """
 
-        BasicReport(message.stripMargin('|'))
+        (project, BasicReport(message.stripMargin('|')))
     }
 
 }

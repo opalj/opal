@@ -5,9 +5,11 @@ package info
 
 import java.io.File
 
+import org.rogach.scallop.ScallopConf
+
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -19,7 +21,6 @@ import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
@@ -28,19 +29,16 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalys
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 
-import org.rogach.scallop.ScallopConf
-
 /**
  * Identifies pure/side-effect free methods with a void return type.
  *
  * @author Dominik Helm
  */
-object PureVoidMethods extends MultiProjectAnalysisApplication {
+object PureVoidMethods extends ProjectsAnalysisApplication {
 
-    protected class PureVoidMethodsConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[PureVoidMethodsConfig]
-        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
-        banner("Finds useless methods because they are side effect free and do not return a value (void)\n")
+    protected class PureVoidMethodsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
+        val description = "Finds useless methods because they are side effect free and do not return a value (void)"
     }
 
     protected type ConfigType = PureVoidMethodsConfig

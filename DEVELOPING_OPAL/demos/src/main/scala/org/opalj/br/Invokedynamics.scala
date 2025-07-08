@@ -3,18 +3,17 @@ package org.opalj
 package br
 
 import java.io.File
-import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.reader.InvokedynamicRewriting.{defaultConfig => invokedynamicRewritingConfig}
-import org.opalj.log.LogContext
 
 /**
  * Prints out the immediately available information about invokedynamic instructions.
@@ -22,32 +21,31 @@ import org.opalj.log.LogContext
  * @author Arne Lottmann
  * @author Michael Eichberg
  */
-object InvokedynamicPrinter extends ProjectAnalysisApplication {
+object Invokedynamics extends ProjectsAnalysisApplication {
 
-    // We have to adapt the configuration to ensure that invokedynamic instructions
-    // are never rewritten!
-    override def setupProject(
-        cpFiles:                 Iterable[File],
-        libcpFiles:              Iterable[File],
-        completelyLoadLibraries: Boolean,
-        fallbackConfiguration:   Config
-    )(
-        implicit initialLogContext: LogContext
-    ): Project[URL] = {
-        val baseConfig = invokedynamicRewritingConfig(rewrite = false, logRewrites = true)
-        val config = baseConfig.withFallback(fallbackConfiguration)
-        super.setupProject(cpFiles, libcpFiles, completelyLoadLibraries, config)
+    protected class InvokedynamicsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Collects information about invokedynamic instructions"
+
+        override def setupConfig(isLibrary: Boolean): Config = {
+            val config = super.setupConfig(isLibrary)
+            // We have to adapt the configuration to ensure that invokedynamic instructions are never rewritten!
+            invokedynamicRewritingConfig(rewrite = false, logRewrites = true, config)
+        }
     }
 
-    override def description: String = "Prints information about invokedynamic instructions."
+    protected type ConfigType = InvokedynamicsConfig
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected def createConfig(args: Array[String]): InvokedynamicsConfig = new InvokedynamicsConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ConfigType,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+
         val invokedynamics = new ConcurrentLinkedQueue[String]()
-        project.parForeachMethodWithBody(isInterrupted) { mi =>
+        project.parForeachMethodWithBody() { mi =>
             val method = mi.method
             val classFile = method.classFile
             val body = method.body.get
@@ -59,11 +57,11 @@ object InvokedynamicPrinter extends ProjectAnalysisApplication {
                             bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +
                             s"    Calling:   ${descriptor.toJava(name)}\n" +
                             "} }\n"
-                }.toList.asJava
+                }.asJava
             )
         }
         val result = invokedynamics.asScala.toSeq.sorted
-        BasicReport(result.mkString(s"${result.size} invokedynamic instructions found:\n", "\n", "\n"))
+        (project, BasicReport(result.mkString(s"${result.size} invokedynamic instructions found:\n", "\n", "\n")))
     }
 
 }

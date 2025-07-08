@@ -11,10 +11,10 @@ import scala.jdk.CollectionConverters._
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
+import org.rogach.scallop.stringListConverter
+
 import org.opalj.cli.PlainArg
 import org.opalj.fpcf.FPCFAnalysesRegistry
-
-import org.rogach.scallop.stringListConverter
 
 object EnabledCGModulesArg extends CGModulesArg {
     override val name: String = "enabledCGModules"

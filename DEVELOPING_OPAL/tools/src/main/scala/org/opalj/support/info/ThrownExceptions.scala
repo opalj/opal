@@ -9,7 +9,7 @@ import java.io.File
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.collection.TypesSet
 import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
@@ -25,19 +25,17 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
-import org.rogach.scallop.ScallopConf
-
 /**
  * Prints out the information about the exceptions thrown by methods.
  *
  * @author Michael Eichberg
  * @author Andreas Muttschelller
  */
-object ThrownExceptions extends MultiProjectAnalysisApplication {
+object ThrownExceptions extends ProjectsAnalysisApplication {
 
-    protected class ThrownExceptionsConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[ThrownExceptionsConfig] with PropertyStoreBasedCommandLineConfig {
-        banner("Computes the set of the execeptions (in)directly thrown by methods\n")
+    protected class ThrownExceptionsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with PropertyStoreBasedCommandLineConfig {
+        val description = "Computes the set of the execeptions (in)directly thrown by methods"
 
         private val analysisLevelArg =
             new AnalysisLevelArg("Thrown-exceptions analysis level", Seq("L0" -> "L0", "L1" -> "L1") *) {
@@ -49,6 +47,7 @@ object ThrownExceptions extends MultiProjectAnalysisApplication {
             analysisLevelArg !,
             IndividualArg
         )
+        init()
 
         val analysisLevel: String = apply(analysisLevelArg)
     }

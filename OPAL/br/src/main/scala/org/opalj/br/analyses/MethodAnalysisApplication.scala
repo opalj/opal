@@ -3,8 +3,12 @@ package org.opalj
 package br
 package analyses
 
-import java.net.URL
+import scala.language.postfixOps
 
+import java.io.File
+
+import org.opalj.br.cli.PartialSignatureArg
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 
@@ -12,55 +16,48 @@ import org.opalj.log.OPALLogger.info
  * A small framework to implement analyses which should be executed for a given
  * set of methods.
  */
-abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
+abstract class MethodAnalysisApplication extends ProjectsAnalysisApplication {
 
-    override def analysisSpecificParametersDescription: String = {
-        "-class=<the fully qualified name of the class>\n" +
-            "-method=<name and/or parts of the signature>"
+    abstract protected class MethodAnalysisConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        args(PartialSignatureArg !)
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
-        if (parameters.size != 2 || parameters(0).substring(0, 7) == parameters(1).substring(0, 7))
-            return List("missing parameters");
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ConfigType,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
-        parameters.foldLeft(List.empty[String]) { (notUnderstood, p) =>
-            if (!p.startsWith("-class=") && !p.startsWith("-method="))
-                p :: notUnderstood
-            else
-                notUnderstood
-        }
-    }
-
-    override def doAnalyze(
-        p:             Project[URL],
-        params:        Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
-        implicit val logContext: LogContext = p.logContext
+        val result = new StringBuilder()
 
         // Find the class(es) that we want to analyze.
         // (Left as an exercise: error handling...)
-        val className = params.find(_.startsWith("-class=")).get.substring(7).replace('.', '/')
-        val methodSignature = params.find(_.startsWith("-method=")).get.substring(8)
-        info("progress", s"trying to find: $className{ $methodSignature }")
+        for { (className, methodName, signature) <- analysisConfig(PartialSignatureArg) } {
+            implicit val logContext: LogContext = project.logContext
 
-        val cf = p.classFile(ClassType(className)) match {
-            case Some(cf) => cf
-            case None     => return s"Class $className could not be found!";
-        }
-        val m = cf.methods.find(_.signatureToJava(false).contains(methodSignature)) match {
-            case Some(m) => m
-            case None    => return s"Method $methodSignature could not be found!";
-        }
-        info("progress", s"analyzing: ${m.toJava}")
+            val methodSignature = methodName + signature
+            info("progress", s"trying to find: $className{ $methodSignature }")
 
-        // Run analysis
-        renderResult(analyzeMethod(p, m))
+            project.classFile(ClassType(className)) match {
+                case Some(cf) =>
+                    cf.methods.find(_.signatureToJava(false).contains(methodSignature)) match {
+                        case Some(m) =>
+                            info("progress", s"analyzing: ${m.toJava}")
+                            // Run analysis
+                            result.append(renderResult(analyzeMethod(project, m, analysisConfig)) + "\n")
+                        case None => result.append(s"Method $className.$methodSignature could not be found!\n")
+                    }
+                case None => result.append(s"Class $className could not be found!\n")
+            }
+        }
+
+        (project, BasicReport(result.toString()))
     }
 
     type Result
 
-    def analyzeMethod(p: Project[URL], m: Method): Result
+    def analyzeMethod(p: SomeProject, m: Method, analysisConfig: ConfigType): Result
 
     def renderResult(r: Result): String
 

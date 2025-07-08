@@ -4,16 +4,18 @@ package ai
 
 import scala.language.existentials
 
-import java.net.URL
+import java.io.File
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
 
+import org.rogach.scallop.ScallopConf
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
@@ -28,19 +30,22 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  * @author Marco Jacobasch
  * @author Michael Eichberg
  */
-object InfiniteRecursions extends ProjectAnalysisApplication {
+object InfiniteRecursions extends ProjectsAnalysisApplication {
 
-    override def title: String = "infinite recursions analysis"
-
-    override def description: String = {
-        "identifies method which calls themselves using infinite recursion"
+    protected class InfiniteRecursionConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Identifies method which calls themselves using infinite recursion"
     }
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String] = List.empty,
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = InfiniteRecursionConfig
+
+    protected def createConfig(args: Array[String]): InfiniteRecursionConfig = new InfiniteRecursionConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: InfiniteRecursionConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         // In a real application we should take this from a parameter
         val maxRecursionDepth = 3
@@ -72,7 +77,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
                 result <- inifiniteRecursions(maxRecursionDepth, project, method, pcs)
             } yield { result }
 
-        BasicReport(result.map(_.toString).mkString("\n"))
+        (project, BasicReport(result.map(_.toString).mkString("\n")))
     }
 
     /**

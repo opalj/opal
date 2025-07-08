@@ -2,12 +2,15 @@
 package org.opalj
 package br
 
-import java.net.URL
+import scala.language.postfixOps
 
-import org.opalj.br.analyses.AnalysisApplication
+import java.io.File
+
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
-import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cli.ClassNameArg
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.de.DependencyExtractor
 import org.opalj.de.DependencyProcessorAdapter
 import org.opalj.de.DependencyType
@@ -19,7 +22,18 @@ import org.opalj.de.DependencyType
  *
  * @author Michael Eichberg
  */
-object TransitiveUsage extends AnalysisApplication {
+object TransitiveUsage extends ProjectsAnalysisApplication {
+
+    protected class TransitiveUsageConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description =
+            "Calculates the transitive closure of all classes used by a specific class (not taking reflective usages into account)"
+
+        args(ClassNameArg !)
+    }
+
+    protected type ConfigType = TransitiveUsageConfig
+
+    protected def createConfig(args: Array[String]): TransitiveUsageConfig = new TransitiveUsageConfig(args)
 
     private[this] var visitedTypes = Set.empty[ClassType]
 
@@ -64,30 +78,16 @@ object TransitiveUsage extends AnalysisApplication {
 
     val dependencyCollector = new DependencyExtractor(TypesCollector)
 
-    override def analysisSpecificParametersDescription: String = {
-        "-class=<The class for which the transitive closure of used classes is determined>"
-    }
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: TransitiveUsageConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
-        if (parameters.size == 1 && parameters.head.startsWith("-class="))
-            Seq.empty
-        else
-            parameters.filterNot(_.startsWith("-class=")).map("unknown parameter: " + _)
-    }
-
-    override val analysis = new OneStepAnalysis[URL, BasicReport] {
-
-        override val description: String =
-            "Calculates the transitive closure of all classes used by a specific class. " +
-                "(Does not take reflective usages into relation)."
-
-        override def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () => Boolean
-        ) = {
-
-            val baseType = ClassType(parameters.head.substring(7).replace('.', '/'))
+        val result = new StringBuilder()
+        for { className <- analysisConfig(ClassNameArg) } {
+            val baseType = ClassType(className)
             extractedTypes += baseType
             while (extractedTypes.nonEmpty) {
                 val nextType = extractedTypes.head
@@ -96,12 +96,13 @@ object TransitiveUsage extends AnalysisApplication {
                 extractedTypes = extractedTypes.tail
                 nextClassFile.foreach(dependencyCollector.process)
             }
-
-            BasicReport(
+            result.append(
                 "To compile: " + baseType.toJava +
                     " the following " + visitedTypes.size + " classes are required:\n" +
                     visitedTypes.map(_.toJava).mkString("\n")
             )
         }
+
+        (project, BasicReport(result.toString()))
     }
 }

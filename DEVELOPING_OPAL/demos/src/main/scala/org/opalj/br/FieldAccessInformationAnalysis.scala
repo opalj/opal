@@ -2,14 +2,16 @@
 package org.opalj
 package br
 
-import java.net.URL
+import java.io.File
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.cli.FieldNameArg
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.util.PerformanceEvaluation.memory
 import org.opalj.util.asMB
 
@@ -18,33 +20,30 @@ import org.opalj.util.asMB
  *
  * ==Example Usage==
  * {{{
- * run -cp=/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/lib/ -field="java.util.HashMap entrySet"
+ * run -cp=/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/lib/ -field=java.util.HashMap.entrySet
  * }}}
  *
  * @author Michael Eichberg
  */
-object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
+object FieldAccessInformationAnalysis extends ProjectsAnalysisApplication {
 
-    override def description: String = "provides information about field accesses"
+    protected class FieldAccessConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Provides information about field accesses"
 
-    override def analysisSpecificParametersDescription: String = {
-        "[-field=\"<The field for which we want read/write access information " +
-            "(e.g., -field=\"java.util.HashMap entrySet\">\"]"
+        args(FieldNameArg)
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
-        if (parameters.isEmpty || (parameters.size == 1 && parameters.head.startsWith("-field="))) {
-            Seq.empty
-        } else {
-            Seq("unknown parameters: " + parameters.mkString(" "))
-        }
-    }
+    protected type ConfigType = FieldAccessConfig
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected def createConfig(args: Array[String]): FieldAccessConfig = new FieldAccessConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: FieldAccessConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+
         implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
         var memoryUsage = ""
@@ -52,42 +51,47 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
             project.get(FieldAccessInformationKey)
         } { m => memoryUsage = asMB(m) }
 
-        if (parameters.nonEmpty) {
-            val Array(declaringClassName, fieldName) =
-                parameters.head.substring(7).replace('.', '/').split(' ')
-            val declaringClassType = ClassType(declaringClassName)
-            val fields = project.classFile(declaringClassType).map(_.findField(fieldName)).getOrElse(List.empty)
+        val report =
+            if (analysisConfig.get(FieldNameArg).isDefined) {
+                val results = new StringBuilder()
+                for { (declaringClassName, fieldName) <- analysisConfig(FieldNameArg) } {
+                    val declaringClassType = ClassType(declaringClassName)
+                    val fields = project.classFile(declaringClassType).map(_.findField(fieldName)).getOrElse(List.empty)
 
-            val (reads, writes) = fields
-                .foldLeft((Seq.empty[(DefinedMethod, PCs)], Seq.empty[(DefinedMethod, PCs)])) { (accesses, field) =>
-                    val newReads =
-                        (accesses._1 ++ accessInformation.readAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
-                    val newWrites =
-                        (accesses._2 ++ accessInformation.writeAccesses(field)).asInstanceOf[Seq[(DefinedMethod, PCs)]]
+                    val (reads, writes) = fields
+                        .foldLeft((Seq.empty[(DefinedMethod, PCs)], Seq.empty[(DefinedMethod, PCs)])) {
+                            (accesses, field) =>
+                                val newReads =
+                                    (accesses._1 ++ accessInformation.readAccesses(field))
+                                        .asInstanceOf[Seq[(DefinedMethod, PCs)]]
+                                val newWrites =
+                                    (accesses._2 ++ accessInformation.writeAccesses(field))
+                                        .asInstanceOf[Seq[(DefinedMethod, PCs)]]
 
-                    (newReads, newWrites)
-                }
+                                (newReads, newWrites)
+                        }
 
-            def accessInformationToString(data: Seq[(DefinedMethod, PCs)]): String = {
-                (
-                    data.map { e =>
-                        val (method, pcs) = e
-                        method.definedMethod.toJava(pcs.mkString("pcs: ", ", ", ""))
+                    def accessInformationToString(data: Seq[(DefinedMethod, PCs)]): String = {
+                        data.map { e =>
+                            val (method, pcs) = e
+                            method.definedMethod.toJava(pcs.mkString("pcs: ", ", ", ""))
+                        }.mkString("\t ", "\n\t ", "\n")
                     }
-                ).mkString("\t ", "\n\t ", "\n")
+
+                    results.append(
+                        declaringClassName + " " + fieldName + "\n" +
+                            "writes:\n" + accessInformationToString(writes) +
+                            "reads:\n" + accessInformationToString(reads) + "\n"
+                    )
+                }
+                BasicReport(results.toString())
+            } else {
+                BasicReport(
+                    accessInformation.statistics
+                        .mkString(s"determing field access information required $memoryUsage :\n", "\n", "\n")
+                )
             }
 
-            BasicReport(
-                declaringClassName + " " + fieldName + "\n" +
-                    "writes:\n" + accessInformationToString(writes) +
-                    "reads:\n" + accessInformationToString(reads)
-            )
-
-        } else {
-            BasicReport(
-                accessInformation.statistics
-                    .mkString(s"determing field access information required $memoryUsage :\n", "\n", "\n")
-            )
-        }
+        (project, report)
     }
 }

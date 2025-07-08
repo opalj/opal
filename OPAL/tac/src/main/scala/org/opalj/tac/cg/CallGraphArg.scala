@@ -3,10 +3,10 @@ package org.opalj
 package tac
 package cg
 
+import org.rogach.scallop.stringConverter
+
 import org.opalj.cli.ChoiceArg
 import org.opalj.cli.ParsedArg
-
-import org.rogach.scallop.stringConverter
 
 object CallGraphArg extends ParsedArg[String, CallGraphKey] with ChoiceArg[CallGraphKey] {
 

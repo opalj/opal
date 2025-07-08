@@ -6,10 +6,10 @@ import scala.jdk.CollectionConverters._
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
+import org.rogach.scallop.stringConverter
+
 import org.opalj.br.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.cli.PlainArg
-
-import org.rogach.scallop.stringConverter
 
 object TamiFlexArg extends PlainArg[String] {
 

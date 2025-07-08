@@ -6,7 +6,7 @@ package info
 import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.ExtensibleLocalField
@@ -15,29 +15,22 @@ import org.opalj.br.fpcf.properties.LocalField
 import org.opalj.br.fpcf.properties.LocalFieldWithGetter
 import org.opalj.br.fpcf.properties.NoLocalField
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 
-import org.rogach.scallop.ScallopConf
-
 /**
  * Computes the field locality; see [[org.opalj.br.fpcf.properties.FieldLocality]] for details.
  *
  * @author Florian Kuebler
  */
-object FieldLocality extends MultiProjectAnalysisApplication {
+object FieldLocality extends ProjectsAnalysisApplication {
 
-    protected class FieldLocalityConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[FieldLocalityConfig]
-        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
-
-        banner("Computes information about field locality\n")
-
-        init()
+    protected class FieldLocalityConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
+        val description = "Computes information about field locality"
     }
 
     protected type ConfigType = FieldLocalityConfig

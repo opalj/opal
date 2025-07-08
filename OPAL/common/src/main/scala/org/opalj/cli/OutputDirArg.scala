@@ -14,7 +14,7 @@ object OutputDirArg extends PlainArg[File] {
     override val description: String = "Directory to write output files to"
 
     override def apply(config: Config, value: Option[File]): Config = {
-        value.foreach { evaluationDir => if (!evaluationDir.exists()) evaluationDir.mkdir }
+        value.foreach { evaluationDir => if (!evaluationDir.exists()) evaluationDir.mkdirs() }
         config
     }
 }

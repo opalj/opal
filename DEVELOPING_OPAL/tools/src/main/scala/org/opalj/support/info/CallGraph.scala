@@ -10,13 +10,15 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 
+import org.rogach.scallop.stringListConverter
+
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.ContextProviderKey
@@ -30,7 +32,6 @@ import org.opalj.cli.OutputFileArg
 import org.opalj.cli.PlainArg
 import org.opalj.cli.ResultFileArg
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.cg.CallGraphArg
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CGBasedCommandLineConfig
@@ -39,9 +40,6 @@ import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
-
-import org.rogach.scallop.ScallopConf
-import org.rogach.scallop.stringListConverter
 
 /**
  * Computes a call graph and reports its size.
@@ -53,13 +51,12 @@ import org.rogach.scallop.stringListConverter
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-object CallGraph extends MultiProjectAnalysisApplication {
+object CallGraph extends ProjectsAnalysisApplication {
 
-    protected class CallGraphConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[CallGraphConfig]
-        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
+    protected class CallGraphConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
 
-        banner("Compute the number of reachable methods and call edges in the given project\n")
+        val description = "Compute the number of reachable methods and call edges in the given project"
 
         args(
             CallGraphArg !,
@@ -69,7 +66,6 @@ object CallGraph extends MultiProjectAnalysisApplication {
             ResultFileArg,
             OutputFileArg
         )
-        init()
 
         object CalleesArg extends PlainArg[List[String]] {
             override val name: String = "callees"
@@ -82,7 +78,7 @@ object CallGraph extends MultiProjectAnalysisApplication {
             override val name: String = "callers"
             override val argName: String = "method"
             override val description: String =
-                "s of methods for which callers should be printed (e.g., toString()java.lang.String"
+                "Signatures of methods for which callers should be printed (e.g., toString()java.lang.String"
         }
 
     }

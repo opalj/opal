@@ -4,16 +4,19 @@ package ai
 package domain
 package l1
 
-import java.net.URL
+import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.ListSet
 import scala.jdk.CollectionConverters._
 
+import org.rogach.scallop.ScallopConf
+
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
@@ -23,25 +26,28 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
 /**
- * Simple analysis that takes the "unused"-Node from the def-use graph
- * and returns all its children, that is definitions and assignments that are not used again
- * locally.
+ * Simple analysis that takes the "unused"-Node from the def-use graph and returns all its children, that is definitions
+ * and assignments that are not used again locally.
  *
  * @author Stephan Neumann
  */
-object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
+object UnusedValuesAnalysis extends ProjectsAnalysisApplication {
 
-    override def title: String =
-        "Identifies unused variables and unnecessary calculations"
+    protected class UnusedValuesConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description =
+            "Identifies variable declarations or assignments that are not used again locally (unnecessary computations)"
+    }
 
-    override def description: String =
-        "Identifies variable declarations or assignments that are not used again locally"
+    protected type ConfigType = UnusedValuesConfig
 
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected def createConfig(args: Array[String]): UnusedValuesConfig = new UnusedValuesConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: UnusedValuesConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         var analysisTime: Seconds = Seconds.None
         val unusedDefUseNodes = time {
@@ -49,10 +55,10 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
             val results = new ConcurrentLinkedQueue[String]
             val ai = new InterruptableAI[Domain]
 
-            theProject.parForeachMethodWithBody() { m =>
+            project.parForeachMethodWithBody() { m =>
                 val method = m.method
                 if (!method.isSynthetic) {
-                    val domain = new DefaultDomainWithCFGAndDefUse(theProject, method)
+                    val domain = new DefaultDomainWithCFGAndDefUse(project, method)
                     val result = ai(method, domain)
                     val instructions = result.domain.code.instructions
                     val unused = result.domain.unused
@@ -101,10 +107,11 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
 
         } { t => analysisTime = t.toSeconds }
 
-        BasicReport(
+        val report = BasicReport(
             unusedDefUseNodes.mkString("Methods with unused values:\n", "\n", "\n") +
                 "The analysis took " + analysisTime + " and found " + unusedDefUseNodes.size + " issues"
         )
+        (project, report)
     }
 
 }

@@ -11,7 +11,7 @@ object ResultFileArg extends PlainArg[File] {
     override val description: String = "File to write result to"
 
     def getResultFile(config: OPALCommandLineConfig, execution: Int): File = {
-        var resultFile = config(OutputFileArg)
+        var resultFile = config(ResultFileArg)
         if (execution != 1) {
             resultFile = new File(resultFile.getPath + s"_$execution")
         }

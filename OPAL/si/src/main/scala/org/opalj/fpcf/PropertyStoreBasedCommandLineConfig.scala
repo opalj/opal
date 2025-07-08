@@ -4,27 +4,21 @@ package fpcf
 
 import com.typesafe.config.Config
 
+import org.rogach.scallop.ScallopConf
+import org.rogach.scallop.flagConverter
+import org.rogach.scallop.intConverter
+
 import org.opalj.cli.Arg
 import org.opalj.cli.ConvertedArg
 import org.opalj.cli.ForwardingArg
 import org.opalj.cli.OPALCommandLineConfig
+import org.opalj.cli.PlainArg
 import org.opalj.fpcf.par.SchedulingStrategyArg
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.si.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
-import org.rogach.scallop.ScallopConf
-import org.rogach.scallop.flagConverter
-import org.rogach.scallop.intConverter
-
-trait FPCFBasedCommandLineConfig extends OPALCommandLineConfig { self: ScallopConf =>
-    def getScheduler(analysisName: String, eager: Boolean): FPCFAnalysisScheduler[_] = {
-        if (eager) FPCFAnalysesRegistry.eagerFactory(analysisName)
-        else FPCFAnalysesRegistry.lazyFactory(analysisName)
-    }
-}
 
 trait PropertyStoreBasedArg[T, R] extends Arg[T, R] {
 
@@ -33,6 +27,11 @@ trait PropertyStoreBasedArg[T, R] extends Arg[T, R] {
     }
 
     def apply(project: Project, value: Option[R]): Unit = {}
+}
+
+object NoPropertyStoreArg extends PlainArg[Boolean] {
+    override val name = "noPropertyStore"
+    override val description = "Do not use the property store"
 }
 
 object PropertyStoreDebugArg extends ConvertedArg[Boolean, Boolean] with ForwardingArg[Boolean, Boolean, Boolean] {
@@ -65,7 +64,7 @@ object PropertyStoreThreadsNumArg extends ConvertedArg[Int, Int] with Forwarding
     }
 }
 
-trait PropertyStoreBasedCommandLineConfig extends FPCFBasedCommandLineConfig { self: ScallopConf =>
+trait PropertyStoreBasedCommandLineConfig extends OPALCommandLineConfig { self: ScallopConf =>
     generalArgs(
         PropertyStoreThreadsNumArg,
         PropertyStoreDebugArg,
@@ -85,5 +84,10 @@ trait PropertyStoreBasedCommandLineConfig extends FPCFBasedCommandLineConfig { s
             propertyStoreTime = t.toSeconds
         }
         (propertyStore, propertyStoreTime)
+    }
+
+    def getScheduler(analysisName: String, eager: Boolean): FPCFAnalysisScheduler[_] = {
+        if (eager) FPCFAnalysesRegistry.eagerFactory(analysisName)
+        else FPCFAnalysesRegistry.lazyFactory(analysisName)
     }
 }

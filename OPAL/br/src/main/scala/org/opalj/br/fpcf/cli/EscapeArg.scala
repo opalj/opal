@@ -8,8 +8,8 @@ import org.opalj.cli.AnalysisLevelArg
 
 object EscapeArg extends AnalysisLevelArg(
         "Escape analysis used.",
-        "L1" -> "SimpleEscapeAnalysis",
-        "L2" -> "InterproceduralEscapeAnalysis"
+        "L0" -> "SimpleEscapeAnalysis",
+        "L1" -> "InterProceduralEscapeAnalysis"
     ) {
     override val name: String = "escape"
 }

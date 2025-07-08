@@ -4,9 +4,9 @@ package bytecode
 
 import java.io.File
 
-import org.opalj.cli.ParsedArg
-
 import org.rogach.scallop.flagConverter
+
+import org.opalj.cli.ParsedArg
 
 object JDKArg extends ParsedArg[Boolean, Option[Iterable[File]]] {
     override val name: String = "JDK"

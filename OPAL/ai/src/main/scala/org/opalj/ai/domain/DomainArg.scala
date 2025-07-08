@@ -3,13 +3,13 @@ package org.opalj
 package ai
 package domain
 
+import org.rogach.scallop.stringConverter
+
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.ProjectBasedArg
 import org.opalj.cli.ParsedArg
-
-import org.rogach.scallop.stringConverter
 
 object DomainArg extends ParsedArg[String, Class[_ <: Domain]] with ProjectBasedArg[String, Class[_ <: Domain]] {
     override val name: String = "domain"

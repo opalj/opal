@@ -14,6 +14,8 @@ import scala.util.control.ControlThrowable
 
 import com.typesafe.config.Config
 
+import org.rogach.scallop.ScallopConf
+
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
@@ -41,8 +43,6 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-
-import org.rogach.scallop.ScallopConf
 
 trait ProjectBasedArg[T, R] extends Arg[T, R] {
 
@@ -75,7 +75,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
         setupProject(
             cp,
             libCP,
-            get(LibraryArg, cp.head eq JRELibraryFolder),
+            get(LibraryArg, false) || (cp.head eq JRELibraryFolder),
             get(LibrariesAsInterfacesArg, false)
         )
     }
@@ -89,7 +89,6 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
         var projectTime: Seconds = Seconds.None
         var project: SomeProject = null
         time {
-
             implicit val config: Config = setupConfig(isLibrary)
 
             info("creating project", "reading project class files")
@@ -204,14 +203,15 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
     }
 }
 
-trait MultiProjectAnalysisConfig[T <: ScallopConf] extends ProjectBasedCommandLineConfig { self: T =>
+abstract class MultiProjectAnalysisConfig(args: Array[String]) extends ScallopConf(args)
+    with ProjectBasedCommandLineConfig { self =>
 
     generalArgs(MultiProjectsArg)
 
     /**
      * Executes a function for every project directory of a muti-project analysis
      */
-    def foreachProject(f: (Iterable[File], T, Int) => Unit, execution: Int): Unit = {
+    def foreachProject(f: (Iterable[File], self.type, Int) => Unit, execution: Int): Unit = {
         if (apply(MultiProjectsArg)) {
             for {
                 cpEntry <- apply(ClassPathArg)

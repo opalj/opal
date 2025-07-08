@@ -11,7 +11,7 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.fpcf.Entity
@@ -21,19 +21,16 @@ import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation
 
-import org.rogach.scallop.ScallopConf
-
 /**
  * Computes information regarding the values stored in fields and returned by methods.
  *
  * @author Michael Eichberg
  */
-object Values extends MultiProjectAnalysisApplication {
+object Values extends ProjectsAnalysisApplication {
 
-    protected class ValuesConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[ValuesConfig]
+    protected class ValuesConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
         with PropertyStoreBasedCommandLineConfig {
-        banner("Collects information about values returned by methods or stored in fields\n")
+        val description = "Collects information about values returned by methods or stored in fields"
     }
 
     protected type ConfigType = ValuesConfig

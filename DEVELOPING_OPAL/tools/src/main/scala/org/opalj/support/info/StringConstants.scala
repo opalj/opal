@@ -6,23 +6,20 @@ package info
 import java.io.File
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
-
-import org.rogach.scallop.ScallopConf
 
 /**
  * Prints out all string constants found in the bytecode.
  *
  * @author Michael Eichberg
  */
-object StringConstants extends MultiProjectAnalysisApplication {
+object StringConstants extends ProjectsAnalysisApplication {
 
-    protected class StringConstantsConfig(args: Array[String]) extends ScallopConf(args)
-        with MultiProjectAnalysisConfig[StringConstantsConfig] {
-        banner("Collects all constant strings (based on LDC instructions) found in the specified code\n")
+    protected class StringConstantsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Collects all constant strings (based on LDC instructions) found in the specified code"
     }
 
     protected type ConfigType = StringConstantsConfig

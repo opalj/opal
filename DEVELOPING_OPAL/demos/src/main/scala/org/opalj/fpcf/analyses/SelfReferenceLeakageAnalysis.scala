@@ -3,16 +3,16 @@ package org.opalj
 package fpcf
 package analyses
 
-import java.net.URL
+import java.io.File
 
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.L0SelfReferenceLeakageAnalysis
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.DoesNotLeakSelfReference
 import org.opalj.br.fpcf.properties.SelfReferenceLeakage
-import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -21,21 +21,25 @@ import org.opalj.util.Seconds
  *
  * @author Michael Eichberg
  */
-object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
+object SelfReferenceLeakageAnalysis extends ProjectsAnalysisApplication {
 
-    override def title: String = "Analyses whether a class leaks it self-reference this"
-
-    override def description: String = {
-        "Determines if a class leaks its self reference, if not, then the method which instantiates the object has full control."
+    protected class SelfReferenceLeakageConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with PropertyStoreBasedCommandLineConfig {
+        val description =
+            "Determines classes leaking their self reference, if not, then the method which instantiates the object has full control"
     }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = SelfReferenceLeakageConfig
 
-        val projectStore = project.get(PropertyStoreKey)
+    protected def createConfig(args: Array[String]): SelfReferenceLeakageConfig = new SelfReferenceLeakageConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: SelfReferenceLeakageConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+        val (projectStore, _) = analysisConfig.setupPropertyStore(project)
 
         var analysisTime = Seconds.None
         time {
@@ -62,6 +66,6 @@ object SelfReferenceLeakageAnalysisDemo extends ProjectAnalysisApplication {
                 "\n",
                 s"\nTotal: ${notLeakingEntities.size}\n"
             )
-        BasicReport(leakageInfo + projectStore + "\nAnalysis time: " + analysisTime)
+        (project, BasicReport(leakageInfo + projectStore + "\nAnalysis time: " + analysisTime))
     }
 }

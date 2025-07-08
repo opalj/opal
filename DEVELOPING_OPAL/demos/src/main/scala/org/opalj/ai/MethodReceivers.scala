@@ -2,8 +2,10 @@
 package org.opalj
 package ai
 
-import java.net.URL
+import java.io.File
 import scala.collection.mutable
+
+import org.rogach.scallop.ScallopConf
 
 import org.opalj.ai.domain.Origin
 import org.opalj.ai.domain.RecordDefUse
@@ -11,46 +13,59 @@ import org.opalj.ai.fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefin
 import org.opalj.br.Method
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.NEW
 import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.NoPropertyStoreArg
+import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 
 /**
  * Extracts the information about receivers of method calls.
  *
  * @author Michael Eichberg
  */
-object GetReceivers extends ProjectAnalysisApplication {
+object MethodReceivers extends ProjectsAnalysisApplication {
 
-    override def title: String = "Method Call Receivers information"
+    protected class MethodReceiversConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with PropertyStoreBasedCommandLineConfig {
+        val description = "Collects information about method call receiver"
+        args(NoPropertyStoreArg)
+    }
 
-    override def description: String = "Provides information about a method call's receiver."
+    protected type ConfigType = MethodReceiversConfig
 
-    var usePropertyStore: Boolean = true
+    protected def createConfig(args: Array[String]): MethodReceiversConfig = new MethodReceiversConfig(args)
 
-    override def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () => Boolean): BasicReport = {
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: MethodReceiversConfig,
+        execution:      Int
+    ): (SomeProject, BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val performAI: (Method) => AIResult { val domain: Domain with RecordDefUse } =
-            if (usePropertyStore) {
-                val analysesManager = p.get(FPCFAnalysesManagerKey)
+            if (!analysisConfig.get(NoPropertyStoreArg).getOrElse(false)) {
+                analysisConfig.setupPropertyStore(project)
+                val analysesManager = project.get(FPCFAnalysesManagerKey)
                 analysesManager.runAll(
                     org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
                     org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
                 )
                 (m: Method) => {
-                    BaseAI(m, new L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement(p, m))
+                    BaseAI(m, new L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement(project, m))
                 }
             } else {
-                p.updateProjectInformationKeyInitializationData(org.opalj.ai.common.SimpleAIKey) { // new org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
-                    _ => (m: Method) => new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+                project.updateProjectInformationKeyInitializationData(org.opalj.ai.common.SimpleAIKey) { // new org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
+                    _ => (m: Method) => new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(project, m)
                 }
-                p.get(org.opalj.ai.common.SimpleAIKey)
+                project.get(org.opalj.ai.common.SimpleAIKey)
             }
 
         val counts: mutable.Map[String, Int] = mutable.Map.empty.withDefaultValue(0)
 
-        p.parForeachMethodWithBody() { mi =>
+        project.parForeachMethodWithBody() { mi =>
             val m = mi.method
             lazy val aiResult = performAI(m).asInstanceOf[AIResult { val domain: Domain with Origin }]
             for {
@@ -78,8 +93,8 @@ object GetReceivers extends ProjectAnalysisApplication {
                     value.isPrecise &&
                         value.upperTypeBound.isSingletonSet &&
                         !value.upperTypeBound.head.isArrayType && (
-                            p.classFile(value.upperTypeBound.head.asClassType).get.isFinal ||
-                            p.classHierarchy.hasSubtypes(value.upperTypeBound.head.asClassType).isNoOrUnknown
+                            project.classFile(value.upperTypeBound.head.asClassType).get.isFinal ||
+                            project.classHierarchy.hasSubtypes(value.upperTypeBound.head.asClassType).isNoOrUnknown
                         )
                 if (triviallyPrecise)
                     s += " (trivially)"
@@ -101,12 +116,15 @@ object GetReceivers extends ProjectAnalysisApplication {
             }
         }
 
-        BasicReport(
-            "type, isPrecise, isNull, count\n" +
-                counts
-                    .iterator
-                    .map(e => e._1 + ", " + e._2)
-                    .mkString("\n")
+        (
+            project,
+            BasicReport(
+                "type, isPrecise, isNull, count\n" +
+                    counts
+                        .iterator
+                        .map(e => e._1 + ", " + e._2)
+                        .mkString("\n")
+            )
         )
     }
 }

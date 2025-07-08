@@ -16,11 +16,14 @@ import scala.collection.immutable.SortedSet
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
+import org.rogach.scallop.flagConverter
+import org.rogach.scallop.stringConverter
+
 import org.opalj.ai.domain.DomainArg
 import org.opalj.br.ClassType
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.MultiProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -66,7 +69,6 @@ import org.opalj.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
@@ -76,23 +78,18 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAn
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
-import org.rogach.scallop.ScallopConf
-import org.rogach.scallop.flagConverter
-import org.rogach.scallop.stringConverter
-
 /**
  * Determines the assignability of fields and the immutability of fields, classes, and types and provides several
  * setting options for evaluation.
  *
  * @author Tobias Roth
  */
-object Immutability extends MultiProjectAnalysisApplication {
+object Immutability extends ProjectsAnalysisApplication {
 
-    protected class ImmutabilityConfig(args: Array[String])
-        extends ScallopConf(args) with MultiProjectAnalysisConfig[ImmutabilityConfig]
-        with PropertyStoreBasedCommandLineConfig with CGBasedCommandLineConfig {
+    protected class ImmutabilityConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
 
-        banner("Compute information on the immutability of fields, classes, and types\n")
+        val description = "Compute information on the immutability of fields, classes, and types"
 
         private val analysisArg = new ParsedArg[String, Analyses] with ChoiceArg[Analyses] {
             override val name: String = "analysis"
@@ -485,7 +482,7 @@ object Immutability extends MultiProjectAnalysisApplication {
         )
 
         val domainName = analysisConfig(DomainArg).getClass.getName
-        val domainLevel = domainName.substring(domainName.lastIndexOf('.') + 1).substring(domainName.indexOf('.') + 1)
+        val domainLevel = domainName.substring(domainName.indexOf('.') + 1, domainName.lastIndexOf('.'))
         val fileNameExtension = {
             {
                 if (analysisConfig.ignoreLazyInitialization) {
@@ -507,7 +504,7 @@ object Immutability extends MultiProjectAnalysisApplication {
         val projectEvalDir = analysisConfig.get(OutputDirArg)
             .map(new File(_, if (analysisConfig(JDKArg).isDefined) "JDK" else cp.head.getName))
         if (projectEvalDir.isDefined) {
-            if (!projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
+            if (!projectEvalDir.get.exists()) projectEvalDir.get.mkdirs()
 
             val calender = Calendar.getInstance()
             calender.add(Calendar.ALL_STYLES, 1)
