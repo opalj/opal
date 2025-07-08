@@ -16,6 +16,7 @@ import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.ExceptionHandlers
 import org.opalj.br.PCs
+import org.opalj.br.PDUVar
 import org.opalj.br.PUVar
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
@@ -32,6 +33,7 @@ import org.opalj.value.ValueInformation
 package object tac {
 
     type V = DUVar[ValueInformation]
+    type PV = PDUVar[ValueInformation]
 
     final def uVarFromPersistentForm[Value <: ValueInformation](
         puVar: PUVar[Value]
@@ -54,19 +56,21 @@ package object tac {
             )
     }
 
+    final def valueOriginOfPC(pc: Int, pcToIndex: Array[Int]): Option[ValueOrigin] = {
+        if (ai.underlyingPC(pc) < 0)
+            Some(pc) // parameter
+        else if (pc >= 0 && pcToIndex(pc) >= 0)
+            Some(pcToIndex(pc)) // local
+        else if (isImmediateVMException(pc) && pcToIndex(pcOfImmediateVMException(pc)) >= 0)
+            Some(ValueOriginForImmediateVMException(pcToIndex(pcOfImmediateVMException(pc))))
+        else if (isMethodExternalExceptionOrigin(pc) && pcToIndex(pcOfMethodExternalException(pc)) >= 0)
+            Some(ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc))))
+        else
+            None
+    }
+
     final def valueOriginsOfPCs(pcs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
-        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) =>
-            if (ai.underlyingPC(pc) < 0)
-                origins + pc // parameter
-            else if (pc >= 0 && pcToIndex(pc) >= 0)
-                origins + pcToIndex(pc) // local
-            else if (isImmediateVMException(pc) && pcToIndex(pcOfImmediateVMException(pc)) >= 0)
-                origins + ValueOriginForImmediateVMException(pcToIndex(pcOfImmediateVMException(pc)))
-            else if (isMethodExternalExceptionOrigin(pc) && pcToIndex(pcOfMethodExternalException(pc)) >= 0)
-                origins + ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc)))
-            else
-                origins // as is
-        }
+        pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) => origins ++ valueOriginOfPC(pc, pcToIndex) }
     }
 
     /**
