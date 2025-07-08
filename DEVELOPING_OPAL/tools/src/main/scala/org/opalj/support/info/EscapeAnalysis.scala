@@ -6,12 +6,13 @@ package info
 import scala.language.postfixOps
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.cli.EscapeArg
@@ -52,7 +53,7 @@ object EscapeAnalysis extends ProjectsAnalysisApplication {
         with CGBasedCommandLineConfig {
         val description = "Determines escape information for every allocation site and every formal parameter"
 
-        private val analysisLevelArg = new AnalysisLevelArg(EscapeArg.description, EscapeArg.levels *) {
+        private val analysisLevelArg = new AnalysisLevelArg(EscapeArg.description, EscapeArg.levels: _*) {
             override val defaultValue: Option[String] = Some("L1")
             override val withNone = false
         }
@@ -72,7 +73,7 @@ object EscapeAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: EscapeConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (propertyStore, _) = analysisConfig.setupPropertyStore(project)
 

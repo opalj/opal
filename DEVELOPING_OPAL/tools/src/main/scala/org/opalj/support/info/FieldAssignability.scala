@@ -4,10 +4,11 @@ package support
 package info
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
@@ -44,7 +45,7 @@ object FieldAssignability extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: FieldAssignabilityConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (ps, _) = analysisConfig.setupPropertyStore(project)
         analysisConfig.setupCallGaph(project)

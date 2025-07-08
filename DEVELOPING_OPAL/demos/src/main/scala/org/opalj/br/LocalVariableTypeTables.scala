@@ -3,12 +3,13 @@ package org.opalj
 package br
 
 import java.io.File
+import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 /**
@@ -30,7 +31,7 @@ object LocalVariableTypeTables extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: LocalVariableTablesConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val messages = new ConcurrentLinkedQueue[String]()

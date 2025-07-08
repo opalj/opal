@@ -9,9 +9,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 
-import org.rogach.scallop.ScallopConf
-
-import org.opalj.ai.domain.DomainArg
+import org.opalj.ai.common.DomainArg
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -82,7 +80,7 @@ object Purity extends ProjectsAnalysisApplication {
 
         val description = "Compute method purity information"
 
-        private val analysisLevelArg = new AnalysisLevelArg(PurityArg.description, PurityArg.levels *) {
+        private val analysisLevelArg = new AnalysisLevelArg(PurityArg.description, PurityArg.levels: _*) {
             override val defaultValue: Option[String] = Some("L2")
             override val withNone = false
         }

@@ -4,6 +4,7 @@ package br
 package analyses
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.issues.ClassLocation
@@ -37,7 +38,7 @@ object CovariantEqualsMethodDefined extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: CovariantEqualsConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val mutex = new Object

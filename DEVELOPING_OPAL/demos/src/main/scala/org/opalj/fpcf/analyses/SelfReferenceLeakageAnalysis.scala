@@ -4,11 +4,12 @@ package fpcf
 package analyses
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.L0SelfReferenceLeakageAnalysis
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.DoesNotLeakSelfReference
@@ -37,7 +38,7 @@ object SelfReferenceLeakageAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: SelfReferenceLeakageConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (projectStore, _) = analysisConfig.setupPropertyStore(project)
 

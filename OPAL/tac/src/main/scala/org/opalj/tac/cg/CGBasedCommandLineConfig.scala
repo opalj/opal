@@ -7,7 +7,7 @@ import scala.language.postfixOps
 
 import org.rogach.scallop.ScallopConf
 
-import org.opalj.ai.util.AIBasedCommandLineConfig
+import org.opalj.ai.common.AIBasedCommandLineConfig
 import org.opalj.br.android.AndroidManifestArg
 import org.opalj.br.fpcf.cli.cg.DisabledCGModulesArg
 import org.opalj.br.fpcf.cli.cg.EnabledCGModulesArg

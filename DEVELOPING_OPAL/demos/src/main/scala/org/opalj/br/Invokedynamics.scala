@@ -3,14 +3,15 @@ package org.opalj
 package br
 
 import java.io.File
+import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.reader.InvokedynamicRewriting.{defaultConfig => invokedynamicRewritingConfig}
@@ -41,7 +42,7 @@ object Invokedynamics extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ConfigType,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val invokedynamics = new ConcurrentLinkedQueue[String]()

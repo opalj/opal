@@ -9,6 +9,7 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import scala.collection.immutable.SortedSet
@@ -19,12 +20,12 @@ import com.typesafe.config.ConfigValueFactory
 import org.rogach.scallop.flagConverter
 import org.rogach.scallop.stringConverter
 
-import org.opalj.ai.domain.DomainArg
+import org.opalj.ai.common.DomainArg
 import org.opalj.br.ClassType
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
@@ -144,7 +145,7 @@ object Immutability extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ImmutabilityConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
 
         var analysisTime: Seconds = Seconds.None
 

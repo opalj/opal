@@ -3,11 +3,12 @@ package org.opalj
 package tac
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeInCallee
@@ -50,7 +51,7 @@ object FieldAndArrayUsageAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: FieldArrayUsageConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         var putFields = 0

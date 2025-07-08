@@ -4,11 +4,12 @@ package support
 package info
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 /**
@@ -31,7 +32,7 @@ object MaxLocalsEvaluation extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: MaxLocalsConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         import scala.collection.immutable.TreeMap // <= Sorted...
         var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
         var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty

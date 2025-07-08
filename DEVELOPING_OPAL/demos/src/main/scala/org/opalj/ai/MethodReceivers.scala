@@ -3,9 +3,8 @@ package org.opalj
 package ai
 
 import java.io.File
+import java.net.URL
 import scala.collection.mutable
-
-import org.rogach.scallop.ScallopConf
 
 import org.opalj.ai.domain.Origin
 import org.opalj.ai.domain.RecordDefUse
@@ -13,8 +12,8 @@ import org.opalj.ai.fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefin
 import org.opalj.br.Method
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.NEW
 import org.opalj.fpcf.FPCFAnalysesManagerKey
@@ -42,7 +41,7 @@ object MethodReceivers extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: MethodReceiversConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val performAI: (Method) => AIResult { val domain: Domain with RecordDefUse } =

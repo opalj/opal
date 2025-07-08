@@ -3,13 +3,14 @@ package org.opalj
 package br
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cli.FieldNameArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.util.PerformanceEvaluation.memory
@@ -41,7 +42,7 @@ object FieldAccessInformationAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: FieldAccessConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)

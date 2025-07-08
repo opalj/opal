@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ai.util
+package org.opalj
+package ai
+package common
 
 import scala.language.postfixOps
 
 import org.rogach.scallop.ScallopConf
 
-import org.opalj.ai.domain.DomainArg
 import org.opalj.cli.OPALCommandLineConfig
 
 trait AIBasedCommandLineConfig extends OPALCommandLineConfig { self: ScallopConf =>

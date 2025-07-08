@@ -3,12 +3,12 @@ package org.opalj
 package ai
 
 import java.io.File
-
-import org.rogach.scallop.ScallopConf
+import java.net.URL
 
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
@@ -61,7 +61,7 @@ object UselessComputations extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: UselessComputationsConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val results = {

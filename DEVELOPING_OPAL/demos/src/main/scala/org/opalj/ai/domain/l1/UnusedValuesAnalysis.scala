@@ -5,17 +5,16 @@ package domain
 package l1
 
 import java.io.File
+import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.ListSet
 import scala.jdk.CollectionConverters._
 
-import org.rogach.scallop.ScallopConf
-
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -46,7 +45,7 @@ object UnusedValuesAnalysis extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: UnusedValuesConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         var analysisTime: Seconds = Seconds.None

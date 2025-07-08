@@ -6,6 +6,7 @@ package analyses
 import scala.language.implicitConversions
 
 import java.io.File
+import java.net.URL
 import java.util.Calendar
 
 import org.rogach.scallop.exceptions.IncompleteBuildException
@@ -40,7 +41,7 @@ abstract class ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: ConfigType,
         execution:      Int
-    ): (SomeProject, ReportableAnalysisResult) = ???
+    ): (Project[URL], ReportableAnalysisResult) = ???
 
     def main(args: Array[String]): Unit = {
 

@@ -5,10 +5,11 @@ package br
 import scala.language.postfixOps
 
 import java.io.File
+import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cli.ClassNameArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.de.DependencyExtractor
@@ -82,7 +83,7 @@ object TransitiveUsage extends ProjectsAnalysisApplication {
         cp:             Iterable[File],
         analysisConfig: TransitiveUsageConfig,
         execution:      Int
-    ): (SomeProject, BasicReport) = {
+    ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
         val result = new StringBuilder()
