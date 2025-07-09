@@ -55,11 +55,8 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
 
     /**
      * Checks whether `analysis1` is scheduled before or in the same batch as `analysis2` within a given `schedule`.
-     * Iterates through the schedule's batches, tracking the phases in which each analysis appears.
-     * If `analysis1` is scheduled at an earlier or the same phase as `analysis2`, it prints "Success";
-     * otherwise, it triggers a failure message indicating incorrect scheduling.
      */
-    def analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(
+    def isNotScheduledAfter(
         schedule:  Schedule[Unit],
         analysis1: BasicComputationSpecification,
         analysis2: BasicComputationSpecification
@@ -86,11 +83,8 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
 
     /**
      * Checks whether `analysis1` is scheduled before `analysis2` within a given `schedule`.
-     * Iterates through the schedule's batches, tracking the phases in which each analysis appears.
-     * If `analysis1` is scheduled at an earlier phase than `analysis2`, it prints "Success";
-     * otherwise, it triggers a failure message indicating incorrect scheduling.
      */
-    def analysis1IsScheduledBeforeAnalysis2(
+    def isScheduledBefore(
         schedule:  Schedule[Unit],
         analysis1: BasicComputationSpecification,
         analysis2: BasicComputationSpecification
@@ -117,11 +111,8 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
 
     /**
      * Checks whether `analysis1` and `analysis2` are scheduled in the same batch within a given `schedule`.
-     * Iterates through the schedule's batches, tracking the phases in which each analysis appears.
-     * If both analyses are scheduled in the same phase, it prints "Success";
-     * otherwise, it triggers a failure message indicating incorrect scheduling.
      */
-    def analysis1IsScheduledInTheSameBatchAsAnalysis2(
+    def isScheduledConcurrently(
         schedule:  Schedule[Unit],
         analysis1: BasicComputationSpecification,
         analysis2: BasicComputationSpecification
@@ -182,143 +173,140 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
 
         describe(s"an AnalysisScenario with strategy $strategy") {
 
-            it("should be possible to create an empty schedule") {
+            it("should be able to create an empty schedule") {
                 val ps = setupPropertyStoreConfigurationRecorder(strategy)
                 val batches = AnalysisScenario(Set(), ps).computeSchedule(ps).batches
                 batches should be(Symbol("Empty"))
             }
 
-            describe("the scheduling of mixed eager and lazy property computations") {
+            it("should produce an empty configuration in an empty scenary") {
+                val ps = setupPropertyStoreConfigurationRecorder(strategy)
+                val scenario = AnalysisScenario(Set.empty, ps)
+                val schedule = scenario.computeSchedule(ps)
+                /*smoke test: */
+                schedule(ps, trace = false)
+                schedule.batches should be(Symbol("Empty"))
+                ps.phaseConfigurations.head should be((Set.empty, Set.empty, Map.empty))
+            }
 
-                it("an empty analysis scenario should lead to an empty phase configuration in the ps") {
-                    val ps = setupPropertyStoreConfigurationRecorder(strategy)
-                    val scenario = AnalysisScenario(Set.empty, ps)
-                    val schedule = scenario.computeSchedule(ps)
-                    /*smoke test: */
-                    schedule(ps, trace = false)
-                    schedule.batches should be(Symbol("Empty"))
-                    ps.phaseConfigurations.head should be((Set.empty, Set.empty, Map.empty))
-                }
+            it("should create a valid schedule when scheduling mixed property computations") {
+                val lazy1 = BasicComputationSpecification(
+                    "lazy1",
+                    LazyComputation,
+                    derivesLazily = Option(PropertyBounds.lub(pks(10)))
+                )
+                val eager1 = BasicComputationSpecification(
+                    "eager1",
+                    EagerComputation,
+                    derivesEagerly = Set(PropertyBounds.lub(pks(1))),
+                    uses = Set(PropertyBounds.lub(pks(10)))
+                )
+                val eager4 = BasicComputationSpecification(
+                    "eager4",
+                    EagerComputation,
+                    derivesCollaboratively = Set(PropertyBounds.lub(pks(13))),
+                    uses = Set(PropertyBounds.lub(pks(1)))
+                )
+                val transformer1 =
+                    BasicComputationSpecification(
+                        "transformer1",
+                        Transformer,
+                        derivesLazily = Option(PropertyBounds.lub(pks(7))),
+                        uses = Set(PropertyBounds.finalP(pks(1)))
+                    )
+                val eager5 = BasicComputationSpecification(
+                    "eager5",
+                    EagerComputation,
+                    derivesCollaboratively = Set(PropertyBounds.lub(pks(13))),
+                    uses = Set(PropertyBounds.lub(pks(7)))
+                )
+                val eager6 = BasicComputationSpecification(
+                    "eager6",
+                    EagerComputation,
+                    derivesCollaboratively = Set(PropertyBounds.lub(pks(13)))
+                )
+                val lazy2 = BasicComputationSpecification(
+                    "lazy2",
+                    LazyComputation,
+                    derivesLazily = Option(PropertyBounds.lub(pks(11))),
+                    uses = Set(PropertyBounds.lub(pks(13)))
+                )
+                val lazy3 = BasicComputationSpecification(
+                    "lazy3",
+                    LazyComputation,
+                    derivesLazily = Option(PropertyBounds.lub(pks(12))),
+                    uses = Set(PropertyBounds.lub(pks(13)))
+                )
+                val eager2 = BasicComputationSpecification(
+                    "eager2",
+                    EagerComputation,
+                    derivesEagerly = Set(PropertyBounds.lub(pks(2))),
+                    uses = Set(PropertyBounds.lub(pks(12)))
+                )
+                val eager3 = BasicComputationSpecification(
+                    "eager3",
+                    EagerComputation,
+                    derivesEagerly = Set(PropertyBounds.lub(pks(3))),
+                    uses = Set(PropertyBounds.lub(pks(13)))
+                )
+                val triggered1 =
+                    BasicComputationSpecification(
+                        "triggered1",
+                        TriggeredComputation,
+                        derivesEagerly = Set(PropertyBounds.lub(pks(4))),
+                        uses = Set(PropertyBounds.lub(pks(3)), PropertyBounds.lub(pks(6)))
+                    )
+                val triggered2 =
+                    BasicComputationSpecification(
+                        "triggered2",
+                        TriggeredComputation,
+                        derivesEagerly = Set(PropertyBounds.lub(pks(5))),
+                        uses = Set(PropertyBounds.lub(pks(4)))
+                    )
+                val triggered3 =
+                    BasicComputationSpecification(
+                        "triggered3",
+                        TriggeredComputation,
+                        derivesEagerly = Set(PropertyBounds.lub(pks(6))),
+                        uses = Set(PropertyBounds.lub(pks(5)))
+                    )
 
-                it("a mixed analysis scenario") {
-                    val lazy1 = BasicComputationSpecification(
-                        "lazy1",
-                        LazyComputation,
-                        derivesLazily = Option(PropertyBounds.lub(pks(10)))
-                    )
-                    val eager1 = BasicComputationSpecification(
-                        "eager1",
-                        EagerComputation,
-                        derivesEagerly = Set(PropertyBounds.lub(pks(1))),
-                        uses = Set(PropertyBounds.lub(pks(10)))
-                    )
-                    val eager4 = BasicComputationSpecification(
-                        "eager4",
-                        EagerComputation,
-                        derivesCollaboratively = Set(PropertyBounds.lub(pks(13))),
-                        uses = Set(PropertyBounds.lub(pks(1)))
-                    )
-                    val transformer1 =
-                        BasicComputationSpecification(
-                            "transformer1",
-                            Transformer,
-                            derivesLazily = Option(PropertyBounds.lub(pks(7))),
-                            uses = Set(PropertyBounds.finalP(pks(1)))
-                        )
-                    val eager5 = BasicComputationSpecification(
-                        "eager5",
-                        EagerComputation,
-                        derivesCollaboratively = Set(PropertyBounds.lub(pks(13))),
-                        uses = Set(PropertyBounds.lub(pks(7)))
-                    )
-                    val eager6 = BasicComputationSpecification(
-                        "eager6",
-                        EagerComputation,
-                        derivesCollaboratively = Set(PropertyBounds.lub(pks(13)))
-                    )
-                    val lazy2 = BasicComputationSpecification(
-                        "lazy2",
-                        LazyComputation,
-                        derivesLazily = Option(PropertyBounds.lub(pks(11))),
-                        uses = Set(PropertyBounds.lub(pks(13)))
-                    )
-                    val lazy3 = BasicComputationSpecification(
-                        "lazy3",
-                        LazyComputation,
-                        derivesLazily = Option(PropertyBounds.lub(pks(12))),
-                        uses = Set(PropertyBounds.lub(pks(13)))
-                    )
-                    val eager2 = BasicComputationSpecification(
-                        "eager2",
-                        EagerComputation,
-                        derivesEagerly = Set(PropertyBounds.lub(pks(2))),
-                        uses = Set(PropertyBounds.lub(pks(12)))
-                    )
-                    val eager3 = BasicComputationSpecification(
-                        "eager3",
-                        EagerComputation,
-                        derivesEagerly = Set(PropertyBounds.lub(pks(3))),
-                        uses = Set(PropertyBounds.lub(pks(13)))
-                    )
-                    val triggered1 =
-                        BasicComputationSpecification(
-                            "triggered1",
-                            TriggeredComputation,
-                            derivesEagerly = Set(PropertyBounds.lub(pks(4))),
-                            uses = Set(PropertyBounds.lub(pks(3)), PropertyBounds.lub(pks(6)))
-                        )
-                    val triggered2 =
-                        BasicComputationSpecification(
-                            "triggered2",
-                            TriggeredComputation,
-                            derivesEagerly = Set(PropertyBounds.lub(pks(5))),
-                            uses = Set(PropertyBounds.lub(pks(4)))
-                        )
-                    val triggered3 =
-                        BasicComputationSpecification(
-                            "triggered3",
-                            TriggeredComputation,
-                            derivesEagerly = Set(PropertyBounds.lub(pks(6))),
-                            uses = Set(PropertyBounds.lub(pks(5)))
-                        )
+                val ps = setupPropertyStoreConfigurationRecorder(strategy)
+                val scenario = AnalysisScenario(
+                    Set(
+                        eager1,
+                        eager3,
+                        eager4,
+                        eager5,
+                        eager6,
+                        eager2,
+                        lazy1,
+                        lazy2,
+                        lazy3,
+                        transformer1,
+                        triggered1,
+                        triggered2,
+                        triggered3
+                    ),
+                    ps
+                )
+                val schedule = scenario.computeSchedule(ps)
 
-                    val ps = setupPropertyStoreConfigurationRecorder(strategy)
-                    val scenario = AnalysisScenario(
-                        Set(
-                            eager1,
-                            eager3,
-                            eager4,
-                            eager5,
-                            eager6,
-                            eager2,
-                            lazy1,
-                            lazy2,
-                            lazy3,
-                            transformer1,
-                            triggered1,
-                            triggered2,
-                            triggered3
-                        ),
-                        ps
-                    )
-                    val schedule = scenario.computeSchedule(ps)
-
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, lazy1, eager1)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager1, eager4)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager1, eager5)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager1, eager6)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager1, transformer1)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager4, lazy3)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager4, eager2)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager6, lazy2)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager6, lazy2)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager6, lazy3)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager3, triggered1)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager3, triggered2)
-                    analysis1IsScheduledBeforeOrAtTheSameBatchAsAnalysis2(schedule, eager3, triggered3)
-                    analysis1IsScheduledInTheSameBatchAsAnalysis2(schedule, triggered1, triggered2)
-                    analysis1IsScheduledInTheSameBatchAsAnalysis2(schedule, triggered1, triggered3)
-                }
+                isNotScheduledAfter(schedule, lazy1, eager1)
+                isNotScheduledAfter(schedule, eager1, eager4)
+                isNotScheduledAfter(schedule, eager1, eager5)
+                isNotScheduledAfter(schedule, eager1, eager6)
+                isNotScheduledAfter(schedule, eager1, transformer1)
+                isNotScheduledAfter(schedule, eager4, lazy3)
+                isNotScheduledAfter(schedule, eager4, eager2)
+                isNotScheduledAfter(schedule, eager6, lazy2)
+                isNotScheduledAfter(schedule, eager6, lazy2)
+                isNotScheduledAfter(schedule, eager6, lazy3)
+                isNotScheduledAfter(schedule, eager3, triggered1)
+                isNotScheduledAfter(schedule, eager3, triggered2)
+                isNotScheduledAfter(schedule, eager3, triggered3)
+                isScheduledConcurrently(schedule, triggered1, triggered2)
+                isScheduledConcurrently(schedule, triggered1, triggered3)
             }
         }
     }
