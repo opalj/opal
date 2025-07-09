@@ -329,59 +329,6 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             initializationData
         )
     }
-
-    /**
-     * Computes the configuration for a specific batch; this method can only handle the situation
-     * where all analyses can be executed in the same phase.
-     */
-    protected def computePhase(
-        propertyStore:     PropertyStore,
-        phaseAnalysis:     Set[ComputationSpecification[A]],
-        nextPhaseAnalysis: Set[ComputationSpecification[A]]
-    ): PhaseConfiguration[A] = {
-
-        // 1. compute the phase configuration; i.e., find those properties for which we must
-        //    suppress interim updates.
-        var suppressInterimUpdates: Map[PropertyKind, Set[PropertyKind]] = Map.empty
-        // Interim updates have to be suppressed when an analysis uses a property for which
-        // the wrong bounds/not enough bounds are computed.
-        transformersCS foreach { cs => suppressInterimUpdates += (cs.derivesLazily.get.pk -> cs.uses(ps).map(_.pk)) }
-
-        def extractPropertyKinds(analyses: Set[ComputationSpecification[A]]): Set[PropertyKind] = {
-            analyses.flatMap { analysis =>
-                (analysis.derivesLazily.toSet ++
-                    analysis.derivesEagerly ++
-                    analysis.derivesCollaboratively ++
-                    analysis.derives.toSet)
-                    .map(_.pk)
-            }
-        }
-
-        val propertyKindsFromPhaseAnalysis = extractPropertyKinds(phaseAnalysis)
-        val propertyKindsFromNextPhaseAnalysis = extractPropertyKinds(nextPhaseAnalysis)
-
-        val collabProperties = phaseAnalysis.flatMap { analysis => analysis.derivesCollaboratively.map(_.pk) }
-
-        // 3. create the batch
-        val batchBuilder = List.newBuilder[ComputationSpecification[A]]
-        batchBuilder ++= phaseAnalysis
-
-        // FIXME...
-
-        // Interim updates can be suppressed when the depender and dependee are not in a cyclic
-        // relation; however, this could have a negative impact on the effect of deep laziness -
-        // once we are actually implementing it. For the time being, suppress notifications is always
-        // advantageous.
-
-        val phase1Configuration = PropertyKindsConfiguration(
-            propertyKindsComputedInThisPhase = propertyKindsFromPhaseAnalysis,
-            suppressInterimUpdates = suppressInterimUpdates,
-            propertyKindsComputedInLaterPhase = propertyKindsFromNextPhaseAnalysis,
-            collaborativelyComputedPropertyKindsFinalizationOrder = List(collabProperties.toList) // FIXME: Compute actual subphase finalization order
-        )
-
-        PhaseConfiguration(phase1Configuration, batchBuilder.result())
-    }
 }
 
 /**

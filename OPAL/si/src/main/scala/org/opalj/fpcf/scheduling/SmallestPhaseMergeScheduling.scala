@@ -12,7 +12,7 @@ import org.opalj.graphs.topologicalSort
  * Merging batches based on the number of analyses to keep merged batches of similar sizes.
  */
 class SmallestPhaseMergeScheduling[A](ps: PropertyStore, scheduleLazyTransformerInAllBatches: Boolean)
-    extends AnalysisScenario[A](ps) with SchedulingStrategy[A] {
+    extends SchedulingStrategy[A] {
 
     val name = "SPMS"
 

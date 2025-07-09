@@ -7,7 +7,7 @@ package scheduling
  * Single Phase Scheduling (SPS) Strategy.
  * Schedules all computations in a single batch without considering dependencies.
  */
-class SinglePhaseScheduling[A](ps: PropertyStore) extends AnalysisScenario[A](ps) with SchedulingStrategy[A] {
+class SinglePhaseScheduling[A](ps: PropertyStore) extends SchedulingStrategy[A] {
 
     override def schedule(
         ps:    PropertyStore,

@@ -13,7 +13,7 @@ import org.opalj.graphs.topologicalSort
  */
 
 class MaximumPhaseScheduling[A](ps: PropertyStore, scheduleLazyTransformerInAllBatches: Boolean)
-    extends AnalysisScenario[A](ps) with SchedulingStrategy[A] {
+    extends SchedulingStrategy[A] {
 
     val name = "MPS"
 

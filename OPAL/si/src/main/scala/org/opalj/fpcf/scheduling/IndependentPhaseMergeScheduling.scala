@@ -12,7 +12,7 @@ import org.opalj.graphs.topologicalSort
  * Merges independent batches to optimize parallelism.
  */
 class IndependentPhaseMergeScheduling[A](ps: PropertyStore, scheduleLazyTransformerInAllBatches: Boolean)
-    extends AnalysisScenario[A](ps) with SchedulingStrategy[A] {
+    extends SchedulingStrategy[A] {
 
     val name = "IPMS"
 
