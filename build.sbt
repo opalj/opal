@@ -95,6 +95,7 @@ addCommandAlias(
 addCommandAlias("cleanBuild", "; project OPAL ; cleanAll ; buildAll ")
 
 addCommandAlias("format", "; scalafmt; Test / scalafmt; IntegrationTest / scalafmt")
+addCommandAlias("checkFormat", "; scalafmtCheck; Test / scalafmtCheck; IntegrationTest / scalafmtCheck")
 
 lazy val IntegrationTest = config("it") extend Test
 
