@@ -5,6 +5,7 @@ package scheduling
 
 import org.opalj.collection.IntIterator
 import org.opalj.graphs.sccs
+import org.opalj.graphs.topologicalSort
 
 /**
  * Smallest Phase Merge Scheduling (SPS) Strategy.
@@ -103,38 +104,6 @@ class SmallestPhaseMergeScheduling[A](ps: PropertyStore, scheduleLazyTransformer
                 aCyclicGraph
             }
             setLazyInAllBatches_rek(aCyclicGraph, firstElement)
-        }
-
-        def topologicalSort(graph: Map[Int, List[Int]]): List[Int] = {
-            var sortedNodes: List[Int] = List.empty
-            var permanent: Set[Int] = Set.empty
-            var temporary: Set[Int] = Set.empty
-
-            val preparedGraph = graph.map { case (node, deps) =>
-                node -> deps.filter(_ != node)
-            }
-
-            def visit(node: Int): Unit = {
-                if (!permanent.contains(node)) {
-                    if (temporary.contains(node)) {
-                        throw new IllegalStateException("Graph contains a cycle")
-                    }
-                    temporary = temporary + node
-
-                    preparedGraph.get(node).head.foreach { otherNode => visit(otherNode) }
-
-                    permanent = permanent + node
-                    temporary = temporary - node
-
-                    sortedNodes = sortedNodes :+ node
-                }
-
-            }
-            for (node <- preparedGraph.keys) {
-                visit(node)
-            }
-
-            sortedNodes
         }
 
         def mergeIndependentBatches(
