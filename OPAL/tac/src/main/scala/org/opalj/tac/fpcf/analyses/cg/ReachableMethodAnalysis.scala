@@ -14,7 +14,6 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -28,6 +27,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * Base trait for analyses that are executed for every method that is reachable.
  * The analysis is performed by `processMethod`.
  *
+ * Note that methods without a body are not processed unless `processMethodWithoutBody` is overridden.
+ *
  * @author Florian Kuebler
  */
 trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
@@ -36,23 +37,14 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
 
     final def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
-        (callersEOptP: @unchecked) match {
-            case FinalP(NoCallers) =>
-                // nothing to do, since there is no caller
-                return NoResult;
 
-            case eps: EPS[_, _] =>
-                if (eps.ub eq NoCallers) {
-                    // we can not create a dependency here, so the analysis is not allowed to create
-                    // such a result
-                    throw new IllegalStateException("illegal immediate result for callers")
-                }
-            // the method is reachable, so we analyze it!
+        if (callersEOptP.isFinal && callersEOptP.ub == NoCallers) {
+            return NoResult;
         }
 
         // we only allow defined methods
         if (!declaredMethod.hasSingleDefinedMethod)
-            return processMethodWithoutBody(callersEOptP);
+            return processNewContexts(callersEOptP, NoCallers) { processMethodWithoutBody };
 
         val method = declaredMethod.definedMethod
 
@@ -60,48 +52,50 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
         if (method.classFile.thisType != declaredMethod.declaringClassType)
             return NoResult;
 
-        if (method.body.isEmpty)
+        if (method.body.isEmpty) {
             // happens in particular for native methods
-            return processMethodWithoutBody(callersEOptP);
+            return processNewContexts(callersEOptP, NoCallers) { processMethodWithoutBody };
+        };
 
         val tacEP = propertyStore(method, TACAI.key)
-
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod(callersEOptP, null, tacEP.asEPS)
+            processMethodWithTAC(callersEOptP, NoCallers, tacEP.asEPS)
         } else {
             InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod))
         }
     }
 
-    protected val processesMethodsWithoutBody = false
-
-    protected def processMethodWithoutBody(
-        eOptP: EOptionP[DeclaredMethod, Callers]
-    ): PropertyComputationResult = {
-        if (processesMethodsWithoutBody) {
-            processMethod(eOptP, null, null)
-        } else
-            NoResult
+    private def processMethodWithTAC(
+        eOptP:      EOptionP[DeclaredMethod, Callers],
+        oldCallers: Callers,
+        tacEP:      EPS[Method, TACAI]
+    ): ProperPropertyComputationResult = {
+        processNewContexts(eOptP, oldCallers) { processMethod(_, tacEP) }
     }
 
-    private[this] def processMethod(
-        eOptP: EOptionP[DeclaredMethod, Callers],
-        seen:  Callers,
-        tacEP: EPS[Method, TACAI]
-    ): ProperPropertyComputationResult = {
+    private def processNewContexts(
+        eOptP:      EOptionP[DeclaredMethod, Callers],
+        oldCallers: Callers
+    )(processMethod: ContextType => ProperPropertyComputationResult): ProperPropertyComputationResult = {
+        val newCallers = if (eOptP.hasUBP) eOptP.ub else NoCallers
         var results: List[ProperPropertyComputationResult] = Nil
-        eOptP.ub.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
+
+        newCallers.forNewCalleeContexts(oldCallers, eOptP.e) { calleeContext =>
             val theCalleeContext =
                 if (calleeContext.hasContext) calleeContext.asInstanceOf[ContextType]
                 else typeIterator.newContext(eOptP.e)
-            results ::= processMethod(theCalleeContext, tacEP)
+            results ::= processMethod(theCalleeContext)
         }
 
         Results(
-            InterimPartialResult(Set(eOptP), continuationForCallers(eOptP.ub, tacEP)),
+            InterimPartialResult(Set(eOptP), continuationForCallers(processNewContexts(_, newCallers)(processMethod))),
             results
         )
     }
+
+    protected def processMethodWithoutBody(
+        callContext: ContextType
+    ): ProperPropertyComputationResult = Results()
 
     def processMethod(
         callContext: ContextType,
@@ -113,9 +107,9 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     )(someEPS: SomeEPS): ProperPropertyComputationResult = {
         someEPS match {
             case UBP(tac: TACAI) if tac.tac.isDefined =>
-                processMethod(
+                processMethodWithTAC(
                     propertyStore(declaredMethod, Callers.key),
-                    null,
+                    NoCallers,
                     someEPS.asInstanceOf[EPS[Method, TACAI]]
                 )
             case _ =>
@@ -124,13 +118,8 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
     }
 
     private[this] def continuationForCallers(
-        oldCallers: Callers,
-        tacEP:      EPS[Method, TACAI]
-    )(
-        update: SomeEPS
-    ): ProperPropertyComputationResult = {
-        val newCallers = update.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processMethod(newCallers, oldCallers, tacEP)
+        processMethod: EOptionP[DeclaredMethod, Callers] => ProperPropertyComputationResult
+    )(someEPS: SomeEPS): ProperPropertyComputationResult = {
+        processMethod(someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]])
     }
-
 }

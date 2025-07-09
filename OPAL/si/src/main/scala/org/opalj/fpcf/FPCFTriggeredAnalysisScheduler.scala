@@ -1,14 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
 package fpcf
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.ComputationType
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.TriggeredComputation
+import org.opalj.si.Project
 
 /**
  *  The underlying analysis will only be registered with the property store and
@@ -20,14 +14,14 @@ import org.opalj.fpcf.TriggeredComputation
  *
  * @author Michael Eichberg
  */
-trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
+trait FPCFTriggeredAnalysisScheduler[P <: Project] extends FPCFAnalysisScheduler[P] {
 
     override final def computationType: ComputationType = TriggeredComputation
 
     override final def derivesLazily: Option[PropertyBounds] = None
 
     override final def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
-        register(ps.context(classOf[SomeProject]), ps, i)
+        register(ps.context(classOf[Project]).asInstanceOf[P], ps, i)
     }
 
     /**
@@ -35,7 +29,7 @@ trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
      */
     def triggeredBy: PropertyKind
 
-    final def register(project: SomeProject, i: InitializationData): FPCFAnalysis = {
+    final def register(project: P, i: InitializationData): FPCFAnalysis = {
         register(project, project.get(PropertyStoreKey), i)
     }
 
@@ -48,23 +42,19 @@ trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
      *       `scheduleEagerComputationForEntity`.
      */
     def register(
-        project:       SomeProject,
+        project:       P,
         propertyStore: PropertyStore,
         i:             InitializationData
     ): FPCFAnalysis
 
 }
 
-trait BasicFPCFTriggeredAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+trait BasicFPCFTriggeredAnalysisScheduler[P <: Project] extends FPCFTriggeredAnalysisScheduler[P] {
     override type InitializationData = Null
-    override def init(p:           SomeProject, ps: PropertyStore): Null = null
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    override def init(p:           P, ps: PropertyStore): Null = null
+    override def beforeSchedule(p: P, ps: PropertyStore): Unit = {}
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+    override def afterPhaseCompletion(p: P, ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 }

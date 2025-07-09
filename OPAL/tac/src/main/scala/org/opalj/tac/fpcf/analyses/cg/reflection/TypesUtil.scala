@@ -65,8 +65,8 @@ object TypesUtil {
             case at: ArrayType =>
                 val et = at.elementType
                 !et.isClassType || project.classFile(et.asClassType).isDefined
-            case ot: ClassType =>
-                project.classFile(ot).isDefined
+            case ct: ClassType =>
+                project.classFile(ct).isDefined
         }
     }
 

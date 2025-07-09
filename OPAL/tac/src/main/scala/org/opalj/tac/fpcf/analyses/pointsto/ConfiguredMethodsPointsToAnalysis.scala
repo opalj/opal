@@ -15,8 +15,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
@@ -160,8 +159,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         getDefSite(defSite)
     }
 
-    private[this] def canBeInstantiated(ot: ClassType): Boolean = {
-        val cfOption = project.classFile(ot)
+    private[this] def canBeInstantiated(ct: ClassType): Boolean = {
+        val cfOption = project.classFile(ct)
         cfOption.isDefined && {
             val cf = cfOption.get
             !cf.isInterfaceDeclaration && !cf.isAbstract
@@ -303,12 +302,10 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     }
 }
 
-trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler
+trait ConfiguredMethodsPointsToAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler
     with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => ConfiguredMethodsPointsToAnalysis
-
-    override type InitializationData = Null
 
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation :+ DeclaredMethodsKey
@@ -323,12 +320,6 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        null
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
     override def register(
         p:      SomeProject,
         ps:     PropertyStore,
@@ -339,14 +330,6 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
 
     /**
      * Specifies the kind of the properties that will trigger the analysis to be registered.

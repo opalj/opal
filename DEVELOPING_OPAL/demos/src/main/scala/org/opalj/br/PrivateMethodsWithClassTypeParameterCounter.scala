@@ -36,7 +36,7 @@ object PrivateMethodsWithClassTypeParameterCounter extends ProjectAnalysisApplic
                 if method.isPrivate // || method.isPackagePrivate
                 if method.name != "readObject" && method.name != "writeObject"
                 potential = (method.descriptor.parameterTypes.collect {
-                    case ot: ClassType => project.classHierarchy.allSubtypes(ot, false).size
+                    case ct: ClassType => project.classHierarchy.allSubtypes(ct, false).size
                     case _             => 0
                 }).sum
                 if potential >= 5

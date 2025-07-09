@@ -139,7 +139,7 @@ class ClassForNameAnalysis private[analyses] (
         loadedClassesUB: UIDSet[ClassType],
         callContext:     ContextType,
         val callPC:      Int
-    ) extends CGState[ContextType](callContext, null) {
+    ) extends CGState[ContextType](callContext) {
         var hasFailed = false
 
         private[this] var _loadedClassesUB: UIDSet[ClassType] = loadedClassesUB
@@ -149,7 +149,7 @@ class ClassForNameAnalysis private[analyses] (
         private[cg] def addNewLoadedClasses(loadedClasses: IterableOnce[ReferenceType]): Unit = {
             forNameClasses ++= loadedClasses
             _newLoadedClasses ++= loadedClasses.iterator.collect {
-                case ot: ClassType if !_loadedClassesUB.contains(ot) => ot
+                case ct: ClassType if !_loadedClassesUB.contains(ct) => ct
             }
         }
 
@@ -334,7 +334,7 @@ class ClassNewInstanceAnalysis private[analyses] (
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
-        implicit val state: CGState[ContextType] = new CGState[ContextType](
+        implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
             callerContext,
             FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
@@ -352,7 +352,7 @@ class ClassNewInstanceAnalysis private[analyses] (
         classRef:      V,
         callPC:        Int,
         indirectCalls: IndirectCalls
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val results = indirectCalls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -366,10 +366,10 @@ class ClassNewInstanceAnalysis private[analyses] (
     private[this] def c(
         classRef: V,
         callPC:   Int,
-        state:    CGState[ContextType]
+        state:    TACAIBasedCGState[ContextType]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
-        implicit val _state: CGState[ContextType] = state
+        implicit val _state: TACAIBasedCGState[ContextType] = state
 
         val epk = eps.toEPK
 
@@ -379,7 +379,7 @@ class ClassNewInstanceAnalysis private[analyses] (
                 new ParameterTypesBasedMethodMatcher(ArraySeq.empty),
                 new ClassBasedMethodMatcher(
                     eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.collect {
-                        case ot: ClassType => ot
+                        case ct: ClassType => ct
                     },
                     true
                 )
@@ -426,8 +426,8 @@ class ClassNewInstanceAnalysis private[analyses] (
         callPC:      Int,
         classExpr:   V,
         stmts:       Array[Stmt[V]]
-    )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
-        implicit val highSoundness = HighSoundnessMode("class")
+    )(implicit indirectCalls: IndirectCalls, state: TACAIBasedCGState[ContextType]): Unit = {
+        implicit val highSoundness: Boolean = HighSoundnessMode("class")
 
         val matchers = Set(
             MatcherUtil.constructorMatcher,
@@ -450,7 +450,7 @@ class ClassNewInstanceAnalysis private[analyses] (
 
     private[this] def failure(
         callPC: Int
-    )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
+    )(implicit indirectCalls: IndirectCalls, state: TACAIBasedCGState[ContextType]): Unit = {
         if (HighSoundnessMode.contains("class")) {
             val matchers: Set[MethodMatcher] = Set(
                 MatcherUtil.constructorMatcher,
@@ -489,7 +489,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
 
-        implicit val state: CGState[ContextType] = new CGState[ContextType](
+        implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
             callerContext,
             FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
@@ -506,7 +506,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
     def returnResult(
         constructor:   V,
         indirectCalls: IndirectCalls
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val results = indirectCalls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -521,9 +521,9 @@ class ConstructorNewInstanceAnalysis private[analyses] (
     private type classDependerType =
         (Int, Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], V, Array[Stmt[V]])
 
-    def c(constructor: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+    def c(constructor: V, state: TACAIBasedCGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
-        implicit val _state: CGState[ContextType] = state
+        implicit val _state: TACAIBasedCGState[ContextType] = state
 
         val epk = eps.toEPK
 
@@ -532,7 +532,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
             val (callPC, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
             val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.collect {
-                case ot: ClassType => ot
+                case ct: ClassType => ct
             }
 
             val allMatchers = matchers + new ClassBasedMethodMatcher(classes, true)
@@ -589,7 +589,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         constructor:       V,
         newInstanceParams: Seq[Option[Expr[V]]],
         stmts:             Array[Stmt[V]]
-    )(implicit state: CGState[ContextType], indirectCalls: IndirectCalls): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType], indirectCalls: IndirectCalls): Unit = {
 
         val actualParamsNewInstanceOpt =
             if (newInstanceParams.nonEmpty && newInstanceParams.head.isDefined)
@@ -648,7 +648,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         actualParams:       Seq[Option[(ValueInformation, IntTrieSet)]],
         baseMatchers:       Set[MethodMatcher],
         stmts:              Array[Stmt[V]]
-    )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Set[MethodMatcher] = {
+    )(implicit indirectCalls: IndirectCalls, state: TACAIBasedCGState[ContextType]): Set[MethodMatcher] = {
         var matchers = baseMatchers
         stmts(constructorDefSite).asAssignment.expr match {
             case call @ VirtualFunctionCall(
@@ -664,11 +664,11 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                     matchers += PublicMethodMatcher
                 }
 
-                implicit val highSoundness = HighSoundnessMode("method")
+                implicit val highSoundness: Boolean = HighSoundnessMode("method")
                 matchers += MatcherUtil.retrieveParameterTypesBasedMethodMatcher(params.head, callPC, stmts)
 
                 if (!matchers.contains(NoMethodsMatcher)) {
-                    implicit val highSoundness = HighSoundnessMode("class")
+                    implicit val highSoundness: Boolean = HighSoundnessMode("class")
                     matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
                         context,
                         receiver.asVar,
@@ -703,7 +703,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         callPC:           Int,
         params:           Seq[Option[(ValueInformation, IntTrieSet)]],
         baseMatchers:     Set[MethodMatcher]
-    )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
+    )(implicit indirectCalls: IndirectCalls, state: TACAIBasedCGState[ContextType]): Unit = {
         if (HighSoundnessMode.contains(highSoundnessKey)) {
             addCalls(state.callContext, callPC, constructorReceiver(callPC), params, baseMatchers + AllMethodsMatcher)
         } else {
@@ -736,7 +736,7 @@ class MethodInvokeAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
 
-        implicit val state: CGState[ContextType] = new CGState[ContextType](
+        implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
             callerContext,
             FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
@@ -753,7 +753,7 @@ class MethodInvokeAnalysis private[analyses] (
     def returnResult(
         methodVar:     V,
         indirectCalls: IndirectCalls
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val results = indirectCalls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -785,9 +785,9 @@ class MethodInvokeAnalysis private[analyses] (
         Array[Stmt[V]]
     )
 
-    def c(methodVar: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+    def c(methodVar: V, state: TACAIBasedCGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
-        implicit val _state: CGState[ContextType] = state
+        implicit val _state: TACAIBasedCGState[ContextType] = state
 
         val epk = eps.toEPK
 
@@ -803,7 +803,7 @@ class MethodInvokeAnalysis private[analyses] (
 
             addCalls(state.callContext, callPC, _ => receiver, params, allMatchers)
         } else {
-            implicit val highSoundness = HighSoundnessMode("method")
+            implicit val highSoundness: Boolean = HighSoundnessMode("method")
 
             AllocationsUtil.continuationForAllocation[methodDependerType, ContextType](
                 eps,
@@ -881,8 +881,8 @@ class MethodInvokeAnalysis private[analyses] (
     private[this] def getClassMatcher(
         data:     nameDependerType,
         matchers: Set[MethodMatcher]
-    )(implicit state: CGState[ContextType], indirectCalls: IndirectCalls): MethodMatcher = {
-        implicit val highSoundness = HighSoundnessMode("class")
+    )(implicit state: TACAIBasedCGState[ContextType], indirectCalls: IndirectCalls): MethodMatcher = {
+        implicit val highSoundness: Boolean = HighSoundnessMode("class")
         MatcherUtil.retrieveClassBasedMethodMatcher(
             data._8,
             data._7,
@@ -901,8 +901,8 @@ class MethodInvokeAnalysis private[analyses] (
         method:       V,
         methodParams: Seq[Option[Expr[V]]],
         stmts:        Array[Stmt[V]]
-    )(implicit state: CGState[ContextType], indirectCalls: IndirectCalls): Unit = {
-        implicit val highSoundness = HighSoundnessMode("method")
+    )(implicit state: TACAIBasedCGState[ContextType], indirectCalls: IndirectCalls): Unit = {
+        implicit val highSoundness: Boolean = HighSoundnessMode("method")
 
         val methodInvokeReceiver = methodParams.head.map(_.asVar)
         if (methodInvokeReceiver.isDefined) {
@@ -962,8 +962,8 @@ class MethodInvokeAnalysis private[analyses] (
         actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]],
         baseMatchers:   Set[MethodMatcher],
         stmts:          Array[Stmt[V]]
-    )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Set[MethodMatcher] = {
-        implicit val highSoundness = HighSoundnessMode("method")
+    )(implicit indirectCalls: IndirectCalls, state: TACAIBasedCGState[ContextType]): Set[MethodMatcher] = {
+        implicit val highSoundness: Boolean = HighSoundnessMode("method")
 
         var matchers = baseMatchers
         stmts(methodDefSite).asAssignment.expr match {
@@ -1025,7 +1025,7 @@ class MethodInvokeAnalysis private[analyses] (
         receiver:         Option[(ValueInformation, IntTrieSet)],
         params:           Seq[Option[(ValueInformation, IntTrieSet)]],
         baseMatchers:     Set[MethodMatcher]
-    )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
+    )(implicit indirectCalls: IndirectCalls, state: TACAIBasedCGState[ContextType]): Unit = {
         if (HighSoundnessMode.contains(highSoundnessKey)) {
             addCalls(state.callContext, callPC, _ => receiver, params, baseMatchers + AllMethodsMatcher)
         } else {
@@ -1052,7 +1052,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
 
-        implicit val state: CGState[ContextType] = new CGState[ContextType](
+        implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
             callerContext,
             FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
@@ -1085,7 +1085,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
     def returnResult(
         methodHandle:  V,
         indirectCalls: IndirectCalls
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val results = indirectCalls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -1116,9 +1116,9 @@ class MethodHandleInvokeAnalysis private[analyses] (
     private type classDependerType =
         (Int, Boolean, Seq[Option[(ValueInformation, IntTrieSet)]], Set[MethodMatcher], V, Array[Stmt[V]])
 
-    def c(methodHandle: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+    def c(methodHandle: V, state: TACAIBasedCGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
-        implicit val _state: CGState[ContextType] = state
+        implicit val _state: TACAIBasedCGState[ContextType] = state
 
         val epk = eps.toEPK
 
@@ -1126,8 +1126,8 @@ class MethodHandleInvokeAnalysis private[analyses] (
             val (callPC, isVirtual, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
             val classes = eps.asInstanceOf[EPS[_, ForNameClasses]].ub.classes.flatMap {
-                case ot: ClassType if isVirtual => project.classHierarchy.allSubtypes(ot, true)
-                case ot: ClassType              => Set(ot)
+                case ct: ClassType if isVirtual => project.classHierarchy.allSubtypes(ct, reflexive = true)
+                case ct: ClassType              => Set(ct)
                 case _: ArrayType               => Set(ClassType.Object)
             }
 
@@ -1135,7 +1135,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
             addCalls(state.callContext, callPC, allMatchers, params)
         } else {
-            implicit val highSoundness = HighSoundnessMode("method")
+            implicit val highSoundness: Boolean = HighSoundnessMode("method")
 
             AllocationsUtil.continuationForAllocation[methodHandleDependerType, ContextType](
                 eps,
@@ -1197,7 +1197,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                     () => failure("class", data._1, data._3, data._4),
                     onlyClassTypes = false
                 ).flatMap { tpe =>
-                    if (data._2) project.classHierarchy.allSubtypes(tpe.asClassType, true)
+                    if (data._2) project.classHierarchy.allSubtypes(tpe.asClassType, reflexive = true)
                     else Set(if (tpe.isClassType) tpe.asClassType else ClassType.Object)
                 }
 
@@ -1219,8 +1219,8 @@ class MethodHandleInvokeAnalysis private[analyses] (
     private[this] def getClassMatcher(
         data:     nameDependerType,
         matchers: Set[MethodMatcher]
-    )(implicit state: CGState[ContextType], indirectCalls: IndirectCalls): MethodMatcher = {
-        implicit val highSoundness = HighSoundnessMode("class")
+    )(implicit state: TACAIBasedCGState[ContextType], indirectCalls: IndirectCalls): MethodMatcher = {
+        implicit val highSoundness: Boolean = HighSoundnessMode("class")
         MatcherUtil.retrieveClassBasedMethodMatcher(
             data._8,
             data._7,
@@ -1239,7 +1239,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         callPC:           Int,
         params:           Seq[Option[(ValueInformation, IntTrieSet)]],
         baseMatchers:     Set[MethodMatcher]
-    )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Unit = {
+    )(implicit indirectCalls: IndirectCalls, state: TACAIBasedCGState[ContextType]): Unit = {
         if (HighSoundnessMode.contains(highSoundnessKey)) {
             addCalls(state.callContext, callPC, baseMatchers + AllMethodsMatcher, params)
         } else {
@@ -1255,7 +1255,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         descriptorOpt:          Option[MethodDescriptor],
         isSignaturePolymorphic: Boolean,
         stmts:                  Array[Stmt[V]]
-    )(implicit state: CGState[ContextType], indirectCalls: IndirectCalls): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType], indirectCalls: IndirectCalls): Unit = {
         // IMPROVE: for signature polymorphic calls, we could also use the method descriptor (return type)
         val actualInvokeParamsOpt =
             if (isSignaturePolymorphic) Some(invokeParams.map(_.map(_.asVar)))
@@ -1311,7 +1311,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         persistentActualParams: Seq[Option[(ValueInformation, IntTrieSet)]],
         baseMatchers:           Set[MethodMatcher],
         stmts:                  Array[Stmt[V]]
-    )(implicit indirectCalls: IndirectCalls, state: CGState[ContextType]): Set[MethodMatcher] = {
+    )(implicit indirectCalls: IndirectCalls, state: TACAIBasedCGState[ContextType]): Set[MethodMatcher] = {
         var matchers = baseMatchers
 
         val definition = stmts(methodHandleDefSite).asAssignment.expr
@@ -1338,7 +1338,10 @@ class MethodHandleInvokeAnalysis private[analyses] (
                                 if (rcvr.isNull.isYes) Set.empty[ClassType]
                                 else if (rcvr.leastUpperType.get.isArrayType) Set(ClassType.Object)
                                 else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asClassType)
-                                else project.classHierarchy.allSubtypes(rcvr.leastUpperType.get.asClassType, true)
+                                else project.classHierarchy.allSubtypes(
+                                    rcvr.leastUpperType.get.asClassType,
+                                    reflexive = true
+                                )
                             )
                         } else
                             None
@@ -1423,7 +1426,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                     project
                 )
                 if (!matchers.contains(NoMethodsMatcher)) {
-                    implicit val highSoundness = HighSoundnessMode("method")
+                    implicit val highSoundness: Boolean = HighSoundnessMode("method")
                     matchers +=
                         (if (isConstructor) MatcherUtil.constructorMatcher
                          else MatcherUtil.retrieveNameBasedMethodMatcher(
@@ -1452,7 +1455,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                                         else if (rcvr.isPrecise) Set(rcvr.leastUpperType.get.asClassType)
                                         else project.classHierarchy.allSubtypes(
                                             rcvr.leastUpperType.get.asClassType,
-                                            true
+                                            reflexive = true
                                         )
                                     )
                                 }

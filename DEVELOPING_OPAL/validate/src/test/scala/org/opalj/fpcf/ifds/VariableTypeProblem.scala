@@ -13,11 +13,11 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.AbstractIFDSNullFact
 import org.opalj.ifds.Callable

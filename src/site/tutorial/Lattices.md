@@ -19,7 +19,7 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
 ```
 We use it to provide the type of the property.
 
-Second, the property companion object provides the [PropertyKey]():
+Second, the property companion object provides the [PropertyKey](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyKey.html):
 ```scala
 object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
     final val key: PropertyKey[ClassImmutability] = PropertyKey.create(
@@ -99,7 +99,7 @@ override def checkIsEqualOrBetterThan(e: Entity, other: ClassImmutability): Unit
 ```
 However, it may be better to provide optimized implementations for your individual lattice values if the `meet` operation is not trivial.
 
-The second option to consider is [`AggregatedProperty`](/library/api/SNAPSHOT/org/opalj/br/fpcf/properties/AggregatedProperty.html).  
+The second option to consider is [`AggregatedProperty`](/library/api/SNAPSHOT/org/opalj/fpcf/AggregatedProperty.html).  
 Some properties really represent an aggregation of another property, e.g., `ClassImmutability` aggregates the `FieldImmutability` of a class' instance fields.  
 In such cases, one often needs to convert between corresponding values of the two lattices.  
 Also, the partial order and thus `meet` operator are equivalent and need to be defined only once.

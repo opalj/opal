@@ -1,17 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
 package fpcf
 
 import com.typesafe.config.Config
 
-import org.opalj.br.analyses.ProjectInformationKey
-import org.opalj.br.analyses.SomeProject
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.si.Project
+import org.opalj.si.ProjectInformationKey
 
 import net.ceedubs.ficus.Ficus._
 
@@ -24,7 +21,7 @@ import net.ceedubs.ficus.Ficus._
  * @author Michael Eichberg
  */
 object PropertyStoreKey
-    extends ProjectInformationKey[PropertyStore, (List[PropertyStoreContext[AnyRef]]) => PropertyStore] {
+    extends ProjectInformationKey[Project, PropertyStore, (List[PropertyStoreContext[AnyRef]]) => PropertyStore] {
 
     final val configKey = "org.opalj.fpcf.PropertyStore.Default"
 
@@ -42,16 +39,18 @@ object PropertyStoreKey
      *
      * @return `Nil`.
      */
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: Project): Seq[ProjectInformationKey[Project, Nothing, Nothing]] = Nil
 
     /**
      * Creates a new empty property store using the current [[parallelismLevel]].
      */
-    override def compute(project: SomeProject): PropertyStore = {
+    override def compute(project: Project): PropertyStore = {
         implicit val logContext: LogContext = project.logContext
 
         val context: List[PropertyStoreContext[AnyRef]] = List(
-            PropertyStoreContext(classOf[SomeProject], project),
+            // The project is stored twice, once as a generic [[org.opalj.si.Project]] and once for its concrete class
+            PropertyStoreContext(classOf[Project], project),
+            PropertyStoreContext(project.getClass.asInstanceOf[Class[Project]], project),
             PropertyStoreContext(classOf[Config], project.config)
         )
         project.getProjectInformationKeyInitializationData(this) match {

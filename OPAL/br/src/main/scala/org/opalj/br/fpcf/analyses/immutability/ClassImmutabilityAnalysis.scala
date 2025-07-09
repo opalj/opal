@@ -397,8 +397,8 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         val unexpectedRootClassTypes = rootClassTypesIterator.filter(rt => rt ne ClassType.Object)
 
         unexpectedRootClassTypes foreach { rt =>
-            allSubtypes(rt, reflexive = true) foreach { ot =>
-                project.classFile(ot) foreach { cf => set(cf.thisType, MutableClass) }
+            allSubtypes(rt, reflexive = true) foreach { ct =>
+                project.classFile(ct) foreach { cf => set(cf.thisType, MutableClass) }
             }
         }
 
@@ -408,7 +408,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         classHierarchy
             .directSubclassesOf(ClassType.Object)
             .iterator
-            .map(ot => (ot, project.classFile(ot)))
+            .map(ct => (ct, project.classFile(ct)))
             .foreach {
                 case (_, Some(cf)) => cfs ::= cf
                 case (t, None)     =>
@@ -434,13 +434,13 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
+        analysis: org.opalj.fpcf.FPCFAnalysis
     ): Unit = {}
+
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: org.opalj.fpcf.FPCFAnalysis): Unit = {}
 }
 
 /**

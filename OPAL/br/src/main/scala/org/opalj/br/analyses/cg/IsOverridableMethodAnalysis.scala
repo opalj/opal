@@ -43,14 +43,14 @@ private[analyses] class IsOverridableMethodAnalysis(
 
         val worklist = mutable.Queue.empty[ClassType]
 
-        def addDirectSubclasses(ot: ClassType): Unit = {
-            classHierarchy.directSubclassesOf(ot).foreach(worklist.enqueue(_))
+        def addDirectSubclasses(ct: ClassType): Unit = {
+            classHierarchy.directSubclassesOf(ct).foreach(worklist.enqueue(_))
         }
 
         while (worklist.nonEmpty) {
-            val ot = worklist.dequeue()
-            if (isTypeExtensible(ot).isYesOrUnknown) {
-                val cf = project.classFile(ot)
+            val ct = worklist.dequeue()
+            if (isTypeExtensible(ct).isYesOrUnknown) {
+                val cf = project.classFile(ct)
                 val subtypeMethod = cf.flatMap(_.findMethod(methodName, methodDescriptor))
                 if (subtypeMethod.isEmpty || !subtypeMethod.get.isFinal ||
                     subtypeMethod.get.isPrivate || // private methods don't override
@@ -63,7 +63,7 @@ private[analyses] class IsOverridableMethodAnalysis(
                                 // ... the original method is package private
                                 // ... both methods are defined in different packages
                                 // ... the subtypeMethod is protected or public
-                                val candidateMethods = instanceMethods(ot).iterator.filter(mdc =>
+                                val candidateMethods = instanceMethods(ct).iterator.filter(mdc =>
                                     mdc.name == methodName && mdc.descriptor == methodDescriptor
                                 )
                                 // if we still have the original method in the list then this method
@@ -74,10 +74,10 @@ private[analyses] class IsOverridableMethodAnalysis(
                 ) {
                     // the type as a whole is extensible and
                     // the method is not (finally) overridden by this type...
-                    isClassExtensible(ot) match {
+                    isClassExtensible(ct) match {
                         case Yes     => return No;
                         case Unknown => return Unknown;
-                        case No      => addDirectSubclasses(ot)
+                        case No      => addDirectSubclasses(ct)
                     }
                 }
                 // ... if the method is final we do not need to consider further subtypes
@@ -92,14 +92,14 @@ private[analyses] class IsOverridableMethodAnalysis(
         if (method.isPrivate || method.isStatic || method.isInitializer || method.isFinal)
             return No;
 
-        val ot = method.declaringClassFile.thisType
-        val isExtensibleType = isTypeExtensible(ot)
+        val ct = method.declaringClassFile.thisType
+        val isExtensibleType = isTypeExtensible(ct)
 
         if (isExtensibleType.isNoOrUnknown)
             // We "inherit" the (non/unknown)extensibility of the class in this case:
             return isExtensibleType;
 
         // the type is extensible... Let's check the method:
-        isAlwaysFinallyOverridden(ot, method).negate
+        isAlwaysFinallyOverridden(ct, method).negate
     }
 }

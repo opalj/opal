@@ -317,7 +317,7 @@ Because OPAL doesn't know in advance that we will only ever query the property s
 Thus, we provide a second entry point to our analysis, `lazilyAnalyzeClassImmutability`, that takes any type of entity and, if it is a classfile, analyzes it.  
 We just throw an exception if the entity is not a classfile, as we can only process classfiles.
 
-Now we are ready to implement a [`FPCFLazyAnalysisScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFLazyAnalysisScheduler.html):
+Now we are ready to implement an [`FPCFLazyAnalysisScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFLazyAnalysisScheduler.html):
 ```scala
 object LazyClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
 
@@ -338,7 +338,7 @@ As before, we finally have to return the analysis.
 ## Running the Analysis
 
 Finally it is time to try our analysis.  
-To do so easily, we extend [ProjectAnalysisApplication]() which provides us with an implicit `main` method that parses parameters for us, most importantly the "-cp=<some path>" parameter that lets users specify the path to a project that they want to analyze.
+To do so easily, we extend [ProjectAnalysisApplication](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectAnalysisApplication.html) which provides us with an implicit `main` method that parses parameters for us, most importantly the "-cp=<some path>" parameter that lets users specify the path to a project that they want to analyze.
 ```scala
 object ClassImmutabilityRunner extends ProjectAnalysisApplication { 
     override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = { [...] }
@@ -356,7 +356,7 @@ override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterru
     [...]
 }
 ```
-We use the [`FPCFAnalysesManagerKey`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFAnalysesManagerKey$.html) to get an [`FPCFAnalysesManager`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFAnalysesManager.html) that will run our analyses.  
+We use the [`FPCFAnalysesManagerKey`](/library/api/SNAPSHOT/org/opalj/fpcf/FPCFAnalysesManagerKey$.html) to get an [`FPCFAnalysesManager`](/library/api/SNAPSHOT/org/opalj/fpcf/FPCFAnalysesManager.html) that will run our analyses.  
 We just pass all analyses that we want to execute to the `runAll` method.  
 Note that we assume that a `LazyFieldImmutabilityAnalysis` has been implemented as well.  
 As long as that doesn't exist, you can remove that line and OPAL will use the fallback value of the `FieldImmutability` lattice whenever a field immutability is queried.

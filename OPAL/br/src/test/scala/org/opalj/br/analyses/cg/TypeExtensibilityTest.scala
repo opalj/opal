@@ -97,45 +97,45 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
 
         it("a package visible class should NOT be transitively extensible when all subclasses" +
             " are (effectively) final") {
-            val classOt = ClassType(s"${testPackage}case2/Class")
-            val interfaceOt = ClassType(s"${testPackage}case2/Interface")
+            val classCt = ClassType(s"${testPackage}case2/Class")
+            val interfaceCt = ClassType(s"${testPackage}case2/Interface")
 
-            isExtensible(classOt) should be(No)
-            isExtensible(interfaceOt) should be(No)
+            isExtensible(classCt) should be(No)
+            isExtensible(interfaceCt) should be(No)
         }
 
         it("a non-final public class is transitively extensible even when all subclasses are NOT") {
-            val pClassOt = ClassType(s"${testPackage}case3/PublicClass")
+            val pClassCt = ClassType(s"${testPackage}case3/PublicClass")
 
-            val pfClassOt = ClassType(s"${testPackage}case3/PublicFinalClass")
-            val classOt = ClassType(s"${testPackage}case3/Class")
-            val pEfClassOt = ClassType(s"${testPackage}case3/EffectivelyFinalClass")
+            val pfClassCt = ClassType(s"${testPackage}case3/PublicFinalClass")
+            val classCt = ClassType(s"${testPackage}case3/Class")
+            val pEfClassCt = ClassType(s"${testPackage}case3/EffectivelyFinalClass")
 
-            isExtensible(pClassOt) should be(Yes)
+            isExtensible(pClassCt) should be(Yes)
 
-            isExtensible(pfClassOt) should be(No)
-            isExtensible(classOt) should be(No)
-            isExtensible(pEfClassOt) should be(No)
+            isExtensible(pfClassCt) should be(No)
+            isExtensible(classCt) should be(No)
+            isExtensible(pEfClassCt) should be(No)
         }
 
         it("a non-final package visible class must be transitively extensible even if only one subtype" +
             "is extensible") {
 
-            val rootOt = ClassType(s"${testPackage}case5/TransitivelyExtensible")
+            val rootCt = ClassType(s"${testPackage}case5/TransitivelyExtensible")
 
-            val pClassOt = ClassType(s"${testPackage}case5/PublicClass")
-            val pfClassOt = ClassType(s"${testPackage}case5/PublicFinalClass")
+            val pClassCt = ClassType(s"${testPackage}case5/PublicClass")
+            val pfClassCt = ClassType(s"${testPackage}case5/PublicFinalClass")
 
-            isExtensible(pClassOt) should be(Yes)
-            isExtensible(pfClassOt) should be(No)
+            isExtensible(pClassCt) should be(Yes)
+            isExtensible(pfClassCt) should be(No)
 
-            isExtensible(rootOt) should be(Yes)
+            isExtensible(rootCt) should be(Yes)
         }
 
         it("a non-final package visible class must be transitively extensible even if only one subtype" +
             "is extensible and the type hierarchy is large") {
 
-            val rootOt = ClassType(s"${testPackage}case6/TransitivelyExtensible")
+            val rootCt = ClassType(s"${testPackage}case6/TransitivelyExtensible")
 
             val directSt1 = ClassType(s"${testPackage}case6/HiddenSubclass")
             val directSt2 = ClassType(s"${testPackage}case6/PublicFinalClass")
@@ -143,7 +143,7 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
             isExtensible(directSt1) should be(Yes)
             isExtensible(directSt2) should be(No)
 
-            isExtensible(rootOt) should be(Yes)
+            isExtensible(rootCt) should be(Yes)
         }
     }
 
@@ -160,13 +160,13 @@ class TypeExtensibilityTest extends AnyFunSpec with Matchers {
         val isClassExtensible = project.get(ClassExtensibilityKey)
 
         it("a package visible class should be transitively extensible") {
-            val case1_classOt = ClassType(s"${testPackage}case1/Class")
-            val case2_classOt = ClassType(s"${testPackage}case2/Class")
-            val case2_interfaceOt = ClassType(s"${testPackage}case2/Interface")
+            val case1_classCt = ClassType(s"${testPackage}case1/Class")
+            val case2_classCt = ClassType(s"${testPackage}case2/Class")
+            val case2_interfaceCt = ClassType(s"${testPackage}case2/Interface")
 
-            isExtensible(case1_classOt) should be(Yes)
-            isExtensible(case2_classOt) should be(Yes)
-            isExtensible(case2_interfaceOt) should be(Yes)
+            isExtensible(case1_classCt) should be(Yes)
+            isExtensible(case2_classCt) should be(Yes)
+            isExtensible(case2_interfaceCt) should be(Yes)
         }
 
         it("a type from which an application type inherits from is (obviously) extensible") {
