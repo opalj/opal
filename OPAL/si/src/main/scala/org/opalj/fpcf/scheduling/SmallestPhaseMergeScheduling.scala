@@ -7,8 +7,8 @@ import org.opalj.collection.IntIterator
 import org.opalj.graphs.sccs
 
 /**
- * Single Phase Scheduling (SPS) Strategy.
- * Schedules all computations in a single batch without considering dependencies.
+ * Smallest Phase Merge Scheduling (SPS) Strategy.
+ * Merging batches based on the number of analyses to keep merged batches of similar sizes.
  */
 class SmallestPhaseMergeScheduling[A](ps: PropertyStore, scheduleLazyTransformerInAllBatches: Boolean)
     extends AnalysisScenario[A](ps) with SchedulingStrategy[A] {

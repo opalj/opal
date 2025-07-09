@@ -71,7 +71,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 analysis2phase += 1
         }
 
-        if (!(analysis1phase <= analysis2phase))
+        if (analysis1phase > analysis2phase)
             fail(s"$analysis1 is not scheduled before or in the same batch as $analysis2!")
     }
 
@@ -102,7 +102,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 analysis2phase += 1
         }
 
-        if (!(analysis1phase < analysis2phase))
+        if (analysis1phase >= analysis2phase)
             fail(s"$analysis1 is not scheduled before $analysis2!")
     }
 
@@ -141,7 +141,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
             }
         }
 
-        if (!(analysis1phase == analysis2phase))
+        if (analysis1phase != analysis2phase)
             fail(s"$analysis1 is not scheduled in the same batch as $analysis2!")
 
     }

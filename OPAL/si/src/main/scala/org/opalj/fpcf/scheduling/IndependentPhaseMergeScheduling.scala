@@ -7,8 +7,8 @@ import org.opalj.collection.IntIterator
 import org.opalj.graphs.sccs
 
 /**
- * Single Phase Scheduling (SPS) Strategy.
- * Schedules all computations in a single batch without considering dependencies.
+ * Independent Phase Merge Scheduling (IPMS) Strategy.
+ * Merges independent batches to optimize parallelism.
  */
 class IndependentPhaseMergeScheduling[A](ps: PropertyStore, scheduleLazyTransformerInAllBatches: Boolean)
     extends AnalysisScenario[A](ps) with SchedulingStrategy[A] {

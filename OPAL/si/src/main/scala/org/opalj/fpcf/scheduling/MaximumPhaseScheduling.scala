@@ -7,8 +7,8 @@ import org.opalj.collection.IntIterator
 import org.opalj.graphs.sccs
 
 /**
- * Single Phase Scheduling (SPS) Strategy.
- * Schedules all computations in a single batch without considering dependencies.
+ * Maximum Phase Scheduling (MPS) Strategy.
+ * Breaks down computations into as many phases as possible based on dependencies and computation types.
  */
 
 class MaximumPhaseScheduling[A](ps: PropertyStore, scheduleLazyTransformerInAllBatches: Boolean)
