@@ -5,19 +5,22 @@ package info
 
 import java.net.URL
 
-import org.opalj.br.Method
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.collection.TypesSet
-import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
-import org.opalj.br.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
+import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.properties.{ThrownExceptions => ThrownExceptionsProperty}
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.SomeEPS
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -57,18 +60,21 @@ object ThrownExceptions extends ProjectAnalysisApplication {
     ): BasicReport = {
         var executionTime: Nanoseconds = Nanoseconds.None
         val ps: PropertyStore = time {
-
             if (parameters.contains(AnalysisLevelL0)) {
                 // We are relying on/using the "FallbackAnalysis":
                 val ps = project.get(PropertyStoreKey)
+                val declaredMethods = project.get(DeclaredMethodsKey)
+                val contextProvider = project.get(ContextProviderKey)
                 ps.setupPhase(Set.empty[PropertyKind]) // <= ALWAYS REQUIRED.
                 // We have to query the properties...
-                project.allMethods foreach { m => ps.force(m, ThrownExceptionsProperty.key) }
+                project.allMethods foreach { m =>
+                    ps.force(contextProvider.newContext(declaredMethods(m)), ThrownExceptionsProperty.key)
+                }
                 ps.waitOnPhaseCompletion()
                 ps
             } else /* if no analysis level is specified or L1 */ {
+                project.get(RTACallGraphKey)
                 val (ps, _) = project.get(FPCFAnalysesManagerKey).runAll(
-                    LazyVirtualMethodThrownExceptionsAnalysis,
                     EagerL1ThrownExceptionsAnalysis
                 )
                 ps
@@ -80,22 +86,23 @@ object ThrownExceptions extends ProjectAnalysisApplication {
             allMethods.partition(_.ub.throwsNoExceptions)
         val epsThrowingExceptions = otherEPS.filter(eps => eps.lb.types != TypesSet.SomeException)
 
-        val methodsThrowingExceptions = epsThrowingExceptions.map(_.e.asInstanceOf[Method])
-        val privateMethodsThrowingExceptionsCount = methodsThrowingExceptions.count(_.isPrivate)
+        val methodsThrowingExceptions = epsThrowingExceptions.map(_.e.asInstanceOf[Context])
+        val privateMethodsThrowingExceptionsCount = methodsThrowingExceptions.count(_.method.definedMethod.isPrivate)
 
         val privateMethodsNotThrowingExceptions =
-            epsNotThrowingExceptions.map(_.e.asInstanceOf[Method]).filter(_.isPrivate)
+            epsNotThrowingExceptions.map(_.e.asInstanceOf[Context]).filter(_.method.definedMethod.isPrivate)
 
         val perMethodsReport =
             if (parameters.contains(SuppressPerMethodReports))
                 ""
             else {
-                val epsThrowingExceptionsByClassFile = epsThrowingExceptions groupBy (_.e.asInstanceOf[Method].classFile)
+                val epsThrowingExceptionsByClassFile =
+                    epsThrowingExceptions groupBy (_.e.asInstanceOf[Context].method.definedMethod.classFile)
                 epsThrowingExceptionsByClassFile.map { e =>
                     val (cf, epsThrowingExceptionsPerMethod) = e
                     cf.thisType.toJava + "{" +
                         epsThrowingExceptionsPerMethod.map { (eps: SomeEPS) =>
-                            val m: Method = eps.e.asInstanceOf[Method]
+                            val m: DeclaredMethod = eps.e.asInstanceOf[Context].method
                             val ThrownExceptionsProperty(types) = eps.ub
                             m.descriptor.toJava(m.name) + " throws " + types.toString
                         }.toList.sorted.mkString("\n\t\t", "\n\t\t", "\n") +
