@@ -377,7 +377,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             propertyKindsComputedInThisPhase = propertyKindsFromPhaseAnalysis,
             suppressInterimUpdates = suppressInterimUpdates,
             propertyKindsComputedInLaterPhase = propertyKindsFromNextPhaseAnalysis,
-            collaborativelyComputedPropertyKindsFinalizationOrder = List(collabProperties.toList)
+            collaborativelyComputedPropertyKindsFinalizationOrder = List(collabProperties.toList) // FIXME: Compute actual subphase finalization order
         )
 
         PhaseConfiguration(phase1Configuration, batchBuilder.result())
