@@ -176,11 +176,11 @@ object CallGraph extends ProjectsAnalysisApplication {
         }
 
         if (analysisConfig.get(ResultFileArg).isDefined) {
-            CallGraphSerializer.writeCG(cg, ResultFileArg.getResultFile(analysisConfig, execution))
+            CallGraphSerializer.writeCG(cg, ResultFileArg.getFile(analysisConfig, execution))
         }
 
         if (analysisConfig.get(OutputFileArg).isDefined) {
-            val output = OutputFileArg.getOutputFile(analysisConfig, execution)
+            val output = OutputFileArg.getFile(analysisConfig, execution)
             val newOutputFile = !output.exists()
             val outputWriter = new PrintWriter(new FileOutputStream(output, true))
             try {

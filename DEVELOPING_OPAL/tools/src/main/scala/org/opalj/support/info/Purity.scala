@@ -265,7 +265,7 @@ object Purity extends ProjectsAnalysisApplication {
             // WRITE ANALYSIS OUTPUT
 
             var outputFileName = "purityResults"
-            if (execution != 1) {
+            if (execution != 0) {
                 outputFileName += s"_$execution"
             }
             val output = new File(projectEvalDir.get, s"$outputFileName.csv")
@@ -312,7 +312,7 @@ object Purity extends ProjectsAnalysisApplication {
             val aggregated = !analysisConfig.get(IndividualArg, false)
 
             var resultFileName = "method-results"
-            if (execution != 1) {
+            if (execution != 0) {
                 resultFileName += s"_$execution"
             }
             val results = new File(projectEvalDir.get, s"$resultFileName.csv")
