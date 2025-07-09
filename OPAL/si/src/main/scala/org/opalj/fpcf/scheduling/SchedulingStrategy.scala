@@ -40,6 +40,7 @@ trait SchedulingStrategy {
         currentPhaseAnalyses foreach {
             case cs if cs.computationType == Transformer =>
                 suppressInterimUpdates += (cs.derivesLazily.get.pk -> cs.uses(ps).map(_.pk))
+            case _ =>
         }
 
         def extractPropertyKinds(analyses: Set[ComputationSpecification[A]]): Set[PropertyKind] = {

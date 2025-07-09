@@ -2,16 +2,14 @@
 package org.opalj
 package fpcf
 
+import com.typesafe.config.Config
+
 import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
 import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleStrategy
-import org.opalj.fpcf.scheduling.IndependentPhaseMergeScheduling
-import org.opalj.fpcf.scheduling.MaximumPhaseScheduling
-import org.opalj.fpcf.scheduling.SinglePhaseScheduling
-import org.opalj.fpcf.scheduling.SmallestPhaseMergeScheduling
+import org.opalj.fpcf.scheduling.SchedulingStrategy
 import org.opalj.graphs.Graph
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.si.Project
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -39,8 +37,6 @@ class AnalysisScenario[A](val ps: PropertyStore) {
     private[this] var lazyCS: Set[ComputationSpecification[A]] = Set.empty
     private[this] var triggeredCS: Set[ComputationSpecification[A]] = Set.empty
     private[this] var transformersCS: Set[ComputationSpecification[A]] = Set.empty
-
-    private[this] var scheduleBatches: List[PhaseConfiguration[A]] = List.empty
 
     private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = {
         Map.empty
@@ -234,7 +230,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             scheduleComputed = true
         }
 
-        time {
+        val scheduledBatches = if (allCS.isEmpty) List.empty
+        else time {
             allCS.foreach(processCS)
 
             val alreadyComputedPropertyKinds = propertyStore.alreadyComputedPropertyKindIds.toSet
@@ -260,7 +257,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                 }
             }
 
-            implicit val config = propertyStore.context(classOf[Project]).config
+            implicit val config = propertyStore.context(classOf[Config])
 
             val analysisAutoConfig = config.getBoolean(AnalysisAutoConfigKey)
             val underivedProperties = usedProperties -- derivedProperties
@@ -287,44 +284,26 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     }
                 }
 
-            // This code implements different scheduling strategies for batching computations based on their dependencies and properties.
+            val schedulingStrategy = instantiateSchedulingStrategy(config.getString(AnalysisScheduleStrategy))
+            OPALLogger.info("scheduler", s"scheduling strategy ${schedulingStrategy} is selected")
 
-            val scheduleStrategy = config.getAnyRef(AnalysisScheduleStrategy)
-
-            // The match statement handles three main scheduling strategies: "SPS", "MPS", "IPMS", and "SPMS".
-            // Each strategy defines how computations are scheduled into batches based on their dependencies and other constraints.
-            scheduleStrategy match {
-                case "SPS" =>
-                    // SPS (Single Phase Scheduling) schedules all computations in a single batch.
-                    val spsStrategy = SinglePhaseScheduling
-                    this.scheduleBatches = spsStrategy.schedule(ps, allCS)
-
-                case "MPS" =>
-                    // MPS (Maximum Phase Scheduling) breaks down computations into multiple phases based on dependencies and computation types.
-                    val mpsStrategy = MaximumPhaseScheduling
-                    this.scheduleBatches = mpsStrategy.schedule(ps, allCS)
-
-                case "IPMS" =>
-                    // IPMS (Independent Phase Merge Scheduling) extends MPS by merging independent batches to optimize parallelism.
-                    val ipmsStrategy = IndependentPhaseMergeScheduling
-                    this.scheduleBatches = ipmsStrategy.schedule(ps, allCS)
-
-                case "SPMS" =>
-                    // SPMS (Smallest Phase Merge Scheduling) further optimizes phases merging batches based on the amount of analysis.
-                    val spmsStrategy = SmallestPhaseMergeScheduling
-                    this.scheduleBatches = spmsStrategy.schedule(ps, allCS)
-
-                case _ => throw new IllegalStateException(s"Invalid scheduler configuration: $scheduleStrategy");
-            }
-
-            OPALLogger.info("scheduler", s"scheduling strategy ${scheduleStrategy} is selected")
-
+            schedulingStrategy.schedule(ps, allCS)
         } { t => OPALLogger.info("scheduler", s"computation of schedule took ${t.toSeconds}") }
 
         Schedule(
-            scheduleBatches,
+            scheduledBatches,
             initializationData
         )
+    }
+
+    /**
+     * Reflectively instantiates a ''SchedulingStrategy'' object.
+     */
+    private[this] def instantiateSchedulingStrategy(fqn: String): SchedulingStrategy = {
+        import scala.reflect.runtime.universe._
+        val mirror = runtimeMirror(this.getClass.getClassLoader)
+        val module = mirror.staticModule(fqn)
+        mirror.reflectModule(module).instance.asInstanceOf[SchedulingStrategy]
     }
 }
 
