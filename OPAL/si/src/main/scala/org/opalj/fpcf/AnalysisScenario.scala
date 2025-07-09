@@ -3,7 +3,6 @@ package org.opalj
 package fpcf
 
 import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
-import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatches
 import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleStrategy
 import org.opalj.fpcf.scheduling.IndependentPhaseMergeScheduling
 import org.opalj.fpcf.scheduling.MaximumPhaseScheduling
@@ -12,6 +11,7 @@ import org.opalj.fpcf.scheduling.SmallestPhaseMergeScheduling
 import org.opalj.graphs.Graph
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.si.Project
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -260,7 +260,9 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                 }
             }
 
-            val analysisAutoConfig = BaseConfig.getBoolean(AnalysisAutoConfigKey)
+            implicit val config = propertyStore.context(classOf[Project]).config
+
+            val analysisAutoConfig = config.getBoolean(AnalysisAutoConfigKey)
             val underivedProperties = usedProperties -- derivedProperties
             underivedProperties
                 .filterNot { underivedProperty => alreadyComputedPropertyKinds.contains(underivedProperty.pk.id) }
@@ -287,42 +289,37 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
             // This code implements different scheduling strategies for batching computations based on their dependencies and properties.
 
-            val scheduleStrategy = BaseConfig.getAnyRef(AnalysisScheduleStrategy)
-            val scheduleLazyTransformerInAllBatches =
-                BaseConfig.getBoolean(AnalysisScheduleLazyTransformerInMultipleBatches)
+            val scheduleStrategy = config.getAnyRef(AnalysisScheduleStrategy)
 
             // The match statement handles three main scheduling strategies: "SPS", "MPS", "IPMS", and "SPMS".
             // Each strategy defines how computations are scheduled into batches based on their dependencies and other constraints.
             scheduleStrategy match {
-                case SinglePhaseScheduling.name =>
+                case "SPS" =>
                     // SPS (Single Phase Scheduling) schedules all computations in a single batch.
-                    val spsStrategy = new SinglePhaseScheduling[A](ps)
+                    val spsStrategy = SinglePhaseScheduling
                     this.scheduleBatches = spsStrategy.schedule(ps, allCS)
 
-                case MaximumPhaseScheduling.name =>
+                case "MPS" =>
                     // MPS (Maximum Phase Scheduling) breaks down computations into multiple phases based on dependencies and computation types.
-                    val mpsStrategy = new MaximumPhaseScheduling[A](ps, scheduleLazyTransformerInAllBatches)
+                    val mpsStrategy = MaximumPhaseScheduling
                     this.scheduleBatches = mpsStrategy.schedule(ps, allCS)
 
-                case IndependentPhaseMergeScheduling.name =>
+                case "IPMS" =>
                     // IPMS (Independent Phase Merge Scheduling) extends MPS by merging independent batches to optimize parallelism.
-                    val ipmsStrategy = new IndependentPhaseMergeScheduling[A](ps, scheduleLazyTransformerInAllBatches)
+                    val ipmsStrategy = IndependentPhaseMergeScheduling
                     this.scheduleBatches = ipmsStrategy.schedule(ps, allCS)
 
-                case SmallestPhaseMergeScheduling.name =>
+                case "SPMS" =>
                     // SPMS (Smallest Phase Merge Scheduling) further optimizes phases merging batches based on the amount of analysis.
-                    val spmsStrategy = new SmallestPhaseMergeScheduling[A](ps, scheduleLazyTransformerInAllBatches)
+                    val spmsStrategy = SmallestPhaseMergeScheduling
                     this.scheduleBatches = spmsStrategy.schedule(ps, allCS)
 
                 case _ => throw new IllegalStateException(s"Invalid scheduler configuration: $scheduleStrategy");
             }
 
-            OPALLogger.info(
-                "scheduler",
-                s"scheduling strategy ${scheduleStrategy} ${if (scheduleLazyTransformerInAllBatches) "with Lazy/Transformer in multiple phases"
-                    else ""} is selected"
-            )
-        } { t => OPALLogger.info("scheduler", s"initialization of Scheduler took ${t.toSeconds}") }
+            OPALLogger.info("scheduler", s"scheduling strategy ${scheduleStrategy} is selected")
+
+        } { t => OPALLogger.info("scheduler", s"computation of schedule took ${t.toSeconds}") }
 
         Schedule(
             scheduleBatches,

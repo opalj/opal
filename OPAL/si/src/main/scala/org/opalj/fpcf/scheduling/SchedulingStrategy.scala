@@ -3,7 +3,12 @@ package org.opalj
 package fpcf
 package scheduling
 
-trait SchedulingStrategy[A] {
+import com.typesafe.config.Config
+
+import org.opalj.log.LogContext
+
+trait SchedulingStrategy {
+
     /**
      * Schedules computations based on the strategy's specific algorithm.
      *
@@ -12,16 +17,16 @@ trait SchedulingStrategy[A] {
      * @return List of PhaseConfiguration representing the scheduled phases
      */
 
-    def schedule(
-        ps:    PropertyStore,
-        allCS: Set[ComputationSpecification[A]]
+    def schedule[A](ps: PropertyStore, allCS: Set[ComputationSpecification[A]])(implicit
+        config:     Config,
+        logContext: LogContext
     ): List[PhaseConfiguration[A]]
 
     /**
      * Computes the configuration for a specific batch; this method can only handle the situation
      * where all analyses can be executed in the same phase.
      */
-    protected def computePhase(
+    protected def computePhase[A](
         ps:                   PropertyStore,
         currentPhaseAnalyses: Set[ComputationSpecification[A]],
         nextPhaseAnalyses:    Set[ComputationSpecification[A]]
