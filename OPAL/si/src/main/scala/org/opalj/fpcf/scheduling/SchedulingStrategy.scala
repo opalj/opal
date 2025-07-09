@@ -1,12 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org
-package opalj
+package org.opalj
 package fpcf
 package scheduling
-
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.PhaseConfiguration
-import org.opalj.fpcf.PropertyStore
 
 trait SchedulingStrategy[A] {
     /**

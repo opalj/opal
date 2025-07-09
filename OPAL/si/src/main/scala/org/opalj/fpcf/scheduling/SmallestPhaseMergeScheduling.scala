@@ -1,17 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org
-package opalj
+package org.opalj
 package fpcf
 package scheduling
 
 import org.opalj.collection.IntIterator
-import org.opalj.fpcf.AnalysisScenario
-import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.LazyComputation
-import org.opalj.fpcf.PhaseConfiguration
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Transformer
 import org.opalj.graphs.sccs
 
 /**

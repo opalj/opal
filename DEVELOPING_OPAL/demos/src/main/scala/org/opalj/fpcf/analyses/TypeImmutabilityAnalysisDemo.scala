@@ -1,6 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org
-package opalj
+package org.opalj
 package fpcf
 package analyses
 
@@ -19,10 +18,6 @@ import org.opalj.br.fpcf.properties.immutability.MutableType
 import org.opalj.br.fpcf.properties.immutability.NonTransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
