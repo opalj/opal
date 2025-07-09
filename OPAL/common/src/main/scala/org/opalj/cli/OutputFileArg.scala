@@ -6,15 +6,25 @@ import java.io.File
 
 import org.rogach.scallop.fileConverter
 
-object OutputFileArg extends PlainArg[File] {
+object OutputFileArg extends OutputFileArgLike {
     override val name: String = "out"
     override val description: String = "File to write output to"
+}
 
-    def getOutputFile(config: OPALCommandLineConfig, execution: Int): File = {
-        var outputFile = config(OutputFileArg)
-        if (execution != 1) {
-            outputFile = new File(outputFile.getPath + s"_$execution")
+object ResultFileArg extends OutputFileArgLike {
+    override val name: String = "result"
+    override val description: String = "File to write result to"
+}
+
+trait OutputFileArgLike extends PlainArg[File] {
+    def getFile(config: OPALCommandLineConfig, execution: Int): File = {
+        var file = config(this)
+        if (execution != 0) {
+            val dir = file.getParentFile
+            val name = file.getName
+            val (baseName, extension) = name.splitAt(name.indexOf('.'))
+            file = new File(dir, s"${baseName}_$execution$extension")
         }
-        outputFile
+        file
     }
 }
