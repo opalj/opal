@@ -11,7 +11,7 @@ import org.scalatestplus.junit.JUnitRunner
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleStrategy
+import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleStrategyKey
 import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
 import org.opalj.fpcf.scheduling.IndependentPhaseMergeScheduling
 import org.opalj.fpcf.scheduling.MaximumPhaseScheduling
@@ -150,7 +150,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
         schedulingStrategy: SchedulingStrategy
     ): PropertyStoreConfigurationRecorder = {
         val config = BaseConfig.withValue(
-            AnalysisScheduleStrategy,
+            AnalysisScheduleStrategyKey,
             ConfigValueFactory.fromAnyRef(schedulingStrategy.getClass.getName)
         )
         new PropertyStoreConfigurationRecorder() {

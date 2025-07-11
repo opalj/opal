@@ -6,7 +6,7 @@ package scheduling
 import com.typesafe.config.Config
 
 import org.opalj.collection.IntIterator
-import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatches
+import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatchesKey
 import org.opalj.graphs.sccs
 import org.opalj.graphs.topologicalSort
 import org.opalj.log.LogContext
@@ -37,7 +37,7 @@ abstract class MaximumPhaseScheduling extends SchedulingStrategy {
             ))
         }
 
-        val scheduleLazyTransformerInAllBatches = config.getBoolean(AnalysisScheduleLazyTransformerInMultipleBatches)
+        val scheduleLazyTransformerInAllBatches = config.getBoolean(AnalysisScheduleLazyTransformerInMultipleBatchesKey)
         if (scheduleLazyTransformerInAllBatches)
             OPALLogger.info("scheduler", s"scheduling Lazy/Transformer analyses in multiple phases")
 
