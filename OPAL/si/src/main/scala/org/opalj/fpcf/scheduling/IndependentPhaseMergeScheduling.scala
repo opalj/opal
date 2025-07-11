@@ -17,10 +17,10 @@ abstract class IndependentPhaseMergeScheduling extends MaximumPhaseScheduling {
         var transformingMap = nodeIndexMap
         var counter = batchCount
 
-        def mergeIndependentBatches_rek(
-            graph: Map[Int, List[Int]]
-        ): Map[Int, List[Int]] = {
+        var updatedGraph: Map[Int, List[Int]] = dependencyGraph
+        var couldBeMerged: List[(Int, Int)] = List.empty
 
+        do {
             def getUses(batch: Int, graph: Map[Int, List[Int]]): Set[Int] = {
                 val directUses = graph.getOrElse(batch, List.empty).toSet
                 val recursiveUses = directUses.flatMap(otherBatch => getUses(otherBatch, graph))
@@ -28,12 +28,12 @@ abstract class IndependentPhaseMergeScheduling extends MaximumPhaseScheduling {
             }
 
             var map: Map[Int, Set[Int]] = Map.empty
-            graph.foreach { batch =>
-                val tempUses = getUses(batch._1, graph)
+            updatedGraph.foreach { batch =>
+                val tempUses = getUses(batch._1, updatedGraph)
                 map = map + (batch._1 -> tempUses)
             }
 
-            var couldBeMerged: List[(Int, Int)] = List.empty
+            couldBeMerged = List.empty
             map.foreach { batch =>
                 map.foreach { subBatch =>
                     if (subBatch != batch) {
@@ -49,9 +49,8 @@ abstract class IndependentPhaseMergeScheduling extends MaximumPhaseScheduling {
 
             }
 
-            var updatedGraph: Map[Int, List[Int]] = graph
             if (couldBeMerged.nonEmpty) {
-                val toBeMerged = nextToMerge(couldBeMerged, transformingMap)
+                val toBeMerged = nextPhasesToMerge(couldBeMerged, transformingMap)
 
                 val tempTransformation_2 = (transformingMap.get(toBeMerged._1).head ++
                     transformingMap.get(toBeMerged._2).head).distinct
@@ -59,8 +58,8 @@ abstract class IndependentPhaseMergeScheduling extends MaximumPhaseScheduling {
                     transformingMap - toBeMerged._1 - toBeMerged._2
                 transformingMap = transformingMap + (counter -> tempTransformation_2)
 
-                val tempGraph_2: List[Int] = (graph.get(toBeMerged._1).head ++
-                    graph.get(toBeMerged._2).head).distinct
+                val tempGraph_2: List[Int] = (updatedGraph.get(toBeMerged._1).head ++
+                    updatedGraph.get(toBeMerged._2).head).distinct
                 updatedGraph = updatedGraph - toBeMerged._1 - toBeMerged._2
                 updatedGraph = updatedGraph + (counter -> tempGraph_2)
 
@@ -73,15 +72,15 @@ abstract class IndependentPhaseMergeScheduling extends MaximumPhaseScheduling {
                 replaceIdInMap(toBeMerged._1, counter)
                 replaceIdInMap(toBeMerged._2, counter)
                 counter = counter + 1
-                updatedGraph = mergeIndependentBatches_rek(updatedGraph)
             }
-            updatedGraph
-        }
-        (mergeIndependentBatches_rek(dependencyGraph), transformingMap)
+
+        } while (couldBeMerged.nonEmpty)
+
+        (updatedGraph, transformingMap)
     }
 
-    def nextToMerge(couldBeMerged: List[(Int, Int)], transformingMap: Map[Int, List[Int]]): (Int, Int) = {
-        couldBeMerged.head
+    def nextPhasesToMerge(independentPhases: List[(Int, Int)], transformingMap: Map[Int, List[Int]]): (Int, Int) = {
+        independentPhases.head
     }
 }
 

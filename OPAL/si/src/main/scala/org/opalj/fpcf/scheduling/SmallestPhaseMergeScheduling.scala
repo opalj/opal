@@ -9,10 +9,10 @@ package scheduling
  */
 abstract class SmallestPhaseMergeScheduling extends IndependentPhaseMergeScheduling {
 
-    override def nextToMerge(couldBeMerged: List[(Int, Int)], transformingMap: Map[Int, List[Int]]): (Int, Int) = {
+    override def nextPhasesToMerge(independentPhases: List[(Int, Int)], transformingMap: Map[Int, List[Int]]): (Int, Int) = {
         var twoBatchesWithLeastAmountOfAnalysis = (0, 0)
         var otherSize = 0
-        couldBeMerged.foreach { tuple =>
+        independentPhases.foreach { tuple =>
             if (otherSize == 0) {
                 twoBatchesWithLeastAmountOfAnalysis = tuple
                 otherSize = transformingMap.get(tuple._1).head.size + transformingMap.get(
