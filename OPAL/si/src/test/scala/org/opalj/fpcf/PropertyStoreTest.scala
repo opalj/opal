@@ -3,7 +3,6 @@ package org.opalj
 package fpcf
 
 import java.util.concurrent.atomic.AtomicInteger
-import scala.collection
 import scala.collection.immutable
 import scala.collection.mutable
 
@@ -818,7 +817,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         (_: PropertyStore, reason: FallbackReason, e: Node) => AllNodes
                     )
             }
-            case class ReachableNodes(nodes: collection.Set[Node]) extends OrderedProperty {
+            case class ReachableNodes(nodes: scala.collection.Set[Node]) extends OrderedProperty {
                 type Self = ReachableNodes
 
                 def key: PropertyKey[ReachableNodes] = ReachableNodes.Key
@@ -908,7 +907,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     ps(nTargets diff (Set(n)) /* ignore self-dependency */, ReachableNodes.Key)
                         .filter { dependeeP => dependeeP.isRefinable }.toSet
 
-                def createPartialResult(currentNodes: collection.Set[Node]): SomePartialResult = {
+                def createPartialResult(currentNodes: scala.collection.Set[Node]): SomePartialResult = {
                     PartialResult(
                         n,
                         ReachableNodes.Key,
@@ -1208,7 +1207,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         val ps = createPropertyStore()
                         info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                        ps.setupPhase(Set(ReachableNodes.Key), Set.empty)
+                        ps.setupPhase(Set(ReachableNodes.Key), finalizationOrder = List(List(ReachableNodes.Key)))
                         ps.scheduleEagerComputationsForEntities(nodeEntitiesPermutation)(
                             reachableNodesAnalysisUsingInterimPartialResults(ps)
                         )
