@@ -36,7 +36,8 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPrope
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val expectedVariablePC = getValue(p, singleAnnotationType, a.elementValuePairs, "pc").asIntValue.value
+        val expectedVariableTacIndex =
+            getValue(p, singleAnnotationType, a.elementValuePairs, "tacIndex").asIntValue.value
 
         val expectedConstantValues =
             mapArrayValueExtractStringAndInt(p, a, "constantValues", constantFieldType, "field", "value")
@@ -49,7 +50,7 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPrope
                 properties,
                 {
                     case (f: lcp_on_fields.problem.AbstractObjectFact, lcp_on_fields.problem.ObjectValue(values)) =>
-                        expectedVariablePC == f.definedAtIndex &&
+                        expectedVariableTacIndex == f.definedAtIndex &&
                             expectedConstantValues.forall {
                                 case (fieldName, value) =>
                                     values.get(fieldName) match {
@@ -88,7 +89,7 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPrope
                     })
                     .toMap
             Some(
-                s"Result should contain (${lcp_on_fields.problem.ObjectFact("?", expectedVariablePC)}, ${lcp_on_fields.problem.ObjectValue(expectedValues)})"
+                s"Result should contain (${lcp_on_fields.problem.ObjectFact("?", expectedVariableTacIndex)}, ${lcp_on_fields.problem.ObjectValue(expectedValues)})"
             )
         }
     }
@@ -120,8 +121,8 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEProper
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val expectedVariablePC =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "pc").asIntValue.value
+        val expectedVariableTacIndex =
+            getValue(p, singleAnnotationType, a.elementValuePairs, "tacIndex").asIntValue.value
 
         val expectedConstantElements =
             mapArrayValueExtractIntAndInt(p, a, "constantElements", constantArrayElementType, "index", "value")
@@ -138,7 +139,7 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEProper
                             f: lcp_on_fields.problem.AbstractArrayFact,
                             lcp_on_fields.problem.ArrayValue(initValue, elements)
                         ) =>
-                        expectedVariablePC == f.definedAtIndex &&
+                        expectedVariableTacIndex == f.definedAtIndex &&
                             expectedConstantElements.forall {
                                 case (index, value) =>
                                     elements.get(index) match {
@@ -183,7 +184,7 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEProper
                     })
                     .toMap
             Some(
-                s"Result should contain (${lcp_on_fields.problem.ArrayFact("?", expectedVariablePC)}, ArrayValue(?, $expectedElements)"
+                s"Result should contain (${lcp_on_fields.problem.ArrayFact("?", expectedVariableTacIndex)}, ArrayValue(?, $expectedElements)"
             )
         }
     }
@@ -310,16 +311,16 @@ class VariableValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDE
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val expectedVariablePC =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "pc").asIntValue.value
+        val expectedVariableTacIndex =
+            getValue(p, singleAnnotationType, a.elementValuePairs, "tacIndex").asIntValue.value
 
         if (existsBasicIDEPropertyResult(
                 properties,
                 {
                     case (f: lcp_on_fields.problem.AbstractObjectFact, lcp_on_fields.problem.VariableValue) =>
-                        expectedVariablePC == f.definedAtIndex
+                        expectedVariableTacIndex == f.definedAtIndex
                     case (f: lcp_on_fields.problem.AbstractArrayFact, lcp_on_fields.problem.VariableValue) =>
-                        expectedVariablePC == f.definedAtIndex
+                        expectedVariableTacIndex == f.definedAtIndex
 
                     case _ => false
                 }
@@ -328,7 +329,7 @@ class VariableValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDE
             None
         } else {
             Some(
-                s"Result should contain (${lcp_on_fields.problem.ObjectFact("?", expectedVariablePC)}, ${lcp_on_fields.problem.VariableValue})!"
+                s"Result should contain (${lcp_on_fields.problem.ObjectFact("?", expectedVariableTacIndex)}, ${lcp_on_fields.problem.VariableValue})!"
             )
         }
     }
@@ -353,16 +354,16 @@ class UnknownValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDEP
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val expectedVariablePC =
-            getValue(p, singleAnnotationType, a.elementValuePairs, "pc").asIntValue.value
+        val expectedVariableTacIndex =
+            getValue(p, singleAnnotationType, a.elementValuePairs, "tacIndex").asIntValue.value
 
         if (existsBasicIDEPropertyResult(
                 properties,
                 {
                     case (f: lcp_on_fields.problem.AbstractObjectFact, lcp_on_fields.problem.UnknownValue) =>
-                        expectedVariablePC == f.definedAtIndex
+                        expectedVariableTacIndex == f.definedAtIndex
                     case (f: lcp_on_fields.problem.AbstractArrayFact, lcp_on_fields.problem.UnknownValue) =>
-                        expectedVariablePC == f.definedAtIndex
+                        expectedVariableTacIndex == f.definedAtIndex
 
                     case _ => false
                 }
@@ -371,7 +372,7 @@ class UnknownValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDEP
             None
         } else {
             Some(
-                s"Result should contain (${lcp_on_fields.problem.ObjectFact("?", expectedVariablePC)}, ${lcp_on_fields.problem.UnknownValue})!"
+                s"Result should contain (${lcp_on_fields.problem.ObjectFact("?", expectedVariableTacIndex)}, ${lcp_on_fields.problem.UnknownValue})!"
             )
         }
     }

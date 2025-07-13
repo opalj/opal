@@ -18,9 +18,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.CLASS)
 public @interface ObjectValue {
     /**
-     * The PC of the variable the object is stored in
+     * The index in the TAC of the variable the object is stored in
      */
-    int pc();
+    int tacIndex();
 
     /**
      * The constant fields of the object

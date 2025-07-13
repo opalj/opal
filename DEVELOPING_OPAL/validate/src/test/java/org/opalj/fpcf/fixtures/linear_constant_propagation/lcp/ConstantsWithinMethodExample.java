@@ -11,11 +11,11 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp.ConstantValues;
  */
 public class ConstantsWithinMethodExample {
     @ConstantValues({
-            @ConstantValue(pc = 0, value = 4),
-            @ConstantValue(pc = 1, value = 3),
-            @ConstantValue(pc = 2, value = 12),
-            @ConstantValue(pc = 3, value = 4),
-            @ConstantValue(pc = 4, value = 16)
+            @ConstantValue(tacIndex = 0, value = 4),
+            @ConstantValue(tacIndex = 1, value = 3),
+            @ConstantValue(tacIndex = 2, value = 12),
+            @ConstantValue(tacIndex = 3, value = 4),
+            @ConstantValue(tacIndex = 4, value = 16)
     })
     public static void main(String[] args) {
         int a = 4;

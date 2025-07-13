@@ -27,9 +27,9 @@ public class FieldReadWriteAcrossMethodsExample {
     }
 
     @ObjectValues({
-            @ObjectValue(pc = 0, unknownValues = {@UnknownField(field = "a")}),
-            @ObjectValue(pc = 2, constantValues = {@ConstantField(field = "a", value = 42)}),
-            @ObjectValue(pc = 4, constantValues = {@ConstantField(field = "a", value = -2)})
+            @ObjectValue(tacIndex = 0, unknownValues = {@UnknownField(field = "a")}),
+            @ObjectValue(tacIndex = 2, constantValues = {@ConstantField(field = "a", value = 42)}),
+            @ObjectValue(tacIndex = 4, constantValues = {@ConstantField(field = "a", value = -2)})
     })
     public static void main(String[] args) {
         FieldReadWriteAcrossMethodsExample example1 = new FieldReadWriteAcrossMethodsExample();

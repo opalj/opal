@@ -14,9 +14,9 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.Varia
 public class ObjectNativeMethodExample {
     int a = 2;
 
-    @VariableValue(pc = 0)
+    @VariableValue(tacIndex = 0)
     @ObjectValues({
-            @ObjectValue(pc = 2, constantValues = {
+            @ObjectValue(tacIndex = 2, constantValues = {
                     @ConstantField(field = "a", value = 2)
             })
     })

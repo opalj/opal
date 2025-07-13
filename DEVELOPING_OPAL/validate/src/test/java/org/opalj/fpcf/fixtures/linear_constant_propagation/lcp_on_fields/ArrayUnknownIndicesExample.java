@@ -13,7 +13,7 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.Varia
  * @author Robin Körkemeier
  */
 public class ArrayUnknownIndicesExample {
-    @ArrayValue(pc = 1, variableElements = {
+    @ArrayValue(tacIndex = 1, variableElements = {
             @VariableArrayElement(index = 0),
             @VariableArrayElement(index = 1),
             @VariableArrayElement(index = 10),
@@ -25,8 +25,8 @@ public class ArrayUnknownIndicesExample {
     }, constantElements = {
             @ConstantArrayElement(index = 50, value = 99)
     })
-    @ConstantValue(pc = 9, value = 0)
-    @VariableValue(pc = 15)
+    @ConstantValue(tacIndex = 9, value = 0)
+    @VariableValue(tacIndex = 15)
     public static void main(String[] args) {
         int[] arr = new int[100];
 

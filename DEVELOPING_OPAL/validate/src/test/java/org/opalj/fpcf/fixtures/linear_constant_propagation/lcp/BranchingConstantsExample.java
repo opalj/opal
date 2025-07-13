@@ -11,11 +11,11 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp.VariableValues;
  * @author Robin Körkemeier
  */
 public class BranchingConstantsExample {
-    @ConstantValue(pc = 13, value = 8)
+    @ConstantValue(tacIndex = 13, value = 8)
     @VariableValues({
-            @VariableValue(pc = 2),
-            @VariableValue(pc = 11),
-            @VariableValue(pc = 15)
+            @VariableValue(tacIndex = 2),
+            @VariableValue(tacIndex = 11),
+            @VariableValue(tacIndex = 15)
     })
     public static void main(String[] args) {
         int a = 23;

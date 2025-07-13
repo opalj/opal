@@ -20,8 +20,8 @@ public class StaticFieldNonImmutableExample {
             @VariableField(field = "b")
     })
     @VariableValues({
-            @VariableValue(pc = 0),
-            @VariableValue(pc = 1)
+            @VariableValue(tacIndex = 0),
+            @VariableValue(tacIndex = 1)
     })
     public static void main(String[] args) {
         int a = StaticFieldNonImmutableExample.a;

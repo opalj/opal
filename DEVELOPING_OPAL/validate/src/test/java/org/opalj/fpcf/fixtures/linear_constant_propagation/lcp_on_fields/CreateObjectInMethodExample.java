@@ -20,14 +20,14 @@ public class CreateObjectInMethodExample {
         return example;
     }
 
-    @ObjectValue(pc = 0, constantValues = {@ConstantField(field = "a", value = 33)})
+    @ObjectValue(tacIndex = 0, constantValues = {@ConstantField(field = "a", value = 33)})
     private CreateObjectInMethodExample createNew2() {
         CreateObjectInMethodExample example = new CreateObjectInMethodExample();
         example.a = a + 2;
         return example;
     }
 
-    @ObjectValue(pc = 0, variableValues = {@VariableField(field = "a")})
+    @ObjectValue(tacIndex = 0, variableValues = {@VariableField(field = "a")})
     private CreateObjectInMethodExample createNew3() {
         CreateObjectInMethodExample example = new CreateObjectInMethodExample();
         example.a = a + 2;
@@ -35,11 +35,11 @@ public class CreateObjectInMethodExample {
     }
 
     @ObjectValues({
-            @ObjectValue(pc = 0, constantValues = {@ConstantField(field = "a", value = 42)}),
-            @ObjectValue(pc = 2, constantValues = {@ConstantField(field = "a", value = 31)}),
-            @ObjectValue(pc = 3, constantValues = {@ConstantField(field = "a", value = 33)}),
-            @ObjectValue(pc = 4, variableValues = {@VariableField(field = "a")}),
-            @ObjectValue(pc = 5, variableValues = {@VariableField(field = "a")})
+            @ObjectValue(tacIndex = 0, constantValues = {@ConstantField(field = "a", value = 42)}),
+            @ObjectValue(tacIndex = 2, constantValues = {@ConstantField(field = "a", value = 31)}),
+            @ObjectValue(tacIndex = 3, constantValues = {@ConstantField(field = "a", value = 33)}),
+            @ObjectValue(tacIndex = 4, variableValues = {@VariableField(field = "a")}),
+            @ObjectValue(tacIndex = 5, variableValues = {@VariableField(field = "a")})
     })
     public static void main(String[] args) {
         CreateObjectInMethodExample example1 = new CreateObjectInMethodExample();

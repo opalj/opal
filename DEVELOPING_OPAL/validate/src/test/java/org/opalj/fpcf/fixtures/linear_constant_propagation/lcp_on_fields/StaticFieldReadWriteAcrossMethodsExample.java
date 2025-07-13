@@ -26,8 +26,8 @@ public class StaticFieldReadWriteAcrossMethodsExample {
             @ConstantField(field = "a", value = 42)
     })
     @ConstantValues({
-            @ConstantValue(pc = 3, value = 11),
-            @ConstantValue(pc = 5, value = 42)
+            @ConstantValue(tacIndex = 3, value = 11),
+            @ConstantValue(tacIndex = 5, value = 42)
     })
     public static void main(String[] args) {
         StaticFieldReadWriteAcrossMethodsExample example = new StaticFieldReadWriteAcrossMethodsExample();

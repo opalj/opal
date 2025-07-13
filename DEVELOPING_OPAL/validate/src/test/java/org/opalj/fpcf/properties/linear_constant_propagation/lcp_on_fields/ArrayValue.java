@@ -18,9 +18,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.CLASS)
 public @interface ArrayValue {
     /**
-     * The PC of the variable the array is stored in
+     * The index in the TAC of the variable the array is stored in
      */
-    int pc();
+    int tacIndex();
 
     /**
      * The constant elements of the array

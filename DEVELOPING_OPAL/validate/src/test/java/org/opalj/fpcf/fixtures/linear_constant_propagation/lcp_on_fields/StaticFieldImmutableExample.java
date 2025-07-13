@@ -39,12 +39,12 @@ public final class StaticFieldImmutableExample {
             @VariableField(field = "e")
     })
     @ConstantValues({
-            @ConstantValue(pc = 0, value = 42),
-            @ConstantValue(pc = 1, value = 23),
-            @ConstantValue(pc = 3, value = 0),
-            @ConstantValue(pc = 4, value = 2)
+            @ConstantValue(tacIndex = 0, value = 42),
+            @ConstantValue(tacIndex = 1, value = 23),
+            @ConstantValue(tacIndex = 3, value = 0),
+            @ConstantValue(tacIndex = 4, value = 2)
     })
-    @VariableValue(pc = 2)
+    @VariableValue(tacIndex = 2)
     public static void main(String[] args) {
         int a = StaticFieldImmutableExample.a;
         int b = StaticFieldImmutableExample.b;

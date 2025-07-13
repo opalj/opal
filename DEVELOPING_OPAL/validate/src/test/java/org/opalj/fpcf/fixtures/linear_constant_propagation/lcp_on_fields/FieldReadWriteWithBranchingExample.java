@@ -14,7 +14,7 @@ import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.Varia
 public class FieldReadWriteWithBranchingExample {
     private int a = -1;
 
-    @ObjectValue(pc = 0, variableValues = {@VariableField(field = "a")})
+    @ObjectValue(tacIndex = 0, variableValues = {@VariableField(field = "a")})
     public static FieldReadWriteWithBranchingExample multipleReturns(int y) {
         FieldReadWriteWithBranchingExample e = new FieldReadWriteWithBranchingExample();
         if (y > 0) {
@@ -27,9 +27,9 @@ public class FieldReadWriteWithBranchingExample {
     }
 
     @ObjectValues({
-            @ObjectValue(pc = 0, constantValues = {@ConstantField(field = "a", value = 42)}),
-            @ObjectValue(pc = 2, variableValues = {@VariableField(field = "a")}),
-            @ObjectValue(pc = 4, variableValues = {@VariableField(field = "a")})
+            @ObjectValue(tacIndex = 0, constantValues = {@ConstantField(field = "a", value = 42)}),
+            @ObjectValue(tacIndex = 2, variableValues = {@VariableField(field = "a")}),
+            @ObjectValue(tacIndex = 4, variableValues = {@VariableField(field = "a")})
     })
     public static void main(String[] args) {
         FieldReadWriteWithBranchingExample example1 = new FieldReadWriteWithBranchingExample();

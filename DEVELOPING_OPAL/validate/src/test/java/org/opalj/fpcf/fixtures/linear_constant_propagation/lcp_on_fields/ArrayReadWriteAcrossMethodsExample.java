@@ -21,13 +21,13 @@ public class ArrayReadWriteAcrossMethodsExample {
     }
 
     @ArrayValues({
-            @ArrayValue(pc = 3, unknownElements = {
+            @ArrayValue(tacIndex = 3, unknownElements = {
                     @UnknownArrayElement(index = 0),
                     @UnknownArrayElement(index = 1),
                     @UnknownArrayElement(index = 2),
                     @UnknownArrayElement(index = 3)
             }),
-            @ArrayValue(pc = 5, constantElements = {
+            @ArrayValue(tacIndex = 5, constantElements = {
                     @ConstantArrayElement(index = 11, value = 42)
             })
     })

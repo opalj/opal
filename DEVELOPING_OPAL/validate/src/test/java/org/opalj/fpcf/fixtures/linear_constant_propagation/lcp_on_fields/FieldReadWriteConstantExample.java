@@ -14,9 +14,9 @@ public class FieldReadWriteConstantExample {
     private int a = -1;
 
     @ObjectValues({
-            @ObjectValue(pc = 0, constantValues = {@ConstantField(field = "a", value = -1)}),
-            @ObjectValue(pc = 2, constantValues = {@ConstantField(field = "a", value = 42)}),
-            @ObjectValue(pc = 4, constantValues = {@ConstantField(field = "a", value = 41)})
+            @ObjectValue(tacIndex = 0, constantValues = {@ConstantField(field = "a", value = -1)}),
+            @ObjectValue(tacIndex = 2, constantValues = {@ConstantField(field = "a", value = 42)}),
+            @ObjectValue(tacIndex = 4, constantValues = {@ConstantField(field = "a", value = 41)})
     })
     public static void main(String[] args) {
         FieldReadWriteConstantExample example1 = new FieldReadWriteConstantExample();

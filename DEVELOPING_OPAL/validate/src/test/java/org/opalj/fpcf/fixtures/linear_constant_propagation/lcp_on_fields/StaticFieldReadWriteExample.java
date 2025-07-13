@@ -19,10 +19,10 @@ public class StaticFieldReadWriteExample {
             @ConstantField(field = "a", value = 11)
     })
     @ConstantValues({
-            @ConstantValue(pc = 5, value = 23),
-            @ConstantValue(pc = 10, value = 11)
+            @ConstantValue(tacIndex = 5, value = 23),
+            @ConstantValue(tacIndex = 10, value = 11)
     })
-    @VariableValue(pc = 2)
+    @VariableValue(tacIndex = 2)
     public static void main(String[] args) {
         StaticFieldReadWriteExample example1 = new StaticFieldReadWriteExample();
 
