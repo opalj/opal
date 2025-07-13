@@ -175,6 +175,7 @@ class LCPOnFieldsProblem(
 
                     seenStmts.addAll(workingStmts)
                     workingStmts = workingStmts
+                        .iterator
                         .map(icfg.getNextStatements)
                         .fold(Set.empty[JavaStatement]) { (nextStmts, stmts) => nextStmts ++ stmts }
                         .diff(seenStmts)
@@ -330,6 +331,7 @@ class LCPOnFieldsProblem(
                             else { 0 }
 
                         allParams
+                            .iterator
                             .zipWithIndex
                             .collect {
                                 /* Only parameters where the variable represented by the source fact is one possible
@@ -584,19 +586,14 @@ class LCPOnFieldsProblem(
     ): LinearConstantPropagationValue = {
         property
             .results
-            .fold[Object](linear_constant_propagation.problem.UnknownValue: LinearConstantPropagationValue) {
-                case (
-                        (linear_constant_propagation.problem.VariableFact(_, dAI), v: LinearConstantPropagationValue),
-                        value: LinearConstantPropagationValue
-                    ) if var0.definedBy.contains(dAI) => LinearConstantPropagationLattice.meet(v, value)
-                case (
-                        value: LinearConstantPropagationValue,
-                        (linear_constant_propagation.problem.VariableFact(_, dAI), v: LinearConstantPropagationValue)
-                    ) if var0.definedBy.contains(dAI) => LinearConstantPropagationLattice.meet(v, value)
-
-                case (_, value: LinearConstantPropagationValue) => value
-                case (value: LinearConstantPropagationValue, _) => value
-            }.asInstanceOf[LinearConstantPropagationValue]
+            .iterator
+            .collect {
+                case (linear_constant_propagation.problem.VariableFact(_, definedAtIndex), value)
+                    if var0.definedBy.contains(definedAtIndex) => value
+            }
+            .fold(linear_constant_propagation.problem.UnknownValue: LinearConstantPropagationValue)(
+                LinearConstantPropagationLattice.meet
+            )
     }
 
     override def getCallEdgeFunction(

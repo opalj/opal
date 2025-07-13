@@ -251,6 +251,7 @@ class LinearConstantPropagationProblem
                             val paramTypes = callee.parameterTypes
 
                             params
+                                .iterator
                                 .zipWithIndex
                                 .collect {
                                     /* Only parameters that are of type integer and where the variable represented by

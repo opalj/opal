@@ -116,6 +116,7 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
             .results
+            .iterator
             .collect {
                 case (f: AbstractArrayFact, ArrayValue(initValue, values))
                     if arrayVar.definedBy.contains(f.definedAtIndex) =>
@@ -180,6 +181,7 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
             .results
+            .iterator
             .collect {
                 case (f: AbstractObjectFact, ObjectValue(values))
                     if objectVar.definedBy.contains(f.definedAtIndex) && values.contains(fieldName) => values(fieldName)
@@ -232,6 +234,7 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
             .results
+            .iterator
             .collect {
                 case (f: AbstractStaticFieldFact, StaticFieldValue(value))
                     if f.objectType == objectType && f.fieldName == fieldName => value
