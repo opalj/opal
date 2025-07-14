@@ -29,7 +29,7 @@ trait SchedulingStrategy {
     protected def computePhase[A](
         ps:                   PropertyStore,
         currentPhaseAnalyses: Set[ComputationSpecification[A]],
-        nextPhaseAnalyses:    Set[ComputationSpecification[A]]
+        laterPhasesAnalyses:  Set[ComputationSpecification[A]]
     ): PhaseConfiguration[A] = {
 
         // 1. compute the phase configuration; i.e., find those properties for which we must
@@ -54,7 +54,7 @@ trait SchedulingStrategy {
         }
 
         val propertyKindsFromPhaseAnalysis = extractPropertyKinds(currentPhaseAnalyses)
-        val propertyKindsFromNextPhaseAnalysis = extractPropertyKinds(nextPhaseAnalyses)
+        val propertyKindsFromLaterPhasesAnalysis = extractPropertyKinds(laterPhasesAnalyses)
 
         val collabProperties = currentPhaseAnalyses.flatMap { analysis => analysis.derivesCollaboratively.map(_.pk) }
 
@@ -72,7 +72,7 @@ trait SchedulingStrategy {
         val phase1Configuration = PropertyKindsConfiguration(
             propertyKindsComputedInThisPhase = propertyKindsFromPhaseAnalysis,
             suppressInterimUpdates = suppressInterimUpdates,
-            propertyKindsComputedInLaterPhase = propertyKindsFromNextPhaseAnalysis,
+            propertyKindsComputedInLaterPhase = propertyKindsFromLaterPhasesAnalysis,
             collaborativelyComputedPropertyKindsFinalizationOrder = List(collabProperties.toList) // FIXME: Compute actual subphase finalization order
         )
 

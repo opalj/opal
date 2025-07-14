@@ -5,7 +5,7 @@ package fpcf
 import com.typesafe.config.Config
 
 import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
-import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleStrategyKey
+import org.opalj.fpcf.AnalysisScenario.AnalysisSchedulingStrategyKey
 import org.opalj.fpcf.scheduling.SchedulingStrategy
 import org.opalj.graphs.Graph
 import org.opalj.log.LogContext
@@ -284,7 +284,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     }
                 }
 
-            val schedulingStrategy = instantiateSchedulingStrategy(config.getString(AnalysisScheduleStrategyKey))
+            val schedulingStrategy = instantiateSchedulingStrategy(config.getString(AnalysisSchedulingStrategyKey))
             OPALLogger.info("scheduler", s"scheduling strategy ${schedulingStrategy} is selected")
 
             schedulingStrategy.schedule(ps, allCS)
@@ -315,8 +315,7 @@ object AnalysisScenario {
     final val ConfigKeyPrefix = "org.opalj.fpcf.AnalysisScenario."
 
     final val AnalysisAutoConfigKey = s"${ConfigKeyPrefix}AnalysisAutoConfig"
-    final val AnalysisScheduleStrategyKey = s"${ConfigKeyPrefix}ScheduleStrategy"
-    final val AnalysisScheduleLazyTransformerInMultipleBatchesKey = s"${ConfigKeyPrefix}ScheduleLazyInMultipleBatches"
+    final val AnalysisSchedulingStrategyKey = s"${ConfigKeyPrefix}SchedulingStrategy"
 
     /**
      * @param analyses The set of analyses that should be executed as part of this analysis scenario.

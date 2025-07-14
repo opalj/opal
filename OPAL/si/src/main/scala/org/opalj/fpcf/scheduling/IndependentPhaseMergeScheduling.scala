@@ -3,85 +3,90 @@ package org.opalj
 package fpcf
 package scheduling
 
+import scala.collection.mutable
+import scala.util.control.Breaks
+
+/**
+ * Base class for scheduling strategies that create multiple computation phases by merging multiple smaller independent
+ * phases into one.
+ */
+abstract class PhaseMergeScheduling extends MultiplePhaseScheduling {
+
+    /**
+     * Merges independent batches based on a merging strategy.
+     */
+    override def refineDependencies(
+        initialPhaseDependencyGraph: Iterable[(Int, List[Int])],
+        initialPhaseIndexToAnalyses: Iterable[(Int, Set[Int])]
+    ): (Map[Int, List[Int]], Map[Int, Set[Int]]) = {
+        val phaseIndexToAnalyses = initialPhaseIndexToAnalyses.to(mutable.Map)
+        val phaseDependencyGraph = initialPhaseDependencyGraph.to(mutable.Map)
+
+        var nextPhaseIndex = initialPhaseIndexToAnalyses.size
+
+        def allDependencies(phase: Int): Set[Int] = {
+            val directDependencies = phaseDependencyGraph(phase).toSet
+            val indirectDependencies = directDependencies.flatMap(phase2 => allDependencies(phase2))
+            directDependencies ++ indirectDependencies
+        }
+
+        val breaks = new Breaks
+        import breaks.{break, breakable}
+        breakable {
+            while (true) {
+                val independentPhases = for {
+                    phaseIndex1 <- phaseDependencyGraph.keysIterator
+                    dependencies1 = allDependencies(phaseIndex1)
+                    phaseIndex2 <- phaseDependencyGraph.keysIterator
+                    if !dependencies1.contains(phaseIndex2)
+                    if phaseIndex1 < phaseIndex2 // Ensure we only look at each pair once
+                    dependencies2 = allDependencies(phaseIndex2)
+                    if !dependencies2.contains(phaseIndex1)
+                } yield (phaseIndex1, phaseIndex2)
+
+                if (independentPhases.isEmpty)
+                    break()
+
+                val (phase1, phase2) = nextPhasesToMerge(independentPhases, phaseIndexToAnalyses)
+
+                phaseIndexToAnalyses(nextPhaseIndex) = phaseIndexToAnalyses(phase1) ++ phaseIndexToAnalyses(phase2)
+                phaseIndexToAnalyses -= phase1
+                phaseIndexToAnalyses -= phase2
+
+                phaseDependencyGraph(nextPhaseIndex) = (phaseDependencyGraph(phase1) ++ phaseDependencyGraph(phase2))
+                    .distinct
+                phaseDependencyGraph -= phase1
+                phaseDependencyGraph -= phase2
+
+                // Map dependencies on old phases to new phase
+                phaseDependencyGraph.foreach { case (key, values) =>
+                    phaseDependencyGraph(key) = values.map(v => if (v == phase1 || v == phase2) nextPhaseIndex else v)
+                }
+
+                nextPhaseIndex = nextPhaseIndex + 1
+            }
+        }
+
+        (phaseDependencyGraph.toMap, phaseIndexToAnalyses.toMap)
+    }
+
+    def nextPhasesToMerge(
+        independentPhases:    Iterator[(Int, Int)],
+        phaseIndexToAnalyses: scala.collection.Map[Int, Set[Int]]
+    ): (Int, Int)
+}
+
 /**
  * Independent Phase Merge Scheduling (IPMS) Strategy.
  * Merges independent batches to optimize parallelism.
  */
-abstract class IndependentPhaseMergeScheduling extends MaximumPhaseScheduling {
+object IndependentPhaseMergeScheduling extends PhaseMergeScheduling {
 
-    override def mergeIndependentBatches(
-        batchCount:      Int,
-        dependencyGraph: Map[Int, List[Int]],
-        nodeIndexMap:    Map[Int, List[Int]]
-    ): (Map[Int, List[Int]], Map[Int, List[Int]]) = {
-        var transformingMap = nodeIndexMap
-        var counter = batchCount
-
-        var updatedGraph: Map[Int, List[Int]] = dependencyGraph
-        var couldBeMerged: List[(Int, Int)] = List.empty
-
-        do {
-            def getUses(batch: Int, graph: Map[Int, List[Int]]): Set[Int] = {
-                val directUses = graph.getOrElse(batch, List.empty).toSet
-                val recursiveUses = directUses.flatMap(otherBatch => getUses(otherBatch, graph))
-                directUses ++ recursiveUses
-            }
-
-            var map: Map[Int, Set[Int]] = Map.empty
-            updatedGraph.foreach { batch =>
-                val tempUses = getUses(batch._1, updatedGraph)
-                map = map + (batch._1 -> tempUses)
-            }
-
-            couldBeMerged = List.empty
-            map.foreach { batch =>
-                map.foreach { subBatch =>
-                    if (subBatch != batch) {
-                        if ((!subBatch._2.contains(batch._1)) && (!batch._2.contains(subBatch._1))) {
-                            if (!couldBeMerged.contains((subBatch._1, batch._1))) {
-                                couldBeMerged = couldBeMerged :+ (batch._1, subBatch._1)
-                            }
-
-                        }
-                    }
-
-                }
-
-            }
-
-            if (couldBeMerged.nonEmpty) {
-                val toBeMerged = nextPhasesToMerge(couldBeMerged, transformingMap)
-
-                val tempTransformation_2 = (transformingMap.get(toBeMerged._1).head ++
-                    transformingMap.get(toBeMerged._2).head).distinct
-                transformingMap =
-                    transformingMap - toBeMerged._1 - toBeMerged._2
-                transformingMap = transformingMap + (counter -> tempTransformation_2)
-
-                val tempGraph_2: List[Int] = (updatedGraph.get(toBeMerged._1).head ++
-                    updatedGraph.get(toBeMerged._2).head).distinct
-                updatedGraph = updatedGraph - toBeMerged._1 - toBeMerged._2
-                updatedGraph = updatedGraph + (counter -> tempGraph_2)
-
-                def replaceIdInMap(oldId: Int, newId: Int): Unit = {
-                    updatedGraph = updatedGraph.map { case (key, values) =>
-                        key -> values.map(v => if (v == oldId) newId else v)
-                    }
-                }
-
-                replaceIdInMap(toBeMerged._1, counter)
-                replaceIdInMap(toBeMerged._2, counter)
-                counter = counter + 1
-            }
-
-        } while (couldBeMerged.nonEmpty)
-
-        (updatedGraph, transformingMap)
+    def nextPhasesToMerge(
+        independentPhases:    Iterator[(Int, Int)],
+        phaseIndexToAnalyses: scala.collection.Map[Int, Set[Int]]
+    ): (Int, Int) = {
+        independentPhases.next()
     }
 
-    def nextPhasesToMerge(independentPhases: List[(Int, Int)], transformingMap: Map[Int, List[Int]]): (Int, Int) = {
-        independentPhases.head
-    }
 }
-
-object IndependentPhaseMergeScheduling extends IndependentPhaseMergeScheduling

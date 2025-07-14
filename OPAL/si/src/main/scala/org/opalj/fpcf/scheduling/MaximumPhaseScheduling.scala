@@ -3,243 +3,169 @@ package org.opalj
 package fpcf
 package scheduling
 
+import scala.collection.mutable
+
 import com.typesafe.config.Config
 
 import org.opalj.collection.IntIterator
-import org.opalj.fpcf.AnalysisScenario.AnalysisScheduleLazyTransformerInMultipleBatchesKey
+import org.opalj.fpcf.AnalysisScenario.ConfigKeyPrefix
+import org.opalj.fpcf.scheduling.MultiplePhaseScheduling.AnalysisScheduleLazyTransformerInMultiplePhasesKey
 import org.opalj.graphs.sccs
 import org.opalj.graphs.topologicalSort
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 /**
- * Maximum Phase Scheduling (MPS) Strategy.
- * Breaks down computations into as many phases as possible based on dependencies and computation types.
+ * Base class for scheduling strategies that create multiple computation phases.
  */
-
-abstract class MaximumPhaseScheduling extends SchedulingStrategy {
+abstract class MultiplePhaseScheduling extends SchedulingStrategy {
 
     override def schedule[A](ps: PropertyStore, allCS: Set[ComputationSpecification[A]])(implicit
         config:     Config,
         logContext: LogContext
     ): List[PhaseConfiguration[A]] = {
 
-        // Creates a map from ComputationSpecifications to their indices
-        val computationSpecificationMap: Map[ComputationSpecification[A], Int] = allCS.zipWithIndex.toMap
-        val computationSpecificationArray: Array[ComputationSpecification[A]] = allCS.toArray
-        // Initializes an empty schedule graph
-        var scheduleGraph: Map[Int, Set[Int]] = Map.empty
+        // Create a mapping from analyses (ComputationSpecifications) to their indices
+        val analysisToIndex: Map[ComputationSpecification[A], Int] = allCS.iterator.zipWithIndex.toMap
+        val indexToAnalysis: Array[ComputationSpecification[A]] = allCS.toArray
 
-        computationSpecificationMap.foreach { csID =>
-            scheduleGraph += (csID._2 -> mapCSToNum(
-                getAllCSFromPropertyBounds(csID._1.uses(ps), allCS),
-                computationSpecificationMap
-            ))
+        def propertiesToAnalyses(properties: Set[PropertyBounds]): mutable.Set[Int] = {
+            analysisToIndex.keysIterator.collect {
+                case analysis if analysis.derives.exists(properties.contains) =>
+                    analysisToIndex(analysis)
+            }.to(mutable.Set)
         }
 
-        val scheduleLazyTransformerInAllBatches = config.getBoolean(AnalysisScheduleLazyTransformerInMultipleBatchesKey)
-        if (scheduleLazyTransformerInAllBatches)
+        // Initialize the analysis dependency graph, mapping each analysisID to the ids of its dependees
+        val analysisDependencyGraph: Map[Int, mutable.Set[Int]] =
+            for { (analysis, analysisID) <- analysisToIndex } yield analysisID -> propertiesToAnalyses(analysis.uses(ps))
+
+        val scheduleLazyTransformerInMultiplePhases =
+            config.getBoolean(AnalysisScheduleLazyTransformerInMultiplePhasesKey)
+        if (scheduleLazyTransformerInMultiplePhases)
             OPALLogger.info("scheduler", s"scheduling Lazy/Transformer analyses in multiple phases")
 
-        if (!scheduleLazyTransformerInAllBatches) {
-            scheduleGraph.foreach { node =>
-                if (computationSpecificationArray(node._1).computationType.equals(
-                        LazyComputation
-                    ) || computationSpecificationArray(node._1).computationType.equals(Transformer)
-                ) {
-                    scheduleGraph.foreach { subNode =>
-                        if (subNode._2.contains(node._1)) {
-                            scheduleGraph =
-                                scheduleGraph +
-                                    (node._1 -> (scheduleGraph.get(node._1).head ++ Set(subNode._1)))
-                        }
-                    }
-                }
+        // Set lazy/transformer analyses as dependers of their uses to ensure that they are scheduled in the same phase
+        if (!scheduleLazyTransformerInMultiplePhases) {
+            for {
+                lazyAnalysisID <- analysisDependencyGraph.keysIterator
+                computationType = indexToAnalysis(lazyAnalysisID).computationType
+                if (computationType eq LazyComputation) || (computationType eq Transformer)
+                (dependerID, dependees) <- analysisDependencyGraph
+                if dependees.contains(lazyAnalysisID)
+            }
+                analysisDependencyGraph(lazyAnalysisID) += dependerID
+        }
+
+        def edges(scheduleGraph: Map[Int, scala.collection.Set[Int]])(node: Int): IntIterator = {
+            val edges = scheduleGraph(node).iterator
+            new IntIterator {
+                def hasNext: Boolean = edges.hasNext
+                def next(): Int = edges.next()
             }
         }
 
-        var aCyclicGraph = sccs(scheduleGraph.size, edgeFunctionForSCCS(scheduleGraph))
-            .map(batch =>
-                batch -> mapCSToNum(
-                    getAllCSFromPropertyBounds(getAllUses(batch, ps, computationSpecificationArray), allCS),
-                    computationSpecificationMap
-                )
-            )
-            .toMap
+        // Strongly connected components must be in a single phase
+        val phaseDependencies =
+            for {
+                phase <- sccs(analysisDependencyGraph.size, edges(analysisDependencyGraph))
+            } yield phase.toSet -> (phase.iterator.flatMap(analysisDependencyGraph).toSet -- phase)
 
-        if (scheduleLazyTransformerInAllBatches) {
-            aCyclicGraph = setLazyInAllBatches(
-                aCyclicGraph,
-                aCyclicGraph.head._1,
-                allCS,
-                computationSpecificationArray,
-                computationSpecificationMap,
-                ps
-            )
+        // After potentially merging lazy analyses into multiple phases
+        val initialPhases = if (scheduleLazyTransformerInMultiplePhases) {
+            mergeLazyIntoEagerPhases(phaseDependencies, indexToAnalysis)
+        } else phaseDependencies.toMap
+
+        val initialPhaseIndexToAnalyses = (0 until initialPhases.size).zip(initialPhases.keysIterator)
+
+        val initialPhaseDependencyGraph: Iterable[(Int, List[Int])] = for {
+            (phaseIndex1, analyses1) <- initialPhaseIndexToAnalyses
+            dependeeAnalyses = initialPhases(analyses1)
+            dependeePhases = initialPhaseIndexToAnalyses.collect {
+                case (phaseIndex2, analyses2) if analyses2.exists(dependeeAnalyses.contains) => phaseIndex2
+            }.toList
+        } yield phaseIndex1 -> dependeePhases
+
+        val (phaseDependencyGraph, phaseIndexToAnalyses) =
+            refineDependencies(initialPhaseDependencyGraph, initialPhaseIndexToAnalyses)
+
+        val phaseOrder = topologicalSort(phaseDependencyGraph)
+
+        var remainingAnalyses: Set[ComputationSpecification[A]] = allCS
+        val schedule = phaseOrder.map { phaseIndex =>
+            val phaseAnalyses = phaseIndexToAnalyses(phaseIndex).iterator.map(indexToAnalysis).toSet
+            remainingAnalyses --= phaseAnalyses
+            computePhase(ps, phaseAnalyses, remainingAnalyses)
         }
 
-        val graphWithoutSelfDependencies = aCyclicGraph.map { case (nodes, deps) =>
-            nodes -> (deps -- nodes).toList
-        }
-
-        var nodeIndexMap: Map[Int, List[Int]] = Map.empty
-        var counter = 0
-        graphWithoutSelfDependencies.foreach { node =>
-            nodeIndexMap = nodeIndexMap + (counter -> node._1)
-            counter = counter + 1
-        }
-
-        var transformedGraph = graphWithoutSelfDependencies.map { case (node, deps) =>
-            var dependencies: List[Int] = List.empty
-            nodeIndexMap.foreach { tuple =>
-                if (tuple._2.intersect(deps).nonEmpty) {
-                    dependencies = dependencies :+ tuple._1
-                }
-            }
-            nodeIndexMap.find(_._2 == node).map(_._1).head -> dependencies
-        }
-
-        val (newGraph, newTransformingMap) = mergeIndependentBatches(counter, transformedGraph, nodeIndexMap)
-
-        transformedGraph = newGraph
-        nodeIndexMap = newTransformingMap
-
-        val batchOrder = topologicalSort(transformedGraph)
-
-        var scheduleBatches: List[PhaseConfiguration[A]] = List.empty
-
-        var alreadyScheduledCS: Set[ComputationSpecification[A]] = Set.empty
-        batchOrder.foreach { batch =>
-            var scheduledInThisPhase: Set[ComputationSpecification[A]] = Set.empty
-            nodeIndexMap.get(batch).head.foreach { csID =>
-                scheduledInThisPhase =
-                    scheduledInThisPhase + computationSpecificationArray(csID)
-            }
-
-            scheduleBatches = scheduleBatches :+ computePhase(
-                ps,
-                scheduledInThisPhase,
-                allCS -- scheduledInThisPhase -- alreadyScheduledCS
-            )
-            alreadyScheduledCS = alreadyScheduledCS ++ scheduledInThisPhase
-        }
-
-        scheduleBatches
-    }
-
-    def getAllCSFromPropertyBounds[A](
-        properties: Set[PropertyBounds],
-        allCS:      Set[ComputationSpecification[A]]
-    ): Set[ComputationSpecification[A]] = {
-        def containsProperty(cs: ComputationSpecification[A], property: PropertyBounds): Boolean =
-            cs.derivesLazily.contains(property) ||
-                cs.derivesCollaboratively.contains(property) ||
-                cs.derivesEagerly.contains(property)
-
-        allCS.filter(cs => properties.exists(containsProperty(cs, _)))
-    }
-
-    def mapCSToNum[A](
-        specifications:              Set[ComputationSpecification[A]],
-        computationSpecificationMap: Map[ComputationSpecification[A], Int]
-    ): Set[Int] = {
-        specifications.flatMap(computationSpecificationMap.get)
-    }
-
-    def edgeFunctionForSCCS(scheduleGraph: Map[Int, Set[Int]])(node: Int): IntIterator = {
-        val edges = scheduleGraph.getOrElse(node, Set.empty).iterator
-        new IntIterator {
-            def hasNext: Boolean = edges.hasNext
-            def next(): Int = edges.next()
-        }
-    }
-
-    def getAllUses[A](
-        css:                           List[Int],
-        ps:                            PropertyStore,
-        computationSpecificationArray: Array[ComputationSpecification[A]]
-    ): Set[PropertyBounds] = {
-        css.foldLeft(Set.empty[PropertyBounds]) { (allUses, cs) =>
-            val uses = computationSpecificationArray(cs).uses(ps)
-            allUses ++ uses
-        }
+        schedule
     }
 
     /**
-     * Recursively updates the scheduling map (`map`) by setting specific computations (lazy/transformer) in all relevant batches.
-     * The method ensures that computations with the type `lazyType` or `transformerType` are placed correctly in all batches,
-     * adjusting dependencies to maintain a valid execution order.
-     *
-     * Steps:
-     * 1. Iterates over batches to find occurrences of `firstElement` and merges it into other batches when necessary.
-     * 2. Updates the scheduling graph (`aCyclicGraph`) to reflect changes and remove redundant batches.
-     * 3. Recursively processes the next batch until all necessary batches are updated.
-     * 4. Ensures computations are properly assigned across batches while preserving execution dependencies.
+     * Computes a new phase map where phases that consist completely of lazy analyses are merged into the phases that
+     * depend on them.
      */
-    def setLazyInAllBatches[A](
-        tmp_aCyclicGraph:              Map[List[Int], Set[Int]],
-        firstElement:                  List[Int],
-        allCS:                         Set[ComputationSpecification[A]],
-        computationSpecificationArray: Array[ComputationSpecification[A]],
-        computationSpecificationMap:   Map[ComputationSpecification[A], Int],
-        ps:                            PropertyStore
-    ): Map[List[Int], Set[Int]] = {
-        var visited_batches: List[List[Int]] = List.empty
-        var acyclicGraph = tmp_aCyclicGraph
+    private def mergeLazyIntoEagerPhases[A](
+        initialPhaseDependencies: List[(Set[Int], Set[Int])],
+        indexToAnalysis:          Array[ComputationSpecification[A]]
+    ): Map[Set[Int], Set[Int]] = {
+        var phaseDependencies = initialPhaseDependencies.toMap
+        var worklist: List[(Set[Int], Set[Int])] = initialPhaseDependencies
 
-        def setLazyInAllBatchesInternal(
-            tmp_aCyclicGraphInternal: Map[List[Int], Set[Int]],
-            firstElement:             List[Int]
-        ): Map[List[Int], Set[Int]] = {
+        while (worklist.nonEmpty) {
+            val currentPhase = worklist.head
+            val (analyses, dependencies) = currentPhase
+            worklist = worklist.tail
 
-            if (firstElement.forall(csID =>
-                    computationSpecificationArray(csID).computationType.equals(LazyComputation) ||
-                        computationSpecificationArray(csID).computationType.equals(Transformer)
-                )
-            ) {
-                var existInSomeBatch = false
-                tmp_aCyclicGraphInternal.foreach { batch =>
-                    if (batch._2.toList.intersect(firstElement).nonEmpty && batch._1 != firstElement) {
-                        acyclicGraph = acyclicGraph + ((batch._1 ++ firstElement) -> mapCSToNum(
-                            getAllCSFromPropertyBounds(
-                                getAllUses(batch._1 ++ firstElement, ps, computationSpecificationArray),
-                                allCS
-                            ),
-                            computationSpecificationMap
-                        ).diff((batch._1 ++ firstElement).toSet))
-                        acyclicGraph = acyclicGraph - batch._1
-                        existInSomeBatch = true
-                    }
+            val allLazy = analyses.forall { analysisID =>
+                val computationType = indexToAnalysis(analysisID).computationType
+                (computationType eq LazyComputation) || (computationType eq Transformer)
+            }
+
+            if (allLazy) {
+                var mergedPhase = false
+                phaseDependencies -= analyses // Remove the all-lazy phase in anticipation of merging it
+                for {
+                    (otherAnalyses, otherDependencies) <- phaseDependencies
+                    if otherDependencies.exists(analyses.contains)
+                    newAnalyses = otherAnalyses ++ analyses
+                    newDependencies = (otherDependencies ++ dependencies).diff(newAnalyses)
+                    newPhase = newAnalyses -> newDependencies
+                } {
+                    phaseDependencies -= otherAnalyses
+                    phaseDependencies += newPhase
+                    worklist :+= newPhase
+                    mergedPhase = true
                 }
-                if (existInSomeBatch) {
-                    acyclicGraph = acyclicGraph - firstElement
-                    setLazyInAllBatchesInternal(acyclicGraph, acyclicGraph.head._1)
-                } else {
-                    visited_batches = visited_batches :+ firstElement
-                    val keyList = acyclicGraph.keys.toSet -- visited_batches
-                    if (keyList.nonEmpty) {
-                        acyclicGraph = setLazyInAllBatchesInternal(acyclicGraph, keyList.head)
-                    }
-                }
-            } else {
-                visited_batches = visited_batches :+ firstElement
-                val keyList = acyclicGraph.keys.toSet -- visited_batches
-                if (keyList.nonEmpty) {
-                    setLazyInAllBatchesInternal(acyclicGraph, keyList.head)
+                if (!mergedPhase) { // If we didn't merge the lazy phase into another phase, we need to keep it
+                    phaseDependencies += currentPhase
                 }
             }
-            acyclicGraph
         }
-        setLazyInAllBatchesInternal(acyclicGraph, firstElement)
+
+        phaseDependencies
     }
 
-    def mergeIndependentBatches(
-        batchCount:      Int,
-        dependencyGraph: Map[Int, List[Int]],
-        nodeIndexMap:    Map[Int, List[Int]]
-    ): (Map[Int, List[Int]], Map[Int, List[Int]]) = {
-        (dependencyGraph, nodeIndexMap)
-    }
+    def refineDependencies(
+        initialPhaseDependencyGraph: Iterable[(Int, List[Int])],
+        initialPhaseIndexToAnalyses: Iterable[(Int, Set[Int])]
+    ): (Map[Int, List[Int]], Map[Int, Set[Int]])
 }
 
-object MaximumPhaseScheduling extends MaximumPhaseScheduling
+object MultiplePhaseScheduling {
+    final val AnalysisScheduleLazyTransformerInMultiplePhasesKey = s"${ConfigKeyPrefix}ScheduleLazyInMultiplePhases"
+}
+
+/**
+ * Maximum Phase Scheduling (MPS) Strategy.
+ * Breaks down computations into as many phases as possible based on dependencies and computation types.
+ */
+object MaximumPhaseScheduling extends MultiplePhaseScheduling {
+
+    def refineDependencies(
+        initialPhaseDependencyGraph: Iterable[(Int, List[Int])],
+        initialPhaseIndexToAnalyses: Iterable[(Int, Set[Int])]
+    ): (Map[Int, List[Int]], Map[Int, Set[Int]]) = {
+        (initialPhaseDependencyGraph.toMap, initialPhaseIndexToAnalyses.toMap)
+    }
+}
