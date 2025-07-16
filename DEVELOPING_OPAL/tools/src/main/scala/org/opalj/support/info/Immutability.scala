@@ -128,7 +128,6 @@ object Immutability {
 
         var projectTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
-        var callGraphTime: Seconds = Seconds.None
 
         val project = time {
             Project(
@@ -182,13 +181,13 @@ object Immutability {
         val propertyStore = project.get(PropertyStoreKey)
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
-        time {
-            project.get(callgraphKey)
-        } { t => callGraphTime = t.toSeconds }
+        callgraphKey.requirements(project)
+
+        val allDependencies = dependencies ++ callgraphKey.allCallGraphAnalyses(project)
 
         time {
             analysesManager.runAll(
-                dependencies,
+                allDependencies,
                 {
                     (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                         analysis match {
@@ -573,7 +572,7 @@ object Immutability {
                 |""".stripMargin
             )
 
-        val totalTime = projectTime + callGraphTime + analysisTime
+        val totalTime = projectTime + analysisTime
 
         stringBuilderNumber.append(
             s"""
@@ -581,7 +580,6 @@ object Immutability {
             | took:
             |   $totalTime seconds total time
             |   $projectTime seconds project time
-            |   $callGraphTime seconds callgraph time
             |   $analysisTime seconds analysis time
             |""".stripMargin
         )
