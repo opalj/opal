@@ -3,11 +3,11 @@ package org.opalj
 package tac2bc
 
 import java.io.File
-import java.nio.file.Path
 
 class MutatedClassFileTACtoBCTest extends TACtoBCTest {
 
     val dirName: String = "mutation"
+    val packageName: String = "org/opalj/tac2bc/mutation"
 
     describe("TACtoBC Mutation Testing") {
         executeTest("mutated")
@@ -33,7 +33,7 @@ class MutatedClassFileTACtoBCTest extends TACtoBCTest {
     override def extraFilesToLoad(
         testClassFileName: String,
         testInputDir:      String
-    ): List[Path] = {
+    ): List[String] = {
         val baseFileName = testClassFileName.replace(".class", "$")
         val directory = new File(testInputDir)
 
@@ -43,6 +43,6 @@ class MutatedClassFileTACtoBCTest extends TACtoBCTest {
             Array.empty
         }
 
-        extraFiles.iterator.map(file => file.toPath).toList
+        extraFiles.iterator.map(file => file.getName).toList
     }
 }

@@ -1,4 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.tac2bc.mutation;
+
 public class InvokeDynamic_mutation_1 {
 
     public static void main(String[] args) {

@@ -1,4 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.tac2bc.mutation;
+
 public class Negation_mutation_4 {
 
     private static int INT_FIELD = 42;

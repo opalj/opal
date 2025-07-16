@@ -6,7 +6,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URL
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import scala.sys.process._
 
@@ -37,6 +36,7 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
     val testRoot: String = s"${System.getProperty("user.dir")}/OPAL/tac2bc/src/test/resources"
 
     def dirName: String
+    def packageName: String
 
     def getSourceDir(originalFileName: String): String
 
@@ -44,7 +44,7 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
 
     def getTestFiles(file: File, fileName: String): IterableOnce[(String, String)]
 
-    def extraFilesToLoad(testClassFileName: String, testInputDir: String): List[Path] = List.empty
+    def extraFilesToLoad(testClassFileName: String, testInputDir: String): List[String] = List.empty
 
     def executeTest(
         testInputDirName: String
@@ -65,8 +65,9 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
         } yield testFile
 
         testFiles.foreach { case (testFileName, originalFileName) =>
-            val originalClassFileName = originalFileName.replace(".java", ".class")
+            val originalClassPath = s"$packageName/${originalFileName.replace(".java", ".class")}"
             val testClassFileName = testFileName.replace(".java", ".class")
+            val testClassPath = s"$packageName/$testClassFileName"
 
             it(description(originalFileName, testFileName)) {
 
@@ -85,7 +86,7 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
                 val logContext = new StandardLogContext()
                 OPALLogger.register(logContext)
                 implicit val project: Project[URL] =
-                    Project(Paths.get(testInputDir, testClassFileName).toFile, logContext, config)
+                    Project(Paths.get(testInputDir, testClassPath).toFile, logContext, config)
 
                 // Load the test class file
                 val classFile = project.allClassFiles.head
@@ -106,13 +107,15 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
                     classFile,
                     byteCodes.toMap,
                     outputDir,
-                    testClassFileName
+                    testClassPath
                 )
 
                 // Load the original class and the generated class
-                val originalClass = loadClasses(List(Paths.get(originalInputDir, originalClassFileName))).head
-                val classesToLoad =
-                    Paths.get(outputDir, testClassFileName) +: extraFilesToLoad(testClassFileName, testInputDir)
+                val originalClass = loadClasses(List((originalInputDir, originalClassPath))).head
+                val classesToLoad = (outputDir, testClassPath) +: extraFilesToLoad(
+                    testClassFileName,
+                    s"$testInputDir/$packageName"
+                ).map(fileName => (testInputDir, s"$packageName/$fileName"))
                 val generatedClass = loadClasses(classesToLoad).head
 
                 // Compare the output of the main method in the original and generated classes
@@ -173,10 +176,10 @@ trait TACtoBCTest extends AnyFunSpec with Matchers {
         outputStream.toString.trim
     }
 
-    def loadClasses(paths: List[Path]): Iterable[Class[_]] = {
-        val classes = paths.map { classFilePath =>
-            val className = classFilePath.getFileName.toString.replace(".class", "")
-            className -> Files.readAllBytes(classFilePath)
+    def loadClasses(files: List[(String, String)]): Iterable[Class[_]] = {
+        val classes = files.map { case (dir, file) =>
+            val className = file.replace(".class", "").replace('/', '.')
+            className -> Files.readAllBytes(Paths.get(dir, file))
         }
 
         val classLoader = new InMemoryClassLoader(classes.toMap)

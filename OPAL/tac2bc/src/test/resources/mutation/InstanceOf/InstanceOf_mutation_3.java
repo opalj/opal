@@ -1,4 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.tac2bc.mutation;
+
 public class InstanceOf_mutation_3 {
 
     public static final Object INSTANCE = new Object();

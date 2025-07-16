@@ -1,4 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.tac2bc.single;
+
 public class InstanceOf {
 
     public static void main(String[] args) {

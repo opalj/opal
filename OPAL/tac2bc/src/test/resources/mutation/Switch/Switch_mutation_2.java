@@ -1,4 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.tac2bc.mutation;
+
 public class Switch_mutation_2 {
 
     static class Myclass {

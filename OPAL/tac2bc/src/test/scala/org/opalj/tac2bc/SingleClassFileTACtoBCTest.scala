@@ -7,6 +7,7 @@ import java.io.File
 class SingleClassFileTACtoBCTest extends TACtoBCTest {
 
     val dirName: String = "single"
+    val packageName: String = "org/opalj/tac2bc/single"
 
     describe("TACtoBC Single Class File Generation") {
         executeTest("original")
