@@ -252,10 +252,10 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             newFai.getNewestAccesses(
                 newFai.numDirectAccesses - seenDirectAccesses,
                 newFai.numIndirectAccesses - seenIndirectAccesses
-            ) exists { writeAccess =>
-                val method = contextProvider.contextFromId(writeAccess._1).method.asDefinedMethod
+            ) exists { case (contextID, pc, receiver, _) =>
+                val method = contextProvider.contextFromId(contextID).method.asDefinedMethod
                 state.fieldAccesses += method -> (state.fieldAccesses.getOrElse(method, Set.empty) +
-                    ((writeAccess._2, writeAccess._3)))
+                    ((pc, receiver)))
 
                 val tacEP = state.tacDependees.get(method) match {
                     case Some(tacEP) => tacEP
@@ -274,7 +274,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 }
 
                 if (tacEP.hasUBP && callersEP.hasUBP)
-                    methodUpdatesField(method, tacEP.ub.tac.get, callersEP.ub, writeAccess._2, writeAccess._3)
+                    methodUpdatesField(method, tacEP.ub.tac.get, callersEP.ub, pc, receiver)
                 else
                     false
             }
