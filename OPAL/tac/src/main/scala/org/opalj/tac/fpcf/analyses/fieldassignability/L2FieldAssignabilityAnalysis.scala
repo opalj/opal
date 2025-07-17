@@ -322,8 +322,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             (accessingMethod ne method) && !accessingMethod.isInitializer
         }) ||
             writes.iterator.distinctBy(_._1).size < writes.size // More than one write per method was detected
-
-        false
     }
 
     /**
