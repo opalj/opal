@@ -36,7 +36,7 @@ object ThrownExceptions extends ProjectsAnalysisApplication {
 
     protected class ThrownExceptionsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
         with PropertyStoreBasedCommandLineConfig {
-        val description = "Computes the set of the execeptions (in)directly thrown by methods"
+        val description = "Computes the set of the exceptions (in)directly thrown by methods"
 
         private val analysisLevelArg =
             new AnalysisLevelArg("Thrown-exceptions analysis level", Seq("L0" -> "L0", "L1" -> "L1"): _*) {
