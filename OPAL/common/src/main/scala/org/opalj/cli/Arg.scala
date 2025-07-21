@@ -43,15 +43,15 @@ trait ChoiceArg[R] extends Arg[String, R] {
 }
 
 trait ForwardingArg[T, S, R] extends Arg[T, R] {
-    val command: Arg[T, S]
-    def name: String = command.name
-    override def argName: String = command.argName
-    def description: String = command.description
-    override def defaultValue: Option[T] = command.defaultValue
-    override def short: Char = command.short
-    override def noshort: Boolean = command.noshort
-    override def choices: Seq[String] = command.choices
+    val arg: Arg[T, S]
+    def name: String = arg.name
+    override def argName: String = arg.argName
+    def description: String = arg.description
+    override def defaultValue: Option[T] = arg.defaultValue
+    override def short: Char = arg.short
+    override def noshort: Boolean = arg.noshort
+    override def choices: Seq[String] = arg.choices
 }
 
-abstract class ExternalParser[T: ValueConverter, R](val command: Arg[T, T]) extends ParsedArg[T, R]
+abstract class ExternalParser[T: ValueConverter, R](val arg: Arg[T, T]) extends ParsedArg[T, R]
     with ForwardingArg[T, T, R]

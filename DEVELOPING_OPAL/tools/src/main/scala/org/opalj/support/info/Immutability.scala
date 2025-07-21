@@ -96,6 +96,7 @@ object Immutability extends ProjectsAnalysisApplication {
             override val name: String = "analysis"
             override val description: String = "The analysis that should be executed"
             override val choices: Seq[String] = Seq("FieldAssignability", "Fields", "Classes", "Types", "All")
+            override val defaultValue: Option[String] = Some("All")
 
             override def parse(arg: String): Analyses = arg match {
                 case "All"                => All
@@ -471,7 +472,7 @@ object Immutability extends ProjectsAnalysisApplication {
                |
                | ${analysisConfig(ThreadsNumArg)} Threads :: took $analysisTime seconds analysis time
                |
-               | results folder: ${analysisConfig(OutputDirArg)}
+               | results folder: ${analysisConfig.get(OutputDirArg)}
                |
                | CofigurationName: ${analysisConfig(ConfigurationNameArg)}
                |

@@ -145,15 +145,21 @@ trait OPALCommandLineConfig {
 
         verify()
 
-        values = rawValues.collect {
-            case (arg, value) if value.isDefined =>
-                (
-                    arg,
-                    arg match {
-                        case parsedArg: ParsedArg[_, _] => parseArgWithParser(value, parsedArg.parse)
-                        case _: Arg[_, _]               => value()
-                    }
-                )
+        def forwardedArgs(forwardedArg: Arg[_, _]): Iterator[Arg[_, _]] = {
+            forwardedArg match {
+                case forwardingArg: ForwardingArg[_, _, _] => Iterator(forwardingArg) ++ forwardedArgs(forwardingArg.arg)
+                case _                                     => Iterator(forwardedArg)
+            }
+        }
+
+        values = rawValues.flatMap {
+            case (arg, scallopOpt) if scallopOpt.isDefined =>
+                val value = arg match {
+                    case parsedArg: ParsedArg[_, _] => parseArgWithParser(scallopOpt, parsedArg.parse)
+                    case _: Arg[_, _]               => scallopOpt()
+                }
+                forwardedArgs(arg).map { arg => arg -> value }
+            case _ => None
         }
     }
 
