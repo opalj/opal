@@ -6,7 +6,7 @@ package analyses
 import java.io.File
 import java.net.URL
 
-import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
@@ -52,9 +52,8 @@ object SelfReferenceLeakageAnalysis extends ProjectsAnalysisApplication {
         val notLeakingEntities: Iterator[EPS[Entity, SelfReferenceLeakage]] =
             projectStore.entities(SelfReferenceLeakage.Key) filter { eps => eps.lb == DoesNotLeakSelfReference }
         val notLeakingClasses = notLeakingEntities map { eps =>
-            val classFile = eps.e.asInstanceOf[ClassFile]
-            val classType = classFile.thisType
-            val className = classFile.thisType.toJava
+            val classType = eps.e.asInstanceOf[ClassType]
+            val className = classType.toJava
             if (project.classHierarchy.isInterface(classType).isYes)
                 "interface " + className
             else
