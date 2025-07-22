@@ -20,6 +20,7 @@ import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 
 /**
  * Computes return value freshness information; see
@@ -49,6 +50,7 @@ object ReturnValueFreshness extends ProjectsAnalysisApplication {
         analysisConfig.setupCallGaph(project)
 
         project.get(FPCFAnalysesManagerKey).runAll(
+            EagerFieldAccessInformationAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyFieldLocalityAnalysis,
             EagerReturnValueFreshnessAnalysis
