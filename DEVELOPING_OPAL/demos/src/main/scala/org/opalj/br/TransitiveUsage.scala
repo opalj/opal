@@ -54,7 +54,8 @@ object TransitiveUsage extends AnalysisApplication {
                         processType(declaringClassType)
                         processType(descriptor.returnType)
                         descriptor.parameterTypes.view foreach { processType(_) }
-                    case VirtualForwardingMethod(_, _, _, _) | _: VirtualMethod => throw new MatchError(vse)
+                    case _: VirtualModule                              =>
+                    case _: VirtualForwardingMethod | _: VirtualMethod => throw new MatchError(vse)
                 }
             }
             process(source)
