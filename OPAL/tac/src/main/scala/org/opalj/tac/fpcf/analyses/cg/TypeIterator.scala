@@ -55,6 +55,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
+import org.opalj.si.ProjectInformationKeys
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -530,6 +531,9 @@ class RTATypeIterator(project: SomeProject)
             isPossibleType(field, _)
         }.foreach(handleNewType)
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ PropertyStoreKey
 }
 
 /**
@@ -645,6 +649,9 @@ class PropagationBasedTypeIterator(
             isPossibleType(field, _)
         }.foreach(handleNewType)
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ PropertyStoreKey
 }
 
 /**
@@ -816,6 +823,9 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
                 None
         }
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :++ Seq(PropertyStoreKey, VirtualFormalParametersKey, DefinitionSitesKey)
 }
 
 /**
