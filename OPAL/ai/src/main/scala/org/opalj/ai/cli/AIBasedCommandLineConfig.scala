@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package ai
-package common
+package cli
 
 import scala.language.postfixOps
 

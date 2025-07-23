@@ -20,7 +20,7 @@ import com.typesafe.config.ConfigValueFactory
 import org.rogach.scallop.flagConverter
 import org.rogach.scallop.stringConverter
 
-import org.opalj.ai.common.DomainArg
+import org.opalj.ai.cli.DomainArg
 import org.opalj.br.ClassType
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport

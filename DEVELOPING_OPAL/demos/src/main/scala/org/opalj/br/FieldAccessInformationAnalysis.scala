@@ -11,8 +11,8 @@ import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.cli.FieldNameArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.cli.FieldNameArg
 import org.opalj.util.PerformanceEvaluation.memory
 import org.opalj.util.asMB
 

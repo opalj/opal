@@ -1,12 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
-package br
 package cli
 
 import org.rogach.scallop.stringListConverter
-
-import org.opalj.cli.ParsedArg
-import org.opalj.cli.PlainArg
 
 object ClassNameArg extends PlainArg[List[String]] {
     override val name: String = "class"
@@ -35,23 +31,6 @@ object MethodNameArg extends ParsedArg[List[String], List[(String, String)]] {
         arg.map { methodName =>
             val methodIndex = methodName.lastIndexOf('.')
             (methodName.take(methodIndex), methodName.drop(methodIndex + 1))
-        }
-    }
-}
-
-object MethodArg extends ParsedArg[List[String], List[(String, String, MethodDescriptor)]] {
-    override val name: String = "method"
-    override val description: String =
-        "Fully-qualified class name and method signature to analyze, e.g., java.util.HashMap.get(Ljava/lang/Object;)Ljava/lang/Object;"
-
-    override def parse(arg: List[String]): List[(String, String, MethodDescriptor)] = {
-        arg.map { methodSignature =>
-            val (classAndMethod, descriptorString) = methodSignature.splitAt(methodSignature.indexOf('('))
-            val methodNameIndex = classAndMethod.lastIndexOf('.')
-            val className = classAndMethod.take(methodNameIndex).replace('.', '/')
-            val methodName = className.drop(methodNameIndex + 1)
-
-            (className, methodName, MethodDescriptor(descriptorString))
         }
     }
 }

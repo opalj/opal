@@ -10,8 +10,8 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.cli.ClassNameArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.cli.ClassNameArg
 import org.opalj.de.DependencyExtractor
 import org.opalj.de.DependencyProcessorAdapter
 import org.opalj.de.DependencyType

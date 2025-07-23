@@ -9,7 +9,7 @@ import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
 
-import org.opalj.ai.common.AIBasedCommandLineConfig
+import org.opalj.ai.cli.AIBasedCommandLineConfig
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project

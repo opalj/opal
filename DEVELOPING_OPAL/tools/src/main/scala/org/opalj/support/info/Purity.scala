@@ -9,7 +9,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 
-import org.opalj.ai.common.DomainArg
+import org.opalj.ai.cli.DomainArg
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey

@@ -36,7 +36,7 @@ trait OPALCommandLineConfig {
     private val generalConfigGroup = group("General configuration:")
     protected var argGroups: Map[Arg[_, _], ScallopOptionGroup] = Map.empty
 
-    generalArgs(NoLogsArg, RenderConfigArg)
+    generalArgs(NoLogsArg, ConfigFileArg, RenderConfigArg)
 
     /**
      * Defines (additional) args for this configuration
@@ -100,7 +100,7 @@ trait OPALCommandLineConfig {
          * Requires exactly one of the given arguments
          */
         def ^(a2: Arg[_, _]): Arg[_, _] = {
-            MutuallyExclusive(Seq(a, a2))
+            MutuallyExclusive(a, a2)
         }
     }
 
@@ -198,7 +198,9 @@ trait OPALCommandLineConfig {
             OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
         var config: Config =
-            if (isLibrary)
+            if (get(ConfigFileArg).isDefined)
+                ConfigFactory.load(apply(ConfigFileArg))
+            else if (isLibrary)
                 ConfigFactory.load("LibraryProject.conf")
             else
                 ConfigFactory.load("CommandLineProject.conf")

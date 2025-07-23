@@ -15,8 +15,8 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.cli.ClassNameArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.cli.ClassNameArg
 import org.opalj.cli.GranularityArg
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call

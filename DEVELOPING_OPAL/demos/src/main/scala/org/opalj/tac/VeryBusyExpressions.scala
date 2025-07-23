@@ -2,7 +2,7 @@
 package org.opalj
 package tac
 
-import org.opalj.ai.common.AIBasedCommandLineConfig
+import org.opalj.ai.cli.AIBasedCommandLineConfig
 import org.opalj.br._
 import org.opalj.br.analyses._
 import org.opalj.br.cfg._
