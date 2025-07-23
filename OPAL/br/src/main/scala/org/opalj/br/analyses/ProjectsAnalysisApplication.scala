@@ -3,8 +3,6 @@ package org.opalj
 package br
 package analyses
 
-import scala.language.implicitConversions
-
 import java.io.File
 import java.net.URL
 import java.util.Calendar

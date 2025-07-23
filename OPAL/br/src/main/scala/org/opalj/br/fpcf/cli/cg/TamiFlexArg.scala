@@ -1,7 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.cli.cg
-
-import scala.jdk.CollectionConverters._
+package org.opalj
+package br
+package fpcf
+package cli
+package cg
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
