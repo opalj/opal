@@ -330,7 +330,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         case VirtualMethodCall.ASTID    => stmt.asVirtualMethodCall
         case Assignment.ASTID           => stmt.asAssignment.expr.asFunctionCall
         case ExprStmt.ASTID             => stmt.asExprStmt.expr.asFunctionCall
-        case _ =>
+        case _                          =>
             throw new IllegalStateException(s"unexpected stmt $stmt")
     }
 
@@ -465,7 +465,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case LBP(TransitivelyImmutableType | TransitivelyImmutableClass) => true
+        case LBP(TransitivelyImmutableType | TransitivelyImmutableClass)                => true
         case UBP(TransitivelyImmutableType | TransitivelyImmutableClass) | _: EPK[_, _] =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
@@ -589,7 +589,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def baseMethodPurity(context: Context): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) => Result(context, p)
+            case FinalP(p)                => Result(context, p)
             case ep @ InterimLUBP(lb, ub) =>
                 InterimResult.create(context, lb, ub, Set(ep), c)
             case epk =>
@@ -615,7 +615,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case context: Context if context.method.definedMethod.body.isDefined =>
                 determinePurity(context)
             case context: Context => Result(context, ImpureByLackOfInformation)
-            case _ =>
+            case _                =>
                 throw new IllegalArgumentException(s"$e is not a declared method")
         }
     }

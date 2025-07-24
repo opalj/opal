@@ -175,7 +175,7 @@ sealed abstract class Purity
         other match {
             case _: ClassifiedImpure           => other
             case _ if other.modifiesParameters => other.meet(this)
-            case _ =>
+            case _                             =>
                 Purity(this.flags | other.flags)
         }
     }
@@ -237,11 +237,11 @@ object Purity extends PurityPropertyMetaInformation {
     }
 
     def apply(name: String): Option[Purity] = name match {
-        case "CompileTimePure" => Some(CompileTimePure)
-        case "Pure"            => Some(Pure)
-        case "SideEffectFree"  => Some(SideEffectFree)
-        case "DPure"           => Some(DPure)
-        case "DSideEffectFree" => Some(DSideEffectFree)
+        case "CompileTimePure"                         => Some(CompileTimePure)
+        case "Pure"                                    => Some(Pure)
+        case "SideEffectFree"                          => Some(SideEffectFree)
+        case "DPure"                                   => Some(DPure)
+        case "DSideEffectFree"                         => Some(DSideEffectFree)
         case _ if name.startsWith("ContextuallyPure{") =>
             Some(ContextuallyPure(parseParams(name.substring(17, name.length - 1))))
         case _ if name.startsWith("ContextuallySideEffectFree{") =>
@@ -337,7 +337,7 @@ case class ContextuallyPure(override val modifiedParams: IntTrieSet) extends Pur
         case ContextuallySideEffectFree(p)  => ContextuallySideEffectFree(this.modifiedParams ++ p)
         case DContextuallyPure(p)           => DContextuallyPure(this.modifiedParams ++ p)
         case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _ =>
+        case _                              =>
             (other.flags: @switch) match {
                 case CompileTimePure.flags | Pure.flags => this
                 // For non-pure levels, we don't have compile-time purity anymore
@@ -368,12 +368,12 @@ case class ContextuallySideEffectFree(override val modifiedParams: IntTrieSet) e
         case ContextuallySideEffectFree(p)  => ContextuallySideEffectFree(this.modifiedParams ++ p)
         case DContextuallyPure(p)           => DContextuallySideEffectFree(this.modifiedParams ++ p)
         case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _ =>
+        case _                              =>
             (other.flags: @switch) match {
                 case CompileTimePure.flags | Pure.flags => this
                 // For non-pure levels, we don't have compile-time purity anymore
                 case _ => (other.flags | NotCompileTimePure: @switch) match {
-                        case SideEffectFree.flags => this
+                        case SideEffectFree.flags                => this
                         case DPure.flags | DSideEffectFree.flags =>
                             DContextuallySideEffectFree(modifiedParams)
                     }
@@ -438,7 +438,7 @@ case class DContextuallyPure(override val modifiedParams: IntTrieSet) extends Pu
         case ContextuallySideEffectFree(p)  => DContextuallySideEffectFree(this.modifiedParams ++ p)
         case DContextuallyPure(p)           => DContextuallyPure(this.modifiedParams ++ p)
         case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _ =>
+        case _                              =>
             (other.flags: @switch) match {
                 case CompileTimePure.flags | Pure.flags => this
                 // For non-pure levels, we don't have compile-time purity anymore

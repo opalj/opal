@@ -163,7 +163,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
                 Some((classFile.thisType, nestedClasses))
             } catch {
                 case ct: ControlThrowable => throw ct
-                case t: Throwable =>
+                case t: Throwable         =>
                     failures =
                         s"cannot calculate inner classes for ${classFile.fqn}: ${t.getClass().getSimpleName()} - ${t.getMessage()}" ::
                             failures

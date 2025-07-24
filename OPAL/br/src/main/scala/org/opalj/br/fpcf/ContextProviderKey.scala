@@ -23,7 +23,7 @@ object ContextProviderKey extends ProjectInformationKey[ContextProvider, Context
     override def compute(theProject: SomeProject): ContextProvider = {
         theProject.getProjectInformationKeyInitializationData(this) match {
             case Some(contextProvider: ContextProvider) => contextProvider
-            case None =>
+            case None                                   =>
                 implicit val logContext: LogContext = theProject.logContext
                 OPALLogger.warn(
                     "analysis configuration",

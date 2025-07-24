@@ -145,7 +145,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                             val astID = rhs.astID
                             astID match {
                                 case New.ASTID | NewArray.ASTID => true
-                                case GetField.ASTID =>
+                                case GetField.ASTID             =>
                                     val objRef = rhs.asGetField.objRef
                                     isLocal(objRef, otherwise, excludedDefSites ++ defSites)
                                 case ArrayLoad.ASTID =>

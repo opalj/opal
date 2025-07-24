@@ -57,7 +57,7 @@ abstract class IFDSEvaluationRunner {
         def evalProject(p: SomeProject): (Milliseconds, Statistics, Option[Object]) = {
             if (useL2) {
                 p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                    case None => Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+                    case None               => Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
                     case Some(requirements) =>
                         requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
                 }
@@ -175,7 +175,7 @@ abstract class IFDSEvaluationRunner {
         propertyStore(method, Callers.key) match {
             // This is the case, if the method may be called from outside the library.
             case FinalEP(_, p: Callers) => p.hasCallersWithUnknownContext
-            case _ =>
+            case _                      =>
                 throw new IllegalStateException(
                     "call graph mut be computed before the analysis starts"
                 )

@@ -146,7 +146,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 // These are "custom attributes"
                 case SynthesizedClassFiles.KindId => /*ignore*/
                 case VirtualTypeFlag.KindId       => /*ignore*/
-                case _ =>
+                case _                            =>
                     val classInfo = classFile.thisType.toJava
                     val message = s"unexpected class attribute: $attribute ($classInfo)"
                     throw BytecodeProcessingFailedException(message)
@@ -214,7 +214,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 // Synthetic and Deprecated do not introduce new dependencies
                 case Synthetic.KindId  => /*do nothing*/
                 case Deprecated.KindId => /*do nothing*/
-                case _ =>
+                case _                 =>
                     val fieldInfo = field.toJava
                     val message = s"unexpected field attribute: $attribute ($fieldInfo)"
                     throw new BytecodeProcessingFailedException(message)
@@ -293,7 +293,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     // relevant dependencies.
                     case StackMapTable.KindId   => /* Do Nothing */
                     case LineNumberTable.KindId => /* Do Nothing */
-                    case _ =>
+                    case _                      =>
                         val methodSignature = method.toJava
                         val message = s"unexpected code attribute: $attribute ($methodSignature)"
                         throw BytecodeProcessingFailedException(message)
@@ -330,9 +330,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case RuntimeInvisibleParameterAnnotationTable.KindId
                     | RuntimeVisibleParameterAnnotationTable.KindId =>
                     val pas = attribute.asInstanceOf[ParameterAnnotationTable].parameterAnnotations
-                    pas foreach { pa =>
-                        pa foreach { process(vm, _, PARAMETER_ANNOTATED_WITH, ANNOTATION_ELEMENT_TYPE) }
-                    }
+                    pas foreach { pa => pa foreach { process(vm, _, PARAMETER_ANNOTATED_WITH, ANNOTATION_ELEMENT_TYPE) } }
 
                 // ElementValues encode annotation default attributes
                 case BooleanValue.KindId
@@ -358,7 +356,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case Synthetic.KindId            => /* nothing to do */
                 case Deprecated.KindId           => /* nothing to do */
                 case MethodParameterTable.KindId => /* nothing to do */
-                case _ =>
+                case _                           =>
                     val methodSignature = method.toJava
                     val message = s"unexpected method attribute: $attribute ($methodSignature)"
                     throw BytecodeProcessingFailedException(message)

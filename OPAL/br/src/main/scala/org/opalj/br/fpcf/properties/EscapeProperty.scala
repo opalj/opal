@@ -134,7 +134,7 @@ sealed abstract class EscapeProperty
         other match {
             case _: AtMost                                                  => // TODO this is not correct -> fix me!
             case other: EscapeProperty if other lessOrEqualRestrictive this =>
-            case p =>
+            case p                                                          =>
                 throw new IllegalArgumentException(s"$e: illegal refinement of property $p to $this")
         }
     }

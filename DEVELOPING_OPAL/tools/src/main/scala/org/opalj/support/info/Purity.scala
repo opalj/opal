@@ -243,7 +243,7 @@ object Purity {
         val projMethods = allMethods.filter { m =>
             val pn = m.definedMethod.classFile.thisType.packageName
             packages match {
-                case None => isJDK || !JDKPackages.exists(pn.startsWith)
+                case None     => isJDK || !JDKPackages.exists(pn.startsWith)
                 case Some(ps) =>
                     ps.exists(pn.startsWith)
             }
@@ -539,7 +539,7 @@ object Purity {
                 case "-packages"           => packages = Some(readNextArg().split(':'))
                 case "-j"                  => numThreads = readNextArg().toInt
                 case "-noJDK"              => withoutJDK = true
-                case "-JDK" =>
+                case "-JDK"                =>
                     cp = JRELibraryFolder; withoutJDK = true
 
                 case unknown =>
@@ -655,7 +655,7 @@ object Purity {
             case Some("CHA")        => CHACallGraphKey
             case Some("PointsTo")   => AllocationSiteBasedPointsToCallGraphKey
             case Some("RTA") | None => RTACallGraphKey
-            case Some(a) =>
+            case Some(a)            =>
                 Console.println(s"unknown call graph analysis: $a")
                 Console.println(usage)
                 return;

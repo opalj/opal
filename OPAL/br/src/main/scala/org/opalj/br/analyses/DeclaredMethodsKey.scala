@@ -335,13 +335,13 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
     ) extends MethodContext(methodName, descriptor) {
 
         override def equals(other: Any): Boolean = other match {
-            case that: MethodContextQuery => that.equals(this)
+            case that: MethodContextQuery          => that.equals(this)
             case that: PackagePrivateMethodContext =>
                 packageName == that.packageName &&
                     methodName == that.methodName &&
                     descriptor == that.descriptor
             case _: ShadowsPackagePrivateMethodContext => false
-            case that: MethodContext =>
+            case that: MethodContext                   =>
                 methodName == that.methodName && descriptor == that.descriptor
             case _ => false
         }
@@ -362,7 +362,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         override def equals(other: Any): Boolean = other match {
             case that: MethodContextQuery       => that.equals(this)
             case _: PackagePrivateMethodContext => false
-            case that: MethodContext =>
+            case that: MethodContext            =>
                 methodName == that.methodName && descriptor == that.descriptor
             case _ => false
         }

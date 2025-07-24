@@ -114,7 +114,7 @@ object TAC {
                     if (domainName.nonEmpty) handleError("-naive and -domain cannot be combined")
 
                 case "-domainValueInformation" => DUVar.printDomainValue = true
-                case "-domain" =>
+                case "-domain"                 =>
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")
 
@@ -129,7 +129,7 @@ object TAC {
                 case "-performConstantPropagation" => performConstantPropagation = true
                 case "-rewriteInvokeDynamic"       => rewriteInvokeDynamic = true
                 case "-rewriteDynamicConstants"    => rewriteDynamicConstants = true
-                case "-rewriteAll" =>
+                case "-rewriteAll"                 =>
                     rewriteInvokeDynamic = true
                     rewriteDynamicConstants = true
 

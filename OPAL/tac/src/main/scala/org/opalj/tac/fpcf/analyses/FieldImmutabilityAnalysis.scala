@@ -100,7 +100,7 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
     def doDetermineFieldImmutability(entity: Entity): ProperPropertyComputationResult = entity match {
         case field: Field => determineFieldImmutability(field)
-        case _ =>
+        case _            =>
             throw new IllegalArgumentException(s"${entity.getClass.getName} is not an org.opalj.br.Field")
     }
 

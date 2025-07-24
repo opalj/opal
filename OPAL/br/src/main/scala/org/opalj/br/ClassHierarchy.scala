@@ -1696,10 +1696,10 @@ class ClassHierarchy private (
         implicit p: ClassFileRepository
     ): Answer = {
         (subtype, supertype) match {
-            case (ConcreteTypeArgument(et), ConcreteTypeArgument(superEt)) => Answer(et eq superEt)
-            case (ConcreteTypeArgument(et), UpperTypeBound(superEt))       => isASubtypeOf(et, superEt)
-            case (ConcreteTypeArgument(et), LowerTypeBound(superEt))       => isASubtypeOf(superEt, et)
-            case (_, Wildcard)                                             => Yes
+            case (ConcreteTypeArgument(et), ConcreteTypeArgument(superEt))                  => Answer(et eq superEt)
+            case (ConcreteTypeArgument(et), UpperTypeBound(superEt))                        => isASubtypeOf(et, superEt)
+            case (ConcreteTypeArgument(et), LowerTypeBound(superEt))                        => isASubtypeOf(superEt, et)
+            case (_, Wildcard)                                                              => Yes
             case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) =>
                 (varInd, supVarInd) match {
                     case (None, None) =>
@@ -2225,9 +2225,9 @@ class ClassHierarchy private (
         assert(upperTypeBoundsB.nonEmpty)
 
         upperTypeBoundsA.compare(upperTypeBoundsB) match {
-            case StrictSubset   => upperTypeBoundsA
-            case EqualSets      => upperTypeBoundsA /* or upperTypeBoundsB */
-            case StrictSuperset => upperTypeBoundsB
+            case StrictSubset     => upperTypeBoundsA
+            case EqualSets        => upperTypeBoundsA /* or upperTypeBoundsB */
+            case StrictSuperset   => upperTypeBoundsB
             case UncomparableSets =>
                 val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
                 val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)

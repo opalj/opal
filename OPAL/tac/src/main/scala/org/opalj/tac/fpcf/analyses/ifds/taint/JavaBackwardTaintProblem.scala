@@ -49,7 +49,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
                 val arrayDefinedBy = arrayStore.arrayRef.asVar.definedBy
                 if (in match {
                         // check if array is tainted
-                        case Variable(index) => arrayDefinedBy.contains(index) // whole variable/array is tainted
+                        case Variable(index)                     => arrayDefinedBy.contains(index) // whole variable/array is tainted
                         case ArrayElement(index, taintedElement) => arrayDefinedBy.contains(index) && // only specific array element is tainted
                                 (arrayIndex.isEmpty || arrayIndex.get == taintedElement)
                         case _ => false
@@ -276,7 +276,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
          ============================================================
          */
         expression.astID match {
-            case Var.ASTID => expression.asVar.definedBy.map(Variable)
+            case Var.ASTID       => expression.asVar.definedBy.map(Variable)
             case ArrayLoad.ASTID =>
                 val arrayLoad = expression.asArrayLoad
                 val arrayIndex = TaintProblem.getIntConstant(arrayLoad.index, statement.code)

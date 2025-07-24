@@ -48,7 +48,7 @@ object DependencyAnalysis extends AnalysisApplication {
 
     def readParameter(param: String, args: Seq[String], default: String = ""): (String, Seq[String]) = {
         args.partition(_.startsWith("-" + param + "=")) match {
-            case (Seq(), parameters1) => (default, parameters1)
+            case (Seq(), parameters1)  => (default, parameters1)
             case (Seq(p), parameters1) => {
                 if (p.startsWith("-" + param + "=\"") && p.endsWith("\""))
                     (p.substring(param.length + 3, p.length - 1), parameters1)

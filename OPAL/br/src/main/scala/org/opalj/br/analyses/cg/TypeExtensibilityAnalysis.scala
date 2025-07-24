@@ -62,7 +62,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ClassType => 
                     update = subtypeExtensibility(scid) ne thisTypeExtensbility
                     subtypeExtensibility(scid) = thisTypeExtensbility
                 }
-                case Yes => // do nothing
+                case Yes     => // do nothing
                 case Unknown => {
                     update = subtypeExtensibility(scid) ne thisTypeExtensbility
                     if (thisTypeExtensbility.isYes) subtypeExtensibility(scid) = Yes

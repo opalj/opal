@@ -755,7 +755,7 @@ object Immutability {
                 case "-withoutConsiderLazyInitialization" => withoutConsiderLazyInitialization = true
                 case "-multi"                             => multiProjects = true
                 case "-analysisName"                      => configurationName = Some(readNextArg())
-                case "-JDK" =>
+                case "-JDK"                               =>
                     cp = JRELibraryFolder
                     withoutJDK = true
 
@@ -773,7 +773,7 @@ object Immutability {
             case Some("PointsTo")   => AllocationSiteBasedPointsToCallGraphKey
             case Some("RTA") | None => RTACallGraphKey
             case Some("XTA")        => XTACallGraphKey
-            case Some(a) =>
+            case Some(a)            =>
                 Console.println(s"unknown call graph analysis: $a")
                 Console.println(usage)
                 return;

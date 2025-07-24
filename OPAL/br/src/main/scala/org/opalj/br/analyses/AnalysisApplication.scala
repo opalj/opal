@@ -206,7 +206,7 @@ trait AnalysisApplication {
                 setupProject(cpFiles, libcpFiles, completelyLoadLibraries, config)
             } catch {
                 case ct: ControlThrowable => throw ct;
-                case t: Throwable =>
+                case t: Throwable         =>
                     error("fatal", "setting up the project failed", t)
                     printUsage
                     sys.exit(2)

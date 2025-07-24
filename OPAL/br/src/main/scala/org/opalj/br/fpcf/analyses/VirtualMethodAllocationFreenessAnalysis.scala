@@ -71,7 +71,7 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] (
             eps match {
                 case FinalP(AllocationFreeMethod)  =>
                 case FinalP(MethodWithAllocations) => return Result(dm, VMethodWithAllocations);
-                case epk =>
+                case epk                           =>
                     dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, AllocationFreeness]]
             }
 

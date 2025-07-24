@@ -84,7 +84,8 @@ package object util {
             }
             run += 1
         } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
-        ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
+                 ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan
+        )
     }
 
     def renderConfig(config: Config, withComments: Boolean = true): String = {

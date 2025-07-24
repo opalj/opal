@@ -41,7 +41,7 @@ object InterpretMethods extends AnalysisApplication {
             parameter == "-verbose=true" || parameter == "-verbose=false"
 
         parameters match {
-            case Nil => Iterable.empty
+            case Nil            => Iterable.empty
             case Seq(parameter) =>
                 if (isDomainParameter(parameter) || isVerbose(parameter))
                     Iterable.empty

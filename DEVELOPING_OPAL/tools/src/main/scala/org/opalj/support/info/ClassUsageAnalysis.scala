@@ -131,7 +131,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
                 granularityParam.get.substring(granularityParam.get.indexOf("=") + 1) match {
                     case "fine"   => true
                     case "coarse" => false
-                    case _ =>
+                    case _        =>
                         val msg = "incorrect argument: -granularity must be one of fine|coarse"
                         throw new IllegalArgumentException(msg)
                 }

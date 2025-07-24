@@ -109,7 +109,7 @@ abstract class JavaICFG(project: SomeProject)
         val ep = propertyStore(caller, Callees.key)
         ep match {
             case FinalEP(_, p) => definedMethods(p.directCallees(contextProvider.newContext(caller), pc).map(_.method))
-            case _ =>
+            case _             =>
                 throw new IllegalStateException(
                     "call graph must be computed before the analysis starts"
                 )

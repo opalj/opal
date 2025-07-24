@@ -152,7 +152,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
                     case Assignment(pc, _, NewArray(_, _, tpe)) => Some((tpe, pc))
                     case Assignment(pc, _, c: Const)            => Some((c.tpe.asClassType, pc))
                     case Assignment(pc, _, fc: FunctionCall[V]) => Some((fc.descriptor.returnType.asReferenceType, pc))
-                    case _ =>
+                    case _                                      =>
                         hasUnknownAllocation = true
                         None
                 }
@@ -487,9 +487,8 @@ class RTATypeIterator(project: SomeProject)
                 handleType(av.theUpperTypeBound)
             case _ =>
         }
-        typesProperty.types.iterator.filter { tpe =>
-            isPossibleType(use, tpe) || additionalTypes.contains(tpe)
-        }.foreach(handleType)
+        typesProperty.types.iterator.filter { tpe => isPossibleType(use, tpe) || additionalTypes.contains(tpe) }
+            .foreach(handleType)
     }
 
     @inline override def foreachType(

@@ -462,7 +462,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         import project.classHierarchy.isSubtypeOf
         ep match {
             case LBP(PrimitiveReturnValue | FreshReturnValue) =>
-            case FinalP(Getter) =>
+            case FinalP(Getter)                               =>
                 if (data._2 meet state.ubPurity ne state.ubPurity)
                     isLocal(data._1.get, data._2)
             case FinalP(ExtensibleGetter) =>
@@ -698,7 +698,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         for ((eop, _) <- state.purityDependees.valuesIterator) {
             eop match {
                 case LBP(lb) => newLowerBound = newLowerBound meet lb
-                case _ =>
+                case _       =>
                     return; // Nothing to be done, lower bound is still LBImpure
             }
         }
