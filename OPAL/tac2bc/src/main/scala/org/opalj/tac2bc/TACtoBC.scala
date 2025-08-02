@@ -2,10 +2,9 @@
 package org.opalj
 package tac2bc
 
+import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
-
 import org.opalj.ba.CodeElement
-import org.opalj.ba.LabelElement
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.RewriteLabel
@@ -27,7 +26,6 @@ object TACtoBC {
      * of bytecode instructions. It handles various types of TAC statements and expressions, translating them
      * into their equivalent bytecode form.
      *
-     * @param method method to be translated
      * @param tac TAC representation of a method to be converted into bytecode.
      * @return A Sequence of bytecode instructions representing the method's functionality
      */
@@ -39,7 +37,7 @@ object TACtoBC {
         val tacStmts = tac.stmts.zipWithIndex
         // fill tacToLVIndexMap
         val tacToLVIndex = prepareLvIndices(methodDescriptor, isStaticMethod, tacStmts)
-        translateStmtsToInstructions(tacStmts, tacToLVIndex)
+        translateStmtsToInstructions(tacStmts, tacToLVIndex, tac)
     }
 
     /**
@@ -48,7 +46,6 @@ object TACtoBC {
      * 2. Assigning LV indices to method parameters.
      * 3. Populating the `tacToLVIndex` map with unique LV indices for each unique variable.
      *
-     * @param method Method which the Array 'tacStmts' belongs to
      * @param tacStmts Array of tuples where each tuple contains a TAC statement and its index.
      */
     private def prepareLvIndices(
@@ -156,7 +153,8 @@ object TACtoBC {
      */
     def translateStmtsToInstructions(
         tacStmts:     Array[(Stmt[DUVar[ValueInformation]], Int)],
-        tacToLVIndex: Map[Int, Int]
+        tacToLVIndex: Map[Int, Int],
+        tac:          AITACode[TACMethodParameter, ValueInformation]
     )(implicit project: SomeProject): IndexedSeq[CodeElement[Nothing]] = {
 
         // generate Label for each TAC-Stmt -> index in TAC-Array = corresponding label
@@ -165,12 +163,22 @@ object TACtoBC {
 
         // list of all CodeElements including bytecode instructions as well as pseudo instructions
         val code = mutable.ListBuffer[CodeElement[Nothing]]()
+        val tacContext = new Tac2BcContext(tacStmts, tacToLVIndex, code)
 
-        tacStmts.foreach { case (stmt, tacIndex) =>
-            // add label to the list
-            code += LabelElement(labels(tacIndex))
-            StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code)
+        val cfg = tac.cfg
+        val workList = new ListBuffer[Stmt[V]]
+        workList.append(cfg.code.instructions.last)
+
+        while(workList.nonEmpty){
+            val current = workList.remove(0)
+            val currentIdx = tac.pcToIndex(current.pc)
+            StmtProcessor.processStmt(current, tacToLVIndex, labels, code, tacContext)
+            cfg.foreachPredecessor(currentIdx){ predIdx =>
+                val predStmt = cfg.code.instructions(predIdx)
+                StmtProcessor.processStmt(predStmt, tacToLVIndex, labels, code, tacContext)
+                //workList.append(predStmt)
+            }
         }
-        code.toIndexedSeq
+        code.toIndexedSeq.reverse
     }
 }

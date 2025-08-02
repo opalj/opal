@@ -88,14 +88,15 @@ object ExprProcessor {
     def processExpression(
         expr:         Expr[V],
         tacToLVIndex: Map[Int, Int],
-        code:         mutable.ListBuffer[CodeElement[Nothing]]
+        code:         mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:   Tac2BcContext
     ): Unit = {
         expr match {
             case const: Const              => loadConstant(const, code)
             case variable: Var[V]          => loadVariable(variable, tacToLVIndex, code)
-            case getField: GetField[V]     => processGetField(getField, tacToLVIndex, code)
+            case getField: GetField[V]     => processGetField(getField, tacToLVIndex, code, tacContext)
             case getStatic: GetStatic      => processGetStatic(getStatic, code)
-            case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code)
+            case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code, tacContext)
             case callExpr: Call[V @unchecked] =>
                 val call @ Call(declaringClass, isInterface, name, descriptor) = callExpr
                 processCall(
@@ -105,19 +106,20 @@ object ExprProcessor {
                     name,
                     descriptor,
                     tacToLVIndex,
-                    code
+                    code,
+                    tacContext
                 )
             case newExpr: New => processNewExpr(newExpr.tpe, code)
             case primitiveTypecastExpr: PrimitiveTypecastExpr[V] =>
-                processPrimitiveTypeCastExpr(primitiveTypecastExpr, tacToLVIndex, code)
-            case arrayLength: ArrayLength[V] => processArrayLength(arrayLength, tacToLVIndex, code)
-            case arrayLoadExpr: ArrayLoad[V] => processArrayLoad(arrayLoadExpr, tacToLVIndex, code)
-            case newArrayExpr: NewArray[V]   => processNewArray(newArrayExpr, tacToLVIndex, code)
+                processPrimitiveTypeCastExpr(primitiveTypecastExpr, tacToLVIndex, code, tacContext)
+            case arrayLength: ArrayLength[V] => processArrayLength(arrayLength, tacToLVIndex, code, tacContext)
+            case arrayLoadExpr: ArrayLoad[V] => processArrayLoad(arrayLoadExpr, tacToLVIndex, code, tacContext)
+            case newArrayExpr: NewArray[V]   => processNewArray(newArrayExpr, tacToLVIndex, code, tacContext)
             case invokedynamicFunctionCall: InvokedynamicFunctionCall[V] =>
-                processInvokedynamicFunctionCall(invokedynamicFunctionCall, tacToLVIndex, code)
-            case compare: Compare[V]       => processCompare(compare, tacToLVIndex, code)
-            case prefixExpr: PrefixExpr[V] => processPrefixExpr(prefixExpr, tacToLVIndex, code)
-            case instanceOf: InstanceOf[V] => processInstanceOf(instanceOf, tacToLVIndex, code)
+                processInvokedynamicFunctionCall(invokedynamicFunctionCall, tacToLVIndex, code, tacContext)
+            case compare: Compare[V]       => processCompare(compare, tacToLVIndex, code, tacContext)
+            case prefixExpr: PrefixExpr[V] => processPrefixExpr(prefixExpr, tacToLVIndex, code, tacContext)
+            case instanceOf: InstanceOf[V] => processInstanceOf(instanceOf, tacToLVIndex, code, tacContext)
             case _ =>
                 throw new UnsupportedOperationException("Unsupported expression type" + expr)
         }
@@ -126,19 +128,21 @@ object ExprProcessor {
     def processInstanceOf(
         instanceOf:   InstanceOf[V],
         tacToLVIndex: Map[Int, Int],
-        code:         mutable.ListBuffer[CodeElement[Nothing]]
+        code:         mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:   Tac2BcContext
     ): Unit = {
-        ExprProcessor.processExpression(instanceOf.value, tacToLVIndex, code)
+        ExprProcessor.processExpression(instanceOf.value, tacToLVIndex, code, tacContext)
         code += INSTANCEOF(instanceOf.cmpTpe)
     }
 
     def processPrefixExpr(
         prefixExpr:   PrefixExpr[V],
         tacToLVIndex: Map[Int, Int],
-        code:         mutable.ListBuffer[CodeElement[Nothing]]
+        code:         mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:   Tac2BcContext
     ): Unit = {
         // Process the operand (the expression being negated)
-        ExprProcessor.processExpression(prefixExpr.operand, tacToLVIndex, code)
+        ExprProcessor.processExpression(prefixExpr.operand, tacToLVIndex, code, tacContext)
         // Note that [[UnaryArithmeticOperators.Negate]] is the only UnaryArithmeticOperator used
         assert(prefixExpr.op eq UnaryArithmeticOperators.Negate)
         // Determine the appropriate negation instruction based on the operand type
@@ -157,12 +161,13 @@ object ExprProcessor {
     def processCompare(
         compare:      Compare[V],
         tacToLVIndex: Map[Int, Int],
-        code:         mutable.ListBuffer[CodeElement[Nothing]]
+        code:         mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:   Tac2BcContext
     ): Unit = {
         // Process the left expression
-        processExpression(compare.left, tacToLVIndex, code)
+        processExpression(compare.left, tacToLVIndex, code, tacContext)
         // Process the right expression
-        processExpression(compare.right, tacToLVIndex, code)
+        processExpression(compare.right, tacToLVIndex, code, tacContext)
         // Determine the appropriate comparison instruction
         code += {
             (compare.left.cTpe, compare.condition) match {
@@ -179,11 +184,12 @@ object ExprProcessor {
     def processInvokedynamicFunctionCall(
         invokedynamicFunctionCall: InvokedynamicFunctionCall[V],
         tacToLVIndex:              Map[Int, Int],
-        code:                      mutable.ListBuffer[CodeElement[Nothing]]
+        code:                      mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:                Tac2BcContext
     ): Unit = {
         // Process each parameter
         for (param <- invokedynamicFunctionCall.params)
-            ExprProcessor.processExpression(param, tacToLVIndex, code)
+            ExprProcessor.processExpression(param, tacToLVIndex, code, tacContext)
         code += DEFAULT_INVOKEDYNAMIC(
             invokedynamicFunctionCall.bootstrapMethod,
             invokedynamicFunctionCall.name,
@@ -194,11 +200,12 @@ object ExprProcessor {
     def processNewArray(
         newArrayExpr: NewArray[V],
         tacToLVIndex: Map[Int, Int],
-        code:         mutable.ListBuffer[CodeElement[Nothing]]
+        code:         mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:   Tac2BcContext
     ): Unit = {
         // Process each parameter
         for (count <- newArrayExpr.counts.reverse)
-            ExprProcessor.processExpression(count, tacToLVIndex, code)
+            ExprProcessor.processExpression(count, tacToLVIndex, code, tacContext)
         code += {
             if (newArrayExpr.counts.size > 1) {
                 MULTIANEWARRAY(newArrayExpr.tpe, newArrayExpr.counts.size)
@@ -213,12 +220,13 @@ object ExprProcessor {
     def processArrayLoad(
         arrayLoadExpr: ArrayLoad[V],
         tacToLVIndex:  Map[Int, Int],
-        code:          mutable.ListBuffer[CodeElement[Nothing]]
+        code:          mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:    Tac2BcContext
     ): Unit = {
         // Load the array reference onto the stack
-        processExpression(arrayLoadExpr.arrayRef, tacToLVIndex, code)
+        processExpression(arrayLoadExpr.arrayRef, tacToLVIndex, code, tacContext)
         // Load the index onto the stack
-        processExpression(arrayLoadExpr.index, tacToLVIndex, code)
+        processExpression(arrayLoadExpr.index, tacToLVIndex, code, tacContext)
         // Infer the element type from the array reference expression
         val elementType = inferElementType(arrayLoadExpr.arrayRef)
         code += {
@@ -247,10 +255,11 @@ object ExprProcessor {
     def processArrayLength(
         arrayLength:  ArrayLength[V],
         tacToLVIndex: Map[Int, Int],
-        code:         mutable.ListBuffer[CodeElement[Nothing]]
+        code:         mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:   Tac2BcContext
     ): Unit = {
         // Process the receiver object
-        ExprProcessor.processExpression(arrayLength.arrayRef, tacToLVIndex, code)
+        ExprProcessor.processExpression(arrayLength.arrayRef, tacToLVIndex, code, tacContext)
         code += ARRAYLENGTH
     }
 
@@ -268,10 +277,9 @@ object ExprProcessor {
         methodName:       String,
         methodDescriptor: MethodDescriptor,
         tacToLVIndex:     Map[Int, Int],
-        code:             mutable.ListBuffer[CodeElement[Nothing]]
+        code:             mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:       Tac2BcContext
     ): Unit = {
-        // Process each parameter
-        for (param <- call.allParams) ExprProcessor.processExpression(param, tacToLVIndex, code)
         code += {
             call match {
                 case _: VirtualMethodCall[V] | _: VirtualFunctionCall[V] =>
@@ -282,6 +290,21 @@ object ExprProcessor {
                 case _: StaticMethodCall[V] | _: StaticFunctionCall[V] =>
                     INVOKESTATIC(declaringClass.asClassType, isInterface, methodName, methodDescriptor)
             }
+        }
+
+        // 1. Process each parameter without receiver
+        for (param <- call.params) {
+            val definedByIdx = param.asVar.definedBy.head
+            tacContext.emitStmt(definedByIdx)
+        }
+
+        // 2. With receiver
+        call.receiverOption.foreach { receiver =>
+            val definedByIdx = receiver.asVar.definedBy.head
+            tacContext.emitStmt(definedByIdx)
+
+            if(call.isInstanceOf[NonVirtualMethodCall[V]])
+                ExprProcessor.processExpression(receiver, tacToLVIndex, code, tacContext)
         }
     }
 
@@ -360,10 +383,11 @@ object ExprProcessor {
     def processGetField(
         getField:     GetField[V],
         tacToLVIndex: Map[Int, Int],
-        code:         mutable.ListBuffer[CodeElement[Nothing]]
+        code:         mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:   Tac2BcContext
     ): Unit = {
         // Load the object reference onto the stack
-        processExpression(getField.objRef, tacToLVIndex, code)
+        processExpression(getField.objRef, tacToLVIndex, code, tacContext)
         // Generate the GETFIELD instruction
         code += GETFIELD(getField.declaringClass, getField.name, getField.declaredFieldType)
     }
@@ -378,13 +402,9 @@ object ExprProcessor {
     def processBinaryExpr(
         binaryExpr:   BinaryExpr[V],
         tacToLVIndex: Map[Int, Int],
-        code:         mutable.ListBuffer[CodeElement[Nothing]]
+        code:         mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:   Tac2BcContext
     ): Unit = {
-        // process the left expr and save the pc to give in the right expr processing
-        processExpression(binaryExpr.left, tacToLVIndex, code)
-        // process the right Expr
-        processExpression(binaryExpr.right, tacToLVIndex, code)
-
         code += {
             (binaryExpr.cTpe, binaryExpr.op) match {
                 // Double
@@ -429,14 +449,18 @@ object ExprProcessor {
                     )
             }
         }
+
+        tacContext.emitStmt(binaryExpr.left.asVar.definedBy.head)
+        tacContext.emitStmt(binaryExpr.right.asVar.definedBy.head)
     }
     def processPrimitiveTypeCastExpr(
         primitiveTypecastExpr: PrimitiveTypecastExpr[V],
         tacToLVIndex:          Map[Int, Int],
-        code:                  mutable.ListBuffer[CodeElement[Nothing]]
+        code:                  mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:            Tac2BcContext
     ): Unit = {
         // First, process the operand expression and add its instructions to the buffer
-        processExpression(primitiveTypecastExpr.operand, tacToLVIndex, code)
+        processExpression(primitiveTypecastExpr.operand, tacToLVIndex, code, tacContext)
 
         code += {
             (primitiveTypecastExpr.operand.cTpe, primitiveTypecastExpr.targetTpe) match {
