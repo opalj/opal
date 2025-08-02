@@ -151,7 +151,7 @@ final case class ConstantString(
 
     override def toJava: String = s""""$valueToString""""
 
-    override def runtimeValueType: ObjectType.String.type = ObjectType.String
+    override def runtimeValueType: ClassType.String.type = ClassType.String
 
     override def kindId: Int = ConstantString.KindId
 

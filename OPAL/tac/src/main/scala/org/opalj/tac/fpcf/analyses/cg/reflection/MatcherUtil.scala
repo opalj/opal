@@ -6,8 +6,8 @@ package analyses
 package cg
 package reflection
 
+import org.opalj.br.ClassType
 import org.opalj.br.FieldTypes
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.fpcf.Entity
@@ -126,7 +126,7 @@ object MatcherUtil {
         project:                   SomeProject,
         failure:                   () => Unit,
         onlyMethodsExactlyInClass: Boolean,
-        onlyObjectTypes:           Boolean = false,
+        onlyClassTypes:            Boolean = false,
         considerSubclasses:        Boolean = false
     )(
         implicit
@@ -137,13 +137,13 @@ object MatcherUtil {
         highSoundness:       Boolean
     ): MethodMatcher = {
         val typesOpt = Some(
-            TypesUtil.getPossibleClasses(context, ref, depender, stmts, failure, onlyObjectTypes).flatMap { tpe =>
-                if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asObjectType, true)
-                else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
+            TypesUtil.getPossibleClasses(context, ref, depender, stmts, failure, onlyClassTypes).flatMap { tpe =>
+                if (considerSubclasses) project.classHierarchy.allSubtypes(tpe.asClassType, true)
+                else Set(if (tpe.isClassType) tpe.asClassType else ClassType.Object)
             }
         )
 
-        retrieveSuitableMatcher[Set[ObjectType]](
+        retrieveSuitableMatcher[Set[ClassType]](
             typesOpt,
             pc,
             v => new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)

@@ -10,7 +10,7 @@ package instructions
  */
 abstract class FloatingPointDivideInstruction extends DivideInstruction {
 
-    override final def jvmExceptions: List[ObjectType] = Nil
+    override final def jvmExceptions: List[ClassType] = Nil
 
     final def mayThrowExceptions: Boolean = false
 

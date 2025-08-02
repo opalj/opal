@@ -111,7 +111,7 @@ trait BootstrapArgumentLoading {
 
         bootstrapMethod match {
             case BootstrapMethod(
-                    InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, methodName, _),
+                    InvokeStaticMethodHandle(ClassType.ConstantBootstraps, false, methodName, _),
                     args: ArraySeq[ConstantValue[_]] @unchecked
                 ) =>
                 methodName match {
@@ -119,16 +119,16 @@ trait BootstrapArgumentLoading {
                         val maxStackAndClassFile = loadClassType(args.head, instructions, classFile)
 
                         instructions ++= INVOKESTATIC(
-                            ObjectType.MethodHandles,
+                            ClassType.MethodHandles,
                             isInterface = false,
                             "arrayElementVarHandle",
-                            MethodDescriptor(ObjectType.Class, ObjectType.VarHandle)
+                            MethodDescriptor(ClassType.Class, ClassType.VarHandle)
                         )
 
                         maxStackAndClassFile
 
                     case "enumConstant" =>
-                        instructions ++= GETSTATIC(descriptor.asObjectType, name, descriptor)
+                        instructions ++= GETSTATIC(descriptor.asClassType, name, descriptor)
                         (1, classFile)
 
                     case "explicitCast" =>
@@ -138,7 +138,7 @@ trait BootstrapArgumentLoading {
                             loadBootstrapArgument(argument, instructions, classFile)
 
                         val maxStack = descriptor match {
-                            case ObjectType.Object => // Nothing to do here, but box if required
+                            case ClassType.Object => // Nothing to do here, but box if required
                                 if (boxed && argType.isBaseType)
                                     instructions ++= argType.asBaseType.boxValue
                                 bsaStack
@@ -152,8 +152,8 @@ trait BootstrapArgumentLoading {
                                 val targetType = if (isBool) IntegerType else bt
 
                                 val baseType = if (argType.isReferenceType) {
-                                    instructions ++= ObjectType.unboxValue(argType)
-                                    ObjectType.primitiveType(argType.asObjectType).get.asNumericType
+                                    instructions ++= ClassType.unboxValue(argType)
+                                    ClassType.primitiveType(argType.asClassType).get.asNumericType
                                 } else argType.asNumericType
 
                                 if (baseType != targetType) {
@@ -187,7 +187,7 @@ trait BootstrapArgumentLoading {
 
                     case "getStaticFinal" =>
                         if (args.isEmpty) { // Simple version loads field from class of field type
-                            val declClass = if (descriptor.isObjectType) descriptor.asObjectType
+                            val declClass = if (descriptor.isClassType) descriptor.asClassType
                             else descriptor.asBaseType.WrapperType
                             instructions ++= GETSTATIC(declClass, name, descriptor)
                             if (boxed && descriptor.isBaseType)
@@ -195,7 +195,7 @@ trait BootstrapArgumentLoading {
                             (descriptor.computationalType.operandSize, classFile)
                         } else args.head match {
                             case ConstantClass(ct) =>
-                                instructions ++= GETSTATIC(ct.asObjectType, name, descriptor)
+                                instructions ++= GETSTATIC(ct.asClassType, name, descriptor)
                                 if (boxed && descriptor.isBaseType)
                                     instructions ++= descriptor.asBaseType.boxValue
                                 (descriptor.computationalType.operandSize, classFile)
@@ -214,7 +214,7 @@ trait BootstrapArgumentLoading {
 
                     case "primitiveClass" =>
                         val classType = FieldType(name).asBaseType.WrapperType
-                        instructions ++= GETSTATIC(classType, "TYPE", ObjectType.Class)
+                        instructions ++= GETSTATIC(classType, "TYPE", ClassType.Class)
                         (1, classFile)
 
                     case "staticFieldVarHandle" =>
@@ -232,7 +232,7 @@ trait BootstrapArgumentLoading {
                         (descriptor.computationalType.operandSize, classFile)
                 }
 
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ObjectMethods, false, _, _), _) =>
+            case BootstrapMethod(InvokeStaticMethodHandle(ClassType.ObjectMethods, false, _, _), _) =>
                 val newMethodName = s"$$object_methods$$${classFile.thisType.simpleName}:pc"
                 val (updatedClassFile, newMethodDescriptor) =
                     createObjectMethodsTarget(bootstrapMethod.arguments, name, newMethodName, classFile).getOrElse {
@@ -267,10 +267,10 @@ trait BootstrapArgumentLoading {
         classFile:      ClassFile
     ): (Int, ClassFile) = {
         instructions ++= INVOKESTATIC( // Get suitable MethodHandles$Lookup object
-            ObjectType.MethodHandles,
+            ClassType.MethodHandles,
             isInterface = false,
             "lookup",
-            MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
+            MethodDescriptor.withNoArgs(ClassType.MethodHandles$Lookup)
         )
 
         val (loadDeclClassStack, updatedClassFile1) =
@@ -281,7 +281,7 @@ trait BootstrapArgumentLoading {
         val (loadFieldTypeStack, updatedClassFile2) = loadFieldType(updatedClassFile1)
 
         instructions ++= INVOKEVIRTUAL(
-            ObjectType.MethodHandles$Lookup,
+            ClassType.MethodHandles$Lookup,
             if (isStaticField) "findStaticVarHandle" else "findVarHandle",
             MethodDescriptor.FindVarHandleDescriptor
         )
@@ -310,7 +310,7 @@ trait BootstrapArgumentLoading {
      */
     private def loadFieldType(fieldType: FieldType, instructions: InstructionsBuilder): Int = {
         if (fieldType.isBaseType)
-            instructions ++= GETSTATIC(fieldType.asBaseType.WrapperType, "TYPE", ObjectType.Class)
+            instructions ++= GETSTATIC(fieldType.asBaseType.WrapperType, "TYPE", ClassType.Class)
         else
             instructions ++= LoadClass_W(fieldType.asReferenceType)
 
@@ -337,11 +337,11 @@ trait BootstrapArgumentLoading {
             classFile
         )
         instructions ++= ICONST_0 // The get method for a static VarHandle takes empty varargs
-        instructions ++= ANEWARRAY(ObjectType.Object)
+        instructions ++= ANEWARRAY(ClassType.Object)
         instructions ++= INVOKEVIRTUAL(
-            ObjectType.VarHandle,
+            ClassType.VarHandle,
             "get",
-            MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+            MethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object)
         )
 
         adaptReturnType(fieldType, boxed, instructions)
@@ -387,23 +387,23 @@ trait BootstrapArgumentLoading {
             instructions ++= DUP
 
             instructions ++= INVOKEVIRTUAL( // Get the full method type
-                ObjectType.MethodHandle,
+                ClassType.MethodHandle,
                 "type",
-                MethodDescriptor.withNoArgs(ObjectType.MethodType)
+                MethodDescriptor.withNoArgs(ClassType.MethodType)
             )
 
             val fieldTypeStack = loadFieldType(returnType, instructions) // Load the new return type
 
             instructions ++= INVOKEVIRTUAL( // Adapt the method type
-                ObjectType.MethodType,
+                ClassType.MethodType,
                 "changeReturnType",
-                MethodDescriptor(ObjectType.Class, ObjectType.MethodType)
+                MethodDescriptor(ClassType.Class, ClassType.MethodType)
             )
 
             instructions ++= INVOKEVIRTUAL( // Adapt the method handle
-                ObjectType.MethodHandle,
+                ClassType.MethodHandle,
                 "asType",
-                MethodDescriptor(ObjectType.MethodType, ObjectType.MethodHandle)
+                MethodDescriptor(ClassType.MethodType, ClassType.MethodHandle)
             )
 
             1 + fieldTypeStack
@@ -412,7 +412,7 @@ trait BootstrapArgumentLoading {
         // Load the bootstrap arguments into a varargs array
         instructions ++= LoadConstantInstruction(arguments.size)
 
-        instructions ++= ANEWARRAY(ObjectType.Object)
+        instructions ++= ANEWARRAY(ClassType.Object)
 
         var argumentStack = 0
         arguments.iterator.zipWithIndex foreach {
@@ -427,9 +427,9 @@ trait BootstrapArgumentLoading {
         }
 
         instructions ++= INVOKEVIRTUAL( // Actually invoke the method handle
-            ObjectType.MethodHandle,
+            ClassType.MethodHandle,
             "invokeWithArguments",
-            MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+            MethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object)
         )
 
         adaptReturnType(returnType, boxed, instructions)
@@ -446,7 +446,7 @@ trait BootstrapArgumentLoading {
             val wrapper = returnType.asBaseType.WrapperType
             instructions ++= CHECKCAST(wrapper)
             if (!boxed)
-                instructions ++= ObjectType.unboxValue(wrapper)
+                instructions ++= ClassType.unboxValue(wrapper)
         } else
             instructions ++= CHECKCAST(returnType.asReferenceType)
     }
@@ -467,7 +467,7 @@ trait BootstrapArgumentLoading {
         classFile:     ClassFile
     ): Option[(ClassFile, MethodDescriptor)] = {
         val recordType = bootstrapArgs.head match {
-            case ConstantClass(rt) => rt.asObjectType
+            case ConstantClass(rt) => rt.asClassType
             case _                 => return None;
         }
 
@@ -486,7 +486,7 @@ trait BootstrapArgumentLoading {
 
         def prepareArgumentArray(hasTwoParameters: Boolean = false): Unit = {
             body ++= ICONST_1
-            body ++= ANEWARRAY(ObjectType.Object)
+            body ++= ANEWARRAY(ClassType.Object)
             body ++= (if (hasTwoParameters) ASTORE_2 else ASTORE_1)
         }
 
@@ -505,9 +505,9 @@ trait BootstrapArgumentLoading {
             body ++= AASTORE
 
             body ++= INVOKEVIRTUAL(
-                ObjectType.MethodHandle,
+                ClassType.MethodHandle,
                 "invokeWithArguments",
-                MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+                MethodDescriptor(ArrayType.ArrayOfObject, ClassType.Object)
             )
         }
 
@@ -528,11 +528,11 @@ trait BootstrapArgumentLoading {
                         loadComponent(getter, hasTwoParameters = true, forSecondRecord = true)
 
                         body ++= INVOKESTATIC(
-                            ObjectType.Objects,
+                            ClassType.Objects,
                             isInterface = false,
                             "equals",
                             MethodDescriptor(
-                                ArraySeq(ObjectType.Object, ObjectType.Object),
+                                ArraySeq(ClassType.Object, ClassType.Object),
                                 BooleanType
                             )
                         )
@@ -543,7 +543,7 @@ trait BootstrapArgumentLoading {
                 body ++= ICONST_1 // return true;
                 body ++= IRETURN
 
-                MethodDescriptor(ArraySeq(recordType, ObjectType.Object), BooleanType)
+                MethodDescriptor(ArraySeq(recordType, ClassType.Object), BooleanType)
 
             case "toString" =>
                 val components = bootstrapArgs(1) match {
@@ -554,21 +554,21 @@ trait BootstrapArgumentLoading {
                 def appendString(s: String): Unit = {
                     body ++= LoadString_W(s)
                     body ++= INVOKEVIRTUAL(
-                        ObjectType.StringBuilder,
+                        ClassType.StringBuilder,
                         "append",
-                        MethodDescriptor(ObjectType.String, ObjectType.StringBuilder)
+                        MethodDescriptor(ClassType.String, ClassType.StringBuilder)
                     )
                 }
 
-                body ++= NEW(ObjectType.StringBuilder)
+                body ++= NEW(ClassType.StringBuilder)
                 body ++= DUP
 
                 body ++= LoadString_W(recordType.simpleName + '[')
                 body ++= INVOKESPECIAL(
-                    ObjectType.StringBuilder,
+                    ClassType.StringBuilder,
                     isInterface = false,
                     "<init>",
-                    MethodDescriptor.JustTakes(ObjectType.String)
+                    MethodDescriptor.JustTakes(ClassType.String)
                 )
 
                 if (getters.nonEmpty)
@@ -584,23 +584,23 @@ trait BootstrapArgumentLoading {
 
                         loadComponent(getter)
                         body ++= INVOKEVIRTUAL(
-                            ObjectType.StringBuilder,
+                            ClassType.StringBuilder,
                             "append",
-                            MethodDescriptor(ObjectType.Object, ObjectType.StringBuilder)
+                            MethodDescriptor(ClassType.Object, ClassType.StringBuilder)
                         )
                 }
 
                 body ++= LoadInt_W(']')
                 body ++= INVOKEVIRTUAL(
-                    ObjectType.StringBuilder,
+                    ClassType.StringBuilder,
                     "append",
-                    MethodDescriptor(CharType, ObjectType.StringBuilder)
+                    MethodDescriptor(CharType, ClassType.StringBuilder)
                 )
 
-                body ++= INVOKEVIRTUAL(ObjectType.StringBuilder, "toString", JustReturnsString)
+                body ++= INVOKEVIRTUAL(ClassType.StringBuilder, "toString", JustReturnsString)
                 body ++= ARETURN
 
-                MethodDescriptor(recordType, ObjectType.String)
+                MethodDescriptor(recordType, ClassType.String)
 
             case "hashCode" =>
                 body ++= ICONST_0 // int hashCode = 0;
@@ -615,10 +615,10 @@ trait BootstrapArgumentLoading {
                     loadComponent(getter)
 
                     body ++= INVOKESTATIC(
-                        ObjectType.Objects,
+                        ClassType.Objects,
                         isInterface = false,
                         "hashCode",
-                        MethodDescriptor.apply(ObjectType.Object, IntegerType)
+                        MethodDescriptor.apply(ClassType.Object, IntegerType)
                     )
                     body ++= IADD
                 }

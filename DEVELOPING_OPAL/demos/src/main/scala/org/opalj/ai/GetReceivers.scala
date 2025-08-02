@@ -13,8 +13,8 @@ import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.instructions.NEW
+import org.opalj.fpcf.FPCFAnalysesManagerKey
 
 /**
  * Extracts the information about receivers of method calls.
@@ -58,7 +58,7 @@ object GetReceivers extends ProjectAnalysisApplication {
                 if i.isMethodInvocationInstruction
                 invocationInstruction = i.asMethodInvocationInstruction
                 if invocationInstruction.isVirtualMethodCall
-                if invocationInstruction.methodDescriptor.returnType.isObjectType
+                if invocationInstruction.methodDescriptor.returnType.isClassType
                 receiverPosition = invocationInstruction.methodDescriptor.parametersCount
                 operands = aiResult.operandsArray(pc)
                 if operands != null
@@ -78,8 +78,8 @@ object GetReceivers extends ProjectAnalysisApplication {
                     value.isPrecise &&
                         value.upperTypeBound.isSingletonSet &&
                         !value.upperTypeBound.head.isArrayType && (
-                            p.classFile(value.upperTypeBound.head.asObjectType).get.isFinal ||
-                            p.classHierarchy.hasSubtypes(value.upperTypeBound.head.asObjectType).isNoOrUnknown
+                            p.classFile(value.upperTypeBound.head.asClassType).get.isFinal ||
+                            p.classHierarchy.hasSubtypes(value.upperTypeBound.head.asClassType).isNoOrUnknown
                         )
                 if (triviallyPrecise)
                     s += " (trivially)"

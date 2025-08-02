@@ -55,7 +55,7 @@ object ToTxt {
             case ArrayLoad(_, index, arrayRef) => s"${toTxtExpr(arrayRef)}[${toTxtExpr(index)}]"
             case ArrayLength(_, arrayRef)      => s"${toTxtExpr(arrayRef)}.length"
 
-            case New(_, objTpe) => s"new ${objTpe.toJava}"
+            case New(_, classTpe) => s"new ${classTpe.toJava}"
 
             case InstanceOf(_, value, tpe) =>
                 s"${toTxtExpr(value)} instanceof ${tpe.asReferenceType.toJava}"

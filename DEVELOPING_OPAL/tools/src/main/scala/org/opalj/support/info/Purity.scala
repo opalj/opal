@@ -22,11 +22,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -53,8 +48,13 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysis
+import org.opalj.fpcf.FPCFAnalysisScheduler
+import org.opalj.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
@@ -137,8 +137,8 @@ object Purity {
         cp:                    File,
         projectDir:            Option[String],
         libDir:                Option[String],
-        analysis:              FPCFLazyAnalysisScheduler,
-        support:               List[FPCFAnalysisScheduler],
+        analysis:              FPCFLazyAnalysisScheduler[_],
+        support:               List[FPCFAnalysisScheduler[_]],
         domain:                Class[_ <: Domain with RecordDefUse],
         configurationName:     Option[String],
         schedulingStrategy:    Option[String],
@@ -282,7 +282,7 @@ object Purity {
         }
 
         val projectEntitiesWithPurity = entitiesWithPurity.filter { ep =>
-            val pn = ep.e.asInstanceOf[Context].method.declaringClassType.asObjectType.packageName
+            val pn = ep.e.asInstanceOf[Context].method.declaringClassType.asClassType.packageName
             packages match {
                 case None     => isJDK || !JDKPackages.exists(pn.startsWith)
                 case Some(ps) => ps.exists(pn.startsWith)
@@ -559,8 +559,8 @@ object Purity {
             return;
         }
 
-        var support: List[FPCFAnalysisScheduler] = Nil
-        val analysis: FPCFLazyAnalysisScheduler = analysisName match {
+        var support: List[FPCFAnalysisScheduler[_]] = Nil
+        val analysis: FPCFLazyAnalysisScheduler[_] = analysisName match {
             case Some("L0") => LazyL0PurityAnalysis
 
             case Some("L1") => LazyL1PurityAnalysis

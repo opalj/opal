@@ -8,7 +8,7 @@ package fields
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.immutability.FieldImmutability
@@ -27,22 +27,22 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
 
     override def isRelevant(
         p:      SomeProject,
-        as:     Set[ObjectType],
+        as:     Set[ClassType],
         entity: Object,
         a:      AnnotationLike
     ): Boolean = {
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         analyses.exists(as.contains)
     }
 
     def validateProperty(
         project:    SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -66,7 +66,7 @@ class DependentlyImmutableFieldMatcher
     extends FieldImmutabilityMatcher(br.fpcf.properties.immutability.DependentlyImmutableField(SortedSet.empty)) {
     override def validateProperty(
         project:    SomeProject,
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Entity,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -75,7 +75,7 @@ class DependentlyImmutableFieldMatcher
         if (!properties.exists(p =>
                 p match {
                     case DependentlyImmutableField(annotationParameters) =>
-                        val annotationType = a.annotationType.asFieldType.asObjectType
+                        val annotationType = a.annotationType.asFieldType.asClassType
                         val analysisParameters =
                             getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(
                                 x =>

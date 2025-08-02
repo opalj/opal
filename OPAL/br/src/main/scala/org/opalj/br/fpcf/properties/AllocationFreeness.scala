@@ -21,6 +21,7 @@ import org.opalj.br.instructions.NEWARRAY
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.IndividualProperty
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation

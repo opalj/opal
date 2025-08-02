@@ -10,21 +10,21 @@ import scala.annotation.switch
 import scala.collection.immutable.IntMap
 
 import org.opalj.ai.isImmediateVMException
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.CompileTimePure
@@ -114,7 +114,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     class State(
         val method:    Method,
         val context:   Context,
-        val declClass: ObjectType,
+        val declClass: ClassType,
         var tac:       TACode[TACMethodParameter, V] = null,
         var lbPurity:  Purity                        = CompileTimePure,
         var ubPurity:  Purity                        = CompileTimePure
@@ -125,9 +125,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var fieldAssignabilityDependees: Map[Field, (EOptionP[Field, FieldAssignability], Set[Option[Expr[V]]])] =
             Map.empty
 
-        var classImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, ClassImmutability], Set[Expr[V]])] =
+        var classImmutabilityDependees: Map[ClassType, (EOptionP[ClassType, ClassImmutability], Set[Expr[V]])] =
             Map.empty
-        var typeImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, TypeImmutability], Set[Expr[V]])] =
+        var typeImmutabilityDependees: Map[ClassType, (EOptionP[ClassType, TypeImmutability], Set[Expr[V]])] =
             Map.empty
 
         var purityDependees: Map[Context, (EOptionP[Context, Purity], Set[Seq[Expr[V]]])] = Map.empty
@@ -181,8 +181,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         def addClassImmutabilityDependee(
-            t:     ObjectType,
-            eop:   EOptionP[ObjectType, ClassImmutability],
+            t:     ClassType,
+            eop:   EOptionP[ClassType, ClassImmutability],
             value: Expr[V]
         ): Unit = {
             if (classImmutabilityDependees.contains(t)) {
@@ -194,8 +194,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         def addTypeImmutabilityDependee(
-            t:     ObjectType,
-            eop:   EOptionP[ObjectType, TypeImmutability],
+            t:     ClassType,
+            eop:   EOptionP[ClassType, TypeImmutability],
             value: Expr[V]
         ): Unit = {
             if (typeImmutabilityDependees.contains(t)) {
@@ -241,8 +241,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         def removeFieldLocalityDependee(f:      Field): Unit = fieldLocalityDependees -= f
         def removeFieldAssignabilityDependee(f: Field): Unit = fieldAssignabilityDependees -= f
-        def removeClassImmutabilityDependee(t:  ObjectType): Unit = classImmutabilityDependees -= t
-        def removeTypeImmutabilityDependee(t:   ObjectType): Unit = typeImmutabilityDependees -= t
+        def removeClassImmutabilityDependee(t:  ClassType): Unit = classImmutabilityDependees -= t
+        def removeTypeImmutabilityDependee(t:   ClassType): Unit = typeImmutabilityDependees -= t
         def removePurityDependee(context:       Context): Unit = purityDependees -= context
         def removeRVFDependee(context:          Context): Unit = rvfDependees -= context
 
@@ -439,7 +439,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 if (data._1.isVar) {
                     val value = data._1.asVar.value.asReferenceValue
                     value.isPrecise &&
-                        !classHierarchy.isSubtypeOf(value.asReferenceType, ObjectType.Cloneable)
+                        !classHierarchy.isSubtypeOf(value.asReferenceType, ClassType.Cloneable)
                 } else
                     false
             case UBP(NoLocalField) =>
@@ -468,7 +468,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             case FinalP(ExtensibleGetter) =>
                 if (data._1.get.isVar) {
                     val value = data._1.get.asVar.value.asReferenceValue
-                    if (value.isPrecise && !isSubtypeOf(value.asReferenceType, ObjectType.Cloneable)) {
+                    if (value.isPrecise && !isSubtypeOf(value.asReferenceType, ClassType.Cloneable)) {
                         if (data._2 meet state.ubPurity ne state.ubPurity)
                             isLocal(data._1.get, data._2)
                     } else {
@@ -605,19 +605,19 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * Adds the dependee necessary if a type mutability is not known yet.
      */
     override def handleUnknownTypeImmutability(
-        ep:   EOptionP[ObjectType, Property],
+        ep:   EOptionP[ClassType, Property],
         expr: Expr[V]
     )(implicit state: State): Unit = {
         if (ep.pk == ClassImmutability.key)
             state.addClassImmutabilityDependee(
                 ep.e,
-                ep.asInstanceOf[EOptionP[ObjectType, ClassImmutability]],
+                ep.asInstanceOf[EOptionP[ClassType, ClassImmutability]],
                 expr
             )
         else
             state.addTypeImmutabilityDependee(
                 ep.e,
-                ep.asInstanceOf[EOptionP[ObjectType, TypeImmutability]],
+                ep.asInstanceOf[EOptionP[ClassType, TypeImmutability]],
                 expr
             )
     }
@@ -758,21 +758,21 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     checkFieldAssignability(eps.asInstanceOf[EOptionP[Field, FieldAssignability]], e)
                 }
             case ClassImmutability.key =>
-                val e = eps.e.asInstanceOf[ObjectType]
+                val e = eps.e.asInstanceOf[ClassType]
                 val dependees = state.classImmutabilityDependees(e)
                 state.removeClassImmutabilityDependee(e)
                 dependees._2.foreach { e =>
                     checkTypeImmutability(
-                        eps.asInstanceOf[EOptionP[ObjectType, ClassImmutability]],
+                        eps.asInstanceOf[EOptionP[ClassType, ClassImmutability]],
                         e
                     )
                 }
             case TypeImmutability.key =>
-                val e = eps.e.asInstanceOf[ObjectType]
+                val e = eps.e.asInstanceOf[ClassType]
                 val dependees = state.typeImmutabilityDependees(e)
                 state.removeTypeImmutabilityDependee(e)
                 dependees._2.foreach { e =>
-                    checkTypeImmutability(eps.asInstanceOf[EOptionP[ObjectType, TypeImmutability]], e)
+                    checkTypeImmutability(eps.asInstanceOf[EOptionP[ClassType, TypeImmutability]], e)
                 }
             case ReturnValueFreshness.key =>
                 val e = eps.e.asInstanceOf[Context]
@@ -830,15 +830,15 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ClassType.Throwable)) {
             val candidate = org.opalj.control.find(project.instanceMethods(state.declClass)) { mdc =>
                 mdc.method.compare(
                     "fillInStackTrace",
-                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                    MethodDescriptor.withNoArgs(ClassType.Throwable)
                 )
             }
             candidate foreach { mdc =>
-                if (mdc.method.classFile.thisType != ObjectType.Throwable) {
+                if (mdc.method.classFile.thisType != ClassType.Throwable) {
                     val fISTMethod = declaredMethods(mdc.method)
                     val fISTContext = contextProvider.expandContext(state.context, fISTMethod, 0)
                     val fISTPurity = propertyStore(fISTContext, Purity.key)
@@ -977,33 +977,19 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         )
     }
 
-    override final type InitializationData = L2PurityAnalysis
-    override final def init(p: SomeProject, ps: PropertyStore): InitializationData = {
-        new L2PurityAnalysis(p)
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
-
 }
 
-object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation :+ CallGraphKey
 
     override def start(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): FPCFAnalysis = {
+        val analysis = new L2PurityAnalysis(p)
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods().collect {
             case c @ Context(dm)
@@ -1026,13 +1012,14 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
 
-object LazyL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL2PurityAnalysis extends L2PurityAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
 
     override def register(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): FPCFAnalysis = {
+        val analysis = new L2PurityAnalysis(p)
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }
