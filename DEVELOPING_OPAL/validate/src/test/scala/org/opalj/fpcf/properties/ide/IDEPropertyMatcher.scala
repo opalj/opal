@@ -7,7 +7,7 @@ package ide
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
@@ -22,7 +22,7 @@ trait IDEPropertyMatcher extends AbstractPropertyMatcher {
     /**
      * The annotation type that is processed
      */
-    val singleAnnotationType: ObjectType
+    val singleAnnotationType: ClassType
 
     /**
      * Extract an element from an annotation, treat it as an array and apply a map operator to it.
@@ -50,7 +50,7 @@ trait IDEPropertyMatcher extends AbstractPropertyMatcher {
         p:                Project[?],
         a:                AnnotationLike,
         elementName:      String,
-        aInner:           ObjectType,
+        aInner:           ClassType,
         innerElementName: String
     ): ArraySeq[String] = {
         mapArrayValue(
@@ -72,7 +72,7 @@ trait IDEPropertyMatcher extends AbstractPropertyMatcher {
         p:                Project[?],
         a:                AnnotationLike,
         elementName:      String,
-        aInner:           ObjectType,
+        aInner:           ClassType,
         innerElementName: String
     ): ArraySeq[Int] = {
         mapArrayValue(
@@ -95,7 +95,7 @@ trait IDEPropertyMatcher extends AbstractPropertyMatcher {
         p:                 Project[?],
         a:                 AnnotationLike,
         elementName:       String,
-        aInner:            ObjectType,
+        aInner:            ClassType,
         innerElementName1: String,
         innerElementName2: String
     ): ArraySeq[(String, Int)] = {
@@ -125,7 +125,7 @@ trait IDEPropertyMatcher extends AbstractPropertyMatcher {
         p:                 Project[?],
         a:                 AnnotationLike,
         elementName:       String,
-        aInner:            ObjectType,
+        aInner:            ClassType,
         innerElementName1: String,
         innerElementName2: String
     ): ArraySeq[(Int, Int)] = {

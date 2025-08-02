@@ -10,7 +10,7 @@ package problem
 
 import scala.collection.immutable.Set
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PropertyStore
@@ -199,7 +199,7 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
         target:     JavaStatement,
         targetFact: LinearConstantPropagationFact
     )(implicit propertyStore: PropertyStore): EdgeFunctionResult[LinearConstantPropagationValue] = {
-        val objectType = getStaticExpr.declaringClass
+        val classType = getStaticExpr.declaringClass
         val fieldName = getStaticExpr.name
 
         val lcpOnFieldsEOptionP = propertyStore((source.method, source), LCPOnFieldsPropertyMetaInformation.key)
@@ -207,14 +207,14 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
         /* Decide based on the current result of the LCP on fields analysis */
         lcpOnFieldsEOptionP match {
             case FinalP(property) =>
-                FinalEdgeFunction(getStaticFieldFromProperty(objectType, fieldName)(property) match {
+                FinalEdgeFunction(getStaticFieldFromProperty(classType, fieldName)(property) match {
                     case UnknownValue     => UnknownValueEdgeFunction
                     case ConstantValue(c) => LinearCombinationEdgeFunction(0, c, lattice.top)
                     case VariableValue    => VariableValueEdgeFunction
                 })
 
             case InterimUBP(property) =>
-                getStaticFieldFromProperty(objectType, fieldName)(property) match {
+                getStaticFieldFromProperty(classType, fieldName)(property) match {
                     case UnknownValue =>
                         InterimEdgeFunction(UnknownValueEdgeFunction, Set(lcpOnFieldsEOptionP))
                     case ConstantValue(c) =>
@@ -229,17 +229,17 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
     }
 
     private def getStaticFieldFromProperty(
-        objectType: ObjectType,
-        fieldName:  String
+        classType: ClassType,
+        fieldName: String
     )(property: LCPOnFieldsPropertyMetaInformation.Self): LinearConstantPropagationValue = {
         property
             .results
             .iterator
             .collect {
                 case (f: AbstractStaticFieldFact, StaticFieldValue(value))
-                    if f.objectType == objectType && f.fieldName == fieldName => value
+                    if f.classType == classType && f.fieldName == fieldName => value
                 case (f: AbstractStaticFieldFact, LCPVariableValue)
-                    if f.objectType == objectType && f.fieldName == fieldName => VariableValue
+                    if f.classType == classType && f.fieldName == fieldName => VariableValue
             }
             .fold(UnknownValue: LinearConstantPropagationValue)(lattice.meet)
     }

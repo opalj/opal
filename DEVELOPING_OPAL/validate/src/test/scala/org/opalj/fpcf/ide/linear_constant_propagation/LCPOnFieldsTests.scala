@@ -4,7 +4,8 @@ package fpcf
 package ide
 package linear_constant_propagation
 
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp.LinearConstantPropagationProperty
 import org.opalj.fpcf.properties.linear_constant_propagation.lcp_on_fields.LCPOnFieldsProperty
 import org.opalj.ide.integration.LazyIDEAnalysisProxyScheduler
@@ -34,7 +35,7 @@ class LCPOnFieldsTests extends IDEPropertiesTest {
             new LazyIDEAnalysisProxyScheduler(linearConstantPropagationAnalysisSchedulerExtended),
             new LazyIDEAnalysisProxyScheduler(lcpOnFieldsAnalysisScheduler) {
                 override def afterPhaseScheduling(propertyStore: PropertyStore, analysis: FPCFAnalysis): Unit = {
-                    val entryPoints = methodsWithAnnotations(analysis.project)
+                    val entryPoints = methodsWithAnnotations(analysis.project.asInstanceOf[SomeProject])
                     entryPoints.foreach { case (method, _, _) =>
                         propertyStore.force(method, lcpOnFieldsAnalysisScheduler.propertyMetaInformation.key)
                         propertyStore.force(

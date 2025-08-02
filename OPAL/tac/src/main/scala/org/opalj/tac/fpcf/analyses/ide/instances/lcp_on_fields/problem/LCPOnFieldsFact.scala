@@ -8,7 +8,7 @@ package instances
 package lcp_on_fields
 package problem
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.ide.problem.IDEFact
 
 /**
@@ -120,16 +120,16 @@ case class PutElementFact(name: String, definedAtIndex: Int) extends AbstractArr
  */
 trait AbstractStaticFieldFact extends LCPOnFieldsFact {
     /**
-     * The object type the field belongs to
+     * The class type the field belongs to
      */
-    val objectType: ObjectType
+    val classType: ClassType
 
     /**
      * The name of the field
      */
     val fieldName: String
 
-    def toStaticFieldFact: AbstractStaticFieldFact = StaticFieldFact(objectType, fieldName)
+    def toStaticFieldFact: AbstractStaticFieldFact = StaticFieldFact(classType, fieldName)
 }
 
 /**
@@ -137,10 +137,10 @@ trait AbstractStaticFieldFact extends LCPOnFieldsFact {
  *
  * @author Robin Körkemeier
  */
-case class StaticFieldFact(objectType: ObjectType, fieldName: String) extends AbstractStaticFieldFact {
+case class StaticFieldFact(classType: ClassType, fieldName: String) extends AbstractStaticFieldFact {
     override def toStaticFieldFact: StaticFieldFact = this
 
-    override def toString: String = s"StaticFieldFact(${objectType.simpleName}, $fieldName)"
+    override def toString: String = s"StaticFieldFact(${classType.simpleName}, $fieldName)"
 }
 
 /**
@@ -148,6 +148,6 @@ case class StaticFieldFact(objectType: ObjectType, fieldName: String) extends Ab
  *
  * @author Robin Körkemeier
  */
-case class PutStaticFieldFact(objectType: ObjectType, fieldName: String) extends AbstractStaticFieldFact {
-    override def toString: String = s"PutStaticFieldFact(${objectType.simpleName}, $fieldName)"
+case class PutStaticFieldFact(classType: ClassType, fieldName: String) extends AbstractStaticFieldFact {
+    override def toString: String = s"PutStaticFieldFact(${classType.simpleName}, $fieldName)"
 }

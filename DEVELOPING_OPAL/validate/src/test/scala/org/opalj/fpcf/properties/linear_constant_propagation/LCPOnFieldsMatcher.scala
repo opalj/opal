@@ -5,8 +5,8 @@ package properties
 package linear_constant_propagation
 
 import org.opalj.br.AnnotationLike
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.properties.ide.IDEPropertyMatcher
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields
@@ -19,19 +19,19 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
  * @author Robin Körkemeier
  */
 class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
-    override val singleAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ObjectValue")
-    override val containerAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ObjectValues")
+    override val singleAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ObjectValue")
+    override val containerAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ObjectValues")
 
     private val constantFieldType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ConstantField")
-    private val variableValueType = ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/VariableField")
-    private val unknownValueType = ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/UnknownField")
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ConstantField")
+    private val variableValueType = ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/VariableField")
+    private val unknownValueType = ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/UnknownField")
 
     override def validateSingleProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -102,21 +102,21 @@ class ObjectValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPrope
  * @author Robin Körkemeier
  */
 class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
-    override val singleAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ArrayValue")
-    override val containerAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ArrayValues")
+    override val singleAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ArrayValue")
+    override val containerAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ArrayValues")
 
     private val constantArrayElementType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ConstantArrayElement")
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ConstantArrayElement")
     private val variableArrayElementType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/VariableArrayElement")
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/VariableArrayElement")
     private val unknownArrayElementType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/UnknownArrayElement")
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/UnknownArrayElement")
 
     override def validateSingleProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -196,22 +196,22 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEProper
  * @author Robin Körkemeier
  */
 class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatcher {
-    override val singleAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/StaticValues")
+    override val singleAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/StaticValues")
 
     private val constantFieldType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ConstantField")
-    private val variableValueType = ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/VariableField")
-    private val unknownValueType = ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/UnknownField")
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/ConstantField")
+    private val variableValueType = ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/VariableField")
+    private val unknownValueType = ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/UnknownField")
 
     override def validateProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
     ): Option[String] = {
-        val entityObjectType = entity.asInstanceOf[Method].classFile.thisType
+        val entityClassType = entity.asInstanceOf[Method].classFile.thisType
 
         val expectedConstantValues =
             mapArrayValueExtractStringAndInt(p, a, "constantValues", constantFieldType, "field", "value")
@@ -228,7 +228,7 @@ class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatche
                                     f: lcp_on_fields.problem.AbstractStaticFieldFact,
                                     lcp_on_fields.problem.StaticFieldValue(v)
                                 ) =>
-                                f.objectType == entityObjectType && f.fieldName == fieldName &&
+                                f.classType == entityClassType && f.fieldName == fieldName &&
                                     (v match {
                                         case linear_constant_propagation.problem.ConstantValue(c) => value == c
                                         case _                                                    => false
@@ -246,7 +246,7 @@ class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatche
                                 f: lcp_on_fields.problem.AbstractStaticFieldFact,
                                 lcp_on_fields.problem.StaticFieldValue(v)
                             ) =>
-                            f.objectType == entityObjectType && f.fieldName == fieldName &&
+                            f.classType == entityClassType && f.fieldName == fieldName &&
                                 v == linear_constant_propagation.problem.VariableValue
 
                         case _ => false
@@ -261,7 +261,7 @@ class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatche
                                 f: lcp_on_fields.problem.AbstractStaticFieldFact,
                                 lcp_on_fields.problem.StaticFieldValue(v)
                             ) =>
-                            f.objectType == entityObjectType && f.fieldName == fieldName &&
+                            f.classType == entityClassType && f.fieldName == fieldName &&
                                 v == linear_constant_propagation.problem.UnknownValue
 
                         case _ => false
@@ -284,7 +284,7 @@ class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatche
             Some(
                 s"Result should contain ${expectedValues.map {
                         case (fieldName, value) =>
-                            s"(${lcp_on_fields.problem.StaticFieldFact(entityObjectType, fieldName)}, ${lcp_on_fields.problem.StaticFieldValue(value)})"
+                            s"(${lcp_on_fields.problem.StaticFieldFact(entityClassType, fieldName)}, ${lcp_on_fields.problem.StaticFieldValue(value)})"
 
                     }}"
             )
@@ -299,14 +299,14 @@ class StaticValuesMatcher extends AbstractPropertyMatcher with IDEPropertyMatche
  * @author Robin Körkemeier
  */
 class VariableValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
-    override val singleAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/VariableValue")
-    override val containerAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/VariableValues")
+    override val singleAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/VariableValue")
+    override val containerAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/VariableValues")
 
     override def validateSingleProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -342,14 +342,14 @@ class VariableValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDE
  * @author Robin Körkemeier
  */
 class UnknownValueMatcherLCP extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
-    override val singleAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/UnknownValue")
-    override val containerAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/UnknownValues")
+    override val singleAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/UnknownValue")
+    override val containerAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp_on_fields/UnknownValues")
 
     override def validateSingleProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]

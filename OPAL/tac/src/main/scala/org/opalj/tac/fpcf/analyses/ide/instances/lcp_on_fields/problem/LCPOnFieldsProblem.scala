@@ -75,8 +75,8 @@ class LCPOnFieldsProblem(
                 .iterator
                 .zipWithIndex
                 .collect {
-                    case (paramType, index) if paramType.isObjectType => ObjectFact(s"param${index + 1}", -(index + 2))
-                    case (paramType, index) if paramType.isObjectType => ArrayFact(s"param${index + 1}", -(index + 2))
+                    case (paramType, index) if paramType.isClassType => ObjectFact(s"param${index + 1}", -(index + 2))
+                    case (paramType, index) if paramType.isClassType => ArrayFact(s"param${index + 1}", -(index + 2))
                 } ++
             /* Add facts for static fields of class */
             callee.classFile
@@ -98,7 +98,7 @@ class LCPOnFieldsProblem(
     private def getEdgeFunctionForStaticFieldFactByImmutability(staticFieldFact: AbstractStaticFieldFact)(
         implicit propertyStore: PropertyStore
     ): EdgeFunctionResult[LCPOnFieldsValue] = {
-        val declaredField = declaredFields(staticFieldFact.objectType, staticFieldFact.fieldName, IntegerType)
+        val declaredField = declaredFields(staticFieldFact.classType, staticFieldFact.fieldName, IntegerType)
         if (!declaredField.isDefinedField) {
             return PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue)
         }
@@ -278,7 +278,7 @@ class LCPOnFieldsProblem(
                         val putStatic = source.stmt.asPutStatic
 
                         /* Drop existing fact if for the same static field */
-                        if (f.objectType == putStatic.declaringClass && f.fieldName == putStatic.name) {
+                        if (f.classType == putStatic.declaringClass && f.fieldName == putStatic.name) {
                             Set.empty
                         } else {
                             Set(f.toStaticFieldFact)
@@ -305,7 +305,7 @@ class LCPOnFieldsProblem(
                 callSiteFact match {
                     case NullFact =>
                         /* Only propagate null fact if function returns an object or an array of integers */
-                        if (callee.returnType.isObjectType) {
+                        if (callee.returnType.isClassType) {
                             Set(callSiteFact)
                         } else if (callee.returnType.isArrayType &&
                                    callee.returnType.asArrayType.componentType.isIntegerType
@@ -349,7 +349,7 @@ class LCPOnFieldsProblem(
 
                     case f: AbstractStaticFieldFact =>
                         /* Only propagate fact if the callee can access the corresponding static field */
-                        if (callee.classFile.thisType == f.objectType) {
+                        if (callee.classFile.thisType == f.classType) {
                             Set(f.toStaticFieldFact)
                         } else {
                             Set.empty
@@ -424,7 +424,7 @@ class LCPOnFieldsProblem(
 
                     case f: AbstractStaticFieldFact =>
                         /* Only propagate fact if the caller can access the corresponding static field */
-                        if (returnSite.method.classFile.thisType == f.objectType) {
+                        if (returnSite.method.classFile.thisType == f.classType) {
                             Set(f.toStaticFieldFact)
                         } else {
                             Set.empty
@@ -460,7 +460,7 @@ class LCPOnFieldsProblem(
 
                     case f: AbstractStaticFieldFact =>
                         /* Propagate facts that are not propagated via the call flow */
-                        if (callee.classFile.thisType == f.objectType) {
+                        if (callee.classFile.thisType == f.classType) {
                             Set.empty
                         } else {
                             Set(f.toStaticFieldFact)
@@ -653,7 +653,7 @@ class LCPOnFieldsProblem(
                             returnSite.stmt.astID match {
                                 case Assignment.ASTID =>
                                     val assignment = returnSite.stmt.asAssignment
-                                    if (callee.returnType.isObjectType) {
+                                    if (callee.returnType.isClassType) {
                                         Set(NewObjectFact(assignment.targetVar.name, returnSite.pc))
                                     } else if (callee.returnType.isArrayType &&
                                                callee.returnType.asArrayType.componentType.isIntegerType
@@ -677,7 +677,7 @@ class LCPOnFieldsProblem(
                             }
 
                         case f: AbstractStaticFieldFact =>
-                            if (callee.classFile.thisType == f.objectType) {
+                            if (callee.classFile.thisType == f.classType) {
                                 Set(f.toStaticFieldFact)
                             } else {
                                 Set.empty
@@ -705,8 +705,8 @@ class LCPOnFieldsProblem(
                 case _: AbstractObjectFact =>
                     val callStmt = callSite.stmt.asCall()
 
-                    if (callStmt.declaringClass.isObjectType &&
-                        callStmt.declaringClass.asObjectType.fqn == "java/lang/Object" && callStmt.name == "<init>"
+                    if (callStmt.declaringClass.isClassType &&
+                        callStmt.declaringClass.asClassType.fqn == "java/lang/Object" && callStmt.name == "<init>"
                     ) {
                         IdentityEdgeFunction
                     } else {
@@ -739,7 +739,7 @@ class LCPOnFieldsProblem(
                                 val callStmt = callSite.stmt.asCall()
                                 val assignment = returnSite.stmt.asAssignment
 
-                                if (callStmt.descriptor.returnType.isObjectType) {
+                                if (callStmt.descriptor.returnType.isClassType) {
                                     Set(callSiteFact, NewObjectFact(assignment.targetVar.name, returnSite.pc))
                                 } else if (callStmt.descriptor.returnType.isArrayType &&
                                            callStmt.descriptor.returnType.asArrayType.componentType.isIntegerType
@@ -779,8 +779,8 @@ class LCPOnFieldsProblem(
 
             case (_: AbstractEntityFact, f: AbstractEntityFact) =>
                 /* Constructor of object class doesn't modify the object */
-                if (callStmt.declaringClass.isObjectType &&
-                    callStmt.declaringClass.asObjectType.fqn == "java/lang/Object" && callStmt.name == "<init>"
+                if (callStmt.declaringClass.isClassType &&
+                    callStmt.declaringClass.asClassType.fqn == "java/lang/Object" && callStmt.name == "<init>"
                 ) {
                     IdentityEdgeFunction
                 }
@@ -796,13 +796,13 @@ class LCPOnFieldsProblem(
                 }
 
             case (_, f: AbstractStaticFieldFact) =>
-                val declaredField = declaredFields(f.objectType, f.fieldName, IntegerType)
+                val declaredField = declaredFields(f.classType, f.fieldName, IntegerType)
                 if (!declaredField.isDefinedField) {
                     return PutStaticFieldEdgeFunction(linear_constant_propagation.problem.VariableValue)
                 }
                 val field = declaredField.definedField
 
-                if (callStmt.declaringClass != f.objectType && field.isPrivate) {
+                if (callStmt.declaringClass != f.classType && field.isPrivate) {
                     IdentityEdgeFunction
                 } else {
                     getEdgeFunctionForStaticFieldFactByImmutability(f)

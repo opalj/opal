@@ -5,7 +5,7 @@ package properties
 package linear_constant_propagation
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.fpcf.properties.ide.IDEPropertyMatcher
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
@@ -17,14 +17,14 @@ import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
  * @author Robin Körkemeier
  */
 class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
-    override val singleAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/ConstantValue")
-    override val containerAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/ConstantValues")
+    override val singleAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/ConstantValue")
+    override val containerAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/ConstantValues")
 
     override def validateSingleProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -63,14 +63,14 @@ class ConstantValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPro
  * @author Robin Körkemeier
  */
 class VariableValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
-    override val singleAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/VariableValue")
-    override val containerAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/VariableValues")
+    override val singleAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/VariableValue")
+    override val containerAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/VariableValues")
 
     override def validateSingleProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -107,14 +107,14 @@ class VariableValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPro
  * @author Robin Körkemeier
  */
 class UnknownValueMatcher extends AbstractRepeatablePropertyMatcher with IDEPropertyMatcher {
-    override val singleAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/UnknownValue")
-    override val containerAnnotationType: ObjectType =
-        ObjectType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/UnknownValues")
+    override val singleAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/UnknownValue")
+    override val containerAnnotationType: ClassType =
+        ClassType("org/opalj/fpcf/properties/linear_constant_propagation/lcp/UnknownValues")
 
     override def validateSingleProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
