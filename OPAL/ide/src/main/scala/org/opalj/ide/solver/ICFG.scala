@@ -24,6 +24,13 @@ trait ICFG[Statement, Callable <: Entity] {
     def getNextStatements(stmt: Statement): collection.Set[Statement]
 
     /**
+     * Check whether a statement exits a callable (in a normal or abnormal way)
+     */
+    def isExitStatement(stmt: Statement): Boolean = {
+        isNormalExitStatement(stmt) || isAbnormalExitStatement(stmt)
+    }
+
+    /**
      * Check whether a statement exits a callable in a normal way (e.g. with a return)
      */
     def isNormalExitStatement(stmt: Statement): Boolean
@@ -47,4 +54,9 @@ trait ICFG[Statement, Callable <: Entity] {
      * Get the callable a statement belongs to
      */
     def getCallable(stmt: Statement): Callable
+
+    /**
+     * Get all possible statements that could call a callable
+     */
+    def getCallers(callable: Callable): collection.Set[Statement]
 }

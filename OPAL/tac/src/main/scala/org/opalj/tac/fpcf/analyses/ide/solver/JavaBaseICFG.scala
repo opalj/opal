@@ -16,6 +16,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
@@ -90,4 +91,27 @@ abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
     }
 
     override def getCallable(javaStmt: JavaStatement): Method = javaStmt.method
+
+    override def getCallers(callable: Method): scala.collection.Set[JavaStatement] = {
+        // Slightly adjusted code from the IFDS ICFG implementation
+        val declaredCallable = declaredMethods(callable)
+        val callersEOptionP = propertyStore(declaredCallable, Callers.key)
+        callersEOptionP match {
+            case FinalP(callers) =>
+                callers
+                    .callers(declaredCallable)
+                    .iterator
+                    // We do not handle indirect calls.
+                    .filter(callersProperty => callersProperty._3)
+                    .map {
+                        case (caller, callPc, _) =>
+                            val tac = tacProvider(caller.definedMethod)
+                            val callIndex = tac.pcToIndex(callPc)
+                            JavaStatement(caller.definedMethod, callIndex, isReturnNode = false, tac.stmts, tac.cfg)
+                    }
+                    .toSet
+            case _ =>
+                throw new IllegalStateException("Call graph must be computed before the analysis starts!")
+        }
+    }
 }
