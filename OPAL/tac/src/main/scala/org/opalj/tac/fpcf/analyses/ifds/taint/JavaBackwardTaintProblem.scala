@@ -11,10 +11,10 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.JavaBackwardIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
 /**
  * Implementation of a backward taint analysis for Java code.
@@ -36,8 +36,8 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         jstmt.stmt.astID match {
             case Assignment.ASTID =>
                 if (in match {
-                        case Variable(index)        => index == jstmt.index
-                        case ArrayElement(index, _) => index == jstmt.index
+                        case Variable(index)        => index == jstmt.pc
+                        case ArrayElement(index, _) => index == jstmt.pc
                         case _                      => false
                     }
                 ) {
@@ -45,7 +45,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
                 } else Set(in)
             case ArrayStore.ASTID =>
                 val arrayStore = jstmt.stmt.asArrayStore
-                val arrayIndex = TaintProblem.getIntConstant(arrayStore.index, jstmt.code)
+                val arrayIndex = TaintProblem.getIntConstant(arrayStore.index, jstmt.stmts)
                 val arrayDefinedBy = arrayStore.arrayRef.asVar.definedBy
                 if (in match {
                         // check if array is tainted
@@ -98,11 +98,11 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         val flow = scala.collection.mutable.Set.empty[TaintFact]
         if (call.stmt.astID == Assignment.ASTID && start.stmt.astID == ReturnValue.ASTID) {
             in match {
-                case Variable(index) if index == call.index =>
+                case Variable(index) if index == call.pc =>
                     flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
-                case ArrayElement(index, taintedElement) if index == call.index =>
+                case ArrayElement(index, taintedElement) if index == call.pc =>
                     flow ++= createNewArrayElementTaints(start.stmt.asReturnValue.expr, taintedElement, call)
-                case InstanceField(index, declaringClass, name) if index == call.index =>
+                case InstanceField(index, declaringClass, name) if index == call.pc =>
                     flow ++= createNewInstanceFieldTaints(start.stmt.asReturnValue.expr, declaringClass, name, call)
                 case _ => // Nothing to do
             }
@@ -151,7 +151,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         successor:    Option[JavaStatement],
         unbCallChain: Seq[Callable]
     ): Set[TaintFact] = {
-        val callee = exit.callable
+        val callee = exit.method
         if (sanitizesReturnValue(callee)) return Set.empty
 
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
@@ -182,7 +182,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
             case staticField: StaticField => facts.add(staticField)
             // If the source was reached in a callee, create a flow fact from this method to the sink.
             case calleeFact: FlowFact =>
-                val callerFact = applyFlowFactFromCallee(calleeFact, call.callable, in, unbCallChain)
+                val callerFact = applyFlowFactFromCallee(calleeFact, call.method, in, unbCallChain)
                 if (callerFact.isDefined) facts.add(callerFact.get)
             case _ => // Nothing to do
         }
@@ -234,11 +234,11 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
                     ) => {
                         val callStatement = JavaIFDSProblem.asCall(call.stmt)
                         Set(in) ++ (in match {
-                            case Variable(index) if index == call.index =>
+                            case Variable(index) if index == call.pc =>
                                 callStatement.allParams.flatMap(createNewTaints(_, call))
-                            case ArrayElement(index, _) if index == call.index =>
+                            case ArrayElement(index, _) if index == call.pc =>
                                 callStatement.allParams.flatMap(createNewTaints(_, call))
-                            case InstanceField(index, _, _) if index == call.index =>
+                            case InstanceField(index, _, _) if index == call.pc =>
                                 callStatement.allParams.flatMap(createNewTaints(_, call))
                         })
                     }
@@ -279,7 +279,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
             case Var.ASTID => expression.asVar.definedBy.map(Variable)
             case ArrayLoad.ASTID =>
                 val arrayLoad = expression.asArrayLoad
-                val arrayIndex = TaintProblem.getIntConstant(arrayLoad.index, statement.code)
+                val arrayIndex = TaintProblem.getIntConstant(arrayLoad.index, statement.stmts)
                 val arrayDefinedBy = arrayLoad.arrayRef.asVar.definedBy
                 if (arrayIndex.isDefined) arrayDefinedBy.map(ArrayElement(_, arrayIndex.get))
                 else arrayDefinedBy.map(Variable)

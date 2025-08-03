@@ -39,9 +39,9 @@ import org.opalj.util.PerformanceEvaluation.time
  */
 abstract class IFDSEvaluationRunner {
 
-    protected def analysisClass: IFDSAnalysisScheduler[_, _, _]
+    protected def analysisClass: IFDSAnalysisScheduler[_, _, _, _]
 
-    protected def printAnalysisResults(analysis: IFDSAnalysis[_, _, _], ps: PropertyStore): Unit = ()
+    protected def printAnalysisResults(analysis: IFDSAnalysis[_, _, _, _], ps: PropertyStore): Unit = ()
 
     protected def run(
         debug:                    Boolean,
@@ -77,7 +77,7 @@ abstract class IFDSEvaluationRunner {
                 time {
                     p.get(FPCFAnalysesManagerKey).runAll(analysisClass)._2
                 }(t => analysisTime = t.toMilliseconds).collect {
-                    case (_, a: IFDSAnalysis[_, _, _]) => a
+                    case (_, a: IFDSAnalysis[_, _, _, _]) => a
                 }.head
 
             printAnalysisResults(analysis, ps)
@@ -161,7 +161,7 @@ abstract class IFDSEvaluationRunner {
         }
     }
 
-    protected def additionalEvaluationResult(analysis: IFDSAnalysis[_, _, _]): Option[Object] = None
+    protected def additionalEvaluationResult(analysis: IFDSAnalysis[_, _, _, _]): Option[Object] = None
 
     protected def writeAdditionalEvaluationResultsToFile(
         writer:                      PrintWriter,

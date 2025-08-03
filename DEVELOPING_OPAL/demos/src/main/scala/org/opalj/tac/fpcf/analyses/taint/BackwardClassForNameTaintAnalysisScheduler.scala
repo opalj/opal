@@ -25,9 +25,10 @@ import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
+import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
@@ -126,7 +127,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
 }
 
 object BackwardClassForNameTaintAnalysisScheduler
-    extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+    extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement, JavaICFG] {
 
     override def init(
         p:  SomeProject,
@@ -152,7 +153,7 @@ class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
     override def analysisClass: BackwardClassForNameTaintAnalysisScheduler.type =
         BackwardClassForNameTaintAnalysisScheduler
 
-    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit = {
+    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?, ?], ps: PropertyStore): Unit = {
         val propertyKey = BackwardClassForNameTaintAnalysisScheduler.property.key
         ps.entities(propertyKey)
             .collect {

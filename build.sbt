@@ -299,6 +299,7 @@ lazy val `IFDS` = (project in file("OPAL/ifds"))
   )
   .dependsOn(si % "it->it;it->test;test->test;compile->compile")
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")
+  .dependsOn(ide % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
 lazy val ide = `IDE`

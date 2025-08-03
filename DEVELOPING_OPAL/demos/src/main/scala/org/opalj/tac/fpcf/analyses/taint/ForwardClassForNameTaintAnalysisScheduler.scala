@@ -25,9 +25,10 @@ import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
+import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.AbstractJavaForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
@@ -100,7 +101,8 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
         method.declaringClassType == ClassType.Class && method.name == "forName"
 }
 
-object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+object ForwardClassForNameTaintAnalysisScheduler
+    extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement, JavaICFG] {
 
     override def init(p: SomeProject, ps: PropertyStore) = new ForwardClassForNameTaintAnalysis(p)
 
@@ -121,7 +123,7 @@ class ForwardClassForNameAnalysisRunnerIFDS extends IFDSEvaluationRunner {
     override def analysisClass: ForwardClassForNameTaintAnalysisScheduler.type =
         ForwardClassForNameTaintAnalysisScheduler
 
-    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit =
+    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?, ?], ps: PropertyStore): Unit =
         for {
             e <- analysis.ifdsProblem.entryPoints
             flows = ps(e, ForwardClassForNameTaintAnalysisScheduler.property.key)

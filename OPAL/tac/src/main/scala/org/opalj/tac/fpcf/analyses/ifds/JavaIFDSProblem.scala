@@ -7,56 +7,17 @@ package ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.cfg.CFG
-import org.opalj.br.cfg.CFGNode
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSProblem
-import org.opalj.ifds.Statement
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Stmt
-import org.opalj.tac.TACStmts
-import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.value.ValueInformation
-
-/**
- * A statement that is passed to the concrete analysis.
- *
- * @param method The method containing the statement.
- * @param index The index of the Statement in the code.
- * @param code The method's TAC code.
- * @param cfg The method's CFG.
- *
- * @author Marc Clement
- */
-case class JavaStatement(
-    method: Method,
-    index:  Int,
-    code:   Array[Stmt[V]],
-    cfg:    CFG[Stmt[V], TACStmts[V]]
-) extends Statement[Method, CFGNode] {
-
-    override def hashCode(): Int = method.hashCode() * 31 + index
-
-    override def equals(o: Any): Boolean = o match {
-        case s: JavaStatement => s.index == index && s.method == method
-        case _                => false
-    }
-
-    override def toString: String = s"${method.signatureToJava(false)}[${index}]\n\t${stmt}\n\t${method.toJava}"
-    override def callable: Method = method
-    override def basicBlock: CFGNode = cfg.bb(index)
-    def stmt: Stmt[V] = code(index)
-}
-
-object JavaStatement {
-    def apply(referenceStatement: JavaStatement, newIndex: Int): JavaStatement =
-        JavaStatement(referenceStatement.method, newIndex, referenceStatement.code, referenceStatement.cfg)
-}
 
 abstract class JavaForwardIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
     extends JavaIFDSProblem[Fact](new JavaForwardICFG(project))
@@ -64,8 +25,8 @@ abstract class JavaForwardIFDSProblem[Fact <: AbstractIFDSFact](project: SomePro
 abstract class JavaBackwardIFDSProblem[Fact <: AbstractIFDSFact](project: SomeProject)
     extends JavaIFDSProblem[Fact](new JavaBackwardICFG(project))
 
-abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](override val icfg: JavaICFG)
-    extends IFDSProblem[Fact, Method, JavaStatement](icfg) {
+abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](icfg: JavaICFG)
+    extends IFDSProblem[Fact, Method, JavaStatement, JavaICFG](icfg) {
 
     override def needsPredecessor(statement: JavaStatement): Boolean = false
 

@@ -23,6 +23,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
+import org.opalj.ide.solver.ICFG
 import org.opalj.ifds.Dependees.Getter
 
 /**
@@ -36,7 +37,7 @@ import org.opalj.ifds.Dependees.Getter
  *
  * @author Marc Clement
  */
-class IFDSFact[Fact <: AbstractIFDSFact, S <: Statement[_, _]](
+class IFDSFact[Fact <: AbstractIFDSFact, S](
     val fact:               Fact,
     val isUnbalancedReturn: Boolean,
     val callStmt:           Option[S],
@@ -111,7 +112,7 @@ object Dependees {
  * that is the fact reaches the statement as an input.
  * Source fact is the fact within the analysis entity.
  */
-case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: AnyRef](
+case class PathEdges[Fact <: AbstractIFDSFact, S, C <: AnyRef](
     subsumes: (Set[Fact], Fact) => Boolean
 ) {
     /**
@@ -193,7 +194,7 @@ case class PathEdges[Fact <: AbstractIFDSFact, S <: Statement[_ <: C, _], C <: A
  * @param source The callable and input fact for which the callable is analyzed.
  * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
  */
-protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _], WorklistItem](
+protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S, WorklistItem](
     val source: (C, IFDSFact[Fact, S]),
     subsumes:   (Set[Fact], Fact) => Boolean
 ) {
@@ -226,9 +227,9 @@ case class Statistics(
  *
  * @author Marc Clement
  */
-class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]](
+class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: ICFG[S, C]](
     val project:     SomeProject,
-    val ifdsProblem: IFDSProblem[Fact, C, S],
+    val ifdsProblem: IFDSProblem[Fact, C, S, _ICFG],
     val propertyKey: IFDSPropertyMetaInformation[S, Fact]
 ) extends FPCFAnalysis {
     private type WorklistItem = (Option[S], IFDSFact[Fact, S], Option[S]) // statement, fact, predecessor
@@ -236,7 +237,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     type State = IFDSState[Fact, C, S, WorklistItem]
 
     implicit var statistics: Statistics = Statistics()
-    val icfg: ICFG[C, S] = ifdsProblem.icfg
+    val icfg: _ICFG = ifdsProblem.icfg
 
     /**
      * Performs an IFDS analysis for a method-fact-pair.
@@ -258,10 +259,10 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         val startStatements: Set[(Option[S], Option[S])] = if (sourceFact.isUnbalancedReturn) {
             val call = sourceFact.callStmt.get
             val startStmts: Set[(Option[S], Option[S])] =
-                icfg.nextStatements(call).map(stmt => (Some(stmt), Some(call)))
+                icfg.getNextStatements(call).map(stmt => (Some(stmt), Some(call))).toSet
             if (startStmts.isEmpty) Set((None, Some(call))) // unbalanced return to call with index 0
             else startStmts
-        } else icfg.startStatements(function).map(stmt => (Some(stmt), None))
+        } else icfg.getStartStatements(function).map(stmt => (Some(stmt), None)).toSet
 
         startStatements.foreach(start => {
             if (start._1.isDefined) state.pathEdges.add(start._1.get, sourceFact.fact) // ifds line 2
@@ -337,11 +338,10 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
             implicit val work: (Option[S], IFDSFact[Fact, S], Option[S]) = worklist.dequeue() // ifds line 11
             val (statement, in, predecessor) = work
             statement match {
+                case Some(stmt) if icfg.isCallStatement(stmt) =>
+                    handleCall(stmt, icfg.getCallees(stmt), in.fact) // ifds line 13
                 case Some(stmt) =>
-                    icfg.getCalleesIfCallStatement(stmt) match {
-                        case Some(callees) => handleCall(stmt, callees, in.fact) // ifds line 13
-                        case None          => handleOther(stmt, in.fact, predecessor) // ifds line 33
-                    }
+                    handleOther(stmt, in.fact, predecessor) // ifds line 33
                 case None if icfg.isExitStatement(predecessor.get) =>
                     handleExit(predecessor.get, in.fact) // ifds line 21
                 case _ => // last statement was no exit statement, should not happen
@@ -370,7 +370,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         work:     WorklistItem
     ): Unit = {
         val successors = {
-            val successors = icfg.nextStatements(call).map(Some(_))
+            val successors = icfg.getNextStatements(call).map(Some(_))
             if (successors.isEmpty) {
                 Set(None)
             } else {
@@ -416,7 +416,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         // callee could have multiple return statements
         // thus, backward analysis could have multiple entry points to a callee
         val entryFacts =
-            icfg.startStatements(callee).flatMap(entry => callFlow(entry, in, call, callee))
+            icfg.getStartStatements(callee).flatMap(entry => callFlow(entry, in, call, callee))
         val entryIFDSFacts = entryFacts.map(new IFDSFact(_)) // obviously no unbalanced return since this is a call
         for (entryFact <- entryIFDSFacts) { // ifds line 14
             val newEntity = (callee, entryFact)
@@ -454,7 +454,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     )(implicit state: State, worklist: Worklist, work: WorklistItem): Unit = {
         // analysis might create new facts at exit
         val unbCallChain = state.source._2.callChain.getOrElse(Seq.empty)
-        val createdFact = ifdsProblem.createFlowFactAtExit(statement.callable, in, unbCallChain)
+        val createdFact = ifdsProblem.createFlowFactAtExit(icfg.getCallable(statement), in, unbCallChain)
         val newEdges =
             if (createdFact.isDefined) Set((statement, in), (statement, createdFact.get))
             else Set((statement, in))
@@ -480,7 +480,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
         state:    State,
         worklist: Worklist
     ): Unit = {
-        val successors = icfg.nextStatements(statement)
+        val successors = icfg.getNextStatements(statement)
         for (out <- normalFlow(statement, in, predecessor)) { // ifds line 34
             if (successors.isEmpty) {
                 // exit reached
@@ -494,7 +494,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     }
 
     private def handleUnbalancedReturn(exit: S, in: Fact)(implicit state: State, work: WorklistItem): Unit = {
-        val callee = exit.callable
+        val callee = icfg.getCallable(exit)
         val existingCallChain = state.source._2.callChain.getOrElse(Seq.empty)
         // avoid infinite loops
         val callable = ifdsProblem.createCallable(callee)
@@ -510,7 +510,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
 
             // Add the caller with the unbalanced return facts as a dependency to start its analysis
             for (unbRetFact <- unbalancedReturnFacts) {
-                val newEntity = (callStmt.callable, unbRetFact)
+                val newEntity = (icfg.getCallable(callStmt), unbRetFact)
                 if (newEntity == state.source) {
                     // handle self dependency on our own because property store can't handle it
                     state.selfDependees += work
@@ -628,17 +628,17 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C,
     }
 }
 
-abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S <: Statement[_ <: C, _]]
+abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: ICFG[S, C]]
     extends FPCFLazyAnalysisScheduler {
 
-    override final type InitializationData = IFDSAnalysis[Fact, C, S]
+    override final type InitializationData = IFDSAnalysis[Fact, C, S, _ICFG]
     def property: IFDSPropertyMetaInformation[S, Fact]
     override final def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
 
     override def register(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: IFDSAnalysis[Fact, C, S]
+        analysis: IFDSAnalysis[Fact, C, S, _ICFG]
     ): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(property.key, analysis.performAnalysis)
         analysis

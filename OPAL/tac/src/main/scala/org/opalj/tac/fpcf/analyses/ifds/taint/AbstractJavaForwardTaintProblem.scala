@@ -12,10 +12,10 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 
 /**
  * IFDS Problem that performs a forward Taint Analysis on Java
@@ -47,7 +47,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
             case ArrayStore.ASTID =>
                 val store = statement.stmt.asArrayStore
                 val definedBy = store.arrayRef.asVar.definedBy
-                val arrayIndex = TaintProblem.getIntConstant(store.index, statement.code)
+                val arrayIndex = TaintProblem.getIntConstant(store.index, statement.stmts)
                 if (isTainted(store.value, in)) {
                     if (arrayIndex.isDefined) {
                         // Taint a known array index
@@ -169,7 +169,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
     ): Set[TaintFact] = {
         if (successor.isDefined && !isPossibleReturnFlow(exit, successor.get)) return Set.empty
 
-        val callee = exit.callable
+        val callee = exit.method
         if (sanitizesReturnValue(callee)) return Set.empty
         val callStatement = JavaIFDSProblem.asCall(call.stmt)
         val allParams = callStatement.allParams
@@ -208,11 +208,11 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
             val returnValueDefinedBy = exit.stmt.asReturnValue.expr.asVar.definedBy
             in match {
                 case Variable(index) if returnValueDefinedBy.contains(index) =>
-                    flows += Variable(call.index)
+                    flows += Variable(call.pc)
                 case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) =>
-                    flows += ArrayElement(call.index, taintedIndex)
+                    flows += ArrayElement(call.pc, taintedIndex)
                 case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) =>
-                    flows += InstanceField(call.index, declClass, taintedField)
+                    flows += InstanceField(call.pc, declClass, taintedField)
                 case TaintNullFact =>
                     val taints = createTaints(callee, call)
                     if (taints.nonEmpty) flows ++= taints
@@ -286,7 +286,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                                     }
                                 case _ => false
                             })
-                        ) Set(Variable(call.index))
+                        ) Set(Variable(call.pc))
                         else Set.empty
                     }
                 ): OutsideAnalysisContextCallHandler)
@@ -310,7 +310,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                 val definedBy = expression.asVar.definedBy
                 in match {
                     case Variable(index) if definedBy.contains(index) =>
-                        Set(Variable(statement.index))
+                        Set(Variable(statement.pc))
                     case _ => Set()
                 }
             case ArrayLoad.ASTID =>
@@ -319,14 +319,14 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                 if (in match {
                         // One specific array element may be tainted
                         case ArrayElement(index, taintedElement) =>
-                            val loadedIndex = TaintProblem.getIntConstant(loadExpression.index, statement.code)
+                            val loadedIndex = TaintProblem.getIntConstant(loadExpression.index, statement.stmts)
                             arrayDefinedBy.contains(index) &&
                                 (loadedIndex.isEmpty || taintedElement == loadedIndex.get)
                         // Or the whole array
                         case Variable(index) => arrayDefinedBy.contains(index)
                         case _               => false
                     }
-                ) Set(Variable(statement.index))
+                ) Set(Variable(statement.pc))
                 else
                     Set.empty
             case GetField.ASTID =>
@@ -341,13 +341,13 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                         case _               => false
                     }
                 )
-                    Set(Variable(statement.index))
+                    Set(Variable(statement.pc))
                 else
                     Set.empty
             case GetStatic.ASTID =>
                 val get = expression.asGetStatic
                 if (in == StaticField(get.declaringClass, get.name))
-                    Set(Variable(statement.index))
+                    Set(Variable(statement.pc))
                 else Set.empty
             case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID | PrimitiveTypecastExpr.ASTID |
                 NewArray.ASTID | ArrayLength.ASTID =>
