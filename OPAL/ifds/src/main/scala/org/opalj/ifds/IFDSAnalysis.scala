@@ -23,7 +23,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
-import org.opalj.ide.solver.ICFG
 import org.opalj.ifds.Dependees.Getter
 
 /**
@@ -226,13 +225,13 @@ case class Statistics(
  * @tparam Fact the generated facts
  * @tparam C the type of callables
  * @tparam S the type of statements
- * @tparam _ICFG the interprocedual control-flow graph used
+ * @tparam ICFG the interprocedual control-flow graph used
  *
  * @author Marc Clement
  */
-class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: ICFG[S, C]](
+class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S, ICFG <: ide.solver.ICFG[S, C]](
     val project:     SomeProject,
-    val ifdsProblem: IFDSProblem[Fact, C, S, _ICFG],
+    val ifdsProblem: IFDSProblem[Fact, C, S, ICFG],
     val propertyKey: IFDSPropertyMetaInformation[S, Fact]
 ) extends FPCFAnalysis {
     private type WorklistItem = (Option[S], IFDSFact[Fact, C, S], Option[S]) // statement, fact, predecessor
@@ -240,7 +239,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: ICFG[S, C]
     type State = IFDSState[Fact, C, S, WorklistItem]
 
     implicit var statistics: Statistics = Statistics()
-    val icfg: _ICFG = ifdsProblem.icfg
+    val icfg: ICFG = ifdsProblem.icfg
 
     /**
      * Performs an IFDS analysis for a method-fact-pair.
@@ -630,17 +629,17 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: ICFG[S, C]
     }
 }
 
-abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: ICFG[S, C]]
+abstract class IFDSAnalysisScheduler[Fact <: AbstractIFDSFact, C <: AnyRef, S, ICFG <: ide.solver.ICFG[S, C]]
     extends FPCFLazyAnalysisScheduler {
 
-    override final type InitializationData = IFDSAnalysis[Fact, C, S, _ICFG]
+    override final type InitializationData = IFDSAnalysis[Fact, C, S, ICFG]
     def property: IFDSPropertyMetaInformation[S, Fact]
     override final def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
 
     override def register(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: IFDSAnalysis[Fact, C, S, _ICFG]
+        analysis: IFDSAnalysis[Fact, C, S, ICFG]
     ): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(property.key, analysis.performAnalysis)
         analysis
