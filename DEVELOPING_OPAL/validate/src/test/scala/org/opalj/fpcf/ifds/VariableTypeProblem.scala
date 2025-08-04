@@ -20,7 +20,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.AbstractIFDSNullFact
-import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSFact
 import org.opalj.tac.ArrayLoad
@@ -102,7 +101,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
 
     override def nullFact: VTAFact = VTANullFact
 
-    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, JavaStatement])] = {
+    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, Method, JavaStatement])] = {
         project.allProjectClassFiles.flatMap(cf =>
             if (classInsideAnalysisContext(cf)) {
                 cf.methods.flatMap { m =>
@@ -198,7 +197,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         call:         JavaStatement,
         in:           VTAFact,
         successor:    Option[JavaStatement],
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Set[VTAFact] = {
         val inSet = Set(in)
         // Check, to which variables the callee may refer
@@ -223,7 +222,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         in:           VTAFact,
         call:         JavaStatement,
         successor:    Option[JavaStatement],
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Set[VTAFact] =
         // We only create a new fact, if the call returns a value, which is assigned to a variable.
         if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
@@ -236,7 +235,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
             }
         } else Set.empty
 
-    override def createFlowFactAtExit(callee: Method, in: VTAFact, unbCallChain: Seq[Callable]): Option[VTAFact] = None
+    override def createFlowFactAtExit(callee: Method, in: VTAFact, unbCallChain: Seq[Method]): Option[VTAFact] = None
 
     /**
      * Only methods in java.lang and org.opalj are inside the analysis context.
@@ -255,7 +254,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                     call:         JavaStatement,
                     successor:    Option[JavaStatement],
                     in:           VTAFact,
-                    unbCallChain: Seq[Callable],
+                    unbCallChain: Seq[Method],
                     getter:       Getter
                 ) => {
                     val returnType = callee.descriptor.returnType
@@ -378,7 +377,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * @return All pairs (`method`, inputFact) where inputFact is a VariableType for one of the
      *         method's parameter with its compile time type as an upper bound.
      */
-    private def entryPointsForMethod(method: Method): Seq[(Method, IFDSFact[VTAFact, JavaStatement])] = {
+    private def entryPointsForMethod(method: Method): Seq[(Method, IFDSFact[VTAFact, Method, JavaStatement])] = {
         // Iterate over all parameters, which have a reference type.
         (method.descriptor.parameterTypes.zipWithIndex.collect {
             case (t, index) if t.isReferenceType =>

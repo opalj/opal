@@ -9,7 +9,6 @@ package taint
 import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.JavaBackwardIFDSProblem
@@ -149,7 +148,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         in:           TaintFact,
         call:         JavaStatement,
         successor:    Option[JavaStatement],
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Set[TaintFact] = {
         val callee = exit.method
         if (sanitizesReturnValue(callee)) return Set.empty
@@ -197,7 +196,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         call:         JavaStatement,
         in:           TaintFact,
         successor:    Option[JavaStatement],
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Set[TaintFact] = {
         val flowFact = createFlowFactAtCall(call, in, unbCallChain)
         val result = scala.collection.mutable.Set.empty[TaintFact]
@@ -216,7 +215,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
     protected def createFlowFactAtCall(
         call:      JavaStatement,
         in:        TaintFact,
-        callChain: Seq[Callable]
+        callChain: Seq[Method]
     ): Option[TaintFact] = None
 
     /**
@@ -229,7 +228,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
                         call:         JavaStatement,
                         _:            Option[JavaStatement],
                         in:           TaintFact,
-                        unbCallChain: Seq[Callable],
+                        unbCallChain: Seq[Method],
                         _:            Getter
                     ) => {
                         val callStatement = JavaIFDSProblem.asCall(call.stmt)
@@ -353,6 +352,6 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         calleeFact: FlowFact,
         caller:     Method,
         in:         TaintFact,
-        callChain:  Seq[Callable]
+        callChain:  Seq[Method]
     ): Option[FlowFact]
 }

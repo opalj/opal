@@ -33,7 +33,7 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: IC
     /**
      * The entry points of this analysis.
      */
-    def entryPoints: Seq[(C, IFDSFact[Fact, S])]
+    def entryPoints: Seq[(C, IFDSFact[Fact, C, S])]
 
     /**
      * @return Whether the analysis should follow unbalanced return flows
@@ -48,7 +48,7 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: IC
      * @param source the source fact of the analysis of the current function.
      * @return true if an unbalanced return should be performed.
      */
-    def shouldPerformUnbalancedReturn(source: (C, IFDSFact[Fact, S])): Boolean =
+    def shouldPerformUnbalancedReturn(source: (C, IFDSFact[Fact, C, S])): Boolean =
         source._2.isUnbalancedReturn || entryPoints.contains(source)
 
     /**
@@ -94,7 +94,7 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: IC
      *         under the assumption that `in` held before the execution of `exit` and that
      *         `successor` will be executed next.
      */
-    def returnFlow(exit: S, in: Fact, call: S, successor: Option[S], unbCallChain: Seq[Callable]): Set[Fact]
+    def returnFlow(exit: S, in: Fact, call: S, successor: Option[S], unbCallChain: Seq[C]): Set[Fact]
 
     /**
      * Computes the data flow for a call to return edge.
@@ -109,7 +109,7 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: IC
         call:         S,
         in:           Fact,
         successor:    Option[S],
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[C]
     ): Set[Fact]
 
     /**
@@ -121,24 +121,16 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: IC
      * @param unbalancedCallChain the current call chain.
      * @return Some FlowFact, if necessary. Otherwise None.
      */
-    def createFlowFactAtExit(callee: C, in: Fact, unbalancedCallChain: Seq[Callable]): Option[Fact]
+    def createFlowFactAtExit(callee: C, in: Fact, unbalancedCallChain: Seq[C]): Option[Fact]
 
     def needsPredecessor(statement: S): Boolean
 
-    /**
-     * Creates a Callable object from a method/function.
-     *
-     *  @param callable the method/function.
-     *  @return the corresponding Callable instance.
-     */
-    def createCallable(callable: C): Callable
-
-    type OutsideAnalysisContextCallHandler = ((S, Option[S], Fact, Seq[Callable], Getter) => Set[Fact]) {
+    type OutsideAnalysisContextCallHandler = ((S, Option[S], Fact, Seq[C], Getter) => Set[Fact]) {
         def apply(
             call:            S,
             successor:       Option[S],
             in:              Fact,
-            unbCallChain:    Seq[Callable],
+            unbCallChain:    Seq[C],
             dependeesGetter: Getter
         ): Set[Fact]
     }
@@ -158,8 +150,8 @@ abstract class IFDSProblem[Fact <: AbstractIFDSFact, C <: AnyRef, S, _ICFG <: IC
      */
     def outsideAnalysisContextCall(callee: C): Option[OutsideAnalysisContextCallHandler]
 
-    type OutsideAnalysisContextUnbReturnHandler = ((C, Fact, Seq[Callable], Getter) => Unit) {
-        def apply(callee: C, in: Fact, callChain: Seq[Callable], dependeesGetter: Getter): Unit
+    type OutsideAnalysisContextUnbReturnHandler = ((C, Fact, Seq[C], Getter) => Unit) {
+        def apply(callee: C, in: Fact, callChain: Seq[C], dependeesGetter: Getter): Unit
     }
 
     /**

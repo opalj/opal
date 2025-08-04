@@ -5,10 +5,11 @@ package fpcf
 package analyses
 package ifds
 
+import java.util.concurrent.Callable
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.AbstractIFDSFact
-import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSProblem
 import org.opalj.tac.Assignment
@@ -33,11 +34,9 @@ abstract class JavaIFDSProblem[Fact <: AbstractIFDSFact](icfg: JavaICFG)
 
     override def needsPredecessor(statement: JavaStatement): Boolean = false
 
-    override def createCallable(callable: Method): Callable = JavaMethod(callable)
-
     override def outsideAnalysisContextCall(callee: Method): Option[OutsideAnalysisContextCallHandler] =
         if (callee.body.isDefined) None
-        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, unbCallChain: Seq[Callable], _: Getter) =>
+        else Some((_: JavaStatement, _: Option[JavaStatement], in: Fact, unbCallChain: Seq[Method], _: Getter) =>
             Set(in)
         )
 
