@@ -19,20 +19,7 @@ package object analyses {
 
     type ProjectInformationKeys = si.ProjectInformationKeys
 
-    type ProgressEvent = ProgressEvents.Value
-
     type StringConstantsInformation = Map[String, ArraySeq[PCInMethod]]
-
-    /**
-     * An analysis that may produce a result.
-     */
-    type SingleOptionalResultAnalysis[Source, +AnalysisResult] = Analysis[Source, Option[AnalysisResult]]
-
-    /**
-     * An analysis that may produce multiple results. E.g., an analysis that looks for
-     * instances of bug patterns.
-     */
-    type MultipleResultsAnalysis[Source, +AnalysisResult] = Analysis[Source, Iterable[AnalysisResult]]
 
     implicit object MethodDeclarationContextOrdering extends Ordering[MethodDeclarationContext] {
         def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = x compare y
