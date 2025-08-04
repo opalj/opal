@@ -224,6 +224,9 @@ case class Statistics(
  * @param propertyKey Provides the concrete property key that must be unique for every distinct concrete analysis and
  *                    the lower bound for the IFDSProperty.
  * @tparam Fact the generated facts
+ * @tparam C the type of callables
+ * @tparam S the type of statements
+ * @tparam _ICFG the interprocedual control-flow graph used
  *
  * @author Marc Clement
  */

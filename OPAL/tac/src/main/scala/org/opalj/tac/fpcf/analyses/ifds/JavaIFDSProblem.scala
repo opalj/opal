@@ -16,6 +16,9 @@ import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Stmt
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaBackwardICFG
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaForwardICFG
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.value.ValueInformation
 

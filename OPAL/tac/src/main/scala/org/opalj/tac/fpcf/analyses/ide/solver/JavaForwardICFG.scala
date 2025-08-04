@@ -6,7 +6,6 @@ package analyses
 package ide
 package solver
 
-import scala.collection.immutable.Set
 import scala.collection.mutable.{Set => MutableSet}
 
 import org.opalj.br.Method
@@ -19,14 +18,14 @@ import org.opalj.br.analyses.SomeProject
  * @author Robin Körkemeier
  */
 class JavaForwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
-    override def getStartStatements(callable: Method): scala.collection.Set[JavaStatement] = {
+    override def getStartStatements(callable: Method): Set[JavaStatement] = {
         val tac = tacProvider(callable)
         Set(
             JavaStatement(callable, 0, isReturnNode = false, tac.stmts, tac.cfg)
         )
     }
 
-    override def getNextStatements(javaStmt: JavaStatement): scala.collection.Set[JavaStatement] = {
+    override def getNextStatements(javaStmt: JavaStatement): Set[JavaStatement] = {
         if (isCallStatement(javaStmt)) {
             Set(
                 JavaStatement(javaStmt.method, javaStmt.pc, isReturnNode = true, javaStmt.stmts, javaStmt.cfg)
@@ -38,7 +37,7 @@ class JavaForwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
                     JavaStatement(javaStmt.method, nextPc, isReturnNode = false, javaStmt.stmts, javaStmt.cfg)
                 )
             }
-            successors
+            successors.toSet
         }
     }
 

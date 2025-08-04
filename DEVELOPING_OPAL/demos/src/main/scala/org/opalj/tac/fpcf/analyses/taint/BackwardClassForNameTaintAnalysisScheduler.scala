@@ -25,9 +25,9 @@ import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
-import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
