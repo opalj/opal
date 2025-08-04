@@ -3,7 +3,10 @@ package org.opalj
 package br
 package analyses
 
+import java.io.File
 import java.net.URL
+
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 /**
  * Demonstrates how to collect some statistics about the analyzed project
@@ -11,17 +14,22 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-object SimpleProjectStatistics extends ProjectAnalysisApplication {
+object SimpleProjectStatistics extends ProjectsAnalysisApplication {
 
-    override def title: String = "collects project statistics"
+    protected class StatisticsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Collects basic size metrics about a project"
+    }
 
-    override def description: String = "collects basic size metrics about a project"
+    protected type ConfigType = StatisticsConfig
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected def createConfig(args: Array[String]): StatisticsConfig = new StatisticsConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: StatisticsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         // the following is highly inefficient
 
@@ -90,18 +98,21 @@ object SimpleProjectStatistics extends ProjectAnalysisApplication {
             (max, methodName)
         }
 
-        BasicReport(
-            classFilesDistribution.mkString("classFilesDistribution:\n\t", "\n\t", "\n") +
-                "maxInstanceFieldsInAClass: " +
-                maxInstanceFieldsInAClass + "(" + classWithMaxInstanceFields + ")\n" +
-                "maxClassFieldsInAClass: " +
-                maxClassFieldsInAClass + "(" + classWithMaxClassFields + ")\n" +
-                "maxMethodsInAClass: " +
-                maxMethodsInAClass + "(" + classWithMaxMethods + ")\n" +
-                "longestMethodInAClass: " +
-                longestMethodInAClass + "(" + theLongestMethod + ")\n" +
-                "methodWithMostRegisterVariableInAClass: " +
-                methodWithMostRegisterVariableInAClass + "(" + theMethodWithTheMostLocalVariables + ")\n"
+        (
+            project,
+            BasicReport(
+                classFilesDistribution.mkString("classFilesDistribution:\n\t", "\n\t", "\n") +
+                    "maxInstanceFieldsInAClass: " +
+                    maxInstanceFieldsInAClass + "(" + classWithMaxInstanceFields + ")\n" +
+                    "maxClassFieldsInAClass: " +
+                    maxClassFieldsInAClass + "(" + classWithMaxClassFields + ")\n" +
+                    "maxMethodsInAClass: " +
+                    maxMethodsInAClass + "(" + classWithMaxMethods + ")\n" +
+                    "longestMethodInAClass: " +
+                    longestMethodInAClass + "(" + theLongestMethod + ")\n" +
+                    "methodWithMostRegisterVariableInAClass: " +
+                    methodWithMostRegisterVariableInAClass + "(" + theMethodWithTheMostLocalVariables + ")\n"
+            )
         )
     }
 }

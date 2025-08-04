@@ -2,21 +2,30 @@
 package org.opalj
 package br
 
+import java.io.File
 import java.net.URL
 
-import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
 /**
- * Counts the number of native methods.
+ * Counts the number of public methods.
  *
  * @author Michael Eichberg
  */
-object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisApplication {
+object PublicMethodsInNonRestrictedPackagesCounter extends ProjectsAnalysisApplication {
+
+    protected class NonRestrictedPackagesConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Counts the number of public/protected methods in non-restricted packages"
+    }
+
+    protected type ConfigType = NonRestrictedPackagesConfig
+
+    protected def createConfig(args: Array[String]): NonRestrictedPackagesConfig = new NonRestrictedPackagesConfig(args)
 
     val restrictedPackages = List( // set of restricted packages for Java 7
         "sun/",
@@ -48,35 +57,34 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisApplication {
         "com/sun/java/accessibility/"
     )
 
-    val analysis = new OneStepAnalysis[URL, BasicReport] {
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: NonRestrictedPackagesConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
-        override def description =
-            "Counts the number of public/protected methods in non-restricted packages."
+        val methods =
+            (
+                for {
+                    classFile <- project.allClassFiles.par
+                    if classFile.isPublic
+                    if !restrictedPackages.exists(classFile.fqn.startsWith(_))
+                    method <- classFile.methods
+                    if method.body.isDefined
+                    if method.isPublic || (method.isProtected && !classFile.isFinal)
+                    referenceParametersCount = method.parameterTypes.count(_.isReferenceType)
+                } yield {
+                    method.toJava(referenceParametersCount.toString)
+                }
+            ).seq
 
-        def doAnalyze(
-            project:       Project[URL],
-            parameters:    Seq[String],
-            isInterrupted: () => Boolean
-        ) = {
-            val methods =
-                (
-                    for {
-                        classFile <- project.allClassFiles.par
-                        if classFile.isPublic
-                        if !restrictedPackages.exists(classFile.fqn.startsWith(_))
-                        method <- classFile.methods
-                        if method.body.isDefined
-                        if method.isPublic || (method.isProtected && !classFile.isFinal)
-                        referenceParametersCount = method.parameterTypes.count(_.isReferenceType)
-                    } yield {
-                        method.toJava(referenceParametersCount.toString)
-                    }
-                ).seq
-
+        (
+            project,
             BasicReport(
                 s"${methods.size} public and protected methods in non-restricted packages found:\n" +
                     methods.mkString("\t", "\n\t", "\n")
             )
-        }
+        )
     }
 }

@@ -3,6 +3,7 @@ package org.opalj
 package support
 package info
 
+import java.io.File
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.ArraySeq
@@ -15,11 +16,12 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.{Purity => PurityProperty}
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Pure
@@ -31,14 +33,13 @@ import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
@@ -53,31 +54,32 @@ import org.opalj.value.ValueInformation
  *
  * @author Dominik Helm
  */
-object UnusedResults extends ProjectAnalysisApplication {
+object UnusedResults extends ProjectsAnalysisApplication {
 
-    /** The type of the TAC domain. */
-    type V = DUVar[ValueInformation]
-
-    override def title: String = "Unused Results Analysis"
-
-    override def description: String = {
-        "find invokations of pure/side effect free methods where the result is not used"
+    protected class UnusedResultsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
+        val description = "Finds invocations of pure/side-effect free methods where the result is not used"
     }
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = UnusedResultsConfig
+
+    protected def createConfig(args: Array[String]): UnusedResultsConfig = new UnusedResultsConfig(args)
+
+    type V = DUVar[ValueInformation]
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: UnusedResultsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        implicit val (project, _) = analysisConfig.setupProject(cp)()
+        implicit val (ps, _) = analysisConfig.setupPropertyStore(project)
+        analysisConfig.setupCallGaph(project)
 
         val issues = new ConcurrentLinkedQueue[String]
 
-        implicit val p: SomeProject = project
-        implicit val ps: PropertyStore = project.get(PropertyStoreKey)
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
-
-        project.get(RTACallGraphKey)
 
         project.get(FPCFAnalysesManagerKey).runAll(
             EagerFieldAccessInformationAnalysis,
@@ -96,7 +98,7 @@ object UnusedResults extends ProjectAnalysisApplication {
             issues.addAll(analyzeMethod(method, tacai = tacai).asJava)
         }
 
-        BasicReport(issues.asScala)
+        (project, BasicReport(issues.asScala))
     }
 
     def analyzeMethod(
