@@ -219,8 +219,10 @@ object StmtProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext)
-        //ExprProcessor.storeVariable(targetVar, tacToLVIndex, code)
+        if (expr.isConst || expr.isVar)
+            tacContext.emitVarUse(targetVar)
+        else
+            ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext)
     }
 
     def processExprStmt(

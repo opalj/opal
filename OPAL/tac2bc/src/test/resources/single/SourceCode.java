@@ -3,6 +3,7 @@ public class SourceCode {
         int a = 1;
         int b = 2;
         int c = a + b;
-        System.out.println(c);
+        int d = a + 5;
+        System.out.println(c + d);
     }
 }

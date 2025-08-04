@@ -92,8 +92,8 @@ object ExprProcessor {
         tacContext:   Tac2BcContext
     ): Unit = {
         expr match {
-            case const: Const              => loadConstant(const, code)
-            case variable: Var[V]          => loadVariable(variable, tacToLVIndex, code)
+            //case const: Const              =>
+            //case variable: Var[V]          =>
             case getField: GetField[V]     => processGetField(getField, tacToLVIndex, code, tacContext)
             case getStatic: GetStatic      => processGetStatic(getStatic, code)
             case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code, tacContext)
@@ -301,14 +301,15 @@ object ExprProcessor {
         // 2. With receiver
         call.receiverOption.foreach { receiver =>
             val definedByIdx = receiver.asVar.definedBy.head
-            tacContext.emitStmt(definedByIdx)
 
             if(call.isInstanceOf[NonVirtualMethodCall[V]])
-                ExprProcessor.processExpression(receiver, tacToLVIndex, code, tacContext)
+                ExprProcessor.loadVariable(receiver.asVar, tacToLVIndex, code)
+            else
+                tacContext.emitStmt(definedByIdx)
         }
     }
 
-    private def loadConstant(
+    def loadConstant(
         constExpr: Const,
         code:      mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
@@ -338,7 +339,7 @@ object ExprProcessor {
         tacToLVIndex.getOrElse(tacIndex, throw new RuntimeException(s"no index found for variable $variable"))
     }
 
-    private def loadVariable(
+    def loadVariable(
         variable:     Var[V],
         tacToLVIndex: Map[Int, Int],
         code:         mutable.ListBuffer[CodeElement[Nothing]]
