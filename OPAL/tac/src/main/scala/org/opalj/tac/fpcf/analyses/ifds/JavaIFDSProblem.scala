@@ -5,8 +5,6 @@ package fpcf
 package analyses
 package ifds
 
-import java.util.concurrent.Callable
-
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ifds.AbstractIFDSFact
