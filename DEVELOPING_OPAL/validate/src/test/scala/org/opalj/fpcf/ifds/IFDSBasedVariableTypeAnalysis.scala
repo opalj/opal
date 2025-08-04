@@ -21,9 +21,9 @@ import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ifds.Statistics
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
-import org.opalj.tac.fpcf.analyses.ifds.JavaICFG
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**

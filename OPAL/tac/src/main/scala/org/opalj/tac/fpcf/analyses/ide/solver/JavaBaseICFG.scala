@@ -6,7 +6,6 @@ package analyses
 package ide
 package solver
 
-import scala.collection.immutable.Set
 import scala.collection.mutable.{Map => MutableMap}
 
 import org.opalj.br.Method
@@ -64,7 +63,7 @@ abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
         }
     }
 
-    override def getCallees(javaStmt: JavaStatement): scala.collection.Set[Method] = {
+    override def getCallees(javaStmt: JavaStatement): Set[Method] = {
         val caller = declaredMethods(javaStmt.method)
         if (caller == null) {
             return Set.empty
@@ -92,7 +91,7 @@ abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
 
     override def getCallable(javaStmt: JavaStatement): Method = javaStmt.method
 
-    override def getCallers(callable: Method): scala.collection.Set[JavaStatement] = {
+    override def getCallers(callable: Method): Set[JavaStatement] = {
         // Slightly adjusted code from the IFDS ICFG implementation
         val declaredCallable = declaredMethods(callable)
         val callersEOptionP = propertyStore(declaredCallable, Callers.key)

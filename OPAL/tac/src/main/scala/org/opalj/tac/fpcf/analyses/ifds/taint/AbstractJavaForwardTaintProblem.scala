@@ -10,12 +10,10 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem.V
-import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 
 /**
  * IFDS Problem that performs a forward Taint Analysis on Java
@@ -165,7 +163,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
         in:           TaintFact,
         call:         JavaStatement,
         successor:    Option[JavaStatement],
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Set[TaintFact] = {
         if (successor.isDefined && !isPossibleReturnFlow(exit, successor.get)) return Set.empty
 
@@ -198,8 +196,8 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
             case sf: StaticField => flows += sf
 
             // Track the call chain to the sink back
-            case FlowFact(flow) if !flow.contains(JavaMethod(call.method)) =>
-                flows += FlowFact(JavaMethod(call.method) +: flow)
+            case FlowFact(flow) if !flow.contains(call.method) =>
+                flows += FlowFact(call.method +: flow)
             case _ =>
         }
 
@@ -232,7 +230,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
         call:         JavaStatement,
         in:           TaintFact,
         successor:    Option[JavaStatement],
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Set[TaintFact] =
         if (sanitizesParameter(call, in)) Set() else Set(in)
 
@@ -268,7 +266,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                         call:         JavaStatement,
                         successor:    Option[JavaStatement],
                         in:           TaintFact,
-                        unbCallChain: Seq[Callable],
+                        unbCallChain: Seq[Method],
                         _:            Getter
                     ) => {
                         val allParams =

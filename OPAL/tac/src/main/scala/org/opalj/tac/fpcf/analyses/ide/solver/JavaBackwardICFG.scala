@@ -6,7 +6,6 @@ package analyses
 package ide
 package solver
 
-import scala.collection.immutable.Set
 import scala.collection.mutable.{Set => MutableSet}
 
 import org.opalj.br.Method
@@ -19,13 +18,13 @@ import org.opalj.br.analyses.SomeProject
  * @author Robin Körkemeier
  */
 class JavaBackwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
-    override def getStartStatements(callable: Method): scala.collection.Set[JavaStatement] = {
+    override def getStartStatements(callable: Method): Set[JavaStatement] = {
         val tac = tacProvider(callable)
         (tac.cfg.normalReturnNode.predecessors ++ tac.cfg.abnormalReturnNode.predecessors)
             .map { node => JavaStatement(callable, node.asBasicBlock.endPC, isReturnNode = false, tac.stmts, tac.cfg) }
     }
 
-    override def getNextStatements(javaStmt: JavaStatement): scala.collection.Set[JavaStatement] = {
+    override def getNextStatements(javaStmt: JavaStatement): Set[JavaStatement] = {
         if (isCallStatement(javaStmt)) {
             Set(
                 JavaStatement(javaStmt.method, javaStmt.pc, isReturnNode = true, javaStmt.stmts, javaStmt.cfg)
@@ -37,7 +36,7 @@ class JavaBackwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
                     JavaStatement(javaStmt.method, prevPc, isReturnNode = false, javaStmt.stmts, javaStmt.cfg)
                 )
             }
-            predecessors
+            predecessors.toSet
         }
     }
 
