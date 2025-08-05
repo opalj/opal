@@ -5,8 +5,6 @@ package fpcf
 package analyses
 package taint
 
-import java.io.File
-
 import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -26,7 +24,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
 import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
-import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
+import org.opalj.tac.fpcf.analyses.ifds.BasicIFDSEvaluationRunner
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
@@ -146,9 +144,11 @@ object BackwardClassForNameTaintAnalysisScheduler
         Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
 }
 
-class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
+object BackwardClassForNameTaintAnalysisRunner extends BasicIFDSEvaluationRunner {
 
-    override def analysisClass: BackwardClassForNameTaintAnalysisScheduler.type =
+    override protected val additionalDescription: String = "Strings reaching Class.forName calls (backwards mode)"
+
+    override def analysisClass(analysisConfig: IFDSRunnerConfig): BackwardClassForNameTaintAnalysisScheduler.type =
         BackwardClassForNameTaintAnalysisScheduler
 
     override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?, ?], ps: PropertyStore): Unit = {
@@ -175,26 +175,5 @@ class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
                 case _ =>
             }
 
-    }
-}
-
-object BackwardClassForNameTaintAnalysisRunner {
-    def main(args: Array[String]): Unit = {
-        if (args.contains("--help")) {
-            println("Potential parameters:")
-            println(" -seq (to use the SequentialPropertyStore)")
-            println(" -l2 (to use the l2 domain instead of the default l1 domain)")
-            println(" -debug (for debugging mode in the property store)")
-            println(" -evalSchedulingStrategies (evaluates all available scheduling strategies)")
-            println(" -f <file> (Stores the average runtime to this file)")
-        } else {
-            val fileIndex = args.indexOf("-f")
-            new BackwardClassForNameTaintAnalysisRunner().run(
-                args.contains("-debug"),
-                args.contains("-l2"),
-                args.contains("-evalSchedulingStrategies"),
-                if (fileIndex >= 0) Some(new File(args(fileIndex + 1))) else None
-            )
-        }
     }
 }

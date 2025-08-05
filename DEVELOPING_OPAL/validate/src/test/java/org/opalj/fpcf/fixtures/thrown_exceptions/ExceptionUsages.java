@@ -4,7 +4,6 @@ package org.opalj.fpcf.fixtures.thrown_exceptions;
 import org.opalj.br.fpcf.analyses.L1ThrownExceptionsAnalysis;
 import org.opalj.fpcf.properties.thrown_exceptions.DoesNotThrowException;
 import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptions;
-import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptionsByOverridingMethods;
 import org.opalj.fpcf.properties.thrown_exceptions.Types;
 
 /**
@@ -49,14 +48,14 @@ public class ExceptionUsages {
         return 2;
     }
 
-    @ExpectedExceptionsByOverridingMethods(
+    @ExpectedExceptions(
             reason = "callee does not throw exception, but method may be overridden"
     )
     public int callDoesNotThrowException() {
         return doesNotThrowException();
     }
 
-    @ExpectedExceptionsByOverridingMethods(
+    @ExpectedExceptions(
             reason = "self-recursive methods call (StackOverflows are generally ignored by OPAL)," +
                     " may be overridden"
     )
@@ -68,7 +67,7 @@ public class ExceptionUsages {
         }
     }
 
-    @ExpectedExceptionsByOverridingMethods(
+    @ExpectedExceptions(
             reason = "mutual recursive method calls which throw no exception, call may be " +
                     "overridden"
     )
@@ -79,7 +78,7 @@ public class ExceptionUsages {
         return 42;
     }
 
-    @ExpectedExceptionsByOverridingMethods(
+    @ExpectedExceptions(
             reason = "mutual recursive method calls which throw no exception, call may be " +
                     "overridden"
     )
@@ -132,7 +131,7 @@ public class ExceptionUsages {
         throw new NullPointerException();
     }
 
-    @ExpectedExceptionsByOverridingMethods(
+    @ExpectedExceptions(
             reason="method call, may be overridden by unknown class"
     )
     public int callThrowException() {
@@ -196,7 +195,7 @@ public class ExceptionUsages {
 
     public static class PublicFooBar extends Foo {
         @Override
-        @ExpectedExceptionsByOverridingMethods(
+        @ExpectedExceptions(
             reason = "just returns constant, is not final, class is public and not final"
         )
         public int baz() {
