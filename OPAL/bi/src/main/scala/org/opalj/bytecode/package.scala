@@ -177,6 +177,25 @@ package object bytecode {
     }
 
     /**
+     * Starting substring of packages found in the JDK, e.g., to exclude them from analyses
+     */
+    val JDKPackages: List[String] = List(
+        "java/",
+        "javax",
+        "javafx",
+        "jdk",
+        "sun",
+        "oracle",
+        "com/sun",
+        "netscape",
+        "org/ietf/jgss",
+        "org/jcp/xml/dsig/internal",
+        "org/omg",
+        "org/w3c/dom",
+        "org/xml/sax"
+    )
+
+    /**
      * The list of all JVM instructions in the format: "<OPCODE><MNEMONIC>NewLine".
      */
     def JVMInstructions: List[(Int, String)] = {

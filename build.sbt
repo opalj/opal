@@ -1,5 +1,5 @@
 import sbt.Test
-import sbtassembly.AssemblyPlugin.autoImport.*
+import sbtassembly.AssemblyPlugin.autoImport._
 import sbtunidoc.ScalaUnidocPlugin
 import xerial.sbt.Sonatype.sonatypeCentralHost
 
@@ -169,6 +169,7 @@ lazy val `OPAL` = (project in file("."))
         ba,
         ai,
         ifds,
+        ide,
         tac,
         de,
         av,
@@ -308,6 +309,19 @@ lazy val `IFDS` = (project in file("OPAL/ifds"))
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
         fork := true,
         libraryDependencies ++= Dependencies.ifds
+    )
+    .dependsOn(ide % "it->it;it->test;test->test;compile->compile")
+    .configs(IntegrationTest)
+
+lazy val ide = `IDE`
+
+lazy val `IDE` = (project in file("OPAL/ide"))
+    .settings(buildSettings: _*)
+    .settings(
+        name := "IDE",
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IDE"),
+        fork := true,
+        libraryDependencies ++= Dependencies.ide
     )
     .dependsOn(si % "it->it;it->test;test->test;compile->compile")
     .dependsOn(br % "it->it;it->test;test->test;compile->compile")
@@ -517,8 +531,8 @@ runProjectDependencyGeneration := {
     val s: TaskStreams = streams.value
 
     val dockerUserArg = Try {
-        val uid = "id -u".!!.stripSuffix("\n").toString().trim()
-        val gid = "id -g".!!.stripSuffix("\n").toString().trim()
+        val uid = "id -u".!!.stripSuffix("\n").trim()
+        val gid = "id -g".!!.stripSuffix("\n").trim()
         s"-u $uid:$gid"
     }.getOrElse("")
 
