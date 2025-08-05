@@ -12,6 +12,7 @@ import org.opalj.br.ArrayType
 import org.opalj.br.Attributes
 import org.opalj.br.ByteType
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
 import org.opalj.br.Code
 import org.opalj.br.CompactLineNumberTable
 import org.opalj.br.FieldTypes
@@ -22,7 +23,6 @@ import org.opalj.br.NoAttributes
 import org.opalj.br.NoFieldTemplates
 import org.opalj.br.NoFieldTypes
 import org.opalj.br.NoInterfaces
-import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.instructions.IFEQ
 import org.opalj.collection.mutable.Locals
@@ -59,7 +59,7 @@ object IDLTestsFixtures {
 
     val classFileIDL: JsObject = Json.obj(
         "fqn" -> "foo/Bar",
-        "type" -> Json.obj("ot" -> "foo.Bar", "simpleName" -> "Bar"),
+        "type" -> Json.obj("ct" -> "foo.Bar", "simpleName" -> "Bar"),
         "accessFlags" -> "public"
     )
 
@@ -76,7 +76,7 @@ object IDLTestsFixtures {
     }
 
     private[this] val methodTemplateReturnIntOneParameter = {
-        Method(ACC_PUBLIC.mask | ACC_STATIC.mask, "test1p", FieldTypes(ObjectType("foo/Bar")), IntegerType)
+        Method(ACC_PUBLIC.mask | ACC_STATIC.mask, "test1p", FieldTypes(ClassType("foo/Bar")), IntegerType)
     }
 
     val methodReturnIntTwoParametersIDL: JsObject = Json.obj(
@@ -85,7 +85,7 @@ object IDLTestsFixtures {
         "returnType" -> Json.obj("bt" -> "int"),
         "parameters" -> Json.arr(
             Json.obj("at" -> Json.obj("bt" -> "byte"), "dimensions" -> 2),
-            Json.obj("ot" -> "foo.Bar", "simpleName" -> "Bar")
+            Json.obj("ct" -> "foo.Bar", "simpleName" -> "Bar")
         ),
         "signature" -> "test2p([[BLfoo/Bar;)I",
         "firstLine" -> "8"
@@ -93,7 +93,7 @@ object IDLTestsFixtures {
     private[issues] val methodTemplateReturnIntTwoParameters = Method(
         ACC_PUBLIC.mask | ACC_STATIC.mask,
         "test2p",
-        FieldTypes(ArrayType(2, ByteType), ObjectType("foo/Bar")),
+        FieldTypes(ArrayType(2, ByteType), ClassType("foo/Bar")),
         IntegerType,
         Attributes(codeWithLineNumbers)
     )
@@ -103,7 +103,7 @@ object IDLTestsFixtures {
         0,
         1,
         ACC_PUBLIC.mask,
-        ObjectType("foo/Bar"),
+        ClassType("foo/Bar"),
         Option.empty,
         NoInterfaces,
         NoFieldTemplates,

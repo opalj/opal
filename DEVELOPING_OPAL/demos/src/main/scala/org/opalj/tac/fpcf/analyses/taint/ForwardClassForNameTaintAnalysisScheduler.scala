@@ -5,18 +5,16 @@ package fpcf
 package analyses
 package taint
 
-import java.io.File
-
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.ifds.Callable
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
@@ -25,7 +23,7 @@ import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
+import org.opalj.tac.fpcf.analyses.ifds.BasicIFDSEvaluationRunner
 import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
 import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.AbstractJavaForwardTaintProblem
@@ -57,7 +55,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
         m <- icfg.methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
         index <- m.descriptor.parameterTypes.zipWithIndex.collect {
-            case (pType, index) if pType == ObjectType.String => index
+            case (pType, index) if pType == ClassType.String => index
         }
     } yield (m.definedMethod, new IFDSFact(Variable(-2 - index)))
 
@@ -97,7 +95,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
      * @return True if the method is Class.forName.
      */
     private def isClassForName(method: DeclaredMethod): Boolean =
-        method.declaringClassType == ObjectType.Class && method.name == "forName"
+        method.declaringClassType == ClassType.Class && method.name == "forName"
 }
 
 object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
@@ -109,12 +107,18 @@ object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[T
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
+    override def uses: Set[PropertyBounds] = PropertyBounds.finalPs(TACAI, Callers)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
+        p.get(TypeIteratorKey).usedPropertyKinds
+    }
 }
 
-class ForwardClassForNameAnalysisRunnerIFDS extends IFDSEvaluationRunner {
+object ForwardClassForNameTaintAnalysisRunner extends BasicIFDSEvaluationRunner {
 
-    override def analysisClass: ForwardClassForNameTaintAnalysisScheduler.type =
+    override protected val additionalDescription: String = "Strings reaching Class.forName calls (forward mode)"
+
+    override def analysisClass(analysisConfig: IFDSRunnerConfig): ForwardClassForNameTaintAnalysisScheduler.type =
         ForwardClassForNameTaintAnalysisScheduler
 
     override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit =
@@ -128,26 +132,4 @@ class ForwardClassForNameAnalysisRunnerIFDS extends IFDSEvaluationRunner {
                 case _              =>
             }
         }
-}
-
-object ForwardClassForNameAnalysisRunnerIFDS {
-    def main(args: Array[String]): Unit = {
-        if (args.contains("--help")) {
-            println("Potential parameters:")
-            println(" -seq (to use the SequentialPropertyStore)")
-            println(" -l2 (to use the l2 domain instead of the default l1 domain)")
-            println(" -delay (for a three seconds delay before the taint flow analysis is started)")
-            println(" -debug (for debugging mode in the property store)")
-            println(" -evalSchedulingStrategies (evaluates all available scheduling strategies)")
-            println(" -f <file> (Stores the average runtime to this file)")
-        } else {
-            val fileIndex = args.indexOf("-f")
-            new ForwardClassForNameAnalysisRunnerIFDS().run(
-                args.contains("-debug"),
-                args.contains("-l2"),
-                args.contains("-evalSchedulingStrategies"),
-                if (fileIndex >= 0) Some(new File(args(fileIndex + 1))) else None
-            )
-        }
-    }
 }

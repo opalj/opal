@@ -6,21 +6,21 @@ package analyses
 package purity
 
 import org.opalj.ai.isImmediateVMException
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.Context
@@ -30,7 +30,6 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
@@ -103,7 +102,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var dependees: Set[EOptionP[Entity, Property]],
         val method:    Method,
         val context:   Context,
-        val declClass: ObjectType,
+        val declClass: ClassType,
         var tac:       TACode[TACMethodParameter, V] = null,
         var lbPurity:  Purity                        = Pure,
         var ubPurity:  Purity                        = Pure
@@ -224,7 +223,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * not known yet.
      */
     override def handleUnknownTypeImmutability(
-        ep:   EOptionP[ObjectType, Property],
+        ep:   EOptionP[ClassType, Property],
         expr: Expr[V]
     )(implicit state: State): Unit = {
         if (!isLocal(expr, Pure)) state.dependees += ep
@@ -254,8 +253,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         // Remove unnecessary dependees
         if (!state.ubPurity.isDeterministic) {
             state.dependees = state.dependees.filter { ep =>
-                ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key || ep.pk == Callees.key ||
-                ep.pk == TACAI.key
+                ep.pk == Purity.key || ep.pk == Callees.key || ep.pk == TACAI.key
             }
         }
         // IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
@@ -324,15 +322,15 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ClassType.Throwable)) {
             val candidate = org.opalj.control.find(project.instanceMethods(state.declClass)) { mdc =>
                 mdc.method.compare(
                     "fillInStackTrace",
-                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                    MethodDescriptor.withNoArgs(ClassType.Throwable)
                 )
             }
             candidate foreach { mdc =>
-                if (mdc.method.classFile.thisType != ObjectType.Throwable) {
+                if (mdc.method.classFile.thisType != ClassType.Throwable) {
                     val fISTMethod = declaredMethods(mdc.method)
                     val fISTContext = contextProvider.expandContext(state.context, fISTMethod, 0)
                     val fISTPurity = propertyStore(fISTContext, Purity.key)
@@ -456,31 +454,19 @@ trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         )
     }
 
-    override final type InitializationData = L1PurityAnalysis
-    final def init(p: SomeProject, ps: PropertyStore): InitializationData = new L1PurityAnalysis(p)
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
-
 }
 
-object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
+object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation :+ CallGraphKey
 
     override def start(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): FPCFAnalysis = {
+        val analysis = new L1PurityAnalysis(p)
         val cg = p.get(CallGraphKey)
         val methods = cg.reachableMethods().collect {
             case c @ Context(dm)
@@ -502,13 +488,14 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
 
-object LazyL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFLazyAnalysisScheduler {
+object LazyL1PurityAnalysis extends L1PurityAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
 
     override def register(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
+        p:      SomeProject,
+        ps:     PropertyStore,
+        unused: Null
     ): FPCFAnalysis = {
+        val analysis = new L1PurityAnalysis(p)
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }

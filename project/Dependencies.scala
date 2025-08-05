@@ -24,12 +24,12 @@ object Dependencies {
     val txtmark = "0.16"
     val jacksonDF = "2.12.2"
     val fastutil = "8.5.4"
+    val scallop = "5.1.0"
     val apkparser = "2.6.10"
+    val scalagraphcore = "2.0.1"
+    val scalagraphdot = "2.0.0"
 
     val openjfx = "16"
-
-    val javacpp = "1.5.8"
-    val javacpp_llvm = "15.0.3"
   }
 
   object library {
@@ -54,11 +54,12 @@ object Dependencies {
     val txtmark = "es.nitaur.markdown"                      % "txtmark"                     % version.txtmark withSources () withJavadoc ()
     val jacksonDF = "com.fasterxml.jackson.dataformat"      % "jackson-dataformat-csv"      % version.jacksonDF withSources () withJavadoc ()
     val fastutil = "it.unimi.dsi"                           % "fastutil"                    % version.fastutil withSources () withJavadoc ()
+    val scallop = "org.rogach"                              %% "scallop"                    % version.scallop
     val javafxBase = "org.openjfx"                          % "javafx-base"                 % version.openjfx classifier osName
     val apkparser = "net.dongliu"                           % "apk-parser"                  % version.apkparser
+    val scalagraphcore = "org.scala-graph"                  %% "graph-core"                 % version.scalagraphcore
+    val scalagraphdot = "org.scala-graph"                   %% "graph-dot"                  % version.scalagraphdot
 
-    val javacpp = "org.bytedeco" % "javacpp" % version.javacpp
-    val javacpp_llvm =  "org.bytedeco" % "llvm-platform" % (version.javacpp_llvm + "-" + version.javacpp)
     // --- test related dependencies
 
     val junit =          "junit"              % "junit"           % version.junit          % "test,it"
@@ -71,15 +72,15 @@ object Dependencies {
 
   val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalatestjunit, scalacheck)
 
-  def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaparallelcollections, scalaxml, playjson, ficus, fastutil)
+  def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaparallelcollections, scalaxml, playjson, ficus, fastutil, scallop)
 
-  val si = Seq()
+  val si = Seq(scalagraphcore, scalagraphdot)
   val bi = Seq(commonstext)
   val br = Seq(scalaparsercombinators, scalaxml)
+  val tac = Seq()
   val ifds = Seq()
+  val ide = Seq()
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
   val apk = Seq(apkparser, scalaxml)
-
-  val llvm = Seq(javacpp, javacpp_llvm)
 }

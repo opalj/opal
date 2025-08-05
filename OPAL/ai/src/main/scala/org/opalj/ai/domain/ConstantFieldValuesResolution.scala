@@ -3,8 +3,8 @@ package org.opalj
 package ai
 package domain
 
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 
 /**
  * Resolves references to final static fields that have simple constant values.
@@ -19,7 +19,7 @@ trait ConstantFieldValuesResolution extends Domain { domain: TheProject =>
 
     abstract override def getstatic(
         pc:        Int,
-        classType: ObjectType,
+        classType: ClassType,
         fieldName: String,
         fieldType: FieldType
     ): Computation[DomainValue, Nothing] = {
@@ -27,7 +27,7 @@ trait ConstantFieldValuesResolution extends Domain { domain: TheProject =>
         project.resolveFieldReference(classType, fieldName, fieldType) match {
             case Some(field)
                 if field.isFinal && field.isStatic &&
-                    (field.fieldType.isBaseType || (field.fieldType eq ObjectType.String)) =>
+                    (field.fieldType.isBaseType || (field.fieldType eq ClassType.String)) =>
                 field.constantFieldValue.map(cv =>
                     ComputedValue(ConstantFieldValue(pc, cv))
                 ).getOrElse(

@@ -6,17 +6,16 @@ package analyses
 package pointsto
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
@@ -92,9 +91,9 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 val tpe = m.returnType.asReferenceType.toJVMTypeName
                 val arrayTypes = // TODO We should probably handle ArrayTypes as well
                     if (m.returnType.isArrayType &&
-                        m.returnType.asArrayType.elementType.isObjectType
+                        m.returnType.asArrayType.elementType.isClassType
                     )
-                        Seq(m.returnType.asArrayType.elementType.asObjectType.fqn)
+                        Seq(m.returnType.asArrayType.elementType.asClassType.fqn)
                     else Seq.empty
                 handleCallers(
                     callers,
@@ -160,8 +159,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         getDefSite(defSite)
     }
 
-    private[this] def canBeInstantiated(ot: ObjectType): Boolean = {
-        val cfOption = project.classFile(ot)
+    private[this] def canBeInstantiated(ct: ClassType): Boolean = {
+        val cfOption = project.classFile(ct)
         cfOption.isDefined && {
             val cf = cfOption.get
             !cf.isInterfaceDeclaration && !cf.isAbstract
@@ -186,7 +185,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 )
 
             case StaticFieldDescription(cf, name, fieldType) =>
-                handleGetStatic(declaredFields(ObjectType(cf), name, FieldType(fieldType)), pc, checkForCast = false)
+                handleGetStatic(declaredFields(ClassType(cf), name, FieldType(fieldType)), pc, checkForCast = false)
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
@@ -220,7 +219,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                         val arrayEntity = ArrayEntity(pts.getNewestElement())
                         var arrayPTS: PointsToSet = emptyPointsToSet
                         asd.arrayComponentTypes.foreach { componentTypeString =>
-                            val componentType = ObjectType(componentTypeString)
+                            val componentType = ClassType(componentTypeString)
                             if (!filterNonInstantiableTypes || canBeInstantiated(componentType))
                                 arrayPTS = arrayPTS.included(
                                     createPointsToSet(pc, allocationContext, componentType, isConstant = false)
@@ -233,7 +232,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                         )
                     }
                 } else {
-                    val theInstantiatedType = FieldType(asd.instantiatedType).asObjectType
+                    val theInstantiatedType = FieldType(asd.instantiatedType).asClassType
                     if (!filterNonInstantiableTypes || canBeInstantiated(theInstantiatedType))
                         state.includeSharedPointsToSet(
                             defSiteObject,
@@ -245,7 +244,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             case ArrayDescription(array, arrayType) =>
                 val arrayPC = nextPC
                 val theNextPC = handleGet(array, arrayPC, nextPC, filterNonInstantiableTypes) - 1
-                handleArrayLoad(ArrayType(ObjectType(arrayType)), pc, IntTrieSet(arrayPC), checkForCast = false)
+                handleArrayLoad(ArrayType(ClassType(arrayType)), pc, IntTrieSet(arrayPC), checkForCast = false)
                 return theNextPC;
         }
         nextPC
@@ -269,7 +268,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 )
 
             case StaticFieldDescription(cf, name, fieldType) =>
-                handlePutStatic(declaredFields(ObjectType(cf), name, FieldType(fieldType)), IntTrieSet(0))
+                handlePutStatic(declaredFields(ClassType(cf), name, FieldType(fieldType)), IntTrieSet(0))
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
@@ -296,21 +295,20 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             case ArrayDescription(array, arrayType) =>
                 val arrayPC = nextPC
                 val theNextPC = handleGet(array, arrayPC, nextPC, false) - 1
-                handleArrayStore(ArrayType(ObjectType(arrayType)), IntTrieSet(arrayPC), IntTrieSet(pc))
+                handleArrayStore(ArrayType(ClassType(arrayType)), IntTrieSet(arrayPC), IntTrieSet(pc))
                 return theNextPC;
         }
         nextPC
     }
 }
 
-trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+trait ConfiguredMethodsPointsToAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler
+    with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => ConfiguredMethodsPointsToAnalysis
 
-    override type InitializationData = Null
-
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
+        super.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
@@ -322,12 +320,6 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        null
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
     override def register(
         p:      SomeProject,
         ps:     PropertyStore,
@@ -338,14 +330,6 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
 
     /**
      * Specifies the kind of the properties that will trigger the analysis to be registered.

@@ -2,11 +2,13 @@
 package org.opalj
 package br
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions._
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
@@ -16,15 +18,22 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @author Michael Eichberg
  */
-object VirtualAndStaticMethodCalls extends ProjectAnalysisApplication {
+object VirtualAndStaticMethodCalls extends ProjectsAnalysisApplication {
 
-    override def description: String = "Counts the number of static and virtual method calls."
+    protected class MethodCallsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Counts the number of static and virtual method calls"
+    }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = MethodCallsConfig
+
+    protected def createConfig(args: Array[String]): MethodCallsConfig = new MethodCallsConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: MethodCallsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         var staticCalls = 0
         var virtualCalls = 0
@@ -43,10 +52,13 @@ object VirtualAndStaticMethodCalls extends ProjectAnalysisApplication {
             }
         } { t => executionTime = t }
 
-        BasicReport(
-            "The sequential analysis took: " + executionTime.toSeconds + "\n" +
-                "\tNumber of invokestatic/invokespecial instructions: " + staticCalls + "\n" +
-                "\tNumber of invokeinterface/invokevirtual instructions: " + virtualCalls
+        (
+            project,
+            BasicReport(
+                "The sequential analysis took: " + executionTime.toSeconds + "\n" +
+                    "\tNumber of invokestatic/invokespecial instructions: " + staticCalls + "\n" +
+                    "\tNumber of invokeinterface/invokevirtual instructions: " + virtualCalls
+            )
         )
     }
 }

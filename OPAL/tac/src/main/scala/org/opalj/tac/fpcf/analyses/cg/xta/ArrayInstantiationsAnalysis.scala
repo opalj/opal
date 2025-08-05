@@ -75,7 +75,7 @@ final class ArrayInstantiationsAnalysis(
      * sub-arrays implicitly. We need to capture these effects for the analysis.
      *
      * E.g., consider the allocation "arr = new A[1][1]". Here, it is necessary that
-     * ArrayType(ArrayType(ObjectType(A))) has the type ArrayType(ObjectType(A)) in its type set,
+     * ArrayType(ArrayType(ClassType(A))) has the type ArrayType(ClassType(A)) in its type set,
      * otherwise reads like arr[0] will return no types when propagating which may lead to
      * incorrect results.
      *
@@ -127,6 +127,10 @@ class ArrayInstantiationsAnalysisScheduler(
     }
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI)
+
+    override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
+        p.get(TypeIteratorKey).usedPropertyKinds
+
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
     override def triggeredBy: PropertyKind = Callers.key

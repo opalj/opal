@@ -8,8 +8,8 @@ package rta
 
 import scala.language.existentials
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -100,7 +100,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     private[this] def processCallers(
         declaredMethod:    DeclaredMethod,
-        declaredType:      ObjectType,
+        declaredType:      ClassType,
         instantiatedTypes: UIDSet[ReferenceType],
         callersEOptP:      EOptionP[DeclaredMethod, Callers],
         callersUB:         Callers,
@@ -164,7 +164,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     private[this] def continuation(
         declaredMethod:    DeclaredMethod,
-        declaredType:      ObjectType,
+        declaredType:      ClassType,
         instantiatedTypes: UIDSet[ReferenceType],
         seenCallers:       Callers
     )(someEPS: SomeEPS): PropertyComputationResult = {

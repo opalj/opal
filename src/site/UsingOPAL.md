@@ -6,7 +6,7 @@ The latest release is always found on [Maven Central](https://search.maven.org/#
 
 If you want to use the snapshot version do not forget to add the respective resolver:
 
-    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+    resolvers += "Sonatype Central Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/"
 
 ## Using OPAL to Develop Analyses
 
@@ -60,11 +60,6 @@ The three-address-code toolkit provides a more human readable representation of 
 The architecture validation framework facilitates the development of tools for specifying and validating software architectures.
 
     libraryDependencies += "de.opal-project" % "architecture-validation_2.13" % "5.0.0"
-
-### LLVM
-Provides support for the analysis of LLVM IR.
-
-    libraryDependencies += "de.opal-project" % "llvm_2.13" % "5.0.0"
 
 ### APK
 Provides support for the analyis of APKs, with automatic conversion from dalvik to java byte code.

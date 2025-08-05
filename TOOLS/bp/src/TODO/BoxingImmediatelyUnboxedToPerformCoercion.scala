@@ -42,14 +42,14 @@ object BoxingImmediatelyUnboxedToPerformCoercion {
         // For each method doing INVOKESPECIAL followed by INVOKEVIRTUAL on the same
         // java.lang class, where the called method's name ends in "Value"...
         val theTypes = scala.collection.mutable.HashSet(
-            ObjectType("java/lang/Boolean"),
-            ObjectType("java/lang/Byte"),
-            ObjectType("java/lang/Character"),
-            ObjectType("java/lang/Short"),
-            ObjectType("java/lang/Integer"),
-            ObjectType("java/lang/Long"),
-            ObjectType("java/lang/Float"),
-            ObjectType("java/lang/Double")
+            ClassType("java/lang/Boolean"),
+            ClassType("java/lang/Byte"),
+            ClassType("java/lang/Character"),
+            ClassType("java/lang/Short"),
+            ClassType("java/lang/Integer"),
+            ClassType("java/lang/Long"),
+            ClassType("java/lang/Float"),
+            ClassType("java/lang/Double")
         )
         val theMethods = scala.collection.mutable.HashSet(
             "booleanValue",

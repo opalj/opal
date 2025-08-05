@@ -138,12 +138,12 @@ class ConstantsBuffer private (
 
     @throws[ConstantPoolException]
     def CPEFieldRef(
-        objectType: ObjectType,
-        fieldName:  String,
-        fieldType:  String
+        classType: ClassType,
+        fieldName: String,
+        fieldType: String
     ): Int = {
         val nameAndTypeRef = CPENameAndType(fieldName, fieldType)
-        val cpeClass = CPEClass(objectType, requiresUByteIndex = false)
+        val cpeClass = CPEClass(classType, requiresUByteIndex = false)
         val cpFieldRef = CONSTANT_Fieldref_info(cpeClass, nameAndTypeRef)
         validateUShortIndex(getOrElseUpdate(cpFieldRef, 1))
     }
@@ -163,12 +163,12 @@ class ConstantsBuffer private (
 
     @throws[ConstantPoolException]
     def CPEInterfaceMethodRef(
-        objectType: ReferenceType,
+        classType:  ReferenceType,
         methodName: String,
         descriptor: MethodDescriptor
     ): Int = {
         val jvmDescriptor = descriptor.toJVMDescriptor
-        val class_index = CPEClass(objectType, requiresUByteIndex = false)
+        val class_index = CPEClass(classType, requiresUByteIndex = false)
         val name_and_type_index = CPENameAndType(methodName, jvmDescriptor)
         val cpMethodRef = CONSTANT_InterfaceMethodref_info(class_index, name_and_type_index)
         validateUShortIndex(getOrElseUpdate(cpMethodRef, 1))

@@ -12,12 +12,12 @@ import scala.collection.mutable
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
 import org.opalj.ai.isFormalParameter
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.PCs
 import org.opalj.br.analyses.SomeProject
@@ -504,13 +504,13 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                                 (expr.isCompare || expr.isFunctionCall && {
                                                     val functionCall = expr.asFunctionCall
                                                     state.field.fieldType match {
-                                                        case ObjectType.Byte    => functionCall.name == "byteValue"
-                                                        case ObjectType.Short   => functionCall.name == "shortValue"
-                                                        case ObjectType.Integer => functionCall.name == "intValue"
-                                                        case ObjectType.Long    => functionCall.name == "longValue"
-                                                        case ObjectType.Float   => functionCall.name == "floatValue"
-                                                        case ObjectType.Double  => functionCall.name == "doubleValue"
-                                                        case _                  => false
+                                                        case ClassType.Byte    => functionCall.name == "byteValue"
+                                                        case ClassType.Short   => functionCall.name == "shortValue"
+                                                        case ClassType.Integer => functionCall.name == "intValue"
+                                                        case ClassType.Long    => functionCall.name == "longValue"
+                                                        case ClassType.Float   => functionCall.name == "floatValue"
+                                                        case ClassType.Double  => functionCall.name == "doubleValue"
+                                                        case _                 => false
                                                     }
                                                 }) && !doUsesEscape(st.asAssignment.targetVar.usedBy)
                                             case _ => false
@@ -850,13 +850,13 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 val fieldType = state.field.fieldType
                 functionCall.params.isEmpty && (
                     fieldType match {
-                        case ObjectType.Byte    => functionCall.name == "byteValue"
-                        case ObjectType.Short   => functionCall.name == "shortValue"
-                        case ObjectType.Integer => functionCall.name == "intValue"
-                        case ObjectType.Long    => functionCall.name == "longValue"
-                        case ObjectType.Float   => functionCall.name == "floatValue"
-                        case ObjectType.Double  => functionCall.name == "doubleValue"
-                        case _                  => false
+                        case ClassType.Byte    => functionCall.name == "byteValue"
+                        case ClassType.Short   => functionCall.name == "shortValue"
+                        case ClassType.Integer => functionCall.name == "intValue"
+                        case ClassType.Long    => functionCall.name == "longValue"
+                        case ClassType.Float   => functionCall.name == "floatValue"
+                        case ClassType.Double  => functionCall.name == "doubleValue"
+                        case _                 => false
                     }
                 ) && functionCall.receiver.asVar.definedBy.forall(isExprReadOfCurrentField)
 
