@@ -8,6 +8,7 @@ flowchart BT
     br[Bytecode Representation<br>br]
     da[Bytecode Disassembler<br>da]
 
+    ide[IDE<br>ide]
     ifds[IFDS<br>ifds]
     ai[Abstract Interpretation Framework<br>ai]
     bc[Bytecode Creator<br>bc]
@@ -38,6 +39,9 @@ flowchart BT
     br --> bi
     da --> bi
 
+    ide --> si
+    ide --> br
+
     ifds --> si
     ifds --> br
 
@@ -48,6 +52,7 @@ flowchart BT
     de --> ai
 
     tac --> ifds
+    tac --> ide
     tac --> ai
 
     apk --> tac

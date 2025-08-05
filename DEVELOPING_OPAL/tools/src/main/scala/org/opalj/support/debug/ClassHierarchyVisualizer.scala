@@ -5,46 +5,36 @@ package debug
 
 import java.io.File
 
-import org.opalj.br.ClassFile
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.ClassType
-import org.opalj.br.reader.Java7LibraryFramework.ClassFiles
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.graphs.toDot
 import org.opalj.io.writeAndOpen
-import org.opalj.log.GlobalLogContext
 
 /**
- * Creates a `dot` (Graphviz) based representation of the class hierarchy
- * of the specified jar file(s).
+ * Creates a `dot` (Graphviz) based representation of the class hierarchy.
  *
  * @author Michael Eichberg
  */
-object ClassHierarchyVisualizer {
+object ClassHierarchyVisualizer extends ProjectsAnalysisApplication {
 
-    def main(args: Array[String]): Unit = {
-        if (!args.forall(arg => arg.endsWith(".jar") || arg.endsWith(".jmod"))) {
-            Console.err.println("Usage: java …ClassHierarchy <.jar|.jmod file>+")
-            sys.exit(-1)
-        }
+    protected class ClassHierarchyVisualizerConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Creates a `dot` (Graphviz) based representation of the class hierarchy"
+    }
 
-        println("Extracting class hierarchy.")
-        val classHierarchy =
-            if (args.length == 0) {
-                ClassHierarchy.PreInitializedClassHierarchy
-            } else {
-                val classFiles =
-                    args.foldLeft(List.empty[ClassFile]) { (classFiles, filename) =>
-                        classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
-                    }
-                if (classFiles.forall(cf => cf.thisType != ClassType.Object))
-                    // load pre-configured class hierarchy...
-                    ClassHierarchy(classFiles)(GlobalLogContext)
-                else
-                    ClassHierarchy(classFiles, Seq.empty)(GlobalLogContext)
-            }
+    protected type ConfigType = ClassHierarchyVisualizerConfig
 
-        println("Creating class hierarchy visualization.")
-        val dotGraph = toDot(Set(classHierarchy.toGraph()), "back")
+    protected def createConfig(args: Array[String]): ClassHierarchyVisualizerConfig =
+        new ClassHierarchyVisualizerConfig(args)
+
+    override protected def evaluate(
+        cp:             Iterable[File],
+        analysisConfig: ClassHierarchyVisualizerConfig,
+        execution:      Int
+    ): Unit = {
+
+        val (project, _) = analysisConfig.setupProject(cp)
+
+        val dotGraph = toDot(Set(project.classHierarchy.toGraph()), "back")
         val file = writeAndOpen(dotGraph, "ClassHierarchy", ".gv")
         println(s"Wrote class hierarchy graph to: $file.")
     }
