@@ -38,17 +38,12 @@ sealed trait AllocationFreenessPropertyMetaInformation extends PropertyMetaInfor
  *
  * @author Dominik Helm
  */
-sealed abstract class AllocationFreeness
-    extends OrderedProperty
-    with IndividualProperty[AllocationFreeness, VirtualMethodAllocationFreeness]
-    with AllocationFreenessPropertyMetaInformation {
+sealed abstract class AllocationFreeness extends OrderedProperty with AllocationFreenessPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[AllocationFreeness]] property.
      */
     final def key: PropertyKey[AllocationFreeness] = AllocationFreeness.key
-
-    final val aggregatedProperty = new VirtualMethodAllocationFreeness(this)
 }
 
 object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
@@ -107,8 +102,6 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
 case object AllocationFreeMethod extends AllocationFreeness {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: AllocationFreeness): Unit = {}
-
-    override def meet(other: AllocationFreeness): AllocationFreeness = other
 }
 
 /**
@@ -120,6 +113,4 @@ case object MethodWithAllocations extends AllocationFreeness {
         if (other ne MethodWithAllocations)
             throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
-
-    override def meet(other: AllocationFreeness): AllocationFreeness = this
 }

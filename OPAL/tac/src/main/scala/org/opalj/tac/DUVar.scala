@@ -10,6 +10,7 @@ import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.br.PDUVar
+import org.opalj.br.PDVar
 import org.opalj.br.PUVar
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
@@ -129,6 +130,8 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         new DVar(origin, value, useSites)
     }
 
+    def originatedAt: ValueOrigin = origin
+
     def definedBy: Nothing = throw new UnsupportedOperationException
 
     /**
@@ -183,11 +186,20 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def hashCode(): Int = Var.ASTID * 1171 - 13 + origin
 
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: DVar[_] => this.origin == that.origin && this.useSites == that.useSites
+            case _             => false
+        }
+    }
+
     override def toString: String = {
         s"DVar(useSites=${useSites.mkString("{", ",", "}")},value=$value,origin=$origin)"
     }
 
-    override def toPersistentForm(implicit stmts: Array[Stmt[V]]): Nothing = throw new UnsupportedOperationException
+    override def toPersistentForm(
+        implicit stmts: Array[Stmt[V]]
+    ): PDVar[Value] = PDVar(value, usedBy.map(pcOfDefSite _))
 
 }
 

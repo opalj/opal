@@ -5,10 +5,10 @@ package fpcf
 package analyses
 package pointsto
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ElementReferenceType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -36,9 +36,9 @@ abstract class SerializationAllocationsAnalysis(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis { self =>
 
     override final val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.ObjectInputStream,
+        ClassType.ObjectInputStream,
         "",
-        ObjectType.ObjectInputStream,
+        ClassType.ObjectInputStream,
         "readObject",
         MethodDescriptor.JustReturnsObject
     )
@@ -126,7 +126,7 @@ abstract class SerializationAllocationsAnalysis(
                     t <- ch.allSubtypes(castType, reflexive = true)
                     cf <- project.classFile(t) // we ignore cases were no class file exists
                     if !cf.isInterfaceDeclaration
-                    if ch.isSubtypeOf(t, ObjectType.Serializable)
+                    if ch.isSubtypeOf(t, ClassType.Serializable)
                 } {
                     state.includeSharedPointsToSet(
                         defSite,
@@ -143,12 +143,13 @@ abstract class SerializationAllocationsAnalysis(
     }
 }
 
-trait SerializationAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait SerializationAllocationsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
+    with PointsToBasedAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
     def createAnalysis: SomeProject => SerializationAllocationsAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        AbstractPointsToBasedAnalysis.requiredProjectInformation :+ DeclaredMethodsKey
+        super.requiredProjectInformation :+ DeclaredMethodsKey
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 

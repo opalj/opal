@@ -28,7 +28,7 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
     assert(!method.isStatic)
     assert(!method.isInitializer)
 
-    def declaringClassType: ObjectType = method.declaringClassFile.thisType
+    def declaringClassType: ClassType = method.declaringClassFile.thisType
     def packageName: String = declaringClassType.packageName
     def isPublic: Boolean = method.isPublic
     def name: String = method.name
@@ -102,7 +102,7 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
     }
 
     def compareAccessibilityAware(
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         m:              Method
     ): Int = {
         compareAccessibilityAware(declaringClass.packageName, m.name, m.descriptor)

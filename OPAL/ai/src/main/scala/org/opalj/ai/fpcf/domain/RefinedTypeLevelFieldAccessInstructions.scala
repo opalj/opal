@@ -7,8 +7,8 @@ package domain
 import org.opalj.ai.domain.TheProject
 import org.opalj.ai.domain.l0.TypeLevelFieldAccessInstructions
 import org.opalj.ai.fpcf.properties.FieldValue
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.fpcf.LBP
 import org.opalj.fpcf.PropertyKind
@@ -30,7 +30,7 @@ trait RefinedTypeLevelFieldAccessInstructions
     override def getfield(
         pc:             PC,
         objectref:      DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         fieldName:      String,
         fieldType:      FieldType
     ): Computation[DomainValue, ExceptionValue] = {
@@ -55,7 +55,7 @@ trait RefinedTypeLevelFieldAccessInstructions
      */
     override def getstatic(
         pc:             PC,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         fieldName:      String,
         fieldType:      FieldType
     ): Computation[DomainValue, Nothing] = {

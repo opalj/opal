@@ -3,9 +3,13 @@ package org.opalj
 package tac
 
 import java.io.File
+import java.net.URL
 
-import org.opalj.br.Method
+import org.opalj.ai.cli.AIBasedCommandLineConfig
+import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -14,25 +18,29 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @author Michael Eichberg
  */
-object ComputeTAC {
+object ComputeTAC extends ProjectsAnalysisApplication {
 
-    def main(args: Array[String]): Unit = {
-        val rootFolder =
-            if (args.isEmpty)
-                org.opalj.bytecode.JRELibraryFolder
-            else
-                new File(args(0))
+    protected class TACConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with AIBasedCommandLineConfig {
+        val description = "Prints the 3-address code for all methods of all classes"
+    }
 
-        val tacProvider = time {
-            val p = Project(rootFolder)
-            p.updateProjectInformationKeyInitializationData(EagerDetachedTACAIKey) { oldFactory =>
-                if (oldFactory.isDefined) throw new IllegalStateException();
-                (m: Method) => new org.opalj.ai.domain.l0.PrimitiveTACAIDomain(p, m)
-            }
-            p.get(EagerDetachedTACAIKey)
+    protected type ConfigType = TACConfig
+
+    protected def createConfig(args: Array[String]): TACConfig = new TACConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: TACConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+
+        val (project, tacProvider) = time {
+            val (p, _) = analysisConfig.setupProject(cp)
+            (p, p.get(EagerDetachedTACAIKey))
         } { t => println("Loading the project and computing the tac for all methods took: " + t.toSeconds) }
 
         // Now, you can use the TACProvider to get the TAC for a specific method.
-        println(tacProvider.asInstanceOf[scala.collection.Map[_, _]].size)
+        (project, BasicReport(tacProvider.asInstanceOf[scala.collection.Map[_, _]].size.toString))
     }
 }

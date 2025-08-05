@@ -9,8 +9,8 @@ import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
@@ -61,7 +61,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             createPointsToSet(
                 state.tac.stmts(ai.pcOfImmediateVMException(dependeeDefSite)).pc,
                 state.callContext,
-                ObjectType.Throwable,
+                ClassType.Throwable,
                 isConstant = false
             )
         } else {
@@ -189,12 +189,12 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts =>
             pts.forNewestNElements(pts.numElements) { as =>
                 val tpe = getTypeOf(as)
-                if (tpe.isObjectType && (fieldOpt.isEmpty ||
+                if (tpe.isClassType && (fieldOpt.isEmpty ||
                     classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
                 ) {
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                        else project.classHierarchy.allSuperclassesIterator(tpe.asClassType, reflexive = true)
                             .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                     for (fieldEntity <- fieldEntities)
                         state.includeSharedPointsToSet(
@@ -265,12 +265,12 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts =>
             pts.forNewestNElements(pts.numElements) { as =>
                 val tpe = getTypeOf(as)
-                if (tpe.isObjectType && (fieldOpt.isEmpty ||
+                if (tpe.isClassType && (fieldOpt.isEmpty ||
                     classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
                 ) {
                     val fieldEntities =
                         if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                        else project.classHierarchy.allSuperclassesIterator(tpe.asClassType, reflexive = true)
                             .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                     for (fieldEntity <- fieldEntities)
                         state.includeSharedPointsToSets(
@@ -390,7 +390,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)
                 ) { as =>
                     val tpe = getTypeOf(as)
-                    if (tpe.isObjectType && (fieldOpt.isEmpty ||
+                    if (tpe.isClassType && (fieldOpt.isEmpty ||
                         classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
                     ) {
 
@@ -401,7 +401,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
 
                         val fieldEntities =
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                            else project.classHierarchy.allSuperclassesIterator(tpe.asClassType, reflexive = true)
                                 .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                         for (fieldEntity <- fieldEntities)
                             results = results ++ createPartialResults(
@@ -494,12 +494,12 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)
                 ) { as =>
                     val tpe = getTypeOf(as)
-                    if (tpe.isObjectType && (fieldOpt.isEmpty ||
+                    if (tpe.isClassType && (fieldOpt.isEmpty ||
                         classHierarchy.isSubtypeOf(tpe, fieldOpt.get.declaringClassType))
                     ) {
                         val fieldEntities =
                             if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
-                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, reflexive = true)
+                            else project.classHierarchy.allSuperclassesIterator(tpe.asClassType, reflexive = true)
                                 .flatMap(_.fields.iterator).map(f => (as, declaredFields(f)))
                         for (fieldEntity <- fieldEntities) {
                             val fieldEntries = ps(fieldEntity, pointsToPropertyKey)

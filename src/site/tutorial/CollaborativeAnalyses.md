@@ -8,13 +8,13 @@ We will develop the implementation in small steps, but you can get the complete,
 ## Defining a Lattice
 
 As is always the case for fixed-point analyses in OPAL, we need a suitable lattice to represent our analysis' results.  
-In order to represent the set of all classes potentially instantiated, we thus create a lattice of set<sup title="OPAL's UIDSet is an optimized set for several kinds of entities in OPAL, including, e.g., ObjectType which represents the type of a class.">[note]</sup> values:
+In order to represent the set of all classes potentially instantiated, we thus create a lattice of set<sup title="OPAL's UIDSet is an optimized set for several kinds of entities in OPAL, including, e.g., ClassType which represents the type of a class.">[note]</sup> values:
 ```scala
 sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = InstantiatedTypes
 }
 
-case class InstantiatedTypes(classes: UIDSet[ObjectType]) extends InstantiatedTypesPropertyMetaInformation with OrderedProperty {
+case class InstantiatedTypes(classes: UIDSet[ClassType]) extends InstantiatedTypesPropertyMetaInformation with OrderedProperty {
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
         if (!classes.subsetOf(other.classes)) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
@@ -34,7 +34,7 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     )
 }
 ```
-We use a case class here to provide a container for an arbitrary set of [`ObjectType`](/library/api/SNAPSHOT/org/opalj/br/ObjectType.html)s.  
+We use a case class here to provide a container for an arbitrary set of [`ClassType`](/library/api/SNAPSHOT/org/opalj/br/ClassType.html)s.  
 
 Note that for the `key`, we didn't just provide a fallback value, but a small function that is called whenever `InstantiatedTypes` are needed, but have not been computed.  
 This is to distinguish between two cases:  
@@ -50,12 +50,12 @@ Now, let's implement the (simplified) analysis.
 As usual, we start by creating an analysis class with an analysis function:
 ```scala
 class InstantiatedTypesAnalysis(val project: SomeProject) extends FPCFAnalysis {
-    implicit private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    implicit private val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyzeMethod(method: DeclaredMethod): PropertyComputationResult = { [...] }
 }
 ```
-We need a [`ProjectInformationKey`](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectInformationKey.html) here, namely the `DeclaredMethodsKey`, as this will later be needed implicitly to resolve calls with the call graph.  
+We need a [`ProjectInformationKey`](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectInformationKey.html) here, namely the `ContextProviderKey`, as this will later be needed implicitly to resolve calls with the call graph.  
 The analysis function takes a [`DeclaredMethod`](/library/api/SNAPSHOT/org/opalj/br/DeclaredMethod.html) (a representation of a method in the context of its class) as the entity to be analyzed as we want to find all classes instantiated by methods that potentially called (i.e., that are not *dead*).  
 Note that unlike most analyses, we will however *not* compute a result just for this entity, we just use it to compute its effect on the set of instantiated classes *anywhere* in the analyzed program.
 
@@ -112,7 +112,7 @@ We use a [`PartialResult`](/library/api/SNAPSHOT/org/opalj/fpcf/NoResult.html) h
 The partial result takes the entity (we use `project` here, since the set of instantiated classes is global to the whole program that is analyzed) and the key of the property that we compute.  
 Finally, it takes a function that will get the current value of that property and computes an update to it.  
 To do so, we check whether there already is a property present and extract its upper bound.  
-If that upper bound already contains our class, we return `None` to signal that no update is necessary, otherwise we create an updated result, which is an [`InterimEUBP`](/library/api/SNAPSHOT/org/opalj/fpcf/InterimEUBP.html), i.e., a not yet final result consisting of an entity (`project`) and its property, which is the old set of instantiated classes extended by the class type of the analyzed constructor.  
+If that upper bound already contains our class, we return `None` to signal that no update is necessary, otherwise we create an updated result, which is an [`InterimEUBP`](/library/api/SNAPSHOT/org/opalj/fpcf/InterimEUBP.html), i.e., a not yet final result consisting of an entity (E; `project`) and and upper bound (UB) for its property (P), which is the old set of instantiated classes extended by the class type of the analyzed constructor.  
 If, on the other hand, no property has been computed so far, the update function will be called with an [`EPK`](/library/api/SNAPSHOT/org/opalj/fpcf/EPK.html), i.e., a tuple of the entity and the key of the property.
 In that case, we return property that contains just the class type of the analyzed constructor.
 
@@ -167,12 +167,13 @@ def checkCallers(callersProperty: EOptionP[DeclaredMethod, Callers]): PropertyCo
 ```
 
 Now we can iterate over all callers known so far (the second part of the tuple, the actual program counter of the call is irrelevant here).
-The `callers` method implicitly requires the `DeclaredMethods`, which is why we got that at the beginning of our analysis class.
+The `callers` method takes the callee method (the entity `e` of our callers property) to properly resolve calls. 
+It also implicitly requires the `ContextProvider`, which is why we got that at the beginning of our analysis class.
 ```scala
 def checkCallers(callersProperty: EOptionP[DeclaredMethod, Callers]): PropertyComputationResult = {
     [...]
 
-    for((caller, _, isDirect) <- callers.callers) {
+    for((caller, _, isDirect) <- callers.callers(callersProperty.e)) {
         if (!isDirect)
             return result()
 
@@ -192,7 +193,7 @@ If it isn't, again the constructor must have been called explicitly.
 
 If the caller is a constructor, we now check whether it belongs to a direct subclass:
 ```scala
-for((caller, _, isDirect) <- callers.callers){
+for((caller, _, isDirect) <- callers.callers(callersProperty.e)){
     [...]
 
     val callerClass = project.classFile(caller.declaringClassType)
@@ -209,7 +210,7 @@ The same is true if we know the class, but it has no superclass (this mainly con
 If we didn't return a result yet, we have established that the caller is a constructor of a direct subclass.  
 However, it may still have an explicit call to the analyzed constructor, thus we have to look for such call in its instructions:
 ```scala
-for((caller, _, isDirect) <- callers.callers){
+for((caller, _, isDirect) <- callers.callers(callersProperty.e)){
     [...]
 
     val body = caller.definedMethod.body.get
@@ -224,14 +225,15 @@ Finally, they also can't be abstract or implemented by a native method, thus the
 
 Now we can look for explicit instantiations of the analyzed constructor's class:
 ```scala
-for((caller, _, isDirect) <- callers.callers){
+for((caller, _, isDirect) <- callers.callers(callersProperty.e)){
     [...]
 
-    if(body.exists((_, instruction) => instruction == NEW(instantiatedType)))
+    if (body.exists(_.instruction == NEW(instantiatedType)))
         return result()
 }
 ```
-If there is a `NEW` instruction for that class, that is an explicit instantiation and we return a respective result.
+If there is a `NEW` instruction for that class, that is an explicit instantiation.
+Thus, we return a respective result.
 Otherwise, we now know that this caller is a constructor of a direct subclass that only calls the analyzed constructor as part of its own initialization and thus, it doesn't actually instantiate the class of the analyzed constructor.
 
 If we didn't find any caller that caused an explicit instantiation, there still might be more callers that we just don't know yet.  
@@ -280,7 +282,7 @@ This completes our analysis, now we have to provide a scheduler for it.
 We use an [`FPCFTriggeredAnalysisScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFTriggeredAnalysisScheduler.html)<sup title="The BasicFPCFTriggeredAnalysisScheduler provides an empty implementation for some rarely used methods.">[note]</sup> that allows us to trigger our analysis whenever a method is found to be reachable in the call graph.
 ```scala
 object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(ContextProviderKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes, Callers)
 
@@ -288,7 +290,7 @@ object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSche
 }
 ```
 As usual, we first have to provide the used `ProjectInformationKeys` and fixed-point properties.  
-Remember we used the `DeclaredMethodsKey` in our analysis, so we have to specify it here.
+Remember we used the `ContextProviderKey` in our analysis, so we have to specify it here.
 Also, we use upper bounds from the `InstantiatedTypes` and `Callers` lattices.  
 Note that `PropertyBounds.ubs(...)` is a shorthand for `Set(PropertyBounds.ub(...), ...)`.
 
@@ -333,7 +335,7 @@ As a last step, we implement a simple runner to test our analysis.
 object InstantiatedTypesRunner extends ProjectAnalysisApplication {
     override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
         val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(
-            CHACallGraphAnalysisScheduler,
+            CallGraphAnalysisScheduler,
             InstantiatedTypesAnalysisScheduler
         )
 
@@ -346,7 +348,8 @@ object InstantiatedTypesRunner extends ProjectAnalysisApplication {
     }
 }
 ```
-It executes our analysis alongside a class-hierarchy analysis (CHA) call graph and prints the number of instantiated types to the console.  
+It executes our analysis alongside a call-graph analysis and prints the number of instantiated types to the console.
+The kind of call-graph analysis executed actually depends on the `ContextProviderKey` (or rather its `TypeIterator` special case), which we didn't set up here, so it defaults to a class-hierarchy analysis (CHA).
 Note that when querying the property store for the `InstantiatedTypes` property key, we know that it must be a final result because all analyses have been completed by that point.  
 Remember to specify the program that you want to analyze with the "-cp=<some path>" parameter.
 

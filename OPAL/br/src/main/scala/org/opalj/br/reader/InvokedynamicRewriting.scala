@@ -171,7 +171,7 @@ trait InvokedynamicRewriting
         logUnknownInvokeDynamics
     }
 
-    val ScalaRuntimeObject: ObjectType = ObjectType("scala/runtime/ScalaRunTime$")
+    val ScalaRuntimeObject: ClassType = ClassType("scala/runtime/ScalaRunTime$")
 
     /**
      * Generates a new, internal name for the proxy class for a rewritten invokedynamic.
@@ -187,15 +187,15 @@ trait InvokedynamicRewriting
      * @param surroundingType the type in which the Lambda expression has been found
      */
     private def newLambdaTypeName(
-        surroundingType:             ObjectType,
+        surroundingType:             ClassType,
         surroundingMethodName:       String,
         surroundingMethodDescriptor: MethodDescriptor,
         pc:                          Int
     ): String = {
         val descriptor = surroundingMethodDescriptor.toJVMDescriptor
         val sanitizedDescriptor = replaceChars(descriptor, "/[;", "$]:")
-        s"${surroundingType.packageName}/${surroundingType.simpleName}$$" +
-            s"$surroundingMethodName$sanitizedDescriptor:$pc$$Lambda"
+        val packageString = if (surroundingType.packageName.isEmpty) "" else s"${surroundingType.packageName}/"
+        s"$packageString${surroundingType.simpleName}$$$surroundingMethodName$sanitizedDescriptor:$pc$$Lambda"
     }
 
     override def deferredInvokedynamicResolution(
@@ -376,19 +376,20 @@ trait InvokedynamicRewriting
                 if (recipeO.isDefined) recipeO.get.value.length else descriptor.parametersCount
             val body: InstructionsBuilder = new InstructionsBuilder(11 + 6 * numEntries)
 
-            body ++= NEW(ObjectType.StringBuilder)
+            body ++= NEW(ClassType.StringBuilder)
             body ++= DUP
             body ++= INVOKESPECIAL(
-                ObjectType.StringBuilder,
+                ClassType.StringBuilder,
                 isInterface = false,
                 "<init>",
                 MethodDescriptor.NoArgsAndReturnVoid
             )
 
-            def appendType(t: Type): FieldType = {
-                if (t.isBaseType) t.asBaseType
-                else if (t eq ObjectType.String) ObjectType.String
-                else ObjectType.Object
+            def appendType(t: Type): FieldType = t match {
+                case ShortType | ByteType => IntegerType
+                case bt: BaseType         => bt
+                case ClassType.String     => ClassType.String
+                case _                    => ClassType.Object
             }
 
             // Generate instructions to append a parameter to the StringBuilder
@@ -400,9 +401,9 @@ trait InvokedynamicRewriting
                 body ++= (load, load.indexOfNextInstruction(0, modifiedByWide = isWide))
 
                 body ++= INVOKEVIRTUAL(
-                    ObjectType.StringBuilder,
+                    ClassType.StringBuilder,
                     "append",
-                    MethodDescriptor(appendType(paramType), ObjectType.StringBuilder)
+                    MethodDescriptor(appendType(paramType), ClassType.StringBuilder)
                 )
             }
 
@@ -413,11 +414,11 @@ trait InvokedynamicRewriting
                 updatedClassFile = newClassFile
 
                 body ++= INVOKEVIRTUAL(
-                    ObjectType.StringBuilder,
+                    ClassType.StringBuilder,
                     "append",
                     MethodDescriptor(
                         appendType(constant.runtimeValueType),
-                        ObjectType.StringBuilder
+                        ClassType.StringBuilder
                     )
                 )
 
@@ -437,15 +438,15 @@ trait InvokedynamicRewriting
                 body ++= LoadConstantInstruction(endIndex)
 
                 body ++= INVOKEVIRTUAL(
-                    ObjectType.String,
+                    ClassType.String,
                     "substring",
-                    MethodDescriptor(ArraySeq(IntegerType, IntegerType), ObjectType.String)
+                    MethodDescriptor(ArraySeq(IntegerType, IntegerType), ClassType.String)
                 )
 
                 body ++= INVOKEVIRTUAL(
-                    ObjectType.StringBuilder,
+                    ClassType.StringBuilder,
                     "append",
-                    MethodDescriptor(ObjectType.String, ObjectType.StringBuilder)
+                    MethodDescriptor(ClassType.String, ClassType.StringBuilder)
                 )
             }
 
@@ -517,7 +518,7 @@ trait InvokedynamicRewriting
             }
 
             // Finally, turn StringBuilder to String
-            body ++= INVOKEVIRTUAL(ObjectType.StringBuilder, "toString", JustReturnsString)
+            body ++= INVOKEVIRTUAL(ClassType.StringBuilder, "toString", JustReturnsString)
             body ++= ARETURN
 
             val maxLocals = descriptor.requiredRegisters
@@ -645,12 +646,12 @@ trait InvokedynamicRewriting
 
         val newInvokestatic =
             INVOKESTATIC(
-                ObjectType.ScalaSymbol,
+                ClassType.ScalaSymbol,
                 isInterface = false, // the created proxy class is always a concrete class
                 "apply",
                 // the invokedynamic's methodDescriptor (factoryDescriptor) determines
                 // the parameters that are actually pushed and popped from/to the stack
-                MethodDescriptor(ArraySeq(ObjectType.String), ObjectType.ScalaSymbol)
+                MethodDescriptor(ArraySeq(ClassType.String), ClassType.ScalaSymbol)
             )
 
         if (logLambdaExpressionsRewrites) {
@@ -683,7 +684,7 @@ trait InvokedynamicRewriting
             val newMethod = Method(
                 ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask,
                 newMethodName,
-                MethodDescriptor.withNoArgs(ObjectType.ScalaSymbol),
+                MethodDescriptor.withNoArgs(ClassType.ScalaSymbol),
                 ArraySeq(Code(maxStack, 0, newInstructions, NoExceptionHandlers, NoAttributes))
             )
             updatedClassFile = updatedClassFile._UNSAFE_addMethod(newMethod)
@@ -692,7 +693,7 @@ trait InvokedynamicRewriting
                 classFile.thisType,
                 isInterface = classFile.isInterfaceDeclaration,
                 newMethodName,
-                MethodDescriptor.withNoArgs(ObjectType.ScalaSymbol)
+                MethodDescriptor.withNoArgs(ClassType.ScalaSymbol)
             )
             instructions(pc) = newInvoke
             instructions(pc + 3) = NOP
@@ -734,9 +735,9 @@ trait InvokedynamicRewriting
         val (methodTypeStack, updatedClassFile) = loadBootstrapArgument(methodType, body, classFile)
 
         body ++= INVOKEVIRTUAL(
-            ObjectType.MethodType,
+            ClassType.MethodType,
             "parameterArray",
-            MethodDescriptor.withNoArgs(ArrayType(ObjectType.Class))
+            MethodDescriptor.withNoArgs(ArrayType(ClassType.Class))
         )
 
         body ++= instructions(28).asMethodInvocationInstruction // .getMethod
@@ -823,9 +824,9 @@ trait InvokedynamicRewriting
         val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
 
         val typeDeclaration = TypeDeclaration(
-            ObjectType(newLambdaTypeName(classFile.thisType, methodName, methodDescriptor, pc)),
+            ClassType(newLambdaTypeName(classFile.thisType, methodName, methodDescriptor, pc)),
             isInterfaceType = false,
-            Some(LambdaMetafactoryDescriptor.returnType.asObjectType), // we basically create a "CallSiteObject"
+            Some(LambdaMetafactoryDescriptor.returnType.asClassType), // we basically create a "CallSiteObject"
             UIDSet.empty
         )
 
@@ -842,8 +843,8 @@ trait InvokedynamicRewriting
             isInterface = false, // the created proxy class is always a concrete class
             factoryMethod.name,
             MethodDescriptor(
-                ArraySeq(ObjectType.SerializedLambda),
-                ObjectType.Object
+                ArraySeq(ClassType.SerializedLambda),
+                ClassType.Object
             )
         )
 
@@ -914,7 +915,7 @@ trait InvokedynamicRewriting
 
         val (markerInterfaces, bridges, serializable) = extractAltMetafactoryArguments(altMetafactoryArgs)
 
-        val MethodCallMethodHandle(targetMethodOwner: ObjectType, targetMethodName, targetMethodDescriptor) = implMethod
+        val MethodCallMethodHandle(targetMethodOwner: ClassType, targetMethodName, targetMethodDescriptor) = implMethod
 
         // In case of nested classes, we have to change the invoke instruction from
         // invokespecial to invokevirtual, because the special handling used for private
@@ -936,20 +937,20 @@ trait InvokedynamicRewriting
             case _ =>
         }
 
-        val superInterfaceTypesBuilder = UIDSet.newBuilder[ObjectType]
-        superInterfaceTypesBuilder += factoryDescriptor.returnType.asObjectType
+        val superInterfaceTypesBuilder = UIDSet.newBuilder[ClassType]
+        superInterfaceTypesBuilder += factoryDescriptor.returnType.asClassType
         if (serializable) {
-            superInterfaceTypesBuilder += ObjectType.Serializable
+            superInterfaceTypesBuilder += ClassType.Serializable
         }
-        markerInterfaces foreach { mi => superInterfaceTypesBuilder += mi.asObjectType }
+        markerInterfaces foreach { mi => superInterfaceTypesBuilder += mi.asClassType }
 
         val methodName = cp(methodNameIndex).asString
         val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
 
         val typeDeclaration = TypeDeclaration(
-            ObjectType(newLambdaTypeName(thisType, methodName, methodDescriptor, pc)),
+            ClassType(newLambdaTypeName(thisType, methodName, methodDescriptor, pc)),
             isInterfaceType = false,
-            Some(ObjectType.Object), // we basically create a "CallSiteObject"
+            Some(ClassType.Object), // we basically create a "CallSiteObject"
             superInterfaceTypesBuilder.result()
         )
 
@@ -1023,20 +1024,20 @@ trait InvokedynamicRewriting
             ) {
                 targetMethodOwner
             } else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
-                       invokedynamic.methodDescriptor.parameterTypes.head.isObjectType
+                       invokedynamic.methodDescriptor.parameterTypes.head.isClassType
             ) {
                 // If we have an instance of a object and use a method reference,
                 // get the receiver type from the invokedynamic instruction.
                 // It is the first parameter of the functional interface parameter
                 // list.
-                invokedynamic.methodDescriptor.parameterTypes.head.asObjectType
+                invokedynamic.methodDescriptor.parameterTypes.head.asClassType
             } else if (instantiatedMethodType.parameterTypes.nonEmpty &&
-                       instantiatedMethodType.parameterTypes.head.isObjectType
+                       instantiatedMethodType.parameterTypes.head.isClassType
             ) {
                 // If we get a instance method reference like `LinkedHashSet::addAll`, get
                 // the receiver type from the functional interface. The first parameter is
                 // the instance where the method should be called.
-                instantiatedMethodType.parameterTypes.head.asObjectType
+                instantiatedMethodType.parameterTypes.head.asClassType
             } else {
                 targetMethodOwner
             }
@@ -1356,7 +1357,7 @@ object InvokedynamicRewriting {
     }
 
     def isJava8LikeLambdaExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
-        import ObjectType.LambdaMetafactory
+        import ClassType.LambdaMetafactory
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) =>
                 if (name == "metafactory") {
@@ -1370,7 +1371,7 @@ object InvokedynamicRewriting {
 
     def isScalaLambdaDeserializeExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
         import MethodDescriptor.ScalaLambdaDeserializeDescriptor
-        import ObjectType.ScalaLambdaDeserialize
+        import ClassType.ScalaLambdaDeserialize
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(
                     ScalaLambdaDeserialize,
@@ -1384,7 +1385,7 @@ object InvokedynamicRewriting {
 
     def isScalaSymbolExpression(invokedynamic: INVOKEDYNAMIC): Boolean = {
         import MethodDescriptor.ScalaSymbolLiteralDescriptor
-        import ObjectType.ScalaSymbolLiteral
+        import ClassType.ScalaSymbolLiteral
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(
                     ScalaSymbolLiteral,
@@ -1402,7 +1403,7 @@ object InvokedynamicRewriting {
         pc:            Int
     ): Boolean = {
         import MethodDescriptor.ScalaStructuralCallSiteDescriptor
-        import ObjectType.ScalaStructuralCallSite
+        import ClassType.ScalaStructuralCallSite
         invokedynamic.bootstrapMethod.handle match {
             case InvokeStaticMethodHandle(
                     ScalaStructuralCallSite,
@@ -1414,17 +1415,17 @@ object InvokedynamicRewriting {
                     instructions.length == 44 &&
                     instructions(22).isInstanceOf[LoadString] &&
                     instructions(28) == INVOKEVIRTUAL(
-                        ObjectType.Class,
+                        ClassType.Class,
                         "getMethod",
                         MethodDescriptor(
-                            ArraySeq(ObjectType.String, ArrayType(ObjectType.Class)),
-                            ObjectType.Method
+                            ArraySeq(ClassType.String, ArrayType(ClassType.Class)),
+                            ClassType.Method
                         )
                     ) &&
                     instructions(31) == INVOKEVIRTUAL(
-                        ObjectType("scala/runtime/ScalaRunTime$"),
+                        ClassType("scala/runtime/ScalaRunTime$"),
                         "ensureAccessible",
-                        MethodDescriptor(ObjectType.Method, ObjectType.Method)
+                        MethodDescriptor(ClassType.Method, ClassType.Method)
                     )
 
             case _ => false
@@ -1433,31 +1434,31 @@ object InvokedynamicRewriting {
 
     def isGroovyInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
         invokedynamic.bootstrapMethod.handle match {
-            case ismh: InvokeStaticMethodHandle if ismh.receiverType.isObjectType =>
-                ismh.receiverType.asObjectType.packageName.startsWith("org/codehaus/groovy")
+            case ismh: InvokeStaticMethodHandle if ismh.receiverType.isClassType =>
+                ismh.receiverType.asClassType.packageName.startsWith("org/codehaus/groovy")
             case _ => false
         }
     }
 
     def isDynamoInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
         invokedynamic.bootstrapMethod.handle match {
-            case ismh: InvokeStaticMethodHandle if ismh.receiverType.isObjectType =>
-                ismh.receiverType.asObjectType.fqn == "org/dynamo/rt/DynamoBootstrap"
+            case ismh: InvokeStaticMethodHandle if ismh.receiverType.isClassType =>
+                ismh.receiverType.asClassType.fqn == "org/dynamo/rt/DynamoBootstrap"
             case _ => false
         }
     }
 
     def isJava10StringConcatInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
         invokedynamic.bootstrapMethod.handle match {
-            case InvokeStaticMethodHandle(ObjectType.StringConcatFactory, _, _, _) => true
-            case _                                                                 => false
+            case InvokeStaticMethodHandle(ClassType.StringConcatFactory, _, _, _) => true
+            case _                                                                => false
         }
     }
 
     def isObjectMethodsInvokedynamic(invokedynamic: INVOKEDYNAMIC): Boolean = {
         invokedynamic.bootstrapMethod.handle match {
-            case InvokeStaticMethodHandle(ObjectType.ObjectMethods, _, _, _) => true
-            case _                                                           => false
+            case InvokeStaticMethodHandle(ClassType.ObjectMethods, _, _, _) => true
+            case _                                                          => false
         }
     }
 
@@ -1465,12 +1466,12 @@ object InvokedynamicRewriting {
      * Returns the default config where the settings for rewriting and logging rewrites are
      * set to the specified values.
      */
-    def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {
+    def defaultConfig(rewrite: Boolean, logRewrites: Boolean, config: Config = BaseConfig): Config = {
         val rewritingConfigKey = InvokedynamicRewritingConfigKey
         val logLambdaConfigKey = LambdaExpressionsLogRewritingsConfigKey
         val logConcatConfigKey = StringConcatLogRewritingsConfigKey
         val logObjectMethodsConfigKey = ObjectMethodsLogRewritingsConfigKey
-        BaseConfig
+        config
             .withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite))
             .withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
             .withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))

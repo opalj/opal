@@ -12,7 +12,7 @@ abstract class PrimitiveArrayStoreInstruction
     extends ArrayStoreInstruction
     with InstructionMetaInformation {
 
-    final def jvmExceptions: List[ObjectType] =
+    final def jvmExceptions: List[ClassType] =
         PrimitiveArrayAccess.jvmExceptions
 
     final def nextInstructions(

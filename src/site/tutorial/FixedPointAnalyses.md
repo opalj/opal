@@ -141,7 +141,7 @@ def analyzeClassImmutability(classFile: ClassFile): ProperPropertyComputationRes
 
     val superclassType = classFile.superclassType
 
-    if(superclassType.isDefined && superclassType.get != ObjectType.Object) {
+    if(superclassType.isDefined && superclassType.get != ClassType.Object) {
         [...]
     }
 
@@ -150,11 +150,11 @@ def analyzeClassImmutability(classFile: ClassFile): ProperPropertyComputationRes
 ```
 First, we get the type of the superclass from our classfile.  
 Note that some classes, in particular `java.lang.Object`, do not have superclasses, in which case we can't (and don't have to) check any superclass' immutability.  
-We also don't have to check the immutability of `java.lang.Object` (represented by `ObjectType.Object`) as we know it is transitively immutable because it has no fields.  
+We also don't have to check the immutability of `java.lang.Object` (represented by `ClassType.Object`) as we know it is transitively immutable because it has no fields.  
 Checking whether the superclass is `java.lang.Object` not only allows us to skip checking the superclass, but also allows to get useful results even when the JDK is not part of our analyzed software and thus the classfile for `java.lang.Object` is not available.
 
 ```scala
-    if(superclassType.isDefined && superclassType.get != ObjectType.Object) {
+    if(superclassType.isDefined && superclassType.get != ClassType.Object) {
         val superclass = project.classFile(superclassType.get)
         if(superclass.isEmpty)
             return Result(classFile, MutableClass)
@@ -317,7 +317,7 @@ Because OPAL doesn't know in advance that we will only ever query the property s
 Thus, we provide a second entry point to our analysis, `lazilyAnalyzeClassImmutability`, that takes any type of entity and, if it is a classfile, analyzes it.  
 We just throw an exception if the entity is not a classfile, as we can only process classfiles.
 
-Now we are ready to implement a [`FPCFLazyAnalysisScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFLazyAnalysisScheduler.html):
+Now we are ready to implement an [`FPCFLazyAnalysisScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFLazyAnalysisScheduler.html):
 ```scala
 object LazyClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
 
@@ -338,7 +338,7 @@ As before, we finally have to return the analysis.
 ## Running the Analysis
 
 Finally it is time to try our analysis.  
-To do so easily, we extend [ProjectAnalysisApplication]() which provides us with an implicit `main` method that parses parameters for us, most importantly the "-cp=<some path>" parameter that lets users specify the path to a project that they want to analyze.
+To do so easily, we extend [ProjectAnalysisApplication](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectAnalysisApplication.html) which provides us with an implicit `main` method that parses parameters for us, most importantly the "-cp=<some path>" parameter that lets users specify the path to a project that they want to analyze.
 ```scala
 object ClassImmutabilityRunner extends ProjectAnalysisApplication { 
     override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = { [...] }
@@ -356,7 +356,7 @@ override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterru
     [...]
 }
 ```
-We use the [`FPCFAnalysisManagerKey`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFAnalysesManagerKey$.html) to get an [`FPCFAnalysisManager`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFAnalysesManager.html) that will run our analyses.  
+We use the [`FPCFAnalysesManagerKey`](/library/api/SNAPSHOT/org/opalj/fpcf/FPCFAnalysesManagerKey$.html) to get an [`FPCFAnalysesManager`](/library/api/SNAPSHOT/org/opalj/fpcf/FPCFAnalysesManager.html) that will run our analyses.  
 We just pass all analyses that we want to execute to the `runAll` method.  
 Note that we assume that a `LazyFieldImmutabilityAnalysis` has been implemented as well.  
 As long as that doesn't exist, you can remove that line and OPAL will use the fallback value of the `FieldImmutability` lattice whenever a field immutability is queried.

@@ -2,8 +2,8 @@
 package org.opalj
 package ai
 
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 
 /**
  * Interface related to the handling of field access instructions.
@@ -21,7 +21,7 @@ trait FieldAccessesDomain { this: ValuesDomain =>
     def getfield(
         pc:             Int,
         objectref:      DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         fieldType:      FieldType
     ): Computation[DomainValue, ExceptionValue]
@@ -31,7 +31,7 @@ trait FieldAccessesDomain { this: ValuesDomain =>
      */
     def getstatic(
         pc:             Int,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         fieldType:      FieldType
     ): Computation[DomainValue, Nothing]
@@ -44,7 +44,7 @@ trait FieldAccessesDomain { this: ValuesDomain =>
         pc:             Int,
         objectref:      DomainValue,
         value:          DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         fieldType:      FieldType
     ): Computation[Nothing, ExceptionValue]
@@ -55,7 +55,7 @@ trait FieldAccessesDomain { this: ValuesDomain =>
     def putstatic(
         pc:             Int,
         value:          DomainValue,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         fieldType:      FieldType
     ): Computation[Nothing, Nothing]

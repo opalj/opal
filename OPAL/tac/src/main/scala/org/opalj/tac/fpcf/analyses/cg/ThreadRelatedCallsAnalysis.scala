@@ -7,10 +7,10 @@ package cg
 
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -19,6 +19,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.Entity
@@ -62,7 +63,7 @@ class ThreadStartAnalysis private[cg] (
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         val partialAnalysisResults = new ThreadStartAnalysisResults()
-        implicit val state: CGState[ContextType] = new CGState[ContextType](
+        implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
             callerContext,
             FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
@@ -80,7 +81,7 @@ class ThreadStartAnalysis private[cg] (
     def returnResult(
         receiver:               V,
         partialAnalysisResults: ThreadStartAnalysisResults
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val runnableResults = Results(partialAnalysisResults.partialResults(state.callContext))
         if (state.hasOpenDependencies)
             Results(
@@ -91,12 +92,12 @@ class ThreadStartAnalysis private[cg] (
             Results(runnableResults)
     }
 
-    def c(receiver: V, state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+    def c(receiver: V, state: TACAIBasedCGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         val epk = eps.toEPK
 
         // ensures, that we only add new vm reachable methods
         val partialAnalysisResults = new ThreadStartAnalysisResults()
-        implicit val _state: CGState[ContextType] = state
+        implicit val _state: TACAIBasedCGState[ContextType] = state
 
         eps.ub match {
             case _: TACAI =>
@@ -122,36 +123,62 @@ class ThreadStartAnalysis private[cg] (
                 }
 
             case _ =>
-                val (callPC, receiver) = state.dependersOf(epk).head.asInstanceOf[(Int, V)]
+                state.dependersOf(epk).foreach {
 
-                typeIterator.continuationForAllocations(
-                    receiver,
-                    eps.asInstanceOf[EPS[Entity, PropertyType]]
-                ) { (tpe, allocationContext, allocationPC) =>
-                    val hasRunnable = handleTypeAndHasRunnable(
-                        tpe,
-                        state.callContext,
-                        callPC,
-                        state.tac.stmts,
-                        receiver,
-                        partialAnalysisResults
-                    )
-                    if (hasRunnable)
-                        AllocationsUtil.handleAllocation(
-                            allocationContext,
-                            allocationPC,
-                            (callPC, allocationContext),
-                            () => partialAnalysisResults.addIncompleteCallSite(callPC)
-                        ) { (allocationContext, allocationIndex, stmts) =>
-                            handleThreadInit(
+                    case (callPC: Int, receiver: V) =>
+                        typeIterator.continuationForAllocations(
+                            receiver,
+                            eps.asInstanceOf[EPS[Entity, PropertyType]]
+                        ) { (tpe, allocationContext, allocationPC) =>
+                            val hasRunnable = handleTypeAndHasRunnable(
+                                tpe,
                                 state.callContext,
                                 callPC,
-                                allocationContext,
-                                allocationIndex,
+                                state.tac.stmts,
+                                receiver,
+                                partialAnalysisResults
+                            )
+                            if (hasRunnable)
+                                AllocationsUtil.handleAllocation(
+                                    allocationContext,
+                                    allocationPC,
+                                    (callPC, allocationContext),
+                                    () => partialAnalysisResults.addIncompleteCallSite(callPC)
+                                ) { (allocationContext, allocationIndex, stmts) =>
+                                    handleThreadInit(
+                                        state.callContext,
+                                        callPC,
+                                        allocationContext,
+                                        allocationIndex,
+                                        stmts,
+                                        partialAnalysisResults
+                                    )
+                                }
+                        }
+
+                    case (
+                            callPC: Int,
+                            receiver: V,
+                            allocationContext: ContextType @unchecked,
+                            stmts: Array[Stmt[V @unchecked]]
+                        ) =>
+                        typeIterator.continuation(
+                            receiver,
+                            eps.asInstanceOf[EPS[Entity, PropertyType]]
+                        ) { runnableType =>
+                            addRunnableMethod(
+                                state.callContext,
+                                callPC,
+                                runnableType.mostPreciseClassType,
+                                if (state.callContext.method == allocationContext.method)
+                                    Some(receiver)
+                                else
+                                    None,
                                 stmts,
                                 partialAnalysisResults
                             )
                         }
+
                 }
         }
 
@@ -178,11 +205,11 @@ class ThreadStartAnalysis private[cg] (
         callPC:                 Int,
         receiver:               V,
         partialAnalysisResults: ThreadStartAnalysisResults
-    )(implicit state: CGState[ContextType]): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
         // a call to Thread.start will trigger the JVM to later on call Thread.exit()
         val exitMethod = project.specialCall(
-            ObjectType.Thread,
-            ObjectType.Thread,
+            ClassType.Thread,
+            ClassType.Thread,
             isInterface = false,
             "exit",
             MethodDescriptor.NoArgsAndReturnVoid
@@ -194,7 +221,7 @@ class ThreadStartAnalysis private[cg] (
             Some(receiver),
             state.tac.stmts,
             exitMethod,
-            ObjectType.Thread,
+            ClassType.Thread,
             "exit",
             MethodDescriptor.NoArgsAndReturnVoid,
             partialAnalysisResults
@@ -239,7 +266,7 @@ class ThreadStartAnalysis private[cg] (
         receiver:               V,
         partialAnalysisResults: ThreadStartAnalysisResults
     ): Boolean = {
-        val runMethod = project.instanceCall(tpe.asObjectType, tpe, "run", MethodDescriptor.NoArgsAndReturnVoid)
+        val runMethod = project.instanceCall(tpe.asClassType, tpe, "run", MethodDescriptor.NoArgsAndReturnVoid)
 
         addMethod(
             callContext,
@@ -247,14 +274,14 @@ class ThreadStartAnalysis private[cg] (
             Some(receiver),
             stmts,
             runMethod,
-            tpe.asObjectType,
+            tpe.asClassType,
             "run",
             MethodDescriptor.NoArgsAndReturnVoid,
             partialAnalysisResults
         )
 
-        (tpe eq ObjectType.Thread) ||
-            runMethod.hasValue && (runMethod.value.classFile.thisType eq ObjectType.Thread)
+        (tpe eq ClassType.Thread) ||
+            runMethod.hasValue && (runMethod.value.classFile.thisType eq ClassType.Thread)
     }
 
     /**
@@ -289,41 +316,47 @@ class ThreadStartAnalysis private[cg] (
         threadDefSite:          Int,
         stmts:                  Array[Stmt[V]],
         partialAnalysisResults: ThreadStartAnalysisResults
-    ): Unit = stmts(threadDefSite) match {
+    )(implicit typeIteratorState: TypeIteratorState): Unit = stmts(threadDefSite) match {
         case Assignment(_, thread, New(_, _)) =>
             for {
                 NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) <-
                     getConstructorCalls(thread, threadDefSite, stmts)
             } {
                 val indexOfRunnableParameter = descriptor.parameterTypes.indexWhere {
-                    _ == ObjectType.Runnable
+                    _ == ClassType.Runnable
                 }
 
                 // if there is no runnable passed as parameter, we are sound
                 if (indexOfRunnableParameter != -1) {
-                    val theReceiver = params(indexOfRunnableParameter).asVar
-                    for (runnableValue <- theReceiver.value.asReferenceValue.allValues) {
-                        if (runnableValue.isPrecise) {
-                            addRunnableMethod(
-                                callContext,
-                                callPC,
-                                runnableValue,
-                                if (callContext.method == allocationContext.method)
-                                    Some(theReceiver)
-                                else
-                                    None,
-                                stmts,
-                                partialAnalysisResults
+                    allocationContext match {
+                        case NoContext => partialAnalysisResults.addIncompleteCallSite(callPC)
+                        case context: ContextType @unchecked =>
+                            val theReceiver = params(indexOfRunnableParameter).asVar
+                            val runnableTypes = typeIterator.typesProperty(
+                                theReceiver,
+                                context,
+                                (callPC, theReceiver, allocationContext, stmts),
+                                stmts
                             )
-                        } else {
-                            partialAnalysisResults.addIncompleteCallSite(callPC)
-                        }
+                            typeIterator.foreachType(theReceiver, runnableTypes) { runnableType =>
+                                addRunnableMethod(
+                                    callContext,
+                                    callPC,
+                                    runnableType.mostPreciseClassType,
+                                    if (callContext.method == allocationContext.method)
+                                        Some(theReceiver)
+                                    else
+                                        None,
+                                    stmts,
+                                    partialAnalysisResults
+                                )
+                            }
                     }
                 }
 
                 // if
                 val indexOfThreadGroupParameter = descriptor.parameterTypes.indexWhere {
-                    _ == ObjectType.ThreadGroup
+                    _ == ClassType.ThreadGroup
                 }
 
                 if (indexOfThreadGroupParameter != -1) {
@@ -359,16 +392,15 @@ class ThreadStartAnalysis private[cg] (
     private[this] def addRunnableMethod(
         callContext:            ContextType,
         callPC:                 Int,
-        receiverValue:          IsReferenceValue,
+        receiverType:           ClassType,
         receiver:               Option[V],
         stmts:                  Array[Stmt[V]],
         partialAnalysisResults: IndirectCalls
     ): Unit = {
         val thisType = callContext.method.declaringClassType
-        val preciseType = receiverValue.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
             thisType,
-            preciseType,
+            receiverType,
             "run",
             MethodDescriptor.NoArgsAndReturnVoid
         )
@@ -379,7 +411,7 @@ class ThreadStartAnalysis private[cg] (
             receiver,
             stmts,
             tgt,
-            preciseType,
+            receiverType,
             "run",
             MethodDescriptor.NoArgsAndReturnVoid,
             partialAnalysisResults
@@ -393,7 +425,7 @@ class ThreadStartAnalysis private[cg] (
         vmReachableMethods: ThreadStartAnalysisResults
     ): Unit = {
         val thisType = callContext.method.declaringClassType
-        val preciseType = receiverValue.leastUpperType.get.asObjectType
+        val preciseType = receiverValue.leastUpperType.get.asClassType
         val target = project.instanceCall(
             thisType,
             preciseType,
@@ -406,9 +438,9 @@ class ThreadStartAnalysis private[cg] (
             vmReachableMethods.addVMReachableMethod(declaredMethod)
         } else {
             val declTgt = declaredMethods(
-                preciseType.asObjectType,
+                preciseType.asClassType,
                 callContext.method.declaringClassType.packageName,
-                preciseType.asObjectType,
+                preciseType.asClassType,
                 "uncaughtException",
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
             )
@@ -435,7 +467,7 @@ class ThreadStartAnalysis private[cg] (
         receiver:               Option[V],
         stmts:                  Array[Stmt[V]],
         target:                 org.opalj.Result[Method],
-        preciseType:            ObjectType,
+        preciseType:            ClassType,
         name:                   String,
         descriptor:             MethodDescriptor,
         partialAnalysisResults: IndirectCalls
@@ -480,7 +512,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         val vmReachableMethods = new VMReachableMethods()
 
-        implicit val state: CGState[ContextType] = new CGState[ContextType](
+        implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
             callerContext,
             FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
         )
@@ -497,7 +529,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
 
     def c(
         receiver: V,
-        state:    CGState[ContextType]
+        state:    TACAIBasedCGState[ContextType]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         val epk = eps.toEPK
         val pc = state.dependersOf(epk).head.asInstanceOf[Int]
@@ -521,7 +553,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
     def returnResult(
         receiver:           V,
         vmReachableMethods: VMReachableMethods
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val results = vmReachableMethods.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -545,7 +577,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         receiver:           V,
         callPC:             Int,
         vmReachableMethods: VMReachableMethods
-    )(implicit state: CGState[ContextType]): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
         typeIterator.foreachType(
             receiver,
             typeIterator.typesProperty(receiver, callContext, callPC.asInstanceOf[Entity], state.tac.stmts)
@@ -559,7 +591,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         callPC:             Int,
         vmReachableMethods: VMReachableMethods
     ): Unit = {
-        if (classHierarchy.isASubtypeOf(receiverType, ObjectType("java/lang/Thread$UncaughtExceptionHandler")).isNo)
+        if (classHierarchy.isASubtypeOf(receiverType, ClassType("java/lang/Thread$UncaughtExceptionHandler")).isNo)
             return
 
         val thisType = callContext.method.declaringClassType
@@ -574,9 +606,9 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
             vmReachableMethods.addVMReachableMethod(declaredMethods(tgt.value))
         } else {
             val declTgt = declaredMethods(
-                receiverType.asObjectType,
+                receiverType.asClassType,
                 callContext.method.declaringClassType.packageName,
-                receiverType.asObjectType,
+                receiverType.asClassType,
                 "uncaughtException",
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
             )
@@ -606,27 +638,27 @@ class ThreadRelatedCallsAnalysis private[cg] (
         val declaredMethods = p.get(DeclaredMethodsKey)
 
         val setUncaughtExceptionHandlerDescriptor = {
-            MethodDescriptor(ObjectType("java/lang/Thread$UncaughtExceptionHandler"), VoidType)
+            MethodDescriptor(ClassType("java/lang/Thread$UncaughtExceptionHandler"), VoidType)
         }
 
         var setUncaughtExceptionHandlerMethods: List[DeclaredMethod] = List(
             declaredMethods(
-                ObjectType.Thread,
+                ClassType.Thread,
                 "",
-                ObjectType.Thread,
+                ClassType.Thread,
                 "setUncaughtExceptionHandler",
                 setUncaughtExceptionHandlerDescriptor
             )
         )
         var threadStartMethods = List(declaredMethods(
-            ObjectType.Thread,
+            ClassType.Thread,
             "",
-            ObjectType.Thread,
+            ClassType.Thread,
             "start",
             MethodDescriptor.NoArgsAndReturnVoid
         ))
 
-        classHierarchy.foreachSubclass(ObjectType.Thread, project) { cf =>
+        classHierarchy.foreachSubclass(ClassType.Thread, project) { cf =>
             val setUncaughtExcpetionHandlerOpt =
                 cf.findMethod("setUncaughtExceptionHandler", setUncaughtExceptionHandlerDescriptor)
                     .map(declaredMethods.apply)
@@ -679,5 +711,5 @@ object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisSchedul
     }
 
     private[cg] val uncaughtExceptionDescriptor =
-        MethodDescriptor(ArraySeq(ObjectType.Thread, ObjectType.Throwable), VoidType)
+        MethodDescriptor(ArraySeq(ClassType.Thread, ClassType.Throwable), VoidType)
 }

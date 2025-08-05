@@ -10,19 +10,18 @@ import scala.annotation.switch
 
 import scala.collection.immutable.IntMap
 
+import org.opalj.br.ClassType
+import org.opalj.br.ClassType.ClassId
+import org.opalj.br.ClassType.StringBufferId
+import org.opalj.br.ClassType.StringBuilderId
+import org.opalj.br.ClassType.StringId
 import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.ClassId
-import org.opalj.br.ObjectType.StringBufferId
-import org.opalj.br.ObjectType.StringBuilderId
-import org.opalj.br.ObjectType.StringId
 import org.opalj.br.PCs
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.CallStringContextProvider
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
@@ -53,6 +52,7 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 import org.opalj.tac.common.DefinitionSite
@@ -150,7 +150,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
                 val allocO = stmts(index) match {
                     case Assignment(pc, _, New(_, tpe))         => Some((tpe, pc))
                     case Assignment(pc, _, NewArray(_, _, tpe)) => Some((tpe, pc))
-                    case Assignment(pc, _, c: Const)            => Some((c.tpe.asObjectType, pc))
+                    case Assignment(pc, _, c: Const)            => Some((c.tpe.asClassType, pc))
                     case Assignment(pc, _, fc: FunctionCall[V]) => Some((fc.descriptor.returnType.asReferenceType, pc))
                     case _ =>
                         hasUnknownAllocation = true
@@ -170,7 +170,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
             // IMPROVE: Could use the more precise type information here instead of just the
             // least upper type
             handleAllocation(
-                use.value.asReferenceValue.leastUpperType.getOrElse(ObjectType.Object),
+                use.value.asReferenceValue.leastUpperType.getOrElse(ClassType.Object),
                 NoContext,
                 -1
             )
@@ -288,8 +288,8 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
                         ch.isSubtypeOf(tpe, tub) &&
                         // Exclude unknown types even if the upper bound is Object for
                         // consistency with CHA and bounds != Object
-                        ((tub ne ObjectType.Object) || tpe.isArrayType ||
-                        project.classFile(tpe.asObjectType).isDefined) &&
+                        ((tub ne ClassType.Object) || tpe.isArrayType ||
+                        project.classFile(tpe.asClassType).isDefined) &&
                         ch.isASubtypeOf(tpe, use.value.asReferenceValue.upperTypeBound).isNotNo
                     }
 
@@ -348,9 +348,9 @@ class CHATypeIterator(project: SomeProject)
                 if (sv.isPrecise) {
                     handleType(sv.theUpperTypeBound)
                 } else {
-                    if (sv.theUpperTypeBound.isObjectType) {
+                    if (sv.theUpperTypeBound.isClassType) {
                         ch.allSubtypesForeachIterator(
-                            sv.theUpperTypeBound.asObjectType,
+                            sv.theUpperTypeBound.asClassType,
                             reflexive = true
                         ).filter { subtype =>
                             val cfOption = project.classFile(subtype)
@@ -361,7 +361,7 @@ class CHATypeIterator(project: SomeProject)
                                 ch.isASubtypeOf(subtype, use.value.asReferenceValue.upperTypeBound)
                             }.isNotNo
                         }.foreach(handleType)
-                    } else handleType(ObjectType.Object)
+                    } else handleType(ClassType.Object)
                 }
 
             case mv: IsMObjectValue =>
@@ -391,9 +391,9 @@ class CHATypeIterator(project: SomeProject)
         field:         DeclaredField,
         typesProperty: Null
     )(handleType: ReferenceType => Unit): Unit = {
-        if (field.fieldType.isObjectType) {
+        if (field.fieldType.isClassType) {
             project.classHierarchy.allSubtypesForeachIterator(
-                field.fieldType.asObjectType,
+                field.fieldType.asClassType,
                 reflexive = true
             ).filter { subtype =>
                 val cfOption = project.classFile(subtype)
@@ -455,7 +455,7 @@ class RTATypeIterator(project: SomeProject)
         propertyStore: PropertyStore,
         state:         TypeIteratorState
     ): InstantiatedTypes =
-        typesProperty(depender, field.fieldType.isObjectType)
+        typesProperty(depender, field.fieldType.isClassType)
 
     @inline def typesProperty(
         depender:           Entity,
@@ -573,9 +573,9 @@ class PropagationBasedTypeIterator(
             getProperty(
                 typeSetEntitySelector(field),
                 depender,
-                field.fieldType.isObjectType
+                field.fieldType.isClassType
             ),
-            getProperty(project, depender, field.fieldType.isObjectType)
+            getProperty(project, depender, field.fieldType.isClassType)
         )
     }
 
@@ -691,7 +691,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
                     createPointsToSet(
                         ai.pcOfImmediateVMException(pc),
                         context,
-                        ObjectType.Throwable,
+                        ClassType.Throwable,
                         isConstant = false
                     )
                 )
@@ -933,7 +933,7 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
                     createNewPointsToSet()
             case _ =>
                 if (mergeExceptions &&
-                    project.classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)
+                    project.classHierarchy.isSubtypeOf(allocatedType, ClassType.Throwable)
                 ) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)
                     if (ptsO.isDefined)

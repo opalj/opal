@@ -63,8 +63,8 @@ class L0SelfReferenceLeakageAnalysis(
 
         val classType = classFile.thisType
 
-        def thisIsSubtypeOf(otherType: ObjectType): Boolean = {
-            classHierarchy.isASubtypeOf(classType, otherType.asObjectType).isYesOrUnknown
+        def thisIsSubtypeOf(otherType: ClassType): Boolean = {
+            classHierarchy.isASubtypeOf(classType, otherType.asClassType).isYesOrUnknown
         }
 
         // This method just implements a very quick check if there is any potential
@@ -72,7 +72,7 @@ class L0SelfReferenceLeakageAnalysis(
         // true, a more thorough analysis is useful/necessary.
         def potentiallyLeaksSelfReference(method: Method): Boolean = {
             val returnType = method.returnType
-            if (returnType.isObjectType && thisIsSubtypeOf(returnType.asObjectType))
+            if (returnType.isClassType && thisIsSubtypeOf(returnType.asClassType))
                 return true;
 
             implicit val code: Code = method.body.get
@@ -84,7 +84,7 @@ class L0SelfReferenceLeakageAnalysis(
                 instruction.opcode match {
                     case AASTORE.opcode =>
                         return true;
-                    case ATHROW.opcode if thisIsSubtypeOf(ObjectType.Throwable) =>
+                    case ATHROW.opcode if thisIsSubtypeOf(ClassType.Throwable) =>
                         // the exception may throw itself...
                         return true;
                     case INVOKEDYNAMIC.opcode =>
@@ -95,11 +95,11 @@ class L0SelfReferenceLeakageAnalysis(
                         INVOKEVIRTUAL.opcode =>
                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
                         val parameterTypes = invoke.methodDescriptor.parameterTypes
-                        if (parameterTypes.exists { pt => pt.isObjectType && thisIsSubtypeOf(pt.asObjectType) })
+                        if (parameterTypes.exists { pt => pt.isClassType && thisIsSubtypeOf(pt.asClassType) })
                             return true;
                     case PUTSTATIC.opcode | PUTFIELD.opcode =>
                         val fieldType = instruction.asInstanceOf[FieldWriteAccess].fieldType
-                        if (fieldType.isObjectType && thisIsSubtypeOf(fieldType.asObjectType))
+                        if (fieldType.isClassType && thisIsSubtypeOf(fieldType.asClassType))
                             return true;
                     case _ => /*nothing to do*/
                 }
@@ -144,14 +144,14 @@ class L0SelfReferenceLeakageAnalysis(
 
     def determineSelfReferenceLeakage(classFile: ClassFile): PropertyComputationResult = {
         val classType = classFile.thisType
-        if (classType eq ObjectType.Object) {
+        if (classType eq ClassType.Object) {
             if (debug) {
                 trace(
                     "analysis result",
                     "java.lang.Object does not leak its self reference [configured]"
                 )
             }
-            return Result(classType /* <=> ObjectType.Object*/, DoesNotLeakSelfReference);
+            return Result(classType /* <=> ClassType.Object*/, DoesNotLeakSelfReference);
         }
 
         // Let's check the direct supertypes w.r.t. their leakage property.
@@ -160,8 +160,8 @@ class L0SelfReferenceLeakageAnalysis(
 
         // Given that we may have Java 8+, we may have a default method that leaks
         // the self reference.
-        val superTypes: Seq[ObjectType] =
-            if (superClassType == ObjectType.Object)
+        val superTypes: Seq[ClassType] =
+            if (superClassType == ClassType.Object)
                 interfaceTypes
             else
                 interfaceTypes :+ superClassType
@@ -174,20 +174,20 @@ class L0SelfReferenceLeakageAnalysis(
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
         propertyStore(superTypes, SelfReferenceLeakageKey) foreach {
             case epk @ EPK(e, _)                   => dependees += ((e, epk))
-            case UBP(LeaksSelfReference)           => return Result(classFile, LeaksSelfReference);
+            case UBP(LeaksSelfReference)           => return Result(classType, LeaksSelfReference);
             case ELBP(e, DoesNotLeakSelfReference) => // nothing to do ...
             case eps @ EPS(e)                      => dependees += ((e, eps))
         }
 
         // First, let's wait for the results for the supertypes...
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
-            val ELUBP(e, lb, ub) = eps
-            if (ub == LeaksSelfReference) {
+            val ELUBP(e, superLB, superUB) = eps
+            if (superUB == LeaksSelfReference) {
                 // ... we have a final result
                 return Result(classType, LeaksSelfReference);
             }
             // Update dependee list...
-            if (lb == DoesNotLeakSelfReference) {
+            if (superLB == DoesNotLeakSelfReference) {
                 dependees -= e
             } else {
                 dependees = (dependees - eps.e) + ((eps.e, eps))
@@ -196,7 +196,13 @@ class L0SelfReferenceLeakageAnalysis(
             if (dependees.isEmpty) {
                 determineSelfReferenceLeakageContinuation(classFile)
             } else {
-                InterimResult(classType, lb, ub, dependees.valuesIterator.toSet, c)
+                InterimResult(
+                    classType,
+                    lb = LeaksSelfReference,
+                    ub = DoesNotLeakSelfReference,
+                    dependees.valuesIterator.toSet,
+                    c
+                )
             }
         }
 
@@ -204,7 +210,7 @@ class L0SelfReferenceLeakageAnalysis(
             determineSelfReferenceLeakageContinuation(classFile)
         } else {
             InterimResult(
-                classFile,
+                classType,
                 lb = LeaksSelfReference,
                 ub = DoesNotLeakSelfReference,
                 dependees.valuesIterator.toSet,
@@ -230,11 +236,11 @@ object L0SelfReferenceLeakageAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     /**
      * Starts the analysis for the given `project`. This method is typically implicitly
-     * called by the [[FPCFAnalysesManager]].
+     * called by the [[org.opalj.fpcf.FPCFAnalysesManager]].
      */
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val config = p.config
-        val debug = config.getBoolean("org.opalj.fcpf.analysis.L0SelfReferenceLeakage.debug")
+        val debug = config.getBoolean("org.opalj.fpcf.analysis.L0SelfReferenceLeakage.debug")
         val analysis = new L0SelfReferenceLeakageAnalysis(p, debug)
         import analysis.determineSelfReferenceLeakage
         import p.allProjectClassFiles

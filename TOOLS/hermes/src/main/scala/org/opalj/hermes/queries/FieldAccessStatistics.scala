@@ -8,7 +8,7 @@ import scala.collection.immutable.ArraySeq
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PUBLIC
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
@@ -54,7 +54,7 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
             field <- cf.fields
             fieldType = field.fieldType
             if !fieldType.isBaseType ||
-                (field.fieldType ne ObjectType.String) ||
+                (field.fieldType ne ClassType.String) ||
                 !(field.isStatic && field.isFinal)
         } {
             val category =

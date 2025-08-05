@@ -4,12 +4,12 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.br.Method
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
@@ -19,8 +19,8 @@ import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsNative
 import org.opalj.br.fpcf.properties.ThrownExceptions.SomeException
 import org.opalj.br.fpcf.properties.ThrownExceptions.UnknownExceptionIsThrown
 import org.opalj.br.fpcf.properties.ThrownExceptions.UnresolvedInvokeDynamicInstruction
-import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
 import org.opalj.br.fpcf.properties.ThrownExceptionsFallback
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.ARETURN
 import org.opalj.br.instructions.ASTORE
@@ -54,10 +54,10 @@ import org.opalj.br.instructions.LSTORE_0
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.MONITORENTER
 import org.opalj.br.instructions.MONITOREXIT
-import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.StackManagementInstruction
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -76,16 +76,18 @@ import org.opalj.fpcf.UBP
  *
  * @author Andreas Muttscheller
  */
-class L1ThrownExceptionsAnalysis private[analyses] (
+class L1ThrownExceptionsAnalysis(
     final val project: SomeProject
 ) extends FPCFAnalysis {
+
+    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     private[analyses] def lazilyDetermineThrownExceptions(
         e: Entity
     ): ProperPropertyComputationResult = {
         e match {
-            case m: Method => determineThrownExceptions(m)
-            case e         => throw new UnknownError(s"$e is not a method")
+            case c: Context => determineThrownExceptions(c)
+            case e          => throw new UnknownError(s"$e is not a context")
         }
     }
 
@@ -94,14 +96,19 @@ class L1ThrownExceptionsAnalysis private[analyses] (
      * and adds the exceptions thrown by the called method into its own result.
      * The given method must have a body!
      */
-    def determineThrownExceptions(m: Method): ProperPropertyComputationResult = {
+    def determineThrownExceptions(context: Context): ProperPropertyComputationResult = {
+        val dm = context.method
+        if (!dm.hasSingleDefinedMethod)
+            return Result(context, MethodBodyIsNotAvailable);
+
+        val m = dm.definedMethod
         if (m.isNative)
-            return Result(m, MethodIsNative);
+            return Result(context, MethodIsNative);
         if (m.isAbstract)
-            return Result(m, MethodIsAbstract);
+            return Result(context, MethodIsAbstract);
         val body = m.body
         if (body.isEmpty)
-            return Result(m, MethodBodyIsNotAvailable);
+            return Result(context, MethodBodyIsNotAvailable);
 
         //
         // ... when we reach this point the method is non-empty
@@ -123,6 +130,45 @@ class L1ThrownExceptionsAnalysis private[analyses] (
 
         var dependees = Set.empty[EOptionP[Entity, Property]]
 
+        var callPCs = IntTrieSet.empty
+        lazy val callees = propertyStore(context.method, Callees.key)
+
+        def handleCall(callees: EOptionP[DeclaredMethod, Callees], pc: Int): Unit = {
+            if (callees.hasUBP) {
+                if (callees.ub.hasIncompleteCallSites(context))
+                    result = MethodCalledThrowsUnknownExceptions
+                else
+                    callees.ub.callees(context, pc).foreach { callee =>
+                        if (callee != context)
+                            ps(callee, ThrownExceptions.key) match {
+                                case MethodIsAbstract |
+                                    MethodBodyIsNotAvailable |
+                                    MethodIsNative |
+                                    UnknownExceptionIsThrown |
+                                    AnalysisLimitation |
+                                    UnresolvedInvokeDynamicInstruction =>
+                                    result = MethodCalledThrowsUnknownExceptions
+
+                                case eps @ UBP(te: ThrownExceptions) =>
+                                    // Copy the concrete exception types to our initial
+                                    // exceptions set. Upper type bounds are only used
+                                    // for `SomeExecption`, which are handled above, and
+                                    // don't have to be added to this set.
+                                    initialExceptions ++= te.types.concreteTypes
+                                    if (eps.isRefinable) {
+                                        dependees += eps
+                                    }
+
+                                case epk => dependees += epk
+                            }
+                    }
+            }
+            if (callees.isRefinable) {
+                dependees += callees
+                callPCs += pc
+            }
+        }
+
         /* Implicitly (i.e., as a side effect) collects the thrown exceptions in the exceptions set.
          *
          * @return `true` if it is possible to collect all potentially thrown exceptions.
@@ -138,7 +184,7 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     val MethodInvocationInstruction(declaringClass, _, name, descriptor) =
                         instruction
 
-                    if ((declaringClass eq ObjectType.Object) && (
+                    if ((declaringClass eq ClassType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
                             (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
                             (name == "equals" &&
@@ -148,83 +194,17 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     ) {
                         true
                     } else {
-                        instruction match {
-                            case mii: NonVirtualMethodInvocationInstruction =>
-                                project.nonVirtualCall(m.classFile.thisType, mii) match {
-                                    case Success(`m`)    => true // we basically ignore self-dependencies
-                                    case Success(callee) =>
-                                        // Query the store for information about the callee
-                                        ps(callee, ThrownExceptions.key) match {
-                                            case UBP(MethodIsAbstract) |
-                                                UBP(MethodBodyIsNotAvailable) |
-                                                UBP(MethodIsNative) |
-                                                UBP(UnknownExceptionIsThrown) |
-                                                UBP(AnalysisLimitation) |
-                                                UBP(UnresolvedInvokeDynamicInstruction) =>
-                                                result = MethodCalledThrowsUnknownExceptions
-                                                false
-                                            case eps: EPS[Entity, Property] =>
-                                                // Copy the concrete exception types to our initial
-                                                // exceptions set. Upper type bounds are only used
-                                                // for `SomeExecption`, which are handled above, and
-                                                // don't have to be added to this set.
-                                                initialExceptions ++= eps.ub.types.concreteTypes
-                                                if (eps.isRefinable) {
-                                                    dependees += eps
-                                                }
-                                                true
-                                            case epk =>
-                                                dependees += epk
-                                                true
-                                        }
-                                    case _ =>
-                                        result = UnknownExceptionIsThrown
-                                        false
-                                }
-                            case _ =>
-                                result = UnknownExceptionIsThrown
-                                false
-                        }
+                        handleCall(callees, pc)
+                        result == null
                     }
+
+                case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode =>
+                    handleCall(callees, pc)
+                    result == null
 
                 case INVOKEDYNAMIC.opcode =>
                     result = UnresolvedInvokeDynamicInstruction
                     false
-
-                case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode =>
-                    // ThrownExceptionsByOverridingMethods checks if the method is overridable and
-                    // returns `SomeException` if that is the case. Otherwise the concrete set of
-                    // exceptions is returned.
-                    val calleeOption = instruction match {
-                        case iv: INVOKEVIRTUAL   => project.resolveMethodReference(iv)
-                        case ii: INVOKEINTERFACE => project.resolveInterfaceMethodReference(ii)
-                        case _                   => None
-                    }
-                    calleeOption match {
-                        case Some(`m`)    => // nothing to do...
-                        case Some(callee) =>
-                            // Check the class hierarchy for thrown exceptions
-                            ps(callee, ThrownExceptionsByOverridingMethods.key) match {
-                                case UBP(ThrownExceptionsByOverridingMethods.MethodIsOverridable) =>
-                                    result = MethodCalledThrowsUnknownExceptions
-                                case UBP(ThrownExceptionsByOverridingMethods.SomeException) =>
-                                    result = MethodCalledThrowsUnknownExceptions
-                                case eps: EPS[Entity, Property] =>
-                                    // Copy the concrete exception types to our initial
-                                    // exceptions set. Upper type bounds are only used
-                                    // for `SomeExecption`, which are handled above, and
-                                    // don't have to be added to this set.
-                                    initialExceptions ++= eps.ub.exceptions.concreteTypes
-                                    if (eps.isRefinable) {
-                                        dependees += eps
-                                    }
-                                case epk => dependees += epk
-                            }
-                        case None =>
-                            // We have no information about this method.
-                            result = AnalysisLimitation
-                    }
-                    result == null
 
                 // let's determine if the register 0 is updated (i.e., if the register which
                 // stores the this reference in case of instance methods is updated)
@@ -330,15 +310,15 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                 result ne null,
                 "all exceptions are expected to be collected but the set is null"
             )
-            return Result(m, result);
+            return Result(context, result);
         }
         if (fieldAccessMayThrowNullPointerException ||
             (isFieldAccessed && isLocalVariable0Updated)
         ) {
-            initialExceptions += ObjectType.NullPointerException
+            initialExceptions += ClassType.NullPointerException
         }
         if (isSynchronizationUsed) {
-            initialExceptions += ObjectType.IllegalMonitorStateException
+            initialExceptions += ClassType.IllegalMonitorStateException
         }
 
         var exceptions = initialExceptions.toImmutableTypesSet
@@ -351,7 +331,6 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             }
             eps.ub match {
                 // Properties from ThrownExceptions.Key
-                // They are queried if we got a static or special invokation instruction
 
                 // Check if we got some unknown exceptions. We can terminate the analysis if
                 // that's the case as we cannot compute a more precise result.
@@ -361,30 +340,27 @@ class L1ThrownExceptionsAnalysis private[analyses] (
                     UnknownExceptionIsThrown |
                     AnalysisLimitation |
                     UnresolvedInvokeDynamicInstruction =>
-                    return Result(m, MethodCalledThrowsUnknownExceptions);
+                    return Result(context, MethodCalledThrowsUnknownExceptions);
 
                 case te: ThrownExceptions =>
                     exceptions = exceptions ++ te.types.concreteTypes
 
-                // Properties from ThrownExceptionsByOverridingMethods
-                case ThrownExceptionsByOverridingMethods.SomeException |
-                    ThrownExceptionsByOverridingMethods.MethodIsOverridable =>
-                    return Result(m, MethodCalledThrowsUnknownExceptions);
-
-                case tebom: ThrownExceptionsByOverridingMethods =>
-                    exceptions = exceptions ++ tebom.exceptions.concreteTypes
+                case c: Callees =>
+                    callPCs.foreach(handleCall(eps.asInstanceOf[EPS[DeclaredMethod, Callees]], _))
+                    if (result != null)
+                        return Result(context, result);
             }
             if (dependees.isEmpty) {
-                Result(m, new ThrownExceptions(exceptions))
+                Result(context, new ThrownExceptions(exceptions))
             } else {
-                InterimResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
+                InterimResult(context, SomeException, new ThrownExceptions(exceptions), dependees, c)
             }
         }
 
         if (dependees.isEmpty) {
-            Result(m, new ThrownExceptions(exceptions))
+            Result(context, new ThrownExceptions(exceptions))
         } else {
-            InterimResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
+            InterimResult(context, SomeException, new ThrownExceptions(exceptions), dependees, c)
         }
     }
 }
@@ -393,38 +369,10 @@ abstract class ThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
-    override final def uses: Set[PropertyBounds] = {
-        Set(PropertyBounds.lub(ThrownExceptionsByOverridingMethods))
-    }
+    override final def uses: Set[PropertyBounds] = PropertyBounds.ubs(ThrownExceptions, Callees)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ThrownExceptions)
 
-}
-
-/**
- * Factory and runner for the [[L1ThrownExceptionsAnalysis]].
- *
- * @author Andreas Muttscheller
- * @author Michael Eichberg
- */
-object EagerL1ThrownExceptionsAnalysis
-    extends ThrownExceptionsAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
-
-    override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
-
-    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
-
-    /**
-     * Eagerly schedules the computation of the thrown exceptions for all methods with bodies;
-     * in general, the analysis is expected to be registered as a lazy computation.
-     */
-    override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L1ThrownExceptionsAnalysis(p)
-        val allMethods = p.allMethods
-        ps.scheduleEagerComputationsForEntities(allMethods)(analysis.determineThrownExceptions)
-        analysis
-    }
 }
 
 /**
