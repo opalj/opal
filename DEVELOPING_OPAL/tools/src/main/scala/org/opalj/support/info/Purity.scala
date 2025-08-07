@@ -39,8 +39,6 @@ import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.bytecode.JDKArg
 import org.opalj.bytecode.JDKPackages
 import org.opalj.cli.AnalysisLevelArg
@@ -50,9 +48,11 @@ import org.opalj.cli.IndividualArg
 import org.opalj.cli.OutputDirArg
 import org.opalj.cli.PackagesArg
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.tac.cg.CallGraphArg
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -156,7 +156,6 @@ object Purity extends ProjectsAnalysisApplication {
     ): Unit = {
         val (project, projectTime) = analysisConfig.setupProject(cp)
         val (ps, propertyStoreTime) = analysisConfig.setupPropertyStore(project)
-        val (_, callGraphTime) = analysisConfig.setupCallGaph(project)
 
         val rater = analysisConfig(RaterArg)
         analysisConfig.analysis match {
@@ -183,21 +182,22 @@ object Purity extends ProjectsAnalysisApplication {
             }
         }
 
-        val reachableMethods =
-            ps.entities(Callers.key).collect {
-                case FinalEP(m: DeclaredMethod, c: Callers) if c ne NoCallers => m
-            }.toSet
+        val callGraphKey = analysisConfig(CallGraphArg)
+
+        callGraphKey.requirements(project)
+
+        val allAnalyses =
+            analysisConfig.analysis :: analysisConfig.supportingAnalyses ++ callGraphKey.allCallGraphAnalyses(project)
 
         val contextProvider = project.get(ContextProviderKey)
-        val analyzedContexts = projMethods.filter(reachableMethods.contains).map(contextProvider.newContext(_))
+        val projectMethods: Set[DeclaredMethod] = declaredMethods.declaredMethods.toSet
+        val analyzedContexts = projMethods.filter(projectMethods.contains).map(contextProvider.newContext(_))
 
         var analysisTime: Seconds = Seconds.None
         time {
-            val analyses = analysisConfig.analysis :: analysisConfig.supportingAnalyses
-
             project.get(FPCFAnalysesManagerKey).runAll(
-                analyses,
-                css =>
+                allAnalyses,
+                (css: List[ComputationSpecification[org.opalj.fpcf.FPCFAnalysis]]) =>
                     if (css.contains(analysisConfig.analysis)) {
                         analyzedContexts.foreach { dm => ps.force(dm, br.fpcf.properties.Purity.key) }
                     }
@@ -275,8 +275,8 @@ object Purity extends ProjectsAnalysisApplication {
                 if (newFile) {
                     output.createNewFile()
                     outputWriter.println(
-                        "analysisName;project time;propertyStore time;" +
-                            "callGraph time;analysis time; total time;" +
+                        "analysisName;project time;" +
+                            "propertyStore time;analysis time; total time;" +
                             "compile time pure;pure;domain-specific pure;" +
                             "side-effect free;domain-specific side-effect free;" +
                             "externally pure;domain-specific externally pure;" +
@@ -286,11 +286,10 @@ object Purity extends ProjectsAnalysisApplication {
                             "side-effect free;impure;count"
                     )
                 }
-                val totalTime = projectTime + propertyStoreTime + callGraphTime + analysisTime
+                val totalTime = projectTime + propertyStoreTime + analysisTime
                 outputWriter.println(
                     s"$configurationName;${projectTime.toString(false)};" +
                         s"${propertyStoreTime.toString(false)};" +
-                        s"${callGraphTime.toString(false)};" +
                         s"${analysisTime.toString(false)};" +
                         s"${totalTime.toString(false)};" +
                         s"${compileTimePure.size};${pure.size};${dPure.size};" +
@@ -414,7 +413,6 @@ object Purity extends ProjectsAnalysisApplication {
                     "\nImpure:                                " + lbImpure.size +
                     "\nTotal:                                 " + projectEntitiesWithPurity.size
             Console.println(result)
-            Console.println(s"Call-graph time: $callGraphTime")
             Console.println(s"Analysis time: $analysisTime")
         }
     }
