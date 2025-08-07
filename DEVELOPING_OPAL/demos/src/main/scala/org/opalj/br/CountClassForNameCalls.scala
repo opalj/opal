@@ -2,11 +2,13 @@
 package org.opalj
 package br
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.INVOKESTATIC
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
@@ -16,17 +18,25 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
  *
  * @author Michael Eichberg
  */
-object CountClassForNameCalls extends ProjectAnalysisApplication {
+object CountClassForNameCalls extends ProjectsAnalysisApplication {
 
-    override def description: String = "Counts the number of times Class.forName is called."
+    protected class ClassForNameConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Counts the number of Class.forName calls"
+    }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = ClassForNameConfig
 
-        import ClassType.{String, Class}
+    protected def createConfig(args: Array[String]): ClassForNameConfig = new ClassForNameConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ClassForNameConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+
+        import ClassType.Class
+        import ClassType.String
         // Next, we create a descriptor of a method that takes a single parameter of
         // type "String" and that returns a value of type Class.
         val descriptor = MethodDescriptor(String, Class)
@@ -45,7 +55,7 @@ object CountClassForNameCalls extends ProjectAnalysisApplication {
                 method.toJava(s"pc=$pc")
             }
         val header = s"found ${invokes.size} calls of Class.forName(String)\n\t"
-        BasicReport(invokes.seq.toList.sorted.mkString(header, "\n\t", "\n"))
+        (project, BasicReport(invokes.seq.toList.sorted.mkString(header, "\n\t", "\n")))
     }
 
 }
