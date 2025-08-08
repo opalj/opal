@@ -26,6 +26,8 @@
         <option value="_______ blank line _______" />
         <option value="com.typesafe.config" />
         <option value="_______ blank line _______" />
+        <option value="org.rogach.scallop" />
+        <option value="_______ blank line _______" />
         <option value="org.opalj" />
         <option value="_______ blank line _______" />
         <option value="all other imports" />

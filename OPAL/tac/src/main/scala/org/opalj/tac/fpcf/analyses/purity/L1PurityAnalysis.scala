@@ -30,7 +30,6 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
@@ -254,8 +253,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         // Remove unnecessary dependees
         if (!state.ubPurity.isDeterministic) {
             state.dependees = state.dependees.filter { ep =>
-                ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key || ep.pk == Callees.key ||
-                ep.pk == TACAI.key
+                ep.pk == Purity.key || ep.pk == Callees.key || ep.pk == TACAI.key
             }
         }
         // IMPROVE: We could filter Purity/VPurity dependees with an lb not less than maxPurity
