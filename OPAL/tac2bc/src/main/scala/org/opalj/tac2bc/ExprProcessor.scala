@@ -187,14 +187,15 @@ object ExprProcessor {
         code:                      mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:                Tac2BcContext
     ): Unit = {
-        // Process each parameter
-        for (param <- invokedynamicFunctionCall.params)
-            ExprProcessor.processExpression(param, tacToLVIndex, code, tacContext)
         code += DEFAULT_INVOKEDYNAMIC(
             invokedynamicFunctionCall.bootstrapMethod,
             invokedynamicFunctionCall.name,
             invokedynamicFunctionCall.descriptor
         )
+
+        // Process each parameter
+        for (param <- invokedynamicFunctionCall.params.reverse)
+                tacContext.emitStmt(param.asVar.definedBy.head)
     }
 
     def processNewArray(
@@ -203,9 +204,6 @@ object ExprProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        // Process each parameter
-        for (count <- newArrayExpr.counts.reverse)
-            ExprProcessor.processExpression(count, tacToLVIndex, code, tacContext)
         code += {
             if (newArrayExpr.counts.size > 1) {
                 MULTIANEWARRAY(newArrayExpr.tpe, newArrayExpr.counts.size)
@@ -215,6 +213,10 @@ object ExprProcessor {
                 NEWARRAY(newArrayExpr.tpe.componentType.asBaseType.atype)
             }
         }
+
+        // Process each parameter
+        for (count <- newArrayExpr.counts)
+            tacContext.emitStmt(count.asVar.definedBy.head)
     }
 
     def processArrayLoad(
@@ -223,10 +225,6 @@ object ExprProcessor {
         code:          mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:    Tac2BcContext
     ): Unit = {
-        // Load the array reference onto the stack
-        processExpression(arrayLoadExpr.arrayRef, tacToLVIndex, code, tacContext)
-        // Load the index onto the stack
-        processExpression(arrayLoadExpr.index, tacToLVIndex, code, tacContext)
         // Infer the element type from the array reference expression
         val elementType = inferElementType(arrayLoadExpr.arrayRef)
         code += {
@@ -242,6 +240,11 @@ object ExprProcessor {
                 case _: ReferenceType => AALOAD
             }
         }
+
+        // Load the index onto the stack
+        tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head)
+        // Load the array reference onto the stack
+        tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head)
     }
 
     // Helper function to infer the element type from the array reference expression
@@ -258,9 +261,9 @@ object ExprProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        // Process the receiver object
-        ExprProcessor.processExpression(arrayLength.arrayRef, tacToLVIndex, code, tacContext)
         code += ARRAYLENGTH
+        // Process the receiver object
+        tacContext.emitStmt(arrayLength.arrayRef.asVar.definedBy.head)
     }
 
     def processNewExpr(
@@ -293,7 +296,7 @@ object ExprProcessor {
         }
 
         // 1. Process each parameter without receiver
-        for (param <- call.params) {
+        for (param <- call.params.reverse) {
             val definedByIdx = param.asVar.definedBy.head
             tacContext.emitStmt(definedByIdx)
         }

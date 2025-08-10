@@ -170,13 +170,14 @@ object TACtoBC {
         workList.append(cfg.code.instructions.last)
 
         while(workList.nonEmpty){
-            val current = workList.remove(0)
-            val currentIdx = tac.pcToIndex(current.pc)
-            StmtProcessor.processStmt(current, tacToLVIndex, labels, code, tacContext)
+            val currentStmt = workList.remove(0)
+            val currentIdx = tac.pcToIndex(currentStmt.pc)
+            if(!tacContext.isStmtVisited(currentStmt)) {
+                StmtProcessor.processStmt(currentStmt, tacToLVIndex, labels, code, tacContext)
+            }
             cfg.foreachPredecessor(currentIdx){ predIdx =>
                 val predStmt = cfg.code.instructions(predIdx)
-                StmtProcessor.processStmt(predStmt, tacToLVIndex, labels, code, tacContext)
-                //workList.append(predStmt)
+                workList.append(predStmt)
             }
         }
         code.toIndexedSeq.reverse

@@ -219,7 +219,7 @@ object StmtProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        if (expr.isConst || expr.isVar)
+        if (expr.isConst || expr.isNewArray)
             tacContext.emitVarUse(targetVar)
         else
             ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext)
@@ -314,12 +314,6 @@ object StmtProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        // Load the arrayRef onto the stack
-        ExprProcessor.processExpression(arrayRef, tacToLVIndex, code, tacContext)
-        // Load the index onto the stack
-        ExprProcessor.processExpression(index, tacToLVIndex, code, tacContext)
-        // Load the value to be stored onto the stack
-        ExprProcessor.processExpression(value, tacToLVIndex, code, tacContext)
         // Infer the element type from the array reference expression
         val elementType = ExprProcessor.inferElementType(arrayRef)
         code += {
@@ -335,6 +329,13 @@ object StmtProcessor {
                 case _: ReferenceType => AASTORE
             }
         }
+
+        // Load the value to be stored onto the stack
+        tacContext.emitStmt(value.asVar.definedBy.head)
+        // Load the index onto the stack
+        tacContext.emitStmt(index.asVar.definedBy.head)
+        // Load the arrayRef onto the stack
+        tacContext.emitStmt(arrayRef.asVar.definedBy.head)
     }
 
     def processNop(code: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {

@@ -3,11 +3,11 @@ package org.opalj.tac2bc
 import org.opalj.ba.CodeElement
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.{DUP, RewriteLabel}
-import org.opalj.tac.{Assignment, Const, DVar, Stmt, V, Var}
+import org.opalj.tac.{Assignment, Const, DVar, NewArray, Stmt, V, Var}
 import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
  * Context for translating TAC to bytecode in reverse order.
@@ -24,14 +24,17 @@ class Tac2BcContext(
     /** Maps each variable to its definition index in TAC. */
     private val savedDefSites = mutable.Map[Var[V], Int]()
 
+    private val visitedStmt = ArrayBuffer[Stmt[V]]()
+
     def emitStmt(defIdx: Int): Unit = {
         val variable = getVarFromId(defIdx)
+        val stmt = tacStmts(defIdx)._1
         if (!savedDefSites.contains(variable)) {
             savedDefSites(variable) = defIdx
             useSitesLeft.getOrElseUpdate(defIdx, getUseSites(defIdx))
+            visitedStmt += stmt
         }
 
-        val stmt = tacStmts(defIdx)._1
         val labels = tacStmts.map(_ => RewriteLabel())
         StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this)
     }
@@ -73,6 +76,7 @@ class Tac2BcContext(
             case Assignment(_, _, expr) =>
                 expr match {
                     case const: Const => ExprProcessor.loadConstant(const, code)
+                    case newArray: NewArray[V] => ExprProcessor.processNewArray(newArray, tacToLVIndex, code, this)
                 }
             case _ =>
         }
@@ -96,5 +100,9 @@ class Tac2BcContext(
             case Assignment(_, dvar: DVar[ValueInformation], _) => dvar.asVar
             case _ => throw new NoSuchElementException("There are no variables in Statements.")
         }
+    }
+
+    def isStmtVisited(stmt: Stmt[V]): Boolean = {
+        visitedStmt.contains(stmt)
     }
 }
