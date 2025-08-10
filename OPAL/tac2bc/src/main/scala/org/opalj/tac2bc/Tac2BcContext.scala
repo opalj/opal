@@ -2,7 +2,7 @@ package org.opalj.tac2bc
 
 import org.opalj.ba.CodeElement
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.{DUP, RewriteLabel}
+import org.opalj.br.instructions.{DUP, DUP2, RewriteLabel}
 import org.opalj.tac.{Assignment, Const, DVar, NewArray, Stmt, V, Var}
 import org.opalj.value.ValueInformation
 
@@ -59,7 +59,8 @@ class Tac2BcContext(
 
         if(useSitesLeft(defIdx) == 0) {
             ExprProcessor.storeVariable(variable, tacToLVIndex, code)
-            code += DUP
+            if (variable.cTpe.isCategory2) code += DUP2 else code += DUP
+            //code += DUP
             emitDef(defIdx)
         } else {
             ExprProcessor.loadVariable(variable, tacToLVIndex, code)

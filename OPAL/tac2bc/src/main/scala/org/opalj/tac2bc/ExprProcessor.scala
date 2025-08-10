@@ -454,8 +454,9 @@ object ExprProcessor {
             }
         }
 
-        tacContext.emitStmt(binaryExpr.left.asVar.definedBy.head)
         tacContext.emitStmt(binaryExpr.right.asVar.definedBy.head)
+        tacContext.emitStmt(binaryExpr.left.asVar.definedBy.head)
+
     }
     def processPrimitiveTypeCastExpr(
         primitiveTypecastExpr: PrimitiveTypecastExpr[V],
@@ -463,9 +464,6 @@ object ExprProcessor {
         code:                  mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:            Tac2BcContext
     ): Unit = {
-        // First, process the operand expression and add its instructions to the buffer
-        processExpression(primitiveTypecastExpr.operand, tacToLVIndex, code, tacContext)
-
         code += {
             (primitiveTypecastExpr.operand.cTpe, primitiveTypecastExpr.targetTpe) match {
                 // -> to Float
@@ -496,5 +494,8 @@ object ExprProcessor {
                     )
             }
         }
+
+        // Process the operand expression and add its instructions to the buffer
+        tacContext.emitStmt(primitiveTypecastExpr.operand.asVar.definedBy.head)
     }
 }
