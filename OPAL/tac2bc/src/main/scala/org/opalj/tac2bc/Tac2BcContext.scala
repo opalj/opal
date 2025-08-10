@@ -60,7 +60,6 @@ class Tac2BcContext(
         if(useSitesLeft(defIdx) == 0) {
             ExprProcessor.storeVariable(variable, tacToLVIndex, code)
             if (variable.cTpe.isCategory2) code += DUP2 else code += DUP
-            //code += DUP
             emitDef(defIdx)
         } else {
             ExprProcessor.loadVariable(variable, tacToLVIndex, code)

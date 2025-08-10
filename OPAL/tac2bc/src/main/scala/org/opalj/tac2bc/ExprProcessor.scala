@@ -456,7 +456,6 @@ object ExprProcessor {
 
         tacContext.emitStmt(binaryExpr.right.asVar.definedBy.head)
         tacContext.emitStmt(binaryExpr.left.asVar.definedBy.head)
-
     }
     def processPrimitiveTypeCastExpr(
         primitiveTypecastExpr: PrimitiveTypecastExpr[V],
