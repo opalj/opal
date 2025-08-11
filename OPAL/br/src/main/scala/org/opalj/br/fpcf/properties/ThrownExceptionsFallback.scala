@@ -74,14 +74,19 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
     final val ObjectEqualsMethodDescriptor = MethodDescriptor(ClassType.Object, BooleanType)
 
     def apply(ps: PropertyStore, reason: FallbackReason, e: Entity): ThrownExceptions = {
-        e match { case m: Method => this(ps, m) }
+        e match { case c: Context => this(ps, c) }
     }
 
     def apply(ps: PropertyStore, e: Entity): ThrownExceptions = {
-        e match { case m: Method => this(ps, m) }
+        e match { case c: Context => this(ps, c) }
     }
 
-    def apply(ps: PropertyStore, m: Method): ThrownExceptions = {
+    def apply(ps: PropertyStore, c: Context): ThrownExceptions = {
+        val dm = c.method
+        if (!dm.hasSingleDefinedMethod)
+            return MethodBodyIsNotAvailable;
+
+        val m = dm.definedMethod
         if (m.isNative)
             return MethodIsNative;
         if (m.isAbstract)

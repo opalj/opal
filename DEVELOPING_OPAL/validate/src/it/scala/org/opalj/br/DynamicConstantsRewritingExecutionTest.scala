@@ -17,7 +17,7 @@ import org.opalj.bi.isCurrentJREAtLeastJava11
 import org.opalj.bi.isCurrentJREAtLeastJava15
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.DynamicConstantRewriting
-import org.opalj.bytecode.RTJar
+import org.opalj.bytecode.JavaBase
 
 /**
  * Tests if OPAL is able to rewrite dynamic constants and checks if the rewritten bytecode is
@@ -34,7 +34,7 @@ class DynamicConstantsRewritingExecutionTest extends AnyFunSpec with Matchers {
         )
 
         val projectClassFiles = Project.JavaClassFileReader.ClassFiles(fixtureFiles)
-        val libraryClassFiles = Project.JavaLibraryClassFileReader.ClassFiles(RTJar)
+        val libraryClassFiles = Project.JavaLibraryClassFileReader.ClassFiles(JavaBase)
 
         Project(
             projectClassFiles,
