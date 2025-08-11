@@ -20,7 +20,7 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
-import org.opalj.fpcf.IndividualProperty
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
@@ -142,9 +142,7 @@ sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
  * @author Michael Eichberg
  * @author Dominik Helm
  */
-sealed abstract class Purity
-    extends IndividualProperty[Purity, VirtualMethodPurity]
-    with PurityPropertyMetaInformation {
+sealed abstract class Purity extends Property with PurityPropertyMetaInformation {
 
     /**
      * The globally unique key of the [[Purity]] property.
@@ -158,8 +156,6 @@ sealed abstract class Purity
     def modifiesParameters: Boolean = (flags & ModifiesParameters) != 0
     def usesDomainSpecificActions: Boolean = (flags & PerformsDomainSpecificOperations) != 0
 
-    final def aggregatedProperty = new VirtualMethodPurity(this)
-
     /**
      * Combines this purity value with another one to represent the progress by a purity
      * analysis in one phase.
@@ -171,7 +167,7 @@ sealed abstract class Purity
      * the same as if the conditional purity value was combined with the conditional value that
      * corresponds to the unconditional value.
      */
-    override def meet(other: Purity): Purity = {
+    def meet(other: Purity): Purity = {
         other match {
             case _: ClassifiedImpure           => other
             case _ if other.modifiesParameters => other.meet(this)
@@ -192,7 +188,7 @@ object Purity extends PurityPropertyMetaInformation {
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure".
      */
-    final val key = PropertyKey.create[DeclaredMethod, Purity](
+    final val key = PropertyKey.create[Context, Purity](
         "Purity",
         (ps: PropertyStore, _: FallbackReason, e: Entity) => {
             e match {

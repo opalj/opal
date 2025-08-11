@@ -32,18 +32,19 @@ class FPCFAnalysesManager private[fpcf] (val project: Project) {
      */
     def executedSchedules: List[Schedule[FPCFAnalysis]] = schedules
 
-    final def runAll(
-        analyses: ComputationSpecification[FPCFAnalysis]*
+    final def runAll[T <: FPCFAnalysis](
+        analyses: ComputationSpecification[T]*
     ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = {
         runAll(analyses.to(Iterable))
     }
 
-    final def runAll(
-        analyses:             Iterable[ComputationSpecification[FPCFAnalysis]],
+    final def runAll[T <: FPCFAnalysis](
+        analyses:             Iterable[ComputationSpecification[T]],
         afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
     ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = this.synchronized {
 
-        val scenario = AnalysisScenario(analyses, propertyStore)
+        val scenario =
+            AnalysisScenario(analyses.asInstanceOf[Iterable[ComputationSpecification[FPCFAnalysis]]], propertyStore)
 
         val schedule = scenario.computeSchedule(propertyStore, FPCFAnalysesRegistry.defaultAnalysis)
         schedules ::= schedule

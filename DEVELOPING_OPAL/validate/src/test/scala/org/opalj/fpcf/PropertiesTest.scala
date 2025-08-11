@@ -34,7 +34,7 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.bytecode.RTJar
+import org.opalj.bytecode.JavaBase
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.PropertyStoreKey
@@ -83,7 +83,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
 
-        val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
+        val libraryClassFiles = (if (withRT) ClassFiles(JavaBase) else List()) ++ propertiesClassFiles
 
         implicit val config: Config = createConfig()
 
