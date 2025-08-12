@@ -15,6 +15,7 @@ import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.br.fpcf.properties.SimpleContext
 import org.opalj.br.fpcf.properties.SimpleContexts
 import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.si.ProjectInformationKeys
 
 /**
  * Provides analyses with [[Context]]s for method executions.
@@ -30,6 +31,8 @@ trait ContextProvider {
     def expandContext(oldContext: Context, method: DeclaredMethod, pc: Int): ContextType
 
     def contextFromId(contextId: Int): Context
+
+    def requiredProjectInformation: ProjectInformationKeys = Nil
 }
 
 trait SimpleContextProvider extends ContextProvider {
@@ -52,6 +55,8 @@ trait SimpleContextProvider extends ContextProvider {
         if (contextId == -1) NoContext
         else simpleContexts(declaredMethods(contextId))
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey, SimpleContextsKey)
 }
 
 trait CallStringContextProvider extends ContextProvider {
@@ -84,4 +89,6 @@ trait CallStringContextProvider extends ContextProvider {
         if (contextId == -1) NoContext
         else callStringContexts(contextId)
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(CallStringContextsKey)
 }
