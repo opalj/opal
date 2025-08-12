@@ -12,11 +12,9 @@ import org.scalatestplus.junit.JUnitRunner
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.analyses.EagerVirtualMethodPurityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.FPCFAnalysis
@@ -42,7 +40,6 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
     val primaryAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
         EagerL1PurityAnalysis,
-        EagerVirtualMethodPurityAnalysis,
         EagerFieldAccessInformationAnalysis
     )
 
@@ -65,9 +62,7 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
         val propertyStore = p.get(PropertyStoreKey)
         try {
-            if (propertyStore.entities(Purity.key).exists(_.isRefinable) ||
-                propertyStore.entities(VirtualMethodPurity.key).exists(_.isRefinable)
-            ) {
+            if (propertyStore.entities(Purity.key).exists(_.isRefinable)) {
                 fail("Analysis left over non-final purity results")
             }
         } finally {

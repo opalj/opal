@@ -2,86 +2,105 @@
 package org.opalj
 package br
 
+import scala.language.postfixOps
+
+import java.io.File
+import java.net.URL
+
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
-import org.opalj.br.reader.Java9Framework.{ClassFile => ClassFileReader}
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.cli.ClassNameArg
 
 /**
- * Loads class files from a JAR archive and prints the signature and module related
- * information of the classes.
+ * Loads class files and prints the signature and module related information of the classes.
  *
  * @author Michael Eichberg
  */
-object ClassFileInformation {
+object ClassFileInformation extends ProjectsAnalysisApplication {
 
-    def main(args: Array[String]): Unit = {
+    protected class ClassFileInformationConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description =
+            "Prints signature and module related information of classes"
 
-        if (args.length < 2) {
-            println("Usage: java …ClassFileInformation " +
-                "<JAR file containing class files> " +
-                "<Name of classfile (incl. path) contained in the JAR file>+")
-            println("Example:\n\tjava …ClassFileInformation /.../jre/lib/rt.jar java/util/ArrayList.class")
-            sys.exit(-1)
-        }
+        args(
+            ClassNameArg !
+        )
+    }
 
-        for (classFileName <- args.drop(1) /* drop the name of the jar file */ ) {
+    protected type ConfigType = ClassFileInformationConfig
 
-            // Load class file (the class file name has to correspond to the name of
-            // the file inside the archive.)
-            // The `Java(8|9)Framework`s define multiple other methods that make it convenient
-            // to load class files stored in folders or in jars within jars.
-            val classFile = ClassFileReader(args(0), classFileName).head
-            import classFile._
+    protected def createConfig(args: Array[String]): ClassFileInformationConfig = new ClassFileInformationConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ClassFileInformationConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+
+        val classNames = analysisConfig(ClassNameArg).toSet
+
+        val (project, _) = analysisConfig.setupProject(cp)
+
+        val result = new StringBuilder()
+
+        for {
+            classFileName <- classNames
+            classType = ClassType(classFileName.replace('.', '/'))
+            classFile <- project.classFile(classType)
+        } {
 
             // print the name of the type defined by this class file
-            println(thisType.toJava)
+            result.append(classType.toJava + "\n")
 
             // superclassType returns an Option, because java.lang.Object does not have a super class
-            superclassType foreach { s => println("  extends " + s.toJava) }
-            if (interfaceTypes.nonEmpty) {
-                println(interfaceTypes.map(_.toJava).mkString("  implement ", ", ", ""))
+            classFile.superclassType foreach { s => result.append("  extends " + s.toJava + "\n") }
+            if (classFile.interfaceTypes.nonEmpty) {
+                result.append(classFile.interfaceTypes.map(_.toJava).mkString("  implement ", ", ", "\n"))
             }
 
             // the source file attribute is an optional attribute and is only specified
             // if the compiler settings are such that debug information is added to the
             // compile class file.
-            sourceFile foreach { s => println("\tSOURCEFILE: " + s) }
+            classFile.sourceFile foreach { s => result.append("\tSOURCEFILE: " + s + "\n") }
 
-            module foreach { m =>
-                println("\tMODULE: ")
+            classFile.module foreach { m =>
+                result.append("\tMODULE: \n")
                 if (m.requires.nonEmpty) {
-                    println(
+                    result.append(
                         m.requires.map { r =>
                             val flags = AccessFlags.toString(r.flags, AccessFlagsContexts.MODULE)
                             s"\t\trequires $flags${r.requires};"
-                        }.sorted.mkString("\n")
+                        }.sorted.mkString("", "\n", "\n\n")
                     )
-                    println()
                 }
 
                 if (m.exports.nonEmpty) {
-                    println(m.exports.map(_.toJava).sorted.mkString("", "\n", "\n"))
+                    result.append(m.exports.map(_.toJava).sorted.mkString("", "\n", "\n\n"))
                 }
                 if (m.opens.nonEmpty) {
-                    println(m.opens.map(_.toJava).sorted.mkString("", "\n", "\n"))
+                    result.append(m.opens.map(_.toJava).sorted.mkString("", "\n", "\n\n"))
                 }
                 if (m.uses.nonEmpty) {
-                    println(m.uses.map(use => s"uses ${use.toJava};").sorted.mkString("", "\n", "\n"))
+                    result.append(m.uses.map(use => s"uses ${use.toJava};").sorted.mkString("", "\n", "\n\n"))
                 }
                 if (m.provides.nonEmpty) {
-                    println(m.provides.map(_.toJava).sorted.mkString("", "\n", "\n"))
+                    result.append(m.provides.map(_.toJava).sorted.mkString("", "\n", "\n\n"))
                 }
             }
 
             // The version of the class file. Basically, every major version of the
             // JDK defines additional (new) features.
-            println(s"\tVERSION: $majorVersion.$minorVersion (${bi.jdkVersion(majorVersion)})")
+            result.append(s"\tVERSION: ${classFile.majorVersion}.${classFile.minorVersion} (${bi.jdkVersion(classFile.majorVersion)})\n")
 
-            println(fields.map(_.signatureToJava(false)).mkString("\tFIELDS:\n\t", "\n\t", ""))
+            result.append(classFile.fields.map(_.signatureToJava(false)).mkString("\tFIELDS:\n\t", "\n\t", "\n"))
 
-            println(methods.map(_.signatureToJava(false)).mkString("\tMETHODS:\n\t", "\n\t", ""))
-
-            println()
+            result.append(classFile.methods.map(_.signatureToJava(false)).mkString("\tMETHODS:\n\t", "\n\t", "\n\n"))
         }
+
+        (project, BasicReport(result.toString()))
     }
 }
