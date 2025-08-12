@@ -74,30 +74,7 @@ import org.opalj.br.instructions.RewriteLabel
 import org.opalj.br.instructions.SASTORE
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.ArrayStore
-import org.opalj.tac.Assignment
-import org.opalj.tac.Call
-import org.opalj.tac.CaughtException
-import org.opalj.tac.Checkcast
-import org.opalj.tac.Expr
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.Goto
-import org.opalj.tac.If
-import org.opalj.tac.InvokedynamicMethodCall
-import org.opalj.tac.JSR
-import org.opalj.tac.MonitorEnter
-import org.opalj.tac.MonitorExit
-import org.opalj.tac.Nop
-import org.opalj.tac.PutField
-import org.opalj.tac.PutStatic
-import org.opalj.tac.Ret
-import org.opalj.tac.Return
-import org.opalj.tac.ReturnValue
-import org.opalj.tac.Stmt
-import org.opalj.tac.Switch
-import org.opalj.tac.Throw
-import org.opalj.tac.V
-import org.opalj.tac.Var
+import org.opalj.tac.{ArrayStore, Assignment, Call, CaughtException, Checkcast, Const, Expr, ExprStmt, Goto, If, InvokedynamicMethodCall, JSR, MonitorEnter, MonitorExit, Nop, PutField, PutStatic, Ret, Return, ReturnValue, Stmt, Switch, Throw, V, Var}
 
 object StmtProcessor {
 
@@ -116,8 +93,10 @@ object StmtProcessor {
         tacToLVIndex: Map[Int, Int],
         labels:       Array[RewriteLabel],
         code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext
+        tacContext:   Tac2BcContext,
+        stmtIndex:    Int
     )(implicit project: SomeProject): Unit = {
+        tacContext.visitedStmt += stmt
         stmt match {
             case Assignment(_, targetVar, expr) =>
                 processAssignment(targetVar, expr, tacToLVIndex, code, tacContext)
@@ -210,6 +189,7 @@ object StmtProcessor {
                 processNop(code)
             case _ => throw new UnsupportedOperationException(s"Unsupported TAC-Stmt: $stmt")
         }
+        code += LabelElement(labels(stmtIndex))
     }
 
     def processAssignment(
@@ -513,11 +493,6 @@ object StmtProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        // process the left expr
-        ExprProcessor.processExpression(left, tacToLVIndex, code, tacContext)
-        // process the right expr
-        ExprProcessor.processExpression(right, tacToLVIndex, code, tacContext)
-
         code += {
             (left.cTpe, right.cTpe, condition) match {
                 // Handle null comparisons
@@ -540,5 +515,13 @@ object StmtProcessor {
                     )
             }
         }
+
+        // process the right expr
+        right match {
+            case const: Const => ExprProcessor.loadConstant(const, code)
+        }
+
+        // process the left expr
+        tacContext.emitStmt(left.asVar.definedBy.head)
     }
 }

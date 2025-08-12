@@ -15,7 +15,8 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 class Tac2BcContext(
     tacStmts     : Array[(Stmt[V], Int)],
     tacToLVIndex : Map[Int,Int],
-    code         : ListBuffer[CodeElement[Nothing]]
+    code         : ListBuffer[CodeElement[Nothing]],
+    labels       : Array[RewriteLabel]
 )(implicit project: SomeProject) {
 
     /** Remaining uses of a variable after its definition. */
@@ -24,7 +25,7 @@ class Tac2BcContext(
     /** Maps each variable to its definition index in TAC. */
     private val savedDefSites = mutable.Map[Var[V], Int]()
 
-    private val visitedStmt = ArrayBuffer[Stmt[V]]()
+    val visitedStmt = ArrayBuffer[Stmt[V]]()
 
     def emitStmt(defIdx: Int): Unit = {
         val variable = getVarFromId(defIdx)
@@ -32,11 +33,10 @@ class Tac2BcContext(
         if (!savedDefSites.contains(variable)) {
             savedDefSites(variable) = defIdx
             useSitesLeft.getOrElseUpdate(defIdx, getUseSites(defIdx))
-            visitedStmt += stmt
         }
 
-        val labels = tacStmts.map(_ => RewriteLabel())
-        StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this)
+        val stmtIndex = tacStmts(defIdx)._2
+        StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this, stmtIndex)
     }
 
     def emitVarUse(variable: Var[V]): Unit = {

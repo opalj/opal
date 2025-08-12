@@ -92,8 +92,6 @@ object ExprProcessor {
         tacContext:   Tac2BcContext
     ): Unit = {
         expr match {
-            //case const: Const              =>
-            //case variable: Var[V]          =>
             case getField: GetField[V]     => processGetField(getField, tacToLVIndex, code, tacContext)
             case getStatic: GetStatic      => processGetStatic(getStatic, code)
             case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code, tacContext)
@@ -164,10 +162,6 @@ object ExprProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        // Process the left expression
-        processExpression(compare.left, tacToLVIndex, code, tacContext)
-        // Process the right expression
-        processExpression(compare.right, tacToLVIndex, code, tacContext)
         // Determine the appropriate comparison instruction
         code += {
             (compare.left.cTpe, compare.condition) match {
@@ -179,6 +173,11 @@ object ExprProcessor {
                 case _                               => throw new IllegalArgumentException("Unsupported comparison type")
             }
         }
+
+        // Process the right expression
+        tacContext.emitStmt(compare.right.asVar.definedBy.head)
+        // Process the left expression
+        tacContext.emitStmt(compare.left.asVar.definedBy.head)
     }
 
     def processInvokedynamicFunctionCall(

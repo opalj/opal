@@ -163,21 +163,13 @@ object TACtoBC {
 
         // list of all CodeElements including bytecode instructions as well as pseudo instructions
         val code = mutable.ListBuffer[CodeElement[Nothing]]()
-        val tacContext = new Tac2BcContext(tacStmts, tacToLVIndex, code)
+        val tacContext = new Tac2BcContext(tacStmts, tacToLVIndex, code, labels)
 
         val cfg = tac.cfg
-        val workList = new ListBuffer[Stmt[V]]
-        workList.append(cfg.code.instructions.last)
-
-        while(workList.nonEmpty){
-            val currentStmt = workList.remove(0)
-            val currentIdx = tac.pcToIndex(currentStmt.pc)
-            if(!tacContext.isStmtVisited(currentStmt)) {
-                StmtProcessor.processStmt(currentStmt, tacToLVIndex, labels, code, tacContext)
-            }
-            cfg.foreachPredecessor(currentIdx){ predIdx =>
-                val predStmt = cfg.code.instructions(predIdx)
-                workList.append(predStmt)
+        for (stmt <- cfg.code.instructions.reverse) {
+            val currentIdx = tac.pcToIndex(stmt.pc)
+            if(!tacContext.isStmtVisited(stmt)) {
+                StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, tacContext, currentIdx)
             }
         }
         code.toIndexedSeq.reverse
