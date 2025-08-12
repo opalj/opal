@@ -61,6 +61,19 @@ trait DependencyProcessor {
 
     /**
      * Used, e.g., by the [[DependencyExtractor]] to create representations of
+     * `VirtualModule`s.
+     *
+     * @note The [[DependencyExtractor]] creates all representations of `VirtualModule`s
+     *      using this Method.
+     */
+    def asVirtualModule(
+        name: String
+    ): VirtualModule = {
+        VirtualModule(name)
+    }
+
+    /**
+     * Used, e.g., by the [[DependencyExtractor]] to create representations of
      * `VirtualClass`es.
      *
      * @note The [[DependencyExtractor]] creates all representations of `VirtualClass`es

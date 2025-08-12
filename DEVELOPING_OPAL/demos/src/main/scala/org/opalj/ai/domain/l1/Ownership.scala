@@ -4,6 +4,7 @@ package ai
 package domain
 package l1
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.bi.ACC_PRIVATE
@@ -12,7 +13,8 @@ import org.opalj.br.ArrayType
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.GETFIELD
@@ -28,24 +30,27 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
  *
  * @author Michael Eichberg
  */
-object OwnershipAnalysis extends ProjectAnalysisApplication {
+object OwnershipAnalysis extends ProjectsAnalysisApplication {
 
-    override def title: String =
-        "basic ownership analysis for arrays"
+    protected class OwnershipConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Analyzes ownership for arrays"
+    }
 
-    override def description: String =
-        "a very basic ownership analysis for arrays"
+    protected type ConfigType = OwnershipConfig
 
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected def createConfig(args: Array[String]): OwnershipConfig = new OwnershipConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: OwnershipConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val Private___Not_Static = (AccessFlagsMatcher.NOT_STATIC && ACC_PRIVATE)
 
         val classes = for {
-            classFile <- theProject.allProjectClassFiles.par
+            classFile <- project.allProjectClassFiles.par
             classType = classFile.thisType
             arrayFields = classFile.fields.collect {
                 case Field(Private___Not_Static(), name, ArrayType(_)) => name
@@ -58,7 +63,8 @@ object OwnershipAnalysis extends ProjectAnalysisApplication {
                         val aiResult =
                             BaseAI(
                                 method,
-                                new DefaultDomain(theProject, method) with RecordLastReturnedValues
+                                new DefaultDomain(project.asInstanceOf[Project[URL]], method)
+                                    with RecordLastReturnedValues
                             )
                         import aiResult.domain
                         if (method.returnType.isReferenceType) {
@@ -123,11 +129,14 @@ object OwnershipAnalysis extends ProjectAnalysisApplication {
             )
         }
 
-        BasicReport(
-            classes.toList.sortWith((v1, v2) => v1._1 < v2._1).mkString(
-                "Class files with no ownership protection for arrays:\n\t",
-                "\n\t",
-                "\n"
+        (
+            project,
+            BasicReport(
+                classes.toList.sortWith((v1, v2) => v1._1 < v2._1).mkString(
+                    "Class files with no ownership protection for arrays:\n\t",
+                    "\n\t",
+                    "\n"
+                )
             )
         )
 

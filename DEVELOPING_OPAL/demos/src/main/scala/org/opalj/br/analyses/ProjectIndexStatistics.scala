@@ -3,31 +3,41 @@ package org.opalj
 package br
 package analyses
 
+import java.io.File
 import java.net.URL
+
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 /**
  * Some statistics about the usage of field/method names in a project.
  *
  * @author Michael Eichberg
  */
-object ProjectIndexStatistics extends ProjectAnalysisApplication {
+object ProjectIndexStatistics extends ProjectsAnalysisApplication {
 
-    override def title: String = "project statistics"
-
-    override def description: String = {
-        "statistics about the usage of field/method identifiers in a project"
+    protected class ProjectIndexStatisticsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Collects statistics about the usage of field/method identifiers"
     }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = ProjectIndexStatisticsConfig
 
-        BasicReport(
-            project.get(ProjectIndexKey)
-                .statistics().map(kv => "- " + kv._1 + ": " + kv._2)
-                .mkString("Identifier usage statistics:\n\t", "\n\t", "\n")
+    protected def createConfig(args: Array[String]): ProjectIndexStatisticsConfig =
+        new ProjectIndexStatisticsConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ProjectIndexStatisticsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+
+        (
+            project,
+            BasicReport(
+                project.get(ProjectIndexKey)
+                    .statistics().map(kv => "- " + kv._1 + ": " + kv._2)
+                    .mkString("Identifier usage statistics:\n\t", "\n\t", "\n")
+            )
         )
     }
 }

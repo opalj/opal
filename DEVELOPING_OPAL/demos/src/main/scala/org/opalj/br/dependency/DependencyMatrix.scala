@@ -2,48 +2,37 @@
 package org.opalj
 package de
 
+import java.io.File
+
 import org.opalj.br._
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.util.PerformanceEvaluation.time
 
 /**
- * This class (the implementation) demonstrates how to load all class files
- * from a jar file and how to create a dependency matrix.
+ * Demonstrates how to create a dependency matrix.
  *
  * @author Michael Eichberg
  * @author Thomas Schlosser
  */
-object DependencyMatrix {
+object DependencyMatrix extends ProjectsAnalysisApplication {
 
-    import org.opalj.util.PerformanceEvaluation.time
-
-    private def printUsage(): Unit = {
-        println("Loads all classes stored in the jar files and creates a dependency matrix.")
-        println("Usage: java …DependencyMatrix <JAR file containing class files>+")
+    protected class DependencyMatrixConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Creates a dependency matrix of the classes of a project"
     }
 
-    def main(args: Array[String]): Unit = {
+    protected type ConfigType = DependencyMatrixConfig
 
-        if (args.length == 0 ||
-            !args.forall(arg => arg.endsWith(".zip") || arg.endsWith(".jar"))
-        ) {
-            printUsage()
-            sys.exit(1)
-        }
+    protected def createConfig(args: Array[String]): DependencyMatrixConfig = new DependencyMatrixConfig(args)
 
-        for (arg <- args) {
-            val file = new java.io.File(arg)
-            if (!file.canRead() || file.isDirectory()) {
-                println(arg + " is not a valid ZIP/Jar file.");
-                printUsage()
-                sys.exit(1)
-            }
-        }
+    override protected def evaluate(
+        cp:             Iterable[File],
+        analysisConfig: DependencyMatrixConfig,
+        execution:      Int
+    ): Unit = {
 
-        analyze(args)
-        sys.exit(0)
-    }
+        val (project, _) = analysisConfig.setupProject(cp)
 
-    def analyze(jarFiles: Array[String]): Unit = {
         import scala.collection.mutable.Map
         import scala.collection.mutable.Set
         val dependencyMatrix = Map[VirtualSourceElement, Set[(VirtualSourceElement, DependencyType)]]()
@@ -64,21 +53,14 @@ object DependencyMatrix {
                 }
             )
 
-        println("Reading all class files - " + jarFiles.mkString(", ") + ".")
         var count = 0
         time {
             for {
-                jarFile <- jarFiles
-                (classFile, _ /*drop urls*/ ) <- ClassFiles(new java.io.File(jarFile))
+                classFile <- project.allProjectClassFiles
             } {
                 count += 1
                 dependencyExtractor.process(classFile)
             }
-        } { t =>
-            println(
-                s"\nReading all $count class files and building the dependency matrix took " +
-                    t.toSeconds
-            )
-        }
+        } { t => println(s"\nReading all $count class files and building the dependency matrix took ${t.toSeconds}") }
     }
 }
