@@ -29,7 +29,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
     val project: SomeProject = {
         val testResources = locateTestResources("lambdas-1.8-g-parameters-genericsignature", "bi")
         val projectClasses = Java8Framework.ClassFiles(testResources)
-        val libraryClasses = Java8LibraryFramework.ClassFiles(org.opalj.bytecode.RTJar)
+        val libraryClasses = Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JavaBase)
         Project(projectClasses, libraryClasses, true)
     }
 

@@ -3,261 +3,246 @@ package org.opalj
 package support
 package debug
 
-import java.io.File
+import scala.language.postfixOps
+
 import java.net.URL
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
-import scala.util.control.ControlThrowable
-import scala.xml.NodeSeq
+import java.util.Date
 
+import org.rogach.scallop.flagConverter
+
+import org.opalj.ai.AI
+import org.opalj.ai.AIResult
+import org.opalj.ai.AITracer
+import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
-import org.opalj.ai.InstructionCountBoundedAI
-import org.opalj.ai.domain
+import org.opalj.ai.InterpretationFailedException
+import org.opalj.ai.MultiTracer
+import org.opalj.ai.cli.AIBasedCommandLineConfig
+import org.opalj.ai.cli.DomainArg
+import org.opalj.ai.cli.TraceArg
+import org.opalj.ai.common.XHTML.dump
+import org.opalj.ai.common.XHTML.dumpAIState
+import org.opalj.ai.domain.RecordCFG
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.TheCode
+import org.opalj.ai.util
 import org.opalj.ai.util.XHTML
-import org.opalj.br._
-import org.opalj.br.analyses._
+import org.opalj.br.Method
+import org.opalj.br.analyses.MethodAnalysisApplication
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
+import org.opalj.cli.PlainArg
+import org.opalj.graphs.toDot
 import org.opalj.io.writeAndOpen
-import org.opalj.log.LogContext
 
 /**
- * Performs an abstract interpretation of all methods of the given class file(s) using
- * a configurable domain.
- *
- * This class is meant to support the development and testing of new domains.
+ * A small basic framework that facilitates the abstract interpretation of a
+ * specific method using a configurable domain.
  *
  * @author Michael Eichberg
  */
-object InterpretMethods extends AnalysisApplication {
+object InterpretMethods extends MethodAnalysisApplication {
 
-    override def analysisSpecificParametersDescription: String =
-        "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n" +
-            "[-verbose={true,false} If true, extensive information is shown.]\n"
+    protected class InterpretMethodsConfig(args: Array[String]) extends MethodAnalysisConfig(args)
+        with AIBasedCommandLineConfig {
+        val description = "Performs an abstract interpretation of specified methods"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
-        def isDomainParameter(parameter: String) =
-            parameter.startsWith("-domain=") && parameter.length() > 8
-        def isVerbose(parameter: String) =
-            parameter == "-verbose=true" || parameter == "-verbose=false"
-
-        parameters match {
-            case Nil => Iterable.empty
-            case Seq(parameter) =>
-                if (isDomainParameter(parameter) || isVerbose(parameter))
-                    Iterable.empty
-                else
-                    Iterable("unknown parameter: " + parameter)
-            case Seq(parameter1, parameter2) =>
-                if (!isDomainParameter(parameter1))
-                    Seq("the first parameter does not specify the domain: " + parameter1)
-                else if (!isVerbose(parameter2))
-                    Seq("the second parameter has to be \"verbose\": " + parameter2)
-                else
-                    Iterable.empty
-
+        private val deadVarsArg = new PlainArg[Boolean] {
+            override val name: String = "identifyDeadVariables"
+            override val description: String = "Identify dead variables during abstract interpretation"
+            override val defaultValue: Option[Boolean] = Some(false)
         }
-    }
 
-    override val analysis = new InterpretMethodsAnalysis[URL]
-
-}
-
-/**
- * An analysis that analyzes all methods of all class files of a project using a
- * custom domain.
- *
- * @author Michael Eichberg
- */
-class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
-
-    override def title: String = "interpret methods"
-
-    override def description: String = "performs an abstract interpretation of all methods"
-
-    override def analyze(
-        project:                Project[Source],
-        parameters:             Seq[String] = List.empty,
-        initProgressManagement: (Int) => ProgressManagement
-    ): BasicReport = {
-        implicit val logContext: LogContext = project.logContext
-
-        val verbose = parameters.nonEmpty &&
-            (parameters.head == "-verbose=true" ||
-            (parameters.size == 2 && parameters.tail.head == "-verbose=true"))
-        val (message, detailedErrorInformationFile) =
-            if (parameters.nonEmpty && parameters.head.startsWith("-domain")) {
-                InterpretMethodsAnalysis.interpret(
-                    project,
-                    Class.forName(parameters.head.substring(8)).asInstanceOf[Class[_ <: Domain]],
-                    verbose,
-                    initProgressManagement,
-                    6d
-                )
-            } else {
-                InterpretMethodsAnalysis.interpret(
-                    project,
-                    classOf[domain.l0.BaseDomain[java.net.URL]],
-                    verbose,
-                    initProgressManagement,
-                    6d
-                )
-
-            }
-        BasicReport(
-            message + detailedErrorInformationFile.map(" (See " + _ + " for details.)").getOrElse("")
+        args(
+            TraceArg !,
+            deadVarsArg !
         )
-    }
-}
+        init()
 
-object InterpretMethodsAnalysis {
-
-    def println(s: String): Unit = {
-        Console.out.println(s)
-        Console.flush()
+        val identifyDeadVars: Boolean = apply(deadVarsArg)
     }
 
-    def interpret[Source](
-        project:                Project[Source],
-        domainClass:            Class[_ <: Domain],
-        beVerbose:              Boolean,
-        initProgressManagement: (Int) => ProgressManagement,
-        maxEvaluationFactor:    Double = 3d
-    )(
-        implicit logContext: LogContext
-    ): (String, Option[File]) = {
+    protected type ConfigType = InterpretMethodsConfig
 
-        // TODO Add support for reporting the progress and to interrupt the analysis.
+    override type Result = String
 
-        import Console.GREEN
-        import Console.RED
-        import Console.RESET
-        import Console.YELLOW
+    protected def createConfig(args: Array[String]): InterpretMethodsConfig = new InterpretMethodsConfig(args)
 
-        val performanceEvaluationContext = new org.opalj.util.PerformanceEvaluation
-        import performanceEvaluationContext.getTime
-        import performanceEvaluationContext.time
-        val methodsCount = new AtomicInteger(0)
-        val instructionEvaluationsCount = new AtomicLong(0)
+    def analyzeMethod(p: SomeProject, m: Method, analysisConfig: ConfigType): Result = {
+        val classFile = m.classFile
+        val domainClass = analysisConfig(DomainArg)
 
-        val domainConstructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
+        def createDomain[Source: reflect.ClassTag](project: SomeProject, method: Method): Domain = {
 
-        def analyzeMethod(
-            source: String,
-            method: Method
-        ): Option[(String, ClassFile, Method, Throwable)] = {
-
-            val body = method.body.get
-            try {
-                if (beVerbose) println(method.toJava(YELLOW + "[started]" + RESET))
-
-                val evaluatedCount = time(Symbol("AI")) {
-                    val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor, true)
-                    val domain = domainConstructor.newInstance(project, method)
-                    val result = ai(method, domain)
-                    if (result.wasAborted) {
-                        if (beVerbose)
-                            println(
-                                method.toJava(
-                                    RED + "[aborted after evaluating " +
-                                        ai.currentEvaluationCount +
-                                        " instructions (size of instructions array=" +
-                                        body.instructions.size +
-                                        "; max=" + ai.maxEvaluationCount + ")]" +
-                                        RESET
-                                )
-                            )
-
-                        val message = s"evaluation bound (max=${ai.maxEvaluationCount}) exceeded"
-                        throw new InterruptedException(message)
-                    }
-                    val evaluatedCount = ai.currentEvaluationCount.toLong
-                    instructionEvaluationsCount.addAndGet(evaluatedCount)
-                    evaluatedCount
-                }
-                val naiveEvaluatedCount = time(Symbol("NAIVE_AI")) {
-                    val ai = new InstructionCountBoundedAI[Domain](body, maxEvaluationFactor, false)
-                    val domain = domainConstructor.newInstance(project, method)
-                    ai(method, domain)
-                    ai.currentEvaluationCount
-                }
-
-                if (beVerbose && naiveEvaluatedCount > evaluatedCount) {
-                    val codeLength = body.instructions.length
-                    val message = method.toJava(
-                        s"evaluation steps (code size:$codeLength): " +
-                            s"$naiveEvaluatedCount (w/o dead variables analysis) vs. $evaluatedCount"
-                    )
-                    println(message)
-                }
-
-                if (beVerbose) println(method.toJava(GREEN + "[finished]" + RESET))
-                methodsCount.incrementAndGet()
-                None
-            } catch {
-                case ct: ControlThrowable => throw ct
-                case t: Throwable         =>
-                    // basically, we want to catch everything!
-                    val classFile = method.classFile
-                    val source = project.source(classFile.thisType).get.toString
-                    Some((source, classFile, method, t))
+            scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
+                val constructor = domainClass.getConstructor(classOf[Object])
+                return constructor.newInstance(method.classFile);
             }
+
+            val constructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
+            constructor.newInstance(project, method)
         }
 
-        val collectedExceptions = time(Symbol("OVERALL")) {
-            val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
-            project.parForeachMethodWithBody() { m => analyzeMethod(m.source.toString, m.method).map(results.add) }
-            import scala.jdk.CollectionConverters._
-            results.asScala
-        }
+        var ai: AI[Domain] = null;
+        try {
+            val result = new StringBuilder()
 
-        if (collectedExceptions.nonEmpty) {
-            val header = <p>Generated {new java.util.Date()}</p>
+            val aiResult: AIResult =
+                if (analysisConfig(TraceArg)) {
+                    ai = new IMAI(analysisConfig.identifyDeadVars)
+                    ai(m, createDomain(p, m))
+                } else {
+                    val body = m.body.get
+                    result.append("Starting abstract interpretation of: \n")
+                    result.append("\t" + classFile.thisType.toJava + "{\n")
+                    result.append("\t\t" + m.signatureToJava(true) +
+                        "[instructions=" + body.instructions.length +
+                        "; #max_stack=" + body.maxStack +
+                        "; #locals=" + body.maxLocals + "]\n")
+                    result.append("\t}\n")
+                    ai = new BaseAI(analysisConfig.identifyDeadVars)
+                    val aiResult = ai(m, createDomain(p, m))
+                    result.append("Finished abstract interpretation.\n")
+                    aiResult
+                }
 
-            val body = Seq(header) ++
-                (for ((exResource, exInstances) <- collectedExceptions.groupBy(e => e._1)) yield {
-                    val exDetails =
-                        exInstances.map { ex =>
-                            val (_, classFile, method, throwable) = ex
-                            <div>
-                                <b>{classFile.thisType.fqn}</b>
-                                <i>"{method.signatureToJava(true)}"</i><br/>
-                                {"Length: " + method.body.get.instructions.length}
-                                <div>{XHTML.throwableToXHTML(throwable)}</div>
-                            </div>
-                        }
+            if (aiResult.domain.isInstanceOf[RecordCFG]) {
+                val evaluatedInstructions = aiResult.evaluatedInstructions
+                val cfgDomain = aiResult.domain.asInstanceOf[RecordCFG]
 
-                    <section>
-                        <h1>{exResource}</h1>
-                        <p>Number of thrown exceptions: {exInstances.size}</p>
-                        {exDetails}
-                    </section>
-                })
+                val cfgAsDotGraph = toDot(Set(cfgDomain.cfgAsGraph()), ranksep = "0.3").toString
+                val cfgFile = writeAndOpen(cfgAsDotGraph, "AICFG", ".gv")
+                result.append("AI CFG: " + cfgFile + "\n")
 
-            val node =
-                XHTML.createXHTML(
-                    Some("Exceptions Thrown During Interpretation"),
-                    NodeSeq.fromSeq(body)
-                )
-            val file = writeAndOpen(node, "ExceptionsOfCrashedAbstractInterpretations", ".html")
+                val domAsDot = cfgDomain.dominatorTree.toDot(evaluatedInstructions.contains)
+                val domFile = writeAndOpen(domAsDot, "DominatorTreeOfTheAICFG", ".gv")
+                result.append("AI CFG - Dominator tree: " + domFile + "\n")
 
-            (
-                "During the interpretation of " +
-                    methodsCount.get + " methods (of " + project.methodsCount + ") in " +
-                    project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
-                    ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
-                    ")" + collectedExceptions.size + " exceptions occured.",
-                Some(file)
+                val postDomAsDot = cfgDomain.postDominatorTree.toDot(evaluatedInstructions.contains)
+                val postDomFile = writeAndOpen(postDomAsDot, "PostDominatorTreeOfTheAICFG", ".gv")
+                result.append("AI CFG - Post-Dominator tree: " + postDomFile + "\n")
+
+                val cdg = cfgDomain.pdtBasedControlDependencies
+                val rdfAsDotGraph = cdg.toDot(evaluatedInstructions.contains)
+                val rdfFile = writeAndOpen(rdfAsDotGraph, "ReverseDominanceFrontiersOfAICFG", ".gv")
+                result.append("AI CFG - Reverse Dominance Frontiers: " + rdfFile + "\n")
+            }
+
+            if (aiResult.domain.isInstanceOf[RecordDefUse]) {
+                val duInfo = aiResult.domain.asInstanceOf[RecordDefUse]
+                writeAndOpen(duInfo.dumpDefUseInfo(), "DefUseInfo", ".html")
+
+                val dotGraph = toDot(duInfo.createDefUseGraph(m.body.get))
+                writeAndOpen(dotGraph, "ImplicitDefUseGraph", ".gv")
+            }
+
+            writeAndOpen(
+                dump(
+                    Some(classFile),
+                    Some(m),
+                    m.body.get,
+                    Some(
+                        s"Analyzed: ${new Date}<br>Domain: ${domainClass.getName}<br>" +
+                            (
+                                if (analysisConfig.identifyDeadVars)
+                                    "<b>Dead Variables Identification</b><br>"
+                                else
+                                    "<u>Dead Variables are not filtered</u>.<br>"
+                            ) +
+                            XHTML.instructionsToXHTML("PCs where paths join", aiResult.cfJoins) +
+                            (
+                                if (aiResult.subroutinePCs.nonEmpty) {
+                                    XHTML.instructionsToXHTML("Subroutine instructions", aiResult.subroutinePCs)
+                                } else {
+                                    ""
+                                }
+                            ) + XHTML.evaluatedInstructionsToXHTML(aiResult.evaluatedPCs)
+                    ),
+                    aiResult.domain
+                )(aiResult.cfJoins, aiResult.operandsArray, aiResult.localsArray),
+                "AIResult",
+                ".html"
             )
-        } else {
-            (
-                "No exceptions occured during the interpretation of " +
-                    methodsCount.get + " methods (of " + project.methodsCount + ") in " +
-                    project.classFilesCount + " classes\nreal time: " + getTime(Symbol("OVERALL")).toSeconds + "\n" +
-                    "ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
-                    s"; evaluated ${instructionEvaluationsCount.get} instructions\n" +
-                    "naive ai (∑CPU Times): " + getTime(Symbol("NAIVE_AI")).toSeconds + "\n",
-                None
-            )
+
+            result.toString()
+        } catch {
+            case ife: InterpretationFailedException =>
+                ai match {
+                    case ai: IMAI => ai.xHTMLTracer.result(null);
+                    case _        => /*nothing to do*/
+                }
+
+                def causeToString(ife: InterpretationFailedException, nested: Boolean): String = {
+                    val domain = ife.domain
+                    val parameters =
+                        if (nested) {
+                            ife.localsArray(0).toSeq.reverse
+                                .filter(_ != null).map(_.toString)
+                                .mkString("Parameters:<i>", ", ", "</i><br>")
+                        } else
+                            ""
+
+                    val aiState =
+                        s"<p><i>${domain.getClass.getName}</i><b>( ${domain.toString} )</b></p>" +
+                            parameters +
+                            "Current instruction: " + ife.pc + "<br>" +
+                            XHTML.evaluatedInstructionsToXHTML(ife.evaluatedPCs) + {
+                                if (ife.worklist.nonEmpty)
+                                    ife.worklist.mkString("Remaining worklist:\n<br>", ", ", "<br>")
+                                else
+                                    "Remaining worklist: <i>EMPTY</i><br>"
+                            }
+
+                    val metaInformation = ife.cause match {
+                        case ife: InterpretationFailedException =>
+                            aiState + ife.cause.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
+                                "<div style='margin-left:5em'>" + causeToString(ife, true) + "</div>"
+                        case e: Throwable =>
+                            val message = e.getMessage()
+                            if (message != null)
+                                aiState + "<br>Underlying cause: " + util.XHTML.htmlify(message)
+                            else
+                                aiState + "<br>Underlying cause: <NULL>"
+                        case _ =>
+                            aiState
+                    }
+
+                    if (nested && ife.domain.isInstanceOf[TheCode])
+                        metaInformation +
+                            dumpAIState(
+                                ife.domain.asInstanceOf[TheCode].code,
+                                ife.domain
+                            )(ife.cfJoins, ife.operandsArray, ife.localsArray)
+                    else
+                        metaInformation
+                }
+
+                val resultHeader = Some(causeToString(ife, false))
+                val evaluationDump =
+                    dump(
+                        Some(classFile),
+                        Some(m),
+                        m.body.get,
+                        resultHeader,
+                        ife.domain
+                    )(ife.cfJoins, ife.operandsArray, ife.localsArray)
+                writeAndOpen(evaluationDump, "StateOfCrashedAbstractInterpretation", ".html")
+                throw ife
+
         }
     }
+
+    private class IMAI(IdentifyDeadVariables: Boolean) extends AI[Domain](IdentifyDeadVariables) {
+
+        override def isInterrupted: Boolean = Thread.interrupted()
+
+        val consoleTracer: AITracer = new ConsoleTracer { override val printOIDs = true }
+        // new ConsoleEvaluationTracer {}
+
+        val xHTMLTracer: XHTMLTracer = new XHTMLTracer {}
+
+        override val tracer = Some(new MultiTracer(consoleTracer, xHTMLTracer))
+    }
+
+    override def renderResult(result: String): String = result
 }

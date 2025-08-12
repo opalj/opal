@@ -68,10 +68,9 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
         val epFinder = instantiateEntryPointFinder(fqn)
         epFinder
     }
+
     /**
-     * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
-     * The instantiated class has to satisfy the interface and needs to provide a single
-     * constructor parameterized over a Project.
+     * Reflectively instantiates an ''EntryPointFinder'' object.
      */
     private[this] def instantiateEntryPointFinder(fqn: String): EntryPointFinder = {
         import scala.reflect.runtime.universe._

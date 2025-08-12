@@ -1,6 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org
-package opalj
+package org.opalj
 package tac
 package fpcf
 package analyses
@@ -8,7 +7,6 @@ package ifds
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.TACode
 
 /**
  * An ICFG for a Java IFDS forward analysis.
