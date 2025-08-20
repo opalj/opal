@@ -206,11 +206,11 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
             val returnValueDefinedBy = exit.stmt.asReturnValue.expr.asVar.definedBy
             in match {
                 case Variable(index) if returnValueDefinedBy.contains(index) =>
-                    flows += Variable(call.pc)
+                    flows += Variable(call.tacIndex)
                 case ArrayElement(index, taintedIndex) if returnValueDefinedBy.contains(index) =>
-                    flows += ArrayElement(call.pc, taintedIndex)
+                    flows += ArrayElement(call.tacIndex, taintedIndex)
                 case InstanceField(index, declClass, taintedField) if returnValueDefinedBy.contains(index) =>
-                    flows += InstanceField(call.pc, declClass, taintedField)
+                    flows += InstanceField(call.tacIndex, declClass, taintedField)
                 case TaintNullFact =>
                     val taints = createTaints(callee, call)
                     if (taints.nonEmpty) flows ++= taints
@@ -284,7 +284,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                                     }
                                 case _ => false
                             })
-                        ) Set(Variable(call.pc))
+                        ) Set(Variable(call.tacIndex))
                         else Set.empty
                     }
                 ): OutsideAnalysisContextCallHandler)
@@ -308,7 +308,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                 val definedBy = expression.asVar.definedBy
                 in match {
                     case Variable(index) if definedBy.contains(index) =>
-                        Set(Variable(statement.pc))
+                        Set(Variable(statement.tacIndex))
                     case _ => Set()
                 }
             case ArrayLoad.ASTID =>
@@ -324,7 +324,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                         case Variable(index) => arrayDefinedBy.contains(index)
                         case _               => false
                     }
-                ) Set(Variable(statement.pc))
+                ) Set(Variable(statement.tacIndex))
                 else
                     Set.empty
             case GetField.ASTID =>
@@ -339,13 +339,13 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                         case _               => false
                     }
                 )
-                    Set(Variable(statement.pc))
+                    Set(Variable(statement.tacIndex))
                 else
                     Set.empty
             case GetStatic.ASTID =>
                 val get = expression.asGetStatic
                 if (in == StaticField(get.declaringClass, get.name))
-                    Set(Variable(statement.pc))
+                    Set(Variable(statement.tacIndex))
                 else Set.empty
             case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID | PrimitiveTypecastExpr.ASTID |
                 NewArray.ASTID | ArrayLength.ASTID =>

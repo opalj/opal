@@ -28,11 +28,11 @@ class JavaForwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
     override def getNextStatements(javaStmt: JavaStatement): Set[JavaStatement] = {
         if (isCallStatement(javaStmt)) {
             Set(
-                JavaStatement(javaStmt.method, javaStmt.pc, isReturnNode = true, javaStmt.stmts, javaStmt.cfg)
+                JavaStatement(javaStmt.method, javaStmt.tacIndex, isReturnNode = true, javaStmt.stmts, javaStmt.cfg)
             )
         } else {
             val successors = MutableSet.empty[JavaStatement]
-            javaStmt.cfg.foreachSuccessor(javaStmt.pc) { nextPc =>
+            javaStmt.cfg.foreachSuccessor(javaStmt.tacIndex) { nextPc =>
                 successors.add(
                     JavaStatement(javaStmt.method, nextPc, isReturnNode = false, javaStmt.stmts, javaStmt.cfg)
                 )
@@ -42,12 +42,12 @@ class JavaForwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
     }
 
     override def isNormalExitStatement(javaStmt: JavaStatement): Boolean = {
-        javaStmt.pc == javaStmt.basicBlock.asBasicBlock.endPC &&
+        javaStmt.tacIndex == javaStmt.basicBlock.asBasicBlock.endPC &&
         javaStmt.basicBlock.successors.exists(_.isNormalReturnExitNode)
     }
 
     override def isAbnormalExitStatement(javaStmt: JavaStatement): Boolean = {
-        javaStmt.pc == javaStmt.basicBlock.asBasicBlock.endPC &&
+        javaStmt.tacIndex == javaStmt.basicBlock.asBasicBlock.endPC &&
         javaStmt.basicBlock.successors.exists(_.isAbnormalReturnExitNode)
     }
 }

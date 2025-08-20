@@ -134,7 +134,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         stmt.astID match {
             case Assignment.ASTID =>
                 // Add facts for the assigned variable.
-                inSet ++ newFacts(statement.method, statement.stmt.asAssignment.expr, statement.pc, in)
+                inSet ++ newFacts(statement.method, statement.stmt.asAssignment.expr, statement.tacIndex, in)
             case ArrayStore.ASTID =>
                 /*
                  * Add facts for the array store, like it was a variable assignment.
@@ -145,7 +145,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                  */
                 val flow = scala.collection.mutable.Set.empty[VTAFact]
                 flow ++= inSet
-                newFacts(statement.method, stmt.asArrayStore.value, statement.pc, in).foreach {
+                newFacts(statement.method, stmt.asArrayStore.value, statement.tacIndex, in).foreach {
                     case VariableType(_, t, upperBound) if !(t.isArrayType && t.asArrayType.dimensions <= 254) =>
                         stmt.asArrayStore.arrayRef.asVar.definedBy
                             .foreach(flow += VariableType(_, ArrayType(t), upperBound))
@@ -207,7 +207,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         val calleeTypeFacts = inSet.collect {
             // If we know the variable's type, we also know on which type the call is performed.
             case VariableType(index, t, upperBound) if calleeDefinitionSites.contains(index) =>
-                CalleeType(call.pc, t, upperBound)
+                CalleeType(call.tacIndex, t, upperBound)
         }
         if (inSet.size >= calleeTypeFacts.size) inSet ++ calleeTypeFacts
         else calleeTypeFacts ++ inSet
@@ -231,7 +231,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
             inSet.collect {
                 // If we know the type of the return value, we create a fact for the assigned variable.
                 case VariableType(definedBy, t, upperBound) if returnValue.definedBy.contains(definedBy) =>
-                    VariableType(call.pc, t, upperBound)
+                    VariableType(call.tacIndex, t, upperBound)
             }
         } else Set.empty
 
@@ -259,7 +259,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                 ) => {
                     val returnType = callee.descriptor.returnType
                     if (call.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
-                        Set(VariableType(call.pc, returnType.asReferenceType, upperBound = true))
+                        Set(VariableType(call.tacIndex, returnType.asReferenceType, upperBound = true))
                     } else Set.empty[VTAFact]
                 }
             ): OutsideAnalysisContextCallHandler)

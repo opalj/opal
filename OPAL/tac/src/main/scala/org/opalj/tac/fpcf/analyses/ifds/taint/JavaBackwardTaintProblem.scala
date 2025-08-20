@@ -35,8 +35,8 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         jstmt.stmt.astID match {
             case Assignment.ASTID =>
                 if (in match {
-                        case Variable(index)        => index == jstmt.pc
-                        case ArrayElement(index, _) => index == jstmt.pc
+                        case Variable(index)        => index == jstmt.tacIndex
+                        case ArrayElement(index, _) => index == jstmt.tacIndex
                         case _                      => false
                     }
                 ) {
@@ -97,11 +97,11 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
         val flow = scala.collection.mutable.Set.empty[TaintFact]
         if (call.stmt.astID == Assignment.ASTID && start.stmt.astID == ReturnValue.ASTID) {
             in match {
-                case Variable(index) if index == call.pc =>
+                case Variable(index) if index == call.tacIndex =>
                     flow ++= createNewTaints(start.stmt.asReturnValue.expr, start)
-                case ArrayElement(index, taintedElement) if index == call.pc =>
+                case ArrayElement(index, taintedElement) if index == call.tacIndex =>
                     flow ++= createNewArrayElementTaints(start.stmt.asReturnValue.expr, taintedElement, call)
-                case InstanceField(index, declaringClass, name) if index == call.pc =>
+                case InstanceField(index, declaringClass, name) if index == call.tacIndex =>
                     flow ++= createNewInstanceFieldTaints(start.stmt.asReturnValue.expr, declaringClass, name, call)
                 case _ => // Nothing to do
             }
@@ -233,11 +233,11 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
                     ) => {
                         val callStatement = JavaIFDSProblem.asCall(call.stmt)
                         Set(in) ++ (in match {
-                            case Variable(index) if index == call.pc =>
+                            case Variable(index) if index == call.tacIndex =>
                                 callStatement.allParams.flatMap(createNewTaints(_, call))
-                            case ArrayElement(index, _) if index == call.pc =>
+                            case ArrayElement(index, _) if index == call.tacIndex =>
                                 callStatement.allParams.flatMap(createNewTaints(_, call))
-                            case InstanceField(index, _, _) if index == call.pc =>
+                            case InstanceField(index, _, _) if index == call.tacIndex =>
                                 callStatement.allParams.flatMap(createNewTaints(_, call))
                         })
                     }

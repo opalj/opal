@@ -27,11 +27,11 @@ class JavaBackwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
     override def getNextStatements(javaStmt: JavaStatement): Set[JavaStatement] = {
         if (isCallStatement(javaStmt)) {
             Set(
-                JavaStatement(javaStmt.method, javaStmt.pc, isReturnNode = true, javaStmt.stmts, javaStmt.cfg)
+                JavaStatement(javaStmt.method, javaStmt.tacIndex, isReturnNode = true, javaStmt.stmts, javaStmt.cfg)
             )
         } else {
             val predecessors = MutableSet.empty[JavaStatement]
-            javaStmt.cfg.foreachPredecessor(javaStmt.pc) { prevPc =>
+            javaStmt.cfg.foreachPredecessor(javaStmt.tacIndex) { prevPc =>
                 predecessors.add(
                     JavaStatement(javaStmt.method, prevPc, isReturnNode = false, javaStmt.stmts, javaStmt.cfg)
                 )
@@ -41,7 +41,7 @@ class JavaBackwardICFG(project: SomeProject) extends JavaBaseICFG(project) {
     }
 
     override def isNormalExitStatement(stmt: JavaStatement): Boolean = {
-        stmt.pc == 0
+        stmt.tacIndex == 0
     }
 
     override def isAbnormalExitStatement(stmt: JavaStatement): Boolean = {
