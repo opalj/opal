@@ -38,7 +38,7 @@ object InheritedStaticMethods extends App {
         Array[Constant_Pool_Entry](
             /*  0 */ null,
             /*  1 */ CONSTANT_Class_info(2),
-            /*  2 */ CONSTANT_Utf8("mr/Main"),
+            /*  2 */ CONSTANT_Utf8("mr/inheritedstaticinterfacemethods/Main"),
             /*  3 */ CONSTANT_Class_info(4),
             /*  4 */ CONSTANT_Utf8("java/lang/Object"),
             /*  5 */ CONSTANT_Utf8("<init>"),
@@ -47,7 +47,7 @@ object InheritedStaticMethods extends App {
             /*  8 */ CONSTANT_Methodref_info(3, 9),
             /*  9 */ CONSTANT_NameAndType_info(5, 6),
             /* 10 */ CONSTANT_InterfaceMethodref_info(16, 27),
-            /* 11 */ CONSTANT_Utf8("mr/SubI"),
+            /* 11 */ CONSTANT_Utf8("mr/inheritedstaticinterfacemethods/SubI"),
             /* 12 */ CONSTANT_Utf8("this"),
             /* 13 */ CONSTANT_Utf8("LMain;"),
             /* 14 */ CONSTANT_Utf8("main"),
@@ -62,7 +62,7 @@ object InheritedStaticMethods extends App {
             /* 23 */ CONSTANT_Utf8("Hello World"),
             /* 24 */ CONSTANT_Methodref_info(25, 27),
             /* 25 */ CONSTANT_Class_info(26),
-            /* 26 */ CONSTANT_Utf8("mr/SubX"),
+            /* 26 */ CONSTANT_Utf8("mr/inheritedstaticinterfacemethods/SubX"),
             /* 27 */ CONSTANT_NameAndType_info(28, 29),
             /* 28 */ CONSTANT_Utf8("m"),
             /* 29 */ CONSTANT_Utf8("()V"),
@@ -121,7 +121,8 @@ object InheritedStaticMethods extends App {
         )
     )
     val assembledMain = Assembler(assembledMainCF)
-    val assembledMainPath = Paths.get("OPAL/bc/src/test/resources/InheritedStaticInterfaceMethods/mr/Main.class")
+    val assembledMainPath =
+        Paths.get("OPAL/bc/src/test/resources/InheritedStaticInterfaceMethods/mr/inheritedstaticinterfacemethods/Main.class")
     val assembledMainFile = Files.write(assembledMainPath, assembledMain)
     println("Created class file: " + assembledMainFile.toAbsolutePath())
 

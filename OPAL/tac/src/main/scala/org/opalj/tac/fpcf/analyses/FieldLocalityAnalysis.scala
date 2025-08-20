@@ -618,11 +618,9 @@ class FieldLocalityAnalysis private[analyses] (
             faiEP.ub.getNewestAccesses(
                 faiEP.ub.numDirectAccesses - seenDirectAccesses,
                 faiEP.ub.numIndirectAccesses - seenIndirectAccesses
-            ) exists { wa =>
-                val definedMethod = contextProvider.contextFromId(wa._1).method
+            ) exists { case (contextID, pc, receiver, _) =>
+                val definedMethod = contextProvider.contextFromId(contextID).method
                 val method = definedMethod.definedMethod
-                val pc = wa._2
-                val receiver = wa._3
                 state.tacFieldReadAccesses +=
                     method -> (state.tacFieldReadAccesses.getOrElse(method, Set.empty) + ((pc, receiver)))
 
