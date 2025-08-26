@@ -110,10 +110,9 @@ package object bytecode {
     }
 
     /**
-     * Returns the most likely position of the JRE's library folder. (I.e., the
-     * location in which the rt.jar file and the other jar files belonging to the
-     * Java runtime environment can be found). If the rt.jar cannot be found an
-     * exception is raised.
+     * Returns the most likely position of the JRE's library folder. (I.e., the location in which the rt.jar file and
+     * the other jar files or jmod files belonging to the Java runtime environment can be found). If the location cannot
+     * be found, an exception is raised.
      */
     lazy val JRELibraryFolder: File = {
         val javaVersion = System.getProperty("java.version")
@@ -145,7 +144,7 @@ package object bytecode {
     /**
      * Returns the most likely position of the JAR/JMod that contains Java's main classes.
      */
-    lazy val RTJar: File = { // TODO [Java9+] Rename to JavaBase
+    lazy val JavaBase: File = {
 
         val javaVersion = System.getProperty("java.version")
         if (javaVersion.startsWith("1.")) {

@@ -21,8 +21,9 @@ import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.ifds.Statistics
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -39,7 +40,7 @@ class IFDSBasedVariableTypeAnalysis(project: SomeProject, subsumeFacts: Boolean 
     extends IFDSAnalysis(project, new VariableTypeProblem(project, subsumeFacts), VTAResult)
 
 class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false)
-    extends IFDSAnalysisScheduler[VTAFact, Method, JavaStatement] {
+    extends IFDSAnalysisScheduler[VTAFact, Method, JavaStatement, JavaICFG] {
     override def init(p: SomeProject, ps: PropertyStore) = new IFDSBasedVariableTypeAnalysis(p, subsumeFacts)
     override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
@@ -98,7 +99,7 @@ object IFDSBasedVariableTypeAnalysisRunner extends IFDSEvaluationRunner {
     override type AdditionalResultsType = Statistics
 
     override protected def additionalEvaluationResult(
-        analysis: IFDSAnalysis[_, _, _]
+        analysis: IFDSAnalysis[_, _, _, _]
     ): Option[Statistics] =
         if (analysis.ifdsProblem.subsumeFacts) Some(analysis.statistics) else None
 

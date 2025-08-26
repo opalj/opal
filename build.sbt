@@ -1,3 +1,5 @@
+import java.io.FileWriter
+
 import sbt.Test
 import sbtassembly.AssemblyPlugin.autoImport._
 import sbtunidoc.ScalaUnidocPlugin
@@ -522,6 +524,12 @@ compile := {
     r
 }
 
+//
+//
+// Generation of the ProjectDependencies visualizations
+//
+//
+
 lazy val runProjectDependencyGeneration = ThisBuild / taskKey[Unit]("Regenerates the Project Dependencies Graphics")
 
 runProjectDependencyGeneration := {
@@ -536,6 +544,50 @@ runProjectDependencyGeneration := {
         s"-u $uid:$gid"
     }.getOrElse("")
 
+    val mmd = new StringBuilder();
+    mmd.append("%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear' } } }%%\n")
+    mmd.append("flowchart BT\n")
+
+    val excludedProjects = Seq("OPAL", "Validate", "Tools")
+
+    val allProjects = buildStructure.value.allProjectPairs
+    val allRefs = buildStructure.value.allProjectRefs
+
+    for {
+        (subproject, ref) <- allProjects
+        if !excludedProjects.contains(subproject.id)
+    } {
+        val id = subproject.id
+        val name = settingsData.value.get(
+            new Scope(Select(ref), Zero, Zero, Zero),
+            subproject.settings.find(s => s.key.key.toString == "name").get.key.key
+        ).get
+        val base = subproject.base.getName
+        mmd.append(s"    $id[$name<br>$base]\n")
+    }
+
+    mmd.append("""
+                 |    style Common fill:#9cbecc,color:black
+                 |    style Framework fill:#c0ffc0
+                 |    style Hermes fill:#ffd7cf
+                 |
+                 |""".stripMargin)
+
+    for {
+        (subproject, ref) <- allProjects
+        if !excludedProjects.contains(subproject.id)
+        dependency <- subproject.referenced
+    } {
+        val project = allProjects.find { case (p, r) => r == dependency }.get._1
+        mmd.append(s"    ${subproject.id} --> ${project.id}\n")
+    }
+
+    s.log.info(mmd.toString())
+
+    val mmdWriter = new FileWriter(new File("OPAL/ProjectDependencies.mmd"))
+    mmdWriter.write(mmd.toString())
+    mmdWriter.close()
+
     val baseCommand =
         s"docker run --userns=host --rm $dockerUserArg -v ${baseDirectory.value.getAbsolutePath}/:/data minlag/mermaid-cli -i OPAL/ProjectDependencies.mmd -c mermaid-config.json"
     s.log.info("Regenerating ProjectDependencies.svg")
@@ -543,6 +595,7 @@ runProjectDependencyGeneration := {
     s.log.info("Regenerating ProjectDependencies.pdf")
     baseCommand + "  -o OPAL/ProjectDependencies.pdf" ! s.log
 }
+
 //
 //
 // SETTINGS REQUIRED TO PUBLISH OPAL ON MAVEN CENTRAL
