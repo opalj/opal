@@ -3,8 +3,6 @@ package org.opalj
 package ide
 package solver
 
-import scala.collection
-
 import org.opalj.fpcf.Entity
 
 /**
@@ -16,12 +14,19 @@ trait ICFG[Statement, Callable <: Entity] {
     /**
      * Get all statements a callable can be entered at
      */
-    def getStartStatements(callable: Callable): collection.Set[Statement]
+    def getStartStatements(callable: Callable): Set[Statement]
 
     /**
      * Get all statements that can directly follow the given one
      */
-    def getNextStatements(stmt: Statement): collection.Set[Statement]
+    def getNextStatements(stmt: Statement): Set[Statement]
+
+    /**
+     * Check whether a statement exits a callable (in a normal or abnormal way)
+     */
+    def isExitStatement(stmt: Statement): Boolean = {
+        isNormalExitStatement(stmt) || isAbnormalExitStatement(stmt)
+    }
 
     /**
      * Check whether a statement exits a callable in a normal way (e.g. with a return)
@@ -41,10 +46,15 @@ trait ICFG[Statement, Callable <: Entity] {
     /**
      * Get all possible callees a call statement could call
      */
-    def getCallees(stmt: Statement): collection.Set[Callable]
+    def getCallees(stmt: Statement): Set[Callable]
 
     /**
      * Get the callable a statement belongs to
      */
     def getCallable(stmt: Statement): Callable
+
+    /**
+     * Get all possible statements that could call a callable
+     */
+    def getCallers(callable: Callable): Set[Statement]
 }

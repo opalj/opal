@@ -209,13 +209,13 @@ class LCPOnFieldsProblem(
                         assignment.expr.astID match {
                             case New.ASTID =>
                                 /* Generate new object fact from null fact if assignment is a 'new' expression */
-                                Set(sourceFact, NewObjectFact(assignment.targetVar.name, source.pc))
+                                Set(sourceFact, NewObjectFact(assignment.targetVar.name, source.tacIndex))
 
                             case NewArray.ASTID =>
                                 /* Generate new array fact from null fact if assignment is a 'new array' expression for
                                  * an integer array */
                                 if (assignment.expr.asNewArray.tpe.componentType.isIntegerType) {
-                                    Set(sourceFact, NewArrayFact(assignment.targetVar.name, source.pc))
+                                    Set(sourceFact, NewArrayFact(assignment.targetVar.name, source.tacIndex))
                                 } else {
                                     Set(sourceFact)
                                 }
@@ -410,9 +410,9 @@ class LCPOnFieldsProblem(
                                     if (returnExpr.asVar.definedBy.contains(f.definedAtIndex)) {
                                         Set(f match {
                                             case _: AbstractObjectFact =>
-                                                ObjectFact(assignment.targetVar.name, returnSite.pc)
+                                                ObjectFact(assignment.targetVar.name, returnSite.tacIndex)
                                             case _: AbstractArrayFact =>
-                                                ArrayFact(assignment.targetVar.name, returnSite.pc)
+                                                ArrayFact(assignment.targetVar.name, returnSite.tacIndex)
                                         })
                                     } else {
                                         Set.empty
@@ -654,11 +654,11 @@ class LCPOnFieldsProblem(
                                 case Assignment.ASTID =>
                                     val assignment = returnSite.stmt.asAssignment
                                     if (callee.returnType.isClassType) {
-                                        Set(NewObjectFact(assignment.targetVar.name, returnSite.pc))
+                                        Set(NewObjectFact(assignment.targetVar.name, returnSite.tacIndex))
                                     } else if (callee.returnType.isArrayType &&
                                                callee.returnType.asArrayType.componentType.isIntegerType
                                     ) {
-                                        Set(NewArrayFact(assignment.targetVar.name, returnSite.pc))
+                                        Set(NewArrayFact(assignment.targetVar.name, returnSite.tacIndex))
                                     } else {
                                         Set.empty
                                     }
@@ -740,11 +740,11 @@ class LCPOnFieldsProblem(
                                 val assignment = returnSite.stmt.asAssignment
 
                                 if (callStmt.descriptor.returnType.isClassType) {
-                                    Set(callSiteFact, NewObjectFact(assignment.targetVar.name, returnSite.pc))
+                                    Set(callSiteFact, NewObjectFact(assignment.targetVar.name, returnSite.tacIndex))
                                 } else if (callStmt.descriptor.returnType.isArrayType &&
                                            callStmt.descriptor.returnType.asArrayType.componentType.isIntegerType
                                 ) {
-                                    Set(callSiteFact, NewArrayFact(assignment.targetVar.name, returnSite.pc))
+                                    Set(callSiteFact, NewArrayFact(assignment.targetVar.name, returnSite.tacIndex))
                                 } else {
                                     Set(callSiteFact)
                                 }

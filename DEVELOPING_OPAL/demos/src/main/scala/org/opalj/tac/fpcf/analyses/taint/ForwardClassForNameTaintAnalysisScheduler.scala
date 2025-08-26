@@ -15,7 +15,6 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.ifds.Callable
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.IFDSFact
@@ -23,9 +22,9 @@ import org.opalj.ifds.IFDSProperty
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.BasicIFDSEvaluationRunner
-import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.AbstractJavaForwardTaintProblem
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.TaintFact
@@ -51,7 +50,7 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
     /**
      * The string parameters of all public methods are entry points.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] = for {
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] = for {
         m <- icfg.methodsCallableFromOutside.toSeq
         if !m.definedMethod.isNative
         index <- m.descriptor.parameterTypes.zipWithIndex.collect {
@@ -81,11 +80,11 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
      */
     override protected def createFlowFact(callee: Method, call: JavaStatement, in: TaintFact): Option[FlowFact] = {
         if (isClassForName(declaredMethods(callee)) && in == Variable(-2))
-            Some(FlowFact(Seq(JavaMethod(call.method))))
+            Some(FlowFact(Seq(call.method)))
         else None
     }
 
-    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Callable]): Option[TaintFact] =
+    override def createFlowFactAtExit(callee: Method, in: TaintFact, unbCallChain: Seq[Method]): Option[TaintFact] =
         None
 
     /**
@@ -98,7 +97,8 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
         method.declaringClassType == ClassType.Class && method.name == "forName"
 }
 
-object ForwardClassForNameTaintAnalysisScheduler extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+object ForwardClassForNameTaintAnalysisScheduler
+    extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement, JavaICFG] {
 
     override def init(p: SomeProject, ps: PropertyStore) = new ForwardClassForNameTaintAnalysis(p)
 
@@ -121,7 +121,7 @@ object ForwardClassForNameTaintAnalysisRunner extends BasicIFDSEvaluationRunner 
     override def analysisClass(analysisConfig: IFDSRunnerConfig): ForwardClassForNameTaintAnalysisScheduler.type =
         ForwardClassForNameTaintAnalysisScheduler
 
-    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit =
+    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?, ?], ps: PropertyStore): Unit =
         for {
             e <- analysis.ifdsProblem.entryPoints
             flows = ps(e, ForwardClassForNameTaintAnalysisScheduler.property.key)

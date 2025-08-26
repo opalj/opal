@@ -302,19 +302,6 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
     .dependsOn(br % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
-lazy val ifds = `IFDS`
-
-lazy val `IFDS` = (project in file("OPAL/ifds"))
-    .settings(buildSettings: _*)
-    .settings(
-        name := "IFDS",
-        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
-        fork := true,
-        libraryDependencies ++= Dependencies.ifds
-    )
-    .dependsOn(ide % "it->it;it->test;test->test;compile->compile")
-    .configs(IntegrationTest)
-
 lazy val ide = `IDE`
 
 lazy val `IDE` = (project in file("OPAL/ide"))
@@ -327,6 +314,19 @@ lazy val `IDE` = (project in file("OPAL/ide"))
     )
     .dependsOn(si % "it->it;it->test;test->test;compile->compile")
     .dependsOn(br % "it->it;it->test;test->test;compile->compile")
+    .configs(IntegrationTest)
+
+lazy val ifds = `IFDS`
+
+lazy val `IFDS` = (project in file("OPAL/ifds"))
+    .settings(buildSettings: _*)
+    .settings(
+        name := "IFDS",
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
+        fork := true,
+        libraryDependencies ++= Dependencies.ifds
+    )
+    .dependsOn(ide % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
 lazy val tac = `ThreeAddressCode`

@@ -26,7 +26,6 @@ import org.opalj.ide.problem.FlowRecordingIDEProblem
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.IDEValue
-import org.opalj.ide.solver.ICFG
 import org.opalj.ide.solver.IDEAnalysis
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -47,21 +46,21 @@ class FlowRecordingAnalysisScheduler[
     Value <: IDEValue,
     Statement,
     Callable <: Entity,
-    _ICFG <: ICFG[Statement, Callable]
+    ICFG <: solver.ICFG[Statement, Callable]
 ](
-    ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable, _ICFG],
+    ideAnalysisScheduler: IDEAnalysisScheduler[Fact, Value, Statement, Callable, ICFG],
     path:                 Option[Path]     = Some(Paths.get("target/flow-recordings")),
     recorderMode:         FlowRecorderMode = FlowRecorderModes.NODE_AS_STMT_AND_FACT,
     uniqueFlowsOnly:      Boolean          = true,
     recordEdgeFunctions:  Boolean          = true
-) extends IDEAnalysisScheduler[Fact, Value, Statement, Callable, _ICFG] {
+) extends IDEAnalysisScheduler[Fact, Value, Statement, Callable, ICFG] {
     private implicit val logContext: LogContext = GlobalLogContext
 
     override def propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable] = {
         ideAnalysisScheduler.propertyMetaInformation
     }
 
-    override def createProblem(project: SomeProject, icfg: _ICFG): IDEProblem[Fact, Value, Statement, Callable] = {
+    override def createProblem(project: SomeProject, icfg: ICFG): IDEProblem[Fact, Value, Statement, Callable] = {
         val flowRecordingProblem = new FlowRecordingIDEProblem(
             ideAnalysisScheduler.createProblem(project, icfg),
             icfg,
@@ -73,7 +72,7 @@ class FlowRecordingAnalysisScheduler[
         flowRecordingProblem
     }
 
-    override def createICFG(project: SomeProject): _ICFG = {
+    override def createICFG(project: SomeProject): ICFG = {
         ideAnalysisScheduler.createICFG(project)
     }
 
