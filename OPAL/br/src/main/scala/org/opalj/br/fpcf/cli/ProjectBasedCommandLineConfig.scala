@@ -124,7 +124,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
                 )(config = config)
             } catch {
                 case ct: ControlThrowable => throw ct;
-                case t: Throwable =>
+                case t: Throwable         =>
                     error("fatal", "setting up the project failed", t)
                     printHelp()
                     sys.exit(2)

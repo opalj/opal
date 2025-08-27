@@ -230,7 +230,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
             if (methodOpt.isEmpty) {
                 classFile.superclassType match {
                     case Some(superType) => findMethodRecursiveInner(project.classFile(superType).get)
-                    case None => throw new IllegalStateException(
+                    case None            => throw new IllegalStateException(
                             s"$receiverType does not define $methodName"
                         )
                 }

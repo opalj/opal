@@ -86,7 +86,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] (final val project: SomeP
     def doDetermineConstancy(e: Entity): ProperPropertyComputationResult = {
         e match {
             case f: Field => determineConstancy(f)
-            case _ =>
+            case _        =>
                 throw new UnknownError("compile-time constancy is only defined for fields")
         }
     }

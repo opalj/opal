@@ -149,7 +149,7 @@ lazy val buildSettings =
 lazy val opal = `OPAL`
 
 lazy val `OPAL` = (project in file("."))
-    //  .configure(_.copy(id = "OPAL"))
+//  .configure(_.copy(id = "OPAL"))
     .settings(Defaults.coreDefaultSettings ++ Seq(publishArtifact := false): _*)
     .enablePlugins(ScalaUnidocPlugin)
     .disablePlugins(HeaderPlugin) // The root project has no sources and no configured license header
@@ -302,6 +302,19 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
     .dependsOn(br % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
+lazy val ifds = `IFDS`
+
+lazy val `IFDS` = (project in file("OPAL/ifds"))
+    .settings(buildSettings: _*)
+    .settings(
+        name := "IFDS",
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
+        fork := true,
+        libraryDependencies ++= Dependencies.ifds
+    )
+    .dependsOn(ide % "it->it;it->test;test->test;compile->compile")
+    .configs(IntegrationTest)
+
 lazy val ide = `IDE`
 
 lazy val `IDE` = (project in file("OPAL/ide"))
@@ -314,19 +327,6 @@ lazy val `IDE` = (project in file("OPAL/ide"))
     )
     .dependsOn(si % "it->it;it->test;test->test;compile->compile")
     .dependsOn(br % "it->it;it->test;test->test;compile->compile")
-    .configs(IntegrationTest)
-
-lazy val ifds = `IFDS`
-
-lazy val `IFDS` = (project in file("OPAL/ifds"))
-    .settings(buildSettings: _*)
-    .settings(
-        name := "IFDS",
-        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
-        fork := true,
-        libraryDependencies ++= Dependencies.ifds
-    )
-    .dependsOn(ide % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
 
 lazy val tac = `ThreeAddressCode`
@@ -539,8 +539,8 @@ runProjectDependencyGeneration := {
     val s: TaskStreams = streams.value
 
     val dockerUserArg = Try {
-        val uid = "id -u".!!.stripSuffix("\n").toString().trim()
-        val gid = "id -g".!!.stripSuffix("\n").toString().trim()
+        val uid = "id -u".!!.stripSuffix("\n").trim()
+        val gid = "id -g".!!.stripSuffix("\n").trim()
         s"-u $uid:$gid"
     }.getOrElse("")
 

@@ -106,7 +106,7 @@ case class ProjectConfiguration(
             }
         }
         val libraryClassFiles: Iterable[(br.ClassFile, URL)] = libcp_defaults match {
-            case None => libcpJARs
+            case None            => libcpJARs
             case Some(libraries) =>
                 var predefinedLibrariesClassFiles = Iterable.empty[(br.ClassFile, URL)]
                 var predefinedLibraries = libraries.split(File.pathSeparatorChar)

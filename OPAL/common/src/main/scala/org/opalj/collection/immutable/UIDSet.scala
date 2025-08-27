@@ -745,9 +745,9 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
             return this;
 
         es.size match {
-            case 0 => this
-            case 1 => this.incl(es.head)
-            case 2 => this.incl(es.head).incl(es.last)
+            case 0      => this
+            case 1      => this.incl(es.head)
+            case 2      => this.incl(es.head).incl(es.last)
             case esSize =>
                 if (this.size > esSize)
                     es.foldLeft(this: UIDSet[T])(_ incl _)

@@ -49,10 +49,10 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
         classHierarchy: ClassHierarchy
     )(checkedType: ReferenceType): Boolean = {
         checkedType.isClassType &&
-            (classHierarchy.isSubtypeOf(
-                checkedType.asClassType,
-                collectionInterface
-            ).isNoOrUnknown || checkedType == listInterface)
+        (classHierarchy.isSubtypeOf(
+            checkedType.asClassType,
+            collectionInterface
+        ).isNoOrUnknown || checkedType == listInterface)
         // TODO needs more heuristic or more analysis
     }
 
@@ -65,7 +65,7 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[LineAndColumnBasedReport[Source]] = {
 
@@ -78,9 +78,10 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
             classFile <- project.allProjectClassFiles
             method @ MethodWithBody(body) <- classFile.methods
             pc <- body.matchTriple {
-                case (ICONST_0,
-                    _: ANEWARRAY,
-                    VirtualMethodInvocationInstruction(targetType, "toArray", `toArrayDescriptor`)
+                case (
+                        ICONST_0,
+                        _: ANEWARRAY,
+                        VirtualMethodInvocationInstruction(targetType, "toArray", `toArrayDescriptor`)
                     ) =>
                     isCollectionType(targetType)
                 case _ => false
@@ -94,7 +95,7 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
                 method.name,
                 body.lineNumber(pc),
                 None,
-                "Calling x.toArray(new T[0]) is inefficient, should be "+
+                "Calling x.toArray(new T[0]) is inefficient, should be " +
                     "x.toArray(new T[x.size()])"
             )
         }

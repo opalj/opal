@@ -30,7 +30,7 @@ case class FieldAccessInformation(project: SomeProject) {
         key:   PropertyKey[fieldaccess.FieldAccessInformation[S]]
     ): fieldaccess.FieldAccessInformation[S] = {
         propertyStore(field, key) match {
-            case FinalP(fai) => fai
+            case FinalP(fai)      => fai
             case _: SomeInterimEP =>
                 throw new IllegalStateException("FieldAccessInformationKey should not be called during an FPCF phase!")
             case r =>

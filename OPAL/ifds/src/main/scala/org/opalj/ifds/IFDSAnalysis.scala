@@ -97,8 +97,9 @@ case class Dependees[WorklistItem]() {
         dependee.worklist
     }
 
-    def getter()(implicit propertyStore: PropertyStore, work: WorklistItem): Getter =
+    def getter()(implicit propertyStore: PropertyStore, work: WorklistItem): Getter = {
         (entity: Entity, propertyKey: PropertyKey[Property]) => get(entity, propertyKey)
+    }
 }
 
 object Dependees {
@@ -147,7 +148,7 @@ case class PathEdges[Fact <: AbstractIFDSFact, S, C <: AnyRef](
                 } else false
             case Some(Right(existingFacts)) =>
                 predecessor match {
-                    case None => throw new IllegalArgumentException(s"$statement requires a predecessor")
+                    case None              => throw new IllegalArgumentException(s"$statement requires a predecessor")
                     case Some(predecessor) =>
                         existingFacts.get(statement) match {
                             case Some(existingPredecessorFacts) =>

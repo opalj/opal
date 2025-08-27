@@ -1212,7 +1212,7 @@ private[immutable] class LargeLongLinkedTrieSet(
                 case 15 => split(newSize, newL, trieId, newL, 32)
                 case 25 => split(newSize, newL, trieId, newL, 64)
                 case 55 => split(newSize, newL, trieId, newL, 128)
-                case _ =>
+                case _  =>
                     val newTries = tries.clone()
                     newTries(trieId) = newL
                     new LargeLongLinkedTrieSet(newSize, newTries, newL)

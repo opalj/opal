@@ -50,7 +50,7 @@ abstract class JavaBaseICFG(project: SomeProject) extends JavaICFG {
         val stmt = javaStmt.stmt
         stmt.astID match {
             case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID => true
-            case Assignment.ASTID | ExprStmt.ASTID =>
+            case Assignment.ASTID | ExprStmt.ASTID                                             =>
                 val expr = stmt.astID match {
                     case Assignment.ASTID => stmt.asAssignment.expr
                     case ExprStmt.ASTID   => stmt.asExprStmt.expr

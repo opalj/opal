@@ -1,8 +1,8 @@
 import java.net.URL
 
 import org.opalj.br.ClassFile
-import org.opalj.br.Field
 import org.opalj.br.ClassType
+import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -140,7 +140,8 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(ClassImmutability), PropertyBounds.ub(FieldImmutability))
+    override def uses: Set[PropertyBounds] =
+        Set(PropertyBounds.ub(ClassImmutability), PropertyBounds.ub(FieldImmutability))
 }
 
 object EagerClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler with BasicFPCFEagerAnalysisScheduler {
@@ -158,7 +159,11 @@ object EagerClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler
 object LazyClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def register(project: SomeProject, propertyStore: PropertyStore, initData: InitializationData): FPCFAnalysis = {
+    override def register(
+        project:       SomeProject,
+        propertyStore: PropertyStore,
+        initData:      InitializationData
+    ): FPCFAnalysis = {
         val analysis = new ClassImmutabilityAnalysis(project)
         propertyStore.registerLazyPropertyComputation(ClassImmutability.key, analysis.lazilyAnalyzeClassImmutability)
         analysis
@@ -168,7 +173,11 @@ object LazyClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler 
 /* RUNNER */
 
 object ClassImmutabilityRunner extends ProjectAnalysisApplication {
-    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
+    override def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean
+    ): BasicReport = {
         val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(
             EagerClassImmutabilityAnalysis,
             LazyFieldImmutabilityAnalysis
@@ -179,9 +188,9 @@ object ClassImmutabilityRunner extends ProjectAnalysisApplication {
         val mutableClasses = propertyStore.finalEntities(MutableClass).size
 
         BasicReport(
-            "Results of class immutability analysis: \n"+
-                s"Transitively Immutable classes:     $transitivelyImmutableClasses \n"+
-                s"Non-Transitively Immutable classes: $nonTransitivelyImmutableClasses \n"+
+            "Results of class immutability analysis: \n" +
+                s"Transitively Immutable classes:     $transitivelyImmutableClasses \n" +
+                s"Non-Transitively Immutable classes: $nonTransitivelyImmutableClasses \n" +
                 s"Mutable classes:                    $mutableClasses"
         )
     }
@@ -263,7 +272,8 @@ trait FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(FieldImmutability), PropertyBounds.ub(FieldImmutability))
+    override def uses: Set[PropertyBounds] =
+        Set(PropertyBounds.ub(FieldImmutability), PropertyBounds.ub(FieldImmutability))
 }
 
 object EagerFieldImmutabilityAnalysis extends FieldImmutabilityAnalysisScheduler with BasicFPCFEagerAnalysisScheduler {
@@ -281,7 +291,11 @@ object EagerFieldImmutabilityAnalysis extends FieldImmutabilityAnalysisScheduler
 object LazyFieldImmutabilityAnalysis extends FieldImmutabilityAnalysisScheduler with BasicFPCFLazyAnalysisScheduler {
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override def register(project: SomeProject, propertyStore: PropertyStore, initData: InitializationData): FPCFAnalysis = {
+    override def register(
+        project:       SomeProject,
+        propertyStore: PropertyStore,
+        initData:      InitializationData
+    ): FPCFAnalysis = {
         val analysis = new FieldImmutabilityAnalysis(project)
         propertyStore.registerLazyPropertyComputation(FieldImmutability.key, analysis.lazilyAnalyzeFieldImmutability)
         analysis

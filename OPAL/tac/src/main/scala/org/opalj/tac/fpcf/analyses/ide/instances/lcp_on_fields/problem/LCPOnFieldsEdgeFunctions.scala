@@ -101,7 +101,9 @@ class ObjectEdgeFunction(
     }
 
     override def toString: String =
-        s"ObjectEdgeFunction(${values.toSeq.sortBy(_._1).map { case (fieldName, value) => s"$fieldName -> $value" }.mkString(", ")})"
+        s"ObjectEdgeFunction(${values.toSeq.sortBy(_._1).map { case (fieldName, value) =>
+                s"$fieldName -> $value"
+            }.mkString(", ")})"
 }
 
 object ObjectEdgeFunction {
@@ -150,7 +152,7 @@ case class PutFieldEdgeFunction(
                 ObjectEdgeFunction(values + (fieldName -> value))
 
             case PutFieldEdgeFunction(fieldName2, _) if fieldName == fieldName2 => secondEdgeFunction
-            case PutFieldEdgeFunction(fieldName2, value2) =>
+            case PutFieldEdgeFunction(fieldName2, value2)                       =>
                 ObjectEdgeFunction(Map(fieldName -> value, fieldName2 -> value2))
 
             case IdentityEdgeFunction        => this
@@ -341,7 +343,7 @@ case class PutElementEdgeFunction(
 ) extends EdgeFunction[LCPOnFieldsValue] {
     override def compute[V >: LCPOnFieldsValue](sourceValue: V): V = {
         sourceValue match {
-            case UnknownValue => UnknownValue
+            case UnknownValue                    => UnknownValue
             case ArrayValue(initValue, elements) =>
                 index match {
                     case linear_constant_propagation.problem.UnknownValue =>
@@ -381,7 +383,7 @@ case class PutElementEdgeFunction(
                 }
 
             case PutElementEdgeFunction(index2, _) if index == index2 => secondEdgeFunction
-            case PutElementEdgeFunction(_, _) =>
+            case PutElementEdgeFunction(_, _)                         =>
                 ArrayEdgeFunction(linear_constant_propagation.problem.UnknownValue)
                     .composeWith(this).composeWith(secondEdgeFunction)
 

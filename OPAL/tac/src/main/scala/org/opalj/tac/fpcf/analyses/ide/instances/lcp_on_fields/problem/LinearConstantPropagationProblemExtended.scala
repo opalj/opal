@@ -122,7 +122,7 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                     if arrayVar.definedBy.contains(f.definedAtIndex) =>
                     index match {
                         case Some(i) => values.getOrElse(i, initValue)
-                        case None =>
+                        case None    =>
                             if (values.values.forall { v => v == initValue }) {
                                 initValue
                             } else {

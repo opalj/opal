@@ -134,7 +134,7 @@ object Purity extends ProjectsAnalysisApplication {
             get(FieldAssignabilityArg) match {
                 case Some("") =>
                 case Some(fA) => support ::= getScheduler(fA, eager)
-                case None => analysis match {
+                case None     => analysis match {
                         case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
                         case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
                         case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis

@@ -40,7 +40,7 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     ): Computation[DomainValue, ExceptionValue] = {
 
         refIsNull(pc, objectref) match {
-            case Yes => throws(VMNullPointerException(pc))
+            case Yes                                               => throws(VMNullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnFieldAccess =>
                 ComputedValueOrException(fieldValue, VMNullPointerException(pc))
             case _ => ComputedValue(fieldValue)
@@ -79,7 +79,7 @@ trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
         fieldType:      FieldType
     ): Computation[Nothing, ExceptionValue] = {
         refIsNull(pc, objectref) match {
-            case Yes => throws(VMNullPointerException(pc))
+            case Yes                                               => throws(VMNullPointerException(pc))
             case Unknown if throwNullPointerExceptionOnFieldAccess =>
                 ComputationWithSideEffectOrException(VMNullPointerException(pc))
             case _ => ComputationWithSideEffectOnly
