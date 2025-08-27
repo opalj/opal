@@ -1,76 +1,50 @@
-%%{ init: { 'flowchart': { 'curve': 'linear' } } }%%
+%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear', 'padding': 10, 'wrappingWidth': 205 } } }%%
 flowchart BT
-    common[Common<br>common]
+    Framework[Framework<br>framework]
+    ThreeAddressCode[Three Address Code<br>tac]
+    APK[APK<br>apk]
+    DependenciesExtractionLibrary[Dependencies Extraction Library<br>de]
+    IDE[IDE<br>ide]
+    BytecodeInfrastructure[Bytecode Infrastructure<br>bi]
+    AbstractInterpretationFramework[Abstract Interpretation Framework<br>ai]
+    Hermes[Hermes<br>hermes]
+    ConfigurationExplorer[Configuration Explorer<br>ce]
+    Common[Common<br>common]
+    BytecodeDisassembler[Bytecode Disassembler<br>da]
+    StaticAnalysisInfrastructure[Static Analysis Infrastructure<br>si]
+    IFDS[IFDS<br>ifds]
+    BytecodeRepresentation[Bytecode Representation<br>br]
+    BytecodeAssembler[Bytecode Assembler<br>ba]
+    ArchitectureValidation[Architecture Validation<br>av]
+    Demos[Demos<br>demos]
+    BytecodeCreator[Bytecode Creator<br>bc]
 
-    si[Static Analysis Infrastructure<br>si]
-    bi[Bytecode Infrastructure<br>bi]
+    style Common fill:#9cbecc,color:black
+    style Framework fill:#c0ffc0
+    style Hermes fill:#ffd7cf
 
-    br[Bytecode Representation<br>br]
-    da[Bytecode Disassembler<br>da]
-
-    ide[IDE<br>ide]
-    ifds[IFDS<br>ifds]
-    ai[Abstract Interpretation Framework<br>ai]
-    bc[Bytecode Creator<br>bc]
-
-    tac[Three Address Code<br>tac]
-    de[Dependency Extraction<br>de]
-    ba[Bytecode Assembler<br>ba]
-
-    apk[APK<br>apk]
-    av[Architecture Validation<br>av]
-
-    framework[Framework]
-
-    demos[Demos]
-    bp[BugPicker<br>bp]
-    hermes[Hermes<br>hermes]
-
-    ce[ConfigurationExplorer<br>ce]
-
-    style common fill:#9cbecc,color:black
-    style framework fill:#c0ffc0
-    style bp fill:#ffd7cf
-    style hermes fill:#ffd7cf
-
-    si --> common
-
-    bi --> common
-
-    br --> si
-    br --> bi
-    da --> bi
-
-    ide --> si
-    ide --> br
-
-    ifds --> ide
-
-    ai --> br
-
-    bc --> da
-
-    de --> ai
-
-    tac --> ifds
-    tac --> ai
-
-    apk --> tac
-
-    ba --> ai
-    ba --> bc
-
-    av --> de
-
-    framework --> tac
-    framework --> av
-    framework --> ba
-    
-    demos --> framework
-    bp --> framework
-    hermes --> framework
-
-    ce --> apk
-    ce --> demos
-    ce --> hermes
-    ce --> bp
+    Framework --> BytecodeAssembler
+    Framework --> ArchitectureValidation
+    Framework --> ThreeAddressCode
+    ThreeAddressCode --> AbstractInterpretationFramework
+    ThreeAddressCode --> IFDS
+    APK --> ThreeAddressCode
+    DependenciesExtractionLibrary --> AbstractInterpretationFramework
+    IDE --> StaticAnalysisInfrastructure
+    IDE --> BytecodeRepresentation
+    BytecodeInfrastructure --> Common
+    AbstractInterpretationFramework --> BytecodeRepresentation
+    Hermes --> Framework
+    ConfigurationExplorer --> APK
+    ConfigurationExplorer --> Demos
+    ConfigurationExplorer --> Hermes
+    BytecodeDisassembler --> BytecodeInfrastructure
+    StaticAnalysisInfrastructure --> Common
+    IFDS --> IDE
+    BytecodeRepresentation --> StaticAnalysisInfrastructure
+    BytecodeRepresentation --> BytecodeInfrastructure
+    BytecodeAssembler --> BytecodeCreator
+    BytecodeAssembler --> AbstractInterpretationFramework
+    ArchitectureValidation --> DependenciesExtractionLibrary
+    Demos --> Framework
+    BytecodeCreator --> BytecodeDisassembler

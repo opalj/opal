@@ -16,7 +16,6 @@ import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.ide.problem.IDEFact
 import org.opalj.ide.problem.IDEProblem
 import org.opalj.ide.problem.IDEValue
-import org.opalj.ide.solver.ICFG
 import org.opalj.ide.solver.IDEAnalysis
 
 /**
@@ -29,15 +28,15 @@ abstract class IDEAnalysisScheduler[
     Value <: IDEValue,
     Statement,
     Callable <: Entity,
-    _ICFG <: ICFG[Statement, Callable]
+    ICFG <: solver.ICFG[Statement, Callable]
 ] extends FPCFLazyAnalysisScheduler {
     override final type InitializationData = IDEAnalysis[Fact, Value, Statement, Callable]
 
     def propertyMetaInformation: IDEPropertyMetaInformation[Fact, Value, Statement, Callable]
 
-    def createProblem(project: SomeProject, icfg: _ICFG): IDEProblem[Fact, Value, Statement, Callable]
+    def createProblem(project: SomeProject, icfg: ICFG): IDEProblem[Fact, Value, Statement, Callable]
 
-    def createICFG(project: SomeProject): _ICFG
+    def createICFG(project: SomeProject): ICFG
 
     override final def derivesLazily: Some[PropertyBounds] =
         Some(PropertyBounds.ub(propertyMetaInformation.backingPropertyMetaInformation))

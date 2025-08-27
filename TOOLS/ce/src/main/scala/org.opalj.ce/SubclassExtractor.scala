@@ -7,8 +7,7 @@ import java.net.URL
 import scala.collection.mutable
 
 import org.opalj.br.ClassHierarchy
-import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.unapply
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 
 /**
@@ -17,7 +16,7 @@ import org.opalj.br.analyses.Project
  * @param files accepts an array of files of the jar archives that should be included in the ClassHierarchies
  */
 class SubclassExtractor(files: Array[File]) {
-    val p: Project[URL] = Project.apply(files, Array(org.opalj.bytecode.RTJar))
+    val p: Project[URL] = Project.apply(files, Array(org.opalj.bytecode.JavaBase))
     val classHierarchy: ClassHierarchy = p.classHierarchy
 
     /**
@@ -27,10 +26,10 @@ class SubclassExtractor(files: Array[File]) {
      */
     def extractSubclasses(root: String): Seq[String] = {
         val results = mutable.Set[String]()
-        val unformattedresult = classHierarchy.subtypeInformation(ObjectType(root.replace(".", "/"))).orNull
+        val unformattedresult = classHierarchy.subtypeInformation(ClassType(root.replace(".", "/"))).orNull
         if (unformattedresult != null) {
-            for (entry <- unformattedresult.classTypes) {
-                results += unapply(entry).getOrElse("").replace("/", ".")
+            for { ClassType(entry) <- unformattedresult.classTypes } {
+                results += entry.replace("/", ".")
             }
         }
         results.toSeq

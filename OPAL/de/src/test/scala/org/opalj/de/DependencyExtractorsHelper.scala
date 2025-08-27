@@ -9,6 +9,7 @@ import org.opalj.br.Type
 import org.opalj.br.VirtualClass
 import org.opalj.br.VirtualField
 import org.opalj.br.VirtualMethod
+import org.opalj.br.VirtualModule
 import org.opalj.br.VirtualSourceElement
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
@@ -43,6 +44,7 @@ object DependencyExtractorsHelper {
 
     def vseToString(vse: VirtualSourceElement): String = {
         vse match {
+            case vm: VirtualModule => vm.name
             case vc: VirtualClass  => sourceElementName(vc)
             case vm: VirtualMethod => sourceElementName(vm)
             case vf: VirtualField  => sourceElementName(vf)

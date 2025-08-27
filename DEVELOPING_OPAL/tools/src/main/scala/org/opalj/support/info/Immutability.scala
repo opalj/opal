@@ -70,6 +70,7 @@ import org.opalj.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
+import org.opalj.tac.cg.CallGraphArg
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
@@ -152,7 +153,6 @@ object Immutability extends ProjectsAnalysisApplication {
 
         val (project, projectTime) = analysisConfig.setupProject(cp)
         val (propertyStore, propertyStoreTime) = analysisConfig.setupPropertyStore(project)
-        val (_, callGraphTime) = analysisConfig.setupCallGaph(project)
 
         val allProjectClassTypes = project.allProjectClassFiles.iterator.map(_.thisType).toSet
 
@@ -171,9 +171,16 @@ object Immutability extends ProjectsAnalysisApplication {
                 LazyL0CompileTimeConstancyAnalysis,
                 LazySimpleEscapeAnalysis
             )
+
+        val callGraphKey = analysisConfig(CallGraphArg)
+
+        callGraphKey.requirements(project)
+
+        val allDependencies = dependencies ++ callGraphKey.allCallGraphAnalyses(project)
+
         time {
             project.get(FPCFAnalysesManagerKey).runAll(
-                dependencies,
+                allDependencies,
                 {
                     (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                         analysisConfig.analysis match {
@@ -449,7 +456,7 @@ object Immutability extends ProjectsAnalysisApplication {
                    |""".stripMargin
             )
 
-        val totalTime = projectTime + callGraphTime + analysisTime
+        val totalTime = projectTime + analysisTime
 
         stringBuilderNumber.append(
             s"""
@@ -458,7 +465,6 @@ object Immutability extends ProjectsAnalysisApplication {
                |   $totalTime seconds total time
                |   $projectTime seconds project time
                |   $propertyStoreTime seconds property store time
-               |   $callGraphTime seconds callgraph time
                |   $analysisTime seconds analysis time
                |""".stripMargin
         )

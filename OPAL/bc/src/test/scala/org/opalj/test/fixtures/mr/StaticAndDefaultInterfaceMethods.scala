@@ -39,11 +39,11 @@ object StaticAndDefaultInterfaceMethods extends App {
         Array[Constant_Pool_Entry](
             /*  0 */ null, // must be null due to the specification
             /*  1 */ CONSTANT_Class_info(2),
-            /*  2 */ CONSTANT_Utf8("mr/SuperIntf"),
+            /*  2 */ CONSTANT_Utf8("mr/staticanddefaultinterfacemethods/SuperIntf"),
             /*  3 */ CONSTANT_Class_info(4),
             /*  4 */ CONSTANT_Utf8("java/lang/Object"),
             /*  5 */ CONSTANT_Class_info(6),
-            /*  6 */ CONSTANT_Utf8("mr/SuperIntf"),
+            /*  6 */ CONSTANT_Utf8("mr/staticanddefaultinterfacemethods/SuperIntf"),
             /*  7 */ CONSTANT_Utf8("m"),
             /*  8 */ CONSTANT_Utf8("()V"),
             /*  9 */ CONSTANT_Utf8("Code"),
@@ -51,7 +51,7 @@ object StaticAndDefaultInterfaceMethods extends App {
             /* 11 */ CONSTANT_Utf8("SuperIntf.m"),
             /* 12 */ CONSTANT_Methodref_info(13, 15),
             /* 13 */ CONSTANT_Class_info(14),
-            /* 14 */ CONSTANT_Utf8("mr/Helper"),
+            /* 14 */ CONSTANT_Utf8("mr/staticanddefaultinterfacemethods/Helper"),
             /* 15 */ CONSTANT_NameAndType_info(16, 17),
             /* 16 */ CONSTANT_Utf8("println"),
             /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
@@ -59,7 +59,7 @@ object StaticAndDefaultInterfaceMethods extends App {
         minor_version = 0,
         major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
-        this_class = 1 /*mr/SuperIntf*/,
+        this_class = 1 /*mr/staticanddefaultinterfacemethods/SuperIntf*/,
         super_class = 3 /*extends java.lang.Object*/,
         // Interfaces.empty,
         // Fields.empty,
@@ -91,7 +91,7 @@ object StaticAndDefaultInterfaceMethods extends App {
     )
     val assembledSuperIntf = Assembler(superIntfCF)
     val assembledSuperIntfPath =
-        Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/SuperIntf.class")
+        Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/staticanddefaultinterfacemethods/SuperIntf.class")
     val assembledSuperIntfFile = Files.write(assembledSuperIntfPath, assembledSuperIntf)
     println("Created class file: " + assembledSuperIntfFile.toAbsolutePath())
 
@@ -99,11 +99,11 @@ object StaticAndDefaultInterfaceMethods extends App {
         Array[Constant_Pool_Entry](
             /*  0 */ null,
             /*  1 */ CONSTANT_Class_info(2),
-            /*  2 */ CONSTANT_Utf8("mr/Intf"),
+            /*  2 */ CONSTANT_Utf8("mr/staticanddefaultinterfacemethods/Intf"),
             /*  3 */ CONSTANT_Class_info(4),
             /*  4 */ CONSTANT_Utf8("java/lang/Object"),
             /*  5 */ CONSTANT_Class_info(6),
-            /*  6 */ CONSTANT_Utf8("mr/SuperIntf"),
+            /*  6 */ CONSTANT_Utf8("mr/staticanddefaultinterfacemethods/SuperIntf"),
             /*  7 */ CONSTANT_Utf8("m"),
             /*  8 */ CONSTANT_Utf8("()V"),
             /*  9 */ CONSTANT_Utf8("Code"),
@@ -111,7 +111,7 @@ object StaticAndDefaultInterfaceMethods extends App {
             /* 11 */ CONSTANT_Utf8("Intf.m"),
             /* 12 */ CONSTANT_Methodref_info(13, 15),
             /* 13 */ CONSTANT_Class_info(14),
-            /* 14 */ CONSTANT_Utf8("mr/Helper"),
+            /* 14 */ CONSTANT_Utf8("mr/staticanddefaultinterfacemethods/Helper"),
             /* 15 */ CONSTANT_NameAndType_info(16, 17),
             /* 16 */ CONSTANT_Utf8("println"),
             /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
@@ -119,9 +119,9 @@ object StaticAndDefaultInterfaceMethods extends App {
         minor_version = 0,
         major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
-        this_class = 1 /*mr/Intf*/,
+        this_class = 1 /*mr/staticanddefaultinterfacemethods/Intf*/,
         super_class = 3 /*extends java.lang.Object*/,
-        interfaces = ArraySeq(5) /*mr/SuperIntf*/,
+        interfaces = ArraySeq(5) /*mr/staticanddefaultinterfacemethods/SuperIntf*/,
         // Fields.empty,
         methods = ArraySeq(
             Method_Info(
@@ -149,7 +149,8 @@ object StaticAndDefaultInterfaceMethods extends App {
         )
     )
     val assembledIntf = Assembler(intfCF)
-    val assembledIntfPath = Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/Intf.class")
+    val assembledIntfPath =
+        Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/staticanddefaultinterfacemethods/Intf.class")
     val assembledIntfFile = Files.write(assembledIntfPath, assembledIntf)
     println("Created class file: " + assembledIntfFile.toAbsolutePath())
 
@@ -157,22 +158,22 @@ object StaticAndDefaultInterfaceMethods extends App {
         Array[Constant_Pool_Entry](
             /*  0 */ null,
             /*  1 */ CONSTANT_Class_info(2),
-            /*  2 */ CONSTANT_Utf8("mr/SubIntf"),
+            /*  2 */ CONSTANT_Utf8("mr/staticanddefaultinterfacemethods/SubIntf"),
             /*  3 */ CONSTANT_Class_info(4),
             /*  4 */ CONSTANT_Utf8("java/lang/Object"),
             /*  5 */ CONSTANT_Class_info(6),
-            /*  6 */ CONSTANT_Utf8("mr/Intf")
+            /*  6 */ CONSTANT_Utf8("mr/staticanddefaultinterfacemethods/Intf")
         ),
         minor_version = 0,
         major_version = 52,
         access_flags = ACC_INTERFACE.mask | ACC_ABSTRACT.mask,
-        this_class = 1 /*mr/SubIntf*/,
+        this_class = 1 /*mr/staticanddefaultinterfacemethods/SubIntf*/,
         super_class = 3 /*extends java.lang.Object*/,
-        interfaces = ArraySeq(5) // mr/Intf
+        interfaces = ArraySeq(5) // mr/staticanddefaultinterfacemethods/Intf
     )
     val assembledSubIntf = Assembler(subIntfCF)
     val assembledSubIntfPath =
-        Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/SubIntf.class")
+        Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/staticanddefaultinterfacemethods/SubIntf.class")
     val assembledSubIntfFile = Files.write(assembledSubIntfPath, assembledSubIntf)
     println("Created class file: " + assembledSubIntfFile.toAbsolutePath())
 }
