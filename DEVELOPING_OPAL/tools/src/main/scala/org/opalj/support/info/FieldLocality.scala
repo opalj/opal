@@ -20,6 +20,7 @@ import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -49,6 +50,7 @@ object FieldLocality extends ProjectsAnalysisApplication {
 
         time {
             project.get(FPCFAnalysesManagerKey).runAll(
+                EagerFieldAccessInformationAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 EagerFieldLocalityAnalysis

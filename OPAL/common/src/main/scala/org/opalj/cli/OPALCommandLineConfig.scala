@@ -36,7 +36,7 @@ trait OPALCommandLineConfig {
     private val generalConfigGroup = group("General configuration:")
     protected var argGroups: Map[Arg[_, _], ScallopOptionGroup] = Map.empty
 
-    generalArgs(NoLogsArg, RenderConfigArg)
+    generalArgs(NoLogsArg, ConfigFileArg, RenderConfigArg)
 
     /**
      * Defines (additional) args for this configuration
@@ -100,7 +100,7 @@ trait OPALCommandLineConfig {
          * Requires exactly one of the given arguments
          */
         def ^(a2: Arg[_, _]): Arg[_, _] = {
-            MutuallyExclusive(Seq(a, a2))
+            MutuallyExclusive(a, a2)
         }
     }
 
@@ -145,15 +145,21 @@ trait OPALCommandLineConfig {
 
         verify()
 
-        values = rawValues.collect {
-            case (arg, value) if value.isDefined =>
-                (
-                    arg,
-                    arg match {
-                        case parsedArg: ParsedArg[_, _] => parseArgWithParser(value, parsedArg.parse)
-                        case _: Arg[_, _]               => value()
-                    }
-                )
+        def forwardedArgs(forwardedArg: Arg[_, _]): Iterator[Arg[_, _]] = {
+            forwardedArg match {
+                case forwardingArg: ForwardingArg[_, _, _] => Iterator(forwardingArg) ++ forwardedArgs(forwardingArg.arg)
+                case _                                     => Iterator(forwardedArg)
+            }
+        }
+
+        values = rawValues.flatMap {
+            case (arg, scallopOpt) if scallopOpt.isDefined =>
+                val value = arg match {
+                    case parsedArg: ParsedArg[_, _] => parseArgWithParser(scallopOpt, parsedArg.parse)
+                    case _: Arg[_, _]               => scallopOpt()
+                }
+                forwardedArgs(arg).map { arg => arg -> value }
+            case _ => None
         }
     }
 
@@ -192,7 +198,9 @@ trait OPALCommandLineConfig {
             OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
         var config: Config =
-            if (isLibrary)
+            if (get(ConfigFileArg).isDefined)
+                ConfigFactory.load(apply(ConfigFileArg))
+            else if (isLibrary)
                 ConfigFactory.load("LibraryProject.conf")
             else
                 ConfigFactory.load("CommandLineProject.conf")

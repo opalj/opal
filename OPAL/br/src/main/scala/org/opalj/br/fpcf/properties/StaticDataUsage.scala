@@ -5,7 +5,6 @@ package fpcf
 package properties
 
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.IndividualProperty
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
@@ -22,17 +21,12 @@ sealed trait StaticDataUsagePropertyMetaInformation extends PropertyMetaInformat
  *
  * @author Dominik Helm
  */
-sealed abstract class StaticDataUsage
-    extends OrderedProperty
-    with IndividualProperty[StaticDataUsage, VirtualMethodStaticDataUsage]
-    with StaticDataUsagePropertyMetaInformation {
+sealed abstract class StaticDataUsage extends OrderedProperty with StaticDataUsagePropertyMetaInformation {
 
     /**
      * The globally unique key of the [[StaticDataUsage]] property.
      */
     final def key: PropertyKey[StaticDataUsage] = StaticDataUsage.key
-
-    final val aggregatedProperty = new VirtualMethodStaticDataUsage(this)
 }
 
 object StaticDataUsage extends StaticDataUsagePropertyMetaInformation {
@@ -57,8 +51,6 @@ trait NoVaryingDataUse extends StaticDataUsage
 case object UsesNoStaticData extends NoVaryingDataUse {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: StaticDataUsage): Unit = {}
-
-    override def meet(other: StaticDataUsage): StaticDataUsage = other
 }
 
 /**
@@ -69,11 +61,6 @@ case object UsesConstantDataOnly extends NoVaryingDataUse {
     override def checkIsEqualOrBetterThan(e: Entity, other: StaticDataUsage): Unit = {
         if (other eq UsesNoStaticData)
             throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-    }
-
-    override def meet(other: StaticDataUsage): StaticDataUsage = other match {
-        case UsesVaryingData => other
-        case _               => this
     }
 }
 
@@ -86,6 +73,4 @@ case object UsesVaryingData extends StaticDataUsage {
         if (other ne UsesVaryingData)
             throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
-
-    override def meet(other: StaticDataUsage): StaticDataUsage = this
 }

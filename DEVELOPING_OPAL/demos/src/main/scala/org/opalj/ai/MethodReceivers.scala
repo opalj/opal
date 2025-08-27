@@ -92,7 +92,7 @@ object MethodReceivers extends ProjectsAnalysisApplication {
                     value.isPrecise &&
                         value.upperTypeBound.isSingletonSet &&
                         !value.upperTypeBound.head.isArrayType && (
-                            project.classFile(value.upperTypeBound.head.asClassType).get.isFinal ||
+                            project.classFile(value.upperTypeBound.head.asClassType).exists(_.isFinal) ||
                             project.classHierarchy.hasSubtypes(value.upperTypeBound.head.asClassType).isNoOrUnknown
                         )
                 if (triviallyPrecise)

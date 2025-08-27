@@ -3,8 +3,6 @@ package org.opalj
 package br
 package analyses
 
-import scala.language.implicitConversions
-
 import java.io.File
 import java.net.URL
 import java.util.Calendar
@@ -18,7 +16,9 @@ import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
- * Default command-line runner implementation for analyses to be applied to one or more projects
+ * Default command-line runner implementation for analyses to be applied to one or more projects.
+ *
+ * Subclasses can either implement [[analyze]], creating a [[ReportableAnalysisResult]], or override [[evaluate]].
  *
  * @author Dominik Helm
  */

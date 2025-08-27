@@ -5,8 +5,6 @@ package ai
 import java.io.File
 import java.net.URL
 
-import org.rogach.scallop.ScallopConf
-
 import org.opalj.ai.domain.Origins
 import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.br.analyses.BasicReport

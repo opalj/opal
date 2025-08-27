@@ -10,8 +10,8 @@ import java.net.URL
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.cli.ClassNameArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.cli.ClassNameArg
 import org.opalj.de.DependencyExtractor
 import org.opalj.de.DependencyProcessorAdapter
 import org.opalj.de.DependencyType
@@ -69,7 +69,8 @@ object TransitiveUsage extends ProjectsAnalysisApplication {
                         processType(declaringClassType)
                         processType(descriptor.returnType)
                         descriptor.parameterTypes.view foreach { processType(_) }
-                    case VirtualForwardingMethod(_, _, _, _) | _: VirtualMethod => throw new MatchError(vse)
+                    case _: VirtualModule                              =>
+                    case _: VirtualForwardingMethod | _: VirtualMethod => throw new MatchError(vse)
                 }
             }
             process(source)

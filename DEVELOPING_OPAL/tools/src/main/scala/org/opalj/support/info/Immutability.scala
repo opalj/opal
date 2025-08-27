@@ -20,7 +20,7 @@ import com.typesafe.config.ConfigValueFactory
 import org.rogach.scallop.flagConverter
 import org.rogach.scallop.stringConverter
 
-import org.opalj.ai.common.DomainArg
+import org.opalj.ai.cli.DomainArg
 import org.opalj.br.ClassType
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
@@ -71,6 +71,7 @@ import org.opalj.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
+import org.opalj.tac.cg.CallGraphArg
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
@@ -96,6 +97,7 @@ object Immutability extends ProjectsAnalysisApplication {
             override val name: String = "analysis"
             override val description: String = "The analysis that should be executed"
             override val choices: Seq[String] = Seq("FieldAssignability", "Fields", "Classes", "Types", "All")
+            override val defaultValue: Option[String] = Some("All")
 
             override def parse(arg: String): Analyses = arg match {
                 case "All"                => All
@@ -168,7 +170,6 @@ object Immutability extends ProjectsAnalysisApplication {
 
         val (project, projectTime) = analysisConfig.setupProject(cp)
         val (propertyStore, propertyStoreTime) = analysisConfig.setupPropertyStore(project)
-        val (_, callGraphTime) = analysisConfig.setupCallGaph(project)
 
         val allProjectClassTypes = project.allProjectClassFiles.iterator.map(_.thisType).toSet
 
@@ -191,9 +192,15 @@ object Immutability extends ProjectsAnalysisApplication {
             )
         }
 
+        val callGraphKey = analysisConfig(CallGraphArg)
+
+        callGraphKey.requirements(project)
+
+        val allDependencies = dependencies ++ callGraphKey.allCallGraphAnalyses(project)
+
         time {
             project.get(FPCFAnalysesManagerKey).runAll(
-                dependencies,
+                allDependencies,
                 {
                     (css: List[ComputationSpecification[FPCFAnalysis]]) =>
                         analysisConfig.analysis match {
@@ -469,7 +476,7 @@ object Immutability extends ProjectsAnalysisApplication {
                    |""".stripMargin
             )
 
-        val totalTime = projectTime + callGraphTime + analysisTime
+        val totalTime = projectTime + analysisTime
 
         stringBuilderNumber.append(
             s"""
@@ -478,7 +485,6 @@ object Immutability extends ProjectsAnalysisApplication {
                |   $totalTime seconds total time
                |   $projectTime seconds project time
                |   $propertyStoreTime seconds property store time
-               |   $callGraphTime seconds callgraph time
                |   $analysisTime seconds analysis time
                |""".stripMargin
         )
@@ -492,7 +498,7 @@ object Immutability extends ProjectsAnalysisApplication {
                |
                | ${analysisConfig(ThreadsNumArg)} Threads :: took $analysisTime seconds analysis time
                |
-               | results folder: ${analysisConfig(OutputDirArg)}
+               | results folder: ${analysisConfig.get(OutputDirArg)}
                |
                | CofigurationName: ${analysisConfig(ConfigurationNameArg)}
                |

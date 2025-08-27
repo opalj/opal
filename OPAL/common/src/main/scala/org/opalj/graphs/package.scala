@@ -729,4 +729,40 @@ package object graphs {
         sccs
     }
 
+    /**
+     * Provides a topological order of the given acyclic graph's nodes.
+     *
+     * @throws IllegalStateException If the graph contains cycles
+     */
+    def topologicalSort(graph: Map[Int, List[Int]]): List[Int] = {
+        var sortedNodes: List[Int] = List.empty
+        var permanent: Set[Int] = Set.empty
+        var temporary: Set[Int] = Set.empty
+
+        val preparedGraph = graph.map { case (node, deps) =>
+            node -> deps.filter(_ != node)
+        }
+
+        def visit(node: Int): Unit = {
+            if (!permanent.contains(node)) {
+                if (temporary.contains(node)) {
+                    throw new IllegalStateException("Graph contains a cycle")
+                }
+                temporary = temporary + node
+
+                preparedGraph(node).foreach { otherNode => visit(otherNode) }
+
+                permanent = permanent + node
+                temporary = temporary - node
+
+                sortedNodes = sortedNodes :+ node
+            }
+
+        }
+        for (node <- preparedGraph.keys) {
+            visit(node)
+        }
+
+        sortedNodes
+    }
 }

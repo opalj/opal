@@ -8,8 +8,8 @@ import scala.language.postfixOps
 import java.io.File
 import java.net.URL
 
-import org.opalj.br.cli.PartialSignatureArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.cli.PartialSignatureArg
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 

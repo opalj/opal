@@ -32,7 +32,10 @@ import org.opalj.cli.LibraryArg
 import org.opalj.cli.LibraryClassPathArg
 import org.opalj.cli.LibraryDirectoryArg
 import org.opalj.cli.MultiProjectsArg
+import org.opalj.cli.NoDynamicConstantRewriteArg
+import org.opalj.cli.NoInvokeDynamicRewriteArg
 import org.opalj.cli.NoJDKArg
+import org.opalj.cli.NoRewriteArg
 import org.opalj.cli.OPALCommandLineConfig
 import org.opalj.cli.ProjectDirectoryArg
 import org.opalj.cli.RenderConfigArg
@@ -65,7 +68,8 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
         NoJDKArg !,
         LibrariesAsInterfacesArg,
         ClosedWorldArg,
-        ExecutionsArg !
+        ExecutionsArg !,
+        NoInvokeDynamicRewriteArg ^ NoDynamicConstantRewriteArg ^ NoRewriteArg
     )
 
     def setupProject(

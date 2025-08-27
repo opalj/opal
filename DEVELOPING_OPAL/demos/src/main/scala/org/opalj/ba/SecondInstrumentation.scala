@@ -41,7 +41,7 @@ object SecondInstrumentation extends App {
 
     // let's load the class
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
-    val p = Project(f.getParentFile, org.opalj.bytecode.RTJar) // TODO: turn off InvokedynamicRewriting
+    val p = Project(f.getParentFile, org.opalj.bytecode.JavaBase) // TODO: turn off InvokedynamicRewriting
     implicit val ch: ClassHierarchy = p.classHierarchy
     val cf = p.classFile(TheType).get
     // let's transform the methods

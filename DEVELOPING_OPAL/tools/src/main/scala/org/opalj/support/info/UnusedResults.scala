@@ -9,37 +9,33 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.ArraySeq
 import scala.jdk.CollectionConverters._
 
-import org.opalj.br.ClassType
-import org.opalj.br.Method
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.PC
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.{Purity => PurityProperty}
 import org.opalj.br.fpcf.properties.CompileTimePure
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.fpcf.properties.VirtualMethodPurity
-import org.opalj.br.fpcf.properties.VirtualMethodPurity.VCompileTimePure
-import org.opalj.br.fpcf.properties.VirtualMethodPurity.VPure
-import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStore
+import org.opalj.tac.Call
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.NonVirtualFunctionCall
-import org.opalj.tac.StaticFunctionCall
-import org.opalj.tac.TACode
-import org.opalj.tac.VirtualFunctionCall
+import org.opalj.tac.FunctionCall
 import org.opalj.tac.cg.CGBasedCommandLineConfig
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
@@ -79,7 +75,8 @@ object UnusedResults extends ProjectsAnalysisApplication {
         val issues = new ConcurrentLinkedQueue[String]
 
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-        implicit val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
+
+        val callGraph = project.get(RTACallGraphKey)
 
         project.get(FPCFAnalysesManagerKey).runAll(
             EagerFieldAccessInformationAnalysis,
@@ -92,113 +89,74 @@ object UnusedResults extends ProjectsAnalysisApplication {
             EagerL2PurityAnalysis
         )
 
-        project.parForeachMethodWithBody() { mi =>
-            val method = mi.method
-            val tacai = (m: Method) => { val FinalP(taCode) = ps(method, TACAI.key); taCode.tac }
-            issues.addAll(analyzeMethod(method, tacai = tacai).asJava)
-        }
+        implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+
+        callGraph.reachableMethods().foreach { context => issues.addAll(analyzeMethod(context).asJava) }
 
         (project, BasicReport(issues.asScala))
     }
 
     def analyzeMethod(
-        method: Method,
-        tacai:  Method => Option[TACode[_, V]]
+        context: Context
     )(
         implicit
-        project:             SomeProject,
-        propertyStore:       PropertyStore,
-        declaredMethods:     DeclaredMethods,
-        isMethodOverridable: Method => Answer
+        propertyStore:   PropertyStore,
+        declaredMethods: DeclaredMethods,
+        contextProvider: ContextProvider
     ): Seq[String] = {
-        val taCodeOption = tacai(method)
+        val method = context.method
+        if (!method.hasSingleDefinedMethod)
+            return Nil;
+
+        val taCodeOption = propertyStore(method.definedMethod, TACAI.key).ub.tac
         if (taCodeOption.isEmpty)
             return Nil;
 
         val code = taCodeOption.get.stmts
 
+        val callees = propertyStore(method, Callees.key).ub
+
         val issues = code collect {
-            case ExprStmt(_, call: StaticFunctionCall[V]) =>
-                val callee = call.resolveCallTarget(method.classFile.thisType)
-                handleCall(method, callee, call.pc)
-            case ExprStmt(_, call: NonVirtualFunctionCall[V]) =>
-                val callee = call.resolveCallTarget(method.classFile.thisType)
-                handleCall(method, callee, call.pc)
-            case ExprStmt(_, call: VirtualFunctionCall[V]) =>
-                handleVirtualCall(call, method)
+            case ExprStmt(pc, call: FunctionCall[V]) =>
+                handleCall(method, call, callees.callees(context, pc), pc)
         }
 
         ArraySeq.unsafeWrapArray(issues) collect { case Some(issue) => issue }
     }
 
     def handleCall(
-        caller: Method,
-        callee: Result[Method],
-        pc:     Int
+        caller:  DeclaredMethod,
+        call:    FunctionCall[V],
+        callees: Iterator[Context],
+        pc:      Int
     )(
         implicit
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): Option[String] = {
-        if (callee.hasValue) {
-            propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
-                case FinalP(CompileTimePure | Pure | SideEffectFree) =>
-                    createIssue(caller, callee.value, pc)
-                case _ => None
-            }
-        } else {
-            None
-        }
-    }
-
-    def handleVirtualCall(
-        call:   VirtualFunctionCall[V],
-        caller: Method
-    )(
-        implicit
-        project:             SomeProject,
-        propertyStore:       PropertyStore,
-        declaredMethods:     DeclaredMethods,
-        isMethodOverridable: Method => Answer
-    ): Option[String] = {
-        val callerType = caller.classFile.thisType
-        val VirtualFunctionCall(_, dc, _, name, descr, receiver, _) = call
-
-        val value = receiver.asVar.value.asReferenceValue
-        val receiverType = value.leastUpperType
-
-        if (receiverType.isEmpty) {
-            None // Receiver is null, call will never be executed
-        } else if (receiverType.get.isArrayType) {
-            val callee = project.instanceCall(callerType, ClassType.Object, name, descr)
-            handleCall(caller, callee, call.pc)
-        } else if (value.isPrecise) {
-            val callee = project.instanceCall(callerType, receiverType.get, name, descr)
-            handleCall(caller, callee, call.pc)
-        } else {
-            val callee = declaredMethods(
-                dc.asClassType,
-                callerType.packageName,
-                receiverType.get.asClassType,
-                name,
-                descr
-            )
-
-            if (!callee.hasSingleDefinedMethod || isMethodOverridable(callee.definedMethod).isNotNo) {
-                None // We don't know all overrides, ignore the call (it may be impure)
-            } else {
-                propertyStore(callee, VirtualMethodPurity.key) match {
-                    case FinalP(VCompileTimePure | VPure | VSideEffectFree) =>
-                        createIssue(caller, callee.definedMethod, call.pc)
-                    case _ => None
+        if (callees.forall { callee =>
+                propertyStore(callee, PurityProperty.key) match {
+                    case FinalP(CompileTimePure | Pure | SideEffectFree) => true
+                    case _                                               => false
                 }
             }
-        }
+        ) {
+            val Call(declaringClass, _, name, descriptor) = call
+            val callee = declaredMethods(
+                declaringClass.asClassType,
+                caller.definedMethod.classFile.thisType.packageName,
+                declaringClass.asClassType,
+                name,
+                descriptor
+            )
+            createIssue(caller, callee, pc)
+        } else None
+
     }
 
     private def createIssue(
-        method: Method,
-        target: Method,
+        method: DeclaredMethod,
+        target: DeclaredMethod,
         pc:     PC
     ): Some[String] = {
         Some(s"Unused result of call to ${target.toJava} from ${method.toJava} at $pc")
