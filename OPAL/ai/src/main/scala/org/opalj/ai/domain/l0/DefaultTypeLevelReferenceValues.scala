@@ -175,7 +175,7 @@ trait DefaultTypeLevelReferenceValues
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
-                case _: ANullValue => true
+                case _: ANullValue                    => true
                 case AnArrayValue(thatUpperTypeBound) =>
                     domain.isSubtypeOf(thatUpperTypeBound, this.theUpperTypeBound)
                 case _ => false

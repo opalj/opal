@@ -240,7 +240,7 @@ object TACNaive {
                 case ALOAD_1.opcode => loadInstruction(1, ComputationalTypeReference)
                 case ALOAD_2.opcode => loadInstruction(2, ComputationalTypeReference)
                 case ALOAD_3.opcode => loadInstruction(3, ComputationalTypeReference)
-                case ALOAD.opcode =>
+                case ALOAD.opcode   =>
                     val lvIndex = as[ALOAD](instruction).lvIndex
                     loadInstruction(lvIndex, ComputationalTypeReference)
 
@@ -254,7 +254,7 @@ object TACNaive {
                 case ILOAD_1.opcode => loadInstruction(1, ComputationalTypeInt)
                 case ILOAD_2.opcode => loadInstruction(2, ComputationalTypeInt)
                 case ILOAD_3.opcode => loadInstruction(3, ComputationalTypeInt)
-                case ILOAD.opcode =>
+                case ILOAD.opcode   =>
                     loadInstruction(as[ILOAD](instruction).lvIndex, ComputationalTypeInt)
 
                 case ISTORE_0.opcode => storeInstruction(0)
@@ -267,7 +267,7 @@ object TACNaive {
                 case DLOAD_1.opcode => loadInstruction(1, ComputationalTypeDouble)
                 case DLOAD_2.opcode => loadInstruction(2, ComputationalTypeDouble)
                 case DLOAD_3.opcode => loadInstruction(3, ComputationalTypeDouble)
-                case DLOAD.opcode =>
+                case DLOAD.opcode   =>
                     loadInstruction(as[DLOAD](instruction).lvIndex, ComputationalTypeDouble)
 
                 case DSTORE_0.opcode => storeInstruction(0)
@@ -280,7 +280,7 @@ object TACNaive {
                 case FLOAD_1.opcode => loadInstruction(1, ComputationalTypeFloat)
                 case FLOAD_2.opcode => loadInstruction(2, ComputationalTypeFloat)
                 case FLOAD_3.opcode => loadInstruction(3, ComputationalTypeFloat)
-                case FLOAD.opcode =>
+                case FLOAD.opcode   =>
                     loadInstruction(as[FLOAD](instruction).lvIndex, ComputationalTypeFloat)
 
                 case FSTORE_0.opcode => storeInstruction(0)
@@ -293,7 +293,7 @@ object TACNaive {
                 case LLOAD_1.opcode => loadInstruction(1, ComputationalTypeLong)
                 case LLOAD_2.opcode => loadInstruction(2, ComputationalTypeLong)
                 case LLOAD_3.opcode => loadInstruction(3, ComputationalTypeLong)
-                case LLOAD.opcode =>
+                case LLOAD.opcode   =>
                     loadInstruction(as[LLOAD](instruction).lvIndex, ComputationalTypeLong)
 
                 case LSTORE_0.opcode => storeInstruction(0)
@@ -881,9 +881,7 @@ object TACNaive {
         // single instruction and that instruction was transformed such that we have multiple
         // instructions now. In such a case (e.g., the rewriting of swap...) the additional
         // instructions will never cause any exceptions.
-        finalStatements foreach { stmt =>
-            stmt.remapIndexes(pcToIndex, _ => false /*CaughtException is not used by TACNaive*/ )
-        }
+        finalStatements foreach { stmt => stmt.remapIndexes(pcToIndex, _ => false /*CaughtException is not used by TACNaive*/ ) }
         val tacCode = finalStatements.toArray
         val tacCFG = cfg.mapPCsToIndexes[Stmt[IdBasedVar], TACStmts[IdBasedVar]](
             TACStmts(tacCode),

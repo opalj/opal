@@ -199,7 +199,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
             }
         } catch {
             case ct: ControlThrowable => throw ct
-            case t: Throwable =>
+            case t: Throwable         =>
                 OPALLogger.error(
                     "internal, project configuration",
                     "resolving the method reference resulted in an exception: " +

@@ -38,7 +38,7 @@ class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Sourc
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
@@ -57,8 +57,13 @@ class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Sourc
                 targetType.asClassType.fqn.startsWith("javax/swing/")
             if ((name, desc) match {
                 case ("show" | "pack", MethodDescriptor.NoArgsAndReturnVoid) => true
-                case ("setVisible", MethodDescriptor(IndexedSeq(BooleanType),
-                    VoidType)) => true
+                case (
+                        "setVisible",
+                        MethodDescriptor(
+                            IndexedSeq(BooleanType),
+                            VoidType
+                        )
+                    ) => true
                 case _ => false
             })
         } yield {

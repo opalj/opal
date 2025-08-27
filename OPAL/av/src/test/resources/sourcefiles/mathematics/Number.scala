@@ -5,13 +5,13 @@ package mathematics
  * @author Samuel Beracasa
  */
 class Number(var value: Int) extends Operations {
-    //Number operator Number
+    // Number operator Number
     def +(other: Number): Number = new Number(this.value + other.value)
     def -(other: Number): Number = new Number(this.value - other.value)
     def *(other: Number): Number = new Number(this.value * other.value)
     def /(other: Number): Number = new Number(this.value / other.value)
 
-    //Number operator Rational
+    // Number operator Rational
     def +(other: Rational): Rational =
         new Rational(((this / other.denom) + other.numer), other.denom)
     def -(other: Rational): Rational =
@@ -21,6 +21,6 @@ class Number(var value: Int) extends Operations {
     def /(other: Rational): Rational =
         new Rational(other.numer, other.denom / this)
 
-    //Print
-    override def toString() = ""+this.value
+    // Print
+    override def toString() = "" + this.value
 }

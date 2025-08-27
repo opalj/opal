@@ -45,6 +45,7 @@ class ConfiguredPurity(
             po = Purity(property)
             if po.isDefined
 
+            // Purity value only applies if the given types cannot have subtypes
             if conditions forall {
                 _ forall { typeName =>
                     val ct = ClassType(typeName)

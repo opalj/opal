@@ -153,7 +153,7 @@ package object bytecode {
 
             paths.find(_.endsWith("rt.jar")) match {
                 case Some(rtJarPath) => new File(rtJarPath)
-                case None =>
+                case None            =>
                     val rtJarCandidates =
                         new File(System.getProperty("sun.boot.library.path")).listFiles(
                             new java.io.FilenameFilter() {

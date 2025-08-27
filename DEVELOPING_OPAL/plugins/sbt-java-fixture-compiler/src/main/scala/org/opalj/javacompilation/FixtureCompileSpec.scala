@@ -2,11 +2,11 @@
 package org.opalj
 package javacompilation
 
-import sbt._
 import java.io.File
 import java.io.PrintWriter
 
 import org.eclipse.jdt.core.compiler.batch.BatchCompiler
+import sbt._
 
 /**
  * Defines the classes that define return types of the plugin's tasks and settings.
@@ -20,9 +20,9 @@ object FixtureCompileSpec {
      * The [[generatedFiles]] method returns a sequence of generated class files.
      */
     case class JavaFixtureCompilationResult(
-            task:       JavaFixtureCompilationTask,
-            classFiles: Seq[File],
-            wasSkipped: Boolean
+        task:       JavaFixtureCompilationTask,
+        classFiles: Seq[File],
+        wasSkipped: Boolean
     ) {
         def generatedFiles: Seq[File] = classFiles
     }
@@ -33,9 +33,9 @@ object FixtureCompileSpec {
      * the JAR file.
      */
     case class JavaFixturePackagingResult(
-            compilation: JavaFixtureCompilationResult,
-            jarFile:     File,
-            wasSkipped:  Boolean
+        compilation: JavaFixtureCompilationResult,
+        jarFile:     File,
+        wasSkipped:  Boolean
     ) {
         def generatedFiles: Seq[File] = compilation.generatedFiles :+ jarFile
     }
@@ -80,7 +80,7 @@ object FixtureCompileSpec {
     /** This class is the test fixture compiler OPAL uses. */
     class OPALTestFixtureCompiler extends TestFixtureCompiler {
 
-        //TODO: Use org.eclipse.jdt.internal.formatter.DefaultCodeFormatter for formatting code
+        // TODO: Use org.eclipse.jdt.internal.formatter.DefaultCodeFormatter for formatting code
 
         /** Compiles a test fixture with the eclipse jdt compiler. */
         def compile(
@@ -94,13 +94,13 @@ object FixtureCompileSpec {
 
             val standardConfiguration =
                 '"' + task.fixture.sourceFolder.toString + '"' +
-                    s""" ${task.supportLibraries} -d "${task.targetFolder}" """+
+                    s""" ${task.supportLibraries} -d "${task.targetFolder}" """ +
                     "-nowarn -Xemacs -encoding utf8 -proc:none "
             val bootCPArg =
                 if (!taskConfig.contains("-9") && !taskConfig.contains("-1"))
                     s""" -bootclasspath "${task.fixture.sourceFolder}/../../rt-jar-stubs-1.8.0.jar""""
-                else "" //bootclasspath isn't supported for Java 9+
-            val commandLine = s"$standardConfiguration $taskConfig"+bootCPArg
+                else "" // bootclasspath isn't supported for Java 9+
+            val commandLine = s"$standardConfiguration $taskConfig" + bootCPArg
 
             // Note that we have to recompile the entire project if some file is
             // just deleted to ensure that the project is still consistent.

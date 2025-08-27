@@ -294,9 +294,8 @@ trait HermesCore extends HermesConfig {
             writer.write(q.query)
             writer.write("=")
             writer.write(
-                fq.featureIDs.map { fid =>
-                    fid.replace("\\", "\\\\").replace("\n", "\\n").replace(",", "\\,")
-                }.mkString(",")
+                fq.featureIDs.map { fid => fid.replace("\\", "\\\\").replace("\n", "\\n").replace(",", "\\,") }
+                    .mkString(",")
             )
             writer.newLine()
         }
