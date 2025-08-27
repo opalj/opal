@@ -335,8 +335,7 @@ trait FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
     override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(FieldAssignability),
         PropertyBounds.lub(TypeImmutability),
-        PropertyBounds.lub(ClassImmutability),
-        PropertyBounds.lub(FieldImmutability)
+        PropertyBounds.lub(ClassImmutability)
     )
 
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =
