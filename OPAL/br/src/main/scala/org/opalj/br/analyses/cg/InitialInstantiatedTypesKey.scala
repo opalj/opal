@@ -42,7 +42,11 @@ object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[ClassT
         }
 
         val itFinder: InstantiatedTypesFinder =
-            getObjectReflectively(this, "analysis configuration", configuredAnalysis.get)(GlobalLogContext).get
+            getObjectReflectively[InstantiatedTypesFinder](
+                this,
+                "analysis configuration",
+                configuredAnalysis.get
+            )(GlobalLogContext).get
         itFinder.collectInstantiatedTypes(project)
     }
 }

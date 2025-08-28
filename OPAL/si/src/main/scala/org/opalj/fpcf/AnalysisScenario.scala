@@ -286,7 +286,11 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                 }
 
             val schedulingStrategy: SchedulingStrategy =
-                getObjectReflectively(this, "scheduler", config.getString(AnalysisSchedulingStrategyKey)).get
+                getObjectReflectively[SchedulingStrategy](
+                    this,
+                    "scheduler",
+                    config.getString(AnalysisSchedulingStrategyKey)
+                ).get
             OPALLogger.info("scheduler", s"scheduling strategy ${schedulingStrategy} is selected")
 
             schedulingStrategy.schedule(ps, allCS)
