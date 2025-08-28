@@ -720,7 +720,7 @@ package object ba { ba =>
             case br.TADeeperInArrayType.KindId     => da.TypeAnnotationDeeperInArrayType
             case br.TADeeperInNestedType.KindId    => da.TypeAnnotationDeeperInNestedType
             case br.TAOnBoundOfWildcardType.KindId => da.TypeAnnotationOnBoundOfWildcardType
-            case br.TAOnTypeArgument.KindId =>
+            case br.TAOnTypeArgument.KindId        =>
                 val br.TAOnTypeArgument(index) = typeAnnotationPathElement
                 da.TypeAnnotationOnTypeArgument(index)
         }

@@ -26,10 +26,10 @@ import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
-import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.cli.EscapeArg
+import org.opalj.br.fpcf.cli.FieldAssignabilityArg
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
@@ -54,6 +54,7 @@ import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.bytecode.JDKArg
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.cli.AnalysisLevelArg
 import org.opalj.cli.ChoiceArg
 import org.opalj.cli.ConfigurationNameArg
 import org.opalj.cli.LibraryArg
@@ -74,7 +75,6 @@ import org.opalj.tac.cg.CallGraphArg
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
@@ -108,6 +108,12 @@ object Immutability extends ProjectsAnalysisApplication {
             }
         }
 
+        private val analysisLevelArg =
+            new AnalysisLevelArg(FieldAssignabilityArg.description, FieldAssignabilityArg.levels: _*) {
+                override val defaultValue: Option[String] = Some("L2")
+                override val withNone = false
+            }
+
         private val ignoreLazyInitializationArg = new PlainArg[Boolean] {
             override val name: String = "ignoreLazyInit"
             override val description: String = "Do not consider lazy initialization of fields"
@@ -115,7 +121,7 @@ object Immutability extends ProjectsAnalysisApplication {
 
             override def apply(config: Config, value: Option[Boolean]): Config = {
                 config.withValue(
-                    "org.opalj.fpcf.analyses.L3FieldAssignabilityAnalysis.considerLazyInitialization",
+                    "org.opalj.fpcf.analyses.L2FieldAssignabilityAnalysis.considerLazyInitialization",
                     ConfigValueFactory.fromAnyRef(!value.get)
                 )
             }
@@ -123,13 +129,24 @@ object Immutability extends ProjectsAnalysisApplication {
 
         args(
             analysisArg !,
+            analysisLevelArg !,
             ignoreLazyInitializationArg !,
-            ConfigurationNameArg !
+            ConfigurationNameArg !,
+            EscapeArg
         )
         init()
 
         val analysis: Analyses = apply(analysisArg)
         val ignoreLazyInitialization: Boolean = apply(ignoreLazyInitializationArg)
+
+        val assignabilityAnalysis: FPCFAnalysisScheduler[_] =
+            get(analysisLevelArg, FieldAssignabilityArg.parse("L2")) match {
+                case fA => getScheduler(fA, false)
+            }
+
+        val escapeAnalysis: FPCFAnalysisScheduler[_] = get(EscapeArg, EscapeArg.parse("L0")) match {
+            case escape => getScheduler(escape, false)
+        }
     }
 
     sealed trait Analyses
@@ -160,17 +177,20 @@ object Immutability extends ProjectsAnalysisApplication {
             _.fields
         }.toSet
 
-        val dependencies: List[FPCFAnalysisScheduler[_]] =
+        var dependencies: List[FPCFAnalysisScheduler[_]] =
             List(
                 EagerFieldAccessInformationAnalysis,
-                LazyL2FieldAssignabilityAnalysis,
+                analysisConfig.assignabilityAnalysis,
+                analysisConfig.escapeAnalysis
+            )
+
+        if (analysisConfig.analysis != Assignability) {
+            dependencies :::= List(
                 LazyFieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
-                LazySimpleEscapeAnalysis
+                LazyTypeImmutabilityAnalysis
             )
+        }
 
         val callGraphKey = analysisConfig(CallGraphArg)
 

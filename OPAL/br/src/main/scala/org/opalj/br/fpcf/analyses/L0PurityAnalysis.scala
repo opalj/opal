@@ -305,7 +305,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
         referenceTypedParameters foreach { e =>
             propertyStore(e, TypeImmutability.key) match {
                 case FinalP(TransitivelyImmutableType) => /*everything is Ok*/
-                case _: FinalEP[_, _] =>
+                case _: FinalEP[_, _]                  =>
                     return Result(context, ImpureByAnalysis);
                 case InterimUBP(ub) if ub ne TransitivelyImmutableType =>
                     return Result(context, ImpureByAnalysis);
@@ -323,7 +323,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
     def baseMethodPurity(context: Context): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) => Result(context, p)
+            case FinalP(p)                => Result(context, p)
             case ep @ InterimLUBP(lb, ub) =>
                 InterimResult.create(context, lb, ub, Set(ep), c)
             case epk =>

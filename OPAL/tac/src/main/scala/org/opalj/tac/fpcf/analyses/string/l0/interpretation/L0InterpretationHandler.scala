@@ -30,7 +30,7 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
             SimpleValueConstExprInterpreter.interpretExpr(stmt, expr)
         case stmt @ Assignment(_, _, expr: BinaryExpr[V]) => BinaryExprInterpreter().interpretExpr(stmt, expr)
 
-        case ExprStmt(_, call: FunctionCall[V]) => StringInterpreter.uninterpretedCall(call)
+        case ExprStmt(_, call: FunctionCall[V])           => StringInterpreter.uninterpretedCall(call)
         case Assignment(_, target, call: FunctionCall[V]) =>
             StringInterpreter.uninterpretedCall(call, Some(target.asVar.toPersistentForm(state.tac.stmts)))
         case call: MethodCall[V] => StringInterpreter.uninterpretedCall(call)

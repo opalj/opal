@@ -46,9 +46,9 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
 
     protected def createConfig(args: Array[String]): ConfigType
 
-    protected def analysisClass(analysisConfig: ConfigType): IFDSAnalysisScheduler[_, _, _]
+    protected def analysisClass(analysisConfig: ConfigType): IFDSAnalysisScheduler[_, _, _, _]
 
-    protected def printAnalysisResults(analysis: IFDSAnalysis[_, _, _], ps: PropertyStore): Unit = ()
+    protected def printAnalysisResults(analysis: IFDSAnalysis[_, _, _, _], ps: PropertyStore): Unit = ()
 
     protected type AdditionalResultsType
 
@@ -68,7 +68,7 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
             time {
                 project.get(FPCFAnalysesManagerKey).runAll(analysisClass(analysisConfig))._2
             }(t => analysisTime = t.toMilliseconds).collect {
-                case (_, a: IFDSAnalysis[_, _, _]) => a
+                case (_, a: IFDSAnalysis[_, _, _, _]) => a
             }.head
 
         printAnalysisResults(analysis, ps)
@@ -97,7 +97,7 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
         }
     }
 
-    protected def additionalEvaluationResult(analysis: IFDSAnalysis[_, _, _]): Option[AdditionalResultsType] = None
+    protected def additionalEvaluationResult(analysis: IFDSAnalysis[_, _, _, _]): Option[AdditionalResultsType] = None
 
     protected def writeAdditionalEvaluationResultsToFile(
         writer:                      PrintWriter,
@@ -111,7 +111,7 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
         propertyStore(method, Callers.key) match {
             // This is the case, if the method may be called from outside the library.
             case FinalEP(_, p: Callers) => p.hasCallersWithUnknownContext
-            case _ =>
+            case _                      =>
                 throw new IllegalStateException(
                     "call graph mut be computed before the analysis starts"
                 )

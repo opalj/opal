@@ -430,7 +430,7 @@ object Callers extends CallersPropertyMetaInformation {
             (_: PropertyStore, reason: FallbackReason, _: Entity) =>
                 reason match {
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoCallers
-                    case _ =>
+                    case _                                                =>
                         throw new IllegalStateException(s"analysis required for property: $name")
                 }
         )

@@ -73,7 +73,10 @@ class SystemPropertiesAnalysis private[analyses] (
     }
 
     def returnResults(values: Set[StringTreeNode])(implicit state: State): ProperPropertyComputationResult = {
-        def update(currentVal: EOptionP[SomeProject, SystemProperties]): Option[InterimEP[SomeProject, SystemProperties]] = {
+        def update(currentVal: EOptionP[
+            SomeProject,
+            SystemProperties
+        ]): Option[InterimEP[SomeProject, SystemProperties]] = {
             currentVal match {
                 case UBP(ub) =>
                     val newUB = ub.meet(SystemProperties(values))

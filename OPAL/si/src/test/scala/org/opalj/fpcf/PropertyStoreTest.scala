@@ -147,7 +147,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 fail("expected InterruptedException")
             } catch {
                 case _: InterruptedException => // OK
-                case t: Throwable =>
+                case t: Throwable            =>
                     val m =
                         t.getStackTrace
                             .take(25)
@@ -913,7 +913,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         ReachableNodes.Key,
                         (eOptionP: EOptionP[_, ReachableNodes]) =>
                             eOptionP match {
-                                case _: EPK[_, _] => Some(InterimEUBP(n, ReachableNodes(currentNodes)))
+                                case _: EPK[_, _]  => Some(InterimEUBP(n, ReachableNodes(currentNodes)))
                                 case InterimUBP(p) =>
                                     val oldReachableNodes = p.nodes
                                     val newReachableNodes = oldReachableNodes ++ currentNodes

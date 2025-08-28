@@ -123,7 +123,7 @@ trait OPALCommandLineConfig {
     def init(): Unit = {
 
         def getScallopOptionFlat(a: Arg[_, _]): ScallopOption[_] = a match {
-            case choiceArg: ChoiceArg[_] => getChoiceScallopOption(choiceArg)
+            case choiceArg: ChoiceArg[_]          => getChoiceScallopOption(choiceArg)
             case convertedArg: ConvertedArg[_, _] =>
                 getRegularScallopOption(convertedArg)(convertedArg.conv)
             case _: MutuallyExclusive => throw new IllegalArgumentException("Cannot nest mutually exclusive arguments")

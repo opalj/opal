@@ -414,8 +414,8 @@ trait ProjectLike extends ClassFileRepository { project =>
             }
 
         resolveClassMethodReference(receiverType, name, descriptor) match {
-            case Success(method)                                 => Some(method)
-            case Empty if !forceLookupInSuperinterfacesOnFailure => None
+            case Success(method)                                              => Some(method)
+            case Empty if !forceLookupInSuperinterfacesOnFailure              => None
             case _ /*Failure | (Empty && lookupInSuperinterfacesOnFailure) */ =>
                 val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(receiverType)
                 val (_, methods) =
@@ -474,7 +474,7 @@ trait ProjectLike extends ClassFileRepository { project =>
 
                 classMethod match {
                     case Success(method) => Set(method)
-                    case _ =>
+                    case _               =>
                         val superinterfaces = classHierarchy.allSuperinterfacetypes(receiverType)
                         val (_, methods) = findMaximallySpecificSuperinterfaceMethods(
                             superinterfaces,

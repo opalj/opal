@@ -45,7 +45,7 @@ package object analyses {
             ch.isSubtypeOf(at, ft.WrapperType) ||
                 (ft match {
                     case BooleanType | ByteType | CharType => false
-                    case nt: NumericType =>
+                    case nt: NumericType                   =>
                         Seq(ByteType, CharType, ShortType, IntegerType, LongType, FloatType, DoubleType).exists { tpe =>
                             nt.isWiderThan(tpe) && ch.isSubtypeOf(at, tpe.WrapperType)
                         }
@@ -102,7 +102,7 @@ package object analyses {
             v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isNotNo ||
                 (pType match {
                     case BooleanType | ByteType | CharType => false
-                    case nt: NumericType =>
+                    case nt: NumericType                   =>
                         Seq(ByteType, CharType, ShortType, IntegerType, LongType, FloatType, DoubleType).exists { tpe =>
                             nt.isWiderThan(tpe) && v.asReferenceValue.isValueASubtypeOf(tpe.WrapperType).isNotNo
                         }

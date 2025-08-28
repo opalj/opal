@@ -4,23 +4,23 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Method
-import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
-import org.opalj.ai.domain.TheCode
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.fpcf.PropertyStore
 import org.opalj.ai.analyses.cg.CallGraph
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.TheCode
 import org.opalj.br.ClassType
+import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NEW
-import org.opalj.issues.Issue
+import org.opalj.fpcf.PropertyStore
 import org.opalj.issues.InstructionLocation
+import org.opalj.issues.Issue
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
 import org.opalj.issues.Relevance
@@ -59,16 +59,17 @@ object CollectionsUsage {
             instruction match {
 
                 case INVOKESTATIC(
-                    Collections,
-                    false,
-                    "unmodifiableCollection",
-                    UnmodifiableCollectionMethodDescriptor
+                        Collections,
+                        false,
+                        "unmodifiableCollection",
+                        UnmodifiableCollectionMethodDescriptor
                     ) =>
                     val origins = domain.operandOrigin(pc, 0)
                     if ((origins ne null) && // the instruction is not dead
                         origins.size == 1 &&
                         origins.head >= 0 && // the origin is not a parameter
-                        instructions(origins.head).opcode == NEW.opcode) {
+                        instructions(origins.head).opcode == NEW.opcode
+                    ) {
                         // FIXME Add check if something is done in a loop
                         // there is just one path on which the value is initialized
                         val usages = domain.usedBy(origins.head)
@@ -87,13 +88,16 @@ object CollectionsUsage {
                                         List(
                                             new InstructionLocation(
                                                 Some("directly use Collections.emptyList/Collections.emptySet"),
-                                                theProject, method, pc
+                                                theProject,
+                                                method,
+                                                pc
                                             ),
                                             new InstructionLocation(
                                                 Some("useless"),
-                                                theProject, method, origins.head
+                                                theProject,
+                                                method,
+                                                origins.head
                                             )
-
                                         )
                                     )
 
@@ -120,7 +124,7 @@ object CollectionsUsage {
                                         }
 
                                     case i => // other calls are ignored
-                                        println("let's see"+i)
+                                        println("let's see" + i)
                                 }
                             }
                             if (foundAddCall && foundConstructorCall) {
@@ -133,11 +137,15 @@ object CollectionsUsage {
                                     List(
                                         new InstructionLocation(
                                             Some("directly use Collections.singletonList/Collections.singletonSet"),
-                                            theProject, method, pc
+                                            theProject,
+                                            method,
+                                            pc
                                         ),
                                         new InstructionLocation(
                                             Some("useless"),
-                                            theProject, method, origins.head
+                                            theProject,
+                                            method,
+                                            origins.head
                                         )
                                     )
                                 )

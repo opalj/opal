@@ -37,7 +37,7 @@ object ContextProviderKey extends ProjectInformationKey[ContextProvider, Context
     override def compute(theProject: SomeProject): ContextProvider = {
         theProject.getProjectInformationKeyInitializationData(this) match {
             case Some(s) => s
-            case None =>
+            case None    =>
                 OPALLogger.error(
                     "analysis configuration",
                     s"no context provider configured even though requirements were run"

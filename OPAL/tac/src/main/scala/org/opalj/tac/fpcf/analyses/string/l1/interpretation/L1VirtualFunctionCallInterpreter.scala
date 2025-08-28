@@ -55,7 +55,7 @@ class L1VirtualFunctionCallInterpreter(
             case "append" if StringInterpreter.isStringBuilderBufferCall(call)  => interpretAppendCall(at, pt, call)
             case "toString"                                                     => interpretToStringCall(at, pt)
             case "replace" if StringInterpreter.isStringBuilderBufferCall(call) => interpretReplaceCall(pt)
-            case "substring" if call.descriptor.returnType eq ClassType.String =>
+            case "substring" if call.descriptor.returnType eq ClassType.String  =>
                 interpretSubstringCall(at, pt, call)
             case _ =>
                 call.descriptor.returnType match {

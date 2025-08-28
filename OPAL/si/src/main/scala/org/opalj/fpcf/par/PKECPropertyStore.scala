@@ -603,7 +603,7 @@ class PKECPropertyStore(
             } catch {
                 case ct: ControlThrowable    => throw ct
                 case _: InterruptedException =>
-                case ex: Throwable =>
+                case ex: Throwable           =>
                     collectException(ex)
                     doTerminate = true
             } finally {

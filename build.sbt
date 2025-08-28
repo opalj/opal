@@ -149,7 +149,7 @@ lazy val buildSettings =
 lazy val opal = `OPAL`
 
 lazy val `OPAL` = (project in file("."))
-    //  .configure(_.copy(id = "OPAL"))
+//  .configure(_.copy(id = "OPAL"))
     .settings(Defaults.coreDefaultSettings ++ Seq(publishArtifact := false): _*)
     .enablePlugins(ScalaUnidocPlugin)
     .disablePlugins(HeaderPlugin) // The root project has no sources and no configured license header
@@ -539,8 +539,8 @@ runProjectDependencyGeneration := {
     val s: TaskStreams = streams.value
 
     val dockerUserArg = Try {
-        val uid = "id -u".!!.stripSuffix("\n").toString().trim()
-        val gid = "id -g".!!.stripSuffix("\n").toString().trim()
+        val uid = "id -u".!!.stripSuffix("\n").trim()
+        val gid = "id -g".!!.stripSuffix("\n").trim()
         s"-u $uid:$gid"
     }.getOrElse("")
 

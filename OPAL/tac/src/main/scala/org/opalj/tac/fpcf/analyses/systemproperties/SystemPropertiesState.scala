@@ -23,7 +23,10 @@ final class SystemPropertiesState[ContextType <: Context](
     override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
-    private[this] var _stringConstancyDependees: Map[VariableContext, EOptionP[VariableContext, StringConstancyProperty]] =
+    private[this] var _stringConstancyDependees: Map[
+        VariableContext,
+        EOptionP[VariableContext, StringConstancyProperty]
+    ] =
         Map.empty
 
     def updateStringDependee(dependee: EOptionP[VariableContext, StringConstancyProperty]): Unit = {

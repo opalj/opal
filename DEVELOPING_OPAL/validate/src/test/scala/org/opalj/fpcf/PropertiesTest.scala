@@ -183,7 +183,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
      */
     def validateProperties(
         context: TestContext,
-        eas: IterableOnce[(
+        eas:     IterableOnce[(
             Entity, /*the processed annotation*/ String => String /* a String identifying the entity */,
             Iterable[AnnotationLike]
         )],

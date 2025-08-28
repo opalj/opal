@@ -116,7 +116,7 @@ class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnaly
 
             ps(t, ClassImmutability.key) match {
                 case FinalP(TransitivelyImmutableClass) =>
-                case FinalP(MutableClass) =>
+                case FinalP(MutableClass)               =>
                     return Result(t, MutableType);
                 case FinalP(NonTransitivelyImmutableClass) =>
                     joinedImmutability = NonTransitivelyImmutableType
@@ -139,7 +139,7 @@ class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnaly
             directSubtypes foreach { subtype =>
                 ps(subtype, TypeImmutability.key) match {
                     case FinalP(TransitivelyImmutableType) =>
-                    case UBP(MutableType) =>
+                    case UBP(MutableType)                  =>
                         return Result(t, MutableType);
 
                     case FinalP(NonTransitivelyImmutableType) =>

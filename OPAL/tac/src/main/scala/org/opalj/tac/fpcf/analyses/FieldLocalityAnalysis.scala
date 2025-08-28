@@ -581,7 +581,7 @@ class FieldLocalityAnalysis private[analyses] (
     )(implicit state: FieldLocalityState): Option[(TACode[TACMethodParameter, V], Callers)] = {
         val tacEP = state.getTACDependee(method) match {
             case Some(tacEP) => tacEP
-            case None =>
+            case None        =>
                 val tacEP = propertyStore(method, TACAI.key)
                 state.addTACDependee(tacEP)
                 tacEP
@@ -590,7 +590,7 @@ class FieldLocalityAnalysis private[analyses] (
         val definedMethod = declaredMethods(method)
         val callersEP = state.getCallersDependee(definedMethod) match {
             case Some(callersEP) => callersEP
-            case None =>
+            case None            =>
                 val callersEP = propertyStore(definedMethod, Callers.key)
                 state.addCallersDependee(callersEP)
                 callersEP

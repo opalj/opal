@@ -259,7 +259,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
                 val tacEP = state.tacDependees.get(method) match {
                     case Some(tacEP) => tacEP
-                    case None =>
+                    case None        =>
                         val tacEP = propertyStore(method.definedMethod, TACAI.key)
                         state.tacDependees += method -> tacEP
                         tacEP
@@ -267,7 +267,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
                 val callersEP = state.callerDependees.get(method) match {
                     case Some(callersEP) => callersEP
-                    case None =>
+                    case None            =>
                         val callersEP = propertyStore(method, Callers.key)
                         state.callerDependees += method -> callersEP
                         callersEP
