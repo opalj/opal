@@ -13,21 +13,21 @@ import scala.util.control.Breaks.breakable
 import com.typesafe.config.ConfigFactory
 
 import org.opalj.log.GlobalLogContext
-import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 /**
- * The class CommentParserWrapper is the class that should be used for parsing commented config within the Configuration Explorer.
+ * Parses commented config files for the Configuration Explorer.
  */
-class CommentParser {
+object CommentParser {
     /**
      * Made to parse multiple Configuration Files in bulk.
      * Used in combination with the file Locator to locate and parse all config files of a project.
      * @param filepaths accepts a list of full paths to the HOCON config files that shall be parsed.
+     * @param rootDirectory the project root directory, to allow for relative paths.
      * @return is a Seq of the parsed configuration files, paired with the path they originate from.
      */
     def iterateConfigs(filepaths: Iterable[Path], rootDirectory: Path): Seq[ConfigObject] = {
-        val commentedConfigs = filepaths.map(filepath => ParseComments(filepath, rootDirectory)).toList
+        val commentedConfigs = filepaths.map(filepath => parseComments(filepath, rootDirectory)).toList
 
         // Merge all config files named "reference.conf"
         val (mergingConfigs, otherConfigs) = commentedConfigs.partition(_.comment.label.endsWith("reference.conf"))
@@ -60,25 +60,26 @@ class CommentParser {
     /**
      * Handles the frame around parsing the configuration file.
      * Also checks if the config files are in an allowed HOCON formats to prevent endless loops.
-     * @param filepath accepts the full path to a valid HOCON config file.
+     * @param filePath accepts the full path to a valid HOCON config file.
+     * @param rootDirectory the project root directory, to allow for relative paths.
      * @return returns the parsed config as a ConfigNode.
      */
-    def ParseComments(filepath: Path, rootDirectory: Path): ConfigObject = {
+    def parseComments(filePath: Path, rootDirectory: Path): ConfigObject = {
         // This prevents the Parser from parsing a file without valid syntax
-        ConfigFactory.load(filepath.toString)
+        ConfigFactory.load(filePath.toString)
 
-        val cp = new HOCONParser
-        cp.parseFile(filepath, rootDirectory)
+        OPALLogger.info("Configuration Explorer", s"Parsing: $filePath")(GlobalLogContext)
+
+        Using.resource(Source.fromFile(filePath.toFile)) { source =>
+            new HOCONParser(source.getLines()).parseFile(filePath, rootDirectory)
+        }
     }
 
     /**
-     * Inner class of the Comment parser Wrapper
      * This class handles the parsing process itself
      */
-    private class HOCONParser {
-        private var iterator: Iterator[String] = Iterator.empty
+    private class HOCONParser(var configLines: Iterator[String]) {
         private var line = ""
-        implicit val logContext: LogContext = GlobalLogContext
 
         /**
          * parseComments initiates the parsing process.
@@ -87,24 +88,18 @@ class CommentParser {
          * During parsing, the Parser will iterate the file and sort it into the ConfigNode structure.
          * Since the Nodes can be nested and there can be multiple Nodes in one line, the Parser needs to examine most control structures like a stream and not linewise.
          * @param filePath accepts the path to a valid HOCON file.
+         * @param rootDirectory the project root directory, to allow for relative paths.
          * @return returns the fully parsed file as a configObject.
          */
         def parseFile(filePath: Path, rootDirectory: Path): ConfigObject = {
-            // Initialize iterator
-            OPALLogger.info("Configuration Explorer", s"Parsing: ${filePath.toString}")
-
-            Using.resource(Source.fromFile(filePath.toString)) { source =>
-                iterator = source.getLines()
-
-                // Parse initial Comments
-                val initialComment = ListBuffer[String]()
-                initialComment += ("@label " + filePath.toAbsolutePath.toString.stripPrefix(
-                    rootDirectory.toAbsolutePath.toString
-                ))
-                initialComment ++= parseComments()
-                parseObject(initialComment)
-            }
+            // Parse initial Comments
+            val initialComment = ListBuffer[String]()
+            initialComment += ("@label " + rootDirectory.relativize(filePath))
+            parseComments(initialComment)
+            parseObject(initialComment)
         }
+
+        val objectKeyTerminatingChars = Set(':', '=', '{', '[')
 
         /**
          * Method responsible to parse Object-Type Nodes.
@@ -112,6 +107,7 @@ class CommentParser {
          * @return returns the fully parsed object.
          */
         private def parseObject(currentComment: ListBuffer[String]): ConfigObject = {
+
             line = line.trim.stripPrefix("{")
             // Creating necessary components
             val entries = mutable.Map[String, ConfigNode]()
@@ -121,28 +117,27 @@ class CommentParser {
 
             // Using a breakable while loop to interrupt as soon as the object ends
             breakable {
-                while (iterator.hasNext || line.nonEmpty) {
+                while (configLines.hasNext || line.nonEmpty) {
                     parseComments(nextComment)
                     if (line.startsWith("}")) {
                         // Found the closing bracket of the object. Remove the closing bracket and stop parsing the object
                         line = line.stripPrefix("}")
-                        break()
-
-                    } else if (line != "") {
-                        // If none of the options above apply and the line is NOT empty (in which case load the next line and ignore this)
+                        break();
+                    } else if (line.nonEmpty) {
                         // What follows now is part of the content of the object
-                        // Objects are Key Value pairs, so parsing these is a two stage job: Separating Key and value and then parsing the value
+                        // Objects are Key Value pairs, so parsing them is a two stage job:
+                        // Separating Key and value and then parsing the value
 
                         // 1. Separating Key and value
-                        // In JSON, Keys and values are separated with ':'. HOCON allows substituting ':' with '=' and also allows ommitting these symbols when using a '{' or '[' to open an object/list afterwards
+                        // In JSON, Keys and values are separated with ':'. HOCON allows substituting ':' with '=' and
+                        // also allows ommitting these symbols when using a '{' or '[' to open an object/list afterward
                         // Finding first instance of these symbols
                         // TerminatingIndex is the index of the symbol that terminates the key.
-                        val terminatingChars = Set(':', '=', '{', '[')
-                        val terminatingIndex = line.indexWhere(terminatingChars.contains)
+                        val terminatingIndex = line.indexWhere(objectKeyTerminatingChars.contains)
 
                         // Splitting the key from the string (while splitting of the ':' or '=' as they are not needed anymore
                         currentKey = line.substring(0, terminatingIndex - 1).trim.stripPrefix("\"").stripSuffix("\"")
-                        line = line.substring(terminatingIndex).trim.stripPrefix(":").stripPrefix("=").trim
+                        line = line.substring(terminatingIndex).stripPrefix(":").stripPrefix("=").trim
 
                         // Evaluating the type of value
                         if (line.startsWith("{")) {
@@ -167,21 +162,20 @@ class CommentParser {
                     }
 
                     // Proceed with the next line if the current one was fully parsed
-                    if (line.trim == "" && iterator.hasNext) {
-                        line = iterator.next().trim
+                    while (line.isEmpty && configLines.hasNext) {
+                        line = configLines.next().trim
                     }
                 }
             }
 
             // If there is a comment directly behind the closing bracket of the object, add it to comments too.
-            if (line.startsWith("#") || line.startsWith("//")) {
-                currentComment += line.stripPrefix("#").stripPrefix("//").trim
-                line = ""
-            }
+            currentComment ++= getSingleLineComment
 
             // Return the finished ConfigObject
             ConfigObject(entries, DocumentationComment.fromString(currentComment))
         }
+
+        val stringTerminatingChars = Set(',', ']', '}', ' ')
 
         /**
          * Method responsible to parse Entry-Type Nodes.
@@ -196,7 +190,7 @@ class CommentParser {
 
             if (line.startsWith("\"\"\"")) {
                 // Case: line starts with a triple quoted string (These allow for multi-line values, so the line end does not necessarily terminate the value
-                line = line.stripPrefix("\"\"\"").trim
+                line = line.stripPrefix("\"\"\"")
                 val valueBuilder = new StringBuilder
                 var index = line.indexOf("\"\"\"")
                 if (index >= 0) {
@@ -205,61 +199,46 @@ class CommentParser {
                     line = line.substring(index).stripPrefix("\"\"\"").trim
                 } else {
                     // The value is a multi line value
-                    valueBuilder ++= s"$line \n"
-                    breakable {
-                        while (iterator.hasNext) {
-                            line = iterator.next().trim
-                            index = line.indexOf("\"\"\"")
-                            if (index >= 0) {
-                                valueBuilder ++= s"${line.substring(0, index)} \n"
-                                line = line.stripPrefix(line.trim.substring(
-                                    0,
-                                    index
-                                )).stripPrefix("\"\"\"").trim
-                                break()
-                            } else {
-                                valueBuilder ++= s"$line \n"
-                            }
-                        }
+                    while (index == -1 && configLines.hasNext) {
+                        valueBuilder ++= s"$line\n"
+                        line = configLines.next()
+                        index = line.indexOf("\"\"\"")
+                    }
+                    if (index != -1) {
+                        valueBuilder ++= s"${line.substring(0, index)}"
+                        line = line.substring(index).stripPrefix("\"\"\"").trim
+                    } else {
+                        valueBuilder ++= s"$line\n"
                     }
                 }
                 value = valueBuilder.toString
             } else if (line.startsWith("\"")) {
-                // Case: line starts with a double quoted string
+                // Case: line starts with a double-quoted string
                 line = line.stripPrefix("\"").trim
-                // A '\' can escape a quote. Thus we need to exclude that from the terminating Index
-                var index = line.indexOf('\"')
-                breakable(while (index != -1) {
-                    if (index == 0 || line(index - 1) != '\\') {
-                        break()
-                    } else {
-                        index = line.indexOf('\"', index + 1)
-                    }
-                })
+                // A '\' can escape a quote. Thus, we need to exclude that from the terminating Index
+                var index = line.indexOf('"')
+                while (index > 0 && line(index - 1) == '\\') {
+                    index = line.indexOf('"', index + 1)
+                }
 
-                value = line.substring(0, index).trim
-                line = line.stripPrefix(value).trim.stripPrefix("\"").trim
+                value = line.substring(0, index).replace("\\\"", "\"")
+                line = line.substring(index + 1).trim
             } else if (line.startsWith("\'")) {
                 // Case: line starts with a single quoted string
                 line = line.stripPrefix("\'").trim
-                // A '\' can escape a quote. Thus we need to exclude that from the terminating Index
+                // A '\' can escape a quote. Thus, we need to exclude that from the terminating Index
                 var index = line.indexOf('\'')
-                breakable(while (index != -1) {
-                    if (index == 0 || line(index - 1) != '\\') {
-                        break()
-                    } else {
-                        index = line.indexOf('\'', index + 1)
-                    }
-                })
+                while (index > 0 && line(index - 1) == '\\') {
+                    index = line.indexOf('\'', index + 1)
+                }
 
-                value = line.substring(0, index).trim
-                line = line.stripPrefix(value).trim.stripPrefix("\'").trim
+                value = line.substring(0, index).replace("\\'", "'")
+                line = line.substring(index + 1).trim
             } else {
                 // Case: Line starts with an unquoted string
                 // There are two ways of terminating an unquoted string
-                // Option 1: The value is inside of a pattern that has other control structures
-                val terminatingChars = Set(',', ']', '}', ' ')
-                val terminatingIndex = line.indexWhere(terminatingChars.contains)
+                // Option 1: The value is inside a pattern that has other control structures
+                val terminatingIndex = line.indexWhere(stringTerminatingChars.contains)
 
                 if (terminatingIndex > 0) {
                     value = line.substring(0, terminatingIndex).trim
@@ -271,13 +250,13 @@ class CommentParser {
                 }
             }
 
-            currentComment += getSingleLineComment
+            currentComment ++= getSingleLineComment
             ConfigEntry(value, DocumentationComment.fromString(currentComment))
         }
 
         /**
          * Method responsible to parse List-Type Nodes.
-         * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object).
+         * @param currentComment assigns previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object).
          * @return returns the fully parsed entry.
          */
         private def parseList(currentComment: ListBuffer[String]): ConfigList = {
@@ -287,35 +266,31 @@ class CommentParser {
             var nextComment = ListBuffer[String]()
 
             breakable {
-                while (iterator.hasNext || line.nonEmpty) {
+                while (configLines.hasNext || line.nonEmpty) {
                     nextComment = parseComments()
-                    if (line.startsWith("{")) {
+                    if (line.startsWith("]") || (line.startsWith(",") && line.stripPrefix(",").trim.startsWith("]"))) {
+                        // Case: The following symbol closes the list
+                        line = line.stripPrefix(",").trim.stripPrefix("]").trim
+                        break();
+                    } else if (line.startsWith("{")) {
                         // Case: The following symbol opens an object
                         value += parseObject(nextComment)
-                        line = line.stripPrefix(",").trim
                     } else if (line.startsWith("[")) {
                         // Case: The following symbol opens a list
                         value += parseList(nextComment)
-                        line = line.stripPrefix(",").trim
-                    } else if (
-                        line.startsWith("]") || (line.startsWith(",") && line.stripPrefix(",").trim.startsWith("]"))
-                    ) {
-                        // Case: The following symbol closes the list
-                        line = line.stripPrefix(",").trim.stripPrefix("]").trim
-                        break()
-                    } else if (line != "") {
+                    } else if (line.nonEmpty) {
                         // Case: The following symbol is an entry
                         value += parseEntry(nextComment)
-                        line = line.stripPrefix(",").trim
                     }
+                    line = line.stripPrefix(",").trim
 
-                    if (line == "" && iterator.hasNext) {
+                    while (line.isEmpty && configLines.hasNext) {
                         // Load next line when done
-                        line = iterator.next().trim
+                        line = configLines.next().trim
                     }
                 }
             }
-            currentComment += getSingleLineComment
+            currentComment ++= getSingleLineComment
 
             // Finish
             ConfigList(value, DocumentationComment.fromString(currentComment))
@@ -331,30 +306,31 @@ class CommentParser {
         }
 
         /**
-         * Gets all comments all comments until the next non-comment entry and writes them into an existing ListBuffer.
+         * Gets all comments until the next non-comment entry and writes them into an existing ListBuffer.
          * @param comment Accepts the ListBuffer that the following comment should be added to.
          * @return Returns the existing ListBuffer, but with the content of the comment added to it.
          */
         private def parseComments(comment: ListBuffer[String]): ListBuffer[String] = {
-            while (line.startsWith("#") || line.startsWith("//") || line == "") {
-                if (line != "") comment += getSingleLineComment
-                line = iterator.next().trim
+
+            while (line.startsWith("#") || line.startsWith("//") || line.isEmpty) {
+                comment ++= getSingleLineComment
+                line = configLines.next().trim
             }
             comment
         }
 
         /**
          * Adds a single line of Comment to the raw Comment string if the line has the comment flags
-         * @return returns an empty string if the next line is not a Comment. Returns the Comment without the comment flags if the line is a comment.
+         * @return Returns the Comment text if the line is a comment. Else, returns an empty string.
          */
-        private def getSingleLineComment: String = {
+        private def getSingleLineComment: Option[String] = {
             if (line.startsWith("#") || line.startsWith("//")) {
                 // Add the comment in the same line of the list as well
                 val currentComment = line.stripPrefix("#").stripPrefix("//").trim
                 line = ""
-                currentComment
+                Some(currentComment)
             } else {
-                ""
+                None
             }
         }
     }

@@ -19,28 +19,28 @@ class DocumentationComment(
 
     /**
      * Converts the Comment object into HTML syntax.
-     * @param HTMLStringBuilder accepts a String builder. The method will add the export to this StringBuilder.
+     * @param pageHTML The method will add the export to this StringBuilder.
      */
-    def toHTML(HTMLStringBuilder: StringBuilder): Unit = {
+    def toHTML(pageHTML: StringBuilder): Unit = {
         if (!isEmpty) {
             if (description.mkString("").trim.nonEmpty) {
-                HTMLStringBuilder ++= "<p><b> Description: </b> <br>\n"
-                HTMLStringBuilder ++= StringEscapeUtils.escapeHtml4(description.mkString("\n")).replace("\n", "<br>\n")
-                HTMLStringBuilder ++= "<br> </p>\n"
+                pageHTML ++= "<p><b> Description: </b> <br>\n"
+                pageHTML ++= StringEscapeUtils.escapeHtml4(description.mkString("\n")).replace("\n", "<br>\n")
+                pageHTML ++= "<br> </p>\n"
             }
             if (datatype.nonEmpty) {
-                HTMLStringBuilder ++= s"<p><b> Type: </b>"
-                HTMLStringBuilder ++= StringEscapeUtils.escapeHtml4(datatype)
-                HTMLStringBuilder ++= "<br></p>\n"
+                pageHTML ++= s"<p><b> Type: </b>"
+                pageHTML ++= StringEscapeUtils.escapeHtml4(datatype)
+                pageHTML ++= "<br></p>\n"
             }
             if (constraints.nonEmpty) {
                 if (datatype.equals("enum")) {
-                    HTMLStringBuilder ++= "<p><b> Allowed Values: </b><br>\n"
+                    pageHTML ++= "<p><b> Allowed Values: </b><br>\n"
                 } else {
-                    HTMLStringBuilder ++= "<p><b> Constraints: </b><br>\n"
+                    pageHTML ++= "<p><b> Constraints: </b><br>\n"
                 }
-                HTMLStringBuilder ++= StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).replace("\n", "<br>\n")
-                HTMLStringBuilder ++= "<br>\n </p>\n"
+                pageHTML ++= StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).replace("\n", "<br>\n")
+                pageHTML ++= "<br>\n </p>\n"
             }
         }
     }
@@ -69,8 +69,7 @@ class DocumentationComment(
      * @return returns true if the comment is empty but the label property (the label property is set automatically for config files.).
      */
     def isEmpty: Boolean = {
-        if (description.isEmpty && constraints.isEmpty && datatype.isEmpty) return true
-        false
+        description.isEmpty && constraints.isEmpty && datatype.isEmpty
     }
 
     /**
@@ -79,12 +78,9 @@ class DocumentationComment(
      * @return Returns the brief field of the DocumentationComment if it exists. If it does not exist, it returns a preview of the description.
      */
     def getBrief(previewDescriptionLength: Int): String = {
-        if (brief.isEmpty) {
-            if (description.nonEmpty) {
-                return description.head.substring(0, description.head.length.min(previewDescriptionLength)) + "..."
-            }
-        }
-        brief
+        if (brief.isEmpty && description.nonEmpty)
+            description.head.substring(0, description.head.length.min(previewDescriptionLength)) + "..."
+        else brief
     }
 
     /**
@@ -106,17 +102,6 @@ class DocumentationComment(
             this
         }
     }
-    /**
-     * Prints the Comment object to the console.
-     * Debug purposes.
-     */
-    def printObject(): Unit = {
-        println("Constraints: " + constraints.toString())
-        println("Description: " + description.toString())
-        println("Label: " + label)
-        println("Brief: " + brief)
-        println("Type: " + datatype)
-    }
 }
 
 /**
@@ -125,27 +110,26 @@ class DocumentationComment(
 object DocumentationComment {
     /**
      *  Factory method for creating a comment.
-     *  @param commentBuffer accepts a ListBuffer that contains the raw content of the comment.
-     *  @return is a fully functional Comment.
+     *  @param commentLines the raw content of the comment in the form of trimmed lines
+     *  @return the Comment
      */
-    def fromString(commentBuffer: ListBuffer[String]): DocumentationComment = {
+    def fromString(commentLines: scala.collection.Seq[String]): DocumentationComment = {
         var label = ""
         var brief = ""
         val description = ListBuffer[String]()
         var datatype = ""
         val constraints = ListBuffer[String]()
-        for (line <- commentBuffer) {
-            val trimmedLine = line.trim
-            if (trimmedLine.startsWith("@label")) {
-                label = trimmedLine.stripPrefix("@label").trim
-            } else if (trimmedLine.startsWith("@brief")) {
-                brief = trimmedLine.stripPrefix("@brief").trim
-            } else if (trimmedLine.startsWith("@constraint")) {
-                constraints += trimmedLine.stripPrefix("@constraint").trim
-            } else if (trimmedLine.startsWith("@type")) {
-                datatype = trimmedLine.stripPrefix("@type").trim
+        for (line <- commentLines) {
+            if (line.startsWith("@label")) {
+                label = line.stripPrefix("@label").trim
+            } else if (line.startsWith("@brief")) {
+                brief = line.stripPrefix("@brief").trim
+            } else if (line.startsWith("@constraint")) {
+                constraints += line.stripPrefix("@constraint").trim
+            } else if (line.startsWith("@type")) {
+                datatype = line.stripPrefix("@type").trim
             } else {
-                description += trimmedLine.stripPrefix("@description").trim
+                description += line.stripPrefix("@description").trim
             }
         }
         new DocumentationComment(label, brief, description.toSeq, datatype, constraints.toSeq)

@@ -1,5 +1,6 @@
 import java.io.FileWriter
 
+import sbt.Keys.javaOptions
 import sbt.Test
 import sbtassembly.AssemblyPlugin.autoImport._
 import sbtunidoc.ScalaUnidocPlugin
@@ -516,6 +517,7 @@ lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer")
     )
     .dependsOn(
+        br % "compile->compile",
         apk % "runtime->compile",
         demos % "runtime->compile",
         // bp % "runtime->compile",
@@ -602,9 +604,10 @@ runProjectDependencyGeneration := {
     for {
         (subproject, ref) <- allProjects
         if !excludedProjects.contains(subproject.id)
-        dependency <- subproject.referenced
+        dependency <- subproject.dependencies
+        if dependency.configuration.forall(_.contains("compile->compile"))
     } {
-        val project = allProjects.find { case (p, r) => r == dependency }.get._1
+        val project = allProjects.find { case (p, r) => r == dependency.project }.get._1
         mmd.append(s"    ${subproject.id} --> ${project.id}\n")
     }
 

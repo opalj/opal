@@ -8,8 +8,6 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
-import org.apache.commons.text.StringEscapeUtils
-
 /**
  * Stores a List structure inside the ConfigNode structure.
  * @param entries contains a K,V Map of ConfigNodes.
@@ -18,65 +16,37 @@ import org.apache.commons.text.StringEscapeUtils
 case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var comment: DocumentationComment)
     extends ConfigNode {
     implicit val logContext: LogContext = GlobalLogContext
+
     /**
-     * Formats the entry into HTML code.
-     * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object. Supply an empty string if not needed.
-     * @param HTMLHeadline accepts the HTML syntax of the Headline of the value. Can contain $ label and $ brief flags for filling with content.
-     * @param HTMLContent accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering.
-     * @param HTMLStringBuilder accepts a StringBuilder. The method adds the HTML String to this StringBuilder.
+     * Produces the HTML for the individual entries.
+     * @param headlineHTML accepts the HTML syntax of the Headline of the value. Can contain $label and $brief flags for filling with content.
+     * @param contentHTML accepts the HTML syntax of the content frame for the value. Must contain a $content flag for correct rendering.
+     * @param pageHTML accepts a StringBuilder. The method adds the HTML String to this StringBuilder.
      * @param sorted accepts a boolean to indicate if the export should sort the keys of the configObjects alphabetically.
      * @param maximumHeadlinePreviewLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
      */
-    override def toHTML(
-        label:                        String,
-        HTMLHeadline:                 String,
-        HTMLContent:                  String,
-        HTMLStringBuilder:            StringBuilder,
+    protected def entriesToHTML(
+        headlineHTML:                 String,
+        contentHTML:                  String,
+        pageHTML:                     StringBuilder,
         sorted:                       Boolean,
         maximumHeadlinePreviewLength: Int
     ): Unit = {
-        val head = if (comment.label.nonEmpty) {
-            comment.label
-        } else {
-            label
+        def entryToHTML(key: String, entry: ConfigNode): Unit = {
+            entry.toHTML(key, headlineHTML, contentHTML, pageHTML, sorted, maximumHeadlinePreviewLength)
+            pageHTML ++= "\n"
         }
 
-        val brief = comment.getBrief(maximumHeadlinePreviewLength)
-
-        // Adds Header line with collapse + expand options
-        HTMLStringBuilder ++= HTMLHeadline.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace(
-            "$brief",
-            StringEscapeUtils.escapeHtml4(brief)
-        )
-        HTMLStringBuilder ++= "\n"
-
-        // Write value into HTML code
-        val splitContent = HTMLContent.split("\\$content")
-        HTMLStringBuilder ++= splitContent(0)
-        comment.toHTML(HTMLStringBuilder)
         if (sorted) {
             val sortedKeys = entries.keys.toSeq.sorted
             for (key <- sortedKeys) {
-                entries(key).toHTML(
-                    key,
-                    HTMLHeadline,
-                    HTMLContent,
-                    HTMLStringBuilder,
-                    sorted,
-                    maximumHeadlinePreviewLength
-                )
-                HTMLStringBuilder ++= "\n"
+                entryToHTML(key, entries(key))
             }
         } else {
             for ((key, node) <- entries) {
-                node.toHTML(key, HTMLHeadline, HTMLContent, HTMLStringBuilder, sorted, maximumHeadlinePreviewLength)
-                HTMLStringBuilder ++= "\n"
+                entryToHTML(key, node)
             }
         }
-        HTMLStringBuilder ++= "<br>\n"
-        HTMLStringBuilder ++= splitContent(1)
-
-        HTMLStringBuilder.toString
     }
 
     /**
@@ -84,11 +54,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
      * @return true if both the Object and the comment are empty.
      */
     override def isEmpty: Boolean = {
-        if (!comment.isEmpty) return false
-        for ((key, value) <- entries) {
-            if (!value.isEmpty) return false
-        }
-        true
+        comment.isEmpty && entries.valuesIterator.forall(_.isEmpty)
     }
 
     /**
@@ -103,8 +69,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
         insertingObject.expand()
 
         // Insert object
-        for (kvpair <- insertingObject.entries) {
-            val (key, value) = kvpair
+        for (kvpair @ (key, value) <- insertingObject.entries) {
             if (entries.contains(key)) {
                 val conflicting_entry = entries.getOrElse(key, null)
                 if (conflicting_entry.isInstanceOf[ConfigObject] && value.isInstanceOf[ConfigObject]) {
@@ -130,40 +95,32 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
      * Inverse function of expand.
      */
     def collapse(): Unit = {
-        for (entry <- entries) {
-            val (key, value) = entry
+        for ((key, value) <- entries) {
             value.collapse()
 
             // If the entry is a config object with exactly one child -> merge
-            if (value.isInstanceOf[ConfigObject]) {
-                val value_object = value.asInstanceOf[ConfigObject]
-                if (value_object.entries.size == 1) {
+            value match {
+                case valueObject: ConfigObject if valueObject.entries.size == 1 =>
                     // Merge Keys
-                    val (childkey, childvalue) = value_object.entries.head
+                    val (childkey, childvalue) = valueObject.entries.head
                     val newkey = key.trim + "." + childkey.trim
 
                     // Merge comments
-                    childvalue.comment = childvalue.comment.mergeComment(value_object.comment)
+                    childvalue.comment = childvalue.comment.mergeComment(valueObject.comment)
 
                     // Add new object
                     entries += (newkey -> childvalue)
 
                     // Remove old object
                     entries -= key
-                }
-            }
-        }
-        if (entries.size == 1) {
-            if (comment.isEmpty) {} else {
-                val (key, value) = entries.head
-                if (value.comment.isEmpty) {}
+                case _ =>
             }
         }
     }
 
     /**
      * This method expands the current object to represent all objects within the structure.
-     * Inverse function of collapse.
+     * Inverse function of collapse (except for comments, which are not unmerged).
      */
     def expand(): Unit = {
         for (entry <- entries) {
@@ -173,21 +130,22 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
 
             if (key.contains(".")) {
                 // Create expanded object
-                val newkey = key.trim.split("\\.", 2)
-                val new_entry = mutable.Map[String, ConfigNode](newkey(1).trim -> value)
-                val new_object = ConfigObject(new_entry, new DocumentationComment("", "", Seq(), "", Seq()))
-                new_object.expand()
-                if (entries.contains(newkey(0).trim)) {
-                    if (entries(newkey(0).trim).isInstanceOf[ConfigObject]) {
-                        entries(newkey(0).trim).asInstanceOf[ConfigObject].merge(new_object)
-                    } else {
-                        // If the child object already exists and is NOT a config object, the config structure has a label conflict (Problem!)
-                        throw new IllegalArgumentException(
-                            s"Unable to Merge ${newkey(0).trim} due to incompatible types: ${entries(newkey(0).trim).getClass}"
-                        )
+                val Array(firstKey, remainingKey) = key.split("\\.", 2).map(_.trim)
+                val newEntry = mutable.Map[String, ConfigNode](remainingKey -> value)
+                val newObject = ConfigObject(newEntry, new DocumentationComment("", "", Seq(), "", Seq()))
+                newObject.expand()
+                if (entries.contains(firstKey)) {
+                    entries(firstKey) match {
+                        case configObject: ConfigObject =>
+                            configObject.merge(newObject)
+                        case other =>
+                            // If the child object already exists and is NOT a config object, the config structure has a label conflict (Problem!)
+                            throw new IllegalArgumentException(
+                                s"Unable to Merge ${firstKey} due to incompatible types: ${other.getClass}"
+                            )
                     }
                 } else {
-                    entries += (newkey(0).trim -> new_object)
+                    entries += (firstKey -> newObject)
                 }
 
                 // Delete old entry from the map to avoid duplicates
@@ -197,12 +155,10 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
     }
 
     /**
-     * Iterator for replacing subclass types of all members of the Object.
+     * Replaces subclass types of all members of the Object.
      * @param se Accepts an initialized SubclassExtractor containing the ClassHierarchy required for a successful replacement.
      */
     override def replaceClasses(se: SubclassExtractor): Unit = {
-        for ((key, value) <- entries) {
-            value.replaceClasses(se)
-        }
+        entries.valuesIterator.foreach(_.replaceClasses(se))
     }
 }

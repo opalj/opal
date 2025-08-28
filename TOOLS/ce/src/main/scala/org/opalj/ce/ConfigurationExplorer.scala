@@ -2,9 +2,6 @@
 package org.opalj
 package ce
 
-import java.io.File
-import java.nio.file.Paths
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
@@ -24,14 +21,13 @@ object ConfigurationExplorer extends App {
     val buildVersion = System.getProperty("build.version", "unknown")
 
     // Load config with default filename for this application
-    val conf = LoadConfig()
+    val conf = loadConfig()
 
     val locator = new FileLocator(conf)
     val filepaths = locator.getConfigurationPaths
 
     // Bulk Imports all the configs
-    val CPW = new CommentParser
-    val configs = CPW.iterateConfigs(filepaths, Paths.get(locator.getProjectRoot))
+    val configs = CommentParser.iterateConfigs(filepaths, locator.projectRoot)
 
     // Replace class type values
     if (conf.getBoolean("org.opalj.ce.replaceSubclasses")) {
@@ -42,17 +38,18 @@ object ConfigurationExplorer extends App {
     }
 
     // Export
-    val HE = new HTMLExporter(
+    HTMLExporter.exportHTML(
         configs,
-        Paths.get(locator.getProjectRoot + conf.getString("org.opalj.ce.html.template"))
+        locator.projectRoot.resolve(conf.getString("org.opalj.ce.html.template")),
+        conf,
+        locator.projectRoot.resolve(conf.getString("org.opalj.ce.html.export")).toFile
     )
-    HE.exportHTML(conf, new File(locator.getProjectRoot + conf.getString("org.opalj.ce.html.export")))
 
     /**
      * Loads default configuration of the configuration explorer
      * @return returns the configuration of the configuration explorer
      */
-    def LoadConfig(): Config = {
+    def loadConfig(): Config = {
         OPALLogger.info("Configuration Explorer", "Loading configuration")
         val conf = ConfigFactory.load("ce")
 

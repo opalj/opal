@@ -7,7 +7,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.BasicFileAttributes
-import scala.collection.immutable.Seq
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
@@ -26,12 +25,11 @@ class FileLocator(config: Config) {
     implicit val logContext: LogContext = GlobalLogContext
 
     /**
-     * Small helper method for finding the project root.
-     * @return returns the root directory of the opal project.
+     * The root directory of the opal project.
      */
-    def getProjectRoot: String = {
+    lazy val projectRoot: Path = {
         val subprojectDirectory = config.getString("user.dir")
-        val projectRoot = Paths.get(subprojectDirectory).getParent.getParent.toString
+        val projectRoot = Paths.get(subprojectDirectory).getParent.getParent
         OPALLogger.info("Configuration Explorer", s"Searching in the following directory: $projectRoot")
         projectRoot
     }
@@ -60,21 +58,19 @@ class FileLocator(config: Config) {
     }
 
     /**
-     * Finds all files that match the filename within the.
-     * @param Filenames Accepts a List of all filenames that should be included in the result.
+     * Finds all files that match the filename within the given Seq.
+     * @param filenames Accepts a List of all filenames that should be included in the result.
      * @return returns a List of full FilePaths to all found files.
      */
-    def searchFiles(Filenames: Seq[String]): Seq[Path] = {
-        val projectRoot = Paths.get(getProjectRoot)
+    def searchFiles(filenames: Seq[String]): Seq[Path] = {
         val foundFiles = ListBuffer[Path]()
 
         Files.walkFileTree(
             projectRoot,
             new java.nio.file.SimpleFileVisitor[Path]() {
                 override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {
-                    if (Filenames.contains(file.getFileName.toString) && !file.toAbsolutePath.toString.contains(
-                            "target\\scala"
-                        ) && !file.toAbsolutePath.toString.contains("target/scala")
+                    if (filenames.contains(file.getFileName.toString) &&
+                        !file.toAbsolutePath.toString.contains(s"target${File.separatorChar}scala")
                     ) {
                         foundFiles += file
                         OPALLogger.info("Configuration Explorer", s"Found file: ${file.toString}")
@@ -92,7 +88,6 @@ class FileLocator(config: Config) {
      * @return Will only return jar archives that contain the parameter in their file name and that are not in the bg-jobs folder.
      */
     def findJarArchives(pathWildcard: String): Seq[File] = {
-        val projectRoot = Paths.get(getProjectRoot)
         val foundFiles = ListBuffer[File]()
         Files.walkFileTree(
             projectRoot,
