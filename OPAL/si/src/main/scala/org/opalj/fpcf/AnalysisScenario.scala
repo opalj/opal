@@ -11,6 +11,7 @@ import org.opalj.graphs.Graph
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.getObjectReflectively
 
 /**
  * Provides functionality to determine whether a set of analyses is compatible and to compute
@@ -284,7 +285,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     }
                 }
 
-            val schedulingStrategy = instantiateSchedulingStrategy(config.getString(AnalysisSchedulingStrategyKey))
+            val schedulingStrategy: SchedulingStrategy =
+                getObjectReflectively(this, "scheduler", config.getString(AnalysisSchedulingStrategyKey)).get
             OPALLogger.info("scheduler", s"scheduling strategy ${schedulingStrategy} is selected")
 
             schedulingStrategy.schedule(ps, allCS)
@@ -294,16 +296,6 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             scheduledBatches,
             initializationData
         )
-    }
-
-    /**
-     * Reflectively instantiates a ''SchedulingStrategy'' object.
-     */
-    private[this] def instantiateSchedulingStrategy(fqn: String): SchedulingStrategy = {
-        import scala.reflect.runtime.universe._
-        val mirror = runtimeMirror(this.getClass.getClassLoader)
-        val module = mirror.staticModule(fqn)
-        mirror.reflectModule(module).instance.asInstanceOf[SchedulingStrategy]
     }
 }
 

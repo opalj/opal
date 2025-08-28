@@ -4,6 +4,9 @@ package br
 package analyses
 package cg
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.util.getObjectReflectively
+
 import net.ceedubs.ficus.Ficus._
 
 /**
@@ -55,7 +58,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
         epFinder.collectEntryPoints(project)
     }
 
-    private[this] def getEntryPointFinder(project: SomeProject) = {
+    private[this] def getEntryPointFinder(project: SomeProject): EntryPointFinder = {
         val configuredAnalysis = project.config.as[Option[String]](ConfigKey)
         val entryPointFinder = configuredAnalysis
         if (entryPointFinder.isEmpty) {
@@ -64,18 +67,6 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
             )
         }
 
-        val fqn = entryPointFinder.get
-        val epFinder = instantiateEntryPointFinder(fqn)
-        epFinder
-    }
-
-    /**
-     * Reflectively instantiates an ''EntryPointFinder'' object.
-     */
-    private[this] def instantiateEntryPointFinder(fqn: String): EntryPointFinder = {
-        import scala.reflect.runtime.universe._
-        val mirror = runtimeMirror(this.getClass.getClassLoader)
-        val module = mirror.staticModule(fqn)
-        mirror.reflectModule(module).instance.asInstanceOf[EntryPointFinder]
+        getObjectReflectively(this, "analysis configuration", entryPointFinder.get)(GlobalLogContext).get
     }
 }

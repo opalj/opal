@@ -4,6 +4,9 @@ package br
 package analyses
 package cg
 
+import org.opalj.log.GlobalLogContext
+import org.opalj.util.getObjectReflectively
+
 import net.ceedubs.ficus.Ficus._
 
 /**
@@ -38,15 +41,8 @@ object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[ClassT
             )
         }
 
-        val fqn = configuredAnalysis.get
-        val itFinder = instantiatedTypesFinder(fqn)
+        val itFinder: InstantiatedTypesFinder =
+            getObjectReflectively(this, "analysis configuration", configuredAnalysis.get)(GlobalLogContext).get
         itFinder.collectInstantiatedTypes(project)
-    }
-
-    private[this] def instantiatedTypesFinder(fqn: String): InstantiatedTypesFinder = {
-        import scala.reflect.runtime.universe._
-        val mirror = runtimeMirror(this.getClass.getClassLoader)
-        val module = mirror.staticModule(fqn)
-        mirror.reflectModule(module).instance.asInstanceOf[InstantiatedTypesFinder]
     }
 }

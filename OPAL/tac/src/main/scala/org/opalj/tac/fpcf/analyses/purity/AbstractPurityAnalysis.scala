@@ -56,10 +56,9 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.getObjectReflectively
 import org.opalj.value.ValueInformation
 
 /**
@@ -642,23 +641,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     }
 
     def resolveDomainSpecificRater(fqn: String): DomainSpecificRater = {
-        import scala.reflect.runtime.universe.runtimeMirror
-
-        val mirror = runtimeMirror(getClass.getClassLoader)
-        try {
-            val module = mirror.staticModule(fqn)
-            mirror.reflectModule(module).instance.asInstanceOf[DomainSpecificRater]
-        } catch {
-            case ex @ (_: ScalaReflectionException | _: ClassCastException) =>
-                OPALLogger.error(
-                    "analysis configuration",
-                    "resolve of domain specific rater failed, change " +
-                        s"org.opalj.fpcf.${this.getClass.getName}.domainSpecificRater in " +
-                        "ai/reference.conf to an existing DomainSpecificRater implementation",
-                    ex
-                )(GlobalLogContext)
-                new BaseDomainSpecificRater // Provide a safe default if resolution failed
-        }
+        getObjectReflectively(this, "analysis configuration", fqn).getOrElse(new BaseDomainSpecificRater)
     }
 
 }

@@ -3,8 +3,6 @@ package org.opalj
 package tac
 package cg
 
-import scala.reflect.runtime.universe.runtimeMirror
-
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 
@@ -27,12 +25,12 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.error
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler
+import org.opalj.util.getObjectReflectively
 
 /**
  * An abstract [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]].
@@ -102,9 +100,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val config = project.config
 
         // TODO use FPCFAnalysesRegistry here
-        config.getStringList(
-            "org.opalj.tac.cg.CallGraphKey.modules"
-        ).asScala.flatMap(resolveAnalysisRunner(_))
+        config.getStringList("org.opalj.tac.cg.CallGraphKey.modules").asScala.flatMap(resolveAnalysisRunner)
     }
 
     def allCallGraphAnalyses(project: SomeProject): Iterable[FPCFAnalysisScheduler] = {
@@ -152,30 +148,15 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val manager = project.get(FPCFAnalysesManagerKey)
         manager.runAll(allCallGraphAnalyses(project))
     }
-
-    protected[this] def resolveAnalysisRunner(
-        className: String
-    )(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
-        val mirror = runtimeMirror(getClass.getClassLoader)
-        try {
-            val module = mirror.staticModule(className)
-            import mirror.reflectModule
-            Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler])
-        } catch {
-            case sre: ScalaReflectionException =>
-                error("call graph", s"cannot find analysis scheduler $className", sre)
-                None
-            case cce: ClassCastException =>
-                error("call graph", "analysis scheduler class is invalid", cce)
-                None
-        }
+    protected[this] def resolveAnalysisRunner(className: String)(implicit
+        logContext: LogContext
+    ): Option[FPCFAnalysisScheduler] = {
+        getObjectReflectively(this, "call graph", className)
     }
 
     private[this] def requiresCallBySignatureKey(p: SomeProject): ProjectInformationKeys = {
         val config = p.config
-        if (config.hasPath(CallBySignatureConfigKey)
-            && config.getBoolean(CallBySignatureConfigKey)
-        ) {
+        if (config.hasPath(CallBySignatureConfigKey) && config.getBoolean(CallBySignatureConfigKey)) {
             return Seq(CallBySignatureKey);
         }
         Seq.empty
