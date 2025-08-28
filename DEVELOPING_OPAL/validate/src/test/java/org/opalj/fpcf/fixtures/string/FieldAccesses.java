@@ -44,12 +44,14 @@ public class FieldAccesses {
 
     @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "private l0 non-final string field")
     @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.L3, value = "(null|private l0 non-final string field)")
     public void nonFinalFieldRead() {
         analyzeString(nonFinalNonStaticField);
     }
 
     @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "will not be revealed here")
     @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.L3, value = "(null|will not be revealed here)")
     public void nonFinalStaticFieldRead() {
         analyzeString(nonFinalStaticField);
     }
@@ -65,18 +67,21 @@ public class FieldAccesses {
 
     @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "init field value")
     @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.L3, value = "(init field value|null)")
     public void fieldWithInitRead() {
         analyzeString(fieldWithSelfInit.toString());
     }
 
     @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(Impl_Stub_1|Impl_Stub_2)")
     @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.L3, value = "(Impl_Stub_1|Impl_Stub_2|null)")
     public void fieldWithInitWithOutOfScopeRead() {
         analyzeString(fieldWithSelfInitWithComplexInit);
     }
 
     @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "initialized by constructor")
     @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
+    @Constant(sinkIndex = 0, levels = Level.L3, value = "(initialized by constructor|null)")
     public void fieldInitByConstructorRead() {
         analyzeString(fieldWithConstructorInit.toString());
     }

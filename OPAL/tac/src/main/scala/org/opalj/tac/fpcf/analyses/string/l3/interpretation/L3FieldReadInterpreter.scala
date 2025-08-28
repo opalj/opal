@@ -19,6 +19,7 @@ import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string.StringTreeConst
 import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.br.fpcf.properties.string.StringTreeNull
 import org.opalj.br.fpcf.properties.string.StringTreeOr
@@ -52,6 +53,7 @@ class L3FieldReadInterpreter(
     override type E = FieldRead[V]
 
     private case class FieldReadState(
+        field:                     DeclaredField,
         target:                    PV,
         var fieldAccessDependee:   EOptionP[DeclaredField, FieldWriteAccessInformation],
         var hasWriteInSameMethod:  Boolean                                                    = false,
@@ -92,11 +94,23 @@ class L3FieldReadInterpreter(
             return failure(target)
         }
 
+        fieldRead.resolveField match {
+            case Some(field)
+                if !highSoundness && field.isStatic && field.isFinal && field.constantFieldValue.isDefined =>
+                // The field is really a constant (apart from potential reflection shenanigans)
+                return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                    state.pc,
+                    target,
+                    StringTreeConst(field.constantFieldValue.get.valueToString)
+                ))
+            case _ =>
+        }
+
         val field = declaredFields(fieldRead.declaringClass, fieldRead.name, fieldRead.declaredFieldType)
         val fieldAccessEOptP = ps(field, FieldWriteAccessInformation.key)
 
         implicit val accessState: FieldReadState =
-            FieldReadState(target, InterimEUBP(field, NoFieldWriteAccessInformation))
+            FieldReadState(field, target, InterimEUBP(field, NoFieldWriteAccessInformation))
         if (fieldAccessEOptP.hasUBP) {
             handleFieldAccessInformation(fieldAccessEOptP.asEPS)
         } else {
@@ -118,11 +132,19 @@ class L3FieldReadInterpreter(
 
         if (accessDependee.isFinal && accessInformation.accesses.isEmpty) {
             // No methods which write the field were found => Field could either be null or any value
-            return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
-                state.pc,
-                accessState.target,
-                StringTreeOr.fromNodes(failureTree, StringTreeNull)
-            ))
+            if (accessState.field.fieldType.isReferenceType) {
+                return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                    state.pc,
+                    accessState.target,
+                    StringTreeOr.fromNodes(failureTree, StringTreeNull)
+                ))
+            } else {
+                return computeFinalResult(StringFlowFunctionProperty.constForVariableAt(
+                    state.pc,
+                    accessState.target,
+                    failureTree
+                ))
+            }
         }
 
         accessInformation.getNewestAccesses(
@@ -176,10 +198,9 @@ class L3FieldReadInterpreter(
                         tree
                 } else StringTreeNode.ub
             }
-            // No init is present => append a `null` element to indicate that the field might be null; this behavior
-            // could be refined by only setting the null element if no statement is guaranteed to be executed prior
-            // to the field read
-            if (accessState.fieldAccessDependee.isFinal && !accessState.hasInit) {
+
+            // Always append a "null" for soundness
+            if (accessState.field.fieldType.isReferenceType) {
                 trees = trees :+ StringTreeNull
             }
 
