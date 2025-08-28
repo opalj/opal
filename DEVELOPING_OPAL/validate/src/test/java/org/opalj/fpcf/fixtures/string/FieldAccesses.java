@@ -98,7 +98,7 @@ public class FieldAccesses {
     }
 
     // Contains a field write in the same method which cannot be captured by flow functions
-    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(some value|null)")
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(null|some value)")
     @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1, Level.L2 })
     @Constant(sinkIndex = 0, levels = Level.L3, soundness = SoundnessMode.LOW, value = "(null|some value)")
     @Dynamic(sinkIndex = 0, levels = Level.L3, soundness = SoundnessMode.HIGH, value = ".*")
