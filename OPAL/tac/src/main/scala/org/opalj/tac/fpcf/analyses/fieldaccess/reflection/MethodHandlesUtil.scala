@@ -10,6 +10,7 @@ import org.opalj.br.ClassType
 import org.opalj.br.FieldType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.string.StringTreeConst
 
 object MethodHandlesUtil {
 
@@ -21,7 +22,7 @@ object MethodHandlesUtil {
     )(implicit project: SomeProject): Set[FieldMatcher] = {
         Set(
             new LBTypeBasedFieldMatcher(fieldType),
-            new NameBasedFieldMatcher(Set(name)),
+            new NameBasedFieldMatcher(StringTreeConst(name)),
             if (isStatic) StaticFieldMatcher else NonStaticFieldMatcher,
             if (declaringClass.isArrayType)
                 new ClassBasedFieldMatcher(Set(ClassType.Object), onlyFieldsExactlyInClass = false)

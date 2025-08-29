@@ -53,6 +53,7 @@ object TypesUtil {
         pc:           Int,
         className:    V,
         context:      Context,
+        depender:     Entity,
         stmts:        Array[Stmt[V]],
         project:      SomeProject,
         allowDynamic: Boolean
@@ -61,7 +62,7 @@ object TypesUtil {
         ps:    PropertyStore,
         state: TypeIteratorState
     ): Set[ClassType] = {
-        val stringTree = StringUtil.getPossibleStrings(pc, className, context, stmts)
+        val stringTree = StringUtil.getPossibleStrings(pc, className, context, depender, stmts)
         stringTree.map(getPossibleForNameClasses(_, project, allowDynamic)).getOrElse(Set.empty)
     }
 

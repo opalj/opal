@@ -10,6 +10,8 @@ import org.opalj.br.ClassType
 import org.opalj.br.FieldTypes
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.string.StringTreeConst
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 
@@ -86,29 +88,27 @@ object MatcherUtil {
      * provides allocation sites of Strings to be used as the method name.
      */
     private[reflection] def retrieveNameBasedMethodMatcher(
-        context:  Context,
-        expr:     V,
-        depender: Entity,
         pc:       Int,
-        stmts:    Array[Stmt[V]],
-        failure:  () => Unit
+        value:    V,
+        context:  Context,
+        depender: Entity,
+        stmts:    Array[Stmt[V]]
     )(
         implicit
-        typeIterator:        TypeIterator,
         state:               TypeIteratorState,
         ps:                  PropertyStore,
         incompleteCallSites: IncompleteCallSites,
         highSoundness:       Boolean
     ): MethodMatcher = {
-        val names = StringUtil.getPossibleStrings(expr, context, depender, stmts, failure)
-        retrieveSuitableMatcher[Set[String]](
-            Some(names),
+        val names = StringUtil.getPossibleStrings(pc, value, context, depender, stmts)
+        retrieveSuitableMatcher[StringTreeNode](
+            names,
             pc,
             v => new NameBasedMethodMatcher(v)
         )
     }
 
-    private[reflection] val constructorMatcher = new NameBasedMethodMatcher(Set("<init>"))
+    private[reflection] val constructorMatcher = new NameBasedMethodMatcher(StringTreeConst("<init>"))
 
     /**
      * Given an expression that evaluates to a Class<?> object, creates a MethodMatcher to match

@@ -31,6 +31,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.ForNameClasses
 import org.opalj.br.fpcf.properties.cg.LoadedClasses
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
@@ -254,8 +255,15 @@ class ClassForNameAnalysis private[analyses] (
         callContext: ContextType,
         stmts:       Array[Stmt[V]]
     )(implicit state: State): Unit = {
-        val possibleClasses =
-            TypesUtil.getPossibleForNameClasses(pc, className, callContext, stmts, project, allowDynamicStringTrees)
+        val possibleClasses = TypesUtil.getPossibleForNameClasses(
+            pc,
+            className,
+            callContext,
+            pc.asInstanceOf[Entity],
+            stmts,
+            project,
+            allowDynamicStringTrees
+        )
         state.addNewLoadedClasses(possibleClasses)
     }
 
@@ -750,7 +758,6 @@ class MethodInvokeAnalysis private[analyses] (
         Option[(ValueInformation, IntTrieSet)],
         Seq[Option[(ValueInformation, IntTrieSet)]],
         Set[MethodMatcher],
-        V,
         Array[Stmt[V]],
         V,
         ContextType
@@ -770,6 +777,8 @@ class MethodInvokeAnalysis private[analyses] (
 
         val epk = eps.toEPK
 
+        implicit val highSoundness: Boolean = HighSoundnessMode("method")
+
         if (epk.pk == ForNameClasses.key) {
             val (callPC, receiver, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
@@ -781,9 +790,22 @@ class MethodInvokeAnalysis private[analyses] (
                 new ClassBasedMethodMatcher(classes, !matchers.contains(PublicMethodMatcher))
 
             addCalls(state.callContext, callPC, _ => receiver, params, allMatchers)
-        } else {
-            implicit val highSoundness: Boolean = HighSoundnessMode("method")
+        } else if (epk.pk == StringConstancyProperty.key) {
+            state.dependersOf(epk).foreach {
+                case depender: nameDependerType @unchecked if depender.isInstanceOf[nameDependerType] =>
+                    val (callPC, actualReceiver, actualParams, matchers, _, _, _) = depender
+                    val nameMatcher = retrieveSuitableMatcher[StringTreeNode](
+                        Some(eps.ub.asInstanceOf[StringConstancyProperty].tree),
+                        callPC,
+                        v => new NameBasedMethodMatcher(v)
+                    )
 
+                    if (nameMatcher ne NoMethodsMatcher) {
+                        val allMatchers = matchers + getClassMatcher(depender, matchers + nameMatcher)
+                        addCalls(state.callContext, callPC, _ => actualReceiver, actualParams, allMatchers)
+                    }
+            }
+        } else {
             AllocationsUtil.continuationForAllocation[methodDependerType, ContextType](
                 eps,
                 state.callContext,
@@ -794,30 +816,6 @@ class MethodInvokeAnalysis private[analyses] (
                 val allMatchers =
                     handleGetMethod(allocationContext, data._1, allocationIndex, data._2, data._3, data._4, stmts)
                 addCalls(state.callContext, data._1, _ => data._2, data._3, allMatchers)
-            }
-
-            AllocationsUtil.continuationForAllocation[nameDependerType, ContextType](
-                eps,
-                state.callContext,
-                data => (data._5, data._6),
-                _.isInstanceOf[(_, _, _, _, _, _, _, _)],
-                data => {
-                    val allMatchers = data._4 + getClassMatcher(data, data._4)
-                    failure("method", data._1, data._2, data._3, allMatchers)
-                }
-            ) { (data, _, allocationIndex, stmts) =>
-                val name = StringUtil.getString(allocationIndex, stmts)
-
-                val nameMatcher = retrieveSuitableMatcher[Set[String]](
-                    name.map(Set(_)),
-                    data._1,
-                    v => new NameBasedMethodMatcher(v)
-                )
-
-                if (nameMatcher ne NoMethodsMatcher) {
-                    val allMatchers = data._4 + getClassMatcher(data, data._4 + nameMatcher)
-                    addCalls(state.callContext, data._1, _ => data._2, data._3, allMatchers)
-                }
             }
 
             AllocationsUtil.continuationForAllocation[classDependerType, ContextType](
@@ -863,11 +861,11 @@ class MethodInvokeAnalysis private[analyses] (
     )(implicit state: TACAIBasedCGState[ContextType], indirectCalls: IndirectCalls): MethodMatcher = {
         implicit val highSoundness: Boolean = HighSoundnessMode("class")
         MatcherUtil.retrieveClassBasedMethodMatcher(
-            data._8,
             data._7,
-            (data._1, data._2, data._3, matchers, data._7, data._6),
-            data._1,
             data._6,
+            (data._1, data._2, data._3, matchers, data._6, data._5),
+            data._1,
+            data._5,
             project,
             () => failure("class", data._1, data._2, data._3, matchers),
             onlyMethodsExactlyInClass = !matchers.contains(PublicMethodMatcher)
@@ -962,26 +960,19 @@ class MethodInvokeAnalysis private[analyses] (
                 if (isGetMethod)
                     matchers += PublicMethodMatcher
 
-                var failed: String = null
-
-                val depender =
-                    (callPC, actualReceiver, actualParams, matchers, params.head.asVar, stmts, receiver.asVar, context)
+                val depender = (callPC, actualReceiver, actualParams, matchers, stmts, receiver.asVar, context)
 
                 if (!matchers.contains(NoMethodsMatcher))
                     matchers += MatcherUtil.retrieveNameBasedMethodMatcher(
-                        context,
-                        params.head.asVar,
-                        depender,
                         callPC,
-                        stmts,
-                        () => failed = "method"
+                        params.head.asVar,
+                        context,
+                        depender,
+                        stmts
                     )
 
                 if (!matchers.contains(NoMethodsMatcher))
                     matchers += getClassMatcher(depender, matchers)
-
-                if (failed ne null)
-                    failure("method", callPC, actualReceiver, actualParams, matchers)
 
             /*case ArrayLoad(_, _, arrayRef) =>*/
             // TODO here we can handle getMethods
@@ -1087,7 +1078,6 @@ class MethodHandleInvokeAnalysis private[analyses] (
         Boolean,
         Seq[Option[(ValueInformation, IntTrieSet)]],
         Set[MethodMatcher],
-        V,
         Array[Stmt[V]],
         V,
         ContextType
@@ -1101,6 +1091,8 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
         val epk = eps.toEPK
 
+        implicit val highSoundness: Boolean = HighSoundnessMode("method")
+
         if (epk.pk == ForNameClasses.key) {
             val (callPC, isVirtual, params, matchers, _, _) = state.dependersOf(epk).head.asInstanceOf[classDependerType]
 
@@ -1113,9 +1105,24 @@ class MethodHandleInvokeAnalysis private[analyses] (
             val allMatchers = matchers + new ClassBasedMethodMatcher(classes, false)
 
             addCalls(state.callContext, callPC, allMatchers, params)
-        } else {
-            implicit val highSoundness: Boolean = HighSoundnessMode("method")
+        } else if (epk.pk == StringConstancyProperty.key) {
+            state.dependersOf(epk).foreach {
+                case depender: nameDependerType @unchecked if depender.isInstanceOf[nameDependerType] =>
+                    val (callPC, _, actualParams, previousMatchers, _, _, _) = depender
 
+                    val nameMatcher = retrieveSuitableMatcher[StringTreeNode](
+                        Some(eps.ub.asInstanceOf[StringConstancyProperty].tree),
+                        callPC,
+                        v => new NameBasedMethodMatcher(v)
+                    )
+
+                    if (nameMatcher ne NoMethodsMatcher) {
+                        val matchers = previousMatchers + nameMatcher
+                        val allMatchers = matchers + getClassMatcher(depender, matchers)
+                        addCalls(state.callContext, callPC, allMatchers, actualParams)
+                    }
+            }
+        } else {
             AllocationsUtil.continuationForAllocation[methodHandleDependerType, ContextType](
                 eps,
                 state.callContext,
@@ -1134,31 +1141,6 @@ class MethodHandleInvokeAnalysis private[analyses] (
                     stmts
                 )
                 addCalls(state.callContext, data._1, allMatchers, data._4)
-            }
-
-            AllocationsUtil.continuationForAllocation[nameDependerType, ContextType](
-                eps,
-                state.callContext,
-                data => (data._5, data._6),
-                _.isInstanceOf[(_, _, _, _, _, _, _, _)],
-                data => {
-                    val allMatchers = data._4 + getClassMatcher(data, data._4)
-                    failure("method", data._1, data._3, allMatchers)
-                }
-            ) { (data, _, allocationIndex, stmts) =>
-                val name = StringUtil.getString(allocationIndex, stmts)
-
-                val nameMatcher = retrieveSuitableMatcher[Set[String]](
-                    name.map(Set(_)),
-                    data._1,
-                    v => new NameBasedMethodMatcher(v)
-                )
-
-                if (nameMatcher ne NoMethodsMatcher) {
-                    val matchers = data._4 + nameMatcher
-                    val allMatchers = matchers + getClassMatcher(data, matchers)
-                    addCalls(state.callContext, data._1, allMatchers, data._3)
-                }
             }
 
             AllocationsUtil.continuationForAllocation[classDependerType, ContextType](
@@ -1201,11 +1183,11 @@ class MethodHandleInvokeAnalysis private[analyses] (
     )(implicit state: TACAIBasedCGState[ContextType], indirectCalls: IndirectCalls): MethodMatcher = {
         implicit val highSoundness: Boolean = HighSoundnessMode("class")
         MatcherUtil.retrieveClassBasedMethodMatcher(
-            data._8,
             data._7,
-            (data._1, data._2, data._3, matchers, data._7, data._6),
-            data._1,
             data._6,
+            (data._1, data._2, data._3, matchers, data._6, data._5),
+            data._1,
+            data._5,
             project,
             () => failure("class", data._1, data._3, matchers),
             onlyMethodsExactlyInClass = false,
@@ -1409,12 +1391,11 @@ class MethodHandleInvokeAnalysis private[analyses] (
                     matchers +=
                         (if (isConstructor) MatcherUtil.constructorMatcher
                          else MatcherUtil.retrieveNameBasedMethodMatcher(
-                             context,
-                             name,
-                             (callPC, isVirtual, persistentActualParams, matchers, name, stmts, refc, context),
                              callPC,
-                             stmts,
-                             () => failure("method", callPC, persistentActualParams, matchers)
+                             name,
+                             context,
+                             (callPC, isVirtual, persistentActualParams, matchers, stmts, refc, context),
+                             stmts
                          ))
                 }
                 if (!matchers.contains(NoMethodsMatcher))
@@ -1445,7 +1426,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                                 onlyMethodsExactlyInClass = false
                             )
                         else {
-                            val data = (callPC, isVirtual, persistentActualParams, matchers, name, stmts, refc, context)
+                            val data = (callPC, isVirtual, persistentActualParams, matchers, stmts, refc, context)
                             matchers += getClassMatcher(data, matchers)
                         }
                     }
