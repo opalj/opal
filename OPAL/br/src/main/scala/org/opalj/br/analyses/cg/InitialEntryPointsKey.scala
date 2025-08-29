@@ -4,7 +4,6 @@ package br
 package analyses
 package cg
 
-import org.opalj.log.GlobalLogContext
 import org.opalj.util.getObjectReflectively
 
 import net.ceedubs.ficus.Ficus._
@@ -67,6 +66,6 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
             )
         }
 
-        getObjectReflectively(this, "analysis configuration", entryPointFinder.get)(GlobalLogContext).get
+        getObjectReflectively(entryPointFinder.get, this, "analysis configuration").get
     }
 }

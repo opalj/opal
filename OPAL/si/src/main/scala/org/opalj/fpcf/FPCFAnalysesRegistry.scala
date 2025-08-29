@@ -55,7 +55,7 @@ object FPCFAnalysesRegistry {
         factoryType:         String,
         default:             Boolean
     ): Unit = this.synchronized {
-        getObjectReflectively[FPCFAnalysisScheduler[_]](this, "FPCF registry", analysisFactory) match {
+        getObjectReflectively[FPCFAnalysisScheduler[_]](analysisFactory, this, "FPCF registry") match {
             case Some(analysisRunner) =>
                 factoryType match {
                     case "lazy" =>

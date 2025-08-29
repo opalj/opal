@@ -4,7 +4,6 @@ package br
 package analyses
 package cg
 
-import org.opalj.log.GlobalLogContext
 import org.opalj.util.getObjectReflectively
 
 import net.ceedubs.ficus.Ficus._
@@ -41,12 +40,8 @@ object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[ClassT
             )
         }
 
-        val itFinder: InstantiatedTypesFinder =
-            getObjectReflectively[InstantiatedTypesFinder](
-                this,
-                "analysis configuration",
-                configuredAnalysis.get
-            )(GlobalLogContext).get
+        val itFinder =
+            getObjectReflectively[InstantiatedTypesFinder](configuredAnalysis.get, this, "analysis configuration").get
         itFinder.collectInstantiatedTypes(project)
     }
 }

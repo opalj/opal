@@ -151,7 +151,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     protected[this] def resolveAnalysisRunner(className: String)(implicit
         logContext: LogContext
     ): Option[FPCFAnalysisScheduler] = {
-        getObjectReflectively(this, "call graph", className)
+        getObjectReflectively[FPCFAnalysisScheduler](className, this, "call graph")
     }
 
     private[this] def requiresCallBySignatureKey(p: SomeProject): ProjectInformationKeys = {

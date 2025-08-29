@@ -8,7 +8,6 @@ package purity
 import org.rogach.scallop.stringConverter
 
 import org.opalj.cli.ParsedArg
-import org.opalj.log.GlobalLogContext
 import org.opalj.util.getObjectReflectively
 
 object RaterArg extends ParsedArg[String, DomainSpecificRater] {
@@ -18,6 +17,6 @@ object RaterArg extends ParsedArg[String, DomainSpecificRater] {
     override val defaultValue: Option[String] = Some(SystemOutLoggingAllExceptionRater.getClass.getName)
 
     override def parse(arg: String): DomainSpecificRater = {
-        getObjectReflectively(this, "analysis configuration", arg)(GlobalLogContext).get
+        getObjectReflectively[DomainSpecificRater](arg, this, "analysis configuration").get
     }
 }

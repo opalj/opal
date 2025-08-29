@@ -641,7 +641,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     }
 
     def resolveDomainSpecificRater(fqn: String): DomainSpecificRater = {
-        getObjectReflectively(this, "analysis configuration", fqn).getOrElse(new BaseDomainSpecificRater)
+        val configuredRater = getObjectReflectively[DomainSpecificRater](fqn, this, "analysis configuration")
+        configuredRater.getOrElse(new BaseDomainSpecificRater)
     }
 
 }

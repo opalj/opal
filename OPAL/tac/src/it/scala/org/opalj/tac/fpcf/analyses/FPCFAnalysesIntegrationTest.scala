@@ -32,7 +32,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePropertyKey
-import org.opalj.log.GlobalLogContext
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
@@ -174,7 +173,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
     }
 
     def getProperty(fqn: String): PropertyMetaInformation = {
-        getObjectReflectively(this, "integration test", fqn)(GlobalLogContext).get
+        getObjectReflectively[PropertyMetaInformation](fqn, this, "integration test").get
     }
 
     def getConfig: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] = {
