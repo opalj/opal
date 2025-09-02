@@ -3,8 +3,9 @@ package org.opalj
 package frb
 package analyses
 
-import br.*
 import org.opalj.br.MethodDescriptor.JustReturnsObject
+
+import br.*
 import br.analyses.*
 import br.instructions.*
 
@@ -62,7 +63,7 @@ class CloneDoesNotCallSuperClone[Source] extends FindRealBugsAnalysis[Source] {
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
@@ -75,7 +76,7 @@ class CloneDoesNotCallSuperClone[Source] extends FindRealBugsAnalysis[Source] {
             if method.body.isDefined
             if !method.body.get.instructions.exists {
                 case INVOKESPECIAL(`superClass`, "clone", JustReturnsObject) => true
-                case _ => false
+                case _                                                       => false
             }
         } yield {
             MethodBasedReport(

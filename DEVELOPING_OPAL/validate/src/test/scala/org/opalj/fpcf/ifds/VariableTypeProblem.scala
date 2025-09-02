@@ -13,14 +13,13 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.AbstractIFDSNullFact
-import org.opalj.ifds.Callable
 import org.opalj.ifds.Dependees.Getter
 import org.opalj.ifds.IFDSFact
 import org.opalj.tac.ArrayLoad
@@ -33,9 +32,9 @@ import org.opalj.tac.GetStatic
 import org.opalj.tac.New
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Var
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.JavaForwardIFDSProblem
 import org.opalj.tac.fpcf.analyses.ifds.JavaIFDSProblem
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.value.ValueInformation
 
 trait VTAFact extends AbstractIFDSFact
@@ -102,7 +101,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
 
     override def nullFact: VTAFact = VTANullFact
 
-    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, JavaStatement])] = {
+    override def entryPoints: Seq[(Method, IFDSFact[VTAFact, Method, JavaStatement])] = {
         project.allProjectClassFiles.flatMap(cf =>
             if (classInsideAnalysisContext(cf)) {
                 cf.methods.flatMap { m =>
@@ -135,7 +134,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         stmt.astID match {
             case Assignment.ASTID =>
                 // Add facts for the assigned variable.
-                inSet ++ newFacts(statement.method, statement.stmt.asAssignment.expr, statement.index, in)
+                inSet ++ newFacts(statement.method, statement.stmt.asAssignment.expr, statement.tacIndex, in)
             case ArrayStore.ASTID =>
                 /*
                  * Add facts for the array store, like it was a variable assignment.
@@ -146,7 +145,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                  */
                 val flow = scala.collection.mutable.Set.empty[VTAFact]
                 flow ++= inSet
-                newFacts(statement.method, stmt.asArrayStore.value, statement.index, in).foreach {
+                newFacts(statement.method, stmt.asArrayStore.value, statement.tacIndex, in).foreach {
                     case VariableType(_, t, upperBound) if !(t.isArrayType && t.asArrayType.dimensions <= 254) =>
                         stmt.asArrayStore.arrayRef.asVar.definedBy
                             .foreach(flow += VariableType(_, ArrayType(t), upperBound))
@@ -198,7 +197,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         call:         JavaStatement,
         in:           VTAFact,
         successor:    Option[JavaStatement],
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Set[VTAFact] = {
         val inSet = Set(in)
         // Check, to which variables the callee may refer
@@ -208,7 +207,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         val calleeTypeFacts = inSet.collect {
             // If we know the variable's type, we also know on which type the call is performed.
             case VariableType(index, t, upperBound) if calleeDefinitionSites.contains(index) =>
-                CalleeType(call.index, t, upperBound)
+                CalleeType(call.tacIndex, t, upperBound)
         }
         if (inSet.size >= calleeTypeFacts.size) inSet ++ calleeTypeFacts
         else calleeTypeFacts ++ inSet
@@ -223,7 +222,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
         in:           VTAFact,
         call:         JavaStatement,
         successor:    Option[JavaStatement],
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Set[VTAFact] =
         // We only create a new fact, if the call returns a value, which is assigned to a variable.
         if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
@@ -232,11 +231,11 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
             inSet.collect {
                 // If we know the type of the return value, we create a fact for the assigned variable.
                 case VariableType(definedBy, t, upperBound) if returnValue.definedBy.contains(definedBy) =>
-                    VariableType(call.index, t, upperBound)
+                    VariableType(call.tacIndex, t, upperBound)
             }
         } else Set.empty
 
-    override def createFlowFactAtExit(callee: Method, in: VTAFact, unbCallChain: Seq[Callable]): Option[VTAFact] = None
+    override def createFlowFactAtExit(callee: Method, in: VTAFact, unbCallChain: Seq[Method]): Option[VTAFact] = None
 
     /**
      * Only methods in java.lang and org.opalj are inside the analysis context.
@@ -255,12 +254,12 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                     call:         JavaStatement,
                     successor:    Option[JavaStatement],
                     in:           VTAFact,
-                    unbCallChain: Seq[Callable],
+                    unbCallChain: Seq[Method],
                     getter:       Getter
                 ) => {
                     val returnType = callee.descriptor.returnType
                     if (call.stmt.astID == Assignment.ASTID && returnType.isReferenceType) {
-                        Set(VariableType(call.index, returnType.asReferenceType, upperBound = true))
+                        Set(VariableType(call.tacIndex, returnType.asReferenceType, upperBound = true))
                     } else Set.empty[VTAFact]
                 }
             ): OutsideAnalysisContextCallHandler)
@@ -299,7 +298,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
                 inSet.iterator.collect {
                     // When we know the array's type, we also know the type of the loaded element.
                     case VariableType(index, t, upperBound)
-                        if isArrayOfObjectType(t) &&
+                        if isArrayOfClassType(t) &&
                             expression.asArrayLoad.arrayRef.asVar.definedBy.contains(index) =>
                         VariableType(statementIndex, t.asArrayType.elementType.asReferenceType, upperBound)
                 }
@@ -317,20 +316,20 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
     }
 
     /**
-     * Checks, if some type is an array type containing an object type.
+     * Checks, if some type is an array type containing a class type.
      *
      * @param t The type to be checked.
-     * @param includeObjectType If true, this method also returns true if `t` is an object type
+     * @param includeClassType If true, this method also returns true if `t` is a class type
      *                          itself.
      *
-     * @return True, if `t` is an array type of an object type.
+     * @return True, if `t` is an array type of a class type.
      */
-    @tailrec private def isArrayOfObjectType(
-        t:                 FieldType,
-        includeObjectType: Boolean = false
+    @tailrec private def isArrayOfClassType(
+        t:                FieldType,
+        includeClassType: Boolean = false
     ): Boolean = {
-        if (t.isArrayType) isArrayOfObjectType(t.asArrayType.elementType, includeObjectType = true)
-        else if (t.isObjectType && includeObjectType) true
+        if (t.isArrayType) isArrayOfClassType(t.asArrayType.elementType, includeClassType = true)
+        else if (t.isClassType && includeClassType) true
         else false
     }
 
@@ -378,7 +377,7 @@ class VariableTypeProblem(project: SomeProject, override val subsumeFacts: Boole
      * @return All pairs (`method`, inputFact) where inputFact is a VariableType for one of the
      *         method's parameter with its compile time type as an upper bound.
      */
-    private def entryPointsForMethod(method: Method): Seq[(Method, IFDSFact[VTAFact, JavaStatement])] = {
+    private def entryPointsForMethod(method: Method): Seq[(Method, IFDSFact[VTAFact, Method, JavaStatement])] = {
         // Iterate over all parameters, which have a reference type.
         (method.descriptor.parameterTypes.zipWithIndex.collect {
             case (t, index) if t.isReferenceType =>

@@ -267,7 +267,7 @@ abstract class AI[D <: Domain](
             if (!method.isStatic) {
                 val thisType = method.classFile.thisType
                 val thisValue =
-                    if (method.isConstructor && (method.classFile.thisType ne ObjectType.Object)) {
+                    if (method.isConstructor && (method.classFile.thisType ne ClassType.Object)) {
                         // ... we have an uninitialized this!
                         domain.UninitializedThis(thisType)
                     } else {
@@ -671,7 +671,7 @@ abstract class AI[D <: Domain](
                 theDomain.abstractInterpretationEnded(result)
             } catch {
                 case ct: ControlThrowable => throw ct
-                case t: Throwable =>
+                case t: Throwable         =>
                     throwInterpretationFailedException(t, instructions.length)
             }
             if (tracer.isDefined) tracer.get.result(result)
@@ -1236,7 +1236,7 @@ abstract class AI[D <: Domain](
                                         currentOperands,
                                         currentLocals
                                     ) match {
-                                        case NoUpdate => /*nothing to do...*/
+                                        case NoUpdate                             => /*nothing to do...*/
                                         case SomeUpdate((newOperands, newLocals)) =>
                                             subroutinesOperandsArray(pc) = newOperands
                                             subroutinesLocalsArray(pc) = newLocals
@@ -1333,7 +1333,7 @@ abstract class AI[D <: Domain](
                         case AI.IntIsNot0TestId               => intIsNot0(pc, value)
                         case AI.IntIsLessThan0TestId          => intIsLessThan0(pc, value)
                         case AI.IntIsLessThanOrEqualTo0TestId => intIsLessThanOrEqualTo0(pc, value)
-                        case AI.IntIsGreaterThan0TestId =>
+                        case AI.IntIsGreaterThan0TestId       =>
                             intIsGreaterThan0(pc, value)
                         case AI.IntIsGreaterThanOrEqualTo0TestId =>
                             intIsGreaterThanOrEqualTo0(pc, value)
@@ -1541,7 +1541,7 @@ abstract class AI[D <: Domain](
 
                         case AI.IntAreEqualTestId    => intAreEqual(pc, value1, value2)
                         case AI.IntAreNotEqualTestId => intAreNotEqual(pc, value1, value2)
-                        case AI.IntIsLessThanTestId =>
+                        case AI.IntIsLessThanTestId  =>
                             intIsLessThan(pc, value1, value2)
                         case AI.IntIsLessThanOrEqualToTestId =>
                             intIsLessThanOrEqualTo(pc, value1, value2)
@@ -1750,7 +1750,7 @@ abstract class AI[D <: Domain](
                     def gotoExceptionHandler(
                         pc:             Int,
                         branchTargetPC: Int,
-                        upperBound:     Option[ObjectType]
+                        upperBound:     Option[ClassType]
                     ): Unit = {
                         val newOperands = List(exceptionValue)
                         val memoryLayout1 @ (updatedOperands1, updatedLocals1) =
@@ -1797,7 +1797,7 @@ abstract class AI[D <: Domain](
                             true
                         } else {
                             val caughtType = catchTypeOption.get
-                            if (caughtType eq ObjectType.Throwable) {
+                            if (caughtType eq ClassType.Throwable) {
                                 // Special handling to improve the overall precision if the
                                 // domain is very imprecise or if the type hierarchy is incomplete.
                                 gotoExceptionHandler(pc, branchTarget, None)
@@ -1976,7 +1976,7 @@ abstract class AI[D <: Domain](
                     fallThrough(operands.tail, newLocals)
                     if (RegisterStoreMayThrowExceptions) {
                         handleException(
-                            // theDomain.NonNullObjectValue(ValueOriginForImmediateVMException(pc), ObjectType.Throwable)
+                            // theDomain.NonNullObjectValue(ValueOriginForImmediateVMException(pc), ClassType.Throwable)
                             theDomain.VMThrowable(pc),
                             testForNullnessOfExceptionValue = false,
                             forceJoin = false
@@ -3359,7 +3359,7 @@ abstract class AI[D <: Domain](
 
                     case 187 /*new*/ =>
                         val newObject = as[NEW](instruction)
-                        fallThrough(theDomain.NewObject(pc, newObject.objectType) :: operands)
+                        fallThrough(theDomain.NewObject(pc, newObject.classType) :: operands)
 
                     case 0 /*nop*/    => fallThrough()
                     case 196 /*wide*/ => fallThrough()

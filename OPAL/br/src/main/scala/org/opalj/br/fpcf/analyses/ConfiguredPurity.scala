@@ -11,6 +11,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClassExtensibilityKey
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.fpcf.PropertyStoreKey
 
 import net.ceedubs.ficus.Ficus.*
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
@@ -44,10 +45,11 @@ class ConfiguredPurity(
             po = Purity(property)
             if po.isDefined
 
+            // Purity value only applies if the given types cannot have subtypes
             if conditions forall {
                 _ forall { typeName =>
-                    val ot = ObjectType(typeName)
-                    project.classHierarchy.hasSubtypes(ot).isNo && classExtensibility(ot).isNo
+                    val ct = ClassType(typeName)
+                    project.classHierarchy.hasSubtypes(ct).isNo && classExtensibility(ct).isNo
                 }
             }
 
@@ -58,7 +60,7 @@ class ConfiguredPurity(
                     .filter { m => m.name == methodName && mdo.forall(_ == m.descriptor) }
                     .map(declaredMethods(_))
             } else {
-                val classType = ObjectType(className)
+                val classType = ClassType(className)
 
                 mdo match {
                     case Some(md) => Seq(

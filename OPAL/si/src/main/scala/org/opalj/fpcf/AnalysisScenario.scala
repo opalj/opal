@@ -2,10 +2,16 @@
 package org.opalj
 package fpcf
 
+import com.typesafe.config.Config
+
 import org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfigKey
+import org.opalj.fpcf.AnalysisScenario.AnalysisSchedulingStrategyKey
+import org.opalj.fpcf.scheduling.SchedulingStrategy
 import org.opalj.graphs.Graph
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.getObjectReflectively
 
 /**
  * Provides functionality to determine whether a set of analyses is compatible and to compute
@@ -225,103 +231,71 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             scheduleComputed = true
         }
 
-        allCS.foreach(processCS)
+        val scheduledBatches = if (allCS.isEmpty) List.empty
+        else time {
+            allCS.foreach(processCS)
 
-        val alreadyComputedPropertyKinds = propertyStore.alreadyComputedPropertyKindIds.toSet
+            val alreadyComputedPropertyKinds = propertyStore.alreadyComputedPropertyKindIds.toSet
 
-        // 0. check that a property was not already derived
-        allCS.foreach { cs =>
-            cs.derives foreach { derivedProperty =>
-                if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {
-                    val pkName = PropertyKey.name(derivedProperty.pk.id)
-                    val m = s"can not register $cs: $pkName was computed in a previous phase"
-                    throw new SpecificationViolation(m)
-                }
-            }
-        }
-
-        // 1. check for properties that are not derived (and which require an analysis)
-        def useFallback(underivedProperty: PropertyBounds, propertyName: String) = {
-            if (PropertyKey.hasFallback(underivedProperty.pk)) {
-                val message = s"no analyses scheduled for: $propertyName; using fallback"
-                OPALLogger.warn("analysis configuration", message)
-            } else {
-                throw new IllegalStateException(s"no analysis scheduled for $propertyName")
-            }
-        }
-
-        val analysisAutoConfig = BaseConfig.getBoolean(AnalysisAutoConfigKey)
-        val underivedProperties = usedProperties -- derivedProperties
-        underivedProperties
-            .filterNot { underivedProperty => alreadyComputedPropertyKinds.contains(underivedProperty.pk.id) }
-            .foreach { underivedProperty =>
-                if (!derivedProperties.contains(underivedProperty)) {
-                    val propertyName = PropertyKey.name(underivedProperty.pk.id)
-                    val defaultCSOpt =
-                        if (analysisAutoConfig) defaultAnalysis(underivedProperty) else None
-                    if (defaultCSOpt.isDefined) {
-                        val defaultCS = defaultCSOpt.get
-                        try {
-                            processCS(defaultCS)
-                            val message = s"no analyses scheduled for: $propertyName; using ${defaultCS.name}"
-                            OPALLogger.info("analysis configuration", message)
-                        } catch {
-                            case _: SpecificationViolation =>
-                                useFallback(underivedProperty, propertyName)
-                        }
-                    } else {
-                        useFallback(underivedProperty, propertyName)
+            // 0. check that a property was not already derived
+            allCS.foreach { cs =>
+                cs.derives foreach { derivedProperty =>
+                    if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {
+                        val pkName = PropertyKey.name(derivedProperty.pk.id)
+                        val m = s"can not register $cs: $pkName was computed in a previous phase"
+                        throw new SpecificationViolation(m)
                     }
                 }
             }
 
-        // TODO check all further constraints (in particular those related to cyclic dependencies between analysis...)
+            // 1. check for properties that are not derived (and which require an analysis)
+            def useFallback(underivedProperty: PropertyBounds, propertyName: String) = {
+                if (PropertyKey.hasFallback(underivedProperty.pk)) {
+                    val message = s"no analyses scheduled for: $propertyName; using fallback"
+                    OPALLogger.warn("analysis configuration", message)
+                } else {
+                    throw new IllegalStateException(s"no analysis scheduled for $propertyName")
+                }
+            }
 
-        // 2. assign analyses to different batches if an analysis can only process
-        //    final properties (unless it is a transformer, the latter have special paths and
-        //    constraints and can always be scheduled in the same batch!)
+            implicit val config = propertyStore.context(classOf[Config])
 
-        // TODO ....
+            val analysisAutoConfig = config.getBoolean(AnalysisAutoConfigKey)
+            val underivedProperties = usedProperties -- derivedProperties
+            underivedProperties
+                .filterNot { underivedProperty => alreadyComputedPropertyKinds.contains(underivedProperty.pk.id) }
+                .foreach { underivedProperty =>
+                    if (!derivedProperties.contains(underivedProperty)) {
+                        val propertyName = PropertyKey.name(underivedProperty.pk.id)
+                        val defaultCSOpt =
+                            if (analysisAutoConfig) defaultAnalysis(underivedProperty) else None
+                        if (defaultCSOpt.isDefined) {
+                            val defaultCS = defaultCSOpt.get
+                            try {
+                                processCS(defaultCS)
+                                val message = s"no analyses scheduled for: $propertyName; using ${defaultCS.name}"
+                                OPALLogger.info("analysis configuration", message)
+                            } catch {
+                                case _: SpecificationViolation =>
+                                    useFallback(underivedProperty, propertyName)
+                            }
+                        } else {
+                            useFallback(underivedProperty, propertyName)
+                        }
+                    }
+                }
+
+            val strategyClass = config.getString(AnalysisSchedulingStrategyKey)
+            val schedulingStrategy = getObjectReflectively[SchedulingStrategy](strategyClass, this, "scheduler").get
+            OPALLogger.info("scheduler", s"scheduling strategy ${schedulingStrategy} is selected")
+
+            schedulingStrategy.schedule(ps, allCS)
+        } { t => OPALLogger.info("scheduler", s"computation of schedule took ${t.toSeconds}") }
 
         Schedule(
-            if (allCS.isEmpty) List.empty else List(computePhase(propertyStore)),
+            scheduledBatches,
             initializationData
         )
-    }
-
-    /**
-     * Computes the configuration for a specific batch; this method can only handle the situation
-     * where all analyses can be executed in the same phase.
-     */
-    private def computePhase(propertyStore: PropertyStore): PhaseConfiguration[A] = {
-
-        // 1. compute the phase configuration; i.e., find those properties for which we must
-        //    suppress interim updates.
-        var suppressInterimUpdates: Map[PropertyKind, Set[PropertyKind]] = Map.empty
-        // Interim updates have to be suppressed when an analysis uses a property for which
-        // the wrong bounds/not enough bounds are computed.
-        transformersCS foreach { cs => suppressInterimUpdates += (cs.derivesLazily.get.pk -> cs.uses(ps).map(_.pk)) }
-
-        // 3. create the batch
-        val batchBuilder = List.newBuilder[ComputationSpecification[A]]
-        batchBuilder ++= lazyCS
-        batchBuilder ++= transformersCS
-        batchBuilder ++= triggeredCS
-        batchBuilder ++= eagerCS
-
-        // FIXME...
-
-        // Interim updates can be suppressed when the depender and dependee are not in a cyclic
-        // relation; however, this could have a negative impact on the effect of deep laziness -
-        // once we are actually implementing it. For the time being, suppress notifications is always
-        // advantageous.
-
-        val phase1Configuration = PropertyKindsConfiguration(
-            propertyKindsComputedInThisPhase = derivedProperties.map(_.pk),
-            suppressInterimUpdates = suppressInterimUpdates
-        )
-
-        PhaseConfiguration(phase1Configuration, batchBuilder.result())
     }
 }
 
@@ -330,7 +304,10 @@ class AnalysisScenario[A](val ps: PropertyStore) {
  */
 object AnalysisScenario {
 
-    final val AnalysisAutoConfigKey = "org.opalj.fpcf.AnalysisScenario.AnalysisAutoConfig"
+    final val ConfigKeyPrefix = "org.opalj.fpcf.AnalysisScenario."
+
+    final val AnalysisAutoConfigKey = s"${ConfigKeyPrefix}AnalysisAutoConfig"
+    final val AnalysisSchedulingStrategyKey = s"${ConfigKeyPrefix}SchedulingStrategy"
 
     /**
      * @param analyses The set of analyses that should be executed as part of this analysis scenario.

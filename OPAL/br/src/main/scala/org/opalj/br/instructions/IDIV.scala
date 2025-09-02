@@ -14,6 +14,6 @@ case object IDIV extends IntegerDivideInstruction {
 
     final val mnemonic = "idiv"
 
-    final val computationalType = ComputationalTypeInt
+    final val computationalType: ComputationalTypeInt.type = ComputationalTypeInt
 
 }

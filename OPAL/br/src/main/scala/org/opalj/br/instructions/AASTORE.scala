@@ -16,8 +16,8 @@ case object AASTORE extends ArrayStoreInstruction with InstructionMetaInformatio
 
     final val elementTypeComputationalType = ComputationalTypeReference
 
-    final val jvmExceptions: List[ObjectType] = {
-        import ObjectType.*
+    final val jvmExceptions: List[ClassType] = {
+        import ClassType.*
         List(ArrayIndexOutOfBoundsException, NullPointerException, ArrayStoreException)
     }
 

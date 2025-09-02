@@ -67,7 +67,7 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }
 
-    override def getTypeIterator(project: SomeProject) =
+    override def getTypeIterator(project: SomeProject): PropagationBasedTypeIterator =
         new PropagationBasedTypeIterator(project, typeSetEntitySelector())
 }
 

@@ -109,7 +109,7 @@ trait StackMapTable_attributeBinding
         br.UninitializedThisVariableInfo
     }
 
-    def UninitializedVariableInfo(offset: Int) = new UninitializedVariableInfo(offset)
+    def UninitializedVariableInfo(offset: Int): br.UninitializedVariableInfo = new UninitializedVariableInfo(offset)
 
     def ObjectVariableInfo(
         cp:         Constant_Pool,

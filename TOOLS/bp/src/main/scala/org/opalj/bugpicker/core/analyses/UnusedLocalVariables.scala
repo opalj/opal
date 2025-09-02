@@ -5,55 +5,55 @@ package core
 package analyses
 
 import scala.util.control.ControlThrowable
-import org.opalj.log.OPALLogger
 
-import org.opalj.br.analyses.SomeProject
+import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
+import org.opalj.ai.analyses.cg.CallGraph
+import org.opalj.ai.analyses.cg.CallGraphFactory
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.domain.TheCode
 import org.opalj.br.Method
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.ACONST_NULL
-import org.opalj.br.instructions.ICONST_0
-import org.opalj.br.instructions.DCONST_0
-import org.opalj.br.instructions.LCONST_0
-import org.opalj.br.instructions.FCONST_0
-import org.opalj.br.instructions.StoreLocalVariableInstruction
-import org.opalj.br.instructions.ICONST_M1
-import org.opalj.br.instructions.IINC
 import org.opalj.br.instructions.BIPUSH
-import org.opalj.br.instructions.SIPUSH
-import org.opalj.br.instructions.LDC
+import org.opalj.br.instructions.DCONST_0
+import org.opalj.br.instructions.DCONST_1
+import org.opalj.br.instructions.FCONST_0
+import org.opalj.br.instructions.FCONST_1
+import org.opalj.br.instructions.FCONST_2
+import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.ICONST_0
 import org.opalj.br.instructions.ICONST_1
+import org.opalj.br.instructions.ICONST_2
 import org.opalj.br.instructions.ICONST_3
 import org.opalj.br.instructions.ICONST_4
 import org.opalj.br.instructions.ICONST_5
+import org.opalj.br.instructions.ICONST_M1
+import org.opalj.br.instructions.IINC
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKESTATIC
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.LCONST_0
 import org.opalj.br.instructions.LCONST_1
-import org.opalj.br.instructions.DCONST_1
-import org.opalj.br.instructions.FCONST_1
-import org.opalj.br.instructions.LDC_W
+import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LDC2_W
-import org.opalj.br.instructions.ICONST_2
-import org.opalj.br.instructions.FCONST_2
+import org.opalj.br.instructions.LDC_W
 import org.opalj.br.instructions.LoadConstantInstruction
-import org.opalj.issues.Issue
-import org.opalj.issues.Relevance
-import org.opalj.issues.IssueCategory
-import org.opalj.issues.IssueKind
-import org.opalj.issues.InstructionLocation
-import org.opalj.issues.MethodLocation
-import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.AIResult
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.TheCode
-import org.opalj.ai.analyses.cg.CallGraph
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.br.instructions.SIPUSH
+import org.opalj.br.instructions.StoreLocalVariableInstruction
 import org.opalj.fpcf.EP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.properties.LBPure
 import org.opalj.fpcf.properties.Purity
-import org.opalj.ai.analyses.cg.CallGraphFactory
+import org.opalj.issues.InstructionLocation
+import org.opalj.issues.Issue
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.MethodLocation
+import org.opalj.issues.Relevance
+import org.opalj.log.OPALLogger
 
 /**
  * Identifies unused local variables in non-synthetic methods.
@@ -89,10 +89,10 @@ object UnusedLocalVariables {
                     !CallGraphFactory.isPotentiallySerializationRelated(method)(theProject.classHierarchy)
                 )
             ) ||
-                    method.isStatic) ||
-                    // filter unused local variables related to dead code...
-                    // (we have another analysis for that)
-                    (vo >= 0 && (operandsArray(vo) ne null))
+                method.isStatic) ||
+            // filter unused local variables related to dead code...
+            // (we have another analysis for that)
+            (vo >= 0 && (operandsArray(vo) ne null))
         }
 
         if (unused.isEmpty)
@@ -139,7 +139,8 @@ object UnusedLocalVariables {
                 if (method.isStatic ||
                     method.isPrivate ||
                     // IMPROVE Check that in all other cases the method parameter is never used across all implementations of the method; only then report it.
-                    method.name == "<init>") {
+                    method.name == "<init>"
+                ) {
                     relevance = Relevance.High
                     if (vo == -1 && !method.isStatic) {
                         issue = "the self reference \"this\" is unused (the method could be static)"
@@ -156,7 +157,7 @@ object UnusedLocalVariables {
 
                 def defaultUnusedValueHandling(): Unit = {
                     val instructionDescription = instruction.toString(vo).replace("\n", "\\n")
-                    issue = "the value of "+instructionDescription+" is not used"
+                    issue = "the value of " + instructionDescription + " is not used"
                     relevance = Relevance.VeryHigh
                 }
 
@@ -169,15 +170,15 @@ object UnusedLocalVariables {
                             val resolvedMethod: Iterable[Method] = callGraph.calls(method, vo)
                             // IMPROVE Use a more precise method to determine if a method has a side effect "pureness" is actually too strong.
                             if (resolvedMethod.exists(m => propertyStore(m, Purity.key) == EP(m, LBPure))) {
-                                issue = "the return value of the call of "+invoke.declaringClass.toJava+
-                                    "{ "+
-                                    invoke.methodDescriptor.toJava(invoke.name)+
+                                issue = "the return value of the call of " + invoke.declaringClass.toJava +
+                                    "{ " +
+                                    invoke.methodDescriptor.toJava(invoke.name) +
                                     " } is not used"
                                 relevance = Relevance.OfUtmostRelevance
                             }
                         } catch {
                             case ct: ControlThrowable => throw ct
-                            case t: Throwable =>
+                            case t: Throwable         =>
                                 val message = "assessing analysis result failed; ignoring issue"
                                 OPALLogger.error("error", message, t)(theProject.logContext)
                         }
@@ -211,8 +212,8 @@ object UnusedLocalVariables {
                             //  - it is not a final local variable
 
                             case _ =>
-                                issue = "the constant value "+
-                                    instruction.toString(vo)+
+                                issue = "the constant value " +
+                                    instruction.toString(vo) +
                                     "is (most likely) used to initialize a local variable"
                                 relevance = Relevance.TechnicalArtifact
                         }
@@ -227,8 +228,8 @@ object UnusedLocalVariables {
                         if (constantValues.contains(value)) {
                             // => the value is only found once in the source code and
                             // the value is not used!
-                            issue = "the constant "+
-                                instruction.toString(vo).replace("\n", "\\n")+
+                            issue = "the constant " +
+                                instruction.toString(vo).replace("\n", "\\n") +
                                 " is not used"
                             relevance = Relevance.TechnicalArtifact
                         }
@@ -239,13 +240,13 @@ object UnusedLocalVariables {
 
                     case GETSTATIC.opcode =>
                         val GETSTATIC(_, _, fieldType) = instruction
-                        if (fieldType.isObjectType) {
+                        if (fieldType.isClassType) {
                             val instr = instruction.toString(vo)
 
-                            theProject.classFile(fieldType.asObjectType) match {
+                            theProject.classFile(fieldType.asClassType) match {
                                 case Some(cf) =>
                                     if (cf.isEnumDeclaration) {
-                                        issue = s"the enum value $instr"+
+                                        issue = s"the enum value $instr" +
                                             "is (most likely) used to initialize a local variable"
                                         relevance = Relevance.TechnicalArtifact
                                     } else {

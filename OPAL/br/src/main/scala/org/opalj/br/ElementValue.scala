@@ -48,7 +48,7 @@ object ElementValue {
  */
 sealed trait BaseTypeElementValue extends ElementValue {
 
-    override final def valueType = baseType
+    override final def valueType: BaseType = baseType
 
     def baseType: BaseType
 
@@ -189,7 +189,7 @@ object BooleanValue {
 
 case class StringValue(value: String) extends ElementValue {
 
-    override final def valueType = ObjectType.String
+    override final def valueType: ClassType = ClassType.String
 
     override def toJava: String = "\"" + value.toString + "\""
 
@@ -211,7 +211,7 @@ object StringValue {
 
 case class ClassValue(value: Type) extends ElementValue {
 
-    override final def valueType = ObjectType.Class
+    override final def valueType: ClassType = ClassType.Class
 
     override def toJava: String = value.toJava + ".class"
 
@@ -231,9 +231,9 @@ object ClassValue {
 
 }
 
-case class EnumValue(enumType: ObjectType, constName: String) extends ElementValue {
+case class EnumValue(enumType: ClassType, constName: String) extends ElementValue {
 
-    override final def valueType = enumType
+    override final def valueType: ClassType = enumType
 
     override def toJava: String = enumType.toJava + "." + constName
 
@@ -256,7 +256,7 @@ object EnumValue {
 case class ArrayValue(values: ElementValues) extends ElementValue {
 
     // by design/specification the first value determines the type of the Array
-    override final def valueType = ArrayType(values(0).valueType)
+    override final def valueType: ArrayType = ArrayType(values(0).valueType)
 
     override def toJava: String = values.map(_.toJava).mkString("{", ",", "}")
 

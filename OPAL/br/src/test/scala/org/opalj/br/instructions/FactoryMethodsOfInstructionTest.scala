@@ -40,7 +40,7 @@ class FactoryMethodsOfInstructionTest extends AnyFlatSpec {
         val invoke = INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
 
         assert(invoke.getClass.getName == "org.opalj.br.instructions.INVOKEVIRTUAL")
-        assert(invoke.declaringClass.asObjectType.fqn == declaringClass)
+        assert(invoke.declaringClass.asClassType.fqn == declaringClass)
         assert(invoke.name == methodName)
         assert(invoke.methodDescriptor.toJVMDescriptor == methodDescriptor)
     }
@@ -70,7 +70,7 @@ class FactoryMethodsOfInstructionTest extends AnyFlatSpec {
 
         assert(getStaticObject.getClass.getName == "org.opalj.br.instructions.GETSTATIC")
         assert(getStaticObject.declaringClass.fqn == declaringClass)
-        assert(getStaticObject.fieldType.asObjectType.fqn ==
+        assert(getStaticObject.fieldType.asClassType.fqn ==
             fieldTypeObject.substring(1, fieldTypeObject.length - 1))
 
         val getStaticBoolean = GETSTATIC(declaringClass, fieldName, fieldTypeBoolean)
@@ -84,7 +84,7 @@ class FactoryMethodsOfInstructionTest extends AnyFlatSpec {
 
         assert(getStaticObject.getClass.getName == "org.opalj.br.instructions.PUTSTATIC")
         assert(getStaticObject.declaringClass.fqn == declaringClass)
-        assert(getStaticObject.fieldType.asObjectType.fqn ==
+        assert(getStaticObject.fieldType.asClassType.fqn ==
             fieldTypeObject.substring(1, fieldTypeObject.length - 1))
 
         val getStaticBoolean = PUTSTATIC(declaringClass, fieldName, fieldTypeBoolean)
@@ -97,7 +97,7 @@ class FactoryMethodsOfInstructionTest extends AnyFlatSpec {
         val anewarrayObject = ANEWARRAY(fieldTypeObject)
 
         assert(anewarrayObject.getClass.getName == "org.opalj.br.instructions.ANEWARRAY")
-        assert(anewarrayObject.componentType.isObjectType)
+        assert(anewarrayObject.componentType.isClassType)
     }
 
     "MULTIANEWARRAY's factory method" should "return an MULTIANEWARRAY instruction" in {
@@ -116,7 +116,7 @@ class FactoryMethodsOfInstructionTest extends AnyFlatSpec {
         val instanceOfObject = INSTANCEOF(fieldTypeObject)
 
         assert(instanceOfObject.getClass.getName == "org.opalj.br.instructions.INSTANCEOF")
-        assert(instanceOfObject.referenceType.isObjectType)
+        assert(instanceOfObject.referenceType.isClassType)
 
         val instanceOfArray = INSTANCEOF(fieldTypeBooleanArray)
 
@@ -128,6 +128,6 @@ class FactoryMethodsOfInstructionTest extends AnyFlatSpec {
         val checkcastObject = CHECKCAST(fieldTypeObject)
 
         assert(checkcastObject.getClass.getName == "org.opalj.br.instructions.CHECKCAST")
-        assert(checkcastObject.referenceType.isObjectType)
+        assert(checkcastObject.referenceType.isClassType)
     }
 }

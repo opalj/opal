@@ -20,8 +20,8 @@ import org.opalj.ai.domain.PredefinedClassHierarchy
 import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.IntegerType
-import org.opalj.br.ObjectType
 
 /**
  * Tests the IntegerSets Domain.
@@ -598,8 +598,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -617,8 +617,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -629,8 +629,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.result should be { AnIntegerValue() }
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -641,8 +641,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.result should be { AnIntegerValue() }
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -670,8 +670,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result should be { AnIntegerValue() }
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -682,8 +682,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -694,8 +694,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValueLike(ObjectType.ArithmeticException) => /*OK*/
-                    case v                                                => fail(s"expected ArithmeticException; found $v")
+                    case SObjectValueLike(ClassType.ArithmeticException) => /*OK*/
+                    case v                                               => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -1268,7 +1268,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
         describe("using IntegerSetValues") {
 
             val aiProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
-            val IntegerValues = aiProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
+            val IntegerValues = aiProject.classFile(ClassType("ai/domain/IntegerValuesFrenzy")).get
 
             describe("without constraint tracking between values") {
 

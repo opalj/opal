@@ -87,7 +87,7 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
         val NOT_PRIVATE___NOT_FINAL = (!ACC_PRIVATE) && (!ACC_FINAL)
         afPublicAbstract match {
             case NOT_PRIVATE___NOT_FINAL() => /*success*/
-            case _ =>
+            case _                         =>
                 fail(
                     AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD) +
                         " did not match " + NOT_PRIVATE___NOT_FINAL
@@ -97,7 +97,7 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
         val NOT_NOT_PUBLIC = !(!ACC_PUBLIC)
         afPublicAbstract match {
             case NOT_NOT_PUBLIC() => /*success*/
-            case _ =>
+            case _                =>
                 fail(
                     AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD) +
                         " did not match " + NOT_NOT_PUBLIC
@@ -114,13 +114,13 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
         val OrMatcher = AccessFlagsMatcher.PUBLIC___OR___PROTECTED_AND_NOT_FINAL
         afPublicAbstract match {
             case OrMatcher() => /*success*/
-            case _ =>
+            case _           =>
                 fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD) +
                     " did not match " + OrMatcher)
         }
         afProtectedAbstract match {
             case OrMatcher() => /*success*/
-            case _ =>
+            case _           =>
                 fail(
                     AccessFlags.toString(afProtectedAbstract, AccessFlagsContexts.METHOD) +
                         " did not match " + OrMatcher

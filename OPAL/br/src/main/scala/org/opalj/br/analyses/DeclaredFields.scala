@@ -11,10 +11,10 @@ import org.opalj.br.instructions.FieldAccess
 import org.opalj.log.OPALLogger.info
 
 class DeclaredFields(
-    private[this] val project:          SomeProject,
-    private[this] var id2declaredField: Array[DeclaredField],
+    private[this] val project:                SomeProject,
+    private[this] var id2declaredField:       Array[DeclaredField],
     private[this] val declaredInformation2id: ConcurrentHashMap[
-        ObjectType,
+        ClassType,
         ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]
     ],
     private[this] val nextId: AtomicInteger
@@ -43,13 +43,13 @@ class DeclaredFields(
     }
 
     def apply(
-        declaringClassType: ObjectType,
+        declaringClassType: ClassType,
         name:               String,
         fieldType:          FieldType
     ): DeclaredField = {
         project.resolveFieldReference(declaringClassType, name, fieldType) match {
             case Some(field) => apply(field)
-            case None => getDeclaredField(
+            case None        => getDeclaredField(
                     declaringClassType,
                     name,
                     fieldType,
@@ -59,7 +59,7 @@ class DeclaredFields(
     }
 
     private def getDeclaredField(
-        declaringClassType:   ObjectType,
+        declaringClassType:   ClassType,
         name:                 String,
         fieldType:            FieldType,
         declaredFieldFactory: Int => DeclaredField

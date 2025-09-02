@@ -22,6 +22,6 @@ object AllocationSiteBasedPointsToCallGraphKey extends PointsToCallGraphKey {
     override val pointsToType: String = "AllocationSiteBased"
     override val contextKey: ProjectInformationKey[SimpleContexts, Nothing] = SimpleContextsKey
 
-    override def getTypeIterator(project: SomeProject) =
+    override def getTypeIterator(project: SomeProject): AllocationSitesPointsToTypeIterator =
         new AllocationSitesPointsToTypeIterator(project)
 }

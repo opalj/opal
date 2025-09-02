@@ -8,8 +8,8 @@ import scala.collection.immutable.ArraySeq
 
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.BaseDomain
+import org.opalj.br.ClassType
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.IF_ACMPEQ
@@ -28,8 +28,8 @@ import org.opalj.da.ClassFile
  */
 class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
-    val Class = ObjectType("java/lang/Class")
-    val Object = ObjectType("java/lang/Object")
+    val Class = ClassType("java/lang/Class")
+    val Object = ClassType("java/lang/Object")
 
     override def featureIDs: Seq[String] = {
         Seq(
@@ -62,8 +62,8 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val pc = pcAndInstruction.pc
 
             instruction.opcode match {
-                case CHECKCAST.opcode  => instructionsLocations(0) += InstructionLocation(methodLocation, pc)
-                case INSTANCEOF.opcode => instructionsLocations(3) += InstructionLocation(methodLocation, pc)
+                case CHECKCAST.opcode                    => instructionsLocations(0) += InstructionLocation(methodLocation, pc)
+                case INSTANCEOF.opcode                   => instructionsLocations(3) += InstructionLocation(methodLocation, pc)
                 case IF_ACMPEQ.opcode | IF_ACMPNE.opcode =>
                     val ai = BaseAI
                     val aiResult = ai.apply(method, BaseDomain(project, method))
@@ -80,7 +80,7 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                     }
                 case INVOKEVIRTUAL.opcode =>
                     val INVOKEVIRTUAL(declaringClass, name, _) = instruction.asInstanceOf[INVOKEVIRTUAL];
-                    if (declaringClass.isObjectType && (declaringClass.asObjectType eq Class)) {
+                    if (declaringClass.isClassType && (declaringClass.asClassType eq Class)) {
                         if (name eq "cast") {
                             val nextPC = body.pcOfNextInstruction(pc)
                             if (body.instructions(nextPC).opcode != CHECKCAST.opcode) {

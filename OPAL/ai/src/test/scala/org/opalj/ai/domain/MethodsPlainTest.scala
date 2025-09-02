@@ -90,7 +90,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         /*val result =*/
         BaseAI(method, domain)
 
-        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType.String) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ClassType.String) should be(Yes)
     }
 
     it should "be able to analyze a method that returns a fixed class value" in {
@@ -99,7 +99,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         /*val result =*/
         BaseAI(method, domain)
 
-        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType.Class) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ClassType.Class) should be(Yes)
 
     }
 
@@ -120,7 +120,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         /*val result =*/
         BaseAI(method, domain)
 
-        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType.String) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ClassType.String) should be(Yes)
     }
 
     //
@@ -637,7 +637,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         /*val result =*/
         BaseAI(method, domain)
 
-        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ClassType("ai/MethodsPlain")) should be(Yes)
     }
 
     it should "be able to correctly handle an instance of" in {
@@ -758,7 +758,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         /*val result =*/
         BaseAI(method, domain)
 
-        domain.isValueASubtypeOf(domain.returnedValue.get, ObjectType("ai/MethodsPlain")) should be(Yes)
+        domain.isValueASubtypeOf(domain.returnedValue.get, ClassType("ai/MethodsPlain")) should be(Yes)
         domain.refIsNull(-1, domain.returnedValue.get) should not be (No)
     }
 
@@ -1028,7 +1028,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
         domain.isValueASubtypeOf(
             domain.returnedValue.get,
-            ArrayType(ObjectType("ai/MethodsPlain"))
+            ArrayType(ClassType("ai/MethodsPlain"))
         ) should be(Yes)
     }
 
@@ -1040,7 +1040,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
         domain.isValueASubtypeOf(
             domain.returnedValue.get,
-            ArrayType(ArrayType(ObjectType("ai/MethodsPlain")))
+            ArrayType(ArrayType(ClassType("ai/MethodsPlain")))
         ) should be(Yes)
     }
 
@@ -1054,7 +1054,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         dumpOnFailureDuringValidation(Some(classFile), Some(method), method.body.get, result) {
             domain.isValueASubtypeOf(
                 domain.returnedValue.get,
-                ObjectType("ai/MethodsPlain")
+                ClassType("ai/MethodsPlain")
             ) should be(Yes)
         }
     }
@@ -1144,7 +1144,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         implicit val domain: RecordingDomain = new RecordingDomain;
         import domain.*
         val method = classFile.methods.find(_.name == "asIs").get
-        val t = ObjectType("some/Foo")
+        val t = ClassType("some/Foo")
         val locals = new Array[Value](1)
         val theObject = TypedValue(-1, t)
         locals(0) = theObject
@@ -1160,7 +1160,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
         domain.isValueASubtypeOf(
             domain.returnedValue.get,
-            ObjectType.Object
+            ClassType.Object
         ) should be(Yes)
     }
 

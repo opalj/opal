@@ -5,8 +5,8 @@ package domain
 package l0
 
 import org.opalj.br.BootstrapMethod
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 
 /**
@@ -65,7 +65,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     /*override*/
     def invokeinterface(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         name:             String,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -76,7 +76,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     /*override*/
     def invokespecial(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -88,7 +88,7 @@ trait SimpleTypeLevelInvokeInstructions extends MethodCallsDomain {
     /*override*/
     def invokestatic(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,

@@ -5,8 +5,8 @@ package domain
 package l0
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.FieldType
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.collection.immutable.UIDSet
@@ -331,7 +331,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         def isIndexValid(pc: Int, index: DomainValue): Answer =
             length.map { (l: Int) =>
                 intIsSomeValueNotInRange(pc, index, 0, l - 1) match {
-                    case No => Yes
+                    case No  => Yes
                     case Yes =>
                         intIsSomeValueInRange(pc, index, 0, l - 1) match {
                             case No                  => No
@@ -496,8 +496,8 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
                     // two interfaces that are not in an inheritance relation can
                     // still be implemented by the same class and, hence, the references
                     // can still be equal
-                    v1UTB.exists(t => t.isObjectType && ch.isInterface(t.asObjectType).isNo) &&
-                    v2UTB.exists(t => t.isObjectType && ch.isInterface(t.asObjectType).isNo)
+                    v1UTB.exists(t => t.isClassType && ch.isInterface(t.asClassType).isNo) &&
+                    v2UTB.exists(t => t.isClassType && ch.isInterface(t.asClassType).isNo)
                 )
                     No
                 else
@@ -506,7 +506,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         }
     }
 
-    override final def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
+    override def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
         asReferenceValue(value).isValueASubtypeOf(supertype)
     }
 
@@ -668,16 +668,16 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
 
     override def NullValue(pc: Int): DomainNullValue
 
-    override def NewObject(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(pc, objectType)
+    override def NewObject(pc: Int, classType: ClassType): DomainObjectValue = {
+        ObjectValue(pc, classType)
     }
 
-    override def UninitializedThis(objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(-1, objectType)
+    override def UninitializedThis(classType: ClassType): DomainObjectValue = {
+        ObjectValue(-1, classType)
     }
 
-    override def InitializedObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        ObjectValue(pc, objectType)
+    override def InitializedObjectValue(pc: Int, classType: ClassType): DomainObjectValue = {
+        ObjectValue(pc, classType)
     }
 
     override final def ReferenceValue(
@@ -687,19 +687,19 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         if (upperTypeBound.isArrayType)
             ArrayValue(pc, upperTypeBound.asArrayType)
         else
-            ObjectValue(pc, upperTypeBound.asObjectType)
+            ObjectValue(pc, upperTypeBound.asClassType)
     }
 
-    override def NonNullObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue = {
-        InitializedObjectValue(pc, objectType)
+    override def NonNullObjectValue(pc: Int, classType: ClassType): DomainObjectValue = {
+        InitializedObjectValue(pc, classType)
     }
 
     override def StringValue(pc: Int, value: String): DomainObjectValue = {
-        InitializedObjectValue(pc, ObjectType.String)
+        InitializedObjectValue(pc, ClassType.String)
     }
 
     override def ClassValue(pc: Int, t: Type): DomainObjectValue = {
-        InitializedObjectValue(pc, ObjectType.Class)
+        InitializedObjectValue(pc, ClassType.Class)
     }
 
     //
@@ -744,7 +744,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ObjectValue(pc: Int, objectType: ObjectType): DomainObjectValue
+    def ObjectValue(pc: Int, classType: ClassType): DomainObjectValue
 
     /**
      * Factory method to create a `DomainValue` that represents ''either an class-/interface
@@ -764,7 +764,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Null: '''Unknown'''
      *  - Content: '''Unknown'''
      */
-    def ObjectValue(pc: Int, upperTypeBound: UIDSet[ObjectType]): DomainObjectValue
+    def ObjectValue(pc: Int, upperTypeBound: UIDSet[ClassType]): DomainObjectValue
 
     abstract override def InitializedDomainValue(
         origin: ValueOrigin,
@@ -777,7 +777,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
             case v: IsReferenceValue =>
                 if (v.upperTypeBound.size > 1)
                     // it is definitively not an array
-                    ObjectValue(origin, v.upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
+                    ObjectValue(origin, v.upperTypeBound.asInstanceOf[UIDSet[ClassType]])
                 else
                     // it is definitively not guaranteed to be null
                     ReferenceValue(origin, v.leastUpperType.get)

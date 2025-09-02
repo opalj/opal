@@ -432,7 +432,7 @@ final class Method private[br] (
     /**
      * This method as a virtual method belonging to the given declaring class type.
      */
-    def asVirtualMethod(declaringClassType: ObjectType): VirtualMethod = {
+    def asVirtualMethod(declaringClassType: ClassType): VirtualMethod = {
         VirtualMethod(declaringClassType, name, descriptor)
     }
 
@@ -485,22 +485,22 @@ final class Method private[br] (
             (ACC_STRICT.mask & accessFlags) != 0
 
     def isAccessibleBy(
-        objectType: ObjectType,
-        nests:      SomeMap[ObjectType, ObjectType]
+        classType: ClassType,
+        nests:     SomeMap[ClassType, ClassType]
     )(
         implicit classHierarchy: ClassHierarchy
     ): Boolean = {
         visibilityModifier match {
             // TODO Respect Java 9 modules
-            case Some(ACC_PUBLIC) => true
+            case Some(ACC_PUBLIC)    => true
             case Some(ACC_PROTECTED) =>
-                declaringClassFile.thisType.packageName == objectType.packageName ||
-                    objectType.isASubtypeOf(declaringClassFile.thisType).isNotNo
+                declaringClassFile.thisType.packageName == classType.packageName ||
+                    classType.isASubtypeOf(declaringClassFile.thisType).isNotNo
             case Some(ACC_PRIVATE) =>
                 val thisType = declaringClassFile.thisType
-                thisType == objectType ||
-                    nests.getOrElse(thisType, thisType) == nests.getOrElse(objectType, objectType)
-            case None => declaringClassFile.thisType.packageName == objectType.packageName
+                thisType == classType ||
+                    nests.getOrElse(thisType, thisType) == nests.getOrElse(classType, classType)
+            case None => declaringClassFile.thisType.packageName == classType.packageName
         }
     }
 }
@@ -657,7 +657,7 @@ object Method {
         Some((method.accessFlags, method.name, method.descriptor))
     }
 
-    def defaultConstructor(superclassType: ObjectType = ObjectType.Object): MethodTemplate = {
+    def defaultConstructor(superclassType: ClassType = ClassType.Object): MethodTemplate = {
         import MethodDescriptor.NoArgsAndReturnVoid
         val body = Some(Code(
             maxStack = 1,

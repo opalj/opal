@@ -5,29 +5,26 @@ package fpcf
 package analyses
 package taint
 
-import java.io.File
-
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
-import org.opalj.ifds.Callable
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
-import org.opalj.tac.fpcf.analyses.ifds.IFDSEvaluationRunner
-import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
+import org.opalj.tac.fpcf.analyses.ifds.BasicIFDSEvaluationRunner
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
@@ -51,9 +48,9 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     /**
      * The string parameters of all public methods are entry points.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] =
         p.allProjectClassFiles.flatMap {
-            case cf if cf.thisType == ObjectType.Class =>
+            case cf if cf.thisType == ClassType.Class =>
                 cf.methods.collect {
                     case m if m.name == "forName" => (m, new IFDSFact(Variable(-2)))
                 }
@@ -73,7 +70,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * Do not perform unbalanced return for methods tha can be called from outside the library.
      */
     override def shouldPerformUnbalancedReturn(
-        source: (Method, IFDSFact[TaintFact, JavaStatement])
+        source: (Method, IFDSFact[TaintFact, Method, JavaStatement])
     ): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
         (!icfg.canBeCalledFromOutside(source._1) ||
@@ -88,7 +85,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     override protected def createFlowFactAtCall(
         call:                JavaStatement,
         in:                  TaintFact,
-        unbalancedCallChain: Seq[Callable]
+        unbalancedCallChain: Seq[Method]
     ): Option[FlowFact] = None
 
     /**
@@ -99,7 +96,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
         calleeFact:   FlowFact,
         caller:       Method,
         in:           TaintFact,
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Option[FlowFact] = None
 
     /**
@@ -109,7 +106,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     override def createFlowFactAtExit(
         callee:       Method,
         in:           TaintFact,
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Option[FlowFact] = {
         if (unbCallChain.nonEmpty && // source fact is unbalanced return fact
             icfg.canBeCalledFromOutside(callee) && (in match {
@@ -120,13 +117,13 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
                 case _                                       => false
             })
         ) {
-            Some(FlowFact(unbCallChain.prepended(JavaMethod(callee))))
+            Some(FlowFact(unbCallChain.prepended(callee)))
         } else None
     }
 }
 
 object BackwardClassForNameTaintAnalysisScheduler
-    extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+    extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement, JavaICFG] {
 
     override def init(
         p:  SomeProject,
@@ -147,12 +144,14 @@ object BackwardClassForNameTaintAnalysisScheduler
         Seq(DeclaredMethodsKey, TypeIteratorKey, PropertyStoreKey, RTACallGraphKey)
 }
 
-class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
+object BackwardClassForNameTaintAnalysisRunner extends BasicIFDSEvaluationRunner {
 
-    override def analysisClass: BackwardClassForNameTaintAnalysisScheduler.type =
+    override protected val additionalDescription: String = "Strings reaching Class.forName calls (backwards mode)"
+
+    override def analysisClass(analysisConfig: IFDSRunnerConfig): BackwardClassForNameTaintAnalysisScheduler.type =
         BackwardClassForNameTaintAnalysisScheduler
 
-    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit = {
+    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?, ?], ps: PropertyStore): Unit = {
         val propertyKey = BackwardClassForNameTaintAnalysisScheduler.property.key
         ps.entities(propertyKey)
             .collect {
@@ -176,26 +175,5 @@ class BackwardClassForNameTaintAnalysisRunner extends IFDSEvaluationRunner {
                 case _ =>
             }
 
-    }
-}
-
-object BackwardClassForNameTaintAnalysisRunner {
-    def main(args: Array[String]): Unit = {
-        if (args.contains("--help")) {
-            println("Potential parameters:")
-            println(" -seq (to use the SequentialPropertyStore)")
-            println(" -l2 (to use the l2 domain instead of the default l1 domain)")
-            println(" -debug (for debugging mode in the property store)")
-            println(" -evalSchedulingStrategies (evaluates all available scheduling strategies)")
-            println(" -f <file> (Stores the average runtime to this file)")
-        } else {
-            val fileIndex = args.indexOf("-f")
-            new BackwardClassForNameTaintAnalysisRunner().run(
-                args.contains("-debug"),
-                args.contains("-l2"),
-                args.contains("-evalSchedulingStrategies"),
-                if (fileIndex >= 0) Some(new File(args(fileIndex + 1))) else None
-            )
-        }
     }
 }

@@ -102,21 +102,25 @@ object ProjectIndex {
 
     def apply(project: SomeProject): ProjectIndex = {
 
-        import scala.collection.mutable.AnyRefMap
+        import scala.collection.mutable.HashMap
 
         import scala.concurrent.{Future, Await, ExecutionContext}
         import scala.concurrent.duration.Duration
         import ExecutionContext.Implicits.global
 
-        val fieldsFuture: Future[AnyRefMap[String, AnyRefMap[FieldType, List[Field]]]] = Future {
+        val fieldsFuture: Future[mutable.HashMap[String, mutable.HashMap[FieldType, List[Field]]]] = Future {
             val estimatedFieldsCount = project.fieldsCount
-            val fields = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](estimatedFieldsCount)
+            val fields = new mutable.HashMap[String, mutable.HashMap[FieldType, List[Field]]](
+                estimatedFieldsCount,
+                mutable.HashMap.defaultLoadFactor
+            )
             for (field <- project.allFields) {
                 val fieldName = field.name
                 val fieldType = field.fieldType
                 fields.get(fieldName) match {
                     case None =>
-                        val fieldTypeToField = new AnyRefMap[FieldType, List[Field]](4)
+                        val fieldTypeToField =
+                            new mutable.HashMap[FieldType, List[Field]](4, mutable.HashMap.defaultLoadFactor)
                         fieldTypeToField.update(fieldType, List(field))
                         fields.update(fieldName, fieldTypeToField)
                     case Some(fieldTypeToField) =>
@@ -128,20 +132,22 @@ object ProjectIndex {
                         }
                 }
             }
-            fields.foreachValue(_.repack())
-            fields.repack()
             fields
         }
 
-        val methods: AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]] = {
+        val methods: mutable.HashMap[String, mutable.HashMap[MethodDescriptor, List[Method]]] = {
             val estimatedMethodsCount = project.methodsCount
-            val methods = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](estimatedMethodsCount)
+            val methods = new mutable.HashMap[String, mutable.HashMap[MethodDescriptor, List[Method]]](
+                estimatedMethodsCount,
+                mutable.HashMap.defaultLoadFactor
+            )
             for (method <- project.allMethods) {
                 val methodName = method.name
                 val methodDescriptor = method.descriptor
                 methods.get(methodName) match {
                     case None =>
-                        val descriptorToField = new AnyRefMap[MethodDescriptor, List[Method]](4)
+                        val descriptorToField =
+                            new mutable.HashMap[MethodDescriptor, List[Method]](4, mutable.HashMap.defaultLoadFactor)
                         descriptorToField.update(methodDescriptor, List(method))
                         methods.update(methodName, descriptorToField)
                     case Some(descriptorToField) =>
@@ -153,8 +159,6 @@ object ProjectIndex {
                         }
                 }
             }
-            methods.foreachValue(_.repack())
-            methods.repack()
             methods
         }
 

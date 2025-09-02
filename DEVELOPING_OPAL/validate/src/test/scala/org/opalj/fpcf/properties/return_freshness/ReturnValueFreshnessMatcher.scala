@@ -5,7 +5,7 @@ package properties
 package return_freshness
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
 
@@ -20,7 +20,7 @@ class ReturnValueFreshnessMatcher(val property: ReturnValueFreshness) extends Ab
      * Tests if the computed property is matched by this matcher.
      *
      * @param p          The project.
-     * @param as         The OPAL `ObjectType`'s of the executed analyses.
+     * @param as         The OPAL `ClassType`'s of the executed analyses.
      * @param entity     The annotated entity.
      * @param a          The annotation.
      * @param properties '''All''' properties associated with the given entity.
@@ -30,7 +30,7 @@ class ReturnValueFreshnessMatcher(val property: ReturnValueFreshness) extends Ab
      */
     override def validateProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,
         properties: Iterable[Property]

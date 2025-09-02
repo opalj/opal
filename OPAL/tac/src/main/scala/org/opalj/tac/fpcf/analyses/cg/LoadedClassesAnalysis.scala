@@ -5,9 +5,9 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
@@ -158,7 +158,7 @@ class LoadedClassesAnalysis(
     }
 
     private[this] def update(
-        newLoadedClasses: UIDSet[ObjectType]
+        newLoadedClasses: UIDSet[ClassType]
     )(
         eop: EOptionP[?, LoadedClasses]
     ): Option[InterimEP[SomeProject, LoadedClasses]] = eop match {
@@ -189,13 +189,13 @@ class LoadedClassesAnalysis(
      * @return The set of classes being loaded.
      */
     def handleNewReachableMethod(
-        declClassType: ObjectType,
+        declClassType: ClassType,
         stmts:         Array[Stmt[V]]
-    ): UIDSet[ObjectType] = {
-        var newLoadedClasses = UIDSet.empty[ObjectType]
+    ): UIDSet[ClassType] = {
+        var newLoadedClasses = UIDSet.empty[ClassType]
         val currentLoadedClasses = getCurrentLoadedClasses()
 
-        @inline def isNewLoadedClass(dc: ObjectType): Boolean = {
+        @inline def isNewLoadedClass(dc: ClassType): Boolean = {
             !currentLoadedClasses.contains(dc) && !newLoadedClasses.contains(dc)
         }
 
@@ -223,13 +223,13 @@ class LoadedClassesAnalysis(
     }
 
     private[this] def getSuperclassesNotYetLoaded(
-        declClassType:        ObjectType,
-        currentLoadedClasses: UIDSet[ObjectType]
-    ): UIDSet[ObjectType] = {
+        declClassType:        ClassType,
+        currentLoadedClasses: UIDSet[ClassType]
+    ): UIDSet[ClassType] = {
         ch.allSupertypes(declClassType, reflexive = true).filterNot(currentLoadedClasses.contains)
     }
 
-    private[this] def getCurrentLoadedClasses(): UIDSet[ObjectType] = {
+    private[this] def getCurrentLoadedClasses(): UIDSet[ClassType] = {
         val currentLoadedClassesEPS: EOptionP[SomeProject, LoadedClasses] =
             propertyStore(project, LoadedClasses.key)
 

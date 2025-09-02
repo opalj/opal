@@ -15,11 +15,11 @@ import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
 import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
 import org.opalj.br.Code
 import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
@@ -118,7 +118,7 @@ class LBFieldValuesAnalysis private[analyses] (
         val thisClassType = classFile.thisType
         for {
             field <- classFile.fields
-            if field.fieldType.isObjectType
+            if field.fieldType.isClassType
 
             // Test that the initialization can be made by the declaring class only:
             // (Please note, that we don't track the nullness of domains; we are really
@@ -173,7 +173,7 @@ class LBFieldValuesAnalysis private[analyses] (
         // with RefinedTypeLevelInvokeInstructions
         with RefinedTypeLevelFieldAccessInstructions {
 
-        final val thisClassType: ObjectType = classFile.thisType
+        final val thisClassType: ClassType = classFile.thisType
 
         // Map of fieldNames (that are potentially relevant) and the (refined) value information
         var fieldInformation: Map[Field, Option[DomainValue]] = null
@@ -226,7 +226,7 @@ class LBFieldValuesAnalysis private[analyses] (
 
         private def updateFieldInformation(
             value:              DomainValue,
-            declaringClassType: ObjectType,
+            declaringClassType: ClassType,
             name:               String,
             fieldType:          FieldType
         ): Unit = {
@@ -256,7 +256,7 @@ class LBFieldValuesAnalysis private[analyses] (
             pc:                 PC,
             objectref:          DomainValue,
             value:              DomainValue,
-            declaringClassType: ObjectType,
+            declaringClassType: ClassType,
             name:               String,
             fieldType:          FieldType
         ): Computation[Nothing, ExceptionValue] = {
@@ -267,7 +267,7 @@ class LBFieldValuesAnalysis private[analyses] (
         override def putstatic(
             pc:                 PC,
             value:              DomainValue,
-            declaringClassType: ObjectType,
+            declaringClassType: ClassType,
             name:               String,
             fieldType:          FieldType
         ): Computation[Nothing, Nothing] = {
@@ -317,9 +317,9 @@ class LBFieldValuesAnalysis private[analyses] (
                     Result(FinalEP(f, fv))
 
                 case Some(Some(domain.DomainReferenceValueTag(dv))) =>
-                    if (/* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(
-                            dv.leastUpperType.get
-                        )
+                    if ( /* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(
+                             dv.leastUpperType.get
+                         )
                     ) {
                         val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                         // println(f.toJava+"!!!!!!>>>>>> "+vi)
@@ -435,11 +435,11 @@ object FieldValuesAnalysis {
      * wrong information.
      */
     // IMPROVE Move to configuration file.
-    final val ignoredFields: Map[ObjectType, Set[String]] = Map(
-        ObjectType.System -> Set("in", "out", "err"),
-        ObjectType("java/net/InterfaceAddress") -> Set("address"),
-        ObjectType("java/util/concurrent/FutureTask") -> Set("runner"),
-        ObjectType("java/nio/channels/SelectionKey") -> Set("attachment")
+    final val ignoredFields: Map[ClassType, Set[String]] = Map(
+        ClassType.System -> Set("in", "out", "err"),
+        ClassType("java/net/InterfaceAddress") -> Set("address"),
+        ClassType("java/util/concurrent/FutureTask") -> Set("runner"),
+        ClassType("java/nio/channels/SelectionKey") -> Set("attachment")
     )
 
 }

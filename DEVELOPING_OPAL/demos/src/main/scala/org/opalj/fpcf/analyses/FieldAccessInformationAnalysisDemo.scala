@@ -3,85 +3,68 @@ package org.opalj
 package fpcf
 package analyses
 
+import java.io.File
 import java.net.URL
 
-import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.DeclaredField
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.fieldaccess.FieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.MethodFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldReadAccessInformation
 import org.opalj.br.fpcf.properties.fieldaccess.NoFieldWriteAccessInformation
-import org.opalj.tac.cg.XTACallGraphKey
+import org.opalj.bytecode.JDKPackages
+import org.opalj.tac.cg.CallGraphArg
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedFieldAccessesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
 /**
- * Runs analyses for field accesses throughout a project and automatically excludes any JDK files included in the project
- * files from the summary at the end.
+ * Runs analyses for field accesses throughout a project and automatically excludes any JDK files included in the
+ * project files from the summary at the end.
  *
  * @author Maximilian Rüsch
  */
-object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
+object FieldAccessInformationAnalysisDemo extends ProjectsAnalysisApplication {
 
-    private val JDKPackages =
-        List(
-            "java/",
-            "javax",
-            "javafx",
-            "jdk",
-            "sun",
-            "oracle",
-            "com/sun",
-            "netscape",
-            "org/ietf/jgss",
-            "org/jcp/xml/dsig/internal",
-            "org/omg",
-            "org/w3c/dom",
-            "org/xml/sax"
-        )
+    protected class FieldAccessConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
 
-    override def title: String = "Determines field accesses"
+        val description = "Computes information about field accesses (reads and writes)"
 
-    override def description: String = "Runs analyses for field accesses (field reads and writes) throughout a project"
-
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
-        val result = analyze(project)
-        BasicReport(result)
+        init()
     }
 
-    def analyze(project: Project[URL]): String = {
-        val domain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[?]]
-        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               => Set(domain)
-            case Some(requirements) => requirements + domain
-        }
+    protected type ConfigType = FieldAccessConfig
 
-        val propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    protected def createConfig(args: Array[String]): FieldAccessConfig = new FieldAccessConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: FieldAccessConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+        val (propertyStore, _) = analysisConfig.setupPropertyStore(project)
+
         var analysisTime: Seconds = Seconds.None
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
-        val typeIterator = XTACallGraphKey.getTypeIterator(project)
+
+        val callGraphKey = analysisConfig(CallGraphArg)
+        val typeIterator = callGraphKey.getTypeIterator(project)
         project.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
 
         time {
-            analysesManager
+            project.get(FPCFAnalysesManagerKey)
                 .runAll(
-                    XTACallGraphKey.allCallGraphAnalyses(project)
+                    callGraphKey.allCallGraphAnalyses(project)
                         ++ Set(
                             EagerFieldAccessInformationAnalysis,
                             ReflectionRelatedFieldAccessesAnalysisScheduler
@@ -126,17 +109,20 @@ object FieldAccessInformationAnalysisDemo extends ProjectAnalysisApplication {
             else fields.iterator.map(f => s"- ${f.name}").mkString("\n|     ", "\n|     ", "")
         }
 
-        s"""
-           |
-           | Not Accessed Fields: ${notAccessedFields.size} ${getFieldsList(notAccessedFields)}
-           | Purely Read Fields : ${purelyReadFields.size} ${getFieldsList(purelyReadFields)}
-           | Purely Written Fields: ${purelyWrittenFields.size} ${getFieldsList(purelyWrittenFields)}
-           | Read And Written Fields: ${readAndWrittenFields.size} ${getFieldsList(readAndWrittenFields)}
-           |
-           | Access Sites with missing information: $totalIncompleteAccessSiteCount
-           |
-           | total Fields: ${fields.size}
-           | took : $analysisTime seconds
-           |""".stripMargin
+        val result =
+            s"""
+               |
+               | Not Accessed Fields: ${notAccessedFields.size} ${getFieldsList(notAccessedFields)}
+               | Purely Read Fields : ${purelyReadFields.size} ${getFieldsList(purelyReadFields)}
+               | Purely Written Fields: ${purelyWrittenFields.size} ${getFieldsList(purelyWrittenFields)}
+               | Read And Written Fields: ${readAndWrittenFields.size} ${getFieldsList(readAndWrittenFields)}
+               |
+               | Access Sites with missing information: $totalIncompleteAccessSiteCount
+               |
+               | total Fields: ${fields.size}
+               | took : $analysisTime seconds
+               |""".stripMargin
+
+        (project, BasicReport(result))
     }
 }

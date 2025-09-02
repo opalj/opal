@@ -199,7 +199,8 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     class U7BitSet extends super.U7BitSetLike with BaseTypesBasedSet { this: DomainValue =>
         override def name = "Unsigned7BitValue"
-        override def newInstance = new U7BitSet
+
+        override def newInstance: U7BitSet = new U7BitSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
                 case isv: IntegerSetValues   => isv.U7BitSet()
@@ -215,7 +216,8 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     class U15BitSet extends super.U15BitSetLike with BaseTypesBasedSet { this: DomainValue =>
         override def name = "Unsigned15BitValue"
-        override def newInstance = new U15BitSet
+
+        override def newInstance: U15BitSet = new U15BitSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
                 case isv: IntegerSetValues   => isv.U15BitSet()
@@ -229,7 +231,8 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     class ByteSet extends super.ByteSetLike with BaseTypesBasedSet {
         override def name = "ByteValue"
-        override def newInstance = new ByteSet
+
+        override def newInstance: ByteSet = new ByteSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.ByteValue(pc)
         }
@@ -238,7 +241,8 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     class ShortSet extends super.ShortSetLike with BaseTypesBasedSet {
         override def name = "ShortValue"
-        override def newInstance = new ShortSet
+
+        override def newInstance: ShortSet = new ShortSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.ShortValue(pc)
         }
@@ -247,7 +251,8 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     class CharSet extends super.CharSetLike with BaseTypesBasedSet {
         override def name = "CharValue"
-        override def newInstance = new CharSet
+
+        override def newInstance: CharSet = new CharSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             target.CharValue(pc)
         }

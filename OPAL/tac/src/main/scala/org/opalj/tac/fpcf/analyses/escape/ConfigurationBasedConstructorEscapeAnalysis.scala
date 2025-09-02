@@ -5,7 +5,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.fpcf.properties.EscapeProperty
 
 import net.ceedubs.ficus.Ficus.*
@@ -22,7 +22,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
 
     override type AnalysisContext <: AbstractEscapeAnalysisContext
 
-    private[this] case class PredefinedResult(object_type: String, escape_of_this: String)
+    private[this] case class PredefinedResult(class_type: String, escape_of_this: String)
 
     private[this] val ConfigKey = {
         "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
@@ -33,13 +33,13 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
      *
      * @note The reflective code assumes that every [[EscapeProperty]] is an object and not a class.
      */
-    private[this] val predefinedConstructors: Map[ObjectType, EscapeProperty] = {
+    private[this] val predefinedConstructors: Map[ClassType, EscapeProperty] = {
         project.config.as[Seq[PredefinedResult]](ConfigKey).map { r =>
             import scala.reflect.runtime.*
             val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
             val module = rootMirror.staticModule(r.escape_of_this)
             val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
-            (ObjectType(r.object_type), property)
+            (ClassType(r.class_type), property)
         }.toMap
     }
 
@@ -48,9 +48,9 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(call.name == "<init>")
         assert(state.usesDefSite(call.receiver))
-        assert(call.declaringClass.isObjectType)
+        assert(call.declaringClass.isClassType)
 
-        val propertyOption = predefinedConstructors.get(call.declaringClass.asObjectType)
+        val propertyOption = predefinedConstructors.get(call.declaringClass.asClassType)
 
         // the object constructor will not escape the this local
         if (propertyOption.nonEmpty) {

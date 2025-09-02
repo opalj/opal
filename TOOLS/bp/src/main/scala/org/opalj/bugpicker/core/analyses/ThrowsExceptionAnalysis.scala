@@ -4,24 +4,24 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.collection.immutable.Chain
-import org.opalj.br.Method
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.ReturnInstruction
-import org.opalj.ai.Domain
 import org.opalj.ai.AIResult
+import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.l1.RecordAllThrownExceptions
 import org.opalj.ai.domain.l1.ReferenceValues
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.ReturnInstruction
+import org.opalj.collection.immutable.Chain
+import org.opalj.issues.InstructionLocation
 import org.opalj.issues.Issue
-import org.opalj.issues.Relevance
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
 import org.opalj.issues.LocalVariables
 import org.opalj.issues.Operands
-import org.opalj.issues.InstructionLocation
+import org.opalj.issues.Relevance
 
 /**
  * This analysis identifies those instructions (except of ATHROW) that always lead to an exception.
@@ -48,13 +48,16 @@ object ThrowsExceptionAnalysis {
 
         val exceptionThrowingInstructions =
             code collectWithIndex {
-                case (pc, i: Instruction) if operandsArray(pc) != null /* <=> i was executed */ &&
-                    i != ATHROW && !i.isInstanceOf[ReturnInstruction] /* <=> i may have regular successors  */ &&
-                    domain.regularSuccessorsOf(pc).isEmpty /* <=> but i actually does not have a regular successor */ &&
-                    (
-                        domain.exceptionHandlerSuccessorsOf(pc).nonEmpty ||
-                        domain.allThrownExceptions.get(pc).nonEmpty
-                    ) =>
+                case (pc, i: Instruction)
+                    if operandsArray(pc) != null /* <=> i was executed */ &&
+                        i != ATHROW && !i.isInstanceOf[ReturnInstruction] /* <=> i may have regular successors  */ &&
+                        domain.regularSuccessorsOf(
+                            pc
+                        ).isEmpty /* <=> but i actually does not have a regular successor */ &&
+                        (
+                            domain.exceptionHandlerSuccessorsOf(pc).nonEmpty ||
+                            domain.allThrownExceptions.get(pc).nonEmpty
+                        ) =>
                     (pc, i)
             }
 

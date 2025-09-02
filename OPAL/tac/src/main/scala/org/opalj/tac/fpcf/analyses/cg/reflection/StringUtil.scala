@@ -6,7 +6,7 @@ package analyses
 package cg
 package reflection
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
@@ -25,7 +25,7 @@ object StringUtil {
             if (index >= 0) {
                 getString(index, stmts) match {
                     case Some(v) => Set(v)
-                    case _ =>
+                    case _       =>
                         return None;
                 }
             } else {
@@ -59,7 +59,7 @@ object StringUtil {
             context,
             depender,
             stmts,
-            _ eq ObjectType.String,
+            _ eq ClassType.String,
             failure
         ) { (_, defSite, _stmts) =>
             getString(defSite, _stmts) match {

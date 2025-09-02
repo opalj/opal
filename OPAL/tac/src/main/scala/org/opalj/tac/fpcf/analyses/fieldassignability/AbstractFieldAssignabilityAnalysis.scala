@@ -8,6 +8,7 @@ package fieldassignability
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.DoubleType
@@ -16,7 +17,6 @@ import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
@@ -139,7 +139,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         val thisType = field.classFile.thisType
 
         if (field.isPublic) {
-            if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
+            if (typeExtensibility(ClassType.Object).isYesOrUnknown) {
                 return Result(field, Assignable);
             }
         } else if (field.isProtected) {
@@ -252,14 +252,14 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             newFai.getNewestAccesses(
                 newFai.numDirectAccesses - seenDirectAccesses,
                 newFai.numIndirectAccesses - seenIndirectAccesses
-            ) exists { writeAccess =>
-                val method = contextProvider.contextFromId(writeAccess._1).method.asDefinedMethod
+            ) exists { case (contextID, pc, receiver, _) =>
+                val method = contextProvider.contextFromId(contextID).method.asDefinedMethod
                 state.fieldAccesses += method -> (state.fieldAccesses.getOrElse(method, Set.empty) +
-                    ((writeAccess._2, writeAccess._3)))
+                    ((pc, receiver)))
 
                 val tacEP = state.tacDependees.get(method) match {
                     case Some(tacEP) => tacEP
-                    case None =>
+                    case None        =>
                         val tacEP = propertyStore(method.definedMethod, TACAI.key)
                         state.tacDependees += method -> tacEP
                         tacEP
@@ -267,14 +267,14 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
                 val callersEP = state.callerDependees.get(method) match {
                     case Some(callersEP) => callersEP
-                    case None =>
+                    case None            =>
                         val callersEP = propertyStore(method, Callers.key)
                         state.callerDependees += method -> callersEP
                         callersEP
                 }
 
                 if (tacEP.hasUBP && callersEP.hasUBP)
-                    methodUpdatesField(method, tacEP.ub.tac.get, callersEP.ub, writeAccess._2, writeAccess._3)
+                    methodUpdatesField(method, tacEP.ub.tac.get, callersEP.ub, pc, receiver)
                 else
                     false
             }
@@ -347,19 +347,19 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
      * Returns the initialization value of a given type.
      */
     def getDefaultValues()(implicit state: AnalysisState): Set[Any] = state.field.fieldType match {
-        case FloatType | ObjectType.Float     => Set(0.0f)
-        case DoubleType | ObjectType.Double   => Set(0.0d)
-        case LongType | ObjectType.Long       => Set(0L)
-        case CharType | ObjectType.Character  => Set('\u0000')
-        case BooleanType | ObjectType.Boolean => Set(false)
+        case FloatType | ClassType.Float     => Set(0.0f)
+        case DoubleType | ClassType.Double   => Set(0.0d)
+        case LongType | ClassType.Long       => Set(0L)
+        case CharType | ClassType.Character  => Set('\u0000')
+        case BooleanType | ClassType.Boolean => Set(false)
         case IntegerType |
-            ObjectType.Integer |
+            ClassType.Integer |
             ByteType |
-            ObjectType.Byte |
+            ClassType.Byte |
             ShortType |
-            ObjectType.Short => Set(0)
-        case ObjectType.String => Set("", null)
-        case _: ReferenceType  => Set(null)
+            ClassType.Short => Set(0)
+        case ClassType.String => Set("", null)
+        case _: ReferenceType => Set(null)
     }
 }
 

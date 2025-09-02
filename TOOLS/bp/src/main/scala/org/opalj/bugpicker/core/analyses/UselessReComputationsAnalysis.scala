@@ -4,24 +4,23 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.collection.immutable.:&:
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Method
-import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.AIResult
+import org.opalj.ai.ValuesDomain
+import org.opalj.ai.collectPCWithOperands
 import org.opalj.ai.domain.ConcreteIntegerValues
 import org.opalj.ai.domain.ConcreteLongValues
+import org.opalj.ai.domain.TheCode
+import org.opalj.br.Method
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.IStoreInstruction
 import org.opalj.br.instructions.LStoreInstruction
-import org.opalj.ai.domain.TheCode
-import org.opalj.ai.ValuesDomain
-import org.opalj.issues.Issue
-import org.opalj.issues.Relevance
+import org.opalj.collection.immutable.:&:
 import org.opalj.issues.InstructionLocation
-import org.opalj.issues.Operands
+import org.opalj.issues.Issue
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
-import org.opalj.issues.InstructionLocation
+import org.opalj.issues.Operands
+import org.opalj.issues.Relevance
 
 /**
  * Identifies computations of primitive values that lead to the same result as a
@@ -33,8 +32,9 @@ import org.opalj.issues.InstructionLocation
 object UselessReComputationsAnalysis {
 
     def apply(
-        theProject: SomeProject, method: Method,
-        result: AIResult { val domain: TheCode with ConcreteIntegerValues with ConcreteLongValues with ValuesDomain }
+        theProject: SomeProject,
+        method:     Method,
+        result:     AIResult { val domain: TheCode with ConcreteIntegerValues with ConcreteLongValues with ValuesDomain }
     ): Seq[Issue] = {
 
         import result.domain.ConcreteIntegerValue
@@ -57,21 +57,23 @@ object UselessReComputationsAnalysis {
         val methodsWithValueReassignment =
             collectPCWithOperands(domain)(code, operandsArray) {
                 case (
-                    pc,
-                    IStoreInstruction(index),
-                    ConcreteIntegerValue(a) :&: _
-                    ) if localsArray(pc) != null &&
-                    domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
-                    code.localVariable(pc, index).map(lv => lv.startPC < pc).getOrElse(false) =>
+                        pc,
+                        IStoreInstruction(index),
+                        ConcreteIntegerValue(a) :&: _
+                    )
+                    if localsArray(pc) != null &&
+                        domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
+                        code.localVariable(pc, index).map(lv => lv.startPC < pc).getOrElse(false) =>
                     (pc, index, a.toString)
 
                 case (
-                    pc,
-                    LStoreInstruction(index),
-                    ConcreteLongValue(a) :&: _
-                    ) if localsArray(pc) != null &&
-                    domain.longValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
-                    code.localVariable(pc, index).map(lv => lv.startPC < pc).getOrElse(false) =>
+                        pc,
+                        LStoreInstruction(index),
+                        ConcreteLongValue(a) :&: _
+                    )
+                    if localsArray(pc) != null &&
+                        domain.longValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
+                        code.localVariable(pc, index).map(lv => lv.startPC < pc).getOrElse(false) =>
                     (pc, index, a.toString)
             }
 
@@ -80,7 +82,11 @@ object UselessReComputationsAnalysis {
             val lv = code.localVariable(pc, index).get
             val details = List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))
             val location = new InstructionLocation(
-                Some("useless (re-)assignment"), theProject, method, pc, details
+                Some("useless (re-)assignment"),
+                theProject,
+                method,
+                pc,
+                details
             )
 
             Issue(

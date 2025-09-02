@@ -8,8 +8,8 @@ import java.io.File
 import java.io.FileWriter
 import java.io.Writer
 
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.instructions.MethodInvocationInstruction
@@ -85,9 +85,9 @@ object CallGraphSerializer {
                         val (dc, name, desc) = declaredTgtO.get
                         val declaredType =
                             if (dc.isArrayType)
-                                ObjectType.Object
+                                ClassType.Object
                             else
-                                dc.asObjectType
+                                dc.asClassType
 
                         val declaredTarget =
                             declaredMethods(declaredType, declaredType.packageName, declaredType, name, desc)

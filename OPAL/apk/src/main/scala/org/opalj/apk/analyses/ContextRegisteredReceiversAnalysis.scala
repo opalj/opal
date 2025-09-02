@@ -6,7 +6,7 @@ package analyses
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.apk.ApkContextRegisteredReceiver
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.tac.AITACode
@@ -25,10 +25,10 @@ import org.opalj.value.ValueInformation
  */
 object ContextRegisteredReceiversAnalysis {
     private val RegisterReceiverMethod = "registerReceiver"
-    private val ContextClass = ObjectType("android/content/Context")
-    private val LocalBroadcastManagerClass = ObjectType("androidx/localbroadcastmanager/content/LocalBroadcastManager")
-    private val ActivityClass = ObjectType("android/app/Activity")
-    private val IntentFilterClass = ObjectType("android/content/IntentFilter")
+    private val ContextClass = ClassType("android/content/Context")
+    private val LocalBroadcastManagerClass = ClassType("androidx/localbroadcastmanager/content/LocalBroadcastManager")
+    private val ActivityClass = ClassType("android/app/Activity")
+    private val IntentFilterClass = ClassType("android/content/IntentFilter")
 
     def analyze(project: Project[?]): Seq[ApkContextRegisteredReceiver] = {
         val foundReceivers: ListBuffer[ApkContextRegisteredReceiver] = ListBuffer.empty
@@ -40,7 +40,7 @@ object ContextRegisteredReceiversAnalysis {
             m.body.get.instructionIterator.foreach {
                 case i: MethodInvocationInstruction =>
                     if (!alreadyFoundCall && i.name.equals(RegisterReceiverMethod) &&
-                        classHierarchyMatches(project, i.declaringClass.mostPreciseObjectType)
+                        classHierarchyMatches(project, i.declaringClass.mostPreciseClassType)
                     ) {
                         // potential further calls are found in TAC, remaining bytecode instructions must not be analyzed
                         alreadyFoundCall = true
@@ -50,7 +50,7 @@ object ContextRegisteredReceiversAnalysis {
                         tacMethod.stmts.foreach {
                             case s @ VirtualFunctionCallStatement(call) =>
                                 if (call.name.equals(RegisterReceiverMethod) &&
-                                    classHierarchyMatches(project, call.declaringClass.mostPreciseObjectType)
+                                    classHierarchyMatches(project, call.declaringClass.mostPreciseClassType)
                                 ) {
                                     val receiverType = call.params.head.asVar.value.asReferenceValue.upperTypeBound
                                     // check if broadcast receiver param is null
@@ -86,12 +86,12 @@ object ContextRegisteredReceiversAnalysis {
         foundReceivers.toSeq
     }
 
-    private def classMatches(clazz: ObjectType): Boolean = {
+    private def classMatches(clazz: ClassType): Boolean = {
         clazz == ContextClass || clazz == LocalBroadcastManagerClass ||
         clazz == ActivityClass
     }
 
-    private def classHierarchyMatches(project: Project[?], clazz: ObjectType): Boolean = {
+    private def classHierarchyMatches(project: Project[?], clazz: ClassType): Boolean = {
         var tmpClazz = clazz
         while (!classMatches(tmpClazz)) {
             if (tmpClazz.toJava.equals("java.lang.Object")) {
@@ -121,7 +121,7 @@ object ContextRegisteredReceiversAnalysis {
             intentDef.asAssignment.targetVar.usedBy
                 .foreach(tacMethod.stmts(_) match {
                     case VirtualFunctionCallStatement(call)
-                        if call.declaringClass.mostPreciseObjectType == IntentFilterClass =>
+                        if call.declaringClass.mostPreciseClassType == IntentFilterClass =>
                         val actionOrCategory = call.params.head.asVar.value.asReferenceValue.toCanonicalForm
                             .asInstanceOf[TheStringValue]
                             .value

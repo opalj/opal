@@ -7,12 +7,12 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 
 import org.opalj.ai.ValueOrigin
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.DeclaredMethods
@@ -217,8 +217,8 @@ class FieldLocalityAnalysis private[analyses] (
     /**
      * Determines whether a type is (potentially) cloneable.
      */
-    def isCloneable(tpe: ObjectType): Boolean = {
-        classHierarchy.isASubtypeOf(tpe, ObjectType.Cloneable).isYesOrUnknown
+    def isCloneable(tpe: ClassType): Boolean = {
+        classHierarchy.isASubtypeOf(tpe, ClassType.Cloneable).isYesOrUnknown
     }
 
     /**
@@ -226,8 +226,8 @@ class FieldLocalityAnalysis private[analyses] (
      * class.
      */
     def allSubclassMethods(field: Field): Set[Method] = {
-        classHierarchy.allSubclassTypes(field.classFile.thisType, reflexive = true).flatMap { ot =>
-            project.classFile(ot)
+        classHierarchy.allSubclassTypes(field.classFile.thisType, reflexive = true).flatMap { ct =>
+            project.classFile(ct)
         }.flatMap(_.methodsWithBody.filter(!_.isStatic)).toSet
     }
 
@@ -581,7 +581,7 @@ class FieldLocalityAnalysis private[analyses] (
     )(implicit state: FieldLocalityState): Option[(TACode[TACMethodParameter, V], Callers)] = {
         val tacEP = state.getTACDependee(method) match {
             case Some(tacEP) => tacEP
-            case None =>
+            case None        =>
                 val tacEP = propertyStore(method, TACAI.key)
                 state.addTACDependee(tacEP)
                 tacEP
@@ -590,7 +590,7 @@ class FieldLocalityAnalysis private[analyses] (
         val definedMethod = declaredMethods(method)
         val callersEP = state.getCallersDependee(definedMethod) match {
             case Some(callersEP) => callersEP
-            case None =>
+            case None            =>
                 val callersEP = propertyStore(definedMethod, Callers.key)
                 state.addCallersDependee(callersEP)
                 callersEP
@@ -618,11 +618,9 @@ class FieldLocalityAnalysis private[analyses] (
             faiEP.ub.getNewestAccesses(
                 faiEP.ub.numDirectAccesses - seenDirectAccesses,
                 faiEP.ub.numIndirectAccesses - seenIndirectAccesses
-            ) exists { wa =>
-                val definedMethod = contextProvider.contextFromId(wa._1).method
+            ) exists { case (contextID, pc, receiver, _) =>
+                val definedMethod = contextProvider.contextFromId(contextID).method
                 val method = definedMethod.definedMethod
-                val pc = wa._2
-                val receiver = wa._3
                 state.tacFieldReadAccesses +=
                     method -> (state.tacFieldReadAccesses.getOrElse(method, Set.empty) + ((pc, receiver)))
 

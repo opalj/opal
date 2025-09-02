@@ -60,7 +60,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             attributes = ArraySeq(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
         ).toDA()
 
-    val nestedClassOuterType = br.ObjectType("NestedClassOuter")
+    val nestedClassOuterType = br.ClassType("NestedClassOuter")
     val nestedClassHostAttribute = br.NestHost(nestedClassOuterType)
     val (nestedClassInner, _) =
         CLASS[Nothing](
@@ -71,7 +71,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             attributes = ArraySeq(nestedClassHostAttribute)
         ).toDA()
 
-    val nestedClassInnerType = br.ObjectType("NestedClassInner")
+    val nestedClassInnerType = br.ClassType("NestedClassInner")
 
     val nestedClassesAttribute = br.NestMembers(ArraySeq(nestedClassInnerType))
 
@@ -104,7 +104,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             superclassType = Some("SealedClass")
         ).toDA()
 
-    val sealedClassSubclassType = br.ObjectType("SealedClassSubclass")
+    val sealedClassSubclassType = br.ClassType("SealedClassSubclass")
 
     val permittedSubclassesAttribute = br.PermittedSubclasses(ArraySeq(sealedClassSubclassType))
 

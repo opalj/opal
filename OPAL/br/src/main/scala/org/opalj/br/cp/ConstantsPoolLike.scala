@@ -22,7 +22,7 @@ trait ConstantsPoolLike {
 
     def CPENameAndType(name: String, tpe: String): Int
 
-    def CPEFieldRef(objectType: ObjectType, fieldName: String, fieldType: String): Int
+    def CPEFieldRef(classType: ClassType, fieldName: String, fieldType: String): Int
 
     def CPEMethodRef(
         referenceType: ReferenceType,
@@ -31,7 +31,7 @@ trait ConstantsPoolLike {
     ): Int
 
     def CPEInterfaceMethodRef(
-        objectType: ReferenceType,
+        classType:  ReferenceType,
         name:       String,
         descriptor: MethodDescriptor
     ): Int
@@ -51,8 +51,8 @@ trait ConstantsPoolLike {
 
     def CPEUtf8OfCPEClass(referenceType: ReferenceType): Int = {
         val typeName =
-            if (referenceType.isObjectType)
-                referenceType.asObjectType.fqn // "just", e.g., "java/lang/Object"
+            if (referenceType.isClassType)
+                referenceType.asClassType.fqn // "just", e.g., "java/lang/Object"
             else // an array type including L and ; in case of reference types
                 referenceType.toJVMTypeName
         CPEUtf8(typeName)
@@ -116,18 +116,18 @@ trait ConstantsPoolLike {
     @throws[ConstantPoolException]
     def CPEntryForBootstrapArgument(bootstrapArgument: BootstrapArgument): Int = {
         bootstrapArgument match {
-            case ConstantString(value)        => CPEString(value, requiresUByteIndex = false)
-            case ConstantClass(refType)       => CPEClass(refType, requiresUByteIndex = false)
-            case ConstantInteger(value)       => CPEInteger(value, requiresUByteIndex = false)
-            case ConstantFloat(value)         => CPEFloat(value, requiresUByteIndex = false)
-            case ConstantLong(value)          => CPELong(value)
-            case ConstantDouble(value)        => CPEDouble(value)
-            case md: MethodDescriptor         => CPEMethodType(md, requiresUByteIndex = false)
-            case gfmh: GetFieldMethodHandle   => CPEMethodHandle(gfmh, requiresUByteIndex = false)
-            case gsmh: GetStaticMethodHandle  => CPEMethodHandle(gsmh, requiresUByteIndex = false)
-            case pfmh: PutFieldMethodHandle   => CPEMethodHandle(pfmh, requiresUByteIndex = false)
-            case psmh: PutStaticMethodHandle  => CPEMethodHandle(psmh, requiresUByteIndex = false)
-            case mcmh: MethodCallMethodHandle => CPEMethodHandle(mcmh, requiresUByteIndex = false)
+            case ConstantString(value)                              => CPEString(value, requiresUByteIndex = false)
+            case ConstantClass(refType)                             => CPEClass(refType, requiresUByteIndex = false)
+            case ConstantInteger(value)                             => CPEInteger(value, requiresUByteIndex = false)
+            case ConstantFloat(value)                               => CPEFloat(value, requiresUByteIndex = false)
+            case ConstantLong(value)                                => CPELong(value)
+            case ConstantDouble(value)                              => CPEDouble(value)
+            case md: MethodDescriptor                               => CPEMethodType(md, requiresUByteIndex = false)
+            case gfmh: GetFieldMethodHandle                         => CPEMethodHandle(gfmh, requiresUByteIndex = false)
+            case gsmh: GetStaticMethodHandle                        => CPEMethodHandle(gsmh, requiresUByteIndex = false)
+            case pfmh: PutFieldMethodHandle                         => CPEMethodHandle(pfmh, requiresUByteIndex = false)
+            case psmh: PutStaticMethodHandle                        => CPEMethodHandle(psmh, requiresUByteIndex = false)
+            case mcmh: MethodCallMethodHandle                       => CPEMethodHandle(mcmh, requiresUByteIndex = false)
             case DynamicConstant(bootstrapMethod, name, descriptor) =>
                 CPEDynamic(bootstrapMethod, name, descriptor, requiresUByteIndex = false)
         }

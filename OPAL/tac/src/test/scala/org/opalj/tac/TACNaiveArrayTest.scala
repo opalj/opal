@@ -15,7 +15,7 @@ import org.opalj.br.TestSupport.biProject
 @RunWith(classOf[JUnitRunner])
 class TACNaiveArrayTest extends TACNaiveTest {
 
-    val ArrayInstructionsType = ObjectType("tactest/ArrayCreationAndManipulation")
+    val ArrayInstructionsType = ClassType("tactest/ArrayCreationAndManipulation")
 
     val project = biProject("tactest-8-preserveAllLocals.jar")
 
@@ -100,11 +100,11 @@ class TACNaiveArrayTest extends TACNaiveTest {
                 Assignment(4, SimpleVar(-2, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Assignment(5, SimpleVar(0, ComputationalTypeReference), SimpleVar(-2, ComputationalTypeReference)),
                 Assignment(6, SimpleVar(1, ComputationalTypeInt), IntConst(6, 4)),
-                Assignment(7, SimpleVar(2, ComputationalTypeReference), New(7, ObjectType.Object)),
+                Assignment(7, SimpleVar(2, ComputationalTypeReference), New(7, ClassType.Object)),
                 Nop(10),
                 NonVirtualMethodCall(
                     11,
-                    ObjectType.Object,
+                    ClassType.Object,
                     false,
                     "<init>",
                     MethodDescriptor(NoFieldTypes, VoidType),

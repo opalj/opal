@@ -132,11 +132,59 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     | TypeVariableSignature.KindId =>
                     processSignature(vc, attribute.asInstanceOf[Signature])
 
+                case Module.KindId =>
+                    val module = attribute.asInstanceOf[Module]
+                    processModule(module.name, module.requires, module.uses)
+
+                case ModuleMainClass.KindId =>
+                    processDependency(
+                        vc,
+                        attribute.asInstanceOf[ModuleMainClass].mainClassType,
+                        MODULE_MAIN_CLASS
+                    )
+
+                case NestHost.KindId =>
+                    processDependency(
+                        vc,
+                        attribute.asInstanceOf[NestHost].hostClassType,
+                        NEST_HOST
+                    )
+
+                case NestMembers.KindId =>
+                    for {
+                        member <- attribute.asInstanceOf[NestMembers].classes
+                    } {
+                        processDependency(
+                            vc,
+                            member,
+                            NEST_MEMBER
+                        )
+                    }
+
+                case Record.KindId =>
+                    for {
+                        component <- attribute.asInstanceOf[Record].components
+                    } {
+                        process(vc, component)
+                    }
+
+                case PermittedSubclasses.KindId =>
+                    for {
+                        subclass <- attribute.asInstanceOf[PermittedSubclasses].classes
+                    } {
+                        processDependency(
+                            vc,
+                            subclass,
+                            PERMITTED_SUBCLASS
+                        )
+                    }
+
                 // The following attributes do not create dependencies.
                 case Synthetic.KindId            => /*do nothing*/
                 case SourceFile.KindId           => /*do nothing*/
                 case Deprecated.KindId           => /*do nothing*/
                 case SourceDebugExtension.KindId => /*do nothing*/
+                case ModulePackages.KindId       => /*do nothing*/
                 // The Java 7 BootstrapMethodTable Attribute is resolved and related
                 // dependencies will be extracted when the respective invokedynamic
                 // instructions are processed.
@@ -146,12 +194,28 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 // These are "custom attributes"
                 case SynthesizedClassFiles.KindId => /*ignore*/
                 case VirtualTypeFlag.KindId       => /*ignore*/
-                case _ =>
+                case _                            =>
                     val classInfo = classFile.thisType.toJava
                     val message = s"unexpected class attribute: $attribute ($classInfo)"
                     throw BytecodeProcessingFailedException(message)
             }
         }
+    }
+
+    protected def process(declaringClass: VirtualClass, recordComponent: RecordComponent): Unit = {
+        val vrc = dependencyProcessor.asVirtualField(
+            declaringClass.thisType,
+            recordComponent.name,
+            recordComponent.componentType
+        )
+
+        dependencyProcessor.processDependency(
+            vrc,
+            declaringClass,
+            INSTANCE_MEMBER
+        )
+
+        processFieldLike(declaringClass, vrc, recordComponent.attributes)
     }
 
     /**
@@ -166,16 +230,19 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
             field.name,
             field.fieldType
         )
-
         dependencyProcessor.processDependency(
             vf,
             declaringClass,
             if (field.isStatic) CLASS_MEMBER else INSTANCE_MEMBER
         )
 
-        processDependency(vf, field.fieldType, FIELD_TYPE)
+        processFieldLike(declaringClass, vf, field.attributes)
+    }
 
-        field.attributes foreach { attribute =>
+    private def processFieldLike(declaringClass: VirtualClass, vf: VirtualField, attributes: Attributes): Unit = {
+        processDependency(vf, vf.fieldType, FIELD_TYPE)
+
+        attributes foreach { attribute =>
             attribute.kindId match {
                 case RuntimeInvisibleAnnotationTable.KindId
                     | RuntimeVisibleAnnotationTable.KindId =>
@@ -202,7 +269,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case ConstantDouble.KindId =>
                     processDependency(vf, DoubleType, CONSTANT_VALUE)
                 case ConstantString.KindId =>
-                    processDependency(vf, ObjectType.String, CONSTANT_VALUE)
+                    processDependency(vf, ClassType.String, CONSTANT_VALUE)
 
                 case ClassSignature.KindId
                     | MethodTypeSignature.KindId
@@ -214,8 +281,8 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 // Synthetic and Deprecated do not introduce new dependencies
                 case Synthetic.KindId  => /*do nothing*/
                 case Deprecated.KindId => /*do nothing*/
-                case _ =>
-                    val fieldInfo = field.toJava
+                case _                 =>
+                    val fieldInfo = vf.toJava
                     val message = s"unexpected field attribute: $attribute ($fieldInfo)"
                     throw new BytecodeProcessingFailedException(message)
             }
@@ -293,7 +360,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     // relevant dependencies.
                     case StackMapTable.KindId   => /* Do Nothing */
                     case LineNumberTable.KindId => /* Do Nothing */
-                    case _ =>
+                    case _                      =>
                         val methodSignature = method.toJava
                         val message = s"unexpected code attribute: $attribute ($methodSignature)"
                         throw BytecodeProcessingFailedException(message)
@@ -330,9 +397,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case RuntimeInvisibleParameterAnnotationTable.KindId
                     | RuntimeVisibleParameterAnnotationTable.KindId =>
                     val pas = attribute.asInstanceOf[ParameterAnnotationTable].parameterAnnotations
-                    pas foreach { pa =>
-                        pa foreach { process(vm, _, PARAMETER_ANNOTATED_WITH, ANNOTATION_ELEMENT_TYPE) }
-                    }
+                    pas foreach { pa => pa foreach { process(vm, _, PARAMETER_ANNOTATED_WITH, ANNOTATION_ELEMENT_TYPE) } }
 
                 // ElementValues encode annotation default attributes
                 case BooleanValue.KindId
@@ -358,7 +423,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case Synthetic.KindId            => /* nothing to do */
                 case Deprecated.KindId           => /* nothing to do */
                 case MethodParameterTable.KindId => /* nothing to do */
-                case _ =>
+                case _                           =>
                     val methodSignature = method.toJava
                     val message = s"unexpected method attribute: $attribute ($methodSignature)"
                     throw BytecodeProcessingFailedException(message)
@@ -462,7 +527,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 // If the class is used in a type parameter, a dependency between the given
                 // source and the class is added.
                 if (isInTypeParameters)
-                    processDependency(declaringElement, cts.objectType, TYPE_IN_TYPE_PARAMETERS)
+                    processDependency(declaringElement, cts.classType, TYPE_IN_TYPE_PARAMETERS)
                 processSimpleClassTypeSignature(cts.simpleClassTypeSignature)
 
             case pta: ProperTypeArgument =>
@@ -512,7 +577,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
         //                    processDependency(vm, DoubleType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
 
         // case StringValue.KindId =>
-        //                    processDependency(vm, ObjectType.String , USES_DEFAULT_ANNOTATION_VALUE_TYPE)
+        //                    processDependency(vm, ClassType.String , USES_DEFAULT_ANNOTATION_VALUE_TYPE)
         // case AnnotationValue.KindId =>
         //                    processDependency(vm, AnnotationType, USES_DEFAULT_ANNOTATION_VALUE_TYPE)
         // case ClassValue.KindId =>
@@ -542,7 +607,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 process(declaringElement, annotation, dType, dType)
 
             case _: StringValue =>
-                processDependency(declaringElement, ObjectType.String, dType)
+                processDependency(declaringElement, ClassType.String, dType)
 
             case btev: BaseTypeElementValue =>
                 processDependency(declaringElement, btev.baseType, dType)
@@ -605,14 +670,14 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case LDC.opcode /*18*/ =>
                     instruction match {
                         case LoadString(_) =>
-                            processDependency(declaringMethod, ObjectType.String, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ClassType.String, LOADS_CONSTANT)
                         case LoadClass(value: ReferenceType) =>
                             processDependency(declaringMethod, value, LOADS_CONSTANT)
-                            processDependency(declaringMethod, ObjectType.Class, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ClassType.Class, LOADS_CONSTANT)
                         case LoadMethodHandle(_) =>
-                            processDependency(declaringMethod, ObjectType.MethodHandle, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ClassType.MethodHandle, LOADS_CONSTANT)
                         case LoadMethodType(_) =>
-                            processDependency(declaringMethod, ObjectType.MethodType, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ClassType.MethodType, LOADS_CONSTANT)
 
                         case _ => /*not relevant*/
                     }
@@ -620,14 +685,14 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case LDC_W.opcode /*19*/ =>
                     instruction match {
                         case LoadString_W(_) =>
-                            processDependency(declaringMethod, ObjectType.String, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ClassType.String, LOADS_CONSTANT)
                         case LoadClass_W(value: ReferenceType) =>
                             processDependency(declaringMethod, value, LOADS_CONSTANT)
-                            processDependency(declaringMethod, ObjectType.Class, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ClassType.Class, LOADS_CONSTANT)
                         case LoadMethodHandle_W(_) =>
-                            processDependency(declaringMethod, ObjectType.MethodHandle, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ClassType.MethodHandle, LOADS_CONSTANT)
                         case LoadMethodType_W(_) =>
-                            processDependency(declaringMethod, ObjectType.MethodType, LOADS_CONSTANT)
+                            processDependency(declaringMethod, ClassType.MethodType, LOADS_CONSTANT)
 
                         case _ => /*not relevant*/
                     }
@@ -752,7 +817,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     processInvokedynamic(declaringMethod, as[INVOKEDYNAMIC](instruction))
 
                 case 187 =>
-                    processDependency(declaringMethod, as[NEW](instruction).objectType, CREATES)
+                    processDependency(declaringMethod, as[NEW](instruction).classType, CREATES)
 
                 case NEWARRAY.opcode =>
                     processDependency(
@@ -792,6 +857,31 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case _ =>
             }
             i = instruction.indexOfNextInstruction(i)(code)
+        }
+    }
+
+    protected def processModule(name: String, requires: Seq[Requires], uses: Seq[ClassType]): Unit = {
+        val vm = dependencyProcessor.asVirtualModule(name)
+
+        for {
+            requiredModule <- requires
+        } {
+            val vrm = dependencyProcessor.asVirtualModule(requiredModule.requires)
+            dependencyProcessor.processDependency(
+                vm,
+                vrm,
+                REQUIRED_MODULE
+            )
+        }
+
+        for {
+            use <- uses
+        } {
+            processDependency(
+                vm,
+                use,
+                USED_SERVICE
+            )
         }
     }
 
@@ -916,7 +1006,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
     }
 
     protected[this] def processDependency(
-        source: ObjectType,
+        source: ClassType,
         target: VirtualSourceElement,
         dType:  DependencyType
     ): Unit = {
@@ -941,7 +1031,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
 
     @inline protected[this] def processDependency(
         source: ClassFile,
-        target: ObjectType,
+        target: ClassType,
         dType:  DependencyType
     ): Unit = {
         dependencyProcessor.processDependency(
@@ -953,7 +1043,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
 
     @inline protected[this] def processDependency(
         source: VirtualSourceElement,
-        target: ObjectType,
+        target: ClassType,
         dType:  DependencyType
     ): Unit = {
         dependencyProcessor.processDependency(
@@ -989,8 +1079,8 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
             return;
 
         target match {
-            case ot: ObjectType =>
-                processDependency(source, ot, dType)
+            case ct: ClassType =>
+                processDependency(source, ct, dType)
             case bt: BaseType =>
                 processDependency(source, bt, dType)
             case at: ArrayType =>

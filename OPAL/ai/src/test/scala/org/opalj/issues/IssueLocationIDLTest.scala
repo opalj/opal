@@ -105,7 +105,7 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
                         "bt" -> "int"
                     ),
                     "parameters" -> Json.arr(Json.obj(
-                        "ot" -> "foo.Bar",
+                        "ct" -> "foo.Bar",
                         "simpleName" -> "Bar"
                     )),
                     "signature" -> "test1p(Lfoo/Bar;)I",

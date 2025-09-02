@@ -6,11 +6,11 @@ import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 
 private[ba] class ExceptionHandlerConfiguration(
-    var position:  Int                   = 0,
-    var startPC:   Int                   = -1, // -1 is illegal and used to identify missing labels
-    var endPC:     Int                   = -1, // -1 is illegal and used to identify missing labels
-    var handlerPC: Int                   = -1, // -1 is illegal and used to identify missing labels
-    var catchType: Option[br.ObjectType] = None
+    var position:  Int                  = 0,
+    var startPC:   Int                  = -1, // -1 is illegal and used to identify missing labels
+    var endPC:     Int                  = -1, // -1 is illegal and used to identify missing labels
+    var handlerPC: Int                  = -1, // -1 is illegal and used to identify missing labels
+    var catchType: Option[br.ClassType] = None
 )
 
 /**
@@ -31,8 +31,8 @@ class ExceptionHandlerTableBuilder {
     def add(element: ExceptionHandlerElement, pc: br.PC): this.type = {
         val handler = getExceptionHandlerBuilder(element.id)
         element match {
-            case TRY(_)    => handler.startPC = pc
-            case TRYEND(_) => handler.endPC = pc
+            case TRY(_)                        => handler.startPC = pc
+            case TRYEND(_)                     => handler.endPC = pc
             case CATCH(_, position, catchType) =>
                 handler.handlerPC = pc
                 handler.position = position

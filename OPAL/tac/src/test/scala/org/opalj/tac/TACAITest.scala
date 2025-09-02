@@ -11,8 +11,8 @@ import org.scalatest.matchers.should.Matchers
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.TestSupport.biProjectWithJDK
 import org.opalj.br.analyses.Project
@@ -43,7 +43,7 @@ class TACAITest extends AnyFunSpec with Matchers {
                 for { case Seq(_, _, className, methodName, test, domainName) <- tests } {
                     it(test + s" ($className.$methodName using $domainName)") {
 
-                        val cfOption = p.classFile(ObjectType(className.replace('.', '/')))
+                        val cfOption = p.classFile(ClassType(className.replace('.', '/')))
                         if (cfOption.isEmpty)
                             fail(s"cannot find class: $className")
                         val cf = cfOption.get

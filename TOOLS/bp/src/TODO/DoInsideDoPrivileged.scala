@@ -24,13 +24,13 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
         "Detects calls to setAccessible() outside of doPrivileged blocks."
 
     private val ReflectFieldType =
-        ObjectType("java/lang/reflect/Field")
+        ClassType("java/lang/reflect/Field")
     private val ReflectMethodType =
-        ObjectType("java/lang/reflect/Method")
+        ClassType("java/lang/reflect/Method")
     private val PriviledgedActionType =
-        ObjectType("java/security/PrivilegedAction")
+        ClassType("java/security/PrivilegedAction")
     private val PriviledgedExceptionActionType =
-        ObjectType("java/security/PrivilegedExceptionAction")
+        ClassType("java/security/PrivilegedExceptionAction")
 
     /**
      * Runs this analysis on the given project.
@@ -41,7 +41,7 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
@@ -53,15 +53,21 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
             if !classFile.interfaceTypes.contains(PriviledgedActionType) &&
                 !classFile.interfaceTypes.contains(PriviledgedExceptionActionType)
             method @ MethodWithBody(body) <- classFile.methods
-            (_, INVOKEVIRTUAL(ReflectFieldType | ReflectMethodType,
-                "setAccessible", _)) <- body.associateWithIndex
+            (
+                _,
+                INVOKEVIRTUAL(
+                    ReflectFieldType | ReflectMethodType,
+                    "setAccessible",
+                    _
+                )
+            ) <- body.associateWithIndex
         } yield {
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Warning,
                 classFile.thisType,
                 method,
-                "Calls java.lang.reflect.Field|Method.setAccessible() outside of "+
+                "Calls java.lang.reflect.Field|Method.setAccessible() outside of " +
                     "doPrivileged block"
             )
         }

@@ -9,9 +9,9 @@ package xta
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.br.ArrayType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
-import org.opalj.br.ObjectType
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
@@ -91,7 +91,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             // the method is reachable, so we analyze it!
         }
 
-        val declaredType = declaredMethod.declaringClassType.asObjectType
+        val declaredType = declaredMethod.declaringClassType.asClassType
         val loadConstantTypes = getLoadConstantTypes(declaredMethod)
 
         val instantiatedTypes = PartialResult[TypeSetEntity, InstantiatedTypes](
@@ -115,7 +115,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     private[this] def processCallers(
         declaredMethod: DeclaredMethod,
-        declaredType:   ObjectType,
+        declaredType:   ClassType,
         partialResults: ArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]],
         callersEOptP:   EOptionP[DeclaredMethod, Callers],
         callersUB:      Callers,
@@ -141,7 +141,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     private[this] def processCaller(
         declaredMethod: DeclaredMethod,
-        declaredType:   ObjectType,
+        declaredType:   ClassType,
         callContext:    Context,
         isDirect:       Boolean,
         partialResults: ArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]]
@@ -174,7 +174,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         }
 
         // actually it must be the direct subtype! -- we did the first check to return early
-        project.classFile(caller.declaringClassType.asObjectType).foreach { cf =>
+        project.classFile(caller.declaringClassType.asClassType).foreach { cf =>
             cf.superclassType.foreach { supertype =>
                 if (supertype != declaredType) {
                     partialResults += partialResult(declaredType, caller)
@@ -227,7 +227,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     private[this] def continuation(
         declaredMethod: DeclaredMethod,
-        declaredType:   ObjectType,
+        declaredType:   ClassType,
         seenCallers:    Callers
     )(someEPS: SomeEPS): PropertyComputationResult = {
         val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]]
@@ -235,13 +235,13 @@ class InstantiatedTypesAnalysis private[analyses] (
     }
 
     private def partialResult(
-        declaredType: ObjectType,
+        declaredType: ClassType,
         entity:       Entity
     ): PartialResult[TypeSetEntity, InstantiatedTypes] = {
 
         // Subtypes of Throwable are tracked globally.
         val setEntity =
-            if (classHierarchy.isSubtypeOf(declaredType, ObjectType.Throwable))
+            if (classHierarchy.isSubtypeOf(declaredType, ClassType.Throwable))
                 project
             else
                 setEntitySelector(entity)
@@ -306,7 +306,7 @@ class InstantiatedTypesAnalysisScheduler(
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
         // pre-initialized. Note: This set only contains ArrayTypes whose element type is an
-        // ObjectType. Arrays of primitive types can be ignored.
+        // ClassType. Arrays of primitive types can be ignored.
         val seenArrayTypes = UIDSet.newBuilder[ArrayType]
 
         import p.classHierarchy
@@ -325,10 +325,10 @@ class InstantiatedTypesAnalysisScheduler(
         // Some cooperative analyses originally meant for RTA may require the global type set
         // to be pre-initialized. Strings and classes can be introduced via constants anywhere.
         // TODO Only introduce these types to the per-entity type sets where constants are used
-        initialize(p, UIDSet(ObjectType.String, ObjectType.Class))
+        initialize(p, UIDSet(ClassType.String, ClassType.Class))
 
         def isRelevantArrayType(rt: Type): Boolean =
-            rt.isArrayType && rt.asArrayType.elementType.isObjectType
+            rt.isArrayType && rt.asArrayType.elementType.isClassType
 
         // For each method which is also an entry point, we assume that the caller has passed all subtypes of the
         // method's parameter types to the method.
@@ -344,13 +344,13 @@ class InstantiatedTypesAnalysisScheduler(
             }
 
             for (pt <- dm.descriptor.parameterTypes) {
-                if (pt.isObjectType) {
-                    typeFilters += pt.asObjectType
+                if (pt.isClassType) {
+                    typeFilters += pt.asClassType
                 } else if (isRelevantArrayType(pt)) {
                     seenArrayTypes += pt.asArrayType
 
                     val dim = pt.asArrayType.dimensions
-                    val et = pt.asArrayType.elementType.asObjectType
+                    val et = pt.asArrayType.elementType.asClassType
                     if (initialInstantiatedTypes.contains(et)) {
                         arrayTypeAssignments += ArrayType(dim, et)
                     }
@@ -359,12 +359,12 @@ class InstantiatedTypesAnalysisScheduler(
 
             val typeFilterSet = typeFilters.result()
 
-            // Initial assignments of ObjectTypes
-            val objectTypeAssignments = initialInstantiatedTypes.filter(iit =>
+            // Initial assignments of ClassTypes
+            val classTypeAssignments = initialInstantiatedTypes.filter(iit =>
                 typeFilterSet.exists(tf => classHierarchy.isSubtypeOf(iit, tf))
             )
 
-            val initialAssignment = objectTypeAssignments ++ arrayTypeAssignments.result()
+            val initialAssignment = classTypeAssignments ++ arrayTypeAssignments.result()
 
             val dmSetEntity = selectSetEntity(dm)
 
@@ -373,12 +373,12 @@ class InstantiatedTypesAnalysisScheduler(
 
         // Returns true if the field's type indicates that the field should be pre-initialized.
         @inline def fieldIsRelevant(f: Field): Boolean = {
-            // Only fields which are ArrayType or ObjectType are relevant.
+            // Only fields which are ArrayType or ClassType are relevant.
             f.fieldType.isReferenceType &&
-            // If the field is an ArrayType, then the array's element type must be an ObjectType.
+            // If the field is an ArrayType, then the array's element type must be a ClassType.
             // In other words: We don't care about arrays of primitive types (e.g. int[]) which
             // do not have to be pre-initialized.
-            (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isObjectType)
+            (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isClassType)
         }
 
         // Returns true if a field can be written by the user of a library containing that field.
@@ -397,20 +397,20 @@ class InstantiatedTypesAnalysisScheduler(
 
         for {
             iit <- initialInstantiatedTypes;
-            // Only object types should be initially instantiated.
-            ot = iit.asObjectType
+            // Only class types should be initially instantiated.
+            ct = iit.asClassType
         } {
             // Assign initial types to all accessible fields.
-            p.classFile(ot) match {
+            p.classFile(ct) match {
                 case Some(cf) =>
                     for (f <- cf.fields if f.isNotFinal && fieldIsRelevant(f) && fieldIsAccessible(f)) {
                         val fieldType = f.fieldType.asReferenceType
 
-                        val initialAssignments = if (fieldType.isObjectType) {
-                            val ot = fieldType.asObjectType
+                        val initialAssignments = if (fieldType.isClassType) {
+                            val ct = fieldType.asClassType
                             initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) {
                                 (assignments, iit) =>
-                                    if (classHierarchy.isSubtypeOf(iit, ot)) {
+                                    if (classHierarchy.isSubtypeOf(iit, ct)) {
                                         assignments += iit
                                     }
                                     assignments
@@ -419,11 +419,11 @@ class InstantiatedTypesAnalysisScheduler(
                             val at = fieldType.asArrayType
                             seenArrayTypes += at
                             val dim = at.dimensions
-                            val et = at.elementType.asObjectType
+                            val et = at.elementType.asClassType
                             val allSubtypes = classHierarchy.allSubtypes(et, reflexive = true)
                             initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) {
                                 (assignments, iit) =>
-                                    if (allSubtypes.contains(iit.asObjectType)) {
+                                    if (allSubtypes.contains(iit.asClassType)) {
                                         assignments += ArrayType(dim, iit)
                                     }
                                     assignments
@@ -452,11 +452,11 @@ class InstantiatedTypesAnalysisScheduler(
 
             initializedArrayTypes.add(at)
 
-            val et = at.elementType.asObjectType
+            val et = at.elementType.asClassType
             val allSubtypes = p.classHierarchy.allSubtypes(et, reflexive = true)
             val subtypes =
                 initialInstantiatedTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, iit) =>
-                    if (allSubtypes.contains(iit.asObjectType)) {
+                    if (allSubtypes.contains(iit.asClassType)) {
                         builder += iit
                     }
                     builder
@@ -473,7 +473,7 @@ class InstantiatedTypesAnalysisScheduler(
                 // that these were types which were not initially seen when processing entry points and fields.
                 assignedArrayTypes foreach initializeArrayType
             } else {
-                // If dim == 1, we just need to assign the "pure" ObjectTypes to the ArrayType.
+                // If dim == 1, we just need to assign the "pure" ClassTypes to the ArrayType.
                 initialize(at, subtypes)
             }
         }

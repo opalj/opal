@@ -15,7 +15,7 @@ import org.opalj.br.TestSupport.biProject
 @RunWith(classOf[JUnitRunner])
 class TACNaiveConstantsTest extends TACNaiveTest {
 
-    val ConstantsType = ObjectType("tactest/Constants")
+    val ConstantsType = ClassType("tactest/Constants")
 
     val project = biProject("tactest-8-preserveAllLocals.jar")
 

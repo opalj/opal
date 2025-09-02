@@ -40,22 +40,22 @@ class MethodComplexityAnalysis(val maxComplexity: Int = Int.MaxValue) {
                 //
                 // CONDITIONAL TRANSFER OF CONTROL
                 //
-                case 165 /*if_acmpeq*/ => complexity += 2
-                case 166 /*if_acmpne*/ => complexity += 2
-                case 198 /*ifnull*/    => complexity += 2
-                case 199 /*ifnonnull*/ => complexity += 2
-                case 159 /*if_icmpeq*/ => complexity += 2
-                case 160 /*if_icmpne*/ => complexity += 2
-                case 161 /*if_icmplt*/ => complexity += 2
-                case 162 /*if_icmpge*/ => complexity += 2
-                case 163 /*if_icmpgt*/ => complexity += 2
-                case 164 /*if_icmple*/ => complexity += 2
-                case 153 /*ifeq*/      => complexity += 2
-                case 154 /*ifne*/      => complexity += 2
-                case 155 /*iflt*/      => complexity += 2
-                case 156 /*ifge*/      => complexity += 2
-                case 157 /*ifgt*/      => complexity += 2
-                case 158 /*ifle */     => complexity += 2
+                case 165 /*if_acmpeq*/    => complexity += 2
+                case 166 /*if_acmpne*/    => complexity += 2
+                case 198 /*ifnull*/       => complexity += 2
+                case 199 /*ifnonnull*/    => complexity += 2
+                case 159 /*if_icmpeq*/    => complexity += 2
+                case 160 /*if_icmpne*/    => complexity += 2
+                case 161 /*if_icmplt*/    => complexity += 2
+                case 162 /*if_icmpge*/    => complexity += 2
+                case 163 /*if_icmpgt*/    => complexity += 2
+                case 164 /*if_icmple*/    => complexity += 2
+                case 153 /*ifeq*/         => complexity += 2
+                case 154 /*ifne*/         => complexity += 2
+                case 155 /*iflt*/         => complexity += 2
+                case 156 /*ifge*/         => complexity += 2
+                case 157 /*ifgt*/         => complexity += 2
+                case 158 /*ifle */        => complexity += 2
                 case 171 /*lookupswitch*/ =>
                     val switch = instructions(pc).asInstanceOf[LOOKUPSWITCH]
                     complexity += switch.npairs.size
@@ -304,7 +304,7 @@ class MethodComplexityAnalysis(val maxComplexity: Int = Int.MaxValue) {
                 case 187 /*new*/  => /*complexity += 0*/
                 case 0 /*nop*/    => /*complexity += 0*/
                 case 196 /*wide*/ => /*complexity += 0*/
-                case opcode =>
+                case opcode       =>
                     throw new BytecodeProcessingFailedException(s"unsupported opcode: $opcode")
 
             }

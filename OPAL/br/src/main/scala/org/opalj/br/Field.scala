@@ -95,7 +95,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
         asVirtualField(declaringClassFile.thisType)
     }
 
-    def asVirtualField(declaringClassType: ObjectType): VirtualField = {
+    def asVirtualField(declaringClassType: ClassType): VirtualField = {
         VirtualField(declaringClassType, name, fieldType)
     }
 

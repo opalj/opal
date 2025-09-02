@@ -4,6 +4,7 @@ package ai
 package domain
 package l1
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.ai.CorrelationalDomain
@@ -14,7 +15,9 @@ import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.util.PerformanceEvaluation.time
@@ -27,10 +30,19 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
+object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
+
+    protected class MethodReturnValueConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description =
+            "Identifies methods where we can – statically – derive more precise return type/value information"
+    }
+
+    protected type ConfigType = MethodReturnValueConfig
+
+    protected def createConfig(args: Array[String]): MethodReturnValueConfig = new MethodReturnValueConfig(args)
 
     class AnalysisDomain(
-        override val project: Project[java.net.URL],
+        override val project: SomeProject,
         val ai:               InterruptableAI[?],
         val method:           Method
     ) extends CorrelationalDomain
@@ -94,25 +106,21 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
         }
     }
 
-    override def title: String = "Derives Information About Returned Values"
-
-    override def description: String =
-        "Identifies methods where we can – statically – derive more precise return type/value information."
-
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: MethodReturnValueConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject()
         val refinedMethods = time {
             for {
-                classFile <- theProject.allClassFiles.par
+                classFile <- project.allClassFiles.par
                 method <- classFile.methods
                 if method.body.isDefined
                 originalType = method.returnType
                 if method.returnType.isReferenceType
                 ai = new InterruptableAI[Domain]
-                domain = new AnalysisDomain(theProject, ai, method)
+                domain = new AnalysisDomain(project, ai, method)
                 result = ai(method, domain)
                 if !result.wasAborted
                 returnedValue = domain.returnedValue
@@ -123,8 +131,15 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
             }
         } { ns => println(s"the analysis took ${ns.toSeconds}") }
 
-        BasicReport(
-            refinedMethods.mkString("Methods with refined return types (" + refinedMethods.size + "): \n", "\n", "\n")
+        (
+            project,
+            BasicReport(
+                refinedMethods.mkString(
+                    "Methods with refined return types (" + refinedMethods.size + "): \n",
+                    "\n",
+                    "\n"
+                )
+            )
         )
     }
 

@@ -10,6 +10,10 @@ import scala.jdk.CollectionConverters.*
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
 
+import org.rogach.scallop.ScallopConf
+
+import org.opalj.cli.OPALCommandLineConfig
+
 /**
  * Prints the current explicit (application.conf/reference.conf files) and
  * implicit configuration settings (java.security, ''environment''). To show the explicit
@@ -28,6 +32,10 @@ import com.typesafe.config.ConfigRenderOptions
  */
 object ShowConfiguration {
 
+    protected class ShowConfigurationConfig(args: Array[String]) extends ScallopConf(args) with OPALCommandLineConfig {
+        val description = "Prints current explicit and implicit configuration settings"
+    }
+
     def renderConfig(config: Config): String = {
         val defaultRenderingOptions = ConfigRenderOptions.defaults()
         val renderingOptions =
@@ -39,14 +47,14 @@ object ShowConfiguration {
     }
 
     def main(args: Array[String]): Unit = {
+        val arguments = new ShowConfigurationConfig(args)
+
+        val config = arguments.setupConfig(false)
+
         import Console.err
 
-        val config: Config = BaseConfig
-
-        if (args.contains("-config")) {
-            println(s"\nContext Configuration (application/reference.conf): ")
-            println(renderConfig(config).toString.replace("\n", "\n\t"))
-        }
+        println(s"\nContext Configuration (application/reference.conf): ")
+        println(renderConfig(config).replace("\n", "\n\t"))
 
         //
         // Validate and show environment information

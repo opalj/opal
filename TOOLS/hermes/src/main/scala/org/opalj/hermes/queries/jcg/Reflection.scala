@@ -35,29 +35,29 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     type V = DUVar[ValueInformation]
 
-    val ClassT = ObjectType.Class
-    val MethodT = ObjectType("java/lang/reflect/Method")
-    val ConstructorT = ObjectType("java/lang/reflect/Constructor")
-    val FieldT = ObjectType("java/lang/reflect/Field")
+    val ClassT = ClassType.Class
+    val MethodT = ClassType("java/lang/reflect/Method")
+    val ConstructorT = ClassType("java/lang/reflect/Constructor")
+    val FieldT = ClassType("java/lang/reflect/Field")
 
-    val PropertiesT = ObjectType("java/util/Properties")
+    val PropertiesT = ClassType("java/util/Properties")
 
     val Invoke = MethodDescriptor(
-        ArraySeq(ObjectType.Object, ArrayType(ObjectType.Object)),
-        ObjectType.Object
+        ArraySeq(ClassType.Object, ArrayType(ClassType.Object)),
+        ClassType.Object
     )
-    val GetMethodMD = MethodDescriptor(ArraySeq(ObjectType.String, ArrayType(ClassT)), MethodT)
-    val NewInstanceMD = MethodDescriptor(ArrayType(ObjectType.Object), ObjectType.Object)
-    val GetFieldMD = MethodDescriptor(ObjectType.String, FieldT)
-    val FieldGetMD = MethodDescriptor(ObjectType.Object, ObjectType.Object)
+    val GetMethodMD = MethodDescriptor(ArraySeq(ClassType.String, ArrayType(ClassT)), MethodT)
+    val NewInstanceMD = MethodDescriptor(ArrayType(ClassType.Object), ClassType.Object)
+    val GetFieldMD = MethodDescriptor(ClassType.String, FieldT)
+    val FieldGetMD = MethodDescriptor(ClassType.Object, ClassType.Object)
     val ForName1MD = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
     val ForName3MD =
         MethodDescriptor("(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;")
 
-    val GetProperty1MD = MethodDescriptor(ObjectType.String, ObjectType.String)
+    val GetProperty1MD = MethodDescriptor(ClassType.String, ClassType.String)
     val GetProperty2MD =
-        MethodDescriptor(ArraySeq(ObjectType.String, ObjectType.String), ObjectType.String)
-    val GetMD = MethodDescriptor(ObjectType.Object, ObjectType.Object)
+        MethodDescriptor(ArraySeq(ClassType.String, ClassType.String), ClassType.String)
+    val GetMD = MethodDescriptor(ClassType.Object, ClassType.Object)
 
     override def featureIDs: Seq[String] = {
         Seq(
@@ -138,7 +138,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                     call.declaringClass match {
                         case MethodT      => handleInvoke(call.asVirtualFunctionCall, l)
                         case ConstructorT => locations(4 /* Constructor.newInstance */ ) += l
-                        case ClassT =>
+                        case ClassT       =>
                             call.name match {
                                 case "getMethod" =>
                                     if (stmt.astID == Assignment.ASTID &&
@@ -153,7 +153,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                     ) {
                                         handleParameterSources(call, l)
                                     }
-                                case "newInstance" => locations(5 /* Class.newInstance */ ) += l
+                                case "newInstance"      => locations(5 /* Class.newInstance */ ) += l
                                 case "getDeclaredField" =>
                                     if (stmt.astID == Assignment.ASTID &&
                                         getFieldUsedForInvokation(index, stmt.asAssignment)
@@ -239,7 +239,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case Assignment(
                         _,
                         sb,
-                        VirtualFunctionCall(_, ObjectType.StringBuilder, false, "append", _, receiver, _)
+                        VirtualFunctionCall(_, ClassType.StringBuilder, false, "append", _, receiver, _)
                     ) =>
                     val stringBuilder = simpleDefinition(receiver.asVar.definedBy)
                     stringBuilder.exists(isNonEscapingStringBuilder) && isNonEscaping(sb)
@@ -264,7 +264,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                     } else definition match {
                         case VirtualFunctionCall(
                                 _,
-                                ObjectType.StringBuilder,
+                                ClassType.StringBuilder,
                                 false,
                                 "toString",
                                 MethodDescriptor.JustReturnsString,
@@ -277,7 +277,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                             } else {
                                 locations(11 /* string unknown */ ) += l
                             }
-                        case StaticFunctionCall(_, ObjectType.System, _, "getProperty", GetProperty1MD, _) =>
+                        case StaticFunctionCall(_, ClassType.System, _, "getProperty", GetProperty1MD, _) =>
                             locations(13 /* string from Properties */ ) += l
                         case VirtualFunctionCall(_, dc, _, "getProperty", GetProperty1MD, _, _)
                             if ch.isSubtypeOf(dc, PropertiesT) =>
@@ -331,7 +331,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 mayUse(stmt.asAssignment.expr.asFunctionCall.params, pc) &&
                                     projectContainsNonLocalCall(MethodT, "invoke")
                             case InstanceOf.ASTID | Compare.ASTID => false
-                            case _ =>
+                            case _                                =>
                                 projectContainsNonLocalCall(MethodT, "invoke")
                         }
                     case ExprStmt.ASTID =>
@@ -341,11 +341,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 mayUse(stmt.asExprStmt.expr.asFunctionCall.params, pc) &&
                                     projectContainsNonLocalCall(MethodT, "invoke")
                             case InstanceOf.ASTID | Compare.ASTID => false
-                            case _ =>
+                            case _                                =>
                                 projectContainsNonLocalCall(MethodT, "invoke")
                         }
                     case MonitorEnter.ASTID | MonitorExit.ASTID | If.ASTID | Checkcast.ASTID => false
-                    case _ =>
+                    case _                                                                   =>
                         projectContainsNonLocalCall(MethodT, "invoke")
                 }
             }
@@ -439,7 +439,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 mayUse(stmt.asAssignment.expr.asFunctionCall.params, pc) &&
                                     projectContainsNonLocalCall(FieldT, "get")
                             case InstanceOf.ASTID | Compare.ASTID => false
-                            case _ =>
+                            case _                                =>
                                 projectContainsNonLocalCall(FieldT, "get")
                         }
                     case ExprStmt.ASTID =>
@@ -449,11 +449,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 mayUse(stmt.asExprStmt.expr.asFunctionCall.params, pc) &&
                                     projectContainsNonLocalCall(FieldT, "get")
                             case InstanceOf.ASTID | Compare.ASTID => false
-                            case _ =>
+                            case _                                =>
                                 projectContainsNonLocalCall(FieldT, "get")
                         }
                     case MonitorEnter.ASTID | MonitorExit.ASTID | If.ASTID | Checkcast.ASTID => false
-                    case _ =>
+                    case _                                                                   =>
                         projectContainsNonLocalCall(FieldT, "get")
                 }
             }
@@ -464,7 +464,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     }
 
     def projectContainsNonLocalCall(
-        declType: ObjectType,
+        declType: ClassType,
         name:     String
     )(
         implicit

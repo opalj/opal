@@ -4,9 +4,9 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.instructions.ACONST_NULL
 import org.opalj.br.instructions.LoadClass
@@ -69,16 +69,16 @@ package object cg {
                             ComputationalTypeReference
                     ) {
                         inst match {
-                            case _: LoadClass | _: LoadClass_W               => constantTypes += ObjectType.Class
-                            case _: LoadMethodHandle | _: LoadMethodHandle_W => constantTypes += ObjectType.MethodHandle
-                            case _: LoadMethodType | _: LoadMethodType_W     => constantTypes += ObjectType.MethodType
-                            case _: LoadString | _: LoadString_W             => constantTypes += ObjectType.String
-                            case _: LoadDynamic =>
+                            case _: LoadClass | _: LoadClass_W               => constantTypes += ClassType.Class
+                            case _: LoadMethodHandle | _: LoadMethodHandle_W => constantTypes += ClassType.MethodHandle
+                            case _: LoadMethodType | _: LoadMethodType_W     => constantTypes += ClassType.MethodType
+                            case _: LoadString | _: LoadString_W             => constantTypes += ClassType.String
+                            case _: LoadDynamic                              =>
                                 constantTypes += inst.asInstanceOf[LoadDynamic].descriptor.asReferenceType
                             case _: LoadDynamic_W =>
                                 constantTypes += inst.asInstanceOf[LoadDynamic_W].descriptor.asReferenceType
                             case ACONST_NULL =>
-                            case _ =>
+                            case _           =>
                                 logOnce(Warn("unknown load constant instruction"))
                         }
                     }

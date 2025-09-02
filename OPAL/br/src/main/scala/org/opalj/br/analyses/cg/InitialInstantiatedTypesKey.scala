@@ -4,6 +4,8 @@ package br
 package analyses
 package cg
 
+import org.opalj.util.getObjectReflectively
+
 import net.ceedubs.ficus.Ficus.*
 
 /**
@@ -23,13 +25,13 @@ import net.ceedubs.ficus.Ficus.*
  *
  * @author Florian Kuebler
  */
-object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[ObjectType], Nothing] {
+object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[ClassType], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey."
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(ClosedPackagesKey)
 
-    override def compute(project: SomeProject): Iterable[ObjectType] = {
+    override def compute(project: SomeProject): Iterable[ClassType] = {
         val key = ConfigKeyPrefix + "analysis"
         val configuredAnalysis = project.config.as[Option[String]](key)
         if (configuredAnalysis.isEmpty) {
@@ -38,15 +40,8 @@ object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[Object
             )
         }
 
-        val fqn = configuredAnalysis.get
-        val itFinder = instantiatedTypesFinder(fqn)
+        val itFinder =
+            getObjectReflectively[InstantiatedTypesFinder](configuredAnalysis.get, this, "analysis configuration").get
         itFinder.collectInstantiatedTypes(project)
-    }
-
-    private[this] def instantiatedTypesFinder(fqn: String): InstantiatedTypesFinder = {
-        import scala.reflect.runtime.universe.*
-        val mirror = runtimeMirror(this.getClass.getClassLoader)
-        val module = mirror.staticModule(fqn)
-        mirror.reflectModule(module).instance.asInstanceOf[InstantiatedTypesFinder]
     }
 }

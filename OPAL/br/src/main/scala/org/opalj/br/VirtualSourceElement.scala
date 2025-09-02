@@ -66,17 +66,36 @@ object VirtualSourceElement {
 
 }
 
+final case class VirtualModule(name: String) extends VirtualSourceElement {
+    /**
+     * The "natural order" is VirtualClasses < VirtualFields < VirtualMethods.
+     */
+    override def compare(that: VirtualSourceElement): Int = {
+        // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
+        that match {
+            case VirtualModule(thatName) => name.compareTo(thatName)
+            case _                       => -1
+        }
+    }
+
+    override def classType: ReferenceType = throw new UnsupportedOperationException("module is not a class member")
+
+    override def toJava: String = s"module $name"
+
+    override def getLineNumber(project: ClassFileRepository): Option[Opcode] = None
+}
+
 /**
  * Represents a class for which we have found some references but have not analyzed
  * any class file or do not want to keep the reference to the underlying class file.
  *
  * @author Michael Eichberg
  */
-final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement {
+final case class VirtualClass(thisType: ClassType) extends VirtualSourceElement {
 
     override def isClass: Boolean = true
 
-    override def classType: ObjectType = thisType
+    override def classType: ClassType = thisType
 
     override def toJava: String = thisType.toJava
 
@@ -86,6 +105,8 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
         that match {
+            case _: VirtualModule =>
+                1
             case VirtualClass(thatType) => thisType.compare(thatType)
             case _                      => -1
         }
@@ -116,14 +137,14 @@ sealed abstract class VirtualClassMember extends VirtualSourceElement
  * @author Michael Eichberg
  */
 final case class VirtualField(
-    declaringClassType: ObjectType,
+    declaringClassType: ClassType,
     name:               String,
     fieldType:          FieldType
 ) extends VirtualClassMember {
 
     override def isField: Boolean = true
 
-    override def classType: ObjectType = declaringClassType
+    override def classType: ClassType = declaringClassType
 
     override def toJava: String = declaringClassType.toJava + "{ " + fieldType.toJava + " " + name + "; }"
 
@@ -132,7 +153,7 @@ final case class VirtualField(
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
         that match {
-            case _: VirtualClass =>
+            case _: VirtualModule | _: VirtualClass =>
                 1
             case that: VirtualField =>
                 if (this.declaringClassType eq that.declaringClassType) {
@@ -187,7 +208,7 @@ sealed class VirtualMethod(
         if (declaringClassType.isArrayType)
             return None;
 
-        project.classFile(declaringClassType.asObjectType).flatMap { cf =>
+        project.classFile(declaringClassType.asClassType).flatMap { cf =>
             cf.findMethod(name, descriptor).flatMap(m => m.body.flatMap(b => b.firstLineNumber))
         }
     }

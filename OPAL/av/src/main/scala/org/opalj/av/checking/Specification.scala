@@ -446,7 +446,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
             for {
                 sourceElement <- sourceEnsembleElements
-                classFile <- project.classFile(sourceElement.classType.asObjectType)
+                classFile <- project.classFile(sourceElement.classType.asClassType)
                 annotations = sourceElement match {
                     case _: VirtualClass => classFile.annotations
 
@@ -527,7 +527,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             for {
                 sourceElement <- sourceEnsembleElements
                 sourceClassFile = sourceElement match {
-                    case s: VirtualClass => project.classFile(s.classType.asObjectType).get
+                    case s: VirtualClass => project.classFile(s.classType.asClassType).get
                     case _               => throw SpecificationError(sourceElement.toJava + " is not a class")
                 }
                 if sourceClassFile.methods.forall(m => !methodPredicate(m))
@@ -574,12 +574,12 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             for {
                 sourceElement <- sourceEnsembleElements
                 sourceClassFile = sourceElement match {
-                    case s: VirtualClass => project.classFile(s.classType.asObjectType).get
+                    case s: VirtualClass => project.classFile(s.classType.asClassType).get
                     case _               => throw SpecificationError(sourceElement.toJava + " is not a class")
                 }
                 if sourceClassFile.superclassType.exists(s =>
                     !allLocalTargetSourceElements.exists(v =>
-                        v.classType.asObjectType.equals(s)
+                        v.classType.asClassType.equals(s)
                     )
                 )
             } yield {

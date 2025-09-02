@@ -12,8 +12,8 @@ import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.IntegerType
-import org.opalj.br.ObjectType
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.*
@@ -63,10 +63,10 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 // ASSERTION
                 isSubtypeOf(
                     ArrayType(ArrayType(IntegerType)),
-                    ArrayType(ObjectType.Object)
+                    ArrayType(ClassType.Object)
                 ) should be(true)
 
-                val v1 = ArrayValue(111, No, false, ArrayType(ObjectType.Object), 1)
+                val v1 = ArrayValue(111, No, false, ArrayType(ClassType.Object), 1)
                 v1.isValueASubtypeOf(ArrayType(ArrayType(IntegerType))) should be(Unknown)
             }
         }
@@ -87,8 +87,8 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("an ObjectValue should not be more precise than a second value with the same properties") {
 
-                val v1 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
-                val v2 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+                val v1 = ObjectValue(-1, Unknown, false, ClassType.Object, 1)
+                val v2 = ObjectValue(-1, Unknown, false, ClassType.Object, 1)
 
                 assert(v1.abstractsOver(v2))
                 assert(v2.abstractsOver(v1))
@@ -101,8 +101,8 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("an ObjectValue should not be more precise than a second value with the same properties, but a different timestamp") {
 
-                val v1 = ObjectValue(-1, Unknown, true, ObjectType.Object, 1)
-                val v2 = ObjectValue(-1, Unknown, true, ObjectType.Object, 2)
+                val v1 = ObjectValue(-1, Unknown, true, ClassType.Object, 1)
+                val v2 = ObjectValue(-1, Unknown, true, ClassType.Object, 2)
 
                 assert(v1.abstractsOver(v2))
                 assert(v2.abstractsOver(v1))
@@ -129,15 +129,15 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("a NullValue should be more precise than an ObjectValue but not vice versa") {
                 val v1 = NullValue(-1)
-                val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 1)
+                val v2 = ObjectValue(-1, Unknown, true, ClassType("java/lang/Object"), 1)
                 v1.isMorePreciseThan(v2) should be(true)
                 v2.isMorePreciseThan(v1) should be(false)
             }
 
             it("an ObjectValue of type java/lang/String should be more precise than " +
                 "an ObjectValue of type java/lang/Object but not vice versa") {
-                val v1 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/String"), 1)
-                val v2 = ObjectValue(-1, Unknown, true, ObjectType("java/lang/Object"), 2)
+                val v1 = ObjectValue(-1, Unknown, true, ClassType("java/lang/String"), 1)
+                val v2 = ObjectValue(-1, Unknown, true, ClassType("java/lang/Object"), 2)
                 v1.isMorePreciseThan(v2) should be(true)
                 v2.isMorePreciseThan(v1) should be(false)
             }
@@ -151,7 +151,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("it should be possible to create a representation for a non-null object " +
                 "with a specific type") {
-                val ref = ReferenceValue(444, No, true, ObjectType.Object)
+                val ref = ReferenceValue(444, No, true, ClassType.Object)
                 if (!ref.isNull.isNo || ref.origin != 444 || !ref.isPrecise)
                     fail("expected a precise, non-null reference value with pc 444;" +
                         " actual: " + ref)
@@ -167,10 +167,10 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("it should be able to correctly update the upper bound of the corresponding value") {
 
-                val File = ObjectType("java/io/File")
-                val Serializable = ObjectType.Serializable
+                val File = ClassType("java/io/File")
+                val Serializable = ClassType.Serializable
 
-                val theObjectValue = ObjectValue(-1, No, false, ObjectType.Object)
+                val theObjectValue = ObjectValue(-1, No, false, ClassType.Object)
                 val theFileValue = ObjectValue(-1, No, false, File)
 
                 {
@@ -197,9 +197,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
             it("should be able to correctly handle the refinement of the nullness property of a multiple reference value that has a more precise bound than any reference value to a single value") {
 
                 val v0 = NullValue(111)
-                val v1 = ObjectValue(222, Unknown, false, ObjectType("java/lang/Cloneable"), 2)
+                val v1 = ObjectValue(222, Unknown, false, ClassType("java/lang/Cloneable"), 2)
                 val v2 =
-                    ObjectValue(222, No, UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")), 2)
+                    ObjectValue(222, No, UIDSet(ClassType("java/lang/Cloneable"), ClassType("java/lang/Iterable")), 2)
 
                 val mv1 =
                     MultipleReferenceValues(
@@ -207,7 +207,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         IntTrieSet(111, 222),
                         Unknown,
                         false,
-                        UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
+                        UIDSet(ClassType("java/lang/Cloneable"), ClassType("java/lang/Iterable")),
                         3
                     )
 
@@ -217,12 +217,12 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("should be able to correctly handle the refinement of the upper type bound of a multiple reference value that has a more precise bound than any reference value to a single value") {
 
-                val v1 = ObjectValue(111, Unknown, true, ObjectType("java/lang/Object"), 1)
-                val v2 = ObjectValue(222, Unknown, false, ObjectType("java/lang/Cloneable"), 2)
+                val v1 = ObjectValue(111, Unknown, true, ClassType("java/lang/Object"), 1)
+                val v2 = ObjectValue(222, Unknown, false, ClassType("java/lang/Cloneable"), 2)
                 val v3 = ObjectValue(
                     222,
                     Unknown,
-                    UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
+                    UIDSet(ClassType("java/lang/Cloneable"), ClassType("java/lang/Iterable")),
                     2
                 )
 
@@ -232,19 +232,19 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         IntTrieSet(111, 222),
                         Unknown,
                         true,
-                        UIDSet(ObjectType("java/lang/Cloneable"), ObjectType("java/lang/Iterable")),
+                        UIDSet(ClassType("java/lang/Cloneable"), ClassType("java/lang/Iterable")),
                         3
                     )
 
                 val (refinedOperands, _) =
-                    mv1.refineUpperTypeBound(-1, ObjectType("java/lang/Iterable"), List(mv1), Locals.empty)
+                    mv1.refineUpperTypeBound(-1, ClassType("java/lang/Iterable"), List(mv1), Locals.empty)
                 refinedOperands.head should be(v3)
             }
 
             it("should be able to correctly handle the simple subsequent refinement of the upper type bound of a single value of a multiple reference value") {
-                val Member = ObjectType("java/lang/reflect/Member")
-                val Field = ObjectType("java/lang/reflect/Field")
-                val Constructor = ObjectType("java/lang/reflect/Constructor")
+                val Member = ClassType("java/lang/reflect/Member")
+                val Field = ClassType("java/lang/reflect/Field")
+                val Constructor = ClassType("java/lang/reflect/Constructor")
 
                 assert(isSubtypeOf(Field, Member))
                 assert(isSubtypeOf(Constructor, Member))
@@ -268,9 +268,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
             }
 
             it("should be able to correctly handle the subsequent refinement of the upper type bound of a single value of a multiple reference value") {
-                val Throwable = ObjectType.Throwable
-                val Error = ObjectType.Error
-                val RuntimeException = ObjectType.RuntimeException
+                val Throwable = ClassType.Throwable
+                val Error = ClassType.Error
+                val RuntimeException = ClassType.RuntimeException
 
                 val v1 = ObjectValue(111, No, true, Error, 1)
                 val v2 = ObjectValue(222, Unknown, false, Throwable, 2)
@@ -303,11 +303,11 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 summarize(
                     -1,
                     List(
-                        ObjectValue(444, No, true, ObjectType.Object),
+                        ObjectValue(444, No, true, ClassType.Object),
                         NullValue(444),
-                        ObjectValue(668, No, true, ObjectType("java/io/File"))
+                        ObjectValue(668, No, true, ClassType("java/io/File"))
                     )
-                ) should be(ObjectValue(-1, Unknown, false, ObjectType.Object))
+                ) should be(ObjectValue(-1, Unknown, false, ClassType.Object))
             }
         }
 
@@ -317,15 +317,15 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
         describe("joining two DomainValues that represent reference values") {
 
-            val ref1 = ObjectValue(444, No, true, ObjectType.Object)
+            val ref1 = ObjectValue(444, No, true, ClassType.Object)
 
-            val ref1Alt = ObjectValue(444, No, true, ObjectType.Object)
+            val ref1Alt = ObjectValue(444, No, true, ClassType.Object)
 
-            val ref2 = ObjectValue(668, No, true, ObjectType.String)
+            val ref2 = ObjectValue(668, No, true, ClassType.String)
 
-            val ref2Alt = ObjectValue(668, No, true, ObjectType.String)
+            val ref2Alt = ObjectValue(668, No, true, ClassType.String)
 
-            val ref3 = ObjectValue(732, No, true, ObjectType.String)
+            val ref3 = ObjectValue(732, No, true, ClassType.String)
 
             val ref1MergeRef2 = ref1.join(-1, ref2).value.asDomainReferenceValue
 
@@ -370,15 +370,15 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
             }
 
             it("should be able to join two values with the exact same properties") {
-                val v1 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
-                val v2 = ObjectValue(-1, Unknown, false, ObjectType.Object, 1)
+                val v1 = ObjectValue(-1, Unknown, false, ClassType.Object, 1)
+                val v2 = ObjectValue(-1, Unknown, false, ClassType.Object, 1)
                 v1.join(-1, v2) should be(NoUpdate)
             }
 
             it("should be able to join two refined values sets") {
                 val v0 = NullValue(111)
-                val v1 = ObjectValue(444, Unknown, false, ObjectType.Object)
-                val v2 = ObjectValue(555, Unknown, false, ObjectType.Object)
+                val v1 = ObjectValue(444, Unknown, false, ClassType.Object)
+                val v2 = ObjectValue(555, Unknown, false, ClassType.Object)
 
                 val mv1 =
                     MultipleReferenceValues(
@@ -395,7 +395,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         IntTrieSet(444, 555),
                         No,
                         false,
-                        UIDSet(ObjectType.Object),
+                        UIDSet(ClassType.Object),
                         nextRefId()
                     )
 
@@ -403,7 +403,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 joinResult.updateType should be(StructuralUpdateType)
                 val ValuesDomain.DomainReferenceValueTag(joinedValue) = joinResult.value
                 assert(joinedValue.isPrecise === false)
-                joinedValue.upperTypeBound should be(UIDSet(ObjectType.Object))
+                joinedValue.upperTypeBound should be(UIDSet(ClassType.Object))
             }
 
             it("should be able to rejoin a value") {
@@ -434,10 +434,10 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
             }
 
             it("should be able to rejoin a refined object value") {
-                val v0 = ObjectValue(222, No, false, ObjectType.Serializable, 2)
+                val v0 = ObjectValue(222, No, false, ClassType.Serializable, 2)
 
                 val v1 = NullValue(111)
-                val v2 = ObjectValue(222, Unknown, false, ObjectType.Serializable, 2)
+                val v2 = ObjectValue(222, Unknown, false, ClassType.Serializable, 2)
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
@@ -454,7 +454,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         IntTrieSet(111, 222),
                         Unknown,
                         false,
-                        UIDSet(ObjectType.Serializable),
+                        UIDSet(ClassType.Serializable),
                         3
                     )
 
@@ -468,10 +468,10 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
             }
 
             it("should be able to rejoin a refined array value") {
-                val v0 = ArrayValue(222, No, false, ArrayType(ObjectType.Serializable), 2)
+                val v0 = ArrayValue(222, No, false, ArrayType(ClassType.Serializable), 2)
 
                 val v1 = NullValue(111)
-                val v2 = ArrayValue(222, Unknown, false, ArrayType(ObjectType.Serializable), 2)
+                val v2 = ArrayValue(222, Unknown, false, ArrayType(ClassType.Serializable), 2)
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2),
@@ -488,7 +488,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         IntTrieSet(111, 222),
                         Unknown,
                         false,
-                        UIDSet(ArrayType(ObjectType.Serializable)),
+                        UIDSet(ArrayType(ClassType.Serializable)),
                         3
                     )
 
@@ -503,11 +503,11 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
             }
 
             it("should handle an idempotent rejoin of a nullvalue") {
-                val v1 = ObjectValue(111, Unknown, false, ObjectType.Object, 1)
-                val v2 = ObjectValue(222, No, false, ObjectType.Object, 2)
+                val v1 = ObjectValue(111, Unknown, false, ClassType.Object, 1)
+                val v2 = ObjectValue(222, No, false, ClassType.Object, 2)
                 val v3 = NullValue(222)
 
-                val v2_join_v3 = ObjectValue(222, Unknown, false, ObjectType.Object, 2)
+                val v2_join_v3 = ObjectValue(222, Unknown, false, ClassType.Object, 2)
 
                 assert(v2.join(-1, v3) == StructuralUpdate(v2_join_v3))
 
@@ -517,7 +517,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         IntTrieSet(111, 222),
                         Unknown,
                         false,
-                        UIDSet(ObjectType.Object),
+                        UIDSet(ClassType.Object),
                         -1
                     )
                 val mv1_join_v3 = mv1.join(-1, v3)
@@ -526,24 +526,24 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             /*
             it("should handle an idempotent rejoin of a value") {
-                val v1 = ObjectValue(111, Unknown, false, ObjectType.Object, 1)
-                val v2 = ObjectValue(222, No, false, ObjectType.Object, 2)
-                val v2alt = ObjectValue(222, Yes, false, ObjectType.Object, 3)
+                val v1 = ObjectValue(111, Unknown, false, ClassType.Object, 1)
+                val v2 = ObjectValue(222, No, false, ClassType.Object, 2)
+                val v2alt = ObjectValue(222, Yes, false, ClassType.Object, 3)
 
-                val v2_join_v2alt = ObjectValue(222, Unknown, false, ObjectType.Object, 2)
+                val v2_join_v2alt = ObjectValue(222, Unknown, false, ClassType.Object, 2)
 
                 assert(v2.join(-1, v2alt) == StructuralUpdate(v2_join_v2alt))
 
                 val mv1 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2_join_v3),
-                        Unknown, false, UIDSet(ObjectType.Object),
+                        Unknown, false, UIDSet(ClassType.Object),
                         -1
                     )
                 val expected_mv1_join_v3 =
                     MultipleReferenceValues(
                         UIDSet2[DomainSingleOriginReferenceValue](v1, v2_join_v3),
-                        Unknown, false, UIDSet(ObjectType.Object),
+                        Unknown, false, UIDSet(ClassType.Object),
                         -1
                     )
 
@@ -560,10 +560,10 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("should handle a join of a refined ObjectValue with a MultipleReferenceValue that references the unrefined ObjectValue") {
 
-                val SecurityException = ObjectType("java/lang/SecurityException")
+                val SecurityException = ClassType("java/lang/SecurityException")
                 val v0 = ObjectValue(111, No, false, SecurityException, refId = 106)
-                val v1 = ObjectValue(111, No, false, ObjectType.Exception, refId = 103)
-                val v2 = ObjectValue(555, Unknown, false, ObjectType.Throwable, refId = 107)
+                val v1 = ObjectValue(111, No, false, ClassType.Exception, refId = 103)
+                val v2 = ObjectValue(555, Unknown, false, ClassType.Throwable, refId = 107)
 
                 val mv1 =
                     MultipleReferenceValues(
@@ -597,9 +597,9 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("should handle a join of an ObjectValue with a MultipleReferenceValue that references the refined ObjectValue") {
 
-                val v0 = ObjectValue(111, Unknown, false, ObjectType.Object, refId = 103)
-                val v1 = ObjectValue(111, No, false, ObjectType.Object, refId = 103)
-                val v2 = ObjectValue(555, No, true, ObjectType.Object, refId = 107)
+                val v0 = ObjectValue(111, Unknown, false, ClassType.Object, refId = 103)
+                val v1 = ObjectValue(111, No, false, ClassType.Object, refId = 103)
+                val v2 = ObjectValue(555, No, true, ClassType.Object, refId = 107)
 
                 val mv1 =
                     MultipleReferenceValues(
@@ -607,7 +607,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         IntTrieSet(111, 555),
                         No,
                         true,
-                        UIDSet(ObjectType.Object),
+                        UIDSet(ClassType.Object),
                         refId = 3
                     )
 
@@ -617,7 +617,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                         IntTrieSet(111, 555),
                         Unknown,
                         false,
-                        UIDSet(ObjectType.Object),
+                        UIDSet(ClassType.Object),
                         3
                     )
 
@@ -653,7 +653,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
             }
 
             val theProject = biProject("ai-9.jar")
-            val targetType = ObjectType("ai/domain/ReferenceValuesFrenzy")
+            val targetType = ClassType("ai/domain/ReferenceValuesFrenzy")
             val ReferenceValuesFrenzy = theProject.classFile(targetType).get
 
             it("it should be able to handle basic aliasing (method: \"aliases\"") {
@@ -708,11 +708,11 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 val value @ BaseReferenceValues(values) = head
                 value.isNull should be(No)
                 value.isPrecise should be(true)
-                value.upperTypeBound should be(UIDSet(ObjectType.Object))
+                value.upperTypeBound should be(UIDSet(ClassType.Object))
                 values.size should be(2)
                 values should be(UIDSet(
-                    theDomain.ObjectValue(6, No, true, ObjectType.Object),
-                    theDomain.ObjectValue(17, No, true, ObjectType.Object)
+                    theDomain.ObjectValue(6, No, true, ClassType.Object),
+                    theDomain.ObjectValue(17, No, true, ClassType.Object)
                 ))
             }
 
@@ -724,12 +724,12 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 val value @ BaseReferenceValues(values) = head
                 value.isNull should be(Unknown)
                 value.isPrecise should be(true) // one value is null and the other is precise
-                value.upperTypeBound should be(UIDSet(ObjectType.Object))
+                value.upperTypeBound should be(UIDSet(ClassType.Object))
                 values.size should be(3)
                 values should be(UIDSet(
                     theDomain.NullValue(0),
                     theDomain.NullValue(11),
-                    theDomain.ObjectValue(16, No, true, ObjectType.Object)
+                    theDomain.ObjectValue(16, No, true, ClassType.Object)
                 ))
             }
 
@@ -833,8 +833,8 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 // )
                 values1 should be(UIDSet(
                     theDomain.NullValue(20),
-                    theDomain.ObjectValue(8, Unknown, false, ObjectType.Object),
-                    theDomain.ObjectValue(4, Unknown, false, ObjectType.Object)
+                    theDomain.ObjectValue(8, Unknown, false, ClassType.Object),
+                    theDomain.ObjectValue(4, Unknown, false, ClassType.Object)
                 ))
 
                 val BaseReferenceValues(values2) = result.operandsArray(87).head.asDomainReferenceValue
@@ -850,16 +850,16 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 values4.size should be(3)
                 // Set({_ <: java.lang.Object, null}[↦12;t=105], {_ <: java.lang.Object, null}[↦8;t=104], _ <: java.lang.Object[↦4;t=103])
                 values4 should be(UIDSet(
-                    theDomain.ObjectValue(4, No, false, ObjectType.Object),
-                    theDomain.ObjectValue(8, Unknown, false, ObjectType.Object),
-                    theDomain.ObjectValue(12, Unknown, false, ObjectType.Object)
+                    theDomain.ObjectValue(4, No, false, ClassType.Object),
+                    theDomain.ObjectValue(8, Unknown, false, ClassType.Object),
+                    theDomain.ObjectValue(12, Unknown, false, ClassType.Object)
                 ))
 
                 val BaseReferenceValues(values5) = result.operandsArray(109).head.asDomainReferenceValue
                 // Set(null[↦20], _ <: java.lang.Object[↦4;t=103], {_ <: java.lang.Object, null}[↦8;t=104])
                 values5 should be(UIDSet(
-                    theDomain.ObjectValue(4, No, false, ObjectType.Object),
-                    theDomain.ObjectValue(8, Unknown, false, ObjectType.Object),
+                    theDomain.ObjectValue(4, No, false, ClassType.Object),
+                    theDomain.ObjectValue(8, Unknown, false, ClassType.Object),
                     theDomain.NullValue(20)
                 ))
             }
@@ -889,11 +889,11 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
                 val theDomain = new TheDomain
                 val result = BaseAI(method, theDomain)
 
-                assert(theDomain.isSubtypeOf(ObjectType.Exception, ObjectType.Throwable))
+                assert(theDomain.isSubtypeOf(ClassType.Exception, ClassType.Throwable))
 
                 val value78 @ BaseReferenceValues(values78) = result.operandsArray(78).head.asDomainReferenceValue
                 values78.size should be(1)
-                value78.upperTypeBound should be(UIDSet(ObjectType.Exception))
+                value78.upperTypeBound should be(UIDSet(ClassType.Exception))
             }
         }
     }

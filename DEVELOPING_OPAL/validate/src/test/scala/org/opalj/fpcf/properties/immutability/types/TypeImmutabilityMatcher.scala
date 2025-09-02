@@ -8,7 +8,7 @@ package types
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.immutability.TypeImmutability
@@ -23,22 +23,22 @@ class TypeImmutabilityMatcher(
 
     override def isRelevant(
         p:      SomeProject,
-        as:     Set[ObjectType],
+        as:     Set[ClassType],
         entity: Object,
         a:      AnnotationLike
     ): Boolean = {
-        val annotationType = a.annotationType.asObjectType
+        val annotationType = a.annotationType.asClassType
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asClassType)
 
         analyses.exists(as.contains)
     }
 
     override def validateProperty(
-        project:    Project[?],
-        as:         Set[ObjectType],
+        p:          Project[?],
+        as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -58,7 +58,7 @@ class DependentlyImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType(SortedSet.empty)) {
     override def validateProperty(
         project:    Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,
         properties: Iterable[Property]
@@ -66,10 +66,11 @@ class DependentlyImmutableTypeMatcher
         if (!properties.exists(p =>
                 p match {
                     case DependentlyImmutableType(latticeParameters) =>
-                        val annotationType = a.annotationType.asFieldType.asObjectType
+                        val annotationType = a.annotationType.asFieldType.asClassType
                         val annotationParameters =
-                            getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values
-                                .map(x => x.asStringValue.value)
+                            getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(
+                                x => x.asStringValue.value
+                            )
                         annotationParameters.toSet.equals(latticeParameters.toSet)
                     case _ => p == property
                 }

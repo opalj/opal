@@ -2,13 +2,16 @@
 package org.opalj
 package ai
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.br.Method
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.IF0Instruction
 import org.opalj.br.instructions.IFICMPInstruction
 import org.opalj.br.instructions.IFNONNULL
@@ -21,9 +24,18 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
  *
  * @author Michael Eichberg
  */
-object UselessComputations extends ProjectAnalysisApplication {
+object UselessComputations extends ProjectsAnalysisApplication {
 
-    class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
+    protected class UselessComputationsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description =
+            "Identifies computations that are useless, e.g., comparison against null if the value is known not be null"
+    }
+
+    protected type ConfigType = UselessComputationsConfig
+
+    protected def createConfig(args: Array[String]): UselessComputationsConfig = new UselessComputationsConfig(args)
+
+    class AnalysisDomain(val project: SomeProject, val method: Method)
         extends CorrelationalDomain
         with domain.DefaultSpecialDomainValuesBinding
         with domain.TheProject
@@ -45,24 +57,18 @@ object UselessComputations extends ProjectAnalysisApplication {
         override def maxCardinalityOfIntegerRanges: Long = 4L
     }
 
-    override def title: String = "useless computations"
-
-    override def description: String = {
-        "identifies computations that are useless, e.g., " +
-            "comparison against null if the value is known not be null"
-    }
-
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: UselessComputationsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val results = {
             val results = for {
-                classFile <- theProject.allProjectClassFiles.par
+                classFile <- project.allProjectClassFiles.par
                 case method @ MethodWithBody(body) <- classFile.methods
-                result = BaseAI(method, new AnalysisDomain(theProject, method))
+                result = BaseAI(method, new AnalysisDomain(project, method))
             } yield {
                 import result.*
                 val results = collectPCWithOperands(domain)(body, operandsArray) {
@@ -105,9 +111,7 @@ object UselessComputations extends ProjectAnalysisApplication {
             results.flatten
         }
 
-        BasicReport(
-            results.mkString("Useless computations: " + results.size + "): \n", "\n", "\n")
-        )
+        (project, BasicReport(results.mkString("Useless computations: " + results.size + "): \n", "\n", "\n")))
     }
 }
 

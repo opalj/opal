@@ -7,10 +7,10 @@ package analyses
 import org.opalj.br.*
 import org.opalj.br.analyses.*
 import org.opalj.br.instructions.*
+import org.opalj.issues.ClassLocation
 import org.opalj.issues.Issue
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
-import org.opalj.issues.ClassLocation
 import org.opalj.issues.Relevance
 
 /**
@@ -94,9 +94,10 @@ object AnonymousInnerClassShouldBeStatic {
     private def hasMethodsReadingField(classFile: ClassFile, field: Field): Boolean = {
         for (MethodWithBody(body) <- classFile.methods) {
             if (body.instructions.exists {
-                case FieldReadAccess(classFile.thisType, field.name, field.fieldType) => true
-                case _ => false
-            }) {
+                    case FieldReadAccess(classFile.thisType, field.name, field.fieldType) => true
+                    case _                                                                => false
+                }
+            ) {
                 return true;
             }
         }
@@ -155,8 +156,9 @@ object AnonymousInnerClassShouldBeStatic {
             return None;
 
         if (!(isAnonymousInnerClass(classFile) &&
-            !isWithinAnonymousInnerClass(classFile) &&
-            isOuterClassReferenceUsed(classFile).isNo))
+                !isWithinAnonymousInnerClass(classFile) &&
+                isOuterClassReferenceUsed(classFile).isNo)
+        )
             return None;
 
         var supertype = classFile.superclassType.get.toJava
@@ -164,10 +166,10 @@ object AnonymousInnerClassShouldBeStatic {
         if (classFile.interfaceTypes.nonEmpty) {
             val superInterfacetypes = classFile.interfaceTypes.map(_.toJava).mkString(" with ")
 
-            if (classFile.superclassType.get == ObjectType.Object)
+            if (classFile.superclassType.get == ClassType.Object)
                 supertype = superInterfacetypes
             else
-                supertype += " implements "+superInterfacetypes
+                supertype += " implements " + superInterfacetypes
 
         }
 

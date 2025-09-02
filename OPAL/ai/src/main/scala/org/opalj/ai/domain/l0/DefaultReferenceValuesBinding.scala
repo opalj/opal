@@ -7,7 +7,7 @@ package l0
 import scala.reflect.ClassTag
 
 import org.opalj.br.ArrayType
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.collection.immutable.UIDSet
 
 /**
@@ -35,7 +35,7 @@ trait DefaultReferenceValuesBinding
     // CONCRETE CLASSES AND FACTORY METHODS
     //
 
-    protected case class DefaultSObjectValue(theUpperTypeBound: ObjectType) extends SObjectValueLike {
+    protected case class DefaultSObjectValue(theUpperTypeBound: ClassType) extends SObjectValueLike {
         override def isNull: Answer = Unknown
     }
 
@@ -44,7 +44,7 @@ trait DefaultReferenceValuesBinding
     }
 
     protected case class DefaultMObjectValue(
-        upperTypeBound: UIDSet[ObjectType]
+        upperTypeBound: UIDSet[ClassType]
     ) extends MObjectValueLike {
         override def isNull: Answer = Unknown
     }
@@ -56,13 +56,13 @@ trait DefaultReferenceValuesBinding
      */
     override def NullValue(origin: ValueOrigin): DomainNullValue = TheNullValue
 
-    override def ObjectValue(origin: ValueOrigin, objectType: ObjectType): DomainObjectValue = {
-        DefaultSObjectValue(objectType)
+    override def ObjectValue(origin: ValueOrigin, classType: ClassType): DomainObjectValue = {
+        DefaultSObjectValue(classType)
     }
 
     override def ObjectValue(
         origin:         ValueOrigin,
-        upperTypeBound: UIDSet[ObjectType]
+        upperTypeBound: UIDSet[ClassType]
     ): DomainObjectValue = {
         if (upperTypeBound.isSingletonSet)
             ObjectValue(origin, upperTypeBound.head)

@@ -14,13 +14,13 @@ import org.opalj.bi.REF_invokeSpecial
 import org.opalj.bi.REF_invokeStatic
 import org.opalj.bi.REF_invokeVirtual
 import org.opalj.bi.REF_newInvokeSpecial
+import org.opalj.br.ClassType.LambdaMetafactory
 import org.opalj.br.InvokeSpecialMethodHandle
 import org.opalj.br.InvokeStaticMethodHandle
 import org.opalj.br.Method
 import org.opalj.br.MethodCallMethodHandle
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType.LambdaMetafactory
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ARETURN
@@ -134,7 +134,7 @@ class Java8Invokedynamics(
     private def handleJava8InvokeDynamic[S](m: Method, handle: MethodCallMethodHandle) = {
         handle.referenceKind match {
             case REF_invokeInterface => 0 /* MR1*/
-            case REF_invokeStatic => {
+            case REF_invokeStatic    => {
                 val InvokeStaticMethodHandle(_, _, name, descriptor) = handle
                 // this just the called method is defined in the same class..
                 // if there is a method in the same class with the same name and descriptor,

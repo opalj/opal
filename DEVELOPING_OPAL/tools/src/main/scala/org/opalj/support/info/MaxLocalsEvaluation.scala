@@ -3,12 +3,14 @@ package org.opalj
 package support
 package info
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 /**
  * Computes some statistics related to the number of parameters and locals
@@ -16,23 +18,26 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
  *
  * @author Michael Eichberg
  */
-object MaxLocalsEvaluation extends ProjectAnalysisApplication {
+object MaxLocalsEvaluation extends ProjectsAnalysisApplication {
 
-    override def title: String = "Maximum Number of Locals"
-
-    override def description: String = {
-        "provide information about the maximum number of registers required per method"
+    protected class MaxLocalsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Computes information about the maximum number of registers required per method"
     }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = MaxLocalsConfig
 
+    protected def createConfig(args: Array[String]): MaxLocalsConfig = new MaxLocalsConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: MaxLocalsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
         import scala.collection.immutable.TreeMap // <= Sorted...
         var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
         var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty
+
+        val (project, _) = analysisConfig.setupProject(cp)
 
         for {
             classFile <- project.allProjectClassFiles
@@ -49,12 +54,15 @@ object MaxLocalsEvaluation extends ProjectAnalysisApplication {
             maxLocalsDistrbution = maxLocalsDistrbution.updated(body.maxLocals, newMaxLocalsCount)
         }
 
-        BasicReport("\nResults:\n" +
-            "Method Parameters Distribution:\n" +
-            "#Parameters\tFrequency:\n" +
-            methodParametersDistribution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n") + "\n\n" +
-            "MaxLocals Distribution:\n" +
-            "#Locals\t\tFrequency:\n" +
-            maxLocalsDistrbution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n"))
+        (
+            project,
+            BasicReport("\nResults:\n" +
+                "Method Parameters Distribution:\n" +
+                "#Parameters\tFrequency:\n" +
+                methodParametersDistribution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n") + "\n\n" +
+                "MaxLocals Distribution:\n" +
+                "#Locals\t\tFrequency:\n" +
+                maxLocalsDistrbution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n"))
+        )
     }
 }

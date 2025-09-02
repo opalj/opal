@@ -9,12 +9,12 @@ package xta
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.*
 
+import org.opalj.br.ClassType
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
@@ -245,7 +245,7 @@ final class TypePropagationAnalysis private[analyses] (
         // The "this" type X will flow to the type set of Object.<init>. Since Object.<init> is usually
         // part of the external world, the external world type set is then polluted with any type which
         // was constructed anywhere in the program.
-        callee.declaringClassType == ObjectType.Object && callee.name == "<init>"
+        callee.declaringClassType == ClassType.Object && callee.name == "<init>"
     }
 
     private def processCallees(
@@ -516,11 +516,11 @@ final class TypePropagationAnalysis private[analyses] (
             // definitive Yes/No answer before. Since we didn't get one, the candidate type probably has a supertype
             // which is not a project type. In that case, the above argument applies similarly.
 
-            val filterTypeIsProjectType = if (filterType.isObjectType) {
-                project.isProjectType(filterType.asObjectType)
+            val filterTypeIsProjectType = if (filterType.isClassType) {
+                project.isProjectType(filterType.asClassType)
             } else {
                 val at = filterType.asArrayType
-                project.isProjectType(at.elementType.asObjectType)
+                project.isProjectType(at.elementType.asClassType)
             }
 
             !filterTypeIsProjectType

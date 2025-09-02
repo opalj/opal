@@ -83,7 +83,7 @@ object ThrownExceptions extends ThrownExceptionsPropertyMetaInformation {
     def apply(types: BRTypesSet): ThrownExceptions = new ThrownExceptions(types)
 
     final val key: PropertyKey[ThrownExceptions] = {
-        PropertyKey.create[br.DeclaredMethod, ThrownExceptions](
+        PropertyKey.create[Context, ThrownExceptions](
             "ThrownExceptions",
             ThrownExceptionsFallback
         )

@@ -5,7 +5,7 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.collection.mutable.AnyRefMap
+import scala.collection.mutable
 
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
@@ -37,8 +37,8 @@ import org.opalj.log.OPALLogger
 object FieldAccessInformationAnalysis {
 
     def doAnalyze(project: SomeProject, isInterrupted: () => Boolean): FieldAccessInformation = {
-        import project.resolveFieldReference
         import project.logContext
+        import project.resolveFieldReference
 
         val allReadAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
         val allWriteAccesses = new ConcurrentHashMap[Field, List[(Method, PCs)]]()
@@ -50,8 +50,8 @@ object FieldAccessInformationAnalysis {
         project.parForeachMethodWithBody(isInterrupted) { methodInfo =>
             val method = methodInfo.method
 
-            val readAccesses = AnyRefMap.empty[Field, IntTrieSetBuilder]
-            val writeAccesses = AnyRefMap.empty[Field, IntTrieSetBuilder]
+            val readAccesses = mutable.HashMap.empty[Field, IntTrieSetBuilder]
+            val writeAccesses = mutable.HashMap.empty[Field, IntTrieSetBuilder]
             var unresolved = IntTrieSet.empty
             method.body.get iterate { (pc, instruction) =>
                 instruction.opcode match {
@@ -111,11 +111,6 @@ object FieldAccessInformationAnalysis {
             if (unresolved.nonEmpty) allUnresolved.add((method, unresolved))
         }
 
-        import scala.jdk.CollectionConverters.*
-        val ra = new AnyRefMap(allReadAccesses.size * 2) ++= allReadAccesses.asScala
-        ra.repack()
-        val wa = new AnyRefMap(allReadAccesses.size * 2) ++= allWriteAccesses.asScala
-        wa.repack()
         FieldAccessInformation(project)
     }
 }

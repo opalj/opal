@@ -65,7 +65,7 @@ case object LongTypeInfo extends PrimitiveTypeInfo("long")
 case object FloatTypeInfo extends PrimitiveTypeInfo("float")
 case object DoubleTypeInfo extends PrimitiveTypeInfo("double")
 
-case class ObjectTypeInfo(asJava: String) extends FieldTypeInfo {
+case class ClassTypeInfo(asJava: String) extends FieldTypeInfo {
 
     assert(asJava.indexOf('/') == -1)
 
@@ -74,7 +74,7 @@ case class ObjectTypeInfo(asJava: String) extends FieldTypeInfo {
     override final def elementTypeIsBaseType: Boolean = false
 
     override def asSpan(baseClass: String): Node = {
-        <span class={s"$baseClass object_type"}>{asJava}</span>
+        <span class={s"$baseClass class_type"}>{asJava}</span>
     }
 }
 
@@ -92,6 +92,6 @@ case class ArrayTypeInfo(
         if (elementTypeIsBaseType)
             <span class={s"$baseClass array primitive_type"}>{asJava}</span>
         else
-            <span class={s"$baseClass array object_type"}>{asJava}</span>
+            <span class={s"$baseClass array class_type"}>{asJava}</span>
     }
 }

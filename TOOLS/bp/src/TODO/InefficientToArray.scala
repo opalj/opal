@@ -31,13 +31,13 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
      */
     override def description: String = "Reports inefficient toArray(T[]) calls"
 
-    private val objectArrayType = ArrayType(ObjectType.Object)
+    private val objectArrayType = ArrayType(ClassType.Object)
     private val toArrayDescriptor = MethodDescriptor(
         IndexedSeq(objectArrayType),
         objectArrayType
     )
-    private val collectionInterface = ObjectType("java/util/Collection")
-    private val listInterface = ObjectType("java/util/List")
+    private val collectionInterface = ClassType("java/util/Collection")
+    private val listInterface = ClassType("java/util/List")
 
     /**
      * Checks whether a type inherits from java/util/Collection or is java/util/List.
@@ -48,11 +48,11 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
     private def isCollectionType(
         classHierarchy: ClassHierarchy
     )(checkedType: ReferenceType): Boolean = {
-        checkedType.isObjectType &&
-            (classHierarchy.isSubtypeOf(
-                checkedType.asObjectType,
-                collectionInterface
-            ).isNoOrUnknown || checkedType == listInterface)
+        checkedType.isClassType &&
+        (classHierarchy.isSubtypeOf(
+            checkedType.asClassType,
+            collectionInterface
+        ).isNoOrUnknown || checkedType == listInterface)
         // TODO needs more heuristic or more analysis
     }
 
@@ -65,7 +65,7 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[LineAndColumnBasedReport[Source]] = {
 
@@ -78,9 +78,10 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
             classFile <- project.allProjectClassFiles
             method @ MethodWithBody(body) <- classFile.methods
             pc <- body.matchTriple {
-                case (ICONST_0,
-                    _: ANEWARRAY,
-                    VirtualMethodInvocationInstruction(targetType, "toArray", `toArrayDescriptor`)
+                case (
+                        ICONST_0,
+                        _: ANEWARRAY,
+                        VirtualMethodInvocationInstruction(targetType, "toArray", `toArrayDescriptor`)
                     ) =>
                     isCollectionType(targetType)
                 case _ => false
@@ -94,7 +95,7 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
                 method.name,
                 body.lineNumber(pc),
                 None,
-                "Calling x.toArray(new T[0]) is inefficient, should be "+
+                "Calling x.toArray(new T[0]) is inefficient, should be " +
                     "x.toArray(new T[x.size()])"
             )
         }

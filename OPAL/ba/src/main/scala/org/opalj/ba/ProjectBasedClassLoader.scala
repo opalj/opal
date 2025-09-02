@@ -4,7 +4,7 @@ package ba
 
 import org.opalj.bc.Assembler
 import org.opalj.br.ClassFileRepository
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 
 /**
  * A simple `ClassLoader` that looks-up the available classes from the given
@@ -19,8 +19,7 @@ class ProjectBasedInMemoryClassLoader(
 
     @throws[ClassNotFoundException]
     override def findClass(name: String): Class[?] = {
-        project.classFile(ObjectType(name.replace('.', '/'))) match {
-
+        project.classFile(ClassType(name.replace('.', '/'))) match {
             case Some(cf) =>
                 val bytes = Assembler(ba.toDA(cf))
                 defineClass(name, bytes, 0, bytes.length)

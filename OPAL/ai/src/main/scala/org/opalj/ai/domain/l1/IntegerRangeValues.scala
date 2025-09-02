@@ -639,7 +639,7 @@ trait IntegerRangeValues
         }
 
         denominator match {
-            case IntegerRangeLike(1, 1) => ComputedValue(numerator)
+            case IntegerRangeLike(1, 1)     => ComputedValue(numerator)
             case IntegerRangeLike(dlb, dub) =>
                 if (dlb > 0) {
                     // no div by "0"

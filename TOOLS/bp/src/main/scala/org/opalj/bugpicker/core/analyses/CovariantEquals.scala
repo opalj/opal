@@ -4,19 +4,18 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.issues.Issue
+import org.opalj.br.BooleanType
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
+import org.opalj.br.IntegerType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.BooleanType
-import org.opalj.br.IntegerType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ObjectType
+import org.opalj.issues.ClassLocation
 import org.opalj.issues.Issue
-import org.opalj.issues.Relevance
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
-import org.opalj.issues.ClassLocation
+import org.opalj.issues.Relevance
 
 /**
  * This analysis reports classes that have some `equals()` method(s), but not
@@ -43,33 +42,32 @@ object CovariantEquals {
             case Method(_, "equals", MethodDescriptor(Seq(paramType), BooleanType)) => paramType
         }
 
-        paramTypes.size > 0 && !paramTypes.exists(_ == ObjectType.Object)
+        paramTypes.size > 0 && !paramTypes.exists(_ == ClassType.Object)
     }
 
     private def hasHashCode(classFile: ClassFile): Boolean = {
         classFile.methods.exists {
             case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType)) => true
-            case _ => false
+            case _                                                           => false
         }
     }
 
     private def superClassHasCustomHashCode(
         classFile: ClassFile
     )(
-        implicit
-        project: SomeProject
+        implicit project: SomeProject
     ): Boolean = {
 
-        if (classFile.thisType eq ObjectType.Object)
+        if (classFile.thisType eq ClassType.Object)
             return false;
 
         val superclassType = classFile.superclassType.get
-        if (superclassType eq ObjectType.Object)
+        if (superclassType eq ClassType.Object)
             return false;
 
         import MethodDescriptor.JustReturnsInteger
         project.resolveClassMethodReference(superclassType, "hashCode", JustReturnsInteger) match {
-            case Success(m) => m.classFile.thisType ne ObjectType.Object
+            case Success(m) => m.classFile.thisType ne ClassType.Object
             case _          => false
         }
     }
@@ -83,8 +81,7 @@ object CovariantEquals {
     def apply(
         classFile: ClassFile
     )(
-        implicit
-        project: SomeProject
+        implicit project: SomeProject
     ): Iterable[Issue] = {
         if (classFile.isInterfaceDeclaration)
             return Iterable.empty;

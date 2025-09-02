@@ -20,7 +20,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class GETFIELD(
-    declaringClass: ObjectType,
+    declaringClass: ClassType,
     name:           String,
     fieldType:      FieldType
 ) extends FieldReadAccess {
@@ -29,7 +29,7 @@ case class GETFIELD(
 
     final def mnemonic: String = "getfield"
 
-    final def jvmExceptions: List[ObjectType] = FieldAccess.jvmExceptions
+    final def jvmExceptions: List[ClassType] = FieldAccess.jvmExceptions
 
     final def mayThrowExceptions: Boolean = true
 
@@ -51,7 +51,7 @@ case class GETFIELD(
             Instruction.nextInstructionOrExceptionHandler(
                 this,
                 currentPC,
-                ObjectType.NullPointerException
+                ClassType.NullPointerException
             )
     }
 
@@ -78,7 +78,7 @@ object GETFIELD extends InstructionMetaInformation {
      *          syntax.
      */
     def apply(declaringClassName: String, name: String, fieldTypeName: String): GETFIELD = {
-        GETFIELD(ObjectType(declaringClassName), name, FieldType(fieldTypeName))
+        GETFIELD(ClassType(declaringClassName), name, FieldType(fieldTypeName))
     }
 
 }

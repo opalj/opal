@@ -12,9 +12,9 @@ import scala.collection.mutable
 import scala.xml.Node
 
 import org.opalj.ai.util.XHTML
+import org.opalj.br.ClassType
 import org.opalj.br.Code
 import org.opalj.br.ComputationalTypeCategory
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.instructions.*
@@ -479,7 +479,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                                          !foundDefinitiveHandler && (
                                              (eh.catchType.isEmpty && { foundDefinitiveHandler = true; true }) || {
                                                  val isHandled =
-                                                     isASubtypeOf(ObjectType.NullPointerException, eh.catchType.get)
+                                                     isASubtypeOf(ClassType.NullPointerException, eh.catchType.get)
                                                  if (isHandled.isYes) {
                                                      foundDefinitiveHandler = true
                                                      true

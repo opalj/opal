@@ -28,7 +28,7 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
         methodDescriptor.parametersCount
     }
 
-    override final def jvmExceptions: List[ObjectType] = INVOKEDYNAMIC.jvmExceptions
+    override final def jvmExceptions: List[ClassType] = INVOKEDYNAMIC.jvmExceptions
 
 }
 
@@ -37,7 +37,7 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
  */
 object INVOKEDYNAMIC extends InstructionMetaInformation {
 
-    final val jvmExceptions = List(ObjectType.BootstrapMethodError)
+    final val jvmExceptions = List(ClassType.BootstrapMethodError)
 
     final val opcode = 186
 

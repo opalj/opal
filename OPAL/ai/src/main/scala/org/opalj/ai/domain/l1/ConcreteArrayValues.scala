@@ -7,7 +7,7 @@ package l1
 import scala.reflect.ClassTag
 
 import org.opalj.br.ArrayType
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 
@@ -62,10 +62,10 @@ trait ConcreteArrayValues
      *          for arrays which store non-primitive values.
      *          It can be overridden by subclasses to plug-in more advanced analyses.
      */
-    protected def isEffectivelyImmutable(objectType: ObjectType): Boolean = {
-        objectType.id match {
-            case ObjectType.ObjectId | ObjectType.StringId | ObjectType.ClassId => true
-            case _                                                              => false
+    protected def isEffectivelyImmutable(classType: ClassType): Boolean = {
+        classType.id match {
+            case ClassType.ObjectId | ClassType.StringId | ClassType.ClassId => true
+            case _                                                           => false
         }
     }
 
@@ -98,8 +98,8 @@ trait ConcreteArrayValues
         count <= maxTrackedArraySize && (
             arrayType.componentType.isBaseType ||
             (
-                arrayType.componentType.isObjectType &&
-                isEffectivelyImmutable(arrayType.componentType.asObjectType)
+                arrayType.componentType.isClassType &&
+                isEffectivelyImmutable(arrayType.componentType.asClassType)
             )
         )
     }
@@ -236,7 +236,7 @@ trait ConcreteArrayValues
                         }).toArray // <= forces the evaluation - WHICH IS REQUIRED
                     update match {
                         case NoUpdateType => NoUpdate
-                        case _ =>
+                        case _            =>
                             if (isOther) {
                                 update(other)
                             } else {

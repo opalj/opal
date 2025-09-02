@@ -2,55 +2,88 @@
 package org.opalj
 package tac
 
-import java.io.FileInputStream
+import scala.language.postfixOps
+
+import java.io.File
+import java.net.URL
 
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeReference
-import org.opalj.br.reader.Java9Framework
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.cli.ClassNameArg
+import org.opalj.cli.PartialSignatureArg
 
 /**
  * Collects points-to information related to a method.
  *
  * @author Michael Eichberg
  */
-object LocalPointsTo {
+object LocalPointsTo extends ProjectsAnalysisApplication {
 
-    def main(args: Array[String]): Unit = {
-        // Load the class file (we don't handle invokedynamic in this case)
-        val cf = Java9Framework.ClassFile(() => new FileInputStream(args(0))).head
-        // ... now let's take the first method that matches our filter
-        val m = cf.methods.filter(m => m.signatureToJava().contains(args(1))).head
-        // ... let's get one of the default pre-initialized class hierarchies (typically we want a project!)
-        val ch = ClassHierarchy.PreInitializedClassHierarchy
-        // ... perform the data-flow analysis
-        val aiResult = BaseAI(m, new PrimitiveTACAIDomain(ch, m))
-        // now, we can transform the bytecode to three-address code
-        val tac = TACAI(m, ch, aiResult, propagateConstants = true)(Nil /* no optimizations */ )
+    protected class LocalPointsToConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description =
+            "Collects points-to information related to a method"
 
-        // Let's print the three address code to get a better feeling for it...
-        // Please note, "pc" in the output refers to the program counter of the original
-        // underlying bytecode instruction; the "pc" is kept to avoid that we have to
-        // transform the other information in the class file too.
-        println(tac)
+        args(
+            ClassNameArg !,
+            PartialSignatureArg !
+        )
+    }
 
-        // Let's collect the information where a reference value that is passed
-        // to some method is coming from.
+    protected type ConfigType = LocalPointsToConfig
+
+    protected def createConfig(args: Array[String]): LocalPointsToConfig = new LocalPointsToConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: LocalPointsToConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+
+        val result = new StringBuilder()
+
         for {
-            case (MethodCallParameters(params), stmtIndex) <- tac.stmts.iterator.zipWithIndex
-            case (UVar(v, defSites), paramIndex) <- params.iterator.zipWithIndex
-            if v.computationalType == ComputationalTypeReference
-            defSite <- defSites
+            className <- analysisConfig(ClassNameArg)
+            cf <- project.classFile(ClassType(className.replace('.', '/')))
+            m <- cf.methods
+            if analysisConfig(PartialSignatureArg).exists(sig => m.signatureToJava().contains(sig._2 + sig._3))
         } {
-            if (defSite >= 0) {
-                val Assignment(_, _, expr) = tac.stmts(defSite) // a def site is always an assignment
-                println(s"call@$stmtIndex(param=$paramIndex) is " + expr)
-            } else {
-                println(s"call@$stmtIndex(param=$paramIndex) takes param " + (-defSite - 1))
+
+            // ... perform the data-flow analysis
+            val aiResult = BaseAI(m, new PrimitiveTACAIDomain(project, m))
+            // now, we can transform the bytecode to three-address code
+            val tac = TACAI(m, project.classHierarchy, aiResult, propagateConstants = true)(Nil /* no optimizations */ )
+
+            // Let's print the three address code to get a better feeling for it...
+            // Please note, "pc" in the output refers to the program counter of the original
+            // underlying bytecode instruction; the "pc" is kept to avoid that we have to
+            // transform the other information in the class file too.
+            result.append(tac)
+            result.append('\n')
+
+            // Let's collect the information where a reference value that is passed
+            // to some method is coming from.
+            for {
+                (MethodCallParameters(params), stmtIndex) <- tac.stmts.iterator.zipWithIndex
+                (UVar(v, defSites), paramIndex) <- params.iterator.zipWithIndex
+                if v.computationalType == ComputationalTypeReference
+                defSite <- defSites
+            } {
+                if (defSite >= 0) {
+                    val Assignment(_, _, expr) = tac.stmts(defSite) // a def site is always an assignment
+                    result.append(s"call@$stmtIndex(param=$paramIndex) is " + expr + "\n")
+                } else {
+                    result.append(s"call@$stmtIndex(param=$paramIndex) takes param " + (-defSite - 1) + "\n")
+                }
             }
         }
 
-        println("Done.")
+        (project, BasicReport(result.toString()))
     }
 }

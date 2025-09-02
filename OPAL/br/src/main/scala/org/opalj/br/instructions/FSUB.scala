@@ -14,6 +14,6 @@ case object FSUB extends SubtractInstruction {
 
     final val mnemonic = "fsub"
 
-    final val computationalType = ComputationalTypeFloat
+    final val computationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
 }

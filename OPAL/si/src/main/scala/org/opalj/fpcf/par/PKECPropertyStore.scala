@@ -14,6 +14,7 @@ import scala.util.control.ControlThrowable
 
 import com.typesafe.config.Config
 
+import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
 
@@ -51,8 +52,6 @@ class PKECPropertyStore(
 
     private[this] val initialQueues: Array[java.util.ArrayDeque[QualifiedTask]] =
         Array.fill(THREAD_COUNT) { new java.util.ArrayDeque[QualifiedTask](50000 / THREAD_COUNT) }
-
-    private[this] var setAndPreinitializedValues: List[SomeEPK] = List.empty
 
     override def shutdown(): Unit = {}
 
@@ -181,11 +180,6 @@ class PKECPropertyStore(
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
-
-        // Recall that the scheduler has to take care of registering a triggered computation
-        // before the first analysis derives a respective value!
-        // Hence, there is no need to immediately check that we have to trigger a computation.
-
         val pkId = pk.id
         val oldComputations: Array[SomePropertyComputation] = triggeredComputations(pkId)
         var newComputations: Array[SomePropertyComputation] = null
@@ -206,7 +200,6 @@ class PKECPropertyStore(
         if (oldP ne null) {
             throw new IllegalStateException(s"$e already had the property $oldP")
         }
-        setAndPreinitializedValues ::= EPK(e, p.key)
     }
 
     override protected[this] def doPreInitialize[E <: Entity, P <: Property](
@@ -220,7 +213,6 @@ class PKECPropertyStore(
             oldEPKState match {
                 case null =>
                     val epk = EPK(e, pk)
-                    setAndPreinitializedValues ::= epk
                     pc(epk)
                 case epkState =>
                     pc(epkState.eOptP.asInstanceOf[EOptionP[E, P]])
@@ -488,10 +480,18 @@ class PKECPropertyStore(
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         idle = false
 
-        // If some values were explicitly set, we have to trigger corresponding triggered
-        // computations.
-        setAndPreinitializedValues.foreach { epk => triggerComputations(epk.e, epk.pk.id) }
-        setAndPreinitializedValues = List.empty
+        if (triggeredComputations.exists(_ ne null)) {
+            // Let's trigger triggered computations for those entities, which have values!
+            foreachWithIndex(ps) { (epss, pkId) =>
+                if (propertyKindsComputedInThisPhase(pkId) && (triggeredComputations(pkId) ne null)) {
+                    epss.forEach { (e, eOptionP) =>
+                        if (eOptionP.eOptP.isEPS) {
+                            triggerComputations(e, pkId)
+                        }
+                    }
+                }
+            }
+        }
 
         activeTasks.addAndGet(initialQueues.iterator.map(_.size()).sum)
 
@@ -603,7 +603,7 @@ class PKECPropertyStore(
             } catch {
                 case ct: ControlThrowable    => throw ct
                 case _: InterruptedException =>
-                case ex: Throwable =>
+                case ex: Throwable           =>
                     collectException(ex)
                     doTerminate = true
             } finally {

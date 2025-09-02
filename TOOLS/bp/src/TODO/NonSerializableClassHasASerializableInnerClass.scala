@@ -4,7 +4,6 @@ package frb
 package analyses
 
 import bi.AccessFlagsMatcher
-
 import br.*
 import br.analyses.*
 
@@ -26,7 +25,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
     extends FindRealBugsAnalysis[Source] {
 
     override def description: String =
-        "Identifies (non-static) inner classes that are serializable, "+
+        "Identifies (non-static) inner classes that are serializable, " +
             "but where the outer class is not."
 
     /**
@@ -38,13 +37,13 @@ class NonSerializableClassHasASerializableInnerClass[Source]
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[ClassBasedReport[Source]] = {
 
         import project.classHierarchy.isSubtypeOf
 
-        val Serializable = ObjectType.Serializable
+        val Serializable = ClassType.Serializable
 
         // If it's unknown, it's neither possible nor necessary to collect subtypes
         if (project.classHierarchy.isUnknown(Serializable)) {
@@ -63,7 +62,7 @@ class NonSerializableClassHasASerializableInnerClass[Source]
                 project.source(outerType),
                 Severity.Error,
                 outerType,
-                "Has a serializable non-static inner class ("+serializableType.toJava+
+                "Has a serializable non-static inner class (" + serializableType.toJava +
                     "), but is not serializable itself"
             )
         }

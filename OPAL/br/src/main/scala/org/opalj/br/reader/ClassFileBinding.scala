@@ -29,7 +29,7 @@ trait ClassFileBinding extends ClassFileReader {
         val deleteConfiguration = config.as[Option[Boolean]](Key)
         val delete: Boolean = deleteConfiguration match {
             case Some(x) => x
-            case None =>
+            case None    =>
                 OPALLogger.warn("project configuration", s"the configuration key $Key is not set")
                 false
         }
@@ -65,15 +65,15 @@ trait ClassFileBinding extends ClassFileReader {
             minor_version,
             major_version,
             access_flags,
-            cp(this_class_index).asObjectType(cp),
+            cp(this_class_index).asClassType(cp),
             // to handle the special case that this class file represents java.lang.Object
             {
                 if (super_class_index == 0)
                     None
                 else
-                    Some(cp(super_class_index).asObjectType(cp))
+                    Some(cp(super_class_index).asClassType(cp))
             },
-            ArraySeq.from(interfaces).map(cp(_).asObjectType(cp)),
+            ArraySeq.from(interfaces).map(cp(_).asClassType(cp)),
             fields,
             methods,
             attributes

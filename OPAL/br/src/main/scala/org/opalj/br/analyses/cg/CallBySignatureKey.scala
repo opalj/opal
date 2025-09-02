@@ -30,7 +30,7 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
     )
 
     override def compute(p: SomeProject): CallBySignatureTargets = {
-        val cbsTargets = mutable.HashMap.empty[Method, ArraySeq[ObjectType]]
+        val cbsTargets = mutable.HashMap.empty[Method, ArraySeq[ClassType]]
         val index = p.get(ProjectIndexKey)
         val isOverridableMethod = p.get(IsOverridableMethodKey)
 
@@ -49,7 +49,7 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
             val potentialMethods = index.findMethods(methodName, descriptor)
 
             var i = 0
-            val targets = ListBuffer.empty[ObjectType]
+            val targets = ListBuffer.empty[ClassType]
             while (i < potentialMethods.size) {
                 val m = potentialMethods(i)
                 val cf = m.classFile
@@ -72,12 +72,12 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
 }
 
 class CallBySignatureTargets private[analyses] (
-    val data: scala.collection.Map[Method, ArraySeq[ObjectType]]
+    val data: scala.collection.Map[Method, ArraySeq[ClassType]]
 ) {
     /**
      * Returns all call-by-signature targets of the given method. If the method is not known,
      * `null` is returned. If the method is known a non-null (but potentially empty)
      * [[scala.collection.immutable.ArraySeq]] is returned.
      */
-    def apply(m: Method): ArraySeq[ObjectType] = data.getOrElse(m, ArraySeq.empty)
+    def apply(m: Method): ArraySeq[ClassType] = data.getOrElse(m, ArraySeq.empty)
 }

@@ -14,8 +14,8 @@ case object MONITOREXIT extends SynchronizationInstruction with InstructionMetaI
 
     final val mnemonic = "monitorexit"
 
-    final val jvmExceptions: List[ObjectType] = {
-        List(ObjectType.NullPointerException, ObjectType.IllegalMonitorStateException)
+    final val jvmExceptions: List[ClassType] = {
+        List(ClassType.NullPointerException, ClassType.IllegalMonitorStateException)
     }
 
     final def stackSlotsChange: Int = -1

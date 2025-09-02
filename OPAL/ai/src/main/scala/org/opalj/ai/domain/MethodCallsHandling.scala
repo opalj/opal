@@ -6,9 +6,9 @@ package domain
 import scala.collection.Set
 import scala.collection.mutable
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 
 /**
  * Provides support for handling method invocations, but does not handle any invocations directly.
@@ -19,10 +19,10 @@ trait MethodCallsHandling extends MethodCallsDomain {
     domain: ReferenceValuesDomain & TypedValuesFactory & Configuration & TheCode =>
 
     protected[this] def getPotentialExceptions(pc: Int): List[ExceptionValue] = {
-        val exceptionTypes: mutable.Set[ObjectType] = mutable.Set.empty
+        val exceptionTypes: mutable.Set[ClassType] = mutable.Set.empty
         var exceptionValues: List[ExceptionValue] = List.empty
 
-        def add(exceptionType: ObjectType): Unit = {
+        def add(exceptionType: ClassType): Unit = {
 
             if (!exceptionTypes.contains(exceptionType)) {
                 exceptionTypes += exceptionType
@@ -34,12 +34,12 @@ trait MethodCallsHandling extends MethodCallsDomain {
 
         throwExceptionsOnMethodCall match {
             case ExceptionsRaisedByCalledMethods.Any =>
-                add(ObjectType.Throwable)
+                add(ClassType.Throwable)
 
             case ExceptionsRaisedByCalledMethods.AllExplicitlyHandled =>
                 code.handlersFor(pc) foreach { h =>
                     h.catchType match {
-                        case None     => add(ObjectType.Throwable)
+                        case None     => add(ClassType.Throwable)
                         case Some(ex) => add(ex)
                     }
                 }

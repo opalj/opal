@@ -57,14 +57,14 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
             val index = codeLength - in.available
 
             instructions(index) = (in.readUnsignedByte: @scala.annotation.switch) match {
-                case 50 => AALOAD
-                case 83 => AASTORE
-                case 1  => ACONST_NULL
-                case 25 => cache.ALOAD(lvIndex())
-                case 42 => ALOAD_0
-                case 43 => ALOAD_1
-                case 44 => ALOAD_2
-                case 45 => ALOAD_3
+                case 50  => AALOAD
+                case 83  => AASTORE
+                case 1   => ACONST_NULL
+                case 25  => cache.ALOAD(lvIndex())
+                case 42  => ALOAD_0
+                case 43  => ALOAD_1
+                case 44  => ALOAD_2
+                case 45  => ALOAD_3
                 case 189 =>
                     val rt = cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType
                     cache.ANEWARRAY(rt)
@@ -144,11 +144,11 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 70  => FSTORE_3
                 case 102 => FSUB
                 case 180 =>
-                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                    val (declaringClass, name, fieldType): (ClassType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     GETFIELD(declaringClass, cache.FieldName(name), fieldType)
                 case 178 =>
-                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                    val (declaringClass, name, fieldType): (ClassType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     GETSTATIC(declaringClass, cache.FieldName(name), fieldType)
                 case 167 => cache.GOTO(in.readShort.toInt /* branchoffset */ )
@@ -230,7 +230,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     in.readByte // ignored; fixed value
                     in.readByte // ignored; fixed value
                     INVOKEINTERFACE(
-                        declaringClass.asObjectType,
+                        declaringClass.asClassType,
                         cache.MethodName(name),
                         methodDescriptor
                     )
@@ -238,7 +238,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, isInterface, name, methodDescriptor) = methodRef
                     INVOKESPECIAL(
-                        declaringClass.asObjectType,
+                        declaringClass.asClassType,
                         isInterface,
                         cache.MethodName(name),
                         methodDescriptor
@@ -247,7 +247,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                     val methodRef = cp(in.readUnsignedShort).asMethodref(cp)
                     val (declaringClass, isInterface, name, methodDescriptor) = methodRef
                     INVOKESTATIC(
-                        declaringClass.asObjectType,
+                        declaringClass.asClassType,
                         isInterface,
                         cache.MethodName(name),
                         methodDescriptor
@@ -281,7 +281,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 148 => LCMP
                 case 9   => LCONST_0
                 case 10  => LCONST_1
-                case 18 =>
+                case 18  =>
                     val constant = cp(in.readUnsignedByte())
                     if (constant.isDynamic) {
                         registerDeferredAction(cp) { classFile =>
@@ -371,17 +371,17 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                         //  dimensions
                         in.readUnsignedByte
                     )
-                case 187 => cache.NEW(cp(in.readUnsignedShort).asObjectType(cp))
+                case 187 => cache.NEW(cp(in.readUnsignedShort).asClassType(cp))
                 case 188 => NEWARRAY(in.readByte.toInt) // is internally cached
                 case 0   => NOP
                 case 87  => POP
                 case 88  => POP2
                 case 181 =>
-                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                    val (declaringClass, name, fieldType): (ClassType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     PUTFIELD(declaringClass, cache.FieldName(name), fieldType)
                 case 179 =>
-                    val (declaringClass, name, fieldType): (ObjectType, String, FieldType) =
+                    val (declaringClass, name, fieldType): (ClassType, String, FieldType) =
                         cp(in.readUnsignedShort).asFieldref(cp)
                     PUTSTATIC(declaringClass, cache.FieldName(name), fieldType)
                 case 169 =>

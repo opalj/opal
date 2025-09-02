@@ -9,77 +9,82 @@ import sbt.*
  */
 object Dependencies {
 
-  object version {
-    val junit = "4.13.2"
-    val scalatest = "3.2.12"
-    val scalatestjunit = "3.2.5.0"
-    val scalacheck = "3.2.12.0"
+    object version {
+        val junit = "4.13.2"
+        val scalatest = "3.2.12"
+        val scalatestjunit = "3.2.5.0"
+        val scalacheck = "3.2.12.0"
 
-    val scalaxml = "2.2.0"
-    val scalaparsercombinators = "1.1.2"
-    val scalaparallelcollections = "1.0.4"
-    val playjson = "2.9.2"
-    val ficus = "1.5.0"
-    val commonstext = "1.9"
-    val txtmark = "0.16"
-    val jacksonDF = "2.12.2"
-    val fastutil = "8.5.4"
-    val apkparser = "2.6.10"
+        val scalaxml = "2.2.0"
+        val scalaparsercombinators = "1.1.2"
+        val scalaparallelcollections = "1.0.4"
+        val playjson = "2.9.2"
+        val ficus = "1.5.0"
+        val commonstext = "1.9"
+        val txtmark = "0.16"
+        val jacksonDF = "2.12.2"
+        val fastutil = "8.5.4"
+        val scallop = "5.1.0"
+        val apkparser = "2.6.10"
+        val scalagraphcore = "2.0.1"
+        val scalagraphdot = "2.0.0"
 
-    val openjfx = "16"
-
-    val javacpp = "1.5.8"
-    val javacpp_llvm = "15.0.3"
-  }
-
-  object library {
-
-    // --- general dependencies
-
-    private[this] val osName = System.getProperty("os.name") match {
-      case n if n.startsWith("Linux") => "linux"
-      case n if n.startsWith("Mac") => "mac"
-      case n if n.startsWith("Windows") => "win"
-      case _ => throw new Exception("Unknown platform!")
+        val openjfx = "16"
     }
 
-    def reflect(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-reflect" % scalaVersion
+    object library {
 
-    val scalaxml = "org.scala-lang.modules"                 %% "scala-xml"                  % version.scalaxml
-    val scalaparallelcollections = "org.scala-lang.modules" %% "scala-parallel-collections" % version.scalaparallelcollections
-    val playjson = "com.typesafe.play"                      %% "play-json"                  % version.playjson
-    val ficus = "com.iheart"                                %% "ficus"                      % version.ficus
-    val commonstext = "org.apache.commons"                  % "commons-text"                % version.commonstext
-    val scalaparsercombinators = "org.scala-lang.modules"   %% "scala-parser-combinators"   % version.scalaparsercombinators
-    val txtmark = "es.nitaur.markdown"                      % "txtmark"                     % version.txtmark withSources () withJavadoc ()
-    val jacksonDF = "com.fasterxml.jackson.dataformat"      % "jackson-dataformat-csv"      % version.jacksonDF withSources () withJavadoc ()
-    val fastutil = "it.unimi.dsi"                           % "fastutil"                    % version.fastutil withSources () withJavadoc ()
-    val javafxBase = "org.openjfx"                          % "javafx-base"                 % version.openjfx classifier osName
-    val apkparser = "net.dongliu"                           % "apk-parser"                  % version.apkparser
+        // --- general dependencies
 
-    val javacpp = "org.bytedeco" % "javacpp" % version.javacpp
-    val javacpp_llvm =  "org.bytedeco" % "llvm-platform" % (version.javacpp_llvm + "-" + version.javacpp)
-    // --- test related dependencies
+        private[this] val osName = System.getProperty("os.name") match {
+            case n if n.startsWith("Linux")   => "linux"
+            case n if n.startsWith("Mac")     => "mac"
+            case n if n.startsWith("Windows") => "win"
+            case _                            => throw new Exception("Unknown platform!")
+        }
 
-    val junit =          "junit"              % "junit"           % version.junit          % "test,it"
-    val scalatest =      "org.scalatest"     %% "scalatest"       % version.scalatest      % "test,it"
-    val scalatestjunit = "org.scalatestplus" %% "junit-4-13"      % version.scalatestjunit % "test,it"
-    val scalacheck =     "org.scalatestplus" %% "scalacheck-1-16" % version.scalacheck     % "test,it"
-  }
+        def reflect(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-reflect" % scalaVersion
 
-  import library.*
+        val scalaxml = "org.scala-lang.modules" %% "scala-xml" % version.scalaxml
+        val scalaparallelcollections =
+            "org.scala-lang.modules" %% "scala-parallel-collections" % version.scalaparallelcollections
+        val playjson = "com.typesafe.play" %% "play-json" % version.playjson
+        val ficus = "com.iheart" %% "ficus" % version.ficus
+        val commonstext = "org.apache.commons" % "commons-text" % version.commonstext
+        val scalaparsercombinators =
+            "org.scala-lang.modules" %% "scala-parser-combinators" % version.scalaparsercombinators
+        val txtmark = "es.nitaur.markdown" % "txtmark" % version.txtmark withSources () withJavadoc ()
+        val jacksonDF =
+            "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % version.jacksonDF withSources () withJavadoc ()
+        val fastutil = "it.unimi.dsi" % "fastutil" % version.fastutil withSources () withJavadoc ()
+        val scallop = "org.rogach" %% "scallop" % version.scallop
+        val javafxBase = "org.openjfx" % "javafx-base" % version.openjfx classifier osName
+        val apkparser = "net.dongliu" % "apk-parser" % version.apkparser
+        val scalagraphcore = "org.scala-graph" %% "graph-core" % version.scalagraphcore
+        val scalagraphdot = "org.scala-graph" %% "graph-dot" % version.scalagraphdot
 
-  val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalatestjunit, scalacheck)
+        // --- test related dependencies
 
-  def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaparallelcollections, scalaxml, playjson, ficus, fastutil)
+        val junit = "junit" % "junit" % version.junit % "test,it"
+        val scalatest = "org.scalatest" %% "scalatest" % version.scalatest % "test,it"
+        val scalatestjunit = "org.scalatestplus" %% "junit-4-13" % version.scalatestjunit % "test,it"
+        val scalacheck = "org.scalatestplus" %% "scalacheck-1-16" % version.scalacheck % "test,it"
+    }
 
-  val si = Seq()
-  val bi = Seq(commonstext)
-  val br = Seq(scalaparsercombinators, scalaxml)
-  val ifds = Seq()
-  val tools = Seq(txtmark, jacksonDF)
-  val hermes = Seq(txtmark, jacksonDF, javafxBase)
-  val apk = Seq(apkparser, scalaxml)
+    import library.*
 
-  val llvm = Seq(javacpp, javacpp_llvm)
+    val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalatestjunit, scalacheck)
+
+    def common(scalaVersion: String) =
+        Seq(reflect(scalaVersion), scalaparallelcollections, scalaxml, playjson, ficus, fastutil, scallop)
+
+    val si = Seq(scalagraphcore, scalagraphdot)
+    val bi = Seq(commonstext)
+    val br = Seq(scalaparsercombinators, scalaxml)
+    val tac = Seq()
+    val ifds = Seq()
+    val ide = Seq()
+    val tools = Seq(txtmark, jacksonDF)
+    val hermes = Seq(txtmark, jacksonDF, javafxBase)
+    val apk = Seq(apkparser, scalaxml)
 }

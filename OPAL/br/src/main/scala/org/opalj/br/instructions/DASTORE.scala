@@ -14,5 +14,5 @@ case object DASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAc
 
     final val mnemonic = "dastore"
 
-    final val elementTypeComputationalType = ComputationalTypeDouble
+    final val elementTypeComputationalType: ComputationalTypeDouble.type = ComputationalTypeDouble
 }

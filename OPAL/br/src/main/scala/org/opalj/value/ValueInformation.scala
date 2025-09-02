@@ -10,6 +10,7 @@ import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ComputationalTypeReturnAddress
@@ -22,7 +23,6 @@ import org.opalj.br.IntegerVariableInfo
 import org.opalj.br.LongType
 import org.opalj.br.LongVariableInfo
 import org.opalj.br.NullVariableInfo
-import org.opalj.br.ObjectType
 import org.opalj.br.ObjectVariableInfo
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
@@ -123,22 +123,22 @@ object ValueInformation {
      */
     def forProperValue(t: Type)(implicit classHierarchy: ClassHierarchy): ValueInformation = {
         (t.id: @switch) match {
-            case VoidType.id    => TheVoidValue
-            case BooleanType.id => ABooleanValue
-            case ByteType.id    => AByteValue
-            case CharType.id    => ACharValue
-            case ShortType.id   => AShortValue
-            case IntegerType.id => AnIntegerValue
-            case LongType.id    => ALongValue
-            case FloatType.id   => AFloatValue
-            case DoubleType.id  => ADoubleValue
+            case VoidType.id           => TheVoidValue
+            case BooleanType.id        => ABooleanValue
+            case ByteType.id           => AByteValue
+            case CharType.id           => ACharValue
+            case ShortType.id          => AShortValue
+            case IntegerType.id        => AnIntegerValue
+            case LongType.id           => ALongValue
+            case FloatType.id          => AFloatValue
+            case DoubleType.id         => ADoubleValue
             case _ /*referenceTypeId*/ =>
-                if (t.isObjectType) {
-                    val objectType = t.asObjectType
+                if (t.isClassType) {
+                    val classType = t.asClassType
                     AProperSObjectValue(
                         Unknown,
-                        isPrecise = classHierarchy.isKnownToBeFinal(objectType),
-                        objectType
+                        isPrecise = classHierarchy.isKnownToBeFinal(classType),
+                        classType
                     )
                 } else {
                     val arrayType = t.asArrayType
@@ -650,7 +650,7 @@ trait IsMObjectValue extends IsBaseReferenceValue {
      * (in)directly inherits from all given types at the same time. Hence, the upperTypeBound
      * may contain at most one class type.
      */
-    override def upperTypeBound: UIDSet[ObjectType]
+    override def upperTypeBound: UIDSet[ClassType]
 
     override final def isArrayValue: Answer = No
 
@@ -699,7 +699,7 @@ trait IsMObjectValue extends IsBaseReferenceValue {
         isASubtypeOf match {
             // Yes is not possible here!
 
-            case No if (supertype.isArrayType && upperTypeBound != ObjectType.SerializableAndCloneable) =>
+            case No if (supertype.isArrayType && upperTypeBound != ClassType.SerializableAndCloneable) =>
                 // even if the upper bound is not precise we are now 100% sure
                 // that this value is not a subtype of the given supertype
                 No
@@ -719,8 +719,8 @@ trait IsMObjectValue extends IsBaseReferenceValue {
 case class AProperMObjectValue(
     override val isNull:    Answer,
     override val isPrecise: Boolean,
-    upperTypeBound:         UIDSet[ObjectType],
-    leastUpperType:         Option[ReferenceType] // actually always Some[ObjectType]
+    upperTypeBound:         UIDSet[ClassType],
+    leastUpperType:         Option[ReferenceType] // actually always Some[ClassType]
 ) extends IsMObjectValue {
     override def toCanonicalForm: IsMObjectValue = this
     override def toString: String = {
@@ -741,7 +741,7 @@ trait IsSReferenceValue[T <: ReferenceType] extends IsBaseReferenceValue {
 
 }
 
-trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
+trait IsSObjectValue extends IsSReferenceValue[ClassType] {
 
     override final def isArrayValue: Answer = No
 
@@ -759,17 +759,17 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
                     || (
                         supertype.isArrayType &&
                         // and it is impossible that this value is actually an array...
-                        (subtype ne ObjectType.Object) &&
-                        (subtype ne ObjectType.Serializable) &&
-                        (subtype ne ObjectType.Cloneable)
+                        (subtype ne ClassType.Object) &&
+                        (subtype ne ClassType.Serializable) &&
+                        (subtype ne ClassType.Cloneable)
                     ) || (
                         // If both types represent class types and it is not
                         // possible that some value of this type may be a subtype
                         // of the given supertype, the answer "No" is correct.
-                        supertype.isObjectType &&
-                        classHierarchy.isKnown(supertype.asObjectType) &&
+                        supertype.isClassType &&
+                        classHierarchy.isKnown(supertype.asClassType) &&
                         classHierarchy.isKnown(subtype) &&
-                        classHierarchy.isInterface(supertype.asObjectType).isNo &&
+                        classHierarchy.isInterface(supertype.asClassType).isNo &&
                         classHierarchy.isInterface(subtype).isNo &&
                         classHierarchy.isASubtypeOf(supertype, subtype).isNo
                     ) =>
@@ -801,7 +801,7 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
 case class ASObjectValue(
     isNull:                 Answer,
     override val isPrecise: Boolean,
-    theUpperTypeBound:      ObjectType
+    theUpperTypeBound:      ClassType
 ) extends IsSObjectValue {
     override def toCanonicalForm: IsSObjectValue = this
     override def toString: String = {
@@ -816,7 +816,7 @@ case class ASObjectValue(
 case class AProperSObjectValue(
     isNull:                 Answer,
     override val isPrecise: Boolean,
-    theUpperTypeBound:      ObjectType
+    theUpperTypeBound:      ClassType
 ) extends IsSObjectValue {
     override def toCanonicalForm: IsSObjectValue = this
     override def toString: String = {
@@ -839,14 +839,14 @@ trait IsSArrayValue extends IsSReferenceValue[ArrayType] {
                 if isPrecise ||
                     // the array's supertypes: Object, Serializable and Cloneable
                     // are handled by domain.isASubtypeOf
-                    supertype.isObjectType ||
+                    supertype.isClassType ||
                     theUpperTypeBound.elementType.isBaseType ||
                     (
                         supertype.isArrayType &&
                         supertype.asArrayType.elementType.isBaseType &&
                         (
                             theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
-                            (theUpperTypeBound.componentType ne ObjectType.Object)
+                            (theUpperTypeBound.componentType ne ClassType.Object)
                         )
                     ) => No
             case _ => Unknown
@@ -898,10 +898,10 @@ trait IsStringValue
 
     def value: String
 
-    override final def theUpperTypeBound: ObjectType = ObjectType.String
+    override final def theUpperTypeBound: ClassType = ClassType.String
 
     override final def verificationTypeInfo: VerificationTypeInfo = {
-        ObjectVariableInfo(ObjectType.String)
+        ObjectVariableInfo(ClassType.String)
     }
 
     override final def isValueASubtypeOf(
@@ -910,11 +910,11 @@ trait IsStringValue
         implicit classHierarchy: ClassHierarchy
     ): Answer = {
         supertype.id match {
-            case ObjectType.ObjectId
-                | ObjectType.SerializableId
-                | ObjectType.CloneableId
-                | ObjectType.ComparableId
-                | ObjectType.StringId =>
+            case ClassType.ObjectId
+                | ClassType.SerializableId
+                | ClassType.CloneableId
+                | ClassType.ComparableId
+                | ClassType.StringId =>
                 Yes
             case _ => No
         }
@@ -936,15 +936,15 @@ trait IsClassValue
     with ConstantValueInformationProvider[Type] {
 
     // We hard-code the type hierarchy related to "java.lang.Class".
-    val AnnotatedElement = ObjectType("java/lang/reflect/AnnotatedElement")
-    val GenericDeclaration = ObjectType("java/lang/reflect/GenericDeclaration")
-    val Type = ObjectType("java/lang/reflect/Type")
+    val AnnotatedElement = ClassType("java/lang/reflect/AnnotatedElement")
+    val GenericDeclaration = ClassType("java/lang/reflect/GenericDeclaration")
+    val Type = ClassType("java/lang/reflect/Type")
 
     def value: Type
 
-    override final def theUpperTypeBound: ObjectType = ObjectType.Class
+    override final def theUpperTypeBound: ClassType = ClassType.Class
     override final def verificationTypeInfo: VerificationTypeInfo = {
-        ObjectVariableInfo(ObjectType.Class)
+        ObjectVariableInfo(ClassType.Class)
     }
 
     override final def isValueASubtypeOf(
@@ -953,9 +953,9 @@ trait IsClassValue
         implicit classHierarchy: ClassHierarchy
     ): Answer = {
         supertype.id match {
-            case ObjectType.ObjectId
-                | ObjectType.ClassId
-                | ObjectType.SerializableId
+            case ClassType.ObjectId
+                | ClassType.ClassId
+                | ClassType.SerializableId
                 | AnnotatedElement.id
                 | Type.id
                 | GenericDeclaration.id =>

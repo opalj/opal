@@ -8,7 +8,7 @@ package instructions
  */
 trait LConstInstruction extends LoadConstantInstruction[Long] with ImplicitValue {
 
-    override final def computationalType = ComputationalTypeLong
+    override final def computationalType: ComputationalTypeLong.type = ComputationalTypeLong
 
 }
 

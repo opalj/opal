@@ -286,10 +286,10 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
         val method = context.method.definedMethod
 
         // All parameters either have to be base types or have to be immutable.
-        // IMPROVE Use plain object type once we use ObjectType in the store!
-        var referenceTypedParameters = method.parameterTypes.iterator.collect[ObjectType] {
-            case t: ObjectType => t
-            case _: ArrayType  => return Result(context, ImpureByAnalysis);
+        // IMPROVE Use plain class type once we use ClassType in the store!
+        var referenceTypedParameters = method.parameterTypes.iterator.collect[ClassType] {
+            case t: ClassType => t
+            case _: ArrayType => return Result(context, ImpureByAnalysis);
         }
         val methodReturnType = method.descriptor.returnType
         if (methodReturnType.isArrayType) {
@@ -297,15 +297,15 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
             // and did not escape or was created elsewhere...
             return Result(context, ImpureByAnalysis);
         }
-        if (methodReturnType.isObjectType) {
-            referenceTypedParameters ++= Iterator(methodReturnType.asObjectType)
+        if (methodReturnType.isClassType) {
+            referenceTypedParameters ++= Iterator(methodReturnType.asClassType)
         }
 
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
         referenceTypedParameters foreach { e =>
             propertyStore(e, TypeImmutability.key) match {
                 case FinalP(TransitivelyImmutableType) => /*everything is Ok*/
-                case _: FinalEP[_, _] =>
+                case _: FinalEP[_, _]                  =>
                     return Result(context, ImpureByAnalysis);
                 case InterimUBP(ub) if ub ne TransitivelyImmutableType =>
                     return Result(context, ImpureByAnalysis);
@@ -323,7 +323,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
     def baseMethodPurity(context: Context): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) => Result(context, p)
+            case FinalP(p)                => Result(context, p)
             case ep @ InterimLUBP(lb, ub) =>
                 InterimResult.create(context, lb, ub, Set(ep), c)
             case epk =>

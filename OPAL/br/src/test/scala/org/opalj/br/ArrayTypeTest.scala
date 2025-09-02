@@ -36,7 +36,7 @@ class ArrayTypeTest extends AnyFunSuite {
         val at1Class = at1.toJavaClass
         assert(at1Class == classOf[Array[Object]])
 
-        val at2 = ArrayType(ObjectType("java/util/List"))
+        val at2 = ArrayType(ClassType("java/util/List"))
         assert(at2.toJavaClass == classOf[Array[java.util.List[?]]])
 
         val at3 = ArrayType(IntegerType)
@@ -67,7 +67,7 @@ class ArrayTypeTest extends AnyFunSuite {
         val at1: FieldType = FieldType("[[[Ljava/lang/Object;")
 
         at1 match {
-            case ArrayType(ArrayType(ArrayType(ObjectType(className)))) =>
+            case ArrayType(ArrayType(ArrayType(ClassType(className)))) =>
                 assert(className === "java/lang/Object")
             case _type => throw new MatchError(_type)
         }

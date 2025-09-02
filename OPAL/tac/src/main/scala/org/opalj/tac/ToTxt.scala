@@ -13,6 +13,7 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
+import org.opalj.br.cfg.cfgNodeOrdering
 
 /**
  * Converts a list of three-address instructions into a text-based representation for comprehension
@@ -37,15 +38,15 @@ object ToTxt {
                     v.name + "/* return address */"
                 else
                     v.name
-            case Param(_ /*cTpe*/, name)     => name
-            case IntConst(_, value)          => value.toString
-            case LongConst(_, value)         => value.toString + "l"
-            case FloatConst(_, value)        => value.toString + "f"
-            case DoubleConst(_, value)       => value.toString + "d"
-            case ClassConst(_, value)        => value.toJava + ".class"
-            case StringConst(_, value)       => s""""${value.replace("\\", "\\\\")}""""
-            case MethodHandleConst(_, value) => s"""MethodHandle("${value.toJava}")"""
-            case MethodTypeConst(_, value)   => s"""MethodType("${value.toJava}")"""
+            case Param(_ /*cTpe*/, name)                   => name
+            case IntConst(_, value)                        => value.toString
+            case LongConst(_, value)                       => value.toString + "l"
+            case FloatConst(_, value)                      => value.toString + "f"
+            case DoubleConst(_, value)                     => value.toString + "d"
+            case ClassConst(_, value)                      => value.toJava + ".class"
+            case StringConst(_, value)                     => s""""${value.replace("\\", "\\\\")}""""
+            case MethodHandleConst(_, value)               => s"""MethodHandle("${value.toJava}")"""
+            case MethodTypeConst(_, value)                 => s"""MethodType("${value.toJava}")"""
             case DynamicConst(_, bootstrapMethod, name, _) =>
                 s"DynamicConstant[${bootstrapMethod.toJava}]($name)"
             case NullExpr(_) => "null"
@@ -55,7 +56,7 @@ object ToTxt {
             case ArrayLoad(_, index, arrayRef) => s"${toTxtExpr(arrayRef)}[${toTxtExpr(index)}]"
             case ArrayLength(_, arrayRef)      => s"${toTxtExpr(arrayRef)}.length"
 
-            case New(_, objTpe) => s"new ${objTpe.toJava}"
+            case New(_, classTpe) => s"new ${classTpe.toJava}"
 
             case InstanceOf(_, value, tpe) =>
                 s"${toTxtExpr(value)} instanceof ${tpe.asReferenceType.toJava}"
@@ -104,7 +105,7 @@ object ToTxt {
     @inline final def toTxtStmt[V <: Var[V]](stmt: Stmt[V], includePC: Boolean): String = {
         val pc = if (includePC) s"/*pc=${stmt.pc}:*/" else ""
         stmt.astID match {
-            case Return.ASTID => s"$pc return"
+            case Return.ASTID      => s"$pc return"
             case ReturnValue.ASTID =>
                 val ReturnValue(_, expr) = stmt
                 s"$pc return ${toTxtExpr(expr)}"

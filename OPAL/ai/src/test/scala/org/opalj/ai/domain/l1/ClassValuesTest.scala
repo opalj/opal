@@ -38,7 +38,7 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
     it should ("be able to create the right representation for Arrays of object values") in {
         val domain = new RecordingDomain
         domain.simpleClassForNameCall(-1, "[Ljava/lang/Object;") should be(
-            ComputedValue(domain.ClassValue(-1, ArrayType(ObjectType.Object)))
+            ComputedValue(domain.ClassValue(-1, ArrayType(ClassType.Object)))
         )
     }
 
@@ -46,21 +46,21 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "staticClassValue").get
         BaseAI(method, domain)
-        domain.returnedValue should be(Some(domain.ClassValue(0, ObjectType("java/lang/String"))))
+        domain.returnedValue should be(Some(domain.ClassValue(0, ClassType("java/lang/String"))))
     }
 
     it should ("be able to handle the case that we are not able to resolve the class") in {
         val method = classFile.methods.find(m => m.name == "noLiteralStringInClassForName").get
         val domain = new RecordingDomain
         BaseAI(method, domain)
-        domain.returnedValue should be(Some(domain.ObjectValue(9, Unknown, false, ObjectType.Class)))
+        domain.returnedValue should be(Some(domain.ObjectValue(9, Unknown, false, ClassType.Class)))
     }
 
     it should ("be able to trace literal strings in Class.forName(String) calls") in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "literalStringInClassForName").get
         BaseAI(method, domain)
-        domain.returnedValue should be(Some(domain.ClassValue(2, ObjectType("java/lang/Integer"))))
+        domain.returnedValue should be(Some(domain.ClassValue(2, ClassType("java/lang/Integer"))))
     }
 
     it should ("be able to trace literal strings in Class.forName(String,boolean,ClassLoader) calls") in {
@@ -68,7 +68,7 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
         val domain = new RecordingDomain
         BaseAI(method, domain)
         val classType = domain.returnedValue
-        classType should be(Some(domain.ClassValue(10, ObjectType("java/lang/Integer"))))
+        classType should be(Some(domain.ClassValue(10, ClassType("java/lang/Integer"))))
     }
 
     it should ("be able to trace known string variables in Class.forName calls") in {
@@ -76,35 +76,35 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
         val method = classFile.methods.find(m => m.name == "stringVariableInClassForName").get
         BaseAI(method, domain)
         val classType = domain.returnedValue
-        classType should be(Some(domain.ClassValue(4, ObjectType("java/lang/Integer"))))
+        classType should be(Some(domain.ClassValue(4, ClassType("java/lang/Integer"))))
     }
 
     it should ("be able to trace literal strings in Class.forName(Module, String) calls") in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "literalStringInClassForNameModule").get
         BaseAI(method, domain)
-        domain.returnedValue should be(Some(domain.ClassValue(origin = 7, ObjectType("java/lang/String"))))
+        domain.returnedValue should be(Some(domain.ClassValue(origin = 7, ClassType("java/lang/String"))))
     }
 
     it should ("be able to trace known string variables in Class.forName(Module, String) calls") in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "stringVariableInClassForNameModule").get
         BaseAI(method, domain)
-        domain.returnedValue should be(Some(domain.ClassValue(origin = 9, ObjectType("java/lang/Integer"))))
+        domain.returnedValue should be(Some(domain.ClassValue(origin = 9, ClassType("java/lang/Integer"))))
     }
 
     it should ("over-approximate when incompatible class names and modules are combined in Class.forName") in {
         val domain = new RecordingDomain
         val method = classFile.methods.find(m => m.name == "invalidModuleAndNameInClassForName").get
         BaseAI(method, domain)
-        domain.returnedValue should be(Some(domain.ClassValue(origin = 9, ObjectType("java/lang/Integer"))))
+        domain.returnedValue should be(Some(domain.ClassValue(origin = 9, ClassType("java/lang/Integer"))))
     }
 
     it should ("be able to correctly join multiple class values") in {
         val domain = new RecordingDomain
-        val c1 = domain.ClassValue(1, ObjectType.Serializable)
-        val c2 = domain.ClassValue(1, ObjectType.Cloneable)
-        c1.join(-1, c2) should be(StructuralUpdate(domain.InitializedObjectValue(1, ObjectType.Class)))
+        val c1 = domain.ClassValue(1, ClassType.Serializable)
+        val c2 = domain.ClassValue(1, ClassType.Cloneable)
+        c1.join(-1, c2) should be(StructuralUpdate(domain.InitializedObjectValue(1, ClassType.Class)))
         c1.join(-1, c2) should be(c2.join(-1, c1))
     }
 

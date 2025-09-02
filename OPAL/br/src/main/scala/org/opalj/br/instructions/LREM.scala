@@ -14,6 +14,6 @@ case object LREM extends IntegerRemainderInstruction {
 
     final val mnemonic = "lrem"
 
-    final val computationalType = ComputationalTypeLong
+    final val computationalType: ComputationalTypeLong.type = ComputationalTypeLong
 
 }

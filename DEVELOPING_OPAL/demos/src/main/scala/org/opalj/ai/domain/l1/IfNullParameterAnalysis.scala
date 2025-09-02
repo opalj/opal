@@ -4,6 +4,7 @@ package ai
 package domain
 package l1
 
+import java.io.File
 import java.net.URL
 import scala.Console.BLUE
 import scala.Console.RESET
@@ -16,7 +17,8 @@ import org.opalj.ai.domain
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.util.PerformanceEvaluation.time
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
@@ -44,20 +46,23 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
  *
  * @author Michael Eichberg
  */
-object IfNullParameterAnalysis extends ProjectAnalysisApplication {
+object IfNullParameterAnalysis extends ProjectsAnalysisApplication {
 
-    override def title: String =
-        "Identifies methods that are sensitive to parameters that are \"null\""
+    protected class NullParametersConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description =
+            "Identifies methods that exhibit different behavior w.r.t. the number and kind of thrown exceptions if a parameter is \"null\""
+    }
 
-    override def description: String =
-        "Identifies methods that exhibit different behavior w.r.t. " +
-            "the number and kind of thrown exceptions if a parameter is \"null\"."
+    protected type ConfigType = NullParametersConfig
 
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected def createConfig(args: Array[String]): NullParametersConfig = new NullParametersConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: NullParametersConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         // Explicitly specifies that all reference values are not null.
         def setToNonNull(domain: DefaultDomain[URL])(locals: domain.Locals): domain.Locals = {
@@ -78,7 +83,7 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
 
         val methodsWithDifferentExceptions = time {
             for {
-                classFile <- theProject.allProjectClassFiles.par
+                classFile <- project.allProjectClassFiles.par
                 method <- classFile.methods
                 if method.body.isDefined
                 if method.descriptor.parameterTypes.exists { _.isReferenceType }
@@ -88,7 +93,7 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
 
                 // 1. Default interpretation
                 val domain1 =
-                    new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
+                    new DefaultDomain(project.asInstanceOf[Project[URL]], method) with domain.RecordAllThrownExceptions
                 ai.performInterpretation(method.body.get, domain1)(
                     ai.initialOperands(method, domain1),
                     ai.initialLocals(method, domain1)(None)
@@ -96,7 +101,7 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
 
                 // 2. Interpretation under the assumption that all values are non-null
                 val domain2 =
-                    new DefaultDomain(theProject, method) with domain.RecordAllThrownExceptions
+                    new DefaultDomain(project.asInstanceOf[Project[URL]], method) with domain.RecordAllThrownExceptions
                 val nonNullLocals = setToNonNull(domain2)(ai.initialLocals(method, domain2)(None))
                 ai.performInterpretation(method.body.get, domain2)(
                     ai.initialOperands(method, domain2),
@@ -143,7 +148,7 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
         } { t => println("Analysis time " + t.toSeconds) }
 
         val methodsWithDifferences = methodsWithDifferentExceptions.filter(_._3.nonEmpty).seq.toSeq
-        BasicReport(
+        val report = BasicReport(
             methodsWithDifferences.sortWith { (l, r) =>
                 val (cf1: ClassFile, _, _) = l
                 val (cf2: ClassFile, _, _) = r
@@ -151,6 +156,7 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
             }.map(e => (e._2, e._3)).mkString("\n\n") +
                 "Number of findings: " + methodsWithDifferences.size
         )
+        (project, report)
     }
 
 }

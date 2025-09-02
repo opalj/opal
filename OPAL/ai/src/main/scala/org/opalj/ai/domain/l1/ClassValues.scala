@@ -12,6 +12,7 @@ import org.opalj.br.BooleanType
 import org.opalj.br.BootstrapMethod
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
+import org.opalj.br.ClassType
 import org.opalj.br.DoubleType
 import org.opalj.br.FieldType
 import org.opalj.br.FloatType
@@ -20,7 +21,6 @@ import org.opalj.br.InvokeStaticMethodHandle
 import org.opalj.br.LongType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.ConstantBootstrapsPrimitiveClassDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.Type
@@ -74,7 +74,7 @@ trait ClassValues
                         // String.class "is reference equal to" Class.forName("java.lang.String")
                         NoUpdate
                     else
-                        StructuralUpdate(ObjectValue(origin, No, true, ObjectType.Class, nextRefId()))
+                        StructuralUpdate(ObjectValue(origin, No, true, ClassType.Class, nextRefId()))
                 case _ =>
                     val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
                     if (result.isStructuralUpdate) {
@@ -135,9 +135,9 @@ trait ClassValues
                     return justThrows(ClassNotFoundException(pc));
             }
 
-        if (classValue.isObjectType) {
-            val objectType = classValue.asObjectType
-            if (classHierarchy.isKnown(objectType) || !throwClassNotFoundException) {
+        if (classValue.isClassType) {
+            val classType = classValue.asClassType
+            if (classHierarchy.isKnown(classType) || !throwClassNotFoundException) {
                 ComputedValue(ClassValue(pc, classValue))
             } else {
                 val exception = Iterable(ClassNotFoundException(pc))
@@ -146,7 +146,7 @@ trait ClassValues
         } else {
             val elementType = classValue.asArrayType.elementType
             if (elementType.isBaseType ||
-                classHierarchy.isKnown(elementType.asObjectType) ||
+                classHierarchy.isKnown(elementType.asClassType) ||
                 !throwClassNotFoundException
             ) {
                 ComputedValue(ClassValue(pc, classValue))
@@ -161,7 +161,7 @@ trait ClassValues
 
     abstract override def invokestatic(
         pc:               Int,
-        declaringClass:   ObjectType,
+        declaringClass:   ClassType,
         isInterface:      Boolean,
         name:             String,
         methodDescriptor: MethodDescriptor,
@@ -170,7 +170,7 @@ trait ClassValues
 
         import org.opalj.ai.domain.l1.ClassValues.*
 
-        if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
+        if ((declaringClass eq ClassType.Class) && (name == "forName") && operands.nonEmpty) {
 
             operands match {
                 case _ :+ (sv: StringValue) =>
@@ -181,7 +181,7 @@ trait ClassValues
                         case `forName_String_boolean_ClassLoader`       => simpleClassForNameCall(pc, value)
                         case `forName_String_Class`                     => simpleClassForNameCall(pc, value)
                         case `forName_String_boolean_ClassLoader_Class` => simpleClassForNameCall(pc, value)
-                        case _ =>
+                        case _                                          =>
                             throw new DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
@@ -195,7 +195,7 @@ trait ClassValues
                     methodDescriptor match {
                         case `forName_Module_String`       => simpleClassForNameCall(pc, value)
                         case `forName_Module_String_Class` => simpleClassForNameCall(pc, value)
-                        case _ =>
+                        case _                             =>
                             throw new DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
@@ -213,20 +213,20 @@ trait ClassValues
 
     abstract override def getstatic(
         pc:             Int,
-        declaringClass: ObjectType,
+        declaringClass: ClassType,
         name:           String,
         fieldType:      FieldType
     ): Computation[DomainValue, Nothing] = {
         if (name == "TYPE") {
             declaringClass match {
-                case ObjectType.Boolean   => ComputedValue(ClassValue(pc, BooleanType))
-                case ObjectType.Byte      => ComputedValue(ClassValue(pc, ByteType))
-                case ObjectType.Character => ComputedValue(ClassValue(pc, CharType))
-                case ObjectType.Short     => ComputedValue(ClassValue(pc, ShortType))
-                case ObjectType.Integer   => ComputedValue(ClassValue(pc, IntegerType))
-                case ObjectType.Long      => ComputedValue(ClassValue(pc, LongType))
-                case ObjectType.Float     => ComputedValue(ClassValue(pc, FloatType))
-                case ObjectType.Double    => ComputedValue(ClassValue(pc, DoubleType))
+                case ClassType.Boolean   => ComputedValue(ClassValue(pc, BooleanType))
+                case ClassType.Byte      => ComputedValue(ClassValue(pc, ByteType))
+                case ClassType.Character => ComputedValue(ClassValue(pc, CharType))
+                case ClassType.Short     => ComputedValue(ClassValue(pc, ShortType))
+                case ClassType.Integer   => ComputedValue(ClassValue(pc, IntegerType))
+                case ClassType.Long      => ComputedValue(ClassValue(pc, LongType))
+                case ClassType.Float     => ComputedValue(ClassValue(pc, FloatType))
+                case ClassType.Double    => ComputedValue(ClassValue(pc, DoubleType))
 
                 case _ => super.getstatic(pc, declaringClass, name, fieldType)
             }
@@ -245,7 +245,7 @@ trait ClassValues
         bootstrapMethod match {
             case BootstrapMethod(
                     InvokeStaticMethodHandle(
-                        ObjectType.ConstantBootstraps,
+                        ClassType.ConstantBootstraps,
                         false,
                         "primitiveClass",
                         ConstantBootstrapsPrimitiveClassDescriptor
@@ -270,40 +270,40 @@ trait ClassValues
 
 private object ClassValues {
 
-    final val forName_String = MethodDescriptor(ObjectType.String, ObjectType.Class)
+    final val forName_String = MethodDescriptor(ClassType.String, ClassType.Class)
 
     final val forName_String_Class = {
         MethodDescriptor(
-            ArraySeq(ObjectType.String, ObjectType.Class),
-            ObjectType.Class
+            ArraySeq(ClassType.String, ClassType.Class),
+            ClassType.Class
         )
     }
 
     final val forName_String_boolean_ClassLoader = {
         MethodDescriptor(
-            ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader")),
-            ObjectType.Class
+            ArraySeq(ClassType.String, BooleanType, ClassType("java/lang/ClassLoader")),
+            ClassType.Class
         )
     }
 
     final val forName_String_boolean_ClassLoader_Class = {
         MethodDescriptor(
-            ArraySeq(ObjectType.String, BooleanType, ObjectType("java/lang/ClassLoader"), ObjectType.Class),
-            ObjectType.Class
+            ArraySeq(ClassType.String, BooleanType, ClassType("java/lang/ClassLoader"), ClassType.Class),
+            ClassType.Class
         )
     }
 
     final val forName_Module_String = {
         MethodDescriptor(
-            ArraySeq(ObjectType("java/lang/Module"), ObjectType.String),
-            ObjectType.Class
+            ArraySeq(ClassType("java/lang/Module"), ClassType.String),
+            ClassType.Class
         )
     }
 
     final val forName_Module_String_Class = {
         MethodDescriptor(
-            ArraySeq(ObjectType("java/lang/Module"), ObjectType.String, ObjectType.Class),
-            ObjectType.Class
+            ArraySeq(ClassType("java/lang/Module"), ClassType.String, ClassType.Class),
+            ClassType.Class
         )
     }
 }

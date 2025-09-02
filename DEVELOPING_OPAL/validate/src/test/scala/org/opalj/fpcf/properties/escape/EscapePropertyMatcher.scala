@@ -8,8 +8,8 @@ import org.opalj.ai.domain.l2.PerformInvocations
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.AnnotationLike
 import org.opalj.br.BooleanValue
+import org.opalj.br.ClassType
 import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.AtMost
@@ -28,21 +28,21 @@ abstract class EscapePropertyMatcher(
 
     override def isRelevant(
         p:      Project[?],
-        as:     Set[ObjectType],
+        as:     Set[ClassType],
         entity: Any,
         a:      AnnotationLike
     ): Boolean = {
         // check whether the analyses specified in the annotation are present
         val analysesElementValues =
-            getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues map { _.asClassValue.value.asObjectType }
+            getValue(p, a.annotationType.asClassType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses = analysesElementValues map { _.asClassValue.value.asClassType }
         val analysisRelevant = analyses.exists(as.contains)
 
         // check whether the PerformInvokations domain or the ArrayValuesBinding domain are required
         val requiresPerformInvokationsDomain =
-            getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "performInvokationsDomain")
+            getValue(p, a.annotationType.asClassType, a.elementValuePairs, "performInvokationsDomain")
                 .asInstanceOf[BooleanValue].value
-        // val requiresArrayDomain = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "arrayDomain").asInstanceOf[BooleanValue].value
+        // val requiresArrayDomain = getValue(p, a.annotationType.asClassType, a.elementValuePairs, "arrayDomain").asInstanceOf[BooleanValue].value
 
         // retrieve the current method and using this the domain used for the TAC
         val m = entity match {
@@ -71,7 +71,7 @@ abstract class EscapePropertyMatcher(
 
     override def validateProperty(
         p:          Project[?],
-        as:         Set[ObjectType],
+        as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,
         properties: Iterable[Property]

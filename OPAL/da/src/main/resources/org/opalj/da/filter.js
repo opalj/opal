@@ -89,7 +89,7 @@ function trimPackageNames() {
 	for(var i=1;i<definingPackages.length;i++) {
 		definingPackages[i] = definingPackages[i-1] + "." + definingPackages[i];
 	}
-	document.querySelectorAll(".object_type").forEach(function(e) {
+	document.querySelectorAll(".class_type").forEach(function(e) {
 		for(var i=definingPackages.length-1;i>=0;i--) {
 			while (e.innerHTML.indexOf(definingPackages[i]+".") >= 0) {
 				e.innerHTML = e.innerHTML.replace(definingPackages[i], new Array(i + 1).join( "." ));

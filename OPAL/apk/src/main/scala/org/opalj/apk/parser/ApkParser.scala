@@ -25,7 +25,6 @@ import org.opalj.apk.ApkComponentType
 import org.opalj.apk.ApkComponentType.ApkComponentType
 import org.opalj.apk.parser.DexParser.DexParser
 import org.opalj.br.analyses.Project
-import org.opalj.ll.LLVMProjectKey
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -223,7 +222,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
 
     private[this] def unzipApk(): Unit = tmpDir match {
         case Some(_) =>
-        case None =>
+        case None    =>
             val fileName = Paths.get(apkPath).getFileName
             tmpDir = Some(Files.createTempDirectory("opal_apk_" + fileName).toFile)
             val unzipDir = Files.createDirectory(Paths.get(tmpDir.get.getPath + ApkUnzippedDir))
@@ -264,15 +263,6 @@ object ApkParser {
 
         project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(_ => apkParser)
         project.get(ApkComponentsKey)
-
-        apkParser.parseNativeCode match {
-            case Some((_, llvmModules)) =>
-                project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(_ =>
-                    llvmModules.map(f => f.toString)
-                )
-                project.get(LLVMProjectKey)
-            case None =>
-        }
 
         apkParser.cleanUp()
 

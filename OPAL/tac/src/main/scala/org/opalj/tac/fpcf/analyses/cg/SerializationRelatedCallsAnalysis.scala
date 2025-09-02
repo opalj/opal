@@ -7,15 +7,15 @@ package cg
 
 import scala.annotation.tailrec
 
+import org.opalj.br.ClassType
+import org.opalj.br.ClassType.{ObjectInputStream => ObjectInputStreamType}
+import org.opalj.br.ClassType.{ObjectOutputStream => ObjectOutputStreamType}
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ElementReferenceType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
-import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.ObjectInputStream as ObjectInputStreamType
-import org.opalj.br.ObjectType.ObjectOutputStream as ObjectOutputStreamType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -60,7 +60,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         MethodDescriptor.JustTakesObject
     )
 
-    final val ObjectOutputType = ObjectType("java/io/ObjectOutput")
+    final val ObjectOutputType = ClassType("java/io/ObjectOutput")
     final val WriteExternalDescriptor = MethodDescriptor.JustTakes(ObjectOutputType)
     final val WriteObjectDescriptor = MethodDescriptor.JustTakes(ObjectOutputStreamType)
 
@@ -83,7 +83,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             val receiver = persistentUVar(param)
             val parameters = Seq(receiverOption.flatMap(os => persistentUVar(os.asVar)))
 
-            implicit val state: CGState[ContextType] = new CGState[ContextType](
+            implicit val state: TACAIBasedCGState[ContextType] = new TACAIBasedCGState[ContextType](
                 callerContext,
                 FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
             )
@@ -101,7 +101,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         receiverVar: V,
         receiver:    Option[(ValueInformation, IntTrieSet)],
         parameters:  Seq[Option[(ValueInformation, IntTrieSet)]],
-        state:       CGState[ContextType]
+        state:       TACAIBasedCGState[ContextType]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         val pc = state.dependersOf(eps.toEPK).head.asInstanceOf[Int]
 
@@ -126,7 +126,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         receiver:      Option[(ValueInformation, IntTrieSet)],
         parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
         indirectCalls: IndirectCalls
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val results = indirectCalls.partialResults(state.callContext)
         if (state.hasOpenDependencies)
             Results(
@@ -144,7 +144,7 @@ class OOSWriteObjectAnalysis private[analyses] (
         receiver:      Option[(ValueInformation, IntTrieSet)],
         parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
         indirectCalls: IndirectCalls
-    )(implicit state: CGState[ContextType]): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
         typeIterator.foreachType(
             param,
             typeIterator.typesProperty(param, callContext, callPC.asInstanceOf[Entity], state.tac.stmts)
@@ -159,17 +159,17 @@ class OOSWriteObjectAnalysis private[analyses] (
         parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
         indirectCalls: IndirectCalls
     ): Unit = {
-        if (tpe.isArrayType && !tpe.asArrayType.elementType.isObjectType) {
+        if (tpe.isArrayType && !tpe.asArrayType.elementType.isClassType) {
             indirectCalls.addIncompleteCallSite(callPC)
             return;
         }
 
         val paramType =
             if (tpe.isArrayType)
-                tpe.asArrayType.elementType.asObjectType
-            else tpe.asObjectType
+                tpe.asArrayType.elementType.asClassType
+            else tpe.asClassType
 
-        if (classHierarchy.isSubtypeOf(paramType, ObjectType.Externalizable)) {
+        if (classHierarchy.isSubtypeOf(paramType, ClassType.Externalizable)) {
             val writeExternalMethod = project.instanceCall(
                 paramType,
                 paramType,
@@ -181,8 +181,8 @@ class OOSWriteObjectAnalysis private[analyses] (
                 callContext,
                 callPC,
                 writeExternalMethod,
-                ObjectType.Externalizable.packageName,
-                ObjectType.Externalizable,
+                ClassType.Externalizable.packageName,
+                ClassType.Externalizable,
                 "writeExternal",
                 WriteExternalDescriptor,
                 parameters,
@@ -201,8 +201,8 @@ class OOSWriteObjectAnalysis private[analyses] (
                     callContext,
                     callPC,
                     writeObjectMethod,
-                    ObjectType.Object.packageName,
-                    ObjectType.Object,
+                    ClassType.Object.packageName,
+                    ClassType.Object,
                     "writeObject",
                     WriteObjectDescriptor,
                     parameters,
@@ -222,8 +222,8 @@ class OOSWriteObjectAnalysis private[analyses] (
             callContext,
             callPC,
             writeReplaceMethod,
-            ObjectType.Object.packageName,
-            ObjectType.Object,
+            ClassType.Object.packageName,
+            ClassType.Object,
             "writeReplace",
             WriteObjectDescriptor,
             parameters,
@@ -244,8 +244,8 @@ class OISReadObjectAnalysis private[analyses] (
     final val project: SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
-    final val ObjectInputValidationType = ObjectType("java/io/ObjectInputValidation")
-    final val ObjectInputType = ObjectType("java/io/ObjectInput")
+    final val ObjectInputValidationType = ClassType("java/io/ObjectInputValidation")
+    final val ObjectInputType = ClassType("java/io/ObjectInput")
 
     final val ReadObjectDescriptor = MethodDescriptor.JustTakes(ObjectInputStreamType)
     final val ReadExternalDescriptor = MethodDescriptor.JustTakes(ObjectInputType)
@@ -304,14 +304,14 @@ class OISReadObjectAnalysis private[analyses] (
                     t <- ch.allSubtypes(castType, reflexive = true)
                     cf <- project.classFile(t) // we ignore cases were no class file exists
                     if !cf.isInterfaceDeclaration
-                    if ch.isSubtypeOf(t, ObjectType.Serializable)
+                    if ch.isSubtypeOf(t, ClassType.Serializable)
                 } {
 
                     val receiver = Some(
                         (ASObjectValue(isNull = No, isPrecise = false, castType), IntTrieSet(pc))
                     )
 
-                    if (ch.isSubtypeOf(t, ObjectType.Externalizable)) {
+                    if (ch.isSubtypeOf(t, ClassType.Externalizable)) {
                         // call to `readExternal`
                         val readExternal = p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
 
@@ -319,8 +319,8 @@ class OISReadObjectAnalysis private[analyses] (
                             context,
                             pc,
                             readExternal,
-                            ObjectType.Externalizable.packageName,
-                            ObjectType.Externalizable,
+                            ClassType.Externalizable.packageName,
+                            ClassType.Externalizable,
                             "readExternal",
                             ReadExternalDescriptor,
                             parameterList,
@@ -341,8 +341,8 @@ class OISReadObjectAnalysis private[analyses] (
                                 context,
                                 pc,
                                 readObjectMethod,
-                                ObjectType.Object.packageName,
-                                ObjectType.Object,
+                                ClassType.Object.packageName,
+                                ClassType.Object,
                                 "readObject",
                                 ReadObjectDescriptor,
                                 parameterList,
@@ -366,11 +366,9 @@ class OISReadObjectAnalysis private[analyses] (
                         // type t in order to let the instantiated types be correct. Note, that the
                         // JVM would not call the constructor
                         // Note, that we assume that there is a constructor
-                        // Note that we have to do a String comparison since methods with ObjectType
+                        // Note that we have to do a String comparison since methods with ClassType
                         // descriptors are not sorted consistently across runs
-                        val constructors = cf.constructors.map[(String, Method)] { ctor =>
-                            (ctor.descriptor.toJava, ctor)
-                        }
+                        val constructors = cf.constructors.map[(String, Method)] { ctor => (ctor.descriptor.toJava, ctor) }
 
                         if (constructors.nonEmpty) {
                             // val constructor = constructors.minBy(t => t._1)._2
@@ -387,8 +385,8 @@ class OISReadObjectAnalysis private[analyses] (
                         context,
                         pc,
                         readResolve,
-                        ObjectType.Object.packageName,
-                        ObjectType.Object,
+                        ClassType.Object.packageName,
+                        ClassType.Object,
                         "readResolve",
                         JustReturnsObject,
                         Seq.empty,
@@ -403,8 +401,8 @@ class OISReadObjectAnalysis private[analyses] (
                             context,
                             pc,
                             validateObject,
-                            ObjectType.Object.packageName,
-                            ObjectType.Object,
+                            ClassType.Object.packageName,
+                            ClassType.Object,
                             "validateObject",
                             JustReturnsObject,
                             Seq.empty,
@@ -422,11 +420,11 @@ class OISReadObjectAnalysis private[analyses] (
         }
     }
 
-    @tailrec private[this] def firstNotSerializableSupertype(t: ObjectType): Option[ObjectType] = {
+    @tailrec private[this] def firstNotSerializableSupertype(t: ClassType): Option[ClassType] = {
         ch.superclassType(t) match {
-            case None => None
+            case None            => None
             case Some(superType) =>
-                if (ch.isSubtypeOf(superType, ObjectType.Serializable)) {
+                if (ch.isSubtypeOf(superType, ClassType.Serializable)) {
                     firstNotSerializableSupertype(superType)
                 } else {
                     Some(superType)

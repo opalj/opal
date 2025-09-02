@@ -2,9 +2,6 @@
 package org.opalj
 package log
 
-import scala.annotation.elidable
-import scala.annotation.elidable.ASSERTION
-
 /**
  * Facilitates the logging of messages that are relevant for the end user.
  *
@@ -145,7 +142,6 @@ object OPALLogger extends OPALLogger {
      * Debug message are only included in the code if assertions are turned on. If
      * debug message are logged, then they are logged as Info-level messages.
      */
-    @elidable(ASSERTION)
     final def debug(category: String, message: String)(implicit ctx: LogContext): Unit = {
         log(Info(category, message))
     }
@@ -155,7 +151,6 @@ object OPALLogger extends OPALLogger {
      * `p` evaluates to `true`.
      * If debug message are logged, then they are logged as Info-level messages.
      */
-    @elidable(ASSERTION)
     final def debug(
         p:        => Boolean,
         category: String,

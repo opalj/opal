@@ -10,7 +10,7 @@ package instructions
  */
 abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
 
-    final def jvmExceptions: List[ObjectType] = ArrayLoadInstruction.jvmExceptions
+    final def jvmExceptions: List[ClassType] = ArrayLoadInstruction.jvmExceptions
 
     final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 2
 
@@ -60,8 +60,8 @@ object ArrayLoadInstruction {
      * The exceptions that are potentially thrown by instructions that load values
      * stored in an array.
      */
-    final val jvmExceptions: List[ObjectType] = {
-        import ObjectType.*
+    final val jvmExceptions: List[ClassType] = {
+        import ClassType.*
         List(ArrayIndexOutOfBoundsException, NullPointerException)
     }
 

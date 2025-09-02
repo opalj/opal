@@ -7,11 +7,11 @@ import org.opalj.ai.BaseAI
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
 import org.opalj.br.Field
 import org.opalj.br.LongType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.analyses.DeclaredFields
 import org.opalj.br.analyses.DeclaredFieldsKey
@@ -122,7 +122,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         }
     }
 
-    def hasExplicitSuperType(cl: ClassFile): Boolean = cl.superclassType.exists(_ ne ObjectType.Object)
+    def hasExplicitSuperType(cl: ClassFile): Boolean = cl.superclassType.exists(_ ne ClassType.Object)
 
     /**
      * [From the paper] Thus, a Designator micro pattern is an interface which does not
@@ -136,13 +136,13 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
      * all of its ancestors (other than Object), are empty.
      */
     def isDesignator(cl: ClassFile)(implicit project: SomeProject): Boolean = {
-        if (cl.thisType == ObjectType.Object)
+        if (cl.thisType == ClassType.Object)
             return false;
 
         // IMPROVE Cache the results of super interfaces to avoid recomputations or compute it top-down starting with top-level interfaces.
 
-        def isDesignatorType(ot: ObjectType): Boolean = {
-            project.classFile(ot).exists(this.isDesignator)
+        def isDesignatorType(ct: ClassType): Boolean = {
+            project.classFile(ct).exists(this.isDesignator)
         }
 
         cl.fields.isEmpty && {
@@ -172,7 +172,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
             if (cl.isInterfaceDeclaration) {
                 cl.interfaceTypes.size == 1 && cl.methods.isEmpty
             } else {
-                cl.thisType != ObjectType.Object /*this test is not necessary, but is fast */ &&
+                cl.thisType != ClassType.Object /*this test is not necessary, but is fast */ &&
                 cl.interfaceTypes.isEmpty &&
                 cl.methods.forall(_.isInitializer)
             }
@@ -345,8 +345,8 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         cl.methods.forall { m =>
             m.body.isEmpty ||
             m.body.get.instructions.filter(i => i.isInstanceOf[MethodInvocationInstruction]).forall { i =>
-                !i.asInstanceOf[MethodInvocationInstruction].declaringClass.isObjectType ||
-                i.asInstanceOf[MethodInvocationInstruction].declaringClass.asObjectType.equals(cl.thisType)
+                !i.asInstanceOf[MethodInvocationInstruction].declaringClass.isClassType ||
+                i.asInstanceOf[MethodInvocationInstruction].declaringClass.asClassType.equals(cl.thisType)
             }
         }
     }

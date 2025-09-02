@@ -25,7 +25,7 @@ sealed abstract class LDC2_W[@specialized(Long, Double) T <: Any]
 
 final case class LoadLong(value: Long) extends LDC2_W[Long] {
 
-    final def computationalType = ComputationalTypeLong
+    final def computationalType: ComputationalTypeLong.type = ComputationalTypeLong
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -39,7 +39,7 @@ final case class LoadLong(value: Long) extends LDC2_W[Long] {
 
 final case class LoadDouble(value: Double) extends LDC2_W[Double] {
 
-    final def computationalType = ComputationalTypeDouble
+    final def computationalType: ComputationalTypeDouble.type = ComputationalTypeDouble
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -81,7 +81,7 @@ final case class LoadDynamic2_W(
 
     def computationalType: ComputationalType = descriptor.computationalType
 
-    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+    def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
         (this eq other) || this == other
     }
@@ -94,7 +94,7 @@ case object INCOMPLETE_LDC2_W extends LDC2_W[Any] {
         throw BytecodeProcessingFailedException(message)
     }
 
-    final def computationalType = error
+    final def computationalType: Nothing = error
 
     final def value: Any = error
 
@@ -114,7 +114,7 @@ object LDC2_W {
         constantValue.value match {
             case v: Long   => LoadLong(v)
             case d: Double => LoadDouble(d)
-            case _ =>
+            case _         =>
                 throw BytecodeProcessingFailedException(
                     "unsupported LDC2_W constant value: " + constantValue
                 )

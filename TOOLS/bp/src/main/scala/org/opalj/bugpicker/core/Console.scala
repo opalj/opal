@@ -3,31 +3,29 @@ package org.opalj
 package bugpicker
 package core
 
+import java.io.File
 import java.lang.Integer.parseInt
 import java.net.URL
-import java.nio.file.Files
 import java.nio.charset.StandardCharsets
-import java.io.File
-
+import java.nio.file.Files
 import scala.xml.Node
 
 import com.typesafe.config.Config
 
-import org.opalj.io.writeAndOpen
-import org.opalj.io.process
-import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
+import org.opalj.ai.util.XHTML
 import org.opalj.br.analyses.Analysis
 import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProgressManagement
-import org.opalj.ai.util.XHTML
+import org.opalj.br.analyses.Project
 import org.opalj.bugpicker.core.analyses.BugPickerAnalysis
 import org.opalj.bugpicker.core.analyses.BugPickerAnalysis.resultsAsXHTML
+import org.opalj.io.process
+import org.opalj.io.writeAndOpen
 import org.opalj.issues.IssueKind
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * The command line interface of the bug picker.
@@ -57,7 +55,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         }
     }
 
-    final override val analysisSpecificParametersDescription: String =
+    override final val analysisSpecificParametersDescription: String =
         """[-maxEvalFactor=<DoubleValue {[0.1,100),Infinity}=1.75> determines the maximum effort that
             |               the analysis will spend when analyzing a specific method. The effort is
             |               always relative to the size of the method. For the vast majority of methods
@@ -117,13 +115,14 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         analysisMode:            AnalysisMode,
         fallbackConfiguration:   Config
     )(
-        implicit
-        initialLogContext: LogContext
+        implicit initialLogContext: LogContext
     ): Project[URL] = {
         this.cpFiles = cpFiles
         this.libcpFiles = libcpFiles
         super.setupProject(
-            cpFiles, libcpFiles, completelyLoadLibraries,
+            cpFiles,
+            libcpFiles,
+            completelyLoadLibraries,
             analysisMode,
             fallbackConfiguration
         )
@@ -150,8 +149,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         // Filter the report
         val minRelevance: Int =
             parameters.
-                collectFirst { case MinRelevancePattern(i) => parseInt(i) }.
-                getOrElse(MinRelevance)
+            collectFirst { case MinRelevancePattern(i) => parseInt(i) }.
+            getOrElse(MinRelevance)
         val issues1 = issues0.filter { i => i.relevance.value >= minRelevance }
 
         val issues = parameters.collectFirst { case IssueKindsPattern(ks) => ks } match {
@@ -173,11 +172,11 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         //
         if (parameters.contains("-idl")) {
             val formattedIssues = issues.map { issue => issue.toIDL.toString }
-            println(s"Analysis of "+cpFiles.mkString(", "))
+            println(s"Analysis of " + cpFiles.mkString(", "))
             println("Parameters")
             println(parameters.mkString("\n"))
             println("Issues")
-            val idlReport = "["+formattedIssues.toSeq.mkString(",\n")+"]"
+            val idlReport = "[" + formattedIssues.toSeq.mkString(",\n") + "]"
             println(idlReport)
 
             writeAndOpen(idlReport, "BugPickerAnalysisResults", ".json")
@@ -209,7 +208,9 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
             )
             exceptions.foreach { e =>
                 OPALLogger.error(
-                    "internal error", "the analysis failed", e
+                    "internal error",
+                    "the analysis failed",
+                    e
                 )
             }
 
@@ -217,13 +218,11 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
             def getExceptionsReport = {
                 if (exceptionsReport eq null) {
                     val exceptionNodes =
-                        exceptions.take(10).map { e =>
-                            <p>{ XHTML.throwableToXHTML(e) }</p>
-                        }
+                        exceptions.take(10).map { e => <p>{XHTML.throwableToXHTML(e)}</p> }
                     exceptionsReport =
                         XHTML.createXHTML(
                             Some(s"${exceptions.size}/${exceptionNodes.size} Thrown Exceptions"),
-                            <div>{ exceptionNodes }</div>
+                            <div>{exceptionNodes}</div>
                         )
                 }
                 exceptionsReport
@@ -245,8 +244,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         //
         val groupedIssues =
             issues.groupBy(_.relevance).toList.
-                sortWith((e1, e2) => e1._1.value < e2._1.value)
-        val groupedAndCountedIssues = groupedIssues.map(e => e._1+": "+e._2.size)
+            sortWith((e1, e2) => e1._1.value < e2._1.value)
+        val groupedAndCountedIssues = groupedIssues.map(e => e._1 + ": " + e._2.size)
 
         BasicReport(
             groupedAndCountedIssues.mkString(
@@ -266,64 +265,66 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         import org.opalj.bugpicker.core.analyses.BugPickerAnalysis.*
 
         val issues =
-            parameters.filterNot(parameter => parameter match {
-                case MaxEvalFactorPattern(d) =>
-                    try {
-                        val factor = java.lang.Double.parseDouble(d).toDouble
-                        (factor >= 0.1d && factor < 100.0d) ||
-                            factor == Double.PositiveInfinity
-                    } catch {
-                        case _: NumberFormatException => false
-                    }
-                case MaxEvalTimePattern(l) =>
-                    try {
-                        val maxTime = java.lang.Long.parseLong(l).toLong
-                        maxTime >= 10L && maxTime <= 1000000L
-                    } catch {
-                        case _: NumberFormatException => false
-                    }
-                case MaxCardinalityOfIntegerRangesPattern(i) =>
-                    try {
-                        val cardinality = java.lang.Long.parseLong(i).toLong
-                        cardinality >= 1L && cardinality <= 4294967295L
-                    } catch {
-                        case _: NumberFormatException => false
-                    }
-                case MaxCardinalityOfLongSetsPattern(i) =>
-                    try {
-                        val cardinality = java.lang.Integer.parseInt(i).toInt
-                        cardinality >= 1 && cardinality <= 1024
-                    } catch {
-                        case _: NumberFormatException => false
-                    }
-                case MaxCallChainLengthPattern(_) =>
-                    // the pattern ensures that the value is legal...
-                    true
+            parameters.filterNot(parameter =>
+                parameter match {
+                    case MaxEvalFactorPattern(d) =>
+                        try {
+                            val factor = java.lang.Double.parseDouble(d).toDouble
+                            (factor >= 0.1d && factor < 100.0d) ||
+                                factor == Double.PositiveInfinity
+                        } catch {
+                            case _: NumberFormatException => false
+                        }
+                    case MaxEvalTimePattern(l) =>
+                        try {
+                            val maxTime = java.lang.Long.parseLong(l).toLong
+                            maxTime >= 10L && maxTime <= 1000000L
+                        } catch {
+                            case _: NumberFormatException => false
+                        }
+                    case MaxCardinalityOfIntegerRangesPattern(i) =>
+                        try {
+                            val cardinality = java.lang.Long.parseLong(i).toLong
+                            cardinality >= 1L && cardinality <= 4294967295L
+                        } catch {
+                            case _: NumberFormatException => false
+                        }
+                    case MaxCardinalityOfLongSetsPattern(i) =>
+                        try {
+                            val cardinality = java.lang.Integer.parseInt(i).toInt
+                            cardinality >= 1 && cardinality <= 1024
+                        } catch {
+                            case _: NumberFormatException => false
+                        }
+                    case MaxCallChainLengthPattern(_) =>
+                        // the pattern ensures that the value is legal...
+                        true
 
-                case IssueKindsPattern(ks) =>
-                    val kinds = ks.split(',').map(_.replace('_', ' '))
-                    kinds.nonEmpty && kinds.forall { IssueKind.AllKinds.contains(_) }
+                    case IssueKindsPattern(ks) =>
+                        val kinds = ks.split(',').map(_.replace('_', ' '))
+                        kinds.nonEmpty && kinds.forall { IssueKind.AllKinds.contains(_) }
 
-                case MinRelevancePattern(_) =>
-                    // the pattern ensures that the value is legal...
-                    true
+                    case MinRelevancePattern(_) =>
+                        // the pattern ensures that the value is legal...
+                        true
 
-                case HTMLFileOutputNameMatcher(_) =>
-                    outputFormatGiven = true; true
-                case "-html" =>
-                    outputFormatGiven = true; true
-                case "-eclipse" =>
-                    outputFormatGiven = true; true
-                case "-idl" =>
-                    outputFormatGiven = true; true
-                case "-debug"                      => true
-                case DebugFileOutputNameMatcher(_) => true
-                case _                             => false
-            })
+                    case HTMLFileOutputNameMatcher(_) =>
+                        outputFormatGiven = true; true
+                    case "-html" =>
+                        outputFormatGiven = true; true
+                    case "-eclipse" =>
+                        outputFormatGiven = true; true
+                    case "-idl" =>
+                        outputFormatGiven = true; true
+                    case "-debug"                      => true
+                    case DebugFileOutputNameMatcher(_) => true
+                    case _                             => false
+                }
+            )
 
         if (!outputFormatGiven)
             OPALLogger.warn("analysis configuration", "no output format specified")(GlobalLogContext)
 
-        issues.map("unknown or illegal parameter: "+_)
+        issues.map("unknown or illegal parameter: " + _)
     }
 }

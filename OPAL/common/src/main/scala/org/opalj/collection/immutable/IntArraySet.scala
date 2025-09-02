@@ -634,7 +634,7 @@ class IntArraySetBuilder private[immutable] (
             // the element is NOT already found
             size += 1
             val insertionPoint = -index - 1
-            if (/*new*/ size <= is.length) { // we have enough space
+            if ( /*new*/ size <= is.length) { // we have enough space
                 arraycopy(is, insertionPoint, is, insertionPoint + 1, (size - 1) - insertionPoint)
                 is(insertionPoint) = elem
             } else {

@@ -37,9 +37,9 @@ import org.scalactic.Equality
 @org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
 class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
 
-    val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
+    val InvokedMethod = ClassType("annotations/target/InvokedMethod")
 
-    val InvokedMethods = ObjectType("annotations/target/InvokedMethods")
+    val InvokedMethods = ClassType("annotations/target/InvokedMethods")
 
     val lambda18TestResources: File = locate("lambdas-1.8-g-parameters-genericsignature.jar", "bi")
 
@@ -130,9 +130,9 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
             .find(_.name == expectedTargetName)
             .orElse(Some(invocationInstructions.head)).get
 
-        // declaringClass must be an ObjectType, since lambdas cannot be created on
+        // declaringClass must be a ClassType, since lambdas cannot be created on
         // array types, nor do arrays have methods that could be referenced
-        val declaringType = invocationInstruction.declaringClass.asObjectType
+        val declaringType = invocationInstruction.declaringClass.asClassType
         val targetMethodName = invocationInstruction.name
         val targetMethodDescriptor: MethodDescriptor =
             if (targetMethodName == "<init>") {
@@ -141,15 +141,15 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                 invocationInstruction.methodDescriptor
             }
 
-        if (project.classHierarchy.isInterface(declaringType.asObjectType).isYes)
+        if (project.classHierarchy.isInterface(declaringType.asClassType).isYes)
             project.resolveInterfaceMethodReference(
-                declaringType.asObjectType,
+                declaringType.asClassType,
                 targetMethodName,
                 targetMethodDescriptor
             )
         else
             project.resolveMethodReference(
-                declaringType.asObjectType,
+                declaringType.asClassType,
                 targetMethodName,
                 targetMethodDescriptor
             )
@@ -177,7 +177,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
             pairs = invokedMethod.elementValuePairs
             case ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
             case ElementValuePair("name", StringValue(methodName)) <- pairs
-            classFileOpt = project.classFile(ObjectType(receiverType))
+            classFileOpt = project.classFile(ClassType(receiverType))
         } yield {
             if (classFileOpt.isEmpty) {
                 throw new IllegalStateException(s"the class file $receiverType cannot be found")
@@ -230,7 +230,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
             if (methodOpt.isEmpty) {
                 classFile.superclassType match {
                     case Some(superType) => findMethodRecursiveInner(project.classFile(superType).get)
-                    case None => throw new IllegalStateException(
+                    case None            => throw new IllegalStateException(
                             s"$receiverType does not define $methodName"
                         )
                 }
@@ -244,17 +244,17 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
     private def getParameterTypes(pairs: ElementValuePairs): Option[ArraySeq[FieldType]] = {
         pairs.find(_.name == "parameterTypes").map { p =>
             p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
-                case ClassValue(x: ArrayType)  => x
-                case ClassValue(x: ObjectType) => x
-                case ClassValue(x: BaseType)   => x
-                case x: ElementValue           => x.valueType
+                case ClassValue(x: ArrayType) => x
+                case ClassValue(x: ClassType) => x
+                case ClassValue(x: BaseType)  => x
+                case x: ElementValue          => x.valueType
             }
         }
     }
 
     def testProject(project: SomeProject): Unit = {
-        def testAllMethodsWithInvokedMethodAnnotation(ot: String): Unit = {
-            val classFile = project.classFile(ObjectType(ot)).get
+        def testAllMethodsWithInvokedMethodAnnotation(ct: String): Unit = {
+            val classFile = project.classFile(ClassType(ct)).get
             classFile
                 .methods
                 .filter(_.runtimeVisibleAnnotations.exists { a =>

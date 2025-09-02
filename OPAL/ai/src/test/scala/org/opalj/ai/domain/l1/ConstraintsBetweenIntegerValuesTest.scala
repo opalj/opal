@@ -9,7 +9,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 
 /**
  * Tests the `ConstraintsBetweenIntegerValuesTest` Domain extension.
@@ -44,7 +44,7 @@ class ConstraintsBetweenIntegerValuesTest extends AnyFunSpec with Matchers {
     describe("with constraint tracking between integer values") {
 
         val testProject = org.opalj.br.TestSupport.biProject("ai-9.jar")
-        val IntegerValues = testProject.classFile(ObjectType("ai/domain/IntegerValuesFrenzy")).get
+        val IntegerValues = testProject.classFile(ClassType("ai/domain/IntegerValuesFrenzy")).get
 
         it("it should handle cases where we constrain and compare unknown values (without join)") {
             val domain = new IntegerRangesWithInterIntegerConstraintsTestDomain(4)

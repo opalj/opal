@@ -3,9 +3,9 @@ package org.opalj
 package hermes
 package queries
 
+import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
-import org.opalj.br.ObjectType
 import org.opalj.hermes.queries.util.APIFeature
 import org.opalj.hermes.queries.util.APIFeatureGroup
 import org.opalj.hermes.queries.util.APIFeatureQuery
@@ -21,15 +21,15 @@ class ReflectionAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery 
 
     override val apiFeatures: List[APIFeature] = {
 
-        val Class = ObjectType.Class
-        val Field = ObjectType("java/lang/reflect/Field")
-        val AccessibleObject = ObjectType("java/lang/reflect/AccessibleObject")
-        val Constructor = ObjectType("java/lang/reflect/Constructor")
-        val Method = ObjectType("java/lang/reflect/Method")
-        val MethodHandle = ObjectType("java/lang/invoke/MethodHandle")
-        val MethodHandles = ObjectType("java/lang/invoke/MethodHandles")
-        // TODO val MethodHandles_Lookup = ObjectType("java/lang/invoke/MethodHandles$Lookup")
-        val Proxy = ObjectType("java/lang/reflect/Proxy")
+        val Class = ClassType.Class
+        val Field = ClassType("java/lang/reflect/Field")
+        val AccessibleObject = ClassType("java/lang/reflect/AccessibleObject")
+        val Constructor = ClassType("java/lang/reflect/Constructor")
+        val Method = ClassType("java/lang/reflect/Method")
+        val MethodHandle = ClassType("java/lang/invoke/MethodHandle")
+        val MethodHandles = ClassType("java/lang/invoke/MethodHandles")
+        // TODO val MethodHandles_Lookup = ClassType("java/lang/invoke/MethodHandles$Lookup")
+        val Proxy = ClassType("java/lang/reflect/Proxy")
 
         List(
             StaticAPIMethod(Class, "forName"),

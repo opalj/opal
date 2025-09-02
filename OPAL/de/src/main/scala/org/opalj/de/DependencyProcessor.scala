@@ -61,12 +61,25 @@ trait DependencyProcessor {
 
     /**
      * Used, e.g., by the [[DependencyExtractor]] to create representations of
+     * `VirtualModule`s.
+     *
+     * @note The [[DependencyExtractor]] creates all representations of `VirtualModule`s
+     *      using this Method.
+     */
+    def asVirtualModule(
+        name: String
+    ): VirtualModule = {
+        VirtualModule(name)
+    }
+
+    /**
+     * Used, e.g., by the [[DependencyExtractor]] to create representations of
      * `VirtualClass`es.
      *
      * @note The [[DependencyExtractor]] creates all representations of `VirtualClass`es
      *      using this Method.
      */
-    def asVirtualClass(objectType: ObjectType): VirtualClass = VirtualClass(objectType)
+    def asVirtualClass(classType: ClassType): VirtualClass = VirtualClass(classType)
 
     /**
      * Used, e.g., by the [[DependencyExtractor]] to create representations of
@@ -76,7 +89,7 @@ trait DependencyProcessor {
      *      using this Method.
      */
     def asVirtualField(
-        declaringClassType: ObjectType, // Recall...new Int[]{1,2,3,...}.length
+        declaringClassType: ClassType, // Recall...new Int[]{1,2,3,...}.length
         name:               String,
         fieldType:          FieldType
     ): VirtualField = {

@@ -5,50 +5,51 @@ package core
 package analyses
 
 import java.net.URL
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.Date
-
-import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters.*
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Unparsed
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
-import net.ceedubs.ficus.Ficus.*
+
 import org.opalj.ai.BoundedInterruptableAI
 import org.opalj.ai.InterpretationFailedException
 import org.opalj.ai.analyses.FieldValuesKey
 import org.opalj.ai.analyses.MethodReturnValuesKey
+import org.opalj.ai.analyses.cg.CallGraphCache
+import org.opalj.ai.analyses.cg.VTACallGraphKey
+import org.opalj.ai.util.XHTML
 import org.opalj.br.ClassFile
 import org.opalj.br.Code
 import org.opalj.br.Method
+import org.opalj.br.MethodSignature
 import org.opalj.br.analyses.Analysis
-import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.AnalysisException
-import org.opalj.br.analyses.Project
-import org.opalj.log.OPALLogger
-import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.ai.analyses.cg.VTACallGraphKey
-import org.opalj.ai.util.XHTML
-import org.opalj.util.Nanoseconds
-import org.opalj.util.Milliseconds
-import org.opalj.br.analyses.PropertyStoreKey
-import org.opalj.fpcf.FPCFAnalysesRegistry
-import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.FieldAccessInformationKey
-import org.opalj.util.Milliseconds
+import org.opalj.br.analyses.ProgressManagement
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.PropertyStoreKey
+import org.opalj.br.analyses.StringConstantsInformationKey
+import org.opalj.br.analyses.cg.InstantiableClassesKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysesRegistry
 import org.opalj.issues.Issue
+import org.opalj.issues.IssueOrdering
 import org.opalj.issues.PackageLocation
 import org.opalj.issues.ProjectLocation
-import org.opalj.issues.IssueOrdering
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.ai.analyses.cg.CallGraphCache
-import org.opalj.br.MethodSignature
-import org.opalj.br.analyses.cg.InstantiableClassesKey
 import org.opalj.issues.Relevance
+import org.opalj.log.OPALLogger
+import org.opalj.util.Milliseconds
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
+
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -84,7 +85,6 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
      *      [[BugPickerAnalysis.MaxCardinalityOfIntegerRangesPattern]],
      *      [[BugPickerAnalysis.MaxCardinalityOfLongSetsPattern]],
      *      [[BugPickerAnalysis.MaxCallChainLengthPattern]], and "`-debug`".
-     *
      */
     override def analyze(
         theProject:             Project[URL],
@@ -121,15 +121,15 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             val cpSorted = cp.split(java.io.File.pathSeparatorChar).sorted
             val renderingOptions =
                 ConfigRenderOptions.defaults().
-                    setOriginComments(false).
-                    setComments(true).
-                    setJson(false)
+                setOriginComments(false).
+                setComments(true).
+                setJson(false)
             val bugpickerConf = theProject.config.withOnlyPath("org.opalj")
             val settings = bugpickerConf.root().render(renderingOptions)
             OPALLogger.info(
                 "configuration",
-                cpSorted.mkString("System ClassPath:\n\t", "\n\t", "\n")+"\n"+
-                    "Settings:"+"\n"+
+                cpSorted.mkString("System ClassPath:\n\t", "\n\t", "\n") + "\n" +
+                    "Settings:" + "\n" +
                     settings
             )
         }
@@ -245,10 +245,12 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 new RootBugPickerAnalysisDomain(
                     theProject,
                     // Map.empty, Map.empty,
-                    fieldValueInformation, methodReturnValueInformation,
+                    fieldValueInformation,
+                    methodReturnValueInformation,
                     cache,
                     maxCardinalityOfIntegerRanges,
-                    maxCardinalityOfLongSets, maxCallChainLength,
+                    maxCardinalityOfLongSets,
+                    maxCallChainLength,
                     method,
                     debug
                 )
@@ -263,17 +265,19 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 val result0 = ai0(method, analysisDomain)
                 if (result0.wasAborted && maxCallChainLength > 0) {
                     val logMessage =
-                        s"analysis of ${method.fullyQualifiedSignature} with method call execution aborted "+
-                            s"after ${ai0.currentEvaluationCount} steps "+
+                        s"analysis of ${method.fullyQualifiedSignature} with method call execution aborted " +
+                            s"after ${ai0.currentEvaluationCount} steps " +
                             s"(code size: ${method.body.get.instructions.length})"
                     // let's try it again, but without performing method calls;
                     // let's reuse the current state
                     val fallbackAnalysisDomain =
                         new FallbackBugPickerAnalysisDomain(
                             theProject,
-                            fieldValueInformation, methodReturnValueInformation,
+                            fieldValueInformation,
+                            methodReturnValueInformation,
                             cache,
-                            maxCardinalityOfIntegerRanges, maxCardinalityOfLongSets,
+                            maxCardinalityOfIntegerRanges,
+                            maxCardinalityOfLongSets,
                             method
                         )
 
@@ -290,7 +294,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     if (result1.wasAborted)
                         OPALLogger.warn(
                             "configuration",
-                            logMessage+": retry without performing invocations also failed"
+                            logMessage + ": retry without performing invocations also failed"
                         )
                     else
                         OPALLogger.info("configuration", logMessage)
@@ -311,7 +315,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                             Some(method),
                             method.body.get,
                             Some(
-                                s"Created: ${new Date}<br>Domain: $domainName<br>"+
+                                s"Created: ${new Date}<br>Domain: $domainName<br>" +
                                     XHTML.evaluatedInstructionsToXHTML(result.evaluated)
                             ),
                             domain
@@ -363,8 +367,8 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             } else if (!doInterrupt()) {
                 OPALLogger.error(
                     "internal error",
-                    s"analysis of ${method.fullyQualifiedSignature} aborted "+
-                        s"after ${ai0.currentEvaluationCount} steps "+
+                    s"analysis of ${method.fullyQualifiedSignature} aborted " +
+                        s"after ${ai0.currentEvaluationCount} steps " +
                         s"(code size: ${method.body.get.instructions.length})"
                 )
             } /* else (doInterrupt === true) the analysis as such was interrupted*/
@@ -394,7 +398,9 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                     addResults(
                         UnusedFields(
                             theProject,
-                            propertyStore, fieldAccessInformation, stringConstantsInformation,
+                            propertyStore,
+                            fieldAccessInformation,
+                            stringConstantsInformation,
                             classFile
                         )
                     )
@@ -414,7 +420,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                                     s"the analysis of $ms failed/was aborted after $steps steps"
                                 exceptions add (AnalysisException(message, afe))
                             case ct: ControlThrowable => throw ct
-                            case t: Throwable =>
+                            case t: Throwable         =>
                                 val ms = method.fullyQualifiedSignature
                                 val message = s"the analysis of ${ms} failed"
                                 exceptions add (AnalysisException(message, t))
@@ -423,7 +429,9 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                 } catch {
                     case t: Throwable =>
                         OPALLogger.error(
-                            "internal error", s"evaluation step $stepId failed", t
+                            "internal error",
+                            s"evaluation step $stepId failed",
+                            t
                         )
                         throw t
                 } finally {
@@ -435,13 +443,14 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
         OPALLogger.info(
             "analysis progress",
-            s"the analysis took ${analysisTime.toSeconds} "+
+            s"the analysis took ${analysisTime.toSeconds} " +
                 s"and found ${identifiedIssues.size} unique issues"
         )
         import scala.collection.JavaConverters.*
         (analysisTime, identifiedIssues, exceptions.asScala)
     }
 }
+
 /**
  * Common constants and helper methods related to the configuration of the BugPicker and
  * generating reports.
@@ -524,8 +533,8 @@ object BugPickerAnalysis {
             val result =
                 (for { (pkg, mdc) <- groupedMessages } yield {
                     <details class="package_summary">
-                        <summary class="package_summary">{ pkg.replace('/', '.') }</summary>
-                        { mdc.toSeq.sorted(IssueOrdering).map(_.toXHTML(basicInfoOnly)) }
+                        <summary class="package_summary">{pkg.replace('/', '.')}</summary>
+                        {mdc.toSeq.sorted(IssueOrdering).map(_.toXHTML(basicInfoOnly))}
                     </details>
                 })
             result.seq
@@ -534,7 +543,7 @@ object BugPickerAnalysis {
         val (searchJS: NodeSeq, searchBox: NodeSeq) =
             if (showSearch) {
                 (
-                    <script type="text/javascript">{ Unparsed(SearchJS) }</script>,
+                    <script type="text/javascript">{Unparsed(SearchJS)}</script>,
                     <span id="search_box"><label for="search_field">Search:</label><input type="search" id="search_field" name="search" disabled="true"/></span>
                 )
             } else {
@@ -543,17 +552,19 @@ object BugPickerAnalysis {
         <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
                 <meta http-equiv='Content-Type' content='application/xhtml+xml; charset=utf-8'/>
-                <script type="text/javascript">{ Unparsed(HTMLJS) }</script>
-                <script type="text/javascript">{ Unparsed(ReportJS) }</script>
-                { searchJS }
-                <style>{ Unparsed(HTMLCSS) }</style>
-                <style>{ Unparsed(ReportCSS) }</style>
+                <script type="text/javascript">{Unparsed(HTMLJS)}</script>
+                <script type="text/javascript">{Unparsed(ReportJS)}</script>
+                {searchJS}
+                <style>{Unparsed(HTMLCSS)}</style>
+                <style>{Unparsed(ReportCSS)}</style>
             </head>
             <body>
                 <div id="analysis_controls">
                     <div>
-                        <span>Number of issues currently displayed:<span id="issues_displayed"> { issuesCount } </span>{ totalIssues }</span>
-                        { searchBox }
+                        <span>Number of issues currently displayed:<span id="issues_displayed"> {issuesCount} </span>{
+                            totalIssues
+                        }</span>
+                        {searchBox}
                     </div>
                     <div>
                         Suppress issues with an estimated
@@ -580,16 +591,16 @@ object BugPickerAnalysis {
                         <summary>Parameters</summary>
                         <ul>
                             {
-                                config.filterNot(_.contains("debug")).map(p => <li>{ p }</li>)
+                                config.filterNot(_.contains("debug")).map(p => <li>{p}</li>)
                             }
                         </ul>
                     </details>
                 </div>
                 <div id="analysis_results">
-                    { issuesNode }
+                    {issuesNode}
                 </div>
             </body>
         </html>
     }
-    //<div id="debug"><span id="debug_info"></span></div> <-- add if you want to debug
+    // <div id="debug"><span id="debug_info"></span></div> <-- add if you want to debug
 }

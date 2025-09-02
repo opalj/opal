@@ -33,16 +33,16 @@ class TypesSetTest extends AnyFlatSpec with Matchers {
     val javaLangCHCreator = List(() => classOf[Project[?]].getResourceAsStream(javaLangCHFile))
     val javaLangCH = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
 
-    val Object = ObjectType.Object
-    val Class = ObjectType.Class
-    val Throwable = ObjectType.Throwable
-    val Exception = ObjectType.Exception
-    val Error = ObjectType.Error
-    val RuntimeException = ObjectType.RuntimeException
-    val ArithmeticException = ObjectType.ArithmeticException
-    val Cloneable = ObjectType.Cloneable
-    val Serializable = ObjectType.Serializable
-    val AnUnknownType = ObjectType("myTest/AnUnknownType")
+    val Object = ClassType.Object
+    val Class = ClassType.Class
+    val Throwable = ClassType.Throwable
+    val Exception = ClassType.Exception
+    val Error = ClassType.Error
+    val RuntimeException = ClassType.RuntimeException
+    val ArithmeticException = ClassType.ArithmeticException
+    val Cloneable = ClassType.Cloneable
+    val Serializable = ClassType.Serializable
+    val AnUnknownType = ClassType("myTest/AnUnknownType")
 
     //
     // Verify

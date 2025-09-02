@@ -68,16 +68,16 @@ import org.opalj.log.OPALLogger
  *          instructions.
  *
  * @note    Equality of `ClassFile` objects is reference based and a class file's hash code
- *          is the same as the underlying [[ObjectType]]'s hash code; i.e., ' `thisType`'s hash code.
+ *          is the same as the underlying [[ClassType]]'s hash code; i.e., ' `thisType`'s hash code.
  *
  * @author  Michael Eichberg
  */
 final class ClassFile private (
     val version:        UShortPair,
     val accessFlags:    Int,
-    val thisType:       ObjectType,
-    val superclassType: Option[ObjectType],
-    val interfaceTypes: ObjectTypes,
+    val thisType:       ClassType,
+    val superclassType: Option[ClassType],
+    val interfaceTypes: ClassTypes,
     val fields:         Fields,
     val methods:        Methods,
     val attributes:     Attributes
@@ -182,14 +182,14 @@ final class ClassFile private (
      * @note If the requirements of `unsafeReplaceMethod` are met you should use that method!
      */
     def copy(
-        version:        UShortPair         = this.version,
-        accessFlags:    Int                = this.accessFlags,
-        thisType:       ObjectType         = this.thisType,
-        superclassType: Option[ObjectType] = this.superclassType,
-        interfaceTypes: ObjectTypes        = this.interfaceTypes,
-        fields:         FieldTemplates     = this.fields.map[FieldTemplate](f => f.copy()),
-        methods:        MethodTemplates    = this.methods.map[MethodTemplate](m => m.copy()),
-        attributes:     Attributes         = this.attributes
+        version:        UShortPair        = this.version,
+        accessFlags:    Int               = this.accessFlags,
+        thisType:       ClassType         = this.thisType,
+        superclassType: Option[ClassType] = this.superclassType,
+        interfaceTypes: ClassTypes        = this.interfaceTypes,
+        fields:         FieldTemplates    = this.fields.map[FieldTemplate](f => f.copy()),
+        methods:        MethodTemplates   = this.methods.map[MethodTemplate](m => m.copy()),
+        attributes:     Attributes        = this.attributes
     ): ClassFile = {
         ClassFile(
             version.minor,
@@ -455,7 +455,7 @@ final class ClassFile private (
      * nested classes that are not defined in the scope of a nested class of this
      * class.
      */
-    def nestedClasses(implicit classFileRepository: ClassFileRepository): Seq[ObjectType] = {
+    def nestedClasses(implicit classFileRepository: ClassFileRepository): Seq[ClassType] = {
 
         import classFileRepository.logContext
 
@@ -465,7 +465,7 @@ final class ClassFile private (
         //   and the inner classes array must contain an entry
         // - the InnerClasses attribute only encodes information about its immediate
         //   inner classes
-        var outerClassType: Option[ObjectType] = enclosingMethod.map(_.clazz)
+        var outerClassType: Option[ClassType] = enclosingMethod.map(_.clazz)
         var isInnerType = false
 
         def isThisType(innerClass: InnerClass): Boolean = {
@@ -492,7 +492,7 @@ final class ClassFile private (
                                 (innerClass.outerClassType.get eq thisType)
                             )
                     )
-                    .map[ObjectType](_.innerClassType)
+                    .map[ClassType](_.innerClassType)
             }.getOrElse {
                 ArraySeq.empty
             }
@@ -515,18 +515,18 @@ final class ClassFile private (
                 return nestedClassesCandidates.filter(_.fqn.startsWith(this.fqn));
             }
             val outerFQN = thisFQN.substring(0, innerTypeNameStartIndex)
-            classFileRepository.classFile(ObjectType(outerFQN)) match {
+            classFileRepository.classFile(ClassType(outerFQN)) match {
                 case Some(outerClass) =>
-                    def directNestedClasses(objectTypes: Iterable[ObjectType]): Set[ObjectType] = {
-                        var nestedTypes: Set[ObjectType] = Set.empty
-                        objectTypes.foreach { objectType =>
-                            classFileRepository.classFile(objectType) match {
+                    def directNestedClasses(classTypes: Iterable[ClassType]): Set[ClassType] = {
+                        var nestedTypes: Set[ClassType] = Set.empty
+                        classTypes.foreach { classType =>
+                            classFileRepository.classFile(classType) match {
                                 case Some(classFile) =>
                                     nestedTypes ++= classFile.nestedClasses(classFileRepository)
                                 case None =>
                                     OPALLogger.warn(
                                         "class file reader",
-                                        "cannot get informaton about " + objectType.toJava +
+                                        "cannot get informaton about " + classType.toJava +
                                             "; the inner classes information may be incomplete"
                                     )
                             }
@@ -575,7 +575,7 @@ final class ClassFile private (
      *
      * @example To collect all nested types:
      * {{{
-     *   var allNestedTypes: Set[ObjectType] = Set.empty
+     *   var allNestedTypes: Set[ClassType] = Set.empty
      *   foreachNestedClasses(innerclassesProject, { nc => allNestedTypes += nc.thisType })
      * }}}
      */
@@ -597,10 +597,10 @@ final class ClassFile private (
      * class (a class defined in the scope of a method) or an anonymous class
      * do not specify an outer type.
      *
-     * @return The object type of the outer type as well as the access flags of this
+     * @return The class type of the outer type as well as the access flags of this
      *      inner class.
      */
-    def outerType: Option[(ObjectType, Int)] = {
+    def outerType: Option[(ClassType, Int)] = {
         innerClasses flatMap { innerClasses =>
             innerClasses collectFirst {
                 case InnerClass(`thisType`, Some(outerType), _, accessFlags) =>
@@ -879,7 +879,7 @@ final class ClassFile private (
 
     /**
      * This class file's `hasCode`. The `hashCode` is (by purpose) identical to
-     * the id of the `ObjectType` it implements.
+     * the id of the `ClassType` it implements.
      */
     override def hashCode: Int = thisType.id
 
@@ -933,15 +933,15 @@ object ClassFile {
      *         `java.lang.Object`.
      */
     def apply(
-        minorVersion:   Int                = 0,
-        majorVersion:   Int                = 50,
-        accessFlags:    Int                = { ACC_PUBLIC.mask | ACC_SUPER.mask },
-        thisType:       ObjectType,
-        superclassType: Option[ObjectType] = Some(ObjectType.Object),
-        interfaceTypes: Interfaces         = NoInterfaces,
-        fields:         FieldTemplates     = NoFieldTemplates,
-        methods:        MethodTemplates    = NoMethodTemplates,
-        attributes:     Attributes         = NoAttributes
+        minorVersion:   Int               = 0,
+        majorVersion:   Int               = 50,
+        accessFlags:    Int               = { ACC_PUBLIC.mask | ACC_SUPER.mask },
+        thisType:       ClassType,
+        superclassType: Option[ClassType] = Some(ClassType.Object),
+        interfaceTypes: Interfaces        = NoInterfaces,
+        fields:         FieldTemplates    = NoFieldTemplates,
+        methods:        MethodTemplates   = NoMethodTemplates,
+        attributes:     Attributes        = NoAttributes
     ): ClassFile = {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),
@@ -957,15 +957,15 @@ object ClassFile {
 
     // This method is only intended to be called by the ClassFileReader/ClassFileBinding!
     protected[br] def reify(
-        minorVersion:   Int                = 0,
-        majorVersion:   Int                = 50,
-        accessFlags:    Int                = { ACC_PUBLIC.mask | ACC_SUPER.mask },
-        thisType:       ObjectType,
-        superclassType: Option[ObjectType] = Some(ObjectType.Object),
-        interfaceTypes: Interfaces         = NoInterfaces,
-        fields:         Fields             = NoFields,
-        methods:        Methods            = NoMethods,
-        attributes:     Attributes         = NoAttributes
+        minorVersion:   Int               = 0,
+        majorVersion:   Int               = 50,
+        accessFlags:    Int               = { ACC_PUBLIC.mask | ACC_SUPER.mask },
+        thisType:       ClassType,
+        superclassType: Option[ClassType] = Some(ClassType.Object),
+        interfaceTypes: Interfaces        = NoInterfaces,
+        fields:         Fields            = NoFields,
+        methods:        Methods           = NoMethods,
+        attributes:     Attributes        = NoAttributes
     ): ClassFile = {
         new ClassFile(
             UShortPair(minorVersion, majorVersion),
@@ -981,7 +981,7 @@ object ClassFile {
 
     def unapply(
         classFile: ClassFile
-    ): Option[(Int, ObjectType, Option[ObjectType], Seq[ObjectType])] = {
+    ): Option[(Int, ClassType, Option[ClassType], Seq[ClassType])] = {
         import classFile.*
         Some((accessFlags, thisType, superclassType, interfaceTypes))
     }

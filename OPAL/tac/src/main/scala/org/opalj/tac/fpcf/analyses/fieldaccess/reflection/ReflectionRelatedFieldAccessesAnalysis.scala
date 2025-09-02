@@ -13,6 +13,7 @@ import org.opalj.br.BaseType
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
+import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DoubleType
 import org.opalj.br.Field
@@ -23,7 +24,6 @@ import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.PCs
 import org.opalj.br.ShortType
 import org.opalj.br.StaticFieldAccessMethodHandle
@@ -252,7 +252,7 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
             val depender = state.dependersOf(epk).head.asInstanceOf[ClassDepender]
 
             val classes = eps.asInstanceOf[EPS[?, ForNameClasses]].ub.classes.map { tpe =>
-                if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
+                if (tpe.isClassType) tpe.asClassType else ClassType.Object
             }
 
             val allMatchers = depender.matchers +
@@ -332,13 +332,13 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
                     data,
                     stmts,
                     () => failure(data.pc, data.receiver, data.param, data.matchers),
-                    onlyObjectTypes = false
+                    onlyClassTypes = false
                 )
 
                 val matchers = data.matchers +
-                    retrieveSuitableMatcher[Set[ObjectType]](
+                    retrieveSuitableMatcher[Set[ClassType]](
                         Some(classes.map {
-                            tpe => if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
+                            tpe => if (tpe.isClassType) tpe.asClassType else ClassType.Object
                         }),
                         data.pc,
                         v => new ClassBasedFieldMatcher(v, !data.matchers.contains(PublicFieldMatcher))
@@ -367,7 +367,7 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
         stmts(fieldDefSite).asAssignment.expr match {
             case call @ VirtualFunctionCall(
                     _,
-                    ObjectType.Class,
+                    ClassType.Class,
                     _,
                     "getDeclaredField" | "getField",
                     _,
@@ -418,7 +418,7 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
                     context,
                     arrayDepender,
                     stmts,
-                    _ eq ObjectType.Field,
+                    _ eq ClassType.Field,
                     () => failure(accessPC, actualReceiver, actualParameter, baseMatchers)
                 ) { (allocationContext, allocationIndex, stmts) =>
                     matchers ++= handleFieldArray(
@@ -457,7 +457,7 @@ sealed trait FieldInstanceBasedReflectiveFieldAccessAnalysis extends ReflectionA
         stmts(fieldDefSite).asAssignment.expr match {
             case call @ VirtualFunctionCall(
                     _,
-                    ObjectType.Class,
+                    ClassType.Class,
                     _,
                     "getDeclaredFields" | "getFields",
                     _,
@@ -502,11 +502,11 @@ class FieldGetAnalysis private[analyses] (
 ) extends ReflectionAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.Field,
+        ClassType.Field,
         "",
-        ObjectType.Field,
+        ClassType.Field,
         apiMethodName,
-        MethodDescriptor.apply(ObjectType.Object, fieldType.getOrElse(ObjectType.Object))
+        MethodDescriptor.apply(ClassType.Object, fieldType.getOrElse(ClassType.Object))
     )
 
     protected def handleFieldAccess(
@@ -538,7 +538,7 @@ class FieldGetAnalysis private[analyses] (
             accessContext,
             depender,
             state.tac.stmts,
-            _ eq ObjectType.Field,
+            _ eq ClassType.Field,
             () => failure(accessPC, persistentReceiver, None, baseMatchers)
         ) { (allocationContext, allocationIndex, stmts) =>
             val allMatchers = handleGetField(
@@ -583,11 +583,11 @@ class FieldSetAnalysis private[analyses] (
 ) extends ReflectionAnalysis with FieldInstanceBasedReflectiveFieldAccessAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectType.Field,
+        ClassType.Field,
         "",
-        ObjectType.Field,
+        ClassType.Field,
         apiMethodName,
-        MethodDescriptor.apply(ArraySeq(ObjectType.Object, fieldType.getOrElse(ObjectType.Object)), VoidType)
+        MethodDescriptor.apply(ArraySeq(ClassType.Object, fieldType.getOrElse(ClassType.Object)), VoidType)
     )
 
     protected def handleFieldAccess(
@@ -630,7 +630,7 @@ class FieldSetAnalysis private[analyses] (
             accessContext,
             depender,
             state.tac.stmts,
-            _ eq ObjectType.Field,
+            _ eq ClassType.Field,
             () => failure(accessPC, persistentReceiver, Some(persistentActualParam), baseMatchers)
         ) { (allocationContext, allocationIndex, stmts) =>
             val allMatchers = handleGetField(
@@ -677,11 +677,11 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
     override final val apiMethod =
         declaredMethods(
-            ObjectType.MethodHandle,
+            ClassType.MethodHandle,
             "",
-            ObjectType.MethodHandle,
+            ClassType.MethodHandle,
             apiMethodName,
-            MethodDescriptor(parameterType.map(ArraySeq(_)).getOrElse(ArraySeq.empty), ObjectType.Object)
+            MethodDescriptor(parameterType.map(ArraySeq(_)).getOrElse(ArraySeq.empty), ClassType.Object)
         )
 
     override def processNewCaller(
@@ -777,7 +777,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
             val depender = state.dependersOf(epk).head.asInstanceOf[ClassDepender]
 
             val classes = eps.asInstanceOf[EPS[?, ForNameClasses]].ub.classes.map { tpe =>
-                if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object
+                if (tpe.isClassType) tpe.asClassType else ClassType.Object
             }
 
             val allMatchers = depender.matchers +
@@ -859,14 +859,14 @@ class MethodHandleInvokeAnalysis private[analyses] (
                     data,
                     stmts,
                     () => failure(data.pc, data.persistentActualParams, data.matchers),
-                    onlyObjectTypes = false
+                    onlyClassTypes = false
                 ).flatMap { tpe =>
-                    if (data.isStatic) project.classHierarchy.allSubtypes(tpe.asObjectType, reflexive = true)
-                    else Set(if (tpe.isObjectType) tpe.asObjectType else ObjectType.Object)
+                    if (data.isStatic) project.classHierarchy.allSubtypes(tpe.asClassType, reflexive = true)
+                    else Set(if (tpe.isClassType) tpe.asClassType else ClassType.Object)
                 }
 
                 val matchers = data.matchers +
-                    retrieveSuitableMatcher[Set[ObjectType]](
+                    retrieveSuitableMatcher[Set[ClassType]](
                         Some(classes),
                         data.pc,
                         v => new ClassBasedFieldMatcher(v, false)
@@ -936,7 +936,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
             accessContext,
             depender,
             state.tac.stmts,
-            project.classHierarchy.isASubtypeOf(_, ObjectType.MethodHandle).isYesOrUnknown,
+            project.classHierarchy.isASubtypeOf(_, ClassType.MethodHandle).isYesOrUnknown,
             () => failure(accessPC, persistentActualParams, matchers)
         ) {
             (allocationContext, allocationIndex, stmts) =>
@@ -1008,16 +1008,16 @@ class MethodHandleInvokeAnalysis private[analyses] (
             }
 
             val handleDataOpt = definition.asVirtualFunctionCall match {
-                case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findGetter", _, _, params) =>
+                case VirtualFunctionCall(_, ClassType.MethodHandles$Lookup, _, "findGetter", _, _, params) =>
                     Some(handleParams(params, isStatic = false, isSetter = false))
 
-                case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStaticGetter", _, _, params) =>
+                case VirtualFunctionCall(_, ClassType.MethodHandles$Lookup, _, "findStaticGetter", _, _, params) =>
                     Some(handleParams(params, isStatic = true, isSetter = false))
 
-                case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSetter", _, _, params) =>
+                case VirtualFunctionCall(_, ClassType.MethodHandles$Lookup, _, "findSetter", _, _, params) =>
                     Some(handleParams(params, isStatic = false, isSetter = true))
 
-                case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStaticSetter", _, _, params) =>
+                case VirtualFunctionCall(_, ClassType.MethodHandles$Lookup, _, "findStaticSetter", _, _, params) =>
                     Some(handleParams(params, isStatic = true, isSetter = true))
 
                 case _ =>
@@ -1055,10 +1055,11 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
                 if (!matchers.contains(NoFieldsMatcher))
                     if (!handleData.isStatic) {
-                        val receiverValueOpt = actualParams.flatMap(_.head)
-                        if (receiverValueOpt.isDefined && receiverValueOpt.get.value.isReferenceValue)
-                            matchers += new ActualReceiverBasedFieldMatcher(receiverValueOpt.get.value.asReferenceValue)
-                        else
+                        if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
+                            val receiverValue = actualParams.get.head.get.value
+                            if (receiverValue.isReferenceValue)
+                                matchers += new ActualReceiverBasedFieldMatcher(receiverValue.asReferenceValue)
+                        } else
                             matchers += MatcherUtil.retrieveClassBasedFieldMatcher(
                                 context,
                                 handleData.classVar,
@@ -1180,7 +1181,7 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
             new MethodHandleInvokeAnalysis(
                 project,
                 "invokeWithArguments",
-                Some(ObjectType("java/util/List")),
+                Some(ClassType("java/util/List")),
                 isSignaturePolymorphic = false
             )
 

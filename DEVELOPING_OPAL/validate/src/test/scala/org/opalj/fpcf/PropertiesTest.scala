@@ -16,12 +16,12 @@ import org.opalj.br.Annotation
 import org.opalj.br.AnnotationLike
 import org.opalj.br.Annotations
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
 import org.opalj.br.ClassValue
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementValuePair
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.TAOfNew
 import org.opalj.br.Type
@@ -32,12 +32,12 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.bytecode.RTJar
+import org.opalj.bytecode.JavaBase
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.fpcf.FPCFAnalysis
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.properties.PropertyMatcher
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
@@ -83,7 +83,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
 
-        val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
+        val libraryClassFiles = (if (withRT) ClassFiles(JavaBase) else List()) ++ propertiesClassFiles
 
         implicit val config: Config = createConfig()
 
@@ -138,7 +138,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         )
     }
 
-    final val PropertyValidatorType = ObjectType("org/opalj/fpcf/properties/PropertyValidator")
+    final val PropertyValidatorType = ClassType("org/opalj/fpcf/properties/PropertyValidator")
 
     /**
      * Returns the [[org.opalj.fpcf.properties.PropertyMatcher]] associated with the annotation -
@@ -155,11 +155,11 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     )(
         annotation: AnnotationLike
     ): Option[(AnnotationLike, String, Type /* type of the matcher */ )] = {
-        if (!annotation.annotationType.isObjectType)
+        if (!annotation.annotationType.isClassType)
             return None;
 
         // Get the PropertyValidator meta-annotation of the given entity's annotation:
-        val annotationClassFile = p.classFile(annotation.annotationType.asObjectType).get
+        val annotationClassFile = p.classFile(annotation.annotationType.asClassType).get
         annotationClassFile.runtimeInvisibleAnnotations.collectFirst {
             case Annotation(
                     PropertyValidatorType,
@@ -183,7 +183,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
      */
     def validateProperties(
         context: TestContext,
-        eas: IterableOnce[(
+        eas:     IterableOnce[(
             Entity, /*the processed annotation*/ String => String /* a String identifying the entity */,
             Iterable[AnnotationLike]
         )],
@@ -191,14 +191,14 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     ): Unit = {
         val TestContext(p: Project[URL], ps: PropertyStore, as: List[FPCFAnalysis]) = context
         val ats =
-            as.map(a => ObjectType(a.getClass.getName.replace('.', '/'))).toSet
+            as.map(a => ClassType(a.getClass.getName.replace('.', '/'))).toSet
 
         for {
             (e, entityIdentifier, annotations) <- eas.iterator
             augmentedAnnotations = annotations.flatMap(getPropertyMatcher(p, propertyKinds))
             (annotation, propertyKind, matcherType) <- augmentedAnnotations
         } {
-            val annotationTypeName = annotation.annotationType.asObjectType.simpleName
+            val annotationTypeName = annotation.annotationType.asClassType.simpleName
             val matcherClass = Class.forName(matcherType.toJava)
             val matcherClassConstructor = matcherClass.getDeclaredConstructor()
             val matcher = matcherClassConstructor.newInstance().asInstanceOf[PropertyMatcher]
@@ -361,33 +361,42 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     }
 
     def executeAnalyses(
-        analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
+        analysisRunners:      Iterable[ComputationSpecification[FPCFAnalysis]],
+        afterPhaseScheduling: (Project[URL], List[ComputationSpecification[FPCFAnalysis]]) => Unit = (_, _) => ()
     ): TestContext = {
         try {
-            val p = FixtureProject.recreate { piKeyUnidueId => piKeyUnidueId != PropertyStoreKey.uniqueId } // to ensure that this project is not "polluted"
-            implicit val logContext: LogContext = p.logContext
+            val p = FixtureProject.recreate { piKeyUniqueId => piKeyUniqueId != PropertyStoreKey.uniqueId } // to ensure that this project is not "polluted"
+
             init(p)
+
+            executeAnalysesForProject(p, analysisRunners, afterPhaseScheduling = afterPhaseScheduling(p, _))
+        } catch {
+            case t: Throwable =>
+                t.printStackTrace()
+                t.getSuppressed.foreach(e => e.printStackTrace())
+                throw t;
+        }
+    }
+
+    def executeAnalysesForProject(
+        project:              Project[URL],
+        analysisRunners:      Iterable[ComputationSpecification[FPCFAnalysis]],
+        afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
+    ): TestContext = {
+        try {
+            implicit val logContext: LogContext = project.logContext
 
             PropertyStore.updateDebug(true)
 
-            p.getOrCreateProjectInformationKeyInitializationData(
+            project.getOrCreateProjectInformationKeyInitializationData(
                 PropertyStoreKey,
-                (context: List[PropertyStoreContext[AnyRef]]) => {
-                    /*
-                val ps = PKEParallelTasksPropertyStore.create(
-                    new RecordAllPropertyStoreTracer,
-                    context.iterator.map(_.asTuple).toMap
-                )
-                     */
-                    val ps = PKESequentialPropertyStore(context*)
-                    ps
-                }
+                (context: List[PropertyStoreContext[AnyRef]]) => PKESequentialPropertyStore(context*)
             )
 
-            val ps = p.get(PropertyStoreKey)
+            val ps = project.get(PropertyStoreKey)
 
-            val (_, csas) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
-            TestContext(p, ps, csas.collect { case (_, as) => as })
+            val (_, csas) = project.get(FPCFAnalysesManagerKey).runAll(analysisRunners, afterPhaseScheduling(_))
+            TestContext(project, ps, csas.collect { case (_, as) => as })
         } catch {
             case t: Throwable =>
                 t.printStackTrace()

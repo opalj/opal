@@ -14,6 +14,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.si.Project
 import org.opalj.tac.TACAI as TACAIFactory
 import org.opalj.value.ValueInformation
 
@@ -72,7 +73,7 @@ object TACAI extends TACAIPropertyMetaInformation {
                         NoTACAI
 
                     case PropertyIsNotComputedByAnyAnalysis =>
-                        val p = ps.context(classOf[SomeProject])
+                        val p = ps.context(classOf[Project]).asInstanceOf[SomeProject]
                         val d = new PrimitiveTACAIDomain(p.classHierarchy, m)
                         val taCode = TACAIFactory(p, m)(d)
                         TheTACAI(

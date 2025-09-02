@@ -5,9 +5,9 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -56,14 +56,13 @@ import org.opalj.value.IsSObjectValue
 class CallGraphAnalysis private[cg] (
     override val project: SomeProject
 ) extends ReachableMethodAnalysis with TypeConsumerAnalysis {
-    type LocalTypeInformation
 
     private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
     private[this] lazy val getCBSTargets = project.get(CallBySignatureKey)
     private[this] val resovleCallBySignature =
         project.config.getBoolean("org.opalj.br.analyses.cg.callBySignatureResolution")
 
-    def c(state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
+    def c(state: TACAIBasedCGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(tacai: TACAI) if tacai.tac.isDefined =>
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
@@ -74,7 +73,7 @@ class CallGraphAnalysis private[cg] (
             case UBP(_: TACAI) =>
                 throw new IllegalStateException("there was already a tac defined")
 
-            case EPS(e) =>
+            case EPS(_) =>
                 val relevantCallSites = state.dependersOf(eps.toEPK).asInstanceOf[Set[CallSite]]
 
                 // ensures, that we only add new calls
@@ -119,18 +118,17 @@ class CallGraphAnalysis private[cg] (
         }
     }
 
+    override final def processMethodWithoutBody(callContext: ContextType): ProperPropertyComputationResult = {
+        Results(new DirectCalls().partialResults(callContext, enforceCalleesResult = true))
+    }
+
     override final def processMethod(
         callContext: ContextType,
         tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        val state = new CGState[ContextType](callContext, tacEP)
-        if (tacEP ne null)
-            processMethod(state, new DirectCalls())
-        else
-            returnResult(new DirectCalls(), enforceCalleesResult = true)(state)
+        val state = new TACAIBasedCGState[ContextType](callContext, tacEP)
+        processMethod(state, new DirectCalls())
     }
-
-    override final val processesMethodsWithoutBody = true
 
     protected[this] def doHandleVirtualCall(
         callContext:                   ContextType,
@@ -139,15 +137,15 @@ class CallGraphAnalysis private[cg] (
         specializedDeclaringClassType: ReferenceType,
         isPrecise:                     Boolean,
         calleesAndCallers:             DirectCalls
-    )(implicit state: CGState[ContextType]): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
         val callerType = callContext.method.declaringClassType
         val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
 
         val cbsTargets: Set[ReferenceType] =
             if (!isPrecise && resovleCallBySignature && call.isInterface &&
-                call.declaringClass.isObjectType
+                call.declaringClass.isClassType
             ) {
-                val cf = project.classFile(call.declaringClass.asObjectType)
+                val cf = project.classFile(call.declaringClass.asClassType)
                 cf.flatMap { _.findMethod(call.name, call.descriptor) }.map {
                     getCBSTargets(_).toSet[ReferenceType]
                 }.getOrElse(Set.empty)
@@ -176,8 +174,8 @@ class CallGraphAnalysis private[cg] (
         // Deal with the fact that there may be unknown subtypes of the receiver type that might
         // override the method
         if (!isPrecise) {
-            if (specializedDeclaringClassType.isObjectType) {
-                val declType = specializedDeclaringClassType.asObjectType
+            if (specializedDeclaringClassType.isClassType) {
+                val declType = specializedDeclaringClassType.asClassType
 
                 val mResult = if (classHierarchy.isInterface(declType).isYes)
                     org.opalj.Result(project.resolveInterfaceMethodReference(declType, call.name, call.descriptor))
@@ -209,7 +207,7 @@ class CallGraphAnalysis private[cg] (
     }
 
     protected final def processMethod(
-        state: CGState[ContextType],
+        state: TACAIBasedCGState[ContextType],
         calls: DirectCalls
     ): ProperPropertyComputationResult = {
         val tac = state.tac
@@ -294,13 +292,13 @@ class CallGraphAnalysis private[cg] (
             case _ => // nothing to do
         }
 
-        returnResult(calls, true)(state)
+        returnResult(calls, enforceCalleesResult = true)(state)
     }
 
     protected[this] def returnResult(
         calleesAndCallers:    DirectCalls,
         enforceCalleesResult: Boolean = false
-    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+    )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.callContext, enforceCalleesResult)
 
         // FIXME: This won't work for refinable TACs as state.hasNonFinalCallSite may return false
@@ -355,8 +353,8 @@ class CallGraphAnalysis private[cg] (
         pc:                  Int,
         calleesAndCallers:   DirectCalls
     ): Unit = {
-        val declaringClassType = callDeclaringClass.mostPreciseObjectType
-        val runtimeType = runtimeReceiverType.mostPreciseObjectType
+        val declaringClassType = callDeclaringClass.mostPreciseClassType
+        val runtimeType = runtimeReceiverType.mostPreciseClassType
 
         val declTgt = declaredMethods.apply(declaringClassType, packageName, runtimeType, callName, callDescriptor)
 
@@ -388,11 +386,11 @@ class CallGraphAnalysis private[cg] (
         call:              Call[V] & VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
-    )(implicit state: CGState[ContextType]): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
         for (rv <- rvs) rv match {
             case _: IsSArrayValue =>
-                handlePreciseCall(ObjectType.Object, callContext, call, pc, calleesAndCallers)
+                handlePreciseCall(ClassType.Object, callContext, call, pc, calleesAndCallers)
 
             case ov: IsSObjectValue =>
                 if (ov.isPrecise) {
@@ -417,12 +415,12 @@ class CallGraphAnalysis private[cg] (
     }
 
     protected[this] def handlePreciseCall(
-        calleeType:        ObjectType,
+        calleeType:        ClassType,
         callContext:       ContextType,
         call:              Call[V] & VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
-    )(implicit state: CGState[ContextType]): Unit = {
+    )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
         doHandleVirtualCall(callContext, call, pc, calleeType, isPrecise = true, calleesAndCallers)
     }
 }

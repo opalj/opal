@@ -49,8 +49,8 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_Package_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_String_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Utf8_ID
 import org.opalj.br.Attribute
+import org.opalj.br.ClassType
 import org.opalj.br.Code
-import org.opalj.br.ObjectType
 import org.opalj.br.cp.*
 import org.opalj.br.instructions.*
 import org.opalj.collection.immutable.IntIntPair
@@ -125,9 +125,9 @@ package object ba { ba =>
             def apply(
                 version:        UShortPair,
                 accessFlags:    Int,
-                thisType:       ObjectType,
-                superclassType: Option[ObjectType],
-                interfaceTypes: ArraySeq[ObjectType], // TODO Use a UIDSet here ...
+                thisType:       ClassType,
+                superclassType: Option[ClassType],
+                interfaceTypes: ArraySeq[ClassType], // TODO Use a UIDSet here ...
                 fields:         ArraySeq[br.FieldTemplate],
                 methods:        ArraySeq[br.MethodTemplate]
             ): Attribute = {
@@ -362,8 +362,8 @@ package object ba { ba =>
                     instructions.writeShort(value)
 
                 case NEW.opcode =>
-                    val NEW(objectType) = i
-                    instructions.writeShort(CPEClass(objectType, false))
+                    val NEW(classType) = i
+                    instructions.writeShort(CPEClass(classType, false))
 
                 case CHECKCAST.opcode =>
                     val CHECKCAST(referenceType) = i
@@ -720,7 +720,7 @@ package object ba { ba =>
             case br.TADeeperInArrayType.KindId     => da.TypeAnnotationDeeperInArrayType
             case br.TADeeperInNestedType.KindId    => da.TypeAnnotationDeeperInNestedType
             case br.TAOnBoundOfWildcardType.KindId => da.TypeAnnotationOnBoundOfWildcardType
-            case br.TAOnTypeArgument.KindId =>
+            case br.TAOnTypeArgument.KindId        =>
                 val br.TAOnTypeArgument(index) = typeAnnotationPathElement
                 da.TypeAnnotationOnTypeArgument(index)
         }
@@ -1052,7 +1052,7 @@ package object ba { ba =>
                 Some(da.RuntimeVisibleTypeAnnotations_attribute(attributeNameIndex, daPAs))
 
             case br.ModuleMainClass.KindId =>
-                val br.ModuleMainClass(mainClassType /*:ObjectType*/ ) = attribute
+                val br.ModuleMainClass(mainClassType /*:ClassType*/ ) = attribute
                 val attributeNameIndex = CPEUtf8(bi.ModuleMainClassAttribute.Name)
                 val mainClassIndex = CPEClass(mainClassType, false)
                 Some(da.ModuleMainClass_attribute(attributeNameIndex, mainClassIndex))
@@ -1103,13 +1103,13 @@ package object ba { ba =>
                 ))
 
             case br.NestHost.KindId =>
-                val br.NestHost(hostClassType /*:ObjectType*/ ) = attribute
+                val br.NestHost(hostClassType /*:ClassType*/ ) = attribute
                 val attributeNameIndex = CPEUtf8(bi.NestHostAttribute.Name)
                 val hostClassIndex = CPEClass(hostClassType, false)
                 Some(da.NestHost_attribute(attributeNameIndex, hostClassIndex))
 
             case br.NestMembers.KindId =>
-                val br.NestMembers(classes /*:IndexedSeq[ObjectType]*/ ) = attribute
+                val br.NestMembers(classes /*:IndexedSeq[ClassType]*/ ) = attribute
                 val attributeNameIndex = CPEUtf8(bi.NestMembersAttribute.Name)
                 val classIndices = classes.map(CPEClass(_, false))
                 Some(da.NestMembers_attribute(attributeNameIndex, classIndices))

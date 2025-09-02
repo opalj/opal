@@ -33,12 +33,12 @@ sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] with Instructi
 sealed abstract class PrimitiveLDC_W[T] extends LDC_W[T]
 
 final case class LoadInt_W(value: Int) extends PrimitiveLDC_W[Int] {
-    final def computationalType = ComputationalTypeInt
+    final def computationalType: ComputationalTypeInt.type = ComputationalTypeInt
 }
 
 final case class LoadFloat_W(value: Float) extends PrimitiveLDC_W[Float] {
 
-    final def computationalType = ComputationalTypeFloat
+    final def computationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
     override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -80,7 +80,7 @@ final case class LoadMethodType_W(value: MethodDescriptor) extends LDC_W[MethodD
  * @note To match [[LoadString]] and [[LoadString_W]] instructions you can use [[LDCString]].
  */
 final case class LoadString_W(value: String) extends PrimitiveLDC_W[String] {
-    final def computationalType = ComputationalTypeReference
+    final def computationalType: ComputationalTypeReference.type = ComputationalTypeReference
 }
 
 /**
@@ -109,7 +109,7 @@ case object INCOMPLETE_LDC_W extends LDC_W[Any] {
         throw BytecodeProcessingFailedException(message)
     }
 
-    final def computationalType = error
+    final def computationalType: Nothing = error
 
     final def value: Any = error
 

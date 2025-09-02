@@ -7,7 +7,7 @@ package l1
 import scala.reflect.ClassTag
 
 import org.opalj.br.ArrayType
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
 import org.opalj.br.ReferenceType
 import org.opalj.collection.immutable.UIDSet
 
@@ -47,14 +47,14 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         origin:                 ValueOrigin,
         isNull:                 Answer,
         override val isPrecise: Boolean,
-        theUpperTypeBound:      ObjectType,
+        theUpperTypeBound:      ClassType,
         refId:                  RefId
     ) extends SObjectValue
 
     protected case class DefaultMObjectValue(
         origin:              ValueOrigin,
         override val isNull: Answer,
-        upperTypeBound:      UIDSet[ObjectType],
+        upperTypeBound:      UIDSet[ClassType],
         refId:               RefId
     ) extends MObjectValue
 
@@ -72,7 +72,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
         origin:            ValueOrigin,
         isNull:            Answer,
         isPrecise:         Boolean,
-        theUpperTypeBound: ObjectType,
+        theUpperTypeBound: ClassType,
         refId:             RefId
     ): SObjectValue = {
         DefaultSObjectValue(
@@ -87,7 +87,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
     override protected[domain] def ObjectValue(
         origin:         ValueOrigin,
         isNull:         Answer,
-        upperTypeBound: UIDSet[ObjectType],
+        upperTypeBound: UIDSet[ClassType],
         refId:          RefId
     ): DomainObjectValue = {
         if (upperTypeBound.isSingletonSet) {

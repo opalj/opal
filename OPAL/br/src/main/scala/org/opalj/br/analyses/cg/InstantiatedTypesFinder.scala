@@ -15,9 +15,9 @@ import net.ceedubs.ficus.Ficus.*
  */
 sealed trait InstantiatedTypesFinder {
 
-    def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
+    def collectInstantiatedTypes(project: SomeProject): Iterable[ClassType] = {
         // These types can be introduced via constants!
-        Iterable(ObjectType.String, ObjectType.Class)
+        Iterable(ClassType.String, ClassType.Class)
     }
 }
 
@@ -29,7 +29,7 @@ sealed trait InstantiatedTypesFinder {
  */
 trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
-    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] =
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ClassType] =
         super.collectInstantiatedTypes(project)
 }
 
@@ -42,7 +42,7 @@ trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
  */
 trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
-    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ClassType] = {
         val closedPackages = project.get(ClosedPackagesKey)
         project.allClassFiles.iterator.filter { cf =>
             !cf.isInterfaceDeclaration && !cf.isAbstract &&
@@ -90,9 +90,9 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
         InitialInstantiatedTypesKey.ConfigKeyPrefix + "instantiatedTypes"
     }
 
-    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ClassType] = {
         implicit val logContext: LogContext = project.logContext
-        var instantiatedTypes = Set.empty[ObjectType]
+        var instantiatedTypes = Set.empty[ClassType]
 
         if (!project.config.hasPath(additionalInstantiatedTypesKey)) {
             OPALLogger.info(
@@ -124,11 +124,11 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
                 configuredType
             }
 
-            val objectType = ObjectType(typeName)
+            val classType = ClassType(typeName)
             if (considerSubtypes)
-                instantiatedTypes ++= project.classHierarchy.allSubtypes(objectType, true)
+                instantiatedTypes ++= project.classHierarchy.allSubtypes(classType, true)
             else
-                instantiatedTypes += objectType
+                instantiatedTypes += classType
         }
 
         super.collectInstantiatedTypes(project) ++ instantiatedTypes
@@ -155,7 +155,7 @@ object LibraryInstantiatedTypesFinder
  * @author Dominik Helm
  */
 object AllInstantiatedTypesFinder extends InstantiatedTypesFinder {
-    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ClassType] = {
         val projectMethodsOnlyConfigKey = InitialInstantiatedTypesKey.ConfigKeyPrefix +
             "AllInstantiatedTypesFinder.projectClassesOnly"
         val allClassFiles = if (project.config.as[Boolean](projectMethodsOnlyConfigKey))

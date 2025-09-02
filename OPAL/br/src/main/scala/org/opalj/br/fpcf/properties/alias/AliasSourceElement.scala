@@ -131,7 +131,7 @@ object AliasSourceElement {
         element match {
             case fp: VirtualFormalParameter => AliasFormalParameter(fp)
             case dm: Method                 => AliasReturnValue(dm, project)
-            case f: FieldReference =>
+            case f: FieldReference          =>
                 if (!f.field.isStatic) AliasField(f)
                 else throw new IllegalArgumentException("Static fields must be represented by a normal Field")
             case f: Field =>
@@ -229,7 +229,7 @@ case class AliasFormalParameter(fp: VirtualFormalParameter) extends AliasSourceE
     override def isMethodBound: Boolean = true
 
     override def isReferenceType: Boolean = {
-        if (fp.parameterIndex == -1) fp.method.declaringClassType.isObjectType
+        if (fp.parameterIndex == -1) fp.method.declaringClassType.isClassType
         else fp.method.definedMethod.parameterTypes(fp.parameterIndex).isReferenceType
     }
 

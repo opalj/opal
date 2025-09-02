@@ -6,10 +6,10 @@ package analyses
 package ifds
 package taint
 
-import org.opalj.br.ObjectType
+import org.opalj.br.ClassType
+import org.opalj.br.Method
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.AbstractIFDSNullFact
-import org.opalj.ifds.Callable
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
@@ -40,7 +40,7 @@ case class ArrayElement(index: Int, element: Int) extends TaintFact
  * @param classType The field's class.
  * @param fieldName The field's name.
  */
-case class StaticField(classType: ObjectType, fieldName: String) extends TaintFact
+case class StaticField(classType: ClassType, fieldName: String) extends TaintFact
 
 /**
  * A tainted instance field.
@@ -49,7 +49,7 @@ case class StaticField(classType: ObjectType, fieldName: String) extends TaintFa
  * @param classType The field's type.
  * @param fieldName The field's value.
  */
-case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends TaintFact
+case class InstanceField(index: Int, classType: ClassType, fieldName: String) extends TaintFact
 
 /**
  * A path of method calls, originating from the analyzed method, over which a tainted variable
@@ -57,7 +57,7 @@ case class InstanceField(index: Int, classType: ObjectType, fieldName: String) e
  *
  * @param flow A sequence of method calls, originating from but not including this method.
  */
-case class FlowFact(flow: Seq[Callable]) extends TaintFact {
+case class FlowFact(flow: Seq[Method]) extends TaintFact {
     override val hashCode: Int = {
         var r = 1
         flow.foreach(f => r = (r + f.hashCode()) * 31)

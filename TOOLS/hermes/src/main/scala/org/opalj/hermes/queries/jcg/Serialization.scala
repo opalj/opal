@@ -7,6 +7,7 @@ package jcg
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodCallMethodHandle
 import org.opalj.br.MethodDescriptor
@@ -14,7 +15,6 @@ import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.MethodDescriptor.ReadObjectDescriptor
 import org.opalj.br.MethodDescriptor.WriteObjectDescriptor
 import org.opalj.br.MethodWithBody
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.Project
@@ -47,17 +47,17 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     type V = DUVar[ValueInformation]
 
     // required types and descriptors
-    val OOS = ObjectType("java/io/ObjectOutputStream")
-    val OIS = ObjectType("java/io/ObjectInputStream")
-    val OOutput = ObjectType("java/io/")
+    val OOS = ClassType("java/io/ObjectOutputStream")
+    val OIS = ClassType("java/io/ObjectInputStream")
+    val OOutput = ClassType("java/io/")
 
-    val OOSwriteObject = MethodDescriptor.JustTakes(ObjectType.Object)
+    val OOSwriteObject = MethodDescriptor.JustTakes(ClassType.Object)
     val OISregisterValidation = MethodDescriptor(
-        ArraySeq(ObjectType("java/io/ObjectInputValidation"), IntegerType),
+        ArraySeq(ClassType("java/io/ObjectInputValidation"), IntegerType),
         VoidType
     )
-    val writeExternal = MethodDescriptor.JustTakes(ObjectType("java/io/ObjectOutput"))
-    val readExternal = MethodDescriptor.JustTakes(ObjectType("java/io/ObjectInput"))
+    val writeExternal = MethodDescriptor.JustTakes(ClassType("java/io/ObjectOutput"))
+    val readExternal = MethodDescriptor.JustTakes(ClassType("java/io/ObjectInput"))
 
     override def featureIDs: Seq[String] = {
         Seq(
@@ -90,11 +90,11 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         implicit val p: Project[?] = project
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
 
-        val serializableTypes: Set[ObjectType] =
-            classHierarchy.allSubtypes(ObjectType.Serializable, reflexive = false)
+        val serializableTypes: Set[ClassType] =
+            classHierarchy.allSubtypes(ClassType.Serializable, reflexive = false)
 
-        val externalizableTypes: Set[ObjectType] =
-            classHierarchy.allSubtypes(ObjectType.Externalizable, reflexive = false)
+        val externalizableTypes: Set[ClassType] =
+            classHierarchy.allSubtypes(ClassType.Externalizable, reflexive = false)
 
         val notExternalizableTypes = serializableTypes diff externalizableTypes
 
@@ -160,9 +160,9 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         invocation:             VirtualMethodCall[V],
         l:                      Location[S],
         stmts:                  Array[Stmt[V]],
-        serializableTypes:      Set[ObjectType],
-        externalizableTypes:    Set[ObjectType],
-        notExternalizableTypes: Set[ObjectType]
+        serializableTypes:      Set[ClassType],
+        externalizableTypes:    Set[ClassType],
+        notExternalizableTypes: Set[ClassType]
     )(
         implicit
         locations:      Array[LocationsContainer[S]],
@@ -185,11 +185,11 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         } else if (param.isPrecise) {
             if (param.isNull.isNo &&
                 hasMethod(param.asReferenceType, "writeObject", WriteObjectDescriptor) &&
-                !classHierarchy.isSubtypeOf(param.asReferenceType, ObjectType.Externalizable)
+                !classHierarchy.isSubtypeOf(param.asReferenceType, ClassType.Externalizable)
             )
                 locations(0) += l
             else if (param.isNull.isNo &&
-                     classHierarchy.isSubtypeOf(param.asReferenceType, ObjectType.Externalizable)
+                     classHierarchy.isSubtypeOf(param.asReferenceType, ClassType.Externalizable)
             )
                 locations(9) += l
 
@@ -202,7 +202,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             if (param.allValues.exists { pt =>
                     pt.isNull.isNo &&
                     hasMethod(pt.asReferenceType, "writeObject", WriteObjectDescriptor) &&
-                    !classHierarchy.isSubtypeOf(pt.asReferenceType, ObjectType.Externalizable)
+                    !classHierarchy.isSubtypeOf(pt.asReferenceType, ClassType.Externalizable)
                 }
             )
                 locations(1) += l
@@ -216,7 +216,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
             if (param.allValues.exists { pt =>
                     pt.isNull.isNo &&
-                    classHierarchy.isSubtypeOf(pt.asReferenceType, ObjectType.Externalizable)
+                    classHierarchy.isSubtypeOf(pt.asReferenceType, ClassType.Externalizable)
                 }
             )
                 locations(9) += l
@@ -235,16 +235,16 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     def isLambdaMetafactoryCall(invokedynamic: InvokedynamicFunctionCall[V]): Boolean = {
         val handle = invokedynamic.bootstrapMethod.handle
         handle.isInstanceOf[MethodCallMethodHandle] &&
-            handle.asInstanceOf[MethodCallMethodHandle].receiverType == ObjectType.LambdaMetafactory
+            handle.asInstanceOf[MethodCallMethodHandle].receiverType == ClassType.LambdaMetafactory
     }
 
     def handleReadObject[S](
         invocation:             Assignment[V],
         l:                      Location[S],
         stmts:                  Array[Stmt[V]],
-        serializableTypes:      Set[ObjectType],
-        externalizableTypes:    Set[ObjectType],
-        notExternalizableTypes: Set[ObjectType]
+        serializableTypes:      Set[ClassType],
+        externalizableTypes:    Set[ClassType],
+        notExternalizableTypes: Set[ClassType]
     )(
         implicit
         locations:      Array[LocationsContainer[S]],
@@ -267,7 +267,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         } else {
             if (castTypes.exists { cType =>
                     hasMethod(cType, "readObject", ReadObjectDescriptor) &&
-                    !classHierarchy.isSubtypeOf(cType, ObjectType.Externalizable)
+                    !classHierarchy.isSubtypeOf(cType, ClassType.Externalizable)
                 }
             )
                 locations(4) += l
@@ -275,14 +275,14 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             if (castTypes.exists { cType => hasMethod(cType, "readResolve", JustReturnsObject) })
                 locations(6) += l
 
-            if (castTypes.exists { cType => !classHierarchy.isSubtypeOf(cType, ObjectType.Externalizable) })
+            if (castTypes.exists { cType => !classHierarchy.isSubtypeOf(cType, ClassType.Externalizable) })
                 locations(8) += l
 
             if (castTypes.exists { cType =>
-                    classHierarchy.isSubtypeOf(cType, ObjectType.Externalizable) ||
-                    cType.isObjectType &&
-                    classHierarchy.allSubclassTypes(cType.asObjectType, reflexive = false).exists {
-                        classHierarchy.isSubtypeOf(_, ObjectType.Externalizable)
+                    classHierarchy.isSubtypeOf(cType, ClassType.Externalizable) ||
+                    cType.isClassType &&
+                    classHierarchy.allSubclassTypes(cType.asClassType, reflexive = false).exists {
+                        classHierarchy.isSubtypeOf(_, ClassType.Externalizable)
                     }
                 }
             ) {
@@ -293,9 +293,9 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     def handleReadObjectWithoutCasts[S](
         l:                      Location[S],
-        serializableTypes:      Set[ObjectType],
-        externalizableTypes:    Set[ObjectType],
-        notExternalizableTypes: Set[ObjectType]
+        serializableTypes:      Set[ClassType],
+        externalizableTypes:    Set[ClassType],
+        notExternalizableTypes: Set[ClassType]
     )(
         implicit
         locations: Array[LocationsContainer[S]],
@@ -321,11 +321,11 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         name:       String,
         descriptor: MethodDescriptor
     )(implicit p: SomeProject): Boolean = {
-        if (refType.isObjectType) {
-            val objectType = refType.asObjectType
-            val classFileO = p.classFile(objectType)
+        if (refType.isClassType) {
+            val classType = refType.asClassType
+            val classFileO = p.classFile(classType)
             classFileO.isDefined && classFileO.get.findMethod(name, descriptor).isDefined ||
-                p.instanceCall(objectType, objectType, name, descriptor).hasValue
+                p.instanceCall(classType, classType, name, descriptor).hasValue
         } else false
     }
 }

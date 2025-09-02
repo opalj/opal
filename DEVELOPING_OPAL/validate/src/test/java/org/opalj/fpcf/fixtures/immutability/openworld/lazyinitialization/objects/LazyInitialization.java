@@ -5,7 +5,7 @@ import org.opalj.fpcf.fixtures.immutability.openworld.general.ClassWithMutableFi
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 
 /**
- * This class encompasses different forms of lazy initialized fields with object type.
+ * This class encompasses different forms of lazy initialized fields with class type.
  */
 public class LazyInitialization {
 

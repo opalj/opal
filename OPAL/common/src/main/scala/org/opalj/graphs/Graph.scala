@@ -5,8 +5,8 @@ package graphs
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-import scala.collection.Map as AMap
-import scala.collection.mutable.HashMap
+import scala.collection.{Map => AMap}
+import scala.collection.mutable
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
 
@@ -79,12 +79,12 @@ class Graph[@specialized(Int) N: ClassTag] private (
     /**
      * All nodes which only have incoming dependencies/which have no successors.
      */
-    def leafNodes: Set[N] = vertices.filter(v => !successors.contains(v) || successors(v).isEmpty)
+    def leafNodes: mutable.Set[N] = vertices.filter(v => !successors.contains(v) || successors(v).isEmpty)
 
     def sccs(filterSingletons: Boolean = false): Iterator[Iterator[N]] = {
         val size = vertices.size
         val indexToN = new Array[N](size)
-        val nToIndex = new HashMap[N, Int](size, HashMap.defaultLoadFactor)
+        val nToIndex = new mutable.HashMap[N, Int](size, mutable.HashMap.defaultLoadFactor)
         for {
             e <- vertices.iterator.zipWithIndex // Scalac 2.12.2 will issue an incorrect warning for e @ (n, index)
         } {
