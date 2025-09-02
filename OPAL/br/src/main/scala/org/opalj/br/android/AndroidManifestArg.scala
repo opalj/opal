@@ -24,7 +24,7 @@ object AndroidManifestArg extends PlainArg[File] with ProjectBasedArg[File, File
         if (value.isDefined) {
             opalConfig.withValue(
                 InitialEntryPointsKey.ConfigKey,
-                ConfigValueFactory.fromAnyRef("org.opalj.tac.cg.android.AndroidEntryPointsFinder")
+                ConfigValueFactory.fromAnyRef("org.opalj.br.android.AndroidEntryPointFinder")
             )
         } else opalConfig
     }
