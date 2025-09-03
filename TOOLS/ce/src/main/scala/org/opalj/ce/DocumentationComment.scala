@@ -79,7 +79,8 @@ class DocumentationComment(
      */
     def getBrief(previewDescriptionLength: Int): String = {
         if (brief.isEmpty && description.nonEmpty)
-            description.head.substring(0, description.head.length.min(previewDescriptionLength)) + "..."
+            description.head.substring(0, description.head.length.min(previewDescriptionLength)) +
+                (if (description.size > 1 || description.head.length > previewDescriptionLength) "..." else "")
         else brief
     }
 

@@ -20,6 +20,11 @@
             border: 0.1em solid #DCDCDE;
             border-radius: 0.5em;
             margin-left: 2em;
+        }
+        .content:has(+ .header) {            
+            display: none;
+        }
+        .content ~ .content {            
             display: none;
         }
 

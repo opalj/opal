@@ -39,7 +39,7 @@ object ConfigurationExplorer extends App {
 
     // Export
     HTMLExporter.exportHTML(
-        configs,
+        configs.reverse,
         locator.projectRoot.resolve(conf.getString("org.opalj.ce.html.template")),
         conf,
         locator.projectRoot.resolve(conf.getString("org.opalj.ce.html.export")).toFile
