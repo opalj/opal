@@ -2,7 +2,6 @@
 package org.opalj
 package tac2bc
 
-import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
 import org.opalj.ba.CodeElement
 import org.opalj.br.MethodDescriptor

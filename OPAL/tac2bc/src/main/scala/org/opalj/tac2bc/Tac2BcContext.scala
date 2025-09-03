@@ -3,7 +3,7 @@ package org.opalj.tac2bc
 import org.opalj.ba.CodeElement
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.{DUP, DUP2, RewriteLabel}
-import org.opalj.tac.{Assignment, Const, DVar, NewArray, Stmt, V, Var}
+import org.opalj.tac.{Assignment, Const, DVar, Expr, NewArray, Stmt, UVar, V, Var}
 import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
@@ -40,7 +40,28 @@ class Tac2BcContext(
     }
 
     def emitVarUse(variable: Var[V]): Unit = {
-        val defIdx = savedDefSites(variable)
+        // Determine the definition index for this variable (and cache it if not known yet).
+        val defIdx = savedDefSites.get(variable) match {
+            case Some(idx) => idx
+            case None =>
+                val idx = variable match {
+                    case dvar: DVar[ValueInformation] => dvar.originatedAt
+                    case uvar: UVar[ValueInformation] => uvar.definedBy.head
+                }
+                savedDefSites(variable) = idx
+                idx
+        }
+
+        // Determine the First use-site index (where this variable is used)
+        val usedIdx = variable match {
+            case dvar: DVar[ValueInformation] => dvar.usedBy.head
+        }
+
+        // If the current expression has multiple def-sites,
+        // store the variable in a local to preserve its value.
+        if(getDefSites(usedIdx) > 1) {
+            ExprProcessor.storeVariable(variable, tacToLVIndex, code)
+        }
 
         if(getUseSites(defIdx) > 1) {
             emitMultDef(variable, defIdx)
@@ -93,6 +114,21 @@ class Tac2BcContext(
     }
 
     /**
+     * Returns the number of def-sites for the variable used inside the expression
+     * of the statement at the given definition index.
+     */
+    private def getDefSites(defIdx: Int): Int = {
+        tacStmts(defIdx)._1 match {
+            case Assignment(_, _, expr) =>
+                findUVarInExpr(expr)
+                    .map(_.asVar.definedBy.size)
+                    .getOrElse(throw new NoSuchElementException("No UVar in given expression."))
+
+            case _ => throw new NoSuchElementException("There are no variables in Statements.")
+        }
+    }
+
+    /**
      * Returns the variable corresponding to the given definition index.
      */
     private def getVarFromId(defIdx: Int): Var[V] = {
@@ -102,7 +138,32 @@ class Tac2BcContext(
         }
     }
 
+    /** Checks if a TAC statement has already been visited. */
     def isStmtVisited(stmt: Stmt[V]): Boolean = {
         visitedStmt.contains(stmt)
+    }
+
+    /**
+     * Returns the given expression and returns the first UVar found, if any.
+     */
+    private def findUVarInExpr(expr: Expr[V]): Option[UVar[_]] = {
+        // First, check the root expression itself.
+        var found: Option[UVar[_]] = expr match {
+            case u: UVar[_] => Some(u)
+            case _          => None
+        }
+
+        // Run through all subexpressions.
+        // It will stop traversal when the predicate returns false.
+        expr.forallSubExpressions { sub =>
+            sub match {
+                case u: UVar[_] =>
+                    found = Some(u)
+                    false
+                case _ =>
+                    true
+            }
+        }
+        found
     }
 }

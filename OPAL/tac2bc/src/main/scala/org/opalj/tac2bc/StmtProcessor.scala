@@ -96,7 +96,6 @@ object StmtProcessor {
         tacContext:   Tac2BcContext,
         stmtIndex:    Int
     )(implicit project: SomeProject): Unit = {
-        tacContext.visitedStmt += stmt
         stmt match {
             case Assignment(_, targetVar, expr) =>
                 processAssignment(targetVar, expr, tacToLVIndex, code, tacContext)
@@ -189,7 +188,10 @@ object StmtProcessor {
                 processNop(code)
             case _ => throw new UnsupportedOperationException(s"Unsupported TAC-Stmt: $stmt")
         }
-        code += LabelElement(labels(stmtIndex))
+        if (!tacContext.isStmtVisited(stmt)) {
+            code += LabelElement(labels(stmtIndex))
+        }
+        tacContext.visitedStmt += stmt
     }
 
     def processAssignment(

@@ -174,10 +174,10 @@ object ExprProcessor {
             }
         }
 
-        // Process the right expression
-        tacContext.emitStmt(compare.right.asVar.definedBy.head)
         // Process the left expression
         tacContext.emitStmt(compare.left.asVar.definedBy.head)
+        // Process the right expression
+        tacContext.emitStmt(compare.right.asVar.definedBy.head)
     }
 
     def processInvokedynamicFunctionCall(
@@ -193,8 +193,13 @@ object ExprProcessor {
         )
 
         // Process each parameter
-        for (param <- invokedynamicFunctionCall.params.reverse)
+        for (param <- invokedynamicFunctionCall.params.reverse) {
+            if(param.asVar.definedBy.size > 1) {
+                ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
+            } else {
                 tacContext.emitStmt(param.asVar.definedBy.head)
+            }
+        }
     }
 
     def processNewArray(
