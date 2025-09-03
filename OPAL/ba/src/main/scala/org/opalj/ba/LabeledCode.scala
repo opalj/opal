@@ -209,7 +209,7 @@ class LabeledCode(
                             case lnt: LineNumberTable => lnt
                         }
                     explicitLNT match {
-                        case None => oldRemappedLNT
+                        case None                                             => oldRemappedLNT
                         case Some(explicitLNT @ LineNumberTable(explicitLNs)) =>
                             explicitAttributes = explicitAttributes.filter(a => a != explicitLNT)
                             // explicit line number have precedence

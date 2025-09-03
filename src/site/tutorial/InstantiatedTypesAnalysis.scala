@@ -1,20 +1,20 @@
 import java.net.URL
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.ClassType
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.instructions.NEW
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -44,7 +44,8 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
     final type Self = InstantiatedTypes
 }
 
-case class InstantiatedTypes(classes: UIDSet[ClassType]) extends InstantiatedTypesPropertyMetaInformation with OrderedProperty {
+case class InstantiatedTypes(classes: UIDSet[ClassType]) extends InstantiatedTypesPropertyMetaInformation
+    with OrderedProperty {
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
         if (!classes.subsetOf(other.classes)) {
             throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
@@ -58,10 +59,11 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     final val key: PropertyKey[InstantiatedTypes] = {
         PropertyKey.create(
             "InstantiatedTypes",
-            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => InstantiatedTypes(UIDSet.empty)
-                case _                                                => throw new IllegalStateException(s"No analysis is scheduled for property InstantiatedTypes")
-            }
+            (_: PropertyStore, reason: FallbackReason, _: Entity) =>
+                reason match {
+                    case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => InstantiatedTypes(UIDSet.empty)
+                    case _                                                => throw new IllegalStateException(s"No analysis is scheduled for property InstantiatedTypes")
+                }
         )
     }
 }
@@ -69,7 +71,7 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 /* ANALYSIS */
 
 class InstantiatedTypesAnalysis(val project: SomeProject) extends FPCFAnalysis {
-    implicit private val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyzeMethod(method: DeclaredMethod): PropertyComputationResult = {
         if (method.name != "<init>")
@@ -81,18 +83,19 @@ class InstantiatedTypesAnalysis(val project: SomeProject) extends FPCFAnalysis {
             PartialResult[SomeProject, InstantiatedTypes](
                 project,
                 InstantiatedTypes.key,
-                (current: EOptionP[SomeProject, InstantiatedTypes]) => current match {
-                    case InterimUBP(ub: InstantiatedTypes) =>
-                        if (ub.classes.contains(instantiatedType))
-                            None
-                        else
-                            Some(InterimEUBP(project, InstantiatedTypes(ub.classes + instantiatedType)))
+                (current: EOptionP[SomeProject, InstantiatedTypes]) =>
+                    current match {
+                        case InterimUBP(ub: InstantiatedTypes) =>
+                            if (ub.classes.contains(instantiatedType))
+                                None
+                            else
+                                Some(InterimEUBP(project, InstantiatedTypes(ub.classes + instantiatedType)))
 
-                    case _: EPK[_, _] =>
-                        Some(InterimEUBP(project, InstantiatedTypes(UIDSet(instantiatedType))))
+                        case _: EPK[_, _] =>
+                            Some(InterimEUBP(project, InstantiatedTypes(UIDSet(instantiatedType))))
 
-                    case r => throw new IllegalStateException(s"unexpected previous result $r")
-                }
+                        case r => throw new IllegalStateException(s"unexpected previous result $r")
+                    }
             )
         }
 
@@ -105,7 +108,7 @@ class InstantiatedTypesAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
                 case UBP(v) => v
 
-                case r      => throw new IllegalStateException(s"unexpected result for callers $r")
+                case r => throw new IllegalStateException(s"unexpected result for callers $r")
             }
 
             if (callers.hasCallersWithUnknownContext || callers.hasVMLevelCallers)
@@ -171,7 +174,11 @@ object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSche
 /* RUNNER */
 
 object InstantiatedTypesRunner extends ProjectAnalysisApplication {
-    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
+    override def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () => Boolean
+    ): BasicReport = {
         val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(
             CallGraphAnalysisScheduler,
             InstantiatedTypesAnalysisScheduler
@@ -180,7 +187,7 @@ object InstantiatedTypesRunner extends ProjectAnalysisApplication {
         val instantiatedTypes = propertyStore(project, InstantiatedTypes.key).asFinal.p.classes.size
 
         BasicReport(
-            "Results of instantiated types analysis: \n"+
+            "Results of instantiated types analysis: \n" +
                 s"Number of instantiated types: $instantiatedTypes"
         )
     }

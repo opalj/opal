@@ -109,7 +109,7 @@ object TACtoBC {
     ): Int = {
         expr match {
             case uVar: UVar[ValueInformation] => populatetacToLVIndexMap(uVar, tacToLVIndex, initialLVIndex)
-            case _ =>
+            case _                            =>
                 var nextLVIndex = initialLVIndex
                 expr.forallSubExpressions { subExpr =>
                     nextLVIndex = populateLVIndicesForExpression(subExpr, tacToLVIndex, nextLVIndex)

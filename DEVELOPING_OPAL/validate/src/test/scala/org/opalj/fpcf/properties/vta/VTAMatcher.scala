@@ -40,7 +40,7 @@ abstract class VTAMatcher extends AbstractPropertyMatcher {
         val method = entity.asInstanceOf[(Method, VTAFact)]._1
         val taCode = p.get(PropertyStoreKey)(method, TACAI.key) match {
             case FinalP(TheTACAI(tac)) => tac
-            case _ =>
+            case _                     =>
                 throw new IllegalStateException(
                     "TAC of annotated method not present after analysis"
                 )

@@ -7,7 +7,6 @@ package properties
 import scala.annotation.switch
 
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.ExplicitlyNamedProperty
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
@@ -123,10 +122,7 @@ sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
  *
  * @author Florian Kuebler
  */
-sealed abstract class EscapeProperty
-    extends OrderedProperty
-    with ExplicitlyNamedProperty
-    with EscapePropertyMetaInformation {
+sealed abstract class EscapeProperty extends OrderedProperty with EscapePropertyMetaInformation {
 
     final def key: PropertyKey[EscapeProperty] = EscapeProperty.key
 
@@ -134,7 +130,7 @@ sealed abstract class EscapeProperty
         other match {
             case _: AtMost                                                  => // TODO this is not correct -> fix me!
             case other: EscapeProperty if other lessOrEqualRestrictive this =>
-            case p =>
+            case p                                                          =>
                 throw new IllegalArgumentException(s"$e: illegal refinement of property $p to $this")
         }
     }
@@ -174,8 +170,6 @@ sealed abstract class EscapeProperty
      * Is this the top value of the lattice, i.e. [[NoEscape]].
      */
     def isTop: Boolean
-
-    def asAggregatedProperty: VirtualMethodEscapeProperty = VirtualMethodEscapeProperty(this)
 }
 
 sealed abstract class FinalEscapeProperty extends EscapeProperty {
@@ -219,8 +213,6 @@ case object NoEscape extends FinalEscapeProperty {
     final val PID = 0
 
     override def propertyValueID: Int = PID
-
-    override def propertyName: String = "No"
 
     override def meet(that: EscapeProperty): EscapeProperty = that
 
@@ -267,8 +259,6 @@ case object EscapeInCallee extends FinalEscapeProperty {
     final val PID = 1
 
     override def propertyValueID: Int = PID
-
-    override def propertyName: String = "InCallee"
 
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
@@ -318,8 +308,6 @@ case object EscapeViaParameter extends FinalEscapeProperty {
 
     override def propertyValueID: Int = PID
 
-    override def propertyName: String = "ViaParameter"
-
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
             case NoEscape.PID | EscapeInCallee.PID | EscapeViaParameter.PID => true
@@ -368,8 +356,6 @@ case object EscapeViaReturn extends FinalEscapeProperty {
     final val PID = 3
 
     override def propertyValueID: Int = PID
-
-    override def propertyName: String = "ViaReturn"
 
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
@@ -424,8 +410,6 @@ case object EscapeViaAbnormalReturn extends FinalEscapeProperty {
 
     override def propertyValueID: Int = PID
 
-    override def propertyName: String = "ViaAbnormalReturn"
-
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
             case NoEscape.PID | EscapeInCallee.PID | EscapeViaAbnormalReturn.PID => true
@@ -459,8 +443,6 @@ case object EscapeViaParameterAndReturn extends FinalEscapeProperty {
     final val PID = 5
 
     override def propertyValueID: Int = PID
-
-    override def propertyName: String = "ViaParameterAndReturn"
 
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
@@ -501,8 +483,6 @@ case object EscapeViaParameterAndAbnormalReturn extends FinalEscapeProperty {
 
     override def propertyValueID: Int = PID
 
-    override def propertyName: String = "ViaParameterAndAbnormalReturn"
-
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
             case NoEscape.PID                => true
@@ -542,8 +522,6 @@ case object EscapeViaNormalAndAbnormalReturn extends FinalEscapeProperty {
 
     override def propertyValueID: Int = PID
 
-    override def propertyName: String = "ViaNormalAndAbnormalReturn"
-
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
             case NoEscape.PID                => true
@@ -582,8 +560,6 @@ case object EscapeViaParameterAndNormalAndAbnormalReturn extends FinalEscapeProp
     final val PID = 8
 
     override def propertyValueID: Int = PID
-
-    override def propertyName: String = "ViaParameterAndNormalAndAbnormalReturn"
 
     override def lessOrEqualRestrictive(that: EscapeProperty): Boolean =
         (that.propertyValueID: @switch) match {
@@ -666,8 +642,6 @@ case object GlobalEscape extends GlobalEscape {
 
     override def propertyValueID: Int = PID
 
-    override def propertyName: String = "Global"
-
     override def meet(that: EscapeProperty): EscapeProperty = this
 }
 
@@ -697,8 +671,6 @@ case object EscapeViaHeapObject extends GlobalEscape {
     final val PID = 10
 
     override def propertyValueID: Int = PID
-
-    override def propertyName: String = "ViaHeapObject"
 
     override def meet(that: EscapeProperty): EscapeProperty =
         if (that.propertyValueID == EscapeViaStaticField.PID || that.propertyValueID == GlobalEscape.PID)
@@ -731,8 +703,6 @@ case object EscapeViaStaticField extends GlobalEscape {
 
     override def propertyValueID: Int = PID
 
-    override def propertyName: String = "ViaStaticField"
-
     override def meet(that: EscapeProperty): EscapeProperty =
         if (that.propertyValueID == EscapeViaHeapObject.PID || that.propertyValueID == GlobalEscape.PID)
             GlobalEscape
@@ -753,7 +723,7 @@ case class AtMost private (property: FinalEscapeProperty) extends EscapeProperty
     }
     override def isBottom = false
     override def isTop = false
-    override def propertyName = s"AtMost${property.propertyName}"
+
     override def meet(that: EscapeProperty): EscapeProperty = that match {
         case AtMost(thatProperty)      => AtMost(thatProperty meet property)
         case that: FinalEscapeProperty => AtMost(property meet that)

@@ -35,7 +35,7 @@ object BoxingImmediatelyUnboxedToPerformCoercion {
      */
     def doAnalyze(
         project:       SomeProject,
-        parameters:    Seq[String]  = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[LineAndColumnBasedReport[Source]] = {
 
@@ -81,25 +81,27 @@ object BoxingImmediatelyUnboxedToPerformCoercion {
                         case INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)) =>
                             instructions(next_pc) match {
                                 case INVOKEVIRTUAL(
-                                    `receiver1`,
-                                    name,
-                                    NoArgumentMethodDescriptor(returnType: BaseType)
-                                    ) if ((returnType ne parameterType) && (theTypes.contains(receiver1) && theMethods.contains(name))) =>
-                                    {
-                                        result =
-                                            LineAndColumnBasedReport(
-                                                project.source(classFile.thisType),
-                                                Severity.Info,
-                                                classFile.thisType,
-                                                method.descriptor,
-                                                method.name,
-                                                body.lineNumber(pc),
-                                                None,
-                                                "Value boxed and immediately unboxed"
-                                            ) :: result
-                                        // we have matched the sequence
-                                        pc = body.pcOfNextInstruction(next_pc)
-                                    }
+                                        `receiver1`,
+                                        name,
+                                        NoArgumentMethodDescriptor(returnType: BaseType)
+                                    )
+                                    if ((returnType ne parameterType) && (theTypes.contains(
+                                        receiver1
+                                    ) && theMethods.contains(name))) => {
+                                    result =
+                                        LineAndColumnBasedReport(
+                                            project.source(classFile.thisType),
+                                            Severity.Info,
+                                            classFile.thisType,
+                                            method.descriptor,
+                                            method.name,
+                                            body.lineNumber(pc),
+                                            None,
+                                            "Value boxed and immediately unboxed"
+                                        ) :: result
+                                    // we have matched the sequence
+                                    pc = body.pcOfNextInstruction(next_pc)
+                                }
                                 case _ =>
                                     pc = next_pc
                                     next_pc = body.pcOfNextInstruction(pc)

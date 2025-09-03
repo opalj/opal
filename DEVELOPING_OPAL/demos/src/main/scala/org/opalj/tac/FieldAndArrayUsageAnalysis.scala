@@ -2,12 +2,14 @@
 package org.opalj
 package tac
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
@@ -19,7 +21,6 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
@@ -36,19 +37,22 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @author Florian Kuebler
  */
-object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
+object FieldAndArrayUsageAnalysis extends ProjectsAnalysisApplication {
 
-    override def title: String = "Field and array usage evaluation"
-
-    override def description: String = {
-        "Evaluates the impact of field and array usage to the escape analysis."
+    protected class FieldArrayUsageConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Evaluates the impact of field and array usage to the escape analysis"
     }
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = FieldArrayUsageConfig
+
+    protected def createConfig(args: Array[String]): FieldArrayUsageConfig = new FieldArrayUsageConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: FieldArrayUsageConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         var putFields = 0
         var putFieldsOfAllocation = 0
@@ -66,16 +70,14 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
         var allocations = 0
         var nonDeadAllocations = 0
 
-        implicit val logContext: LogContext = project.logContext
-
         val (defSites, ass) = time {
             val defSites = project.get(DefinitionSitesKey)
             (defSites, defSites.getAllocationSites)
-        } { t => info("progress", s"allocationSites took ${t.toSeconds}") }
+        } { t => info("progress", s"allocationSites took ${t.toSeconds}")(project.logContext) }
 
         val propertyStore = time {
             project.get(PropertyStoreKey)
-        } { t => info("progress", s"initialization of property store took ${t.toSeconds}") }
+        } { t => info("progress", s"initialization of property store took ${t.toSeconds}")(project.logContext) }
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
@@ -83,7 +85,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                 LazyL0BaseAIAnalysis,
                 TACAITransformer /* LazyL0TACAIAnalysis */
             )
-        } { t => info("progress", s"escape analysis took ${t.toSeconds}") }
+        } { t => info("progress", s"escape analysis took ${t.toSeconds}")(project.logContext) }
         for {
             as <- ass
             pc = as.pc
@@ -216,7 +218,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                |# of global new arrays: $globalArrays
                |# of arrayloads after store: $arrayLoads"""
 
-        BasicReport(message.stripMargin('|'))
+        (project, BasicReport(message.stripMargin('|')))
     }
 
 }

@@ -4,8 +4,6 @@ package tac
 package fpcf
 package analyses
 
-import scala.reflect.runtime.universe.runtimeMirror
-
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.GZIPInputStream
@@ -41,6 +39,7 @@ import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.getObjectReflectively
 
 /**
  * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results
@@ -174,9 +173,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
     }
 
     def getProperty(fqn: String): PropertyMetaInformation = {
-        val mirror = runtimeMirror(getClass.getClassLoader)
-        val module = mirror.staticModule(fqn.trim)
-        mirror.reflectModule(module).instance.asInstanceOf[PropertyMetaInformation]
+        getObjectReflectively[PropertyMetaInformation](fqn, this, "integration test").get
     }
 
     def getConfig: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] = {

@@ -34,7 +34,7 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
-import org.opalj.bytecode.RTJar
+import org.opalj.bytecode.JavaBase
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.PropertyStoreKey
@@ -83,7 +83,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             cf.thisType.packageName.startsWith("org/opalj/fpcf/properties")
         }
 
-        val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
+        val libraryClassFiles = (if (withRT) ClassFiles(JavaBase) else List()) ++ propertiesClassFiles
 
         implicit val config: Config = createConfig()
 
@@ -183,7 +183,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
      */
     def validateProperties(
         context: TestContext,
-        eas: IterableOnce[(
+        eas:     IterableOnce[(
             Entity, /*the processed annotation*/ String => String /* a String identifying the entity */,
             Iterable[AnnotationLike]
         )],
@@ -361,33 +361,42 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     }
 
     def executeAnalyses(
-        analysisRunners: Iterable[ComputationSpecification[FPCFAnalysis]]
+        analysisRunners:      Iterable[ComputationSpecification[FPCFAnalysis]],
+        afterPhaseScheduling: (Project[URL], List[ComputationSpecification[FPCFAnalysis]]) => Unit = (_, _) => ()
     ): TestContext = {
         try {
-            val p = FixtureProject.recreate { piKeyUnidueId => piKeyUnidueId != PropertyStoreKey.uniqueId } // to ensure that this project is not "polluted"
-            implicit val logContext: LogContext = p.logContext
+            val p = FixtureProject.recreate { piKeyUniqueId => piKeyUniqueId != PropertyStoreKey.uniqueId } // to ensure that this project is not "polluted"
+
             init(p)
+
+            executeAnalysesForProject(p, analysisRunners, afterPhaseScheduling = afterPhaseScheduling(p, _))
+        } catch {
+            case t: Throwable =>
+                t.printStackTrace()
+                t.getSuppressed.foreach(e => e.printStackTrace())
+                throw t;
+        }
+    }
+
+    def executeAnalysesForProject(
+        project:              Project[URL],
+        analysisRunners:      Iterable[ComputationSpecification[FPCFAnalysis]],
+        afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
+    ): TestContext = {
+        try {
+            implicit val logContext: LogContext = project.logContext
 
             PropertyStore.updateDebug(true)
 
-            p.getOrCreateProjectInformationKeyInitializationData(
+            project.getOrCreateProjectInformationKeyInitializationData(
                 PropertyStoreKey,
-                (context: List[PropertyStoreContext[AnyRef]]) => {
-                    /*
-                val ps = PKEParallelTasksPropertyStore.create(
-                    new RecordAllPropertyStoreTracer,
-                    context.iterator.map(_.asTuple).toMap
-                )
-                     */
-                    val ps = PKESequentialPropertyStore(context: _*)
-                    ps
-                }
+                (context: List[PropertyStoreContext[AnyRef]]) => PKESequentialPropertyStore(context: _*)
             )
 
-            val ps = p.get(PropertyStoreKey)
+            val ps = project.get(PropertyStoreKey)
 
-            val (_, csas) = p.get(FPCFAnalysesManagerKey).runAll(analysisRunners)
-            TestContext(p, ps, csas.collect { case (_, as) => as })
+            val (_, csas) = project.get(FPCFAnalysesManagerKey).runAll(analysisRunners, afterPhaseScheduling(_))
+            TestContext(project, ps, csas.collect { case (_, as) => as })
         } catch {
             case t: Throwable =>
                 t.printStackTrace()

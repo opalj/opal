@@ -89,14 +89,14 @@ object LoadConstantInstruction {
 
     def apply(c: ConstantValue[_], wide: Boolean): LoadConstantInstruction[_] =
         c match {
-            case ConstantDouble(d)    => LoadDouble(d)
-            case ConstantFloat(f)     => if (wide) LoadFloat_W(f) else LoadFloat(f)
-            case ConstantInteger(i)   => if (wide) LoadInt_W(i) else LoadInt(i)
-            case ConstantLong(l)      => LoadLong(l)
-            case ConstantString(s)    => if (wide) LoadString_W(s) else LoadString(s)
-            case ConstantClass(c)     => if (wide) LoadClass_W(c) else LoadClass(c)
-            case md: MethodDescriptor => if (wide) LoadMethodType_W(md) else LoadMethodType(md)
-            case mh: MethodHandle     => if (wide) LoadMethodHandle_W(mh) else LoadMethodHandle(mh)
+            case ConstantDouble(d)                                  => LoadDouble(d)
+            case ConstantFloat(f)                                   => if (wide) LoadFloat_W(f) else LoadFloat(f)
+            case ConstantInteger(i)                                 => if (wide) LoadInt_W(i) else LoadInt(i)
+            case ConstantLong(l)                                    => LoadLong(l)
+            case ConstantString(s)                                  => if (wide) LoadString_W(s) else LoadString(s)
+            case ConstantClass(c)                                   => if (wide) LoadClass_W(c) else LoadClass(c)
+            case md: MethodDescriptor                               => if (wide) LoadMethodType_W(md) else LoadMethodType(md)
+            case mh: MethodHandle                                   => if (wide) LoadMethodHandle_W(mh) else LoadMethodHandle(mh)
             case DynamicConstant(bootstrapMethod, name, descriptor) =>
                 if (descriptor.computationalType.isCategory2)
                     LoadDynamic2_W(bootstrapMethod, name, descriptor)

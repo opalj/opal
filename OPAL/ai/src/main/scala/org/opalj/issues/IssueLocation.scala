@@ -53,7 +53,7 @@ abstract class ProjectLocation(
             case _: FieldLocation       => 1
             case _: ClassLocation       => 1
             case _: PackageLocation     => 1
-            case that: ProjectLocation =>
+            case that: ProjectLocation  =>
                 that.theProject.hashCode() compare this.theProject.hashCode() match {
                     case 0 =>
                         (this.description, that.description) match {

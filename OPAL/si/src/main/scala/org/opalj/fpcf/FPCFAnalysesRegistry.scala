@@ -2,8 +2,6 @@
 package org.opalj
 package fpcf
 
-import scala.reflect.runtime.universe.runtimeMirror
-
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigObject
 import com.typesafe.config.ConfigValueFactory
@@ -13,6 +11,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.getObjectReflectively
 
 /**
  * Registry for all factories for analyses that are implemented using the fixpoint computations
@@ -56,7 +55,7 @@ object FPCFAnalysesRegistry {
         factoryType:         String,
         default:             Boolean
     ): Unit = this.synchronized {
-        resolveAnalysisRunner(analysisFactory) match {
+        getObjectReflectively[FPCFAnalysisScheduler[_]](analysisFactory, this, "FPCF registry") match {
             case Some(analysisRunner) =>
                 factoryType match {
                     case "lazy" =>
@@ -91,22 +90,6 @@ object FPCFAnalysesRegistry {
 
             case None =>
                 error("OPAL Setup", s"unknown analysis implementation: $analysisFactory")
-        }
-    }
-
-    private[this] def resolveAnalysisRunner(fqn: String): Option[FPCFAnalysisScheduler[_]] = {
-        val mirror = runtimeMirror(getClass.getClassLoader)
-        try {
-            val module = mirror.staticModule(fqn)
-            import mirror.reflectModule
-            Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler[_]])
-        } catch {
-            case sre: ScalaReflectionException =>
-                error("FPCF registry", "cannot find analysis scheduler", sre)
-                None
-            case cce: ClassCastException =>
-                error("FPCF registry", "analysis scheduler class is invalid", cce)
-                None
         }
     }
 

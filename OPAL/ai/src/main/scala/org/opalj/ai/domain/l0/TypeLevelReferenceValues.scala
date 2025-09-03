@@ -331,7 +331,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         def isIndexValid(pc: Int, index: DomainValue): Answer =
             length.map { (l: Int) =>
                 intIsSomeValueNotInRange(pc, index, 0, l - 1) match {
-                    case No => Yes
+                    case No  => Yes
                     case Yes =>
                         intIsSomeValueInRange(pc, index, 0, l - 1) match {
                             case No                  => No

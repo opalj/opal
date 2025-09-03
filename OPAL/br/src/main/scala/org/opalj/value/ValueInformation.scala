@@ -123,15 +123,15 @@ object ValueInformation {
      */
     def forProperValue(t: Type)(implicit classHierarchy: ClassHierarchy): ValueInformation = {
         (t.id: @switch) match {
-            case VoidType.id    => TheVoidValue
-            case BooleanType.id => ABooleanValue
-            case ByteType.id    => AByteValue
-            case CharType.id    => ACharValue
-            case ShortType.id   => AShortValue
-            case IntegerType.id => AnIntegerValue
-            case LongType.id    => ALongValue
-            case FloatType.id   => AFloatValue
-            case DoubleType.id  => ADoubleValue
+            case VoidType.id           => TheVoidValue
+            case BooleanType.id        => ABooleanValue
+            case ByteType.id           => AByteValue
+            case CharType.id           => ACharValue
+            case ShortType.id          => AShortValue
+            case IntegerType.id        => AnIntegerValue
+            case LongType.id           => ALongValue
+            case FloatType.id          => AFloatValue
+            case DoubleType.id         => ADoubleValue
             case _ /*referenceTypeId*/ =>
                 if (t.isClassType) {
                     val classType = t.asClassType

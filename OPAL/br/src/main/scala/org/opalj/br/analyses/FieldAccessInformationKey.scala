@@ -38,7 +38,7 @@ object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInform
     override def compute(project: SomeProject): FieldAccessInformation = {
         val schedulers = project.getProjectInformationKeyInitializationData(this) match {
             case Some(s) => s
-            case None =>
+            case None    =>
                 OPALLogger.error(
                     "analysis configuration",
                     s"no field access information analysis configured even though requirements were run"

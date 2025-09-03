@@ -43,9 +43,7 @@ object IntIteratorProperties extends Properties("IntIterator") {
         values.forall { v => is.iterator.contains(v) == is.iterator.contains(v) }
     }
 
-    property("foldLeft") = forAll { (is: IntArraySet) =>
-        is.iterator.foldLeft(0)(_ + _) == is.iterator.foldLeft(0)(_ + _)
-    }
+    property("foldLeft") = forAll { (is: IntArraySet) => is.iterator.foldLeft(0)(_ + _) == is.iterator.foldLeft(0)(_ + _) }
 
     property("map") = forAll { (is: IntArraySet) => is.iterator.map(_ + 1).toList == is.map(_ + 1).toList }
 

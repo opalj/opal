@@ -23,6 +23,7 @@ import org.opalj.br.ArrayType
 import org.opalj.br.BooleanType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
+import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeDouble
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
@@ -34,7 +35,6 @@ import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
 import org.opalj.br.instructions._
@@ -91,11 +91,11 @@ object ExprProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         expr match {
-            case const: Const              => loadConstant(const, code)
-            case variable: Var[V]          => loadVariable(variable, tacToLVIndex, code)
-            case getField: GetField[V]     => processGetField(getField, tacToLVIndex, code)
-            case getStatic: GetStatic      => processGetStatic(getStatic, code)
-            case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code)
+            case const: Const                 => loadConstant(const, code)
+            case variable: Var[V]             => loadVariable(variable, tacToLVIndex, code)
+            case getField: GetField[V]        => processGetField(getField, tacToLVIndex, code)
+            case getStatic: GetStatic         => processGetStatic(getStatic, code)
+            case binaryExpr: BinaryExpr[V]    => processBinaryExpr(binaryExpr, tacToLVIndex, code)
             case callExpr: Call[V @unchecked] =>
                 val call @ Call(declaringClass, isInterface, name, descriptor) = callExpr
                 processCall(
@@ -107,18 +107,18 @@ object ExprProcessor {
                     tacToLVIndex,
                     code
                 )
-            case newExpr: New => processNewExpr(newExpr.tpe, code)
+            case newExpr: New                                    => processNewExpr(newExpr.tpe, code)
             case primitiveTypecastExpr: PrimitiveTypecastExpr[V] =>
                 processPrimitiveTypeCastExpr(primitiveTypecastExpr, tacToLVIndex, code)
-            case arrayLength: ArrayLength[V] => processArrayLength(arrayLength, tacToLVIndex, code)
-            case arrayLoadExpr: ArrayLoad[V] => processArrayLoad(arrayLoadExpr, tacToLVIndex, code)
-            case newArrayExpr: NewArray[V]   => processNewArray(newArrayExpr, tacToLVIndex, code)
+            case arrayLength: ArrayLength[V]                             => processArrayLength(arrayLength, tacToLVIndex, code)
+            case arrayLoadExpr: ArrayLoad[V]                             => processArrayLoad(arrayLoadExpr, tacToLVIndex, code)
+            case newArrayExpr: NewArray[V]                               => processNewArray(newArrayExpr, tacToLVIndex, code)
             case invokedynamicFunctionCall: InvokedynamicFunctionCall[V] =>
                 processInvokedynamicFunctionCall(invokedynamicFunctionCall, tacToLVIndex, code)
             case compare: Compare[V]       => processCompare(compare, tacToLVIndex, code)
             case prefixExpr: PrefixExpr[V] => processPrefixExpr(prefixExpr, tacToLVIndex, code)
             case instanceOf: InstanceOf[V] => processInstanceOf(instanceOf, tacToLVIndex, code)
-            case _ =>
+            case _                         =>
                 throw new UnsupportedOperationException("Unsupported expression type" + expr)
         }
     }
@@ -148,7 +148,7 @@ object ExprProcessor {
                 case ComputationalTypeLong   => LNEG
                 case ComputationalTypeFloat  => FNEG
                 case ComputationalTypeDouble => DNEG
-                case _ =>
+                case _                       =>
                     throw new UnsupportedOperationException(s"Unsupported type for negation: ${prefixExpr.operand.cTpe}")
             }
         }
@@ -255,7 +255,7 @@ object ExprProcessor {
     }
 
     def processNewExpr(
-        tpe:  ObjectType,
+        tpe:  ClassType,
         code: mutable.ListBuffer[CodeElement[Nothing]]
     ): Unit = {
         code += NEW(tpe)
@@ -275,12 +275,12 @@ object ExprProcessor {
         code += {
             call match {
                 case _: VirtualMethodCall[V] | _: VirtualFunctionCall[V] =>
-                    if (isInterface) INVOKEINTERFACE(declaringClass.asObjectType, methodName, methodDescriptor)
+                    if (isInterface) INVOKEINTERFACE(declaringClass.asClassType, methodName, methodDescriptor)
                     else INVOKEVIRTUAL(declaringClass, methodName, methodDescriptor)
                 case _: NonVirtualMethodCall[V] | _: NonVirtualFunctionCall[V] =>
-                    INVOKESPECIAL(declaringClass.asObjectType, isInterface, methodName, methodDescriptor)
+                    INVOKESPECIAL(declaringClass.asClassType, isInterface, methodName, methodDescriptor)
                 case _: StaticMethodCall[V] | _: StaticFunctionCall[V] =>
-                    INVOKESTATIC(declaringClass.asObjectType, isInterface, methodName, methodDescriptor)
+                    INVOKESTATIC(declaringClass.asClassType, isInterface, methodName, methodDescriptor)
             }
         }
     }
@@ -291,15 +291,15 @@ object ExprProcessor {
     ): Unit = {
         code += {
             constExpr match {
-                case _: NullExpr                 => ACONST_NULL
-                case IntConst(_, value)          => LoadConstantInstruction(value)
-                case FloatConst(_, value)        => LoadFloat(value)
-                case ClassConst(_, value)        => LoadClass(value)
-                case StringConst(_, value)       => LoadString(value)
-                case MethodHandleConst(_, value) => LoadMethodHandle(value)
-                case MethodTypeConst(_, value)   => LoadMethodType(value)
-                case DoubleConst(_, value)       => LoadDouble(value)
-                case LongConst(_, value)         => LoadLong(value)
+                case _: NullExpr                                        => ACONST_NULL
+                case IntConst(_, value)                                 => LoadConstantInstruction(value)
+                case FloatConst(_, value)                               => LoadFloat(value)
+                case ClassConst(_, value)                               => LoadClass(value)
+                case StringConst(_, value)                              => LoadString(value)
+                case MethodHandleConst(_, value)                        => LoadMethodHandle(value)
+                case MethodTypeConst(_, value)                          => LoadMethodType(value)
+                case DoubleConst(_, value)                              => LoadDouble(value)
+                case LongConst(_, value)                                => LoadLong(value)
                 case DynamicConst(_, bootstrapMethod, name, descriptor) =>
                     LoadDynamic(bootstrapMethod, name, descriptor)
             }
@@ -328,7 +328,7 @@ object ExprProcessor {
                 case ComputationalTypeDouble    => DLOAD.canonicalRepresentation(index)
                 case ComputationalTypeLong      => LLOAD.canonicalRepresentation(index)
                 case ComputationalTypeReference => ALOAD.canonicalRepresentation(index)
-                case _ =>
+                case _                          =>
                     throw new UnsupportedOperationException(
                         "Unsupported computational type for loading variable" + variable
                     )
@@ -349,7 +349,7 @@ object ExprProcessor {
                 case ComputationalTypeDouble    => DSTORE.canonicalRepresentation(index)
                 case ComputationalTypeLong      => LSTORE.canonicalRepresentation(index)
                 case ComputationalTypeReference => ASTORE.canonicalRepresentation(index)
-                case _ =>
+                case _                          =>
                     throw new UnsupportedOperationException(
                         "Unsupported computational type for storing variable" + variable
                     )

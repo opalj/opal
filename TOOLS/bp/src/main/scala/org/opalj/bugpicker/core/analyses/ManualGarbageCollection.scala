@@ -4,18 +4,18 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.issues.Issue
-import org.opalj.br.MethodWithBody
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodWithBody
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.issues.InstructionLocation
+import org.opalj.issues.Issue
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
 import org.opalj.issues.Relevance
-import org.opalj.issues.InstructionLocation
 
 /**
  * This analysis reports calls to `java.lang.System/Runtime.gc()` that seem to be made
