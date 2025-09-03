@@ -10,8 +10,10 @@ import scala.util.Properties.versionNumberString
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
 
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
 
 /**
  * Utility methods.
@@ -92,6 +94,29 @@ package object util {
             ConfigRenderOptions.defaults().setOriginComments(false).setComments(withComments).setJson(false)
         val opalConf = config.withOnlyPath("org")
         opalConf.root().render(renderingOptions)
+    }
+
+    /**
+     * Reflectively retrieves an object.
+     *
+     * @note Make sure to supply the expected object type parameter A to avoid potential issues.
+     */
+    def getObjectReflectively[A](fqn: String, source: AnyRef, category: String = "configuration")(implicit
+        logContext: LogContext = GlobalLogContext
+    ): Option[A] = {
+        import scala.reflect.runtime.universe._
+        try {
+            val mirror = runtimeMirror(source.getClass.getClassLoader)
+            val module = mirror.staticModule(fqn)
+            Some(mirror.reflectModule(module).instance.asInstanceOf[A])
+        } catch {
+            case sre: ScalaReflectionException =>
+                error(category, s"Cannot find object $fqn", sre)
+                None
+            case cce: ClassCastException =>
+                error(category, "Reflected object is invalid", cce)
+                None
+        }
     }
 
 }

@@ -416,4 +416,5 @@ object Purity extends ProjectsAnalysisApplication {
             Console.println(s"Analysis time: $analysisTime")
         }
     }
+
 }
