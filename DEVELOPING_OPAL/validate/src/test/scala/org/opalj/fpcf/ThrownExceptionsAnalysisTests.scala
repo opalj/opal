@@ -2,8 +2,13 @@
 package org.opalj
 package fpcf
 
-import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
-import org.opalj.br.fpcf.analyses.EagerVirtualMethodThrownExceptionsAnalysis
+import java.net.URL
+
+import org.opalj.ai.domain.l1
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.Project
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -14,16 +19,12 @@ import org.opalj.br.fpcf.analyses.EagerVirtualMethodThrownExceptionsAnalysis
  */
 class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
-    object DummyProperty {
-        final val Key: PropertyKey[DummyProperty] = {
-            PropertyKey.create[Entity, DummyProperty]("DummyProperty", new DummyProperty)
-        }
-    }
+    override def init(p: Project[URL]): Unit = {
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(_ =>
+            Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
+        )
 
-    sealed class DummyProperty extends Property {
-        override type Self = DummyProperty
-
-        override def key: PropertyKey[DummyProperty] = DummyProperty.Key
+        p.get(RTACallGraphKey)
     }
 
     override def fixtureProjectPackage: List[String] = {
@@ -32,17 +33,15 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
 
     describe("L1ThrownExceptionsAnalysis and VirtualMethodThrownExceptionsAnalysis are executed") {
         val as = executeAnalyses(Set(
-            EagerVirtualMethodThrownExceptionsAnalysis,
             EagerL1ThrownExceptionsAnalysis
         ))
         val TestContext(_, ps, _) = as
 
         validateProperties(
             as,
-            methodsWithAnnotations(as.project),
+            contextsWithAnnotations(as.project),
             Set(
                 "ExpectedExceptions",
-                "ExpectedExceptionsByOverridingMethods",
                 "ThrownExceptionsAreUnknown"
             )
         )

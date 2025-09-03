@@ -14,21 +14,21 @@ publishMavenStyle := false
 ThisBuild / resolvers += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
 
 ThisBuild / scalacOptions ++= Seq(
-  "-deprecation",
-  "-feature",
-  "-unchecked",
-  "-Xlint",
-  "-Xfuture",
-  "-Xfatal-warnings",
-  "-Ywarn-numeric-widen",
-  "-Ywarn-nullary-unit",
-  "-Ywarn-nullary-override",
-  // 2.12.4 enable: "-Ywarn-unused:imports,privates,locals,implicits",
-  // 2.12.4 enable: "-Ywarn-infer-any",
-  "-Ywarn-dead-code",
-  "-Ywarn-inaccessible",
-  "-Ywarn-adapted-args",
-  "-Wconf:cat=unused-nowarn:s" // necessary with sbt > 1.5 https://github.com/sbt/sbt/issues/6398
+    "-deprecation",
+    "-feature",
+    "-unchecked",
+    "-Xlint",
+    "-Xfuture",
+    "-Xfatal-warnings",
+    "-Ywarn-numeric-widen",
+    "-Ywarn-nullary-unit",
+    "-Ywarn-nullary-override",
+    // 2.12.4 enable: "-Ywarn-unused:imports,privates,locals,implicits",
+    // 2.12.4 enable: "-Ywarn-infer-any",
+    "-Ywarn-dead-code",
+    "-Ywarn-inaccessible",
+    "-Ywarn-adapted-args",
+    "-Wconf:cat=unused-nowarn:s" // necessary with sbt > 1.5 https://github.com/sbt/sbt/issues/6398
 )
 
 // The version of Eclipse JDT compiler library needs to stay fixed for use within OPAL!

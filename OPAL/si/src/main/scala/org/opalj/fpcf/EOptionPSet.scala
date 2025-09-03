@@ -141,7 +141,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
             case Some(eEOptionPs) =>
                 eEOptionPs.get(e) match {
                     case Some(eOptionP) => eOptionP.asInstanceOf[EOptionP[NewE, NewP]]
-                    case _ =>
+                    case _              =>
                         val eOptionP: EOptionP[NewE, NewP] = ps(e, pk)
                         if (eOptionP.isRefinable) {
                             eEOptionPs += (eOptionP.e -> eOptionP)

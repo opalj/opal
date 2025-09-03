@@ -1,0 +1,262 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.fpcf.fixtures.string;
+
+import org.opalj.fpcf.fixtures.string.tools.StringFactory;
+import org.opalj.fpcf.fixtures.string.tools.ParameterDependentStringFactory;
+import org.opalj.fpcf.fixtures.string.tools.StringProvider;
+import org.opalj.fpcf.properties.string.*;
+
+/**
+ * Various tests that test specific compatibility of the different levels of the string analysis with resolving
+ * different types of function calls and their impact on the analyzed strings. As an example, arbitrary virtual function
+ * calls may be analyzable in one level of the string analysis but not another.
+ *
+ * @see SimpleStringOps
+ */
+public class FunctionCalls {
+
+    /**
+     * Serves as the sink for string variables to be analyzed.
+     */
+    public void analyzeString(String s) {}
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.String")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "java.lang.Object")
+    @Failure(sinkIndex = 1, levels = Level.L0)
+    public void simpleStringConcatWithStaticFunctionCalls() {
+        analyzeString(StringProvider.concat("java.lang.", "String"));
+        analyzeString(StringProvider.concat("java.", StringProvider.concat("lang.", "Object")));
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
+    public void fromFunctionCall() {
+        analyzeString(getStringBuilderClassName());
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.StringBuilder")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Invalid(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.LOW)
+    @PartiallyConstant(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "java.lang..*")
+    public void fromConstantAndFunctionCall() {
+        String className = "java.lang.";
+        System.out.println(className);
+        className += getSimpleStringBuilderClassName();
+        analyzeString(className);
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "java.lang.Integer")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    public void fromStaticMethodWithParamTest() {
+        analyzeString(StringProvider.getFQClassNameWithStringBuilder("java.lang", "Integer"));
+    }
+
+    @Invalid(sinkIndex = 0, levels = Level.TRUTH, reason = "the function has no return value, thus it does not return a string")
+    public void functionWithNoReturnValue() {
+        analyzeString(noReturnFunction());
+    }
+
+    /** Belongs to functionWithNoReturnValue. */
+    public static String noReturnFunction() {
+        throw new RuntimeException();
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Hello, World!")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 1, levels = Level.TRUTH, value = "Hello, World?")
+    @Failure(sinkIndex = 1, levels = { Level.L0, Level.L1 })
+    public void functionWithFunctionParameter() {
+        analyzeString(addExclamationMark(getHelloWorld()));
+        analyzeString(addQuestionMark(getHelloWorld()));
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(ERROR|java.lang.Object|java.lang.StringBuilder)")
+    @Constant(sinkIndex = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.LOW, value = "ERROR")
+    @Dynamic(sinkIndex = 0, levels = { Level.L0, Level.L1 }, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
+    public void simpleNonVirtualFunctionCallTestWithIf(int i) {
+        String s;
+        if (i == 0) {
+            s = getObjectClassName();
+        } else if (i == 1) {
+            s = getStringBuilderClassName();
+        } else {
+            s = "ERROR";
+        }
+        analyzeString(s);
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(ERROR|java.lang.Object|java.lang.StringBuilder)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    @Constant(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.LOW, value = "ERROR")
+    @Dynamic(sinkIndex = 0, levels = Level.L1, soundness = SoundnessMode.HIGH, value = "(.*|ERROR)")
+    public void initFromNonVirtualFunctionCallTest(int i) {
+        String s;
+        if (i == 0) {
+            s = getObjectClassName();
+        } else if (i == 1) {
+            s = getStringBuilderClassName();
+        } else {
+            s = "ERROR";
+        }
+        StringBuilder sb = new StringBuilder(s);
+        analyzeString(sb.toString());
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "It is (Hello, World|great)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    public void appendWithTwoDefSitesWithFuncCallTest(int i) {
+        String s;
+        if (i > 0) {
+            s = "great";
+        } else {
+            s = getHelloWorld();
+        }
+        analyzeString(new StringBuilder("It is ").append(s).toString());
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Hello World")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
+    public void knownHierarchyInstanceTest() {
+        StringFactory sf = new ParameterDependentStringFactory();
+        analyzeString(sf.getString("World"));
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(Hello|Hello World)")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
+    public void unknownHierarchyInstanceTest(StringFactory stringFactory) {
+        analyzeString(stringFactory.getString("World"));
+    }
+
+    /**
+     * A case where the single valid return value of the called function can be resolved without calling the function.
+     */
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "val")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 }, domains = DomainLevel.L1)
+    @Constant(sinkIndex = 0, levels = { Level.L2, Level.L3 }, domains = DomainLevel.L1, value = "(One|java.lang.Object|val)")
+    public void resolvableReturnValue() {
+        analyzeString(resolvableReturnValueFunction("val", 42));
+    }
+
+    /**
+     * Belongs to resolvableReturnValue.
+     */
+    private String resolvableReturnValueFunction(String s, int i) {
+        switch (i) {
+            case 0: return getObjectClassName();
+            case 1: return "One";
+            default: return s;
+        }
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(One|java.lang.Object|val)")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
+    public void severalReturnValuesTest1() {
+        analyzeString(severalReturnValuesWithSwitchFunction("val", 42));
+    }
+
+    /** Belongs to severalReturnValuesTest1. */
+    private String severalReturnValuesWithSwitchFunction(String s, int i) {
+        switch (i) {
+            case 0: return "One";
+            case 1: return s;
+            default: return getObjectClassName();
+        }
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "(Hello, World|that's odd)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    public void severalReturnValuesTest2() {
+        analyzeString(severalReturnValuesWithIfElseFunction(42));
+    }
+
+    /** Belongs to severalReturnValuesTest2. */
+    private static String severalReturnValuesWithIfElseFunction(int i) {
+        // The ternary operator would create only a single "return" statement which is not what we want here
+        if (i % 2 != 0) {
+            return "that's odd";
+        } else {
+            return getHelloWorld();
+        }
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(Hello, World|my.helper.Class)")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|Hello, World|my.helper.Class)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    public String calleeWithFunctionParameter(String s, float i) {
+        analyzeString(s);
+        return s;
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, value = "Hello, World")
+    @Failure(sinkIndex = 0, levels = { Level.L0, Level.L1 })
+    public void firstCallerForCalleeWithFunctionParameter() {
+        String s = calleeWithFunctionParameter(getHelloWorldProxy(), 900);
+        analyzeString(s);
+    }
+
+    public void secondCallerForCalleeWithFunctionParameter() {
+        calleeWithFunctionParameter(getHelperClassProxy(), 900);
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(Hello, World|my.helper.Class)")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|Hello, World|my.helper.Class)")
+    @Failure(sinkIndex = 0, levels = Level.L0)
+    public String calleeWithFunctionParameterMultipleCallsInSameMethodTest(String s, float i) {
+        analyzeString(s);
+        return s;
+    }
+
+    public void callerForCalleeWithFunctionParameterMultipleCallsInSameMethodTest() {
+        calleeWithFunctionParameterMultipleCallsInSameMethodTest(getHelloWorldProxy(), 900);
+        calleeWithFunctionParameterMultipleCallsInSameMethodTest(getHelperClassProxy(), 900);
+    }
+
+    @Constant(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.LOW, value = "(string.1|string.2)")
+    @Dynamic(sinkIndex = 0, levels = Level.TRUTH, soundness = SoundnessMode.HIGH, value = "(.*|string.1|string.2)")
+    public String calleeWithStringParameterMultipleCallsInSameMethodTest(String s, float i) {
+        analyzeString(s);
+        return s;
+    }
+
+    public void callerForCalleeWithStringParameterMultipleCallsInSameMethodTest() {
+        calleeWithStringParameterMultipleCallsInSameMethodTest("string.1", 900);
+        calleeWithStringParameterMultipleCallsInSameMethodTest("string.2", 900);
+    }
+
+    public static String getHelloWorldProxy() {
+        return getHelloWorld();
+    }
+
+    public static String getHelperClassProxy() {
+        return getHelperClass();
+    }
+
+    private static String getHelloWorld() {
+        return "Hello, World";
+    }
+
+    private static String getHelperClass() {
+        return "my.helper.Class";
+    }
+
+    private String getStringBuilderClassName() {
+        return "java.lang.StringBuilder";
+    }
+
+    private String getSimpleStringBuilderClassName() {
+        return "StringBuilder";
+    }
+
+    private String getObjectClassName() {
+        return "java.lang.Object";
+    }
+
+    private static String addExclamationMark(String s) {
+        return s + "!";
+    }
+
+    private String addQuestionMark(String s) {
+        return s + "?";
+    }
+}

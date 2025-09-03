@@ -38,7 +38,7 @@ class VTATest extends PropertiesTest {
         val project = testContext.project
         val ps = testContext.propertyStore
         testContext.analyses.foreach {
-            case ifdsAnalysis: IFDSAnalysis[_, _, _] =>
+            case ifdsAnalysis: IFDSAnalysis[_, _, _, _] =>
                 for (e <- ifdsAnalysis.ifdsProblem.entryPoints) {
                     ps.force(e, ifdsAnalysis.propertyKey.key)
                 }

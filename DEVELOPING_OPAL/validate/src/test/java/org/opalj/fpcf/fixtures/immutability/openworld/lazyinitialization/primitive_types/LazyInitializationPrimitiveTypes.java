@@ -122,7 +122,7 @@ class DeterministicCall {
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with call to deterministic method", analyses = {})
     @MutableField("field is unsafely lazily initialized and has primitive value")
-    @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
+    @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
     private int x;
 
@@ -133,7 +133,7 @@ class DeterministicCall {
         return x;
     }
 
-    private final int sum(int a, int b) {
+    private int sum(int a, int b) {
         return a + b;
     }
 }
@@ -151,14 +151,14 @@ class DeterministicCallWithParam {
         return x;
     }
 
-    private final int sum(int a, int b) {
+    private int sum(int a, int b) {
         return a + b;
     }
 }
 
 class DeterministicCallOnFinalField {
 
-    @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
+    @TransitivelyImmutableField(value = "Field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with call to deterministic method ", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
@@ -195,7 +195,7 @@ class DeterministicCallOnFinalField {
 
 class DeterministicCallOnNonFinalField {
 
-    @UnsafelyLazilyInitializedField("Wrong lazy initialization with call to non-deterministic method on final field")
+    @UnsafelyLazilyInitializedField("No lazy initialization due to call to non-deterministic method on final field")
     private int x;
 
     @AssignableField("Non final field")
@@ -228,7 +228,7 @@ class DeterministicCallOnNonFinalField {
 
 class NondeterministicCall {
 
-    @UnsafelyLazilyInitializedField("Wrong lazy initialization with call to non-deterministic method")
+    @UnsafelyLazilyInitializedField("No lazy initialization due to call to non-deterministic method")
     private int x;
 
     private final Object object = new Object();
@@ -243,7 +243,10 @@ class NondeterministicCall {
 
 class DoubleLocalAssignment {
 
-    @UnsafelyLazilyInitializedField("Lazy initialization with a local that is updated twice")
+    @LazilyInitializedField(value = "Lazy initialization with a local that is updated twice with deterministic value",
+            analyses = {})
+    @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
+            analyses = {L2FieldAssignabilityAnalysis.class})
     private int x;
 
     public int init() {
@@ -258,7 +261,9 @@ class DoubleLocalAssignment {
 
 class DoubleAssignment {
 
-    @AssignableField("Field can be observed partially updated")
+    @UnsafelyLazilyInitializedField(value = "Field can be observed partially updated in single thread ", analyses = {})
+    @AssignableField(value = "The analysis does not recognize multiple but inconsequential writes",
+            analyses = {L2FieldAssignabilityAnalysis.class})
     private int x;
 
     public int init() {
@@ -272,7 +277,7 @@ class DoubleAssignment {
 
 class VisibleInitialization {
 
-    @AssignableField("Incorrect because lazy initialization is visible")
+    @AssignableField("Not lazily initialized because initialization is visible")
     private int x;
 
     public int init() {

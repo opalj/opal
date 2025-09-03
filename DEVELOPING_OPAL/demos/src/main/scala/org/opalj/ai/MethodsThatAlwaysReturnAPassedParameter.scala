@@ -2,13 +2,15 @@
 package org.opalj
 package ai
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.ai.domain.Origins
 import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -19,22 +21,26 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  *
  * @author Michael Eichberg
  */
-object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplication {
+object MethodsThatAlwaysReturnAPassedParameter extends ProjectsAnalysisApplication {
 
-    override def title: String = "identify methods that always return a given parameter"
-
-    override def description: String = {
-        "identifies methods that either always throw an exception or return a given parameter"
+    protected class MethodsReturningParameterConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Identifies methods that either always throw an exception or return a given parameter"
     }
 
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = MethodsReturningParameterConfig
+
+    protected def createConfig(args: Array[String]): MethodsReturningParameterConfig =
+        new MethodsReturningParameterConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: MethodsReturningParameterConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val methods = for {
-            classFile <- theProject.allClassFiles.par
+            classFile <- project.allClassFiles.par
             method <- classFile.methods
             if method.body.isDefined
             if method.descriptor.returnType.isReferenceType
@@ -45,7 +51,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
             result = BaseAI(
                 method,
                 // "in real code" a specially tailored domain should be used.
-                new domain.l1.DefaultDomain(theProject, method) with RecordLastReturnedValues
+                new domain.l1.DefaultDomain(project.asInstanceOf[Project[URL]], method) with RecordLastReturnedValues
             )
             if result.domain.allReturnedValues.forall {
                 case (_, Origins(os)) if os.forall(_ < 0) => true
@@ -53,8 +59,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
             }
         } yield {
             // collect the origin information
-            val origins =
-                result.domain.allReturnedValues.values.map(result.domain.originsIterator(_).toList).flatten.toSet
+            val origins = result.domain.allReturnedValues.values.flatMap(result.domain.originsIterator(_).toList).toSet
 
             method.toJava + (
                 if (origins.nonEmpty)
@@ -77,7 +82,6 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
                 "\n",
                 "\n"
             )
-        BasicReport(throwsExceptionResult + returnsParameterResult)
-
+        (project, BasicReport(throwsExceptionResult + returnsParameterResult))
     }
 }

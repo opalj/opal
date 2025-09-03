@@ -25,7 +25,7 @@ public class Main {
 ## "Inherited"StaticInterfaceMethods
 The following is the Java code to facilitate comprehension of the test case.
 
-The engineered classes are found in `bc/test/resources/InheritedStaticInterfaceMethods/mr`.
+The engineered classes are found in `bc/src/test/resources/InheritedStaticInterfaceMethods/mr/inheritedstaticinterfacemethods`.
 ***(The code is not valid Java bytecode; it is intended to test the resolution scheme used by the call graph algorithm!)***
 
 ```java
@@ -58,7 +58,7 @@ class Main {
 The following is **pseudo-code** to facilitate comprehension of the test case:
 ***(The code is not valid Java code!)***
 
-The engineered classes are found in `bc/test/resources/InheritedInterfaceMethods/root`.
+The engineered classes are found in `bc/src/test/resources/InheritedInterfaceMethods/mr/inheritedinterfacemethods`.
 
 Though the following code is not valid Java, it is valid bytecode and instanceMethods does the correct thing:
 
@@ -90,7 +90,7 @@ public class Sub extends Top implements Intf { }
 The following is **pseudo-code** to facilitate comprehension of the test case:
 ***(The code is not valid Java code!)***
 
-The engineered classes are found in `bc/test/resources/StaticAndDefaultInterfaceMethods/mr`.
+The engineered classes are found in `bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/staticanddefaultinterfacemethods`.
 
 ```java
 interface SuperIntf {
@@ -132,7 +132,7 @@ public class Main {
 The following is **pseudo-code** to facilitate comprehension of the test case:
 ***(The code is not valid Java code!)***
 
-The engineered classes are found in `bc/test/resources/MaximallySpecificInterfaceMethods/mr`.
+The engineered classes are found in `bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/maximallyspecificinterfacemethods`.
 
 ```java
 interface S0_1 {

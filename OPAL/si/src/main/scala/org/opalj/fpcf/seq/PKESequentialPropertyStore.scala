@@ -895,15 +895,15 @@ object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialProp
             case "FIFO" => new FIFOTasksManager
             case "LIFO" => new LIFOTasksManager
 
-            case "ManyDirectDependenciesLast" => new ManyDirectDependenciesLastTasksManager
-            case "ManyDirectDependersLast"    => new ManyDirectDependersLastTasksManager
+            case "ManyDirectDependenciesLast"         => new ManyDirectDependenciesLastTasksManager
+            case "ManyDirectDependersLast"            => new ManyDirectDependersLastTasksManager
             case "ManyDependeesOfDirectDependersLast" =>
                 new ManyDependeesOfDirectDependersLastTasksManager
             case "ManyDependeesAndDependersOfDirectDependersLast" =>
                 new ManyDependeesAndDependersOfDirectDependersLastTasksManager
 
-            case "ManyDirectDependenciesFirst" => new ManyDirectDependenciesFirstTasksManager
-            case "ManyDirectDependersFirst"    => new ManyDirectDependersFirstTasksManager
+            case "ManyDirectDependenciesFirst"         => new ManyDirectDependenciesFirstTasksManager
+            case "ManyDirectDependersFirst"            => new ManyDirectDependersFirstTasksManager
             case "ManyDependeesOfDirectDependersFirst" =>
                 new ManyDependeesOfDirectDependersFirstTasksManager
             case "ManyDependeesAndDependersOfDirectDependersFirst" =>

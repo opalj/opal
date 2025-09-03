@@ -11,9 +11,9 @@ import org.opalj.br.ClassType
 import org.opalj.br.ElementValue
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 

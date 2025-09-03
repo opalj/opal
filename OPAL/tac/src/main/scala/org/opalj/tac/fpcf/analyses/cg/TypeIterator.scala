@@ -22,7 +22,6 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.CallStringContextProvider
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
@@ -53,8 +52,10 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
+import org.opalj.si.ProjectInformationKeys
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -152,7 +153,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
                     case Assignment(pc, _, NewArray(_, _, tpe)) => Some((tpe, pc))
                     case Assignment(pc, _, c: Const)            => Some((c.tpe.asClassType, pc))
                     case Assignment(pc, _, fc: FunctionCall[V]) => Some((fc.descriptor.returnType.asReferenceType, pc))
-                    case _ =>
+                    case _                                      =>
                         hasUnknownAllocation = true
                         None
                 }
@@ -487,9 +488,8 @@ class RTATypeIterator(project: SomeProject)
                 handleType(av.theUpperTypeBound)
             case _ =>
         }
-        typesProperty.types.iterator.filter { tpe =>
-            isPossibleType(use, tpe) || additionalTypes.contains(tpe)
-        }.foreach(handleType)
+        typesProperty.types.iterator.filter { tpe => isPossibleType(use, tpe) || additionalTypes.contains(tpe) }
+            .foreach(handleType)
     }
 
     @inline override def foreachType(
@@ -530,6 +530,9 @@ class RTATypeIterator(project: SomeProject)
             isPossibleType(field, _)
         }.foreach(handleNewType)
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ PropertyStoreKey
 }
 
 /**
@@ -645,6 +648,9 @@ class PropagationBasedTypeIterator(
             isPossibleType(field, _)
         }.foreach(handleNewType)
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ PropertyStoreKey
 }
 
 /**
@@ -816,6 +822,9 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
                 None
         }
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :++ Seq(PropertyStoreKey, VirtualFormalParametersKey, DefinitionSitesKey)
 }
 
 /**

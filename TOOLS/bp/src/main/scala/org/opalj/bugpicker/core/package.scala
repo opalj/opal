@@ -3,6 +3,7 @@ package org.opalj
 package bugpicker
 
 import scala.io.Source
+
 import org.opalj.io.process
 
 /**

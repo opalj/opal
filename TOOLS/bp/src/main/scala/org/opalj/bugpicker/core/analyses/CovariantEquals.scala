@@ -4,19 +4,18 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.issues.Issue
+import org.opalj.br.BooleanType
 import org.opalj.br.ClassFile
+import org.opalj.br.ClassType
+import org.opalj.br.IntegerType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.BooleanType
-import org.opalj.br.IntegerType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.ClassType
+import org.opalj.issues.ClassLocation
 import org.opalj.issues.Issue
-import org.opalj.issues.Relevance
 import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
-import org.opalj.issues.ClassLocation
+import org.opalj.issues.Relevance
 
 /**
  * This analysis reports classes that have some `equals()` method(s), but not
@@ -49,15 +48,14 @@ object CovariantEquals {
     private def hasHashCode(classFile: ClassFile): Boolean = {
         classFile.methods.exists {
             case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType)) => true
-            case _ => false
+            case _                                                           => false
         }
     }
 
     private def superClassHasCustomHashCode(
         classFile: ClassFile
     )(
-        implicit
-        project: SomeProject
+        implicit project: SomeProject
     ): Boolean = {
 
         if (classFile.thisType eq ClassType.Object)
@@ -83,8 +81,7 @@ object CovariantEquals {
     def apply(
         classFile: ClassFile
     )(
-        implicit
-        project: SomeProject
+        implicit project: SomeProject
     ): Iterable[Issue] = {
         if (classFile.isInterfaceDeclaration)
             return Iterable.empty;

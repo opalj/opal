@@ -2,6 +2,7 @@
 package org.opalj
 package ai
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.ai.domain.PerformAI
@@ -9,7 +10,8 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.MethodInvocationInstruction
 
 /**
@@ -18,27 +20,30 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  *
  * @author Michael Eichberg
  */
-object MethodCallInformation extends ProjectAnalysisApplication {
+object MethodCallInformation extends ProjectsAnalysisApplication {
 
-    override def title: String = "Extracting Actual Method Parameter Information"
-
-    override def description: String = {
-        "Analyzes the parameters of called methods to determine if we have more precise type information."
+    protected class StatisticsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Collects method call parameters where more precise type information can be computed"
     }
 
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = StatisticsConfig
+
+    protected def createConfig(args: Array[String]): StatisticsConfig = new StatisticsConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: StatisticsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
         //        val mutex = new Object // JUST USED TO GET A REASONABLE DEBUG OUTPUT
 
         val callsCount = new java.util.concurrent.atomic.AtomicInteger
         val refinedCallsCount = new java.util.concurrent.atomic.AtomicInteger
-        val ch = theProject.classHierarchy
+        val ch = project.classHierarchy
 
         def analyzeMethod(method: Method): Unit = {
-            val domain = new ai.domain.l1.DefaultDomain(theProject, method)
+            val domain = new ai.domain.l1.DefaultDomain(project, method)
             val result = PerformAI(domain)
 
             val code = method.body.get
@@ -63,9 +68,8 @@ object MethodCallInformation extends ProjectAnalysisApplication {
                                 val foundMorePreciseType = op match {
                                     case v: domain.AReferenceValue =>
                                         val utb = v.upperTypeBound
-                                        // If the upper type bound has multiple types
-                                        // the type bound is necessarily more precise
-                                        // the the method parameter's type.
+                                        // If the upper type bound has multiple types the type bound
+                                        // is necessarily more precise the method parameter's type.
                                         !utb.isSingletonSet || (utb.head ne parameterTypes(index))
                                     case _ => // we don't care about primitive types
                                         false
@@ -96,10 +100,13 @@ object MethodCallInformation extends ProjectAnalysisApplication {
             }
         }
 
-        theProject.parForeachMethodWithBody(isInterrupted)(mi => analyzeMethod(mi.method))
+        project.parForeachMethodWithBody()(mi => analyzeMethod(mi.method))
 
-        BasicReport(
-            s"Found ${refinedCallsCount.get}/${callsCount.get} calls where we were able to get more precise type information."
+        (
+            project,
+            BasicReport(
+                s"Found ${refinedCallsCount.get}/${callsCount.get} calls where we were able to get more precise type information."
+            )
         )
     }
 }

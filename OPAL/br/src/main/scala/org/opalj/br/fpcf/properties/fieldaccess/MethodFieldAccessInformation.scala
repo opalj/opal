@@ -31,7 +31,7 @@ sealed trait MethodFieldAccessInformationPropertyMetaInformation[S <: MethodFiel
             (_: PropertyStore, reason: FallbackReason, _: Entity) =>
                 reason match {
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => fallbackValue
-                    case _ =>
+                    case _                                                =>
                         throw new IllegalStateException(s"No analysis is scheduled for property $propertyName")
                 }
         )

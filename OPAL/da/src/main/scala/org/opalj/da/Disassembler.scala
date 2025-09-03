@@ -126,7 +126,7 @@ object Disassembler {
                 classFileFilter,
                 (cf: ClassFile) => cf.thisType.asJava
             ) match {
-                case Left(cfSource) => cfSource
+                case Left(cfSource)       => cfSource
                 case Right(altClassNames) =>
                     if (altClassNames.isEmpty) {
                         handleError(sources.mkString("cannot find class files in: ", ", ", ""))

@@ -33,7 +33,7 @@ object TypeIteratorKey extends ProjectInformationKey[TypeIterator, TypeIterator]
         }
 
         project.getProjectInformationKeyInitializationData(ContextProviderKey) match {
-            case Some(_: TypeIterator) =>
+            case Some(_: TypeIterator)    =>
             case Some(_: ContextProvider) =>
                 OPALLogger.error(
                     "analysis configuration",

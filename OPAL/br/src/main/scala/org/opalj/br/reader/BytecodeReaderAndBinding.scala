@@ -262,7 +262,7 @@ trait BytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 148 => LCMP
                 case 9   => LCONST_0
                 case 10  => LCONST_1
-                case 18 =>
+                case 18  =>
                     val constant = cp(in.readUnsignedByte())
                     if (constant.isDynamic) {
                         registerDeferredAction(cp) { classFile =>

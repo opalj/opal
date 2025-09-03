@@ -5,6 +5,4 @@ package entity
  * @author Marco Torsello
  */
 @SerialVersionUID(100L)
-abstract class AbstractEntity extends Serializable {
-
-}
+abstract class AbstractEntity extends Serializable {}

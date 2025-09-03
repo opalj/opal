@@ -3,8 +3,10 @@ package org.opalj
 package br
 package analyses
 
+import java.io.File
 import java.net.URL
 
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.issues.ClassLocation
 import org.opalj.issues.Issue
 import org.opalj.issues.IssueCategory
@@ -22,28 +24,27 @@ import org.opalj.issues.Relevance
  *
  * @author Michael Eichberg
  */
-object CovariantEqualsMethodDefined extends ProjectAnalysisApplication {
+object CovariantEqualsMethodDefined extends ProjectsAnalysisApplication {
 
-    //
-    // Meta-data
-    //
+    protected class CovariantEqualsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Finds classes that just define a co-variant equals method"
+    }
 
-    override def description: String = "Finds classes that just define a co-variant equals method."
+    protected type ConfigType = CovariantEqualsConfig
 
-    //
-    // Implementation
-    //
+    protected def createConfig(args: Array[String]): CovariantEqualsConfig = new CovariantEqualsConfig(args)
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: CovariantEqualsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val mutex = new Object
         var reports = List[Issue]()
 
-        project.parForeachClassFile(isInterrupted) { classFile =>
+        project.parForeachClassFile() { classFile =>
             var definesEqualsMethod = false
             var definesCovariantEqualsMethod = false
             for (Method(_, "equals", MethodDescriptor(Seq(ct), BooleanType)) <- classFile.methods)
@@ -66,6 +67,6 @@ object CovariantEqualsMethodDefined extends ProjectAnalysisApplication {
                 }
             }
         }
-        reports.map(_.toAnsiColoredString).mkString("\n")
+        (project, BasicReport(reports.map(_.toAnsiColoredString).mkString("\n")))
     }
 }

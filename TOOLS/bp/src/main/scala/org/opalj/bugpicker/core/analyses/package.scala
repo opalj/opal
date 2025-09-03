@@ -3,13 +3,13 @@ package org.opalj
 package bugpicker
 package core
 
-import org.opalj.util.Nanoseconds
-import org.opalj.br.ClassType
-import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.BooleanType
-import org.opalj.br.MethodDescriptor
+import org.opalj.br.ClassType
 import org.opalj.br.IntegerType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.analyses.AnalysisException
 import org.opalj.issues.Issue
+import org.opalj.util.Nanoseconds
 
 /**
  * Common constants and helper methods used by the BugPicker's analyses.

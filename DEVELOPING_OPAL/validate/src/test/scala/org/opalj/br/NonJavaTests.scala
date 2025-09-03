@@ -19,9 +19,9 @@ class NonJavaTests extends AnyFunSpec {
 
         val sourceFolder = locateTestResources("StaticAndDefaultInterfaceMethods", "bc")
         val project = Project(sourceFolder)
-        val superIntfType = ClassType("mr/SuperIntf")
-        val intfType = ClassType("mr/Intf")
-        val subIntfType = ClassType("mr/SubIntf")
+        val superIntfType = ClassType("mr/staticanddefaultinterfacemethods/SuperIntf")
+        val intfType = ClassType("mr/staticanddefaultinterfacemethods/Intf")
+        val subIntfType = ClassType("mr/staticanddefaultinterfacemethods/SubIntf")
 
         it("should not contain the default method \"m\" from SuperIntf that is inaccesible in Intf") {
             assert(project.instanceMethods(superIntfType).size == 1)

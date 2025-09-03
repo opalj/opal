@@ -132,11 +132,59 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     | TypeVariableSignature.KindId =>
                     processSignature(vc, attribute.asInstanceOf[Signature])
 
+                case Module.KindId =>
+                    val module = attribute.asInstanceOf[Module]
+                    processModule(module.name, module.requires, module.uses)
+
+                case ModuleMainClass.KindId =>
+                    processDependency(
+                        vc,
+                        attribute.asInstanceOf[ModuleMainClass].mainClassType,
+                        MODULE_MAIN_CLASS
+                    )
+
+                case NestHost.KindId =>
+                    processDependency(
+                        vc,
+                        attribute.asInstanceOf[NestHost].hostClassType,
+                        NEST_HOST
+                    )
+
+                case NestMembers.KindId =>
+                    for {
+                        member <- attribute.asInstanceOf[NestMembers].classes
+                    } {
+                        processDependency(
+                            vc,
+                            member,
+                            NEST_MEMBER
+                        )
+                    }
+
+                case Record.KindId =>
+                    for {
+                        component <- attribute.asInstanceOf[Record].components
+                    } {
+                        process(vc, component)
+                    }
+
+                case PermittedSubclasses.KindId =>
+                    for {
+                        subclass <- attribute.asInstanceOf[PermittedSubclasses].classes
+                    } {
+                        processDependency(
+                            vc,
+                            subclass,
+                            PERMITTED_SUBCLASS
+                        )
+                    }
+
                 // The following attributes do not create dependencies.
                 case Synthetic.KindId            => /*do nothing*/
                 case SourceFile.KindId           => /*do nothing*/
                 case Deprecated.KindId           => /*do nothing*/
                 case SourceDebugExtension.KindId => /*do nothing*/
+                case ModulePackages.KindId       => /*do nothing*/
                 // The Java 7 BootstrapMethodTable Attribute is resolved and related
                 // dependencies will be extracted when the respective invokedynamic
                 // instructions are processed.
@@ -146,12 +194,28 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 // These are "custom attributes"
                 case SynthesizedClassFiles.KindId => /*ignore*/
                 case VirtualTypeFlag.KindId       => /*ignore*/
-                case _ =>
+                case _                            =>
                     val classInfo = classFile.thisType.toJava
                     val message = s"unexpected class attribute: $attribute ($classInfo)"
                     throw BytecodeProcessingFailedException(message)
             }
         }
+    }
+
+    protected def process(declaringClass: VirtualClass, recordComponent: RecordComponent): Unit = {
+        val vrc = dependencyProcessor.asVirtualField(
+            declaringClass.thisType,
+            recordComponent.name,
+            recordComponent.componentType
+        )
+
+        dependencyProcessor.processDependency(
+            vrc,
+            declaringClass,
+            INSTANCE_MEMBER
+        )
+
+        processFieldLike(declaringClass, vrc, recordComponent.attributes)
     }
 
     /**
@@ -166,16 +230,19 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
             field.name,
             field.fieldType
         )
-
         dependencyProcessor.processDependency(
             vf,
             declaringClass,
             if (field.isStatic) CLASS_MEMBER else INSTANCE_MEMBER
         )
 
-        processDependency(vf, field.fieldType, FIELD_TYPE)
+        processFieldLike(declaringClass, vf, field.attributes)
+    }
 
-        field.attributes foreach { attribute =>
+    private def processFieldLike(declaringClass: VirtualClass, vf: VirtualField, attributes: Attributes): Unit = {
+        processDependency(vf, vf.fieldType, FIELD_TYPE)
+
+        attributes foreach { attribute =>
             attribute.kindId match {
                 case RuntimeInvisibleAnnotationTable.KindId
                     | RuntimeVisibleAnnotationTable.KindId =>
@@ -214,8 +281,8 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 // Synthetic and Deprecated do not introduce new dependencies
                 case Synthetic.KindId  => /*do nothing*/
                 case Deprecated.KindId => /*do nothing*/
-                case _ =>
-                    val fieldInfo = field.toJava
+                case _                 =>
+                    val fieldInfo = vf.toJava
                     val message = s"unexpected field attribute: $attribute ($fieldInfo)"
                     throw new BytecodeProcessingFailedException(message)
             }
@@ -293,7 +360,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                     // relevant dependencies.
                     case StackMapTable.KindId   => /* Do Nothing */
                     case LineNumberTable.KindId => /* Do Nothing */
-                    case _ =>
+                    case _                      =>
                         val methodSignature = method.toJava
                         val message = s"unexpected code attribute: $attribute ($methodSignature)"
                         throw BytecodeProcessingFailedException(message)
@@ -330,9 +397,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case RuntimeInvisibleParameterAnnotationTable.KindId
                     | RuntimeVisibleParameterAnnotationTable.KindId =>
                     val pas = attribute.asInstanceOf[ParameterAnnotationTable].parameterAnnotations
-                    pas foreach { pa =>
-                        pa foreach { process(vm, _, PARAMETER_ANNOTATED_WITH, ANNOTATION_ELEMENT_TYPE) }
-                    }
+                    pas foreach { pa => pa foreach { process(vm, _, PARAMETER_ANNOTATED_WITH, ANNOTATION_ELEMENT_TYPE) } }
 
                 // ElementValues encode annotation default attributes
                 case BooleanValue.KindId
@@ -358,7 +423,7 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case Synthetic.KindId            => /* nothing to do */
                 case Deprecated.KindId           => /* nothing to do */
                 case MethodParameterTable.KindId => /* nothing to do */
-                case _ =>
+                case _                           =>
                     val methodSignature = method.toJava
                     val message = s"unexpected method attribute: $attribute ($methodSignature)"
                     throw BytecodeProcessingFailedException(message)
@@ -792,6 +857,31 @@ class DependencyExtractor(protected[this] val dependencyProcessor: DependencyPro
                 case _ =>
             }
             i = instruction.indexOfNextInstruction(i)(code)
+        }
+    }
+
+    protected def processModule(name: String, requires: Seq[Requires], uses: Seq[ClassType]): Unit = {
+        val vm = dependencyProcessor.asVirtualModule(name)
+
+        for {
+            requiredModule <- requires
+        } {
+            val vrm = dependencyProcessor.asVirtualModule(requiredModule.requires)
+            dependencyProcessor.processDependency(
+                vm,
+                vrm,
+                REQUIRED_MODULE
+            )
+        }
+
+        for {
+            use <- uses
+        } {
+            processDependency(
+                vm,
+                use,
+                USED_SERVICE
+            )
         }
     }
 

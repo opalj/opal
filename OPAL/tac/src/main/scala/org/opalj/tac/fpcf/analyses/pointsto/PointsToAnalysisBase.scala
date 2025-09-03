@@ -358,7 +358,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         val oldDependeePointsTo = oldDependee match {
             case UBP(ub: PointsToSet @unchecked)   => ub
             case _: EPK[_, PointsToSet @unchecked] => emptyPointsToSet
-            case d =>
+            case d                                 =>
                 throw new IllegalArgumentException(s"unexpected dependee $d")
         }
 
@@ -407,8 +407,9 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                             results = results ++ createPartialResults(
                                 fieldEntity,
                                 knownPointsTo,
-                                rhsDefSitesEPS.view.mapValues((_, typeFilter)).toMap,
-                                { _.included(knownPointsTo, typeFilter) }
+                                rhsDefSitesEPS.view.mapValues((_, typeFilter)).toMap, {
+                                    _.included(knownPointsTo, typeFilter)
+                                }
                             )(state)
                     }
                 }
@@ -564,8 +565,9 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                     createPartialResults(
                         defSiteObject,
                         newPointsTo,
-                        nextDependees.iterator.map(d => d.toEPK -> ((d, filter))).toMap,
-                        { _.included(newPointsTo, filter) }
+                        nextDependees.iterator.map(d => d.toEPK -> ((d, filter))).toMap, {
+                            _.included(newPointsTo, filter)
+                        }
                     )(state)
 
                 if (newDependees.nonEmpty) {

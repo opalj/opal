@@ -9,7 +9,7 @@ import scala.xml.NodeSeq
  */
 object MavenPublishing {
 
-  def pomNodeSeq(): NodeSeq = {
+    def pomNodeSeq(): NodeSeq = {
     <scm>
         <url>https://github.com/opalj/opal.git</url>
         <connection>scm:git:git@github.com:opalj/opal.git</connection>
@@ -41,6 +41,6 @@ object MavenPublishing {
             <name>Johannes Düsing</name>
         </developer>
     </developers>
-  }
+    }
 
 }

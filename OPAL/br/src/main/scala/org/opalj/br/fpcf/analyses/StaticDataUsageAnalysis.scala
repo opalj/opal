@@ -56,7 +56,7 @@ class StaticDataUsageAnalysis private[analyses] (final val project: SomeProject)
     def baseMethodStaticDataUsage(dm: DefinedMethod): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(sdu) => Result(dm, sdu)
+            case FinalP(sdu)              => Result(dm, sdu)
             case ep @ InterimLUBP(lb, ub) =>
                 InterimResult(dm, lb, ub, Set(ep), c)
             case epk =>
@@ -108,7 +108,7 @@ class StaticDataUsageAnalysis private[analyses] (final val project: SomeProject)
                         case Some(field) =>
                             propertyStore(field, CompileTimeConstancy.key) match {
                                 case FinalP(CompileTimeConstantField) =>
-                                case _: FinalEP[_, _] =>
+                                case _: FinalEP[_, _]                 =>
                                     return Result(definedMethod, UsesVaryingData);
                                 case ep =>
                                     dependees += ep
@@ -134,7 +134,7 @@ class StaticDataUsageAnalysis private[analyses] (final val project: SomeProject)
                                         propertyStore(declaredMethods(callee), StaticDataUsage.key)
 
                                     constantUsage match {
-                                        case FinalP(UsesNoStaticData) => /* Nothing to do */
+                                        case FinalP(UsesNoStaticData)     => /* Nothing to do */
                                         case FinalP(UsesConstantDataOnly) =>
                                             maxLevel = UsesConstantDataOnly
 

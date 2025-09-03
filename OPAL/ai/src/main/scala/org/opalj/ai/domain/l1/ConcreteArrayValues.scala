@@ -236,7 +236,7 @@ trait ConcreteArrayValues
                         }).toArray // <= forces the evaluation - WHICH IS REQUIRED
                     update match {
                         case NoUpdateType => NoUpdate
-                        case _ =>
+                        case _            =>
                             if (isOther) {
                                 update(other)
                             } else {

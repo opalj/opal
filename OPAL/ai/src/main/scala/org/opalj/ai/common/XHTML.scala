@@ -59,7 +59,7 @@ object XHTML {
             f(result)
         } catch {
             case ct: ControlThrowable => throw ct
-            case e: Throwable =>
+            case e: Throwable         =>
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
@@ -104,7 +104,7 @@ object XHTML {
             f
         } catch {
             case ct: ControlThrowable => throw ct
-            case e: Throwable =>
+            case e: Throwable         =>
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime

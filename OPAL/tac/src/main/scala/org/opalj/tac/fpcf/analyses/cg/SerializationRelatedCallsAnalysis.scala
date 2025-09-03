@@ -368,9 +368,7 @@ class OISReadObjectAnalysis private[analyses] (
                         // Note, that we assume that there is a constructor
                         // Note that we have to do a String comparison since methods with ClassType
                         // descriptors are not sorted consistently across runs
-                        val constructors = cf.constructors.map[(String, Method)] { ctor =>
-                            (ctor.descriptor.toJava, ctor)
-                        }
+                        val constructors = cf.constructors.map[(String, Method)] { ctor => (ctor.descriptor.toJava, ctor) }
 
                         if (constructors.nonEmpty) {
                             // val constructor = constructors.minBy(t => t._1)._2
@@ -424,7 +422,7 @@ class OISReadObjectAnalysis private[analyses] (
 
     @tailrec private[this] def firstNotSerializableSupertype(t: ClassType): Option[ClassType] = {
         ch.superclassType(t) match {
-            case None => None
+            case None            => None
             case Some(superType) =>
                 if (ch.isSubtypeOf(superType, ClassType.Serializable)) {
                     firstNotSerializableSupertype(superType)

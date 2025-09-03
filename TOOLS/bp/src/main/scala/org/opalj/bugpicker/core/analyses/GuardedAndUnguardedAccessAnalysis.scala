@@ -4,35 +4,34 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.br.Method
-import org.opalj.br.PC
-import org.opalj.br.instructions.IFXNullInstruction
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.PUTFIELD
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.MONITORENTER
-import org.opalj.br.instructions.ARRAYLENGTH
-import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.AALOAD
-import org.opalj.br.instructions.IFNONNULL
-import org.opalj.br.instructions.NEW
-import org.opalj.br.instructions.IFNULL
-import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.domain.RecordCFG
 import org.opalj.ai.domain.l1.RecordAllThrownExceptions
 import org.opalj.ai.domain.l1.ReferenceValues
-import org.opalj.issues.Relevance
-import org.opalj.issues.Issue
-import org.opalj.issues.Relevance
-import org.opalj.issues.IssueCategory
-import org.opalj.issues.IssueLocation
+import org.opalj.br.Method
+import org.opalj.br.PC
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.instructions.AALOAD
+import org.opalj.br.instructions.AASTORE
+import org.opalj.br.instructions.ARRAYLENGTH
+import org.opalj.br.instructions.GETFIELD
+import org.opalj.br.instructions.IFNONNULL
+import org.opalj.br.instructions.IFNULL
+import org.opalj.br.instructions.IFXNullInstruction
+import org.opalj.br.instructions.INVOKEINTERFACE
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.INVOKEVIRTUAL
+import org.opalj.br.instructions.MONITORENTER
+import org.opalj.br.instructions.NEW
+import org.opalj.br.instructions.PUTFIELD
 import org.opalj.issues.InstructionLocation
+import org.opalj.issues.Issue
+import org.opalj.issues.IssueCategory
 import org.opalj.issues.IssueKind
+import org.opalj.issues.IssueLocation
+import org.opalj.issues.Relevance
 
 /**
  * Identifies accesses to local reference variables that are once done in a guarded context
@@ -59,8 +58,9 @@ object GuardedAndUnguardedAccessAnalysis {
     type UnGuardedAccessAnalysisDomain = Domain with ReferenceValues with RecordCFG with RecordAllThrownExceptions
 
     def apply(
-        theProject: SomeProject, method: Method,
-        result: AIResult { val domain: UnGuardedAccessAnalysisDomain }
+        theProject: SomeProject,
+        method:     Method,
+        result:     AIResult { val domain: UnGuardedAccessAnalysisDomain }
     ): List[Issue] = {
 
         import result.domain
@@ -135,7 +135,7 @@ object GuardedAndUnguardedAccessAnalysis {
                 if receiver.isNull.isUnknown
                 if refIds.contains(receiver.refId) ||
                     (receiver.isInstanceOf[domain.SingleOriginValue] &&
-                        origins.contains(receiver.asInstanceOf[domain.SingleOriginValue].origin))
+                    origins.contains(receiver.asInstanceOf[domain.SingleOriginValue].origin))
             } yield {
                 if (refIds.contains(receiver.refId))
                     (
@@ -161,14 +161,20 @@ object GuardedAndUnguardedAccessAnalysis {
                     unguardedAccesses.map { ua =>
                         val unguardedAccessPC = ua._3
                         new InstructionLocation(
-                            Some("unguarded access"), theProject, method, unguardedAccessPC
+                            Some("unguarded access"),
+                            theProject,
+                            method,
+                            unguardedAccessPC
                         )
                     }.toSeq
 
                 val locations =
                     unguardedLocations :+
                         new InstructionLocation(
-                            Some("guard"), theProject, method, guardPC
+                            Some("guard"),
+                            theProject,
+                            method,
+                            guardPC
                         )
 
                 Issue(

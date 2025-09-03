@@ -10,8 +10,6 @@ import com.typesafe.config.ConfigFactory
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.EagerTypeImmutabilityAnalysis
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
@@ -51,8 +49,6 @@ class ImmutabilityTestsClosedWorld extends PropertiesTest {
                 EagerFieldImmutabilityAnalysis,
                 EagerClassImmutabilityAnalysis,
                 EagerTypeImmutabilityAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
                 LazySimpleEscapeAnalysis
             )
         )

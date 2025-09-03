@@ -21,9 +21,7 @@ case class ModulePackages_attribute(
         <details class="attribute">
             <summary>ModulePackages</summary>
             {
-                package_index_table.map[String](p => cp(p).toString).sorted.map[NodeBuffer] { p =>
-                    <span>{p}</span><br/>
-                }
+                package_index_table.map[String](p => cp(p).toString).sorted.map[NodeBuffer] { p => <span>{p}</span><br/> }
             }
         </details>
     }

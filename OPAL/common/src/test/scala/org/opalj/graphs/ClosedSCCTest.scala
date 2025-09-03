@@ -282,8 +282,8 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with two connected sccs which are connected to one cSCC (requires the correct setting of the non-cSCC node)" should "contain one cSCCs" in {
         val g = Graph.empty[String] addEdge
-            ("a", "b") addEdge ("b", "c") addEdge ("c", "d") addEdge ("d", "e") addEdge ("c", "g") addEdge ("g", "a") addEdge
-            ("e", "d") addEdge ("g", "h") addEdge ("h", "j") addEdge ("j", "g")
+            ("a", "b") addEdge ("b", "c") addEdge ("c", "d") addEdge ("d", "e") addEdge ("c", "g") addEdge
+            ("g", "a") addEdge ("e", "d") addEdge ("g", "h") addEdge ("h", "j") addEdge ("j", "g")
 
         val cSCCs = closedSCCs(g).map(_.toList.sorted)
         val expected = List(List("d", "e"))
@@ -306,9 +306,9 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with one cSCC which has multiple incoming edges" should "contain one cSCCs" in {
         val g = Graph.empty[String] addEdge
-            ("u", "v") addEdge ("v", "a") addEdge ("w", "e") addEdge ("x", "c") addEdge ("x", "b") addEdge ("u", "d") addEdge
-            ("a", "b") addEdge ("b", "c") addEdge ("c", "a") addEdge
-            ("a", "e") addEdge ("e", "d") addEdge ("d", "c")
+            ("u", "v") addEdge ("v", "a") addEdge ("w", "e") addEdge ("x", "c") addEdge ("x", "b") addEdge
+            ("u", "d") addEdge ("a", "b") addEdge ("b", "c") addEdge ("c", "a") addEdge ("a", "e") addEdge
+            ("e", "d") addEdge ("d", "c")
         val cSCCs = closedSCCs(g).map(_.toList.sorted)
         val expected = List(List("a", "b", "c", "d", "e"))
         if (cSCCs != expected) {
@@ -319,12 +319,10 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     "a graph with three cSCC and a SCC which has multiple incoming edges" should
         "contain three cSCCs" in {
             val g = Graph.empty[String] addEdge
-                ("u", "a") addEdge ("v", "c") addEdge ("w", "c") addEdge ("w", "e") addEdge ("w", "g") addEdge ("x", "g") addEdge
-                ("h", "z") addEdge ("y", "b") addEdge ("y", "d") addEdge ("y", "f") addEdge ("y", "h") addEdge
-                ("a", "b") addEdge ("b", "a") addEdge
-                ("c", "d") addEdge ("d", "c") addEdge
-                ("e", "f") addEdge ("f", "e") addEdge
-                ("g", "h") addEdge ("h", "g")
+                ("u", "a") addEdge ("v", "c") addEdge ("w", "c") addEdge ("w", "e") addEdge ("w", "g") addEdge
+                ("x", "g") addEdge ("h", "z") addEdge ("y", "b") addEdge ("y", "d") addEdge ("y", "f") addEdge
+                ("y", "h") addEdge ("a", "b") addEdge ("b", "a") addEdge ("c", "d") addEdge ("d", "c") addEdge
+                ("e", "f") addEdge ("f", "e") addEdge ("g", "h") addEdge ("h", "g")
             val cSCCs = closedSCCs(g).map(_.toList.sorted).toSet
             val expected = Set(List("a", "b"), List("c", "d"), List("e", "f"))
             if (cSCCs != expected) {

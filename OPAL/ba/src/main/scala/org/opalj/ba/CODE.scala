@@ -290,16 +290,15 @@ object CODE {
                                 }
                         }
                         currentIndex += 1
-                    } while (
-                        continueIteration
-                        && currentIndex < codeElementsSize
-                        && {
-                            currentInstruction = codeElements(currentIndex)
-                            // In the following we ignore pseudo instructions
-                            // (in particular PCLabels)
-                            // because they may have been set to live already!
-                            currentInstruction.isPseudoInstruction || !isLive(currentIndex)
-                        }
+                    } while (continueIteration
+                             && currentIndex < codeElementsSize
+                             && {
+                                 currentInstruction = codeElements(currentIndex)
+                                 // In the following we ignore pseudo instructions
+                                 // (in particular PCLabels)
+                                 // because they may have been set to live already!
+                                 currentInstruction.isPseudoInstruction || !isLive(currentIndex)
+                             }
                     )
                 }
             }

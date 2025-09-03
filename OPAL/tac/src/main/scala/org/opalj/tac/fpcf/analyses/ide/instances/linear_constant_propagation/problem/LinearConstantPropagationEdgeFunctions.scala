@@ -1,0 +1,169 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj
+package tac
+package fpcf
+package analyses
+package ide
+package instances
+package linear_constant_propagation
+package problem
+
+import org.opalj.ide.problem.AllBottomEdgeFunction
+import org.opalj.ide.problem.AllTopEdgeFunction
+import org.opalj.ide.problem.EdgeFunction
+import org.opalj.ide.problem.IdentityEdgeFunction
+import org.opalj.ide.problem.IDEValue
+
+/**
+ * Edge function to calculate the value of a variable `i` for a statement `val i = a * x + b`.
+ *
+ * @author Robin Körkemeier
+ */
+case class LinearCombinationEdgeFunction(
+    a: Int,
+    b: Int,
+    c: LinearConstantPropagationValue = LinearConstantPropagationLattice.top
+) extends EdgeFunction[LinearConstantPropagationValue] {
+    override def compute[V >: LinearConstantPropagationValue](sourceValue: V): V = {
+        LinearConstantPropagationLattice.meet(
+            sourceValue match {
+                case ConstantValue(x)        => ConstantValue(a * x + b)
+                case VariableValue if a == 0 => ConstantValue(b)
+                case VariableValue           => VariableValue
+                case UnknownValue            => UnknownValue
+            },
+            c
+        )
+    }
+
+    override def composeWith[V >: LinearConstantPropagationValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
+        secondEdgeFunction match {
+            case LinearCombinationEdgeFunction(a2, b2, c2) =>
+                LinearCombinationEdgeFunction(
+                    a2 * a,
+                    a2 * b + b2,
+                    LinearConstantPropagationLattice.meet(
+                        c match {
+                            case UnknownValue          => UnknownValue
+                            case ConstantValue(cValue) => ConstantValue(a2 * cValue + b2)
+                            case VariableValue         => VariableValue
+                        },
+                        c2
+                    )
+                )
+
+            case VariableValueEdgeFunction => secondEdgeFunction
+            case UnknownValueEdgeFunction  => secondEdgeFunction
+
+            case IdentityEdgeFunction     => this
+            case _: AllTopEdgeFunction[V] => secondEdgeFunction
+
+            case _ =>
+                throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
+        }
+    }
+
+    override def meet[V >: LinearConstantPropagationValue <: IDEValue](
+        otherEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
+        otherEdgeFunction match {
+            case LinearCombinationEdgeFunction(a2, b2, c2) if a2 == a && b2 == b =>
+                LinearCombinationEdgeFunction(a, b, LinearConstantPropagationLattice.meet(c, c2))
+            case LinearCombinationEdgeFunction(a2, b2, c2) if a2 != a && (b - b2) % (a2 - a) == 0 =>
+                val cNew = LinearConstantPropagationLattice.meet(
+                    ConstantValue(a * ((b - b2) / (a2 - a)) + b),
+                    LinearConstantPropagationLattice.meet(c, c2)
+                )
+                cNew match {
+                    case VariableValue => VariableValueEdgeFunction
+                    case _             => LinearCombinationEdgeFunction(a, b, cNew)
+                }
+            case LinearCombinationEdgeFunction(_, _, _) =>
+                VariableValueEdgeFunction
+
+            case VariableValueEdgeFunction => otherEdgeFunction
+            case UnknownValueEdgeFunction  => this
+
+            case IdentityEdgeFunction     => this
+            case _: AllTopEdgeFunction[V] => this
+
+            case _ =>
+                throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
+        }
+    }
+
+    override def equals[V >: LinearConstantPropagationValue <: IDEValue](
+        otherEdgeFunction: EdgeFunction[V]
+    ): Boolean = {
+        (otherEdgeFunction eq this) ||
+        (otherEdgeFunction match {
+            case LinearCombinationEdgeFunction(a2, b2, c2) => a == a2 && b == b2 && c == c2
+            case _                                         => false
+        })
+    }
+}
+
+/**
+ * Edge function for variables whose value is unknown.
+ *
+ * @author Robin Körkemeier
+ */
+object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropagationValue](UnknownValue) {
+    override def composeWith[V >: LinearConstantPropagationValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
+        secondEdgeFunction match {
+            case LinearCombinationEdgeFunction(0, _, _)             => secondEdgeFunction
+            case LinearCombinationEdgeFunction(_, _, VariableValue) => secondEdgeFunction
+            case LinearCombinationEdgeFunction(_, _, _)             => this
+
+            case VariableValueEdgeFunction => secondEdgeFunction
+            case UnknownValueEdgeFunction  => secondEdgeFunction
+
+            case IdentityEdgeFunction     => this
+            case _: AllTopEdgeFunction[V] => this
+
+            case _ =>
+                throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
+        }
+    }
+
+    override def meet[V >: LinearConstantPropagationValue <: IDEValue](
+        otherEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
+        otherEdgeFunction match {
+            case _: AllTopEdgeFunction[V] => this
+            case IdentityEdgeFunction     => this
+            case _                        => otherEdgeFunction
+        }
+    }
+
+    override def equals[V >: LinearConstantPropagationValue <: IDEValue](
+        otherEdgeFunction: EdgeFunction[V]
+    ): Boolean = {
+        otherEdgeFunction eq this
+    }
+
+    override def toString: String = "UnknownValueEdgeFunction()"
+}
+
+/**
+ * Edge function for a variable that is definitely not constant.
+ *
+ * @author Robin Körkemeier
+ */
+object VariableValueEdgeFunction extends AllBottomEdgeFunction[LinearConstantPropagationValue](VariableValue) {
+    override def composeWith[V >: LinearConstantPropagationValue <: IDEValue](
+        secondEdgeFunction: EdgeFunction[V]
+    ): EdgeFunction[V] = {
+        secondEdgeFunction match {
+            case LinearCombinationEdgeFunction(0, _, _) => secondEdgeFunction
+            case LinearCombinationEdgeFunction(_, _, _) => this
+            case _                                      => this
+        }
+    }
+
+    override def toString: String = "VariableValueEdgeFunction()"
+}

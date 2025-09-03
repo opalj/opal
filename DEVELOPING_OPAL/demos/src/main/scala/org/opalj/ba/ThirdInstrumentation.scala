@@ -56,7 +56,7 @@ object ThirdInstrumentation extends App {
     // Let's load the class ( we need the RT Jar to compute appropriate supertypes for
     // local variables and stack values during instrumentation.
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
-    val p = Project(f.getParentFile, org.opalj.bytecode.RTJar)
+    val p = Project(f.getParentFile, org.opalj.bytecode.JavaBase)
     implicit val classHierarchy: ClassHierarchy = p.classHierarchy // STRICTLY REQUIRED WHEN A StackMapTable NEEDS TO BE COMPUTED!
     val cf = p.classFile(TheType).get
     // let's transform the methods

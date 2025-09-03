@@ -2,11 +2,11 @@
 package entity.impl
 
 import entity.AbstractEntity
-import entity.annotation.Entity
-import entity.annotation.Table
 import entity.annotation.Column
-import entity.annotation.Transient
+import entity.annotation.Entity
 import entity.annotation.Id
+import entity.annotation.Table
+import entity.annotation.Transient
 
 /**
  * @author Marco Torsello
@@ -33,7 +33,7 @@ class User extends AbstractEntity {
 
     @Transient
     def getFullName(): String = {
-        this.firstName+" "+this.lastName
+        this.firstName + " " + this.lastName
     }
 
 }

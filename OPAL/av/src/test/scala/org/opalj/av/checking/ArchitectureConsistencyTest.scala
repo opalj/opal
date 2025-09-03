@@ -298,15 +298,17 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
             Symbol("EntityId") every_element_should_be_annotated_with
-                ("(entity.annotation.Id - entity.annotation.Column)",
-                Seq(
-                    AnnotatedWith("entity.annotation.Id"),
-                    AnnotatedWith(
-                        "entity.annotation.Column",
-                        "name" -> StringValue("id"),
-                        "nullable" -> BooleanValue(false)
+                (
+                    "(entity.annotation.Id - entity.annotation.Column)",
+                    Seq(
+                        AnnotatedWith("entity.annotation.Id"),
+                        AnnotatedWith(
+                            "entity.annotation.Column",
+                            "name" -> StringValue("id"),
+                            "nullable" -> BooleanValue(false)
+                        )
                     )
-                ))
+                )
         }
 
         specification.analyze() should be(empty)
@@ -322,15 +324,17 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
             ensemble(Symbol("EntityId"))(FieldMatcher(AllClasses, theName = Some("id")))
 
             Symbol("EntityId") every_element_should_be_annotated_with
-                ("(entity.annotation.Id - entity.annotation.Column)",
-                Seq(
-                    AnnotatedWith("entity.annotation.Id"),
-                    AnnotatedWith(
-                        "entity.annotation.Column",
-                        "name" -> StringValue("id"),
-                        "nullable" -> BooleanValue(true)
+                (
+                    "(entity.annotation.Id - entity.annotation.Column)",
+                    Seq(
+                        AnnotatedWith("entity.annotation.Id"),
+                        AnnotatedWith(
+                            "entity.annotation.Column",
+                            "name" -> StringValue("id"),
+                            "nullable" -> BooleanValue(true)
+                        )
                     )
-                ))
+                )
         }
 
         specification.analyze() should not be (empty)

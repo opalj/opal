@@ -103,14 +103,13 @@ sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: org.opalj.fpcf.FPCFAnalysis): Unit = {}
 
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
+        analysis: org.opalj.fpcf.FPCFAnalysis
     ): Unit = {}
-
 }
 
 object EagerL0TACAIAnalysis extends L0TACAIAnalysisScheduler with FPCFEagerAnalysisScheduler {

@@ -6,6 +6,8 @@ package fixtures
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
+import com.typesafe.config.Config
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 
@@ -13,7 +15,7 @@ class BasePropertyStoreMockup extends PropertyStore {
 
     implicit val logContext: LogContext = GlobalLogContext
 
-    val ctx: Map[Class[_], AnyRef] = Map.empty
+    val ctx: Map[Class[_], AnyRef] = Map(classOf[Config] -> BaseConfig)
 
     //
     // Methods which are not required by the following tests...

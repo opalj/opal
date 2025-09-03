@@ -8,12 +8,12 @@ import org.opalj.bugpicker.core.analyses.BugPickerAnalysis._
 import org.opalj.util.Milliseconds
 
 case class AnalysisParameters(
-        maxEvalTime:                   Milliseconds = DefaultMaxEvalTime,
-        maxEvalFactor:                 Double       = DefaultMaxEvalFactor,
-        maxCardinalityOfIntegerRanges: Long         = DefaultMaxCardinalityOfIntegerRanges,
-        maxCardinalityOfLongSets:      Int          = DefaultMaxCardinalityOfLongSets,
-        maxCallChainLength:            Int          = DefaultMaxCallChainLength,
-        fixpointAnalyses:              Seq[String]  = DefaultFixpointAnalyses
+    maxEvalTime:                   Milliseconds = DefaultMaxEvalTime,
+    maxEvalFactor:                 Double       = DefaultMaxEvalFactor,
+    maxCardinalityOfIntegerRanges: Long         = DefaultMaxCardinalityOfIntegerRanges,
+    maxCardinalityOfLongSets:      Int          = DefaultMaxCardinalityOfLongSets,
+    maxCallChainLength:            Int          = DefaultMaxCallChainLength,
+    fixpointAnalyses:              Seq[String]  = DefaultFixpointAnalyses
 ) {
 
     def toStringParameters: Seq[String] = Seq(

@@ -95,7 +95,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                         case Assignment(_, _, _: FunctionCall[_]) =>
                             state.meetMostRestrictive(AtMost(NoEscape))
                         case Assignment(_, _, _: Const) =>
-                        case s =>
+                        case s                          =>
                             throw new UnknownError(s"Unexpected tac: $s")
                     }
 

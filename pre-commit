@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Check OPAL formatting and reformat if necessary
+if ! sbt checkFormat
+then
+	sbt format
+	>&2 echo -e "\033[0;31mCommit aborted; offending files have been formatted"
+	exit 1
+fi

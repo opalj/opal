@@ -18,6 +18,14 @@ object DependencyTypes extends Enumeration(0 /* <= value of first enumeration va
     val OUTER_CLASS = Value("class type declaration IS OUTER CLASS of method or type")
     val INNER_CLASS = Value("class type declaration IS INNER CLASS of method or type")
 
+    val REQUIRED_MODULE = Value("module IS REQUIRED BY module")
+    val USED_SERVICE = Value("class type declaration IS USED SERVICE INTERFACE of module")
+    val MODULE_MAIN_CLASS = Value("class type declaration IS MAIN CLASS of module")
+
+    val NEST_HOST = Value("class type declaration IS NEST HOST CLASS of type")
+    val NEST_MEMBER = Value("class type declaration IS NEST MEMBER CLASS of type")
+    val PERMITTED_SUBCLASS = Value("class type declaration IS PERMITTED SUBCLASS of type")
+
     val INSTANCE_MEMBER = Value("field or method IS INSTANCE MEMBER of class type")
     val CLASS_MEMBER = Value("field/method IS CLASS MEMBER of class/interface/annotation/enum")
     val ENCLOSED = Value("class type declaration IS ENCLOSED by method or type")
@@ -86,6 +94,12 @@ object DependencyTypes extends Enumeration(0 /* <= value of first enumeration va
             case IMPLEMENTS                        => "implement interface type"
             case OUTER_CLASS                       => "be outer class"
             case INNER_CLASS                       => "be inner class"
+            case REQUIRED_MODULE                   => "be required module"
+            case USED_SERVICE                      => "be used service interface"
+            case MODULE_MAIN_CLASS                 => "be main class of module"
+            case NEST_HOST                         => "be nest host"
+            case NEST_MEMBER                       => "be nest member"
+            case PERMITTED_SUBCLASS                => "be permitted subclass"
             case INSTANCE_MEMBER                   => "be instance member"
             case CLASS_MEMBER                      => "be class member"
             case ENCLOSED                          => "be enclosed"

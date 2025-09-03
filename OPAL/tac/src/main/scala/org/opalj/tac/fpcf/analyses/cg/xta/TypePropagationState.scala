@@ -135,9 +135,8 @@ final class TypePropagationState[ContextType <: Context](
     //                                         //
     /////////////////////////////////////////////
 
-    private[this] val _forwardPropagationEntities: JSet[TypeSetEntity] = new JHashSet()
-    private[this] val _forwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] =
-        new JHashMap()
+    private val _forwardPropagationEntities: JSet[TypeSetEntity] = new JHashSet()
+    private val _forwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] = new JHashMap()
 
     def forwardPropagationEntities: JSet[TypeSetEntity] = _forwardPropagationEntities
 
@@ -180,9 +179,9 @@ final class TypePropagationState[ContextType <: Context](
     //                                         //
     /////////////////////////////////////////////
 
-    private[this] val _backwardPropagationDependees: JHashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]] =
+    private val _backwardPropagationDependees: JHashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]] =
         new JHashMap()
-    private[this] val _backwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] =
+    private val _backwardPropagationFilters: JHashMap[TypeSetEntity, UIDSet[ReferenceType]] =
         new JHashMap()
 
     def backwardPropagationDependeeInstantiatedTypes(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] = {

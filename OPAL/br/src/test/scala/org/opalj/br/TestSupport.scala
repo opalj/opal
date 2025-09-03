@@ -21,8 +21,8 @@ import org.opalj.br.reader.Java11FrameworkWithCaching
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.reader.readJREClassFiles
 import org.opalj.br.reader.readRTJarClassFiles
+import org.opalj.bytecode.JavaBase
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bytecode.RTJar
 import org.opalj.log.GlobalLogContext
 import org.opalj.util.gc
 
@@ -104,7 +104,7 @@ object TestSupport {
 
         jreReader match {
             case Some(jreReader) =>
-                val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
+                val jreCFs = jreReader.ClassFiles(JavaBase) // we share the loaded JRE!
                 val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
                 (allBITestJARs().iterator ++ allBITestProjectFolders().iterator) map { biProject =>
                     val projectClassFiles = projectReader.ClassFiles(biProject)
@@ -126,7 +126,7 @@ object TestSupport {
         projectReader: ClassFileReader = DefaultJava11Reader,
         jreReader:     ClassFileReader = Java9LibraryFramework
     ): Iterator[(String, () => Project[URL])] = {
-        val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
+        val jreCFs = jreReader.ClassFiles(JavaBase) // we share the loaded JRE!
         val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
         allManagedBITestJARs().iterator map { biProject =>
             val projectClassFiles = projectReader.ClassFiles(biProject)

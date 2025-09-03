@@ -124,9 +124,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 }
 
                 evaluatedInstructions.iterator.foreach { pc =>
-                    domain.foreachSuccessorOf(pc) { succPC =>
-                        domain.predecessorsOf(succPC).contains(pc) should be(true)
-                    }
+                    domain.foreachSuccessorOf(pc) { succPC => domain.predecessorsOf(succPC).contains(pc) should be(true) }
 
                     domain.foreachPredecessorOf(pc) { predPC =>
                         domain.allSuccessorsOf(predPC).contains(pc) should be(true)

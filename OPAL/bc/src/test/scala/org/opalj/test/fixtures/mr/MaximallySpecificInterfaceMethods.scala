@@ -41,11 +41,11 @@ object MaximallySpecificInterfaceMethods extends App {
             Array[Constant_Pool_Entry](
                 /*  0 */ null,
                 /*  1 */ CONSTANT_Class_info(2),
-                /*  2 */ CONSTANT_Utf8("mr/S0_1"),
+                /*  2 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S0_1"),
                 /*  3 */ CONSTANT_Class_info(4),
                 /*  4 */ CONSTANT_Utf8("java/lang/Object"),
                 /*  5 */ CONSTANT_Class_info(6), //  HERE - UNUSED
-                /*  6 */ CONSTANT_Utf8("mr/SuperIntf"), // HERE - UNUSED
+                /*  6 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/SuperIntf"), // HERE - UNUSED
                 /*  7 */ CONSTANT_Utf8("m"),
                 /*  8 */ CONSTANT_Utf8("()V"),
                 /*  9 */ CONSTANT_Utf8("Code"),
@@ -53,7 +53,7 @@ object MaximallySpecificInterfaceMethods extends App {
                 /* 11 */ CONSTANT_Utf8("S0_1.m"), // the printed value
                 /* 12 */ CONSTANT_Methodref_info(13, 15),
                 /* 13 */ CONSTANT_Class_info(14),
-                /* 14 */ CONSTANT_Utf8("mr/Helper"),
+                /* 14 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/Helper"),
                 /* 15 */ CONSTANT_NameAndType_info(16, 17),
                 /* 16 */ CONSTANT_Utf8("println"),
                 /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
@@ -80,7 +80,8 @@ object MaximallySpecificInterfaceMethods extends App {
             ))
         )
         val assembledS0_1 = Assembler(s0_1CF)
-        val assembledS0_1Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S0_1.class")
+        val assembledS0_1Path =
+            Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/maximallyspecificinterfacemethods/S0_1.class")
         val assembledS0_1File = Files.write(assembledS0_1Path, assembledS0_1)
         println("Created class file: " + assembledS0_1File.toAbsolutePath())
     }
@@ -90,11 +91,11 @@ object MaximallySpecificInterfaceMethods extends App {
             Array[Constant_Pool_Entry](
                 /*  0 */ null,
                 /*  1 */ CONSTANT_Class_info(2),
-                /*  2 */ CONSTANT_Utf8("mr/S0_2"),
+                /*  2 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S0_2"),
                 /*  3 */ CONSTANT_Class_info(4),
                 /*  4 */ CONSTANT_Utf8("java/lang/Object"),
                 /*  5 */ CONSTANT_Class_info(6), //  HERE - UNUSED
-                /*  6 */ CONSTANT_Utf8("mr/SuperIntf"), // HERE - UNUSED
+                /*  6 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/SuperIntf"), // HERE - UNUSED
                 /*  7 */ CONSTANT_Utf8("m"),
                 /*  8 */ CONSTANT_Utf8("()V"),
                 /*  9 */ CONSTANT_Utf8("Code"),
@@ -102,7 +103,7 @@ object MaximallySpecificInterfaceMethods extends App {
                 /* 11 */ CONSTANT_Utf8("S0_2.m"), // the printed value
                 /* 12 */ CONSTANT_Methodref_info(13, 15),
                 /* 13 */ CONSTANT_Class_info(14),
-                /* 14 */ CONSTANT_Utf8("mr/Helper"),
+                /* 14 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/Helper"),
                 /* 15 */ CONSTANT_NameAndType_info(16, 17),
                 /* 16 */ CONSTANT_Utf8("println"),
                 /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V")
@@ -129,7 +130,8 @@ object MaximallySpecificInterfaceMethods extends App {
             ))
         )
         val assembledS0_2 = Assembler(s0_2CF)
-        val assembledS0_2Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S0_2.class")
+        val assembledS0_2Path =
+            Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/maximallyspecificinterfacemethods/S0_2.class")
         val assembledS0_2File = Files.write(assembledS0_2Path, assembledS0_2)
         println("Created class file: " + assembledS0_2File.toAbsolutePath())
     }
@@ -139,11 +141,11 @@ object MaximallySpecificInterfaceMethods extends App {
             Array[Constant_Pool_Entry](
                 /*  0 */ null,
                 /*  1 */ CONSTANT_Class_info(2),
-                /*  2 */ CONSTANT_Utf8("mr/S1_a"),
+                /*  2 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S1_a"),
                 /*  3 */ CONSTANT_Class_info(4),
                 /*  4 */ CONSTANT_Utf8("java/lang/Object"),
                 /*  5 */ CONSTANT_Class_info(6),
-                /*  6 */ CONSTANT_Utf8("mr/S0_1"),
+                /*  6 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S0_1"),
                 /*  7 */ CONSTANT_Utf8("m"),
                 /*  8 */ CONSTANT_Utf8("()V")
             ),
@@ -160,7 +162,8 @@ object MaximallySpecificInterfaceMethods extends App {
             ))
         )
         val assembledS1_a = Assembler(s1_aCF)
-        val assembledS1_aPath = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S1_a.class")
+        val assembledS1_aPath =
+            Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/maximallyspecificinterfacemethods/S1_a.class")
         val assembledS1_aFile = Files.write(assembledS1_aPath, assembledS1_a)
         println("Created class file: " + assembledS1_aFile.toAbsolutePath())
     }
@@ -170,11 +173,11 @@ object MaximallySpecificInterfaceMethods extends App {
             Array[Constant_Pool_Entry](
                 /*  0 */ null,
                 /*  1 */ CONSTANT_Class_info(2),
-                /*  2 */ CONSTANT_Utf8("mr/S1_c"),
+                /*  2 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S1_c"),
                 /*  3 */ CONSTANT_Class_info(4),
                 /*  4 */ CONSTANT_Utf8("java/lang/Object"),
                 /*  5 */ CONSTANT_Class_info(6),
-                /*  6 */ CONSTANT_Utf8("mr/S0_1"),
+                /*  6 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S0_1"),
                 /*  7 */ CONSTANT_Utf8("m"),
                 /*  8 */ CONSTANT_Utf8("()V"),
                 /*  9 */ CONSTANT_Utf8("Code"),
@@ -182,12 +185,12 @@ object MaximallySpecificInterfaceMethods extends App {
                 /* 11 */ CONSTANT_Utf8("S1_c.m"), // the printed value
                 /* 12 */ CONSTANT_Methodref_info(13, 15),
                 /* 13 */ CONSTANT_Class_info(14),
-                /* 14 */ CONSTANT_Utf8("mr/Helper"),
+                /* 14 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/Helper"),
                 /* 15 */ CONSTANT_NameAndType_info(16, 17),
                 /* 16 */ CONSTANT_Utf8("println"),
                 /* 17 */ CONSTANT_Utf8("(Ljava/lang/String;)V"),
                 /* 18 */ CONSTANT_Class_info(19),
-                /* 19 */ CONSTANT_Utf8("mr/S0_2")
+                /* 19 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S0_2")
             ),
             minor_version = 0,
             major_version = 52,
@@ -212,7 +215,8 @@ object MaximallySpecificInterfaceMethods extends App {
             ))
         )
         val assembledS1_c = Assembler(s1_cCF)
-        val assembledS1_cPath = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S1_c.class")
+        val assembledS1_cPath =
+            Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/maximallyspecificinterfacemethods/S1_c.class")
         val assembledS1_cFile = Files.write(assembledS1_cPath, assembledS1_c)
         println("Created class file: " + assembledS1_cFile.toAbsolutePath())
     }
@@ -222,13 +226,13 @@ object MaximallySpecificInterfaceMethods extends App {
             Array[Constant_Pool_Entry](
                 /*  0 */ null,
                 /*  1 */ CONSTANT_Class_info(2),
-                /*  2 */ CONSTANT_Utf8("mr/S2_1"),
+                /*  2 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S2_1"),
                 /*  3 */ CONSTANT_Class_info(4),
                 /*  4 */ CONSTANT_Utf8("java/lang/Object"),
                 /*  5 */ CONSTANT_Class_info(6),
-                /*  6 */ CONSTANT_Utf8("mr/S1_a"),
+                /*  6 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S1_a"),
                 /*  7 */ CONSTANT_Class_info(8),
-                /*  8 */ CONSTANT_Utf8("mr/S1_c")
+                /*  8 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S1_c")
             ),
             minor_version = 0,
             major_version = 52,
@@ -238,7 +242,8 @@ object MaximallySpecificInterfaceMethods extends App {
             interfaces = ArraySeq(5, 7)
         )
         val assembledS2_1 = Assembler(s2_1CF)
-        val assembledS2_1Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S2_1.class")
+        val assembledS2_1Path =
+            Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/maximallyspecificinterfacemethods/S2_1.class")
         val assembledS2_1File = Files.write(assembledS2_1Path, assembledS2_1)
         println("Created class file: " + assembledS2_1File.toAbsolutePath())
     }
@@ -248,11 +253,11 @@ object MaximallySpecificInterfaceMethods extends App {
             Array[Constant_Pool_Entry](
                 /*  0 */ null,
                 /*  1 */ CONSTANT_Class_info(2),
-                /*  2 */ CONSTANT_Utf8("mr/S2_2"),
+                /*  2 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S2_2"),
                 /*  3 */ CONSTANT_Class_info(4),
                 /*  4 */ CONSTANT_Utf8("java/lang/Object"),
                 /*  5 */ CONSTANT_Class_info(6),
-                /*  6 */ CONSTANT_Utf8("mr/S0_2")
+                /*  6 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S0_2")
             ),
             minor_version = 0,
             major_version = 52,
@@ -262,7 +267,8 @@ object MaximallySpecificInterfaceMethods extends App {
             interfaces = ArraySeq(5)
         )
         val assembledS2_2 = Assembler(s2_2CF)
-        val assembledS2_2Path = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/S2_2.class")
+        val assembledS2_2Path =
+            Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/maximallyspecificinterfacemethods/S2_2.class")
         val assembledS2_2File = Files.write(assembledS2_2Path, assembledS2_2)
         println("Created class file: " + assembledS2_2File.toAbsolutePath())
     }
@@ -272,13 +278,13 @@ object MaximallySpecificInterfaceMethods extends App {
             Array[Constant_Pool_Entry](
                 /*  0 */ null,
                 /*  1 */ CONSTANT_Class_info(2),
-                /*  2 */ CONSTANT_Utf8("mr/Intf"),
+                /*  2 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/Intf"),
                 /*  3 */ CONSTANT_Class_info(4),
                 /*  4 */ CONSTANT_Utf8("java/lang/Object"),
                 /*  5 */ CONSTANT_Class_info(6),
-                /*  6 */ CONSTANT_Utf8("mr/S2_1"),
+                /*  6 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S2_1"),
                 /*  7 */ CONSTANT_Class_info(8),
-                /*  8 */ CONSTANT_Utf8("mr/S2_2")
+                /*  8 */ CONSTANT_Utf8("mr/maximallyspecificinterfacemethods/S2_2")
             ),
             minor_version = 0,
             major_version = 52,
@@ -288,7 +294,8 @@ object MaximallySpecificInterfaceMethods extends App {
             interfaces = ArraySeq(5, 7)
         )
         val assembledIntf = Assembler(intfCF)
-        val assembledIntfPath = Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/Intf.class")
+        val assembledIntfPath =
+            Paths.get("OPAL/bc/src/test/resources/MaximallySpecificInterfaceMethods/mr/maximallyspecificinterfacemethods/Intf.class")
         val assembledIntfFile = Files.write(assembledIntfPath, assembledIntf)
         println("Created class file: " + assembledIntfFile.toAbsolutePath())
     }

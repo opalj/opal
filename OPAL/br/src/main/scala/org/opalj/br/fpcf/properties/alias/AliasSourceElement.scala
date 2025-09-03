@@ -131,7 +131,7 @@ object AliasSourceElement {
         element match {
             case fp: VirtualFormalParameter => AliasFormalParameter(fp)
             case dm: Method                 => AliasReturnValue(dm, project)
-            case f: FieldReference =>
+            case f: FieldReference          =>
                 if (!f.field.isStatic) AliasField(f)
                 else throw new IllegalArgumentException("Static fields must be represented by a normal Field")
             case f: Field =>

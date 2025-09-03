@@ -261,7 +261,7 @@ object Type {
                 case java.lang.Float.TYPE     => FloatType
                 case java.lang.Double.TYPE    => DoubleType
                 case java.lang.Void.TYPE      => VoidType
-                case _ =>
+                case _                        =>
                     throw new UnknownError(s"unknown primitive type $clazz")
             }
         } else {

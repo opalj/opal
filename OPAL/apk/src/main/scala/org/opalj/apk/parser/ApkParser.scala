@@ -222,7 +222,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
 
     private[this] def unzipApk(): Unit = tmpDir match {
         case Some(_) =>
-        case None =>
+        case None    =>
             val fileName = Paths.get(apkPath).getFileName
             tmpDir = Some(Files.createTempDirectory("opal_apk_" + fileName).toFile)
             val unzipDir = Files.createDirectory(Paths.get(tmpDir.get.getPath + ApkUnzippedDir))

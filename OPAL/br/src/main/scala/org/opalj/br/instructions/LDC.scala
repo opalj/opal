@@ -155,7 +155,7 @@ object LDC {
             case s: String            => LoadString(s)
             case mh: MethodHandle     => LoadMethodHandle(mh)
             case md: MethodDescriptor => LoadMethodType(md)
-            case _ =>
+            case _                    =>
                 throw BytecodeProcessingFailedException(
                     "unsupported constant value: " + constantValue
                 )

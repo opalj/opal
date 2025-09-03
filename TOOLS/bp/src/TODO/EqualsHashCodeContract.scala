@@ -29,7 +29,7 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[ClassBasedReport[Source]] = {
 
@@ -40,11 +40,23 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
             var definesEqualsMethod = false
             var definesHashCodeMethod = false
             for (method <- classFile.methods) method match {
-                case Method(_, "equals", MethodDescriptor(Seq(ClassType.Object),
-                    BooleanType)) =>
+                case Method(
+                        _,
+                        "equals",
+                        MethodDescriptor(
+                            Seq(ClassType.Object),
+                            BooleanType
+                        )
+                    ) =>
                     definesEqualsMethod = true
-                case Method(_, "hashCode", MethodDescriptor(Seq(),
-                    IntegerType)) =>
+                case Method(
+                        _,
+                        "hashCode",
+                        MethodDescriptor(
+                            Seq(),
+                            IntegerType
+                        )
+                    ) =>
                     definesHashCodeMethod = true
                 case _ =>
             }
@@ -55,7 +67,7 @@ class EqualsHashCodeContract[Source] extends FindRealBugsAnalysis[Source] {
                         project.source(classFile.thisType),
                         Severity.Error,
                         classFile.thisType,
-                        "Does not satisfy java.lang.Object's equals-hashCode "+
+                        "Does not satisfy java.lang.Object's equals-hashCode " +
                             "contract."
                     ) :: reports
                 }

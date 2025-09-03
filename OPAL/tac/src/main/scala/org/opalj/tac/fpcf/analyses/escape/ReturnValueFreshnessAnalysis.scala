@@ -198,7 +198,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                 def handleReturnValueFreshness(
                     eOptP: SomeEOptionP
                 ): ProperPropertyComputationResult = eOptP match {
-                    case FinalP(p) => Result(e, p)
+                    case FinalP(p)           => Result(e, p)
                     case InterimLUBP(lb, ub) =>
                         InterimResult.create(
                             e,

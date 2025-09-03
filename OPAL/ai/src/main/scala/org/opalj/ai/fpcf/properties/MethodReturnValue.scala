@@ -11,6 +11,7 @@ import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.si.Project
 import org.opalj.value.ValueInformation
 
 sealed trait MethodReturnValuePropertyMetaInformation extends PropertyMetaInformation {
@@ -67,7 +68,7 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
     final val key = PropertyKey.create[Method, MethodReturnValue](
         "opalj.MethodReturnValue",
         (ps: PropertyStore, _: FallbackReason, m: Method) => {
-            val p = ps.context(classOf[SomeProject])
+            val p = ps.context(classOf[Project]).asInstanceOf[SomeProject]
             MethodReturnValue(
                 Some(ValueInformation.forProperValue(m.descriptor.returnType)(p.classHierarchy))
             )

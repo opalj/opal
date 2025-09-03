@@ -134,7 +134,7 @@ class Java8Invokedynamics(
     private def handleJava8InvokeDynamic[S](m: Method, handle: MethodCallMethodHandle) = {
         handle.referenceKind match {
             case REF_invokeInterface => 0 /* MR1*/
-            case REF_invokeStatic => {
+            case REF_invokeStatic    => {
                 val InvokeStaticMethodHandle(_, _, name, descriptor) = handle
                 // this just the called method is defined in the same class..
                 // if there is a method in the same class with the same name and descriptor,

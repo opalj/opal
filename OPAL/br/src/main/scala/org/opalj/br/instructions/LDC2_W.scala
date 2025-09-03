@@ -114,7 +114,7 @@ object LDC2_W {
         constantValue.value match {
             case v: Long   => LoadLong(v)
             case d: Double => LoadDouble(d)
-            case _ =>
+            case _         =>
                 throw BytecodeProcessingFailedException(
                     "unsupported LDC2_W constant value: " + constantValue
                 )

@@ -41,7 +41,7 @@ class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] 
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[LineAndColumnBasedReport[Source]] = {
 
@@ -53,8 +53,8 @@ class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] 
             method @ MethodWithBody(body) <- classFile.methods
             pc <- body.matchPair {
                 case (
-                    I2L,
-                    INVOKESTATIC(`doubleType`, "longBitsToDouble", `longBitsToDoubleDescriptor`)
+                        I2L,
+                        INVOKESTATIC(`doubleType`, "longBitsToDouble", `longBitsToDoubleDescriptor`)
                     ) => true
                 case _ => false
             }

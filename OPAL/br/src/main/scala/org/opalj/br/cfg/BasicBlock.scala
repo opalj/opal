@@ -51,7 +51,7 @@ final class BasicBlock(
     /**
      * The pc of the last instruction belonging to this basic block.
      */
-    def endPC: Int = _endPC
+    override def endPC: Int = _endPC
 
     private[this] var _isStartOfSubroutine: Boolean = false // will be initialized at construction time
     def setIsStartOfSubroutine(): Unit = {

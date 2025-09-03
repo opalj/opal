@@ -138,7 +138,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                     call.declaringClass match {
                         case MethodT      => handleInvoke(call.asVirtualFunctionCall, l)
                         case ConstructorT => locations(4 /* Constructor.newInstance */ ) += l
-                        case ClassT =>
+                        case ClassT       =>
                             call.name match {
                                 case "getMethod" =>
                                     if (stmt.astID == Assignment.ASTID &&
@@ -153,7 +153,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                     ) {
                                         handleParameterSources(call, l)
                                     }
-                                case "newInstance" => locations(5 /* Class.newInstance */ ) += l
+                                case "newInstance"      => locations(5 /* Class.newInstance */ ) += l
                                 case "getDeclaredField" =>
                                     if (stmt.astID == Assignment.ASTID &&
                                         getFieldUsedForInvokation(index, stmt.asAssignment)
@@ -331,7 +331,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 mayUse(stmt.asAssignment.expr.asFunctionCall.params, pc) &&
                                     projectContainsNonLocalCall(MethodT, "invoke")
                             case InstanceOf.ASTID | Compare.ASTID => false
-                            case _ =>
+                            case _                                =>
                                 projectContainsNonLocalCall(MethodT, "invoke")
                         }
                     case ExprStmt.ASTID =>
@@ -341,11 +341,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 mayUse(stmt.asExprStmt.expr.asFunctionCall.params, pc) &&
                                     projectContainsNonLocalCall(MethodT, "invoke")
                             case InstanceOf.ASTID | Compare.ASTID => false
-                            case _ =>
+                            case _                                =>
                                 projectContainsNonLocalCall(MethodT, "invoke")
                         }
                     case MonitorEnter.ASTID | MonitorExit.ASTID | If.ASTID | Checkcast.ASTID => false
-                    case _ =>
+                    case _                                                                   =>
                         projectContainsNonLocalCall(MethodT, "invoke")
                 }
             }
@@ -439,7 +439,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 mayUse(stmt.asAssignment.expr.asFunctionCall.params, pc) &&
                                     projectContainsNonLocalCall(FieldT, "get")
                             case InstanceOf.ASTID | Compare.ASTID => false
-                            case _ =>
+                            case _                                =>
                                 projectContainsNonLocalCall(FieldT, "get")
                         }
                     case ExprStmt.ASTID =>
@@ -449,11 +449,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 mayUse(stmt.asExprStmt.expr.asFunctionCall.params, pc) &&
                                     projectContainsNonLocalCall(FieldT, "get")
                             case InstanceOf.ASTID | Compare.ASTID => false
-                            case _ =>
+                            case _                                =>
                                 projectContainsNonLocalCall(FieldT, "get")
                         }
                     case MonitorEnter.ASTID | MonitorExit.ASTID | If.ASTID | Checkcast.ASTID => false
-                    case _ =>
+                    case _                                                                   =>
                         projectContainsNonLocalCall(FieldT, "get")
                 }
             }

@@ -7,9 +7,9 @@ package ifds
 package taint
 
 import org.opalj.br.ClassType
+import org.opalj.br.Method
 import org.opalj.ifds.AbstractIFDSFact
 import org.opalj.ifds.AbstractIFDSNullFact
-import org.opalj.ifds.Callable
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
@@ -57,7 +57,7 @@ case class InstanceField(index: Int, classType: ClassType, fieldName: String) ex
  *
  * @param flow A sequence of method calls, originating from but not including this method.
  */
-case class FlowFact(flow: Seq[Callable]) extends TaintFact {
+case class FlowFact(flow: Seq[Method]) extends TaintFact {
     override val hashCode: Int = {
         var r = 1
         flow.foreach(f => r = (r + f.hashCode()) * 31)

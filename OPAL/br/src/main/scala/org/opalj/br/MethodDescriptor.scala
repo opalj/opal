@@ -282,7 +282,7 @@ private final class TwoArgumentsMethodDescriptor(
     override def compare(other: MethodDescriptor): Int = {
         (other.parametersCount: @switch) match {
             case 0 | 1 => 1
-            case 2 =>
+            case 2     =>
                 var c = firstParameterType compare other.parameterType(0)
                 if (c != 0)
                     c

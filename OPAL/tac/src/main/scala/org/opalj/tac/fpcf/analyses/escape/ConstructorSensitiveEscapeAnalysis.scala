@@ -92,7 +92,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         implicit state: AnalysisState
     ): Unit = {
         eOptionP match {
-            case FinalP(NoEscape) => // NOTHING TO DO
+            case FinalP(NoEscape)     => // NOTHING TO DO
             case FinalP(GlobalEscape) =>
                 state.meetMostRestrictive(GlobalEscape)
 

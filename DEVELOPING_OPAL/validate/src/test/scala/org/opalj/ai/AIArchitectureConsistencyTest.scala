@@ -93,7 +93,11 @@ class AIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
 
                 Symbol("Project") is_only_allowed_to (
                     USE,
-                    Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"),
+                    Symbol("Util"),
+                    Symbol("AI"),
+                    Symbol("Domain"),
+                    Symbol("DomainL0"),
+                    Symbol("DomainL1"),
                     Symbol("DomainL2")
                 )
 
@@ -102,13 +106,25 @@ class AIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                 // computations
                 Symbol("DomainLA") is_only_allowed_to (
                     USE,
-                    Symbol("Util"), Symbol("AI"), Symbol("Domain"), Symbol("DomainL0"), Symbol("DomainL1"),
-                    Symbol("DomainL2"), Symbol("Analyses")
+                    Symbol("Util"),
+                    Symbol("AI"),
+                    Symbol("Domain"),
+                    Symbol("DomainL0"),
+                    Symbol("DomainL1"),
+                    Symbol("DomainL2"),
+                    Symbol("Analyses")
                 )
                 Symbol("Analyses") is_only_allowed_to (
                     USE,
-                    Symbol("Util"), Symbol("AI"), Symbol("Common"), Symbol("Domain"), Symbol("DomainL0"),
-                    Symbol("DomainL1"), Symbol("DomainL2"), Symbol("DomainLA"), Symbol("Project")
+                    Symbol("Util"),
+                    Symbol("AI"),
+                    Symbol("Common"),
+                    Symbol("Domain"),
+                    Symbol("DomainL0"),
+                    Symbol("DomainL1"),
+                    Symbol("DomainL2"),
+                    Symbol("DomainLA"),
+                    Symbol("Project")
                 )
 
                 // 'Common is allowed to use everything

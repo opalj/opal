@@ -4,8 +4,10 @@ package br
 package analyses
 package observers
 
+import java.io.File
 import java.net.URL
 
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.FieldReadAccess
 
 /**
@@ -16,16 +18,23 @@ import org.opalj.br.instructions.FieldReadAccess
  * @author Linus Armakola
  * @author Michael Eichberg
  */
-object ObserverPatternUsage extends ProjectAnalysisApplication {
+object ObserverPatternUsage extends ProjectsAnalysisApplication {
 
-    override def description: String =
-        "Loads all classes stored in the jar files and analyses the usage of the observer pattern."
+    protected class ObserverPatternConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Finds usages of the observer pattern"
+    }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = ObserverPatternConfig
+
+    protected def createConfig(args: Array[String]): ObserverPatternConfig = new ObserverPatternConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ObserverPatternConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+
         val appClassFiles = project.allProjectClassFiles
         val libClassFiles = project.allLibraryClassFiles
         println("Application:\n\tClasses:" + appClassFiles.size)
@@ -166,8 +175,9 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
         // -------------------------------------------------------------------------------
         // OUTPUT
         // -------------------------------------------------------------------------------
-        import Console.{BOLD, RESET}
-        BasicReport(
+        import Console.BOLD
+        import Console.RESET
+        val report = BasicReport(
             (BOLD + "Observer types in project (" + allObserverTypes.size + "): " +
                 RESET + allObserverTypes.map(_.toJava).mkString(", ")) +
                 (BOLD + "Observer interfaces in application (" + appObserverInterfaces.size + "): " +
@@ -187,5 +197,6 @@ object ObserverPatternUsage extends ProjectAnalysisApplication {
                         e._1.thisType.toJava + "{ " + e._2.signatureToJava(false) + " }"
                     ).mkString(", "))
         )
+        (project, report)
     }
 }

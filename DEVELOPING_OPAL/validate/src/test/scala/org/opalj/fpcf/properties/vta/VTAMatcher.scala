@@ -10,10 +10,10 @@ import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.ifds.VTAFact
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 import org.opalj.tac.DUVar
@@ -40,7 +40,7 @@ abstract class VTAMatcher extends AbstractPropertyMatcher {
         val method = entity.asInstanceOf[(Method, VTAFact)]._1
         val taCode = p.get(PropertyStoreKey)(method, TACAI.key) match {
             case FinalP(TheTACAI(tac)) => tac
-            case _ =>
+            case _                     =>
                 throw new IllegalStateException(
                     "TAC of annotated method not present after analysis"
                 )

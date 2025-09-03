@@ -11,8 +11,8 @@ import org.opalj.br.instructions.FieldAccess
 import org.opalj.log.OPALLogger.info
 
 class DeclaredFields(
-    private[this] val project:          SomeProject,
-    private[this] var id2declaredField: Array[DeclaredField],
+    private[this] val project:                SomeProject,
+    private[this] var id2declaredField:       Array[DeclaredField],
     private[this] val declaredInformation2id: ConcurrentHashMap[
         ClassType,
         ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]
@@ -49,7 +49,7 @@ class DeclaredFields(
     ): DeclaredField = {
         project.resolveFieldReference(declaringClassType, name, fieldType) match {
             case Some(field) => apply(field)
-            case None => getDeclaredField(
+            case None        => getDeclaredField(
                     declaringClassType,
                     name,
                     fieldType,

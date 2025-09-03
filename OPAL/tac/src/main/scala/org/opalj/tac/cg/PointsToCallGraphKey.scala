@@ -10,10 +10,10 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.pointsto.TamiFlexKey
 import org.opalj.br.fpcf.properties.Contexts
 import org.opalj.log.LogContext
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 
 trait PointsToCallGraphKey extends CallGraphKey {
 

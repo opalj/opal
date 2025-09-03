@@ -287,8 +287,8 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
 
         def handleExpr(expr: Expr[DUVar[ValueInformation]]): AliasSourceElement = {
             expr match {
-                case c: Call[_]                   => handleCall(c)
-                case uVar: UVar[ValueInformation] => AliasUVar(uVar.toPersistentForm(stmts), method, as.project)
+                case c: Call[_]                                    => handleCall(c)
+                case uVar: UVar[ValueInformation]                  => AliasUVar(uVar.toPersistentForm(stmts), method, as.project)
                 case GetField(_, _, _, _, UVar(_, objRefDefSites)) => AliasField(FieldReference(
                         findField(a, useSecond),
                         simpleContexts(declaredMethods(method)),
@@ -299,9 +299,9 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
         }
 
         stmt match {
-            case c: Call[_]                                    => handleCall(c)
-            case expr: ExprStmt[DUVar[ValueInformation]]       => handleExpr(expr.expr)
-            case putStatic: PutStatic[DUVar[ValueInformation]] => handleExpr(putStatic.value)
+            case c: Call[_]                                                                   => handleCall(c)
+            case expr: ExprStmt[DUVar[ValueInformation]]                                      => handleExpr(expr.expr)
+            case putStatic: PutStatic[DUVar[ValueInformation]]                                => handleExpr(putStatic.value)
             case PutField(_, _, _, _, UVar(_, objRefDefSites), value: UVar[ValueInformation]) =>
                 if (isFieldReference) AliasField(FieldReference(
                     findField(a, useSecond),
@@ -311,7 +311,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
                 else AliasUVar(value.toPersistentForm(stmts), method, as.project)
             case returnValue: ReturnValue[DUVar[ValueInformation]] => handleExpr(returnValue.expr)
             case Assignment(_, _, expr)                            => handleExpr(expr)
-            case _ => throw new IllegalArgumentException(
+            case _                                                 => throw new IllegalArgumentException(
                     "No UVar found at line number " + lineNumber + " in method " + method.toJava
                 )
         }

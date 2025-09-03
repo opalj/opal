@@ -671,7 +671,7 @@ abstract class AI[D <: Domain](
                 theDomain.abstractInterpretationEnded(result)
             } catch {
                 case ct: ControlThrowable => throw ct
-                case t: Throwable =>
+                case t: Throwable         =>
                     throwInterpretationFailedException(t, instructions.length)
             }
             if (tracer.isDefined) tracer.get.result(result)
@@ -1236,7 +1236,7 @@ abstract class AI[D <: Domain](
                                         currentOperands,
                                         currentLocals
                                     ) match {
-                                        case NoUpdate => /*nothing to do...*/
+                                        case NoUpdate                             => /*nothing to do...*/
                                         case SomeUpdate((newOperands, newLocals)) =>
                                             subroutinesOperandsArray(pc) = newOperands
                                             subroutinesLocalsArray(pc) = newLocals
@@ -1333,7 +1333,7 @@ abstract class AI[D <: Domain](
                         case AI.IntIsNot0TestId               => intIsNot0(pc, value)
                         case AI.IntIsLessThan0TestId          => intIsLessThan0(pc, value)
                         case AI.IntIsLessThanOrEqualTo0TestId => intIsLessThanOrEqualTo0(pc, value)
-                        case AI.IntIsGreaterThan0TestId =>
+                        case AI.IntIsGreaterThan0TestId       =>
                             intIsGreaterThan0(pc, value)
                         case AI.IntIsGreaterThanOrEqualTo0TestId =>
                             intIsGreaterThanOrEqualTo0(pc, value)
@@ -1541,7 +1541,7 @@ abstract class AI[D <: Domain](
 
                         case AI.IntAreEqualTestId    => intAreEqual(pc, value1, value2)
                         case AI.IntAreNotEqualTestId => intAreNotEqual(pc, value1, value2)
-                        case AI.IntIsLessThanTestId =>
+                        case AI.IntIsLessThanTestId  =>
                             intIsLessThan(pc, value1, value2)
                         case AI.IntIsLessThanOrEqualToTestId =>
                             intIsLessThanOrEqualTo(pc, value1, value2)

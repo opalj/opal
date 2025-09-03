@@ -63,7 +63,7 @@ object LazyDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse]
         (m: Method) =>
             taCodes.get(m) match {
                 case Some(taCode) => taCode
-                case None =>
+                case None         =>
                     val brCode = m.body.get
                     // Basically, we use double checked locking; we really don't want to
                     // transform the code more than once!

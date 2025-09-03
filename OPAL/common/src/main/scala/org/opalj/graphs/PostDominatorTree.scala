@@ -96,7 +96,7 @@ object PostDominatorTree {
      *      scala>org.opalj.io.writeAndOpen(pdt.toDot(i => true),"PDT",".gv")
      *      }}}
      *
-     * @param   uniqueExitNode `true` if and only if the underlying CFG has a a unique exit node.
+     * @param   uniqueExitNode `true` if and only if the underlying CFG has a unique exit node.
      *          (This property is independent of the `additionalExitNodes` property which
      *          is not a statement about the underlying CFG, but a directive how to compute
      *          the post-dominator tree.)
@@ -120,76 +120,55 @@ object PostDominatorTree {
         foreachPredecessorOf: Int => ((Int => Unit) => Unit), // IntFunction[Consumer[IntConsumer]]
         maxNode:              Int
     ): PostDominatorTree = {
-        if (uniqueExitNode.isDefined && additionalExitNodes.isEmpty) {
-            val startNode = uniqueExitNode.get
+        val (startNode, virtualStartNode, foreachSuccessor, foreachPredecessor, newMaxNode) =
+            if (uniqueExitNode.isDefined && additionalExitNodes.isEmpty) {
+                (uniqueExitNode.get, false, foreachPredecessorOf, foreachSuccessorOf, maxNode)
+            } else {
+                val virtualStart = maxNode + 1
 
-            DominatorTree.create(
-                startNode,
-                hasVirtualStartNode = false,
-                foreachPredecessorOf,
-                foreachSuccessorOf,
-                maxNode, // unchanged, the graph is not augmented
-                (
-                    startNode:           Int,
-                    hasVirtualStartNode: Boolean,
-                    foreachSuccessorOf:  Int => ((Int => Unit) => Unit),
-                    idom:                Array[Int]
-                ) => {
-                    new PostDominatorTree(
-                        startNode,
-                        hasVirtualStartNode,
-                        additionalExitNodes,
-                        foreachSuccessorOf,
-                        idom
-                    )
+                // reverse flowgraph
+                val revFGForeachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
+                    if (n == virtualStart) {
+                        (f: Int => Unit) => { foreachExitNode(f); additionalExitNodes.foreach(f) }
+                    } else {
+                        foreachPredecessorOf(n)
+                    }
                 }
-            )
 
-        } else {
-            // create a new artificial start node
-            val startNode = maxNode + 1
-
-            // reverse flowgraph
-            val revFGForeachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-                if (n == startNode) {
-                    (f: Int => Unit) => { foreachExitNode(f); additionalExitNodes.foreach(f) }
-                } else {
-                    foreachPredecessorOf(n)
+                val revFGForeachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
+                    if (n == virtualStart) {
+                        DominatorTree.fornone // (_: (Int => Unit)) => {}
+                    } else if (isExitNode(n) || additionalExitNodes.contains(n)) {
+                        // a function that expects a function that will be called for all successors
+                        (f: Int => Unit) => { f(virtualStart); foreachSuccessorOf(n)(f) }
+                    } else {
+                        foreachSuccessorOf(n)
+                    }
                 }
+
+                (virtualStart, true, revFGForeachSuccessorOf, revFGForeachPredecessorOf, virtualStart)
             }
 
-            val revFGForeachPredecessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
-                if (n == startNode) {
-                    DominatorTree.fornone // (_: (Int => Unit)) => {}
-                } else if (isExitNode(n) || additionalExitNodes.contains(n)) {
-                    // a function that expects a function that will be called for all successors
-                    (f: Int => Unit) => { f(startNode); foreachSuccessorOf(n)(f) }
-                } else {
-                    foreachSuccessorOf(n)
-                }
+        DominatorTree.create(
+            startNode,
+            hasVirtualStartNode = virtualStartNode,
+            foreachSuccessor,
+            foreachPredecessor,
+            maxNode = newMaxNode,
+            (
+                startNode:           Int,
+                hasVirtualStartNode: Boolean,
+                foreachSuccessorOf:  Int => ((Int => Unit) => Unit),
+                idom:                Array[Int]
+            ) => {
+                new PostDominatorTree(
+                    startNode,
+                    hasVirtualStartNode,
+                    additionalExitNodes,
+                    foreachSuccessorOf,
+                    idom
+                )
             }
-
-            DominatorTree.create(
-                startNode,
-                hasVirtualStartNode = true,
-                revFGForeachSuccessorOf,
-                revFGForeachPredecessorOf,
-                maxNode = startNode /* we have an additional node */,
-                (
-                    startNode:           Int,
-                    hasVirtualStartNode: Boolean,
-                    foreachSuccessorOf:  Int => ((Int => Unit) => Unit),
-                    idom:                Array[Int]
-                ) => {
-                    new PostDominatorTree(
-                        startNode,
-                        hasVirtualStartNode,
-                        additionalExitNodes,
-                        foreachSuccessorOf,
-                        idom
-                    )
-                }
-            )
-        }
+        )
     }
 }

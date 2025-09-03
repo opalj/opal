@@ -5,7 +5,6 @@ package fpcf
 package properties
 
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyIsNotComputedByAnyAnalysis
@@ -13,6 +12,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.si.Project
 
 sealed trait BaseAIResultPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -68,7 +68,7 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
 
                     case PropertyIsNotComputedByAnyAnalysis =>
                         // we may still have requirements on the domain that we are going to use...
-                        val p = ps.context(classOf[SomeProject])
+                        val p = ps.context(classOf[Project])
                         AnAIResult(p.get(AIDomainFactoryKey)(m))
                 }
             }: BaseAIResult

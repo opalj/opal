@@ -3,23 +3,24 @@ package org.opalj
 package support
 package info
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.fpcf.FinalEP
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.fpcf.FPCFAnalysesManagerKey
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
@@ -32,23 +33,25 @@ import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
  *
  * @author Dominik Helm
  */
-object PureVoidMethods extends ProjectAnalysisApplication {
+object PureVoidMethods extends ProjectsAnalysisApplication {
 
-    override def title: String = "Pure Void Methods Analysis"
-
-    override def description: String = {
-        "finds useless methods because they are side effect free and do not return a value (void)"
+    protected class PureVoidMethodsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with CGBasedCommandLineConfig {
+        val description = "Finds useless methods because they are side effect free and do not return a value (void)"
     }
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = PureVoidMethodsConfig
 
-        val propertyStore = project.get(PropertyStoreKey)
+    protected def createConfig(args: Array[String]): PureVoidMethodsConfig = new PureVoidMethodsConfig(args)
 
-        project.get(RTACallGraphKey)
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: PureVoidMethodsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
+        val (ps, _) = analysisConfig.setupPropertyStore(project)
+        analysisConfig.setupCallGaph(project)
 
         project.get(FPCFAnalysesManagerKey).runAll(
             EagerFieldAccessInformationAnalysis,
@@ -63,7 +66,7 @@ object PureVoidMethods extends ProjectAnalysisApplication {
             EagerL2PurityAnalysis
         )
 
-        val entities = propertyStore.entities(br.fpcf.properties.Purity.key)
+        val entities = ps.entities(br.fpcf.properties.Purity.key)
 
         val voidReturn = entities.collect {
             case FinalEP(m: DefinedMethod, p @ (CompileTimePure | Pure | SideEffectFree)) // Do not report empty methods, they are e.g. used for base implementations of listeners
@@ -73,11 +76,14 @@ object PureVoidMethods extends ProjectAnalysisApplication {
                 (m, p)
         }
 
-        BasicReport(
-            voidReturn.iterator.to(Iterable) map { mp =>
-                val (m, p) = mp
-                s"${m.toJava} has a void return type but it is $p"
-            }
+        (
+            project,
+            BasicReport(
+                voidReturn.iterator.to(Iterable) map { mp =>
+                    val (m, p) = mp
+                    s"${m.toJava} has a void return type but it is $p"
+                }
+            )
         )
     }
 }

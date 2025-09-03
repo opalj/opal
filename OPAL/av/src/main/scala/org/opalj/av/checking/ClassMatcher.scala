@@ -67,7 +67,7 @@ case class DefaultClassMatcher(
 
             project.classFile(sourceClassFile.superclassType.get) match {
                 case Some(cf) => sourceClassFile = cf
-                case None =>
+                case None     =>
                     return false;
             }
         }

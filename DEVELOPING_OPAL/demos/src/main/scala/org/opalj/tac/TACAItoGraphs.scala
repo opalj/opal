@@ -2,58 +2,59 @@
 package org.opalj
 package tac
 
+import scala.language.postfixOps
+
 import java.io.File
 import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.opalj.ai.cli.AIBasedCommandLineConfig
 import org.opalj.ai.common.SimpleAIKey
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.bytecode.JDKArg
+import org.opalj.cli.MultiProjectsArg
+import org.opalj.cli.OutputDirArg
 
 /**
  * Creates for all methods of a given project the Control-flow Graph and the DefUse Graph.
  *
  * @author Michael Eichberg
  */
-object TACAItoGraphs extends ProjectAnalysisApplication {
+object TACAItoGraphs extends ProjectsAnalysisApplication {
 
-    override def title: String = "CFG and Def/Use Creator"
+    protected class TACAIConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with AIBasedCommandLineConfig {
+        val description = "Creates for all methods of a given project the Control-flow Graph and the DefUse Graph"
 
-    override def description: String = {
-        "Creates for all methods of a given project the Control-flow Graph and the DefUse Graph."
+        args(OutputDirArg !)
     }
 
-    override def analysisSpecificParametersDescription: String = {
-        "-o=<the folder to which the generated graphs are written>"
-    }
+    protected type ConfigType = TACAIConfig
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Seq[String] = {
-        if (parameters.size == 1 && parameters.head.startsWith("-o="))
-            Seq.empty
-        else if (parameters.isEmpty)
-            Seq("output folder is missing")
-        else
-            parameters.filterNot(_.startsWith("-o=")).map("unknown parameter: " + _)
-    }
+    protected def createConfig(args: Array[String]): TACAIConfig = new TACAIConfig(args)
 
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ConfigType,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val methodCount = new AtomicInteger(0)
 
-        val folder = new File(parameters.head.substring(3))
-        folder.mkdirs()
+        val folder = if (analysisConfig(MultiProjectsArg))
+            new File(analysisConfig(OutputDirArg), if (analysisConfig(JDKArg).isDefined) "JDK" else cp.head.getName)
+        else analysisConfig(OutputDirArg)
         val pathName = s"${folder.getAbsoluteFile}${File.separator}"
 
-        val aiResults = theProject.get(SimpleAIKey)
-        val tacs = theProject.get(LazyTACUsingAIKey)
+        val aiResults = project.get(SimpleAIKey)
+        val tacs = project.get(LazyTACUsingAIKey)
 
-        theProject.parForeachMethodWithBody() { mi =>
+        project.parForeachMethodWithBody() { mi =>
             val m = mi.method
             val methodName = m.toJava
             val outputFileName = pathName + org.opalj.io.sanitizeFileName(methodName)
@@ -88,6 +89,6 @@ object TACAItoGraphs extends ProjectAnalysisApplication {
             methodCount.incrementAndGet()
         }
 
-        BasicReport(s"Created ${methodCount.get} def/use and control-flow graphs in: $folder.")
+        (project, BasicReport(s"Created ${methodCount.get} def/use and control-flow graphs in: $folder."))
     }
 }

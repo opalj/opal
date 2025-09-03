@@ -56,7 +56,9 @@ abstract class LongSetProperties(typeName: String) extends Properties(typeName) 
         oLongSet eq updatedOLongSet
     }
 
-    property("equals and hashCode: two sets which are definitively equal (the same values are added in the same order) equal have to have the same hash code") =
+    property(
+        "equals and hashCode: two sets which are definitively equal (the same values are added in the same order) equal have to have the same hash code"
+    ) =
         forAll { (sLongSet: Set[Long]) =>
             val sLongListSet = sLongSet.toList
             val oLongSet1 = sLongListSet.foldLeft(empty())(_ + _)

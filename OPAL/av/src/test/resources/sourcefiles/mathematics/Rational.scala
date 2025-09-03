@@ -6,7 +6,7 @@ package mathematics
  */
 class Rational(val numer: Number, val denom: Number) extends Operations {
 
-    //Rational operator Number = Rational
+    // Rational operator Number = Rational
     def +(other: Number) =
         new Rational(((other / this.denom) + this.numer), this.denom)
     def -(other: Number) =
@@ -16,7 +16,7 @@ class Rational(val numer: Number, val denom: Number) extends Operations {
     def /(other: Number) =
         new Rational(this.numer, this.denom / other)
 
-    //Rational operator Rational = Rational
+    // Rational operator Rational = Rational
     def +(other: Rational) =
         new Rational((this.numer / other.denom) + (other.numer / this.denom), other.denom * this.denom)
     def -(other: Rational) =
@@ -26,6 +26,6 @@ class Rational(val numer: Number, val denom: Number) extends Operations {
     def /(other: Rational) =
         new Rational((this.numer * other.denom), (other.numer * this.denom))
 
-    //Print
-    override def toString() = numer.toString+"/"+denom.toString
+    // Print
+    override def toString() = numer.toString + "/" + denom.toString
 }

@@ -2,11 +2,25 @@
 package org.opalj
 package ai
 
+import java.io.File
 import java.net.URL
 
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.br.instructions._
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.ClassType
+import org.opalj.br.Method
+import org.opalj.br.MethodWithBody
+import org.opalj.br.PC
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.br.instructions.AASTORE
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.FieldWriteAccess
+import org.opalj.br.instructions.MethodInvocationInstruction
+import org.opalj.log.OPALLogger
 
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 
@@ -15,32 +29,36 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
  *
  * @author Michael Eichberg
  */
-object ExceptionUsage extends ProjectAnalysisApplication {
+object ExceptionUsage extends ProjectsAnalysisApplication {
 
-    override def title: String = "Intra-procedural Usage of Exceptions"
+    protected class ExceptionUsageConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Collects intra-procedural usage of exceptions"
+    }
 
-    override def description: String = "Analyses the usage of exceptions."
+    protected type ConfigType = ExceptionUsageConfig
 
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected def createConfig(args: Array[String]): ExceptionUsageConfig = new ExceptionUsageConfig(args)
 
-        implicit val ch: ClassHierarchy = theProject.classHierarchy
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ExceptionUsageConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
-        if (theProject.classFile(ClassType("java/lang/Object")).isEmpty) {
-            Console.err.println(
-                "[warn] It seems as if the JDK was not loaded" +
-                    "(use: -libcp=<PATH TO THE JRE>); " +
-                    "the results of the analysis might not be useful."
-            )
+        implicit val ch: ClassHierarchy = project.classHierarchy
+
+        if (project.classFile(ClassType("java/lang/Object")).isEmpty) {
+            OPALLogger.error(
+                "analysis configuration",
+                "It seems as if the JDK was not loaded; the results of the analysis might not be useful."
+            )(project.logContext)
         }
 
         val usages = (for {
-            classFile <- theProject.allProjectClassFiles.par
+            classFile <- project.allProjectClassFiles.par
             method @ MethodWithBody(body) <- classFile.methods
-            result = BaseAI(method, new ExceptionUsageAnalysisDomain(theProject, method))
+            result = BaseAI(method, new ExceptionUsageAnalysisDomain(project, method))
         } yield {
             import scala.collection.mutable._
 
@@ -133,13 +151,13 @@ object ExceptionUsage extends ProjectAnalysisApplication {
             else {
                 Some(usages)
             }
-        }).filter(_.isDefined).map(_.get).flatten
+        }).filter(_.isDefined).flatMap(_.get)
 
         val (notUsed, used) = usages.toSeq.partition(_.usageInformation.isEmpty)
         var report = used.map(_.toString).toList.sorted.mkString("\nUsed\n", "\n", "\n")
         report += notUsed.map(_.toString).toList.sorted.mkString("\nNot Used\n", "\n", "\n")
 
-        BasicReport(report)
+        (project, BasicReport(report))
     }
 
 }
@@ -171,7 +189,7 @@ object UsageKind extends Enumeration {
     val StoredInField = UsageKind.Value
 }
 
-class ExceptionUsageAnalysisDomain(val project: Project[java.net.URL], val method: Method)
+class ExceptionUsageAnalysisDomain(val project: SomeProject, val method: Method)
     extends CorrelationalDomain
     with domain.DefaultSpecialDomainValuesBinding
     with domain.l0.TypeLevelPrimitiveValuesConversions

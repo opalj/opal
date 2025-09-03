@@ -2,11 +2,13 @@
 package org.opalj
 package br
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.LoadMethodHandle
 import org.opalj.br.instructions.LoadMethodHandle_W
@@ -18,15 +20,23 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
 /**
  * @author Michael Eichberg
  */
-object LoadMethodHandleOrMethodType extends ProjectAnalysisApplication {
+object LoadMethodHandleOrMethodType extends ProjectsAnalysisApplication {
 
-    override def description: String = "prints information about loads of method handles and types"
+    protected class MethodHandleStatisticsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Collects information about loads of method handles and types"
+    }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = MethodHandleStatisticsConfig
+
+    protected def createConfig(args: Array[String]): MethodHandleStatisticsConfig =
+        new MethodHandleStatisticsConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: MethodHandleStatisticsConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         val loads =
             for {
@@ -45,6 +55,6 @@ object LoadMethodHandleOrMethodType extends ProjectAnalysisApplication {
                     s"<${project.source(classFile.thisType).map(_.toString()).getOrElse("N/A")}>"
             }
 
-        BasicReport(loads.seq.mkString("Instances of LoadMethod(Type|Handle):\n\t", "\n\t", "\n"))
+        (project, BasicReport(loads.seq.mkString("Instances of LoadMethod(Type|Handle):\n\t", "\n\t", "\n")))
     }
 }

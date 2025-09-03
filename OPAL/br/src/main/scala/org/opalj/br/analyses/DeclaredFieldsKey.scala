@@ -3,7 +3,7 @@ package org.opalj
 package br
 package analyses
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap => ConcurrentMap}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 
@@ -13,13 +13,13 @@ object DeclaredFieldsKey extends ProjectInformationKey[DeclaredFields, Nothing] 
 
     override def compute(p: SomeProject): DeclaredFields = {
         val idCounter = new AtomicInteger()
-        val result: ConcurrentHashMap[ClassType, ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]] =
-            new ConcurrentHashMap
+        val result: ConcurrentMap[ClassType, ConcurrentMap[String, ConcurrentMap[FieldType, DeclaredField]]] =
+            new ConcurrentMap
 
         p.allFields.iterator.foreach { f =>
             result
-                .computeIfAbsent(f.declaringClassFile.thisType, _ => new ConcurrentHashMap())
-                .computeIfAbsent(f.name, _ => new ConcurrentHashMap())
+                .computeIfAbsent(f.declaringClassFile.thisType, _ => new ConcurrentMap())
+                .computeIfAbsent(f.name, _ => new ConcurrentMap())
                 .put(f.fieldType, new DefinedField(idCounter.getAndIncrement(), f))
         }
 

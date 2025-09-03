@@ -100,7 +100,7 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
     def doDetermineFieldImmutability(entity: Entity): ProperPropertyComputationResult = entity match {
         case field: Field => determineFieldImmutability(field)
-        case _ =>
+        case _            =>
             throw new IllegalArgumentException(s"${entity.getClass.getName} is not an org.opalj.br.Field")
     }
 
@@ -269,13 +269,13 @@ class FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
 
             if (state.hasDependee(eps.toEPK)) {
+                typeIterator.continuation(state.field, eps) {
+                    actualType => determineClassImmutability(actualType)
+                }
                 if (eps.isFinal)
                     state.removeDependee(eps.toEPK)
                 else
                     state.updateDependency(eps)
-                typeIterator.continuation(state.field, eps) {
-                    actualType => determineClassImmutability(actualType.asClassType)
-                }
             } else {
 
                 state.fieldImmutabilityDependees =
@@ -335,8 +335,7 @@ trait FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
     override final def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(FieldAssignability),
         PropertyBounds.lub(TypeImmutability),
-        PropertyBounds.lub(ClassImmutability),
-        PropertyBounds.lub(FieldImmutability)
+        PropertyBounds.lub(ClassImmutability)
     )
 
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] =

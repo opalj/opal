@@ -9,8 +9,6 @@ import com.typesafe.config.ConfigFactory
 
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
@@ -19,9 +17,6 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalys
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL0FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.EagerL2FieldAssignabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
 /**
  * Tests the field assignability analysis
@@ -54,16 +49,12 @@ class FieldAssignabilityTests extends PropertiesTest {
         as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldAssignability"))
     }
-    L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
     describe("the org.opalj.fpcf.analyses.L0FieldAssignability is executed") {
 
         val as = executeAnalyses(
             Set(
                 EagerL0FieldAssignabilityAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyL2PurityAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis,
@@ -79,9 +70,6 @@ class FieldAssignabilityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL1FieldAssignabilityAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyL2PurityAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis,
@@ -97,9 +85,6 @@ class FieldAssignabilityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL2FieldAssignabilityAnalysis,
-                LazyStaticDataUsageAnalysis,
-                LazyL2PurityAnalysis,
-                LazyL0CompileTimeConstancyAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis,

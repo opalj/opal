@@ -135,7 +135,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     return Result(t, TransitivelyImmutableClass)
                 // this is safe
                 classHierarchy.superclassType(t) match {
-                    case None => Result(t, MutableClass);
+                    case None                 => Result(t, MutableClass);
                     case Some(superClassType) =>
                         val cf = project.classFile(t) match {
                             case None =>
@@ -239,8 +239,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ClassImmutability = superClassInformation match {
-            case UBP(MutableClass)                  => MutableClass
-            case UBP(NonTransitivelyImmutableClass) => NonTransitivelyImmutableClass
+            case UBP(MutableClass)                          => MutableClass
+            case UBP(NonTransitivelyImmutableClass)         => NonTransitivelyImmutableClass
             case UBP(DependentlyImmutableClass(parameters)) =>
                 genericTypeParameters ++= parameters
                 DependentlyImmutableClass(genericTypeParameters)
@@ -302,7 +302,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     )
                         minLocalImmutability = NonTransitivelyImmutableClass // Lift lower bound when possible
 
-                case UBP(TransitivelyImmutableClass) => // No information about superclass
+                case UBP(TransitivelyImmutableClass)              => // No information about superclass
                 case FinalP(DependentlyImmutableField(parameter)) =>
                     if (hasNonTransitivelyImmutableFields) {
                         maxLocalImmutability = NonTransitivelyImmutableClass
@@ -434,13 +434,13 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
     override def afterPhaseCompletion(
         p:        SomeProject,
         ps:       PropertyStore,
-        analysis: FPCFAnalysis
+        analysis: org.opalj.fpcf.FPCFAnalysis
     ): Unit = {}
+
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: org.opalj.fpcf.FPCFAnalysis): Unit = {}
 }
 
 /**

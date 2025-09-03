@@ -119,10 +119,10 @@ class L0FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
             faiEP.ub.getNewestAccesses(
                 faiEP.ub.numDirectAccesses - seenDirectAccesses,
                 faiEP.ub.numIndirectAccesses - seenIndirectAccesses
-            ) exists { wa =>
-                val method = contextProvider.contextFromId(wa._1).method.definedMethod
+            ) exists { case (contextID, _, receiver, _) =>
+                val method = contextProvider.contextFromId(contextID).method.definedMethod
                 if (method.isStaticInitializer) {
-                    if (wa._3.isDefined) {
+                    if (receiver.isDefined) {
                         // If a receiver is defined, we know that the access was not static
                         // IMPROVE: Add static information to accesses and resolve this
                         false

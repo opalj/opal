@@ -4,7 +4,7 @@ package br
 package fpcf
 package properties
 
-import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsNative
@@ -50,6 +50,7 @@ import org.opalj.fpcf.PropertyComputation
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
+import org.opalj.si.Project
 
 /**
  * A very straight forward flow-insensitive analysis which can successfully analyze methods
@@ -73,14 +74,19 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
     final val ObjectEqualsMethodDescriptor = MethodDescriptor(ClassType.Object, BooleanType)
 
     def apply(ps: PropertyStore, reason: FallbackReason, e: Entity): ThrownExceptions = {
-        e match { case m: Method => this(ps, m) }
+        e match { case c: Context => this(ps, c) }
     }
 
     def apply(ps: PropertyStore, e: Entity): ThrownExceptions = {
-        e match { case m: Method => this(ps, m) }
+        e match { case c: Context => this(ps, c) }
     }
 
-    def apply(ps: PropertyStore, m: Method): ThrownExceptions = {
+    def apply(ps: PropertyStore, c: Context): ThrownExceptions = {
+        val dm = c.method
+        if (!dm.hasSingleDefinedMethod)
+            return MethodBodyIsNotAvailable;
+
+        val m = dm.definedMethod
         if (m.isNative)
             return MethodIsNative;
         if (m.isAbstract)
@@ -97,7 +103,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
         val instructions = code.instructions
         val isStaticMethod = m.isStatic
 
-        val exceptions = new BRMutableTypesSet(ps.context(classOf[Project[_]]).classHierarchy)
+        val exceptions = new BRMutableTypesSet(ps.context(classOf[Project]).asInstanceOf[SomeProject].classHierarchy)
 
         var result: ThrownExceptions = null
 

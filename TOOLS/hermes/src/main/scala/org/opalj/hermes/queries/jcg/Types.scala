@@ -62,8 +62,8 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val pc = pcAndInstruction.pc
 
             instruction.opcode match {
-                case CHECKCAST.opcode  => instructionsLocations(0) += InstructionLocation(methodLocation, pc)
-                case INSTANCEOF.opcode => instructionsLocations(3) += InstructionLocation(methodLocation, pc)
+                case CHECKCAST.opcode                    => instructionsLocations(0) += InstructionLocation(methodLocation, pc)
+                case INSTANCEOF.opcode                   => instructionsLocations(3) += InstructionLocation(methodLocation, pc)
                 case IF_ACMPEQ.opcode | IF_ACMPNE.opcode =>
                     val ai = BaseAI
                     val aiResult = ai.apply(method, BaseDomain(project, method))

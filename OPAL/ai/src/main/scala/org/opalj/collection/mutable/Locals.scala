@@ -1286,7 +1286,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             case 0 | 1     => vs1(index)
             case 2 | 3 | 4 => vs2(index - 2)
             case 5 | 6 | 7 => vs3(index - 5)
-            case _ =>
+            case _         =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1301,7 +1301,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             case 0 | 1     => vs1.set(index, newValue)
             case 2 | 3 | 4 => vs2.set(index - 2, newValue)
             case 5 | 6 | 7 => vs3.set(index - 5, newValue)
-            case _ =>
+            case _         =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1317,7 +1317,7 @@ private[mutable] final class Locals8[T >: Null <: AnyRef](
             case 0 | 1     => new Locals8(vs1.updated(index, newValue), vs2, vs3)
             case 2 | 3 | 4 => new Locals8(vs1, vs2.updated(index - 2, newValue), vs3)
             case 5 | 6 | 7 => new Locals8(vs1, vs2, vs3.updated(index - 5, newValue))
-            case _ =>
+            case _         =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1445,7 +1445,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             case 0 | 1 | 2 => vs1(index)
             case 3 | 4 | 5 => vs2(index - 3)
             case 6 | 7 | 8 => vs3(index - 6)
-            case _ =>
+            case _         =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1460,7 +1460,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             case 0 | 1 | 2 => vs1.set(index, newValue)
             case 3 | 4 | 5 => vs2.set(index - 3, newValue)
             case 6 | 7 | 8 => vs3.set(index - 6, newValue)
-            case _ =>
+            case _         =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1476,7 +1476,7 @@ private[mutable] final class Locals9[T >: Null <: AnyRef](
             case 0 | 1 | 2 => new Locals9(vs1.updated(index, newValue), vs2, vs3)
             case 3 | 4 | 5 => new Locals9(vs1, vs2.updated(index - 3, newValue), vs3)
             case 6 | 7 | 8 => new Locals9(vs1, vs2, vs3.updated(index - 6, newValue))
-            case _ =>
+            case _         =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1605,7 +1605,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             case 0 | 1 | 2 | 3 => vs1(index)
             case 4 | 5 | 6     => vs2(index - 4)
             case 7 | 8 | 9     => vs3(index - 7)
-            case _ =>
+            case _             =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1620,7 +1620,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             case 0 | 1 | 2 | 3 => vs1.set(index, newValue)
             case 4 | 5 | 6     => vs2.set(index - 4, newValue)
             case 7 | 8 | 9     => vs3.set(index - 7, newValue)
-            case _ =>
+            case _             =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1636,7 +1636,7 @@ private[mutable] final class Locals10[T >: Null <: AnyRef](
             case 0 | 1 | 2 | 3 => new Locals10(vs1.updated(index, newValue), vs2, vs3)
             case 4 | 5 | 6     => new Locals10(vs1, vs2.updated(index - 4, newValue), vs3)
             case 7 | 8 | 9     => new Locals10(vs1, vs2, vs3.updated(index - 7, newValue))
-            case _ =>
+            case _             =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1763,7 +1763,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             case 0 | 1 | 2 | 3  => vs1(index)
             case 4 | 5 | 6      => vs2(index - 4)
             case 7 | 8 | 9 | 10 => vs3(index - 7)
-            case _ =>
+            case _              =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1778,7 +1778,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             case 0 | 1 | 2 | 3  => vs1.set(index, newValue)
             case 4 | 5 | 6      => vs2.set(index - 4, newValue)
             case 7 | 8 | 9 | 10 => vs3.set(index - 7, newValue)
-            case _ =>
+            case _              =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }
@@ -1794,7 +1794,7 @@ private[mutable] final class Locals11[T >: Null <: AnyRef](
             case 0 | 1 | 2 | 3  => new Locals11(vs1.updated(index, newValue), vs2, vs3)
             case 4 | 5 | 6      => new Locals11(vs1, vs2.updated(index - 4, newValue), vs3)
             case 7 | 8 | 9 | 10 => new Locals11(vs1, vs2, vs3.updated(index - 7, newValue))
-            case _ =>
+            case _              =>
                 throw new IndexOutOfBoundsException("invalid index(" + index + ")")
         }
     }

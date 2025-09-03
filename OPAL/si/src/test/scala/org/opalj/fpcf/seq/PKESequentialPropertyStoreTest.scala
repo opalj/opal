@@ -6,7 +6,7 @@ package seq
 abstract class PKESequentialPropertyStoreWithDebugging
     extends PropertyStoreTestWithDebugging[PKESequentialPropertyStore]
 
-class LIFOTaskskManagePKESequentialPropertyStoreTest
+class LIFOTasksManagerPKESequentialPropertyStoreTest
     extends PKESequentialPropertyStoreWithDebugging {
 
     def createPropertyStore(): PKESequentialPropertyStore = {
@@ -17,7 +17,7 @@ class LIFOTaskskManagePKESequentialPropertyStoreTest
 
 }
 
-class FIFOTaskskManagePKESequentialPropertyStoreTest
+class FIFOTasksManagerPKESequentialPropertyStoreTest
     extends PKESequentialPropertyStoreWithDebugging {
 
     def createPropertyStore(): PKESequentialPropertyStore = {
@@ -27,7 +27,7 @@ class FIFOTaskskManagePKESequentialPropertyStoreTest
     }
 }
 
-class ManyDependenciesLastTaskskManagePKESequentialPropertyStoreTest
+class ManyDependenciesLastTasksManagerPKESequentialPropertyStoreTest
     extends PKESequentialPropertyStoreWithDebugging {
 
     def createPropertyStore(): PKESequentialPropertyStore = {
@@ -37,7 +37,7 @@ class ManyDependenciesLastTaskskManagePKESequentialPropertyStoreTest
     }
 }
 
-class ManyDependersLastTaskskManagePKESequentialPropertyStoreTest
+class ManyDependersLastTasksManagerPKESequentialPropertyStoreTest
     extends PKESequentialPropertyStoreWithDebugging {
 
     def createPropertyStore(): PKESequentialPropertyStore = {
@@ -47,7 +47,7 @@ class ManyDependersLastTaskskManagePKESequentialPropertyStoreTest
     }
 }
 
-class ManyDependeesOfDependersLastTaskskManagePKESequentialPropertyStoreTest
+class ManyDependeesOfDependersLastTasksManagerPKESequentialPropertyStoreTest
     extends PKESequentialPropertyStoreWithDebugging {
 
     def createPropertyStore(): PKESequentialPropertyStore = {
@@ -57,7 +57,7 @@ class ManyDependeesOfDependersLastTaskskManagePKESequentialPropertyStoreTest
     }
 }
 
-class ManyDependeesAndDependersOfDependersLastTaskskManagePKESequentialPropertyStoreTest
+class ManyDependeesAndDependersOfDependersLastTasksManagerPKESequentialPropertyStoreTest
     extends PKESequentialPropertyStoreWithDebugging {
 
     def createPropertyStore(): PKESequentialPropertyStore = {

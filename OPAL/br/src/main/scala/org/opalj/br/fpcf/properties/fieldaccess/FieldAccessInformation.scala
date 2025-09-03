@@ -33,7 +33,7 @@ sealed trait FieldAccessInformationPropertyMetaInformation[S <: FieldAccessInfor
             (_: PropertyStore, reason: FallbackReason, _: DeclaredField) =>
                 reason match {
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => fallbackValue
-                    case _ =>
+                    case _                                                =>
                         throw new IllegalStateException(s"No analysis is scheduled for property $propertyName")
                 }
         )
@@ -122,7 +122,7 @@ sealed trait FieldAccessInformation[S <: FieldAccessInformation[S]] extends Orde
         other:                S,
         seenDirectAccesses:   Int,
         seenIndirectAccesses: Int,
-        propertyFactory: (
+        propertyFactory:      (
             LongLinkedSet,
             LongMap[AccessReceiver],
             LongMap[AccessParameter],

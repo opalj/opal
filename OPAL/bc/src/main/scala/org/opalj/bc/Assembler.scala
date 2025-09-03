@@ -631,7 +631,7 @@ object Assembler {
 
                 case _: Deprecated_attribute => // nothing more to do
                 case _: Synthetic_attribute  => // nothing more to do
-                case a: Module_attribute =>
+                case a: Module_attribute     =>
                     writeShort(a.module_name_index)
                     writeShort(a.module_flags)
                     writeShort(a.module_version_index)
@@ -777,9 +777,7 @@ object Assembler {
             writeShort(methods.size)
             methods foreach { m =>
                 serialize(m)
-                if (
-                    (ACC_STRICT.mask & m.access_flags) != 0 && (classFile.major_version < 46 || classFile.major_version > 60)
-                ) {
+                if ((ACC_STRICT.mask & m.access_flags) != 0 && (classFile.major_version < 46 || classFile.major_version > 60)) {
                     OPALLogger.warn(
                         "assembler",
                         s"Writing out ACC_STRICT flag for a method in a classfile of version ${classFile.major_version}, which is not interpreted in class files of version < 46 or > 60"

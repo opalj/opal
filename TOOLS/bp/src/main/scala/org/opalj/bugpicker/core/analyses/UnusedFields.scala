@@ -4,21 +4,21 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.FieldAccessInformation
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassType
 import org.opalj.br.ConstantString
+import org.opalj.br.analyses.FieldAccessInformation
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.StringConstantsInformation
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.issues.Issue
-import org.opalj.issues.Relevance
-import org.opalj.issues.IssueKind
-import org.opalj.issues.IssueCategory
-import org.opalj.issues.FieldLocation
-import org.opalj.log.OPALLogger
-import org.opalj.log.GlobalLogContext
 import org.opalj.fpcf.PropertyStore
+import org.opalj.issues.FieldLocation
+import org.opalj.issues.Issue
+import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
+import org.opalj.issues.Relevance
+import org.opalj.log.GlobalLogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Identifies fields (static or instance) that are not used and which are also not useable.
@@ -39,14 +39,14 @@ object UnusedFields {
 
         val candidateFields = classFile.fields.filterNot { field =>
             (field.isSynthetic) ||
-                // These fields are inlined by compilers; hence, even if the field is not accessed
-                // it may be used in the source code.
-                (field.isFinal && (field.fieldType.isBaseType || field.fieldType == ClassType.String)) ||
-                // The field is read at least once...
-                (fieldAccessInformation.readAccesses(field).nonEmpty) ||
-                // We may have some users of the field in the future...
-                // IMPROVE use FutureFieldAccess property (TBD) to get the information if we may have future field accesses
-                (!field.isPrivate && AnalysisModes.isLibraryLike(theProject.analysisMode))
+            // These fields are inlined by compilers; hence, even if the field is not accessed
+            // it may be used in the source code.
+            (field.isFinal && (field.fieldType.isBaseType || field.fieldType == ClassType.String)) ||
+            // The field is read at least once...
+            (fieldAccessInformation.readAccesses(field).nonEmpty) ||
+            // We may have some users of the field in the future...
+            // IMPROVE use FutureFieldAccess property (TBD) to get the information if we may have future field accesses
+            (!field.isPrivate && AnalysisModes.isLibraryLike(theProject.analysisMode))
         }
 
         if (candidateFields.isEmpty)
@@ -55,14 +55,14 @@ object UnusedFields {
         val unusedFields = candidateFields.filterNot { field =>
             // Test if the field defines a (probably inlined) constant string.
             field.isFinal && (field.fieldType eq ClassType.String) &&
-                {
-                    field.constantFieldValue match {
-                        case Some(ConstantString(value)) =>
-                            stringConstantsInformation.get(value).isDefined
-                        case _ =>
-                            false
-                    }
+            {
+                field.constantFieldValue match {
+                    case Some(ConstantString(value)) =>
+                        stringConstantsInformation.get(value).isDefined
+                    case _ =>
+                        false
                 }
+            }
         }
 
         val unusedAndNotReflectivelyAccessedFields = unusedFields.filterNot { field =>
@@ -96,7 +96,8 @@ object UnusedFields {
                 unusedAndNotReflectivelyAccessedFields.filter(f =>
                     f.isPrivate || f.isPackagePrivate || {
                         f.isProtected && typeExtensibility(classFile.thisType).isNo
-                    })
+                    }
+                )
             } else {
                 val message = s"the analysis mode $analysisMode is unknown"
                 OPALLogger.error("unused fields analysis", message)(GlobalLogContext)

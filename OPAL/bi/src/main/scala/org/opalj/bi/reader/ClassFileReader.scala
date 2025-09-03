@@ -314,7 +314,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             case dis: DataInputStream      => ClassFile(dis)
             case bis: BufferedInputStream  => ClassFile(new DataInputStream(bis))
             case bas: ByteArrayInputStream => ClassFile(new DataInputStream(bas))
-            case is =>
+            case is                        =>
                 ClassFile(new DataInputStream(new BufferedInputStream(is)))
         }
     }

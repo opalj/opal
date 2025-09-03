@@ -10,6 +10,7 @@ import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReturnAddress
 import org.opalj.br.PDUVar
+import org.opalj.br.PDVar
 import org.opalj.br.PUVar
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
@@ -196,7 +197,9 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         s"DVar(useSites=${useSites.mkString("{", ",", "}")},value=$value,origin=$origin)"
     }
 
-    override def toPersistentForm(implicit stmts: Array[Stmt[V]]): Nothing = throw new UnsupportedOperationException
+    override def toPersistentForm(
+        implicit stmts: Array[Stmt[V]]
+    ): PDVar[Value] = PDVar(value, usedBy.map(pcOfDefSite _))
 
 }
 

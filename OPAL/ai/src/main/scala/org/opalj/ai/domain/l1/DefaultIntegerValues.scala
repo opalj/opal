@@ -60,7 +60,7 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case AnIntegerValue => StructuralUpdate(AnIntegerValue)
+                case AnIntegerValue             => StructuralUpdate(AnIntegerValue)
                 case that: ConcreteIntegerValue =>
                     if (that.value == this.value)
                         NoUpdate

@@ -1055,10 +1055,11 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
                 if (!matchers.contains(NoFieldsMatcher))
                     if (!handleData.isStatic) {
-                        val receiverValueOpt = actualParams.flatMap(_.head)
-                        if (receiverValueOpt.isDefined && receiverValueOpt.get.value.isReferenceValue)
-                            matchers += new ActualReceiverBasedFieldMatcher(receiverValueOpt.get.value.asReferenceValue)
-                        else
+                        if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
+                            val receiverValue = actualParams.get.head.get.value
+                            if (receiverValue.isReferenceValue)
+                                matchers += new ActualReceiverBasedFieldMatcher(receiverValue.asReferenceValue)
+                        } else
                             matchers += MatcherUtil.retrieveClassBasedFieldMatcher(
                                 context,
                                 handleData.classVar,

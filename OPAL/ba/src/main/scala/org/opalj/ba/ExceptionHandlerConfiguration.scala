@@ -31,8 +31,8 @@ class ExceptionHandlerTableBuilder {
     def add(element: ExceptionHandlerElement, pc: br.PC): this.type = {
         val handler = getExceptionHandlerBuilder(element.id)
         element match {
-            case TRY(_)    => handler.startPC = pc
-            case TRYEND(_) => handler.endPC = pc
+            case TRY(_)                        => handler.startPC = pc
+            case TRYEND(_)                     => handler.endPC = pc
             case CATCH(_, position, catchType) =>
                 handler.handlerPC = pc
                 handler.position = position

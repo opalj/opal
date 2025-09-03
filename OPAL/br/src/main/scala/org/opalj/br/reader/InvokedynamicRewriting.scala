@@ -1466,12 +1466,12 @@ object InvokedynamicRewriting {
      * Returns the default config where the settings for rewriting and logging rewrites are
      * set to the specified values.
      */
-    def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {
+    def defaultConfig(rewrite: Boolean, logRewrites: Boolean, config: Config = BaseConfig): Config = {
         val rewritingConfigKey = InvokedynamicRewritingConfigKey
         val logLambdaConfigKey = LambdaExpressionsLogRewritingsConfigKey
         val logConcatConfigKey = StringConcatLogRewritingsConfigKey
         val logObjectMethodsConfigKey = ObjectMethodsLogRewritingsConfigKey
-        BaseConfig
+        config
             .withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite))
             .withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))
             .withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))

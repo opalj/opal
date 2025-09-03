@@ -40,7 +40,7 @@ import br.instructions._
 class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysis[Source] {
 
     override def description: String =
-        "Reports methods that access their class'es static fields and are called by a "+
+        "Reports methods that access their class'es static fields and are called by a " +
             "super class constructor."
 
     /**
@@ -52,7 +52,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = Seq.empty,
+        parameters:    Seq[String] = Seq.empty,
         isInterrupted: () => Boolean
     ): Iterable[SourceLocationBasedReport[Source]] = {
 
@@ -65,8 +65,11 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
          * @param name The name of the field supposedly declared.
          * @param fieldType Type of the field supposedly declared.
          */
-        def declaresField(classFile: ClassFile, name: String,
-                          fieldType: FieldType): Boolean = {
+        def declaresField(
+            classFile: ClassFile,
+            name:      String,
+            fieldType: FieldType
+        ): Boolean = {
             classFile.fields.exists {
                 case Field(_, `name`, `fieldType`) => true
                 case _                             => false
@@ -82,14 +85,15 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
          */
         def methodOverridesAnything(classFile: ClassFile, method: Method): Boolean = {
             classHierarchy.allSupertypes(classFile.thisType).
-                filter(!classHierarchy.isInterface(_)).
-                exists(
-                    classHierarchy.lookupMethodDefinition(
-                        _,
-                        method.name, method.descriptor,
-                        project
-                    ).isDefined
-                )
+            filter(!classHierarchy.isInterface(_)).
+            exists(
+                classHierarchy.lookupMethodDefinition(
+                    _,
+                    method.name,
+                    method.descriptor,
+                    project
+                ).isDefined
+            )
         }
 
         /*
@@ -102,8 +106,11 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
          */
         def calls(source: Method, targetType: Type, target: Method): Boolean = {
             source.body.get.instructions.exists {
-                case MethodInvocationInstruction(`targetType`, target.name,
-                    target.descriptor) => true
+                case MethodInvocationInstruction(
+                        `targetType`,
+                        target.name,
+                        target.descriptor
+                    ) => true
                 case _ => false
             }
         }
@@ -151,7 +158,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
                 None
             } else {
                 classHierarchy.
-                    resolveMethodReference(declaringClass, name, descriptor, project)
+                resolveMethodReference(declaringClass, name, descriptor, project)
             }
         }
 
@@ -167,8 +174,13 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
         ): Option[Method] = {
             constructor.body.get.associateWithIndex.collectFirst({
                 case (pc, INVOKESPECIAL(typ, name, desc)) => maybeResolveMethodReference(
-                    classFile, constructor, pc, typ, name, desc
-                )
+                        classFile,
+                        constructor,
+                        pc,
+                        typ,
+                        name,
+                        desc
+                    )
             }).flatten
         }
 
@@ -194,7 +206,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
                     Severity.Error,
                     classFile.thisType,
                     method,
-                    "Called by super constructor ("+superClass.thisType.toJava+"), "+
+                    "Called by super constructor (" + superClass.thisType.toJava + "), " +
                         "while the class' fields are still uninitialized"
                 )
         }

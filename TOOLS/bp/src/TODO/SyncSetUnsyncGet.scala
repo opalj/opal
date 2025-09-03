@@ -33,7 +33,7 @@ object SyncSetUnsyncGet {
      */
     def apply(
         project:       SomeProject,
-        parameters:    Seq[String]  = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
@@ -53,16 +53,21 @@ object SyncSetUnsyncGet {
             if (method.name.startsWith("get") &&
                 !method.isSynchronized &&
                 method.parameterTypes.length == 0 &&
-                method.returnType != VoidType) {
-                unSyncedGetters += ((classFile.thisType.fqn+"."+method.name.substring(3),
+                method.returnType != VoidType
+            ) {
+                unSyncedGetters += ((
+                    classFile.thisType.fqn + "." + method.name.substring(3),
                     method
                 ))
             } else if (method.name.startsWith("set") &&
-                method.isSynchronized &&
-                method.parameterTypes.length == 1 &&
-                method.returnType == VoidType) {
-                syncedSetters += ((classFile.thisType.fqn+"."+method.name.substring(3),
-                    (classFile, method)))
+                       method.isSynchronized &&
+                       method.parameterTypes.length == 1 &&
+                       method.returnType == VoidType
+            ) {
+                syncedSetters += ((
+                    classFile.thisType.fqn + "." + method.name.substring(3),
+                    (classFile, method)
+                ))
             }
         }
 
@@ -77,7 +82,7 @@ object SyncSetUnsyncGet {
                 Severity.Warning,
                 classFile.thisType,
                 unsyncGet,
-                "Is not synchronized like "+syncSet.name
+                "Is not synchronized like " + syncSet.name
             )
         }
     }

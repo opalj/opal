@@ -2,11 +2,13 @@
 package org.opalj
 package br
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -16,16 +18,23 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  *
  * @author Michael Eichberg
  */
-object ClassesWithoutConcreteSubclasses extends ProjectAnalysisApplication {
+object ClassesWithoutConcreteSubclasses extends ProjectsAnalysisApplication {
 
-    override def description: String =
-        "Abstract classes and interfaces that have no concrete subclass in the given jars."
+    protected class ClassesWithoutSubclassesConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Finds abstract classes and interfaces that have no concrete subclass"
+    }
 
-    def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ) = {
+    protected type ConfigType = ClassesWithoutSubclassesConfig
+
+    protected def createConfig(args: Array[String]): ClassesWithoutSubclassesConfig =
+        new ClassesWithoutSubclassesConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: ClassesWithoutSubclassesConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
         val classHierarchy = project.classHierarchy
         val abstractTypes =
             for {
@@ -44,6 +53,6 @@ object ClassesWithoutConcreteSubclasses extends ProjectAnalysisApplication {
 
         val sortedAbstractTypes = abstractTypes.seq.toList.sorted
         val header = "Abstract types without concrete subclasses:\n\t"
-        BasicReport(sortedAbstractTypes.mkString(header, "\n\t", "\n"))
+        (project, BasicReport(sortedAbstractTypes.mkString(header, "\n\t", "\n")))
     }
 }
