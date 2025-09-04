@@ -18,17 +18,24 @@ import org.opalj.log.OPALLogger
  *  - a library (`Common`) which provides generally useful data-structures and algorithms
  *    for static analyses.
  *  - a framework for implementing lattice based static analyses (`Static Analysis Infrastructure`)
- *  - a framework for parsing Java bytecode (Bytecode Infrastructure`) that can be used to
+ *  - a framework for parsing Java bytecode (`Bytecode Infrastructure` - [[org.opalj.bi]]) that can be used to
  *    create arbitrary representations.
  *  - a library to create a one-to-one in-memory representation of Java bytecode
- *    (`Bytecode Disassembler`).
+ *    (`Bytecode Disassembler` - [[org.opalj.da]]).
+ *  - a library to convert this representation to Java class files (`Bytecode Creator` - [[org.opalj.bc]]).
  *  - a library to create a representation of Java bytecode that facilitates writing
  *    simple static analyses (`Bytecode Representation` - [[org.opalj.br]]).
+ *  - a library to create a stackless, three-address code representation of Java bytecode that facilitates writing
+ *    complex static analyses (`Three Address Code` - [[org.opalj.tac]]).
  *  - a scalable, easily customizable framework for the abstract interpretation of
  *    Java bytecode (`Abstract Interpretation Framework` - [[org.opalj.ai]]).
- *  - a library to extract dependencies between code elements and to facilitate checking
- *    architecture definitions.
- *  - a library for the lightweight manipulation and creation of Java bytecode (Bytecode Assembler).
+ *  - a library to extract dependencies between code elements (`Dependencies Extraction` - [[org.opalj.de]]) and to
+ *    facilitate checking architecture definitions (`Architecture Validation` - [[org.opalj.av]]).
+ *  - a library for the lightweight manipulation and creation of Java bytecode
+ *    (`Bytecode Assembler` - [[org.opalj.ba]]).
+ *  - a library for parsing Android packages (`APK` - [[org.opalj.apk]]).
+ *  - libraries for writing static analyses using the interprocedural finite distributive subset
+ *    (`IFDS` - [[org.opalj.ifds]]) and interprocedural distributive environment (`IDE` - [[org.opal.ide]]) algorithms.
  *
  * ==General Design Decisions==
  *

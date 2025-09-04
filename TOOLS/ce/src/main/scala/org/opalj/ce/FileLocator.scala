@@ -93,9 +93,9 @@ class FileLocator(config: Config) {
             projectRoot,
             new java.nio.file.SimpleFileVisitor[Path]() {
                 override def visitFile(file: Path, attrs: BasicFileAttributes): java.nio.file.FileVisitResult = {
-                    if (file.getFileName.toString.endsWith(".jar") && file.getFileName.toString.contains(
-                            pathWildcard
-                        ) && !file.toString.contains("bg-jobs")
+                    if (file.getFileName.toString.endsWith(".jar") &&
+                        file.getFileName.toString.contains(pathWildcard) &&
+                        !file.toString.contains("bg-jobs")
                     ) {
                         foundFiles += file.toFile
                         OPALLogger.info("Configuration Explorer", s"Found file: ${file.toString}")

@@ -111,7 +111,7 @@ Example:
         // @constraint three
         // @constraint five
         // @constraint seven
-        primeNumberBelowTen = 3
+        primeNumberBelowTen = three
     }
 ```
 
