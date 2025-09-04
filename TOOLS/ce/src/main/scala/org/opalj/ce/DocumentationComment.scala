@@ -74,19 +74,22 @@ class DocumentationComment(
 
     /**
      * Method used for fetching information of the brief field.
-     * @param previewDescriptionLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
+     * @param maxLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
      * @return Returns the brief field of the DocumentationComment if it exists. If it does not exist, it returns a preview of the description.
      */
-    def getBrief(previewDescriptionLength: Int): String = {
-        if (brief.isEmpty && description.nonEmpty)
-            description.head.substring(0, description.head.length.min(previewDescriptionLength)) +
-                (if (description.size > 1 || description.head.length > previewDescriptionLength) "..." else "")
-        else brief
+    def getBrief(maxLength: Int): String = {
+        if (brief.isEmpty && description.nonEmpty) {
+            val descBrief = description.head
+            val descBriefLength = descBrief.length
+            descBrief.substring(0, descBriefLength.min(maxLength)) +
+                (if (descBriefLength > maxLength && descBrief.charAt(maxLength - 1) != ' ') "..."
+                 else if (description.size == 1) ""
+                 else " ...")
+        } else brief
     }
 
     /**
      * This method is responsible for finding all subclasses to a subclass type and adds them to the constraints.
-     * Then, it changes its datatype to enum to show that all allowed values are the listed classes.
      * @param se Accepts an initialized subclass extractor. It accesses the ClassHierarchy that was extracted by the subclass extractor and finds its subclasses within the structure.
      * @return Returns an Updated DocumentationComment if there were classes to replace. Returns itself otherwise.
      */
@@ -96,9 +99,9 @@ class DocumentationComment(
             val root = constraints.head
 
             // Replace Types
-            val updatedConstraints = constraints ++ se.extractSubclasses(root)
+            val updatedConstraints = se.extractSubclasses(root)
 
-            new DocumentationComment(label, brief, description, "enum", updatedConstraints)
+            new DocumentationComment(label, brief, description, s"subclass of $root", updatedConstraints)
         } else {
             this
         }

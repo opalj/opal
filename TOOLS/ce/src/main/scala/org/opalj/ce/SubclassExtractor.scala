@@ -6,6 +6,7 @@ import java.io.File
 import java.net.URL
 import scala.collection.mutable
 
+import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ClassType
 import org.opalj.br.analyses.Project
@@ -26,11 +27,16 @@ class SubclassExtractor(files: Array[File]) {
      */
     def extractSubclasses(root: String): Seq[String] = {
         val results = mutable.Set[String]()
-        val unformattedresult = classHierarchy.subtypeInformation(ClassType(root.replace(".", "/"))).orNull
-        if (unformattedresult != null) {
-            for { ClassType(entry) <- unformattedresult.classTypes } {
-                results += entry.replace("/", ".")
-            }
+        val rootClassType = ClassType(root.replace(".", "/"))
+        val compatibleTypes = classHierarchy.allSubclassTypes(
+            rootClassType,
+            reflexive = classHierarchy.isInterface(ClassType(root.replace(".", "/"))).isNoOrUnknown
+        )
+        for {
+            entry <- compatibleTypes
+            if p.classFile(entry).forall(cf => !ACC_ABSTRACT.isSet(cf.accessFlags))
+        } {
+            results += entry.toJava.stripSuffix("$")
         }
         results.toSeq
     }
