@@ -42,7 +42,9 @@ object ConfigurationExplorer extends App {
         configs.reverse,
         locator.projectRoot.resolve(conf.getString("org.opalj.ce.html.template")),
         conf,
-        locator.projectRoot.resolve(conf.getString("org.opalj.ce.html.export")).toFile
+        locator.projectRoot.resolve(
+            conf.getString("org.opalj.ce.html.export").replace("$scalaVersion", util.ScalaMajorVersion)
+        ).toFile
     )
 
     /**

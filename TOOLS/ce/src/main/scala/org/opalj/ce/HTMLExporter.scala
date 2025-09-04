@@ -4,6 +4,7 @@ package ce
 
 import java.io.File
 import java.io.PrintWriter
+import java.nio.file.Files
 import java.nio.file.Path
 import scala.io.Source
 import scala.util.Using
@@ -48,6 +49,7 @@ object HTMLExporter {
         fileContent = template.replace("$body", pageHTML.toString())
 
         // Write to file
+        Files.createDirectories(exportFile.toPath.getParent)
         Using(new PrintWriter(exportFile)) { _.write(fileContent) }
     }
 
