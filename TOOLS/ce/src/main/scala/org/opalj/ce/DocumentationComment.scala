@@ -9,13 +9,18 @@ import org.apache.commons.text.StringEscapeUtils
 /**
  * Container for the comments of a config node.
  */
-class DocumentationComment(
-    val label:       String,
-    val brief:       String,
-    val description: Seq[String],
-    val datatype:    String,
-    val constraints: Seq[String]
+case class DocumentationComment(
+    label:       String,
+    brief:       String,
+    description: Seq[String],
+    datatype:    String,
+    constraints: Seq[String]
 ) {
+
+    def needsDetails(maxLength: Int): Boolean = {
+        datatype.nonEmpty || constraints.nonEmpty ||
+        description.nonEmpty && (brief.nonEmpty || description.size > 1 || description.head.length > maxLength)
+    }
 
     /**
      * Converts the Comment object into HTML syntax.
@@ -30,16 +35,27 @@ class DocumentationComment(
             }
             if (datatype.nonEmpty) {
                 pageHTML ++= s"<p><b> Type: </b>"
-                pageHTML ++= StringEscapeUtils.escapeHtml4(datatype)
+                val datatypeString =
+                    if (datatype.equals("subclass")) s"subclass of ${constraints.head.replace('/', '.')}"
+                    else datatype
+                pageHTML ++= StringEscapeUtils.escapeHtml4(datatypeString)
                 pageHTML ++= "<br></p>\n"
             }
             if (constraints.nonEmpty) {
-                if (datatype.equals("enum")) {
-                    pageHTML ++= "<p><b> Allowed Values: </b><br>\n"
+                if (datatype.equals("subclass")) {
+                    pageHTML ++= "<p><b> Available subclasses: </b><br>\n"
+                    val classes = constraints.tail.map(subclass => {
+                        val sc = StringEscapeUtils.escapeHtml4(subclass)
+                        s"<a href=\"$sc.html\">${sc.replace('/', '.').stripSuffix("$")}</a>"
+                    })
+                    pageHTML ++= classes.mkString("\n").replace("\n", "<br>\n")
                 } else {
-                    pageHTML ++= "<p><b> Constraints: </b><br>\n"
+                    if (datatype.equals("enum")) {
+                        pageHTML ++= "<p><b> Allowed Values: </b><br>\n"
+                    } else
+                        pageHTML ++= "<p><b> Constraints: </b><br>\n"
+                    pageHTML ++= StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).replace("\n", "<br>\n")
                 }
-                pageHTML ++= StringEscapeUtils.escapeHtml4(constraints.mkString("\n")).replace("\n", "<br>\n")
                 pageHTML ++= "<br>\n </p>\n"
             }
         }
@@ -74,17 +90,13 @@ class DocumentationComment(
 
     /**
      * Method used for fetching information of the brief field.
-     * @param maxLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
      * @return Returns the brief field of the DocumentationComment if it exists. If it does not exist, it returns a preview of the description.
      */
-    def getBrief(maxLength: Int): String = {
+    def getBrief(exporter: HTMLExporter): String = {
         if (brief.isEmpty && description.nonEmpty) {
-            val descBrief = description.head
-            val descBriefLength = descBrief.length
-            descBrief.substring(0, descBriefLength.min(maxLength)) +
-                (if (descBriefLength > maxLength && descBrief.charAt(maxLength - 1) != ' ') "..."
-                 else if (description.size == 1) ""
-                 else " ...")
+            val brief = exporter.restrictLength(description.head)
+            if (description.size > 1 && !brief.endsWith("...")) brief + " ..."
+            else brief
         } else brief
     }
 
@@ -99,9 +111,9 @@ class DocumentationComment(
             val root = constraints.head
 
             // Replace Types
-            val updatedConstraints = se.extractSubclasses(root)
+            val updatedConstraints = root +: se.extractSubclasses(root)
 
-            new DocumentationComment(label, brief, description, s"subclass of $root", updatedConstraints)
+            new DocumentationComment(label, brief, description, "subclass", updatedConstraints)
         } else {
             this
         }

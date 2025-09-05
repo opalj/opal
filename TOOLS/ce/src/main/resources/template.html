@@ -29,7 +29,6 @@
         }
 
         .header {
-            cursor: pointer;
             color: #28272D;
             background-color: #FBFAFD;
         }
@@ -57,18 +56,22 @@ $body
 
 <script>
     document.querySelectorAll('.header').forEach(header => {
-        header.addEventListener('click', () => {
-            const content = header.nextElementSibling;
-            const expandBox = header.querySelector('.expandBox');
+        const expandBox = header.querySelector('.expandBox');
 
-            if (content.style.display === 'none' || content.style.display === '') {
-                content.style.display = 'block';
-                expandBox.textContent = 'Hide';
-            } else {
-                content.style.display = 'none';
-                expandBox.textContent = 'Show';
-            }
-        });
+        if(expandBox) {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', () => {
+                const content = header.nextElementSibling;
+
+                if (content.style.display === 'none' || content.style.display === '') {
+                    content.style.display = 'block';
+                    expandBox.textContent = 'Hide';
+                } else {
+                    content.style.display = 'none';
+                    expandBox.textContent = 'Show';
+                }
+            });
+        }
     });
 </script>
 

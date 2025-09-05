@@ -4,6 +4,10 @@ package ce
 
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.br.analyses.SomeProject
+
+import org.apache.commons.text.StringEscapeUtils
+
 /**
  * Stores a List structure inside the ConfigNode structure.
  * @param entries contains a List of ConfigNodes.
@@ -13,23 +17,28 @@ case class ConfigList(entries: ListBuffer[ConfigNode], var comment: Documentatio
 
     /**
      * Produces the HTML for the individual entries.
-     * @param headlineHTML accepts the HTML syntax of the Headline of the value. Can contain $label and $brief flags for filling with content.
-     * @param contentHTML accepts the HTML syntax of the content frame for the value. Must contain a $content flag for correct rendering.
      * @param pageHTML accepts a StringBuilder. The method adds the HTML String to this StringBuilder.
-     * @param sorted accepts a boolean to indicate if the export should sort the keys of the configObjects alphabetically.
-     * @param maximumHeadlinePreviewLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
      */
     protected def entriesToHTML(
-        headlineHTML:                 String,
-        contentHTML:                  String,
-        pageHTML:                     StringBuilder,
-        sorted:                       Boolean,
-        maximumHeadlinePreviewLength: Int
-    ): Unit = {
+        exporter: HTMLExporter,
+        pageHTML: StringBuilder
+    )(implicit project: SomeProject): Unit = {
         for (entry <- entries) {
-            entry.toHTML("", headlineHTML, contentHTML, pageHTML, sorted, maximumHeadlinePreviewLength)
+            entry.toHTML(exporter, "", pageHTML)
             pageHTML ++= "\n"
         }
+    }
+
+    override def valueToHTML(exporter: HTMLExporter, pageHTML: StringBuilder)(implicit project: SomeProject): Unit = {
+        pageHTML ++= "<b>Value: </b><code> [ "
+        val contentHTML = entries.map {
+            case e: ConfigEntry  => StringEscapeUtils.escapeHtml4(e.value)
+            case _: ConfigObject => "{...}"
+            case _: ConfigList   => "[...]"
+
+        }.mkString(", ")
+        pageHTML ++= exporter.restrictLength(contentHTML)
+        pageHTML ++= " ]</code>"
     }
 
     /**

@@ -2,23 +2,20 @@
 package org.opalj
 package ce
 
-import java.io.File
-import java.net.URL
 import scala.collection.mutable
 
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ClassType
-import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 
 /**
  * The class subclassExtractor is a wrapper class around the bytecode representation project.
  * It will fetch all subclasses from the opal project and prepares the bytecode hierarchies for querying.
  * @param files accepts an array of files of the jar archives that should be included in the ClassHierarchies
  */
-class SubclassExtractor(files: Array[File]) {
-    val p: Project[URL] = Project.apply(files, Array(org.opalj.bytecode.JavaBase))
-    val classHierarchy: ClassHierarchy = p.classHierarchy
+class SubclassExtractor(project: SomeProject) {
+    val classHierarchy: ClassHierarchy = project.classHierarchy
 
     /**
      * This method queries the extracted class hierarchies for a class.
@@ -34,9 +31,9 @@ class SubclassExtractor(files: Array[File]) {
         )
         for {
             entry <- compatibleTypes
-            if p.classFile(entry).forall(cf => !ACC_ABSTRACT.isSet(cf.accessFlags))
+            if project.classFile(entry).forall(cf => !ACC_ABSTRACT.isSet(cf.accessFlags))
         } {
-            results += entry.toJava.stripSuffix("$")
+            results += entry.fqn
         }
         results.toSeq
     }

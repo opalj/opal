@@ -2,6 +2,8 @@
 package org.opalj
 package ce
 
+import org.opalj.br.analyses.SomeProject
+
 import org.apache.commons.text.StringEscapeUtils
 
 /**
@@ -13,35 +15,39 @@ trait ConfigNode {
     /**
      * Method for handling the export of the configuration structure into an HTML file.
      * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object. Supply an empty string if not needed.
-     * @param headlineHTML accepts the HTML syntax of the Headline of the value. Can contain $label and $brief flags for filling with content.
-     * @param contentHTML accepts the HTML syntax of the content frame for the value. Must contain a $content flag for correct rendering.
      * @param pageHTML accepts a StringBuilder. The method adds the HTML String to this StringBuilder.
-     * @param sorted accepts a boolean to indicate if the export should sort the keys of the configObjects alphabetically.
-     * @param maximumHeadlinePreviewLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
      */
     def toHTML(
-        label:                        String,
-        headlineHTML:                 String,
-        contentHTML:                  String,
-        pageHTML:                     StringBuilder,
-        sorted:                       Boolean,
-        maximumHeadlinePreviewLength: Int
-    ): Unit = {
-        val head = getHeadlineText(label)
+        exporter: HTMLExporter,
+        label:    String,
+        pageHTML: StringBuilder
+    )(implicit project: SomeProject): Unit = {
+        val labelText = StringEscapeUtils.escapeHtml4(getHeadlineText(label))
+        val brief = getBrief(exporter)
+        val labelHTML = exporter.headline.replace("$label", if (labelText.isEmpty) brief else labelText)
 
-        val brief = getBrief(maximumHeadlinePreviewLength)
+        val headlineHTML =
+            if (labelText.isEmpty) {
+                labelHTML.replace("$brief", "")
+            } else {
+                labelHTML.replace("$brief", exporter.brief.replace("$brief", brief))
+            }
 
-        // Adds Header line with collapse + expand options
-        pageHTML ++= headlineHTML.replace("$label", StringEscapeUtils.escapeHtml4(head)).replace("$brief", brief)
-        pageHTML ++= "\n"
+        if (this.isInstanceOf[ConfigEntry] && comment.isEmpty) {
+            pageHTML ++= headlineHTML.replace("$details", "")
+            pageHTML ++= "\n"
+        } else {
+            pageHTML ++= headlineHTML.replace("$details", exporter.details)
+            pageHTML ++= "\n"
 
-        // Write value into HTML code
-        val splitContent = contentHTML.split("\\$content")
-        pageHTML ++= splitContent(0)
-        comment.toHTML(pageHTML)
-        entriesToHTML(headlineHTML, contentHTML, pageHTML, sorted, maximumHeadlinePreviewLength)
-        pageHTML ++= "<br>\n"
-        pageHTML ++= splitContent(1)
+            // Write value into HTML code
+            val splitContent = exporter.content.split("\\$content")
+            pageHTML ++= splitContent(0)
+            comment.toHTML(pageHTML)
+            entriesToHTML(exporter, pageHTML)
+            pageHTML ++= "<br>\n"
+            pageHTML ++= splitContent(1)
+        }
     }
 
     /**
@@ -55,25 +61,26 @@ trait ConfigNode {
     /**
      * Returns an HMTL-escaped text for the brief description.
      */
-    protected def getBrief(maximumHeadlinePreviewLength: Int): String = {
-        StringEscapeUtils.escapeHtml4(comment.getBrief(maximumHeadlinePreviewLength))
+    protected def getBrief(exporter: HTMLExporter)(implicit project: SomeProject): String = {
+        if (comment.brief.nonEmpty || comment.description.nonEmpty)
+            StringEscapeUtils.escapeHtml4(comment.getBrief(exporter))
+        else {
+            val brief = new StringBuilder()
+            valueToHTML(exporter, brief)
+            brief.toString()
+        }
     }
+
+    def valueToHTML(exporter: HTMLExporter, pageHTML: StringBuilder)(implicit project: SomeProject): Unit
 
     /**
      * Produces the HTML for the individual entries.
-     * @param headlineHTML accepts the HTML syntax of the Headline of the value. Can contain $ label and $ brief flags for filling with content.
-     * @param contentHTML accepts the HTML syntax of the content frame for the value. Must contains a $ content flag for correct rendering.
      * @param pageHTML accepts a StringBuilder. The method adds the HTML String to this StringBuilder.
-     * @param sorted accepts a boolean to indicate if the export should sort the keys of the configObjects alphabetically.
-     * @param maximumHeadlinePreviewLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
      */
     protected def entriesToHTML(
-        headlineHTML:                 String,
-        contentHTML:                  String,
-        pageHTML:                     StringBuilder,
-        sorted:                       Boolean,
-        maximumHeadlinePreviewLength: Int
-    ): Unit
+        exporter: HTMLExporter,
+        pageHTML: StringBuilder
+    )(implicit project: SomeProject): Unit
 
     /**
      * Checks if the configNode (and its potential child objects are empty.

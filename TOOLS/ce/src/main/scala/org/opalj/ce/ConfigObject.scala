@@ -4,9 +4,12 @@ package ce
 
 import scala.collection.mutable
 
+import org.opalj.br.analyses.SomeProject
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+
+import org.apache.commons.text.StringEscapeUtils
 
 /**
  * Stores a List structure inside the ConfigNode structure.
@@ -19,25 +22,18 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
 
     /**
      * Produces the HTML for the individual entries.
-     * @param headlineHTML accepts the HTML syntax of the Headline of the value. Can contain $label and $brief flags for filling with content.
-     * @param contentHTML accepts the HTML syntax of the content frame for the value. Must contain a $content flag for correct rendering.
      * @param pageHTML accepts a StringBuilder. The method adds the HTML String to this StringBuilder.
-     * @param sorted accepts a boolean to indicate if the export should sort the keys of the configObjects alphabetically.
-     * @param maximumHeadlinePreviewLength accepts an integer that determines the maximum amount of characters that the fallback brief preview can contain.
      */
     protected def entriesToHTML(
-        headlineHTML:                 String,
-        contentHTML:                  String,
-        pageHTML:                     StringBuilder,
-        sorted:                       Boolean,
-        maximumHeadlinePreviewLength: Int
-    ): Unit = {
+        exporter: HTMLExporter,
+        pageHTML: StringBuilder
+    )(implicit project: SomeProject): Unit = {
         def entryToHTML(key: String, entry: ConfigNode): Unit = {
-            entry.toHTML(key, headlineHTML, contentHTML, pageHTML, sorted, maximumHeadlinePreviewLength)
+            entry.toHTML(exporter, key, pageHTML)
             pageHTML ++= "\n"
         }
 
-        if (sorted) {
+        if (exporter.sortAlphabetically) {
             val sortedKeys = entries.keys.toSeq.sorted
             for (key <- sortedKeys) {
                 entryToHTML(key, entries(key))
@@ -47,6 +43,20 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
                 entryToHTML(key, node)
             }
         }
+    }
+
+    override def valueToHTML(exporter: HTMLExporter, pageHTML: StringBuilder)(implicit project: SomeProject): Unit = {
+        pageHTML ++= "<b>Value: </b><code> { "
+        val contentHTML = entries.map { case (key, node) =>
+            s"\"${StringEscapeUtils.escapeHtml4(key)}\" = " +
+                (node match {
+                    case e: ConfigEntry  => StringEscapeUtils.escapeHtml4(e.value)
+                    case _: ConfigObject => "{...}"
+                    case _: ConfigList   => "[...]"
+                })
+        }.mkString(", ")
+        pageHTML ++= exporter.restrictLength(contentHTML)
+        pageHTML ++= " }</code>"
     }
 
     /**
@@ -106,7 +116,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
                     val newkey = key.trim + "." + childkey.trim
 
                     // Merge comments
-                    childvalue.comment = childvalue.comment.mergeComment(valueObject.comment)
+                    childvalue.comment = value.comment.mergeComment(childvalue.comment)
 
                     // Add new object
                     entries += (newkey -> childvalue)

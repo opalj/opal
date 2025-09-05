@@ -151,11 +151,17 @@ object CommentParser {
                             currentvalue = parseEntry(nextComment)
                         }
 
-                        // Reset next comment
-                        nextComment = ListBuffer[String]()
-
                         // Json Keys are split using a ",". This is not necessary, but tolerated in HOCON syntax
                         line = line.stripPrefix(",").trim
+
+                        // If there is a comment directly behind the comma, add it to comments too.
+                        getSingleLineComment.foreach { comment =>
+                            currentvalue.comment =
+                                currentvalue.comment.mergeComment(DocumentationComment.fromString(Seq(comment)))
+                        }
+
+                        // Reset next comment
+                        nextComment = ListBuffer[String]()
 
                         // Adding the new Key, Value pair to the Map
                         entries += ((currentKey, currentvalue))
@@ -284,6 +290,12 @@ object CommentParser {
                     }
                     line = line.stripPrefix(",").trim
 
+                    // If there is a comment directly behind the comma, add it to comments too.
+                    getSingleLineComment.foreach { comment =>
+                        value.last.comment =
+                            value.last.comment.mergeComment(DocumentationComment.fromString(Seq(comment)))
+                    }
+
                     while (line.isEmpty && configLines.hasNext) {
                         // Load next line when done
                         line = configLines.next().trim
@@ -292,7 +304,6 @@ object CommentParser {
             }
             currentComment ++= getSingleLineComment
 
-            // Finish
             ConfigList(value, DocumentationComment.fromString(currentComment))
         }
 
