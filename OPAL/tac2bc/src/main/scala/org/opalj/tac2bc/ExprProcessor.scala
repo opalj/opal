@@ -139,10 +139,6 @@ object ExprProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        // Process the operand (the expression being negated)
-        ExprProcessor.processExpression(prefixExpr.operand, tacToLVIndex, code, tacContext)
-        // Note that [[UnaryArithmeticOperators.Negate]] is the only UnaryArithmeticOperator used
-        assert(prefixExpr.op eq UnaryArithmeticOperators.Negate)
         // Determine the appropriate negation instruction based on the operand type
         code += {
             prefixExpr.operand.cTpe match {
@@ -154,6 +150,10 @@ object ExprProcessor {
                     throw new UnsupportedOperationException(s"Unsupported type for negation: ${prefixExpr.operand.cTpe}")
             }
         }
+        // Note that [[UnaryArithmeticOperators.Negate]] is the only UnaryArithmeticOperator used
+        assert(prefixExpr.op eq UnaryArithmeticOperators.Negate)
+        // Process the operand (the expression being negated)
+        tacContext.emitStmt(prefixExpr.operand.asVar.definedBy.head)
     }
 
     def processCompare(
