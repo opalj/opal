@@ -201,10 +201,19 @@ object StmtProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        if (expr.isConst || expr.isNewArray)
+        if (expr.isConst || expr.isNewArray) {
             tacContext.emitVarUse(targetVar)
-        else
+        } else {
+            // Special handling for ArrayLoad:
+            // Each ArrayLoad consumes the array reference as many times
+            // as the load result is used, so we need to adjust the array reference use count.
+            if (expr.isArrayLoad)
+                tacContext.increaseUseSitesForArrRef(
+                    targetVar,
+                    expr.asArrayLoad.arrayRef.asVar.definedBy.head
+                )
             ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext)
+        }
     }
 
     def processExprStmt(
@@ -213,8 +222,8 @@ object StmtProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext)
         code += (if (expr.cTpe.isCategory2) POP2 else POP)
+        ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext)
     }
 
     def processSwitch(

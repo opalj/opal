@@ -25,7 +25,7 @@ class Tac2BcContext(
     /** Maps each variable to its definition index in TAC. */
     private val savedDefSites = mutable.Map[Var[V], Int]()
 
-    val visitedStmt = ArrayBuffer[Stmt[V]]()
+    val visitedStmt: ArrayBuffer[Stmt[V]] = ArrayBuffer[Stmt[V]]()
 
     def emitStmt(defIdx: Int): Unit = {
         val variable = getVarFromId(defIdx)
@@ -123,8 +123,7 @@ class Tac2BcContext(
                 findUVarInExpr(expr)
                     .map(_.asVar.definedBy.size)
                     .getOrElse(throw new NoSuchElementException("No UVar in given expression."))
-
-            case _ => throw new NoSuchElementException("There are no variables in Statements.")
+            case _ => 0
         }
     }
 
@@ -165,5 +164,17 @@ class Tac2BcContext(
             }
         }
         found
+    }
+
+    /**
+     * Adjusts the use count of the array reference used by an ArrayLoad.
+     */
+    def increaseUseSitesForArrRef(arrLoadVar: Var[V], arrRefDefIdx: Int): Unit = {
+        if (!useSitesLeft.contains(arrRefDefIdx)) {
+            val arrRefUseSites = getUseSites(arrRefDefIdx)
+            val arrLoadVarUseSites = arrLoadVar.asVar.usedBy.size
+            val newUseSites = arrLoadVarUseSites + arrRefUseSites
+            useSitesLeft.getOrElseUpdate(arrRefDefIdx, newUseSites - 1)
+        }
     }
 }
