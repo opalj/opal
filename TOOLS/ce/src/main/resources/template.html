@@ -21,10 +21,10 @@
             border-radius: 0.5em;
             margin-left: 2em;
         }
-        .content:has(+ .header) {            
+        .content:has(+ .header) {
             display: none;
         }
-        .content ~ .content {            
+        .content ~ .content {
             display: none;
         }
 
@@ -59,16 +59,19 @@ $body
         const expandBox = header.querySelector('.expandBox');
 
         if(expandBox) {
+            const content = header.nextElementSibling;
             header.style.cursor = 'pointer';
+            if (content.checkVisibility()) {
+                expandBox.textContent = 'Hide';
+            }
             header.addEventListener('click', () => {
-                const content = header.nextElementSibling;
 
-                if (content.style.display === 'none' || content.style.display === '') {
-                    content.style.display = 'block';
-                    expandBox.textContent = 'Hide';
-                } else {
+                if (content.checkVisibility()) {
                     content.style.display = 'none';
                     expandBox.textContent = 'Show';
+                } else {
+                    content.style.display = 'block';
+                    expandBox.textContent = 'Hide';
                 }
             });
         }
