@@ -12,7 +12,9 @@ import org.opalj.br.analyses.DeclaredFieldsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
+import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.analyses.string.l2.interpretation.L2InterpretationHandler
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -45,6 +47,8 @@ class L3InterpretationHandler(implicit override val project: SomeProject) extend
 object L3InterpretationHandler {
 
     def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredFieldsKey, ContextProviderKey)
+
+    def uses: Set[PropertyBounds] = L2InterpretationHandler.uses ++ PropertyBounds.ubs(FieldWriteAccessInformation)
 
     def apply(project: SomeProject): L3InterpretationHandler = new L3InterpretationHandler()(project)
 }
