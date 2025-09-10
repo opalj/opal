@@ -103,7 +103,10 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         returnResults(partialResults)
     }
 
-    private def processStaticConfigurations(implicit state: State, partialResults: ArrayBuffer[SomePartialResult]): Unit = {
+    private def processStaticConfigurations(implicit
+        state:          State,
+        partialResults: ArrayBuffer[SomePartialResult]
+    ): Unit = {
         state.configurationData.foreach {
             case PointsToRelation(StaticFieldDescription(cf, name, fieldType), asd: AllocationSiteDescription) =>
                 val theField = declaredFields(ClassType(cf), name, FieldType(fieldType))
@@ -129,9 +132,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             case PointsToRelation(MethodDescription(cf, name, desc), asd: AllocationSiteDescription) =>
                 val theMethod = state.callContext.method
 
-                if (
-                    theMethod.declaringClassType.fqn != cf || theMethod.name != name || theMethod.descriptor.toJVMDescriptor != desc
-                ) {
+                if (theMethod.declaringClassType.fqn != cf || theMethod.name != name || theMethod.descriptor.toJVMDescriptor != desc) {
                     OPALLogger.warn(
                         "project configuration",
                         s"configured points to data is invalid for ${state.callContext.method.toJava}"

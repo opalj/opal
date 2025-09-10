@@ -16,7 +16,6 @@ import org.opalj.br.PCAndInstruction
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
@@ -270,7 +269,6 @@ class InstantiatedTypesAnalysisScheduler(
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
         ContextProviderKey,
         ClosedPackagesKey,
-        DeclaredMethodsKey,
         InitialEntryPointsKey,
         InitialInstantiatedTypesKey
     )
@@ -298,7 +296,6 @@ class InstantiatedTypesAnalysisScheduler(
 
     def assignInitialTypeSets(p: SomeProject, ps: PropertyStore): Unit = {
         val packageIsClosed = p.get(ClosedPackagesKey)
-        val declaredMethods = p.get(DeclaredMethodsKey)
         val declaredFields = p.get(DeclaredFieldsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
         val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
@@ -334,17 +331,16 @@ class InstantiatedTypesAnalysisScheduler(
         // For each method which is also an entry point, we assume that the caller has passed all subtypes of the
         // method's parameter types to the method.
         for {
-            ep <- entryPoints;
-            dm = declaredMethods(ep)
+            ep <- entryPoints
         } {
             val typeFilters = UIDSet.newBuilder[ReferenceType]
             val arrayTypeAssignments = UIDSet.newBuilder[ArrayType]
 
-            if (!dm.definedMethod.isStatic) {
-                typeFilters += dm.declaringClassType
+            if (!ep.definedMethod.isStatic) {
+                typeFilters += ep.declaringClassType
             }
 
-            for (pt <- dm.descriptor.parameterTypes) {
+            for (pt <- ep.descriptor.parameterTypes) {
                 if (pt.isClassType) {
                     typeFilters += pt.asClassType
                 } else if (isRelevantArrayType(pt)) {
@@ -367,7 +363,7 @@ class InstantiatedTypesAnalysisScheduler(
 
             val initialAssignment = classTypeAssignments ++ arrayTypeAssignments.result()
 
-            val dmSetEntity = selectSetEntity(dm)
+            val dmSetEntity = selectSetEntity(ep)
 
             initialize(dmSetEntity, initialAssignment)
         }
