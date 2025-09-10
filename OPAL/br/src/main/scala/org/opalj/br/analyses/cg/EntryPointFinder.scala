@@ -274,10 +274,18 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                         entryPoints = entryPoints ++ methods.map(declaredMethods.apply).toSet
 
                     case None if !isSubtype =>
-                        OPALLogger.warn(
-                            "project configuration",
-                            s"the declaring class $typeName of the entry point has not been found"
-                        )
+
+                        if (methodDescriptor.isDefined) {
+                            val virtualEntry =
+                                declaredMethods(classType, classType.packageName, classType, name, methodDescriptor.get)
+
+                            entryPoints = entryPoints ++ Set(virtualEntry)
+
+                            OPALLogger.info(
+                                "project configuration",
+                                s"the declaring class $typeName of the entry point has not been found, using virtual method ${virtualEntry.toString} as entry"
+                            )
+                        }
 
                     case None => throw new MatchError(None) // TODO: Pattern match not exhaustive
                 }
@@ -286,8 +294,8 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
             findMethods(classType)
             if (considerSubtypes) {
-                project.classHierarchy.allSubtypes(classType, false).foreach {
-                    ct => findMethods(ct, true)
+                project.classHierarchy.allSubtypes(classType, reflexive = false).foreach {
+                    ct => findMethods(ct, isSubtype = true)
                 }
             }
 

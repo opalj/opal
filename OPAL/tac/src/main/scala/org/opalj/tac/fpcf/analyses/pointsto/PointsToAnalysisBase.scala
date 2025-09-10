@@ -12,6 +12,7 @@ import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
 import org.opalj.br.DeclaredField
 import org.opalj.br.ReferenceType
+import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.Context

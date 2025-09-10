@@ -11,6 +11,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.ReferenceType
@@ -336,7 +337,13 @@ class InstantiatedTypesAnalysisScheduler(
             val typeFilters = UIDSet.newBuilder[ReferenceType]
             val arrayTypeAssignments = UIDSet.newBuilder[ArrayType]
 
-            if (!ep.definedMethod.isStatic) {
+            // If the entry point is not static (or if we do not know whether it may be static), we add the type
+            // to the type filters
+            val expandTypeFilter = ep match {
+                case defM: DefinedMethod => !defM.definedMethod.isStatic
+                case _                   => true
+            }
+            if (expandTypeFilter) {
                 typeFilters += ep.declaringClassType
             }
 
