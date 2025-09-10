@@ -56,10 +56,9 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.getObjectReflectively
 import org.opalj.value.ValueInformation
 
 /**
@@ -330,7 +329,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         case VirtualMethodCall.ASTID    => stmt.asVirtualMethodCall
         case Assignment.ASTID           => stmt.asAssignment.expr.asFunctionCall
         case ExprStmt.ASTID             => stmt.asExprStmt.expr.asFunctionCall
-        case _ =>
+        case _                          =>
             throw new IllegalStateException(s"unexpected stmt $stmt")
     }
 
@@ -465,7 +464,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case LBP(TransitivelyImmutableType | TransitivelyImmutableClass) => true
+        case LBP(TransitivelyImmutableType | TransitivelyImmutableClass)                => true
         case UBP(TransitivelyImmutableType | TransitivelyImmutableClass) | _: EPK[_, _] =>
             reducePurityLB(SideEffectFree)
             if (state.ubPurity.isDeterministic)
@@ -589,7 +588,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def baseMethodPurity(context: Context): ProperPropertyComputationResult = {
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
-            case FinalP(p) => Result(context, p)
+            case FinalP(p)                => Result(context, p)
             case ep @ InterimLUBP(lb, ub) =>
                 InterimResult.create(context, lb, ub, Set(ep), c)
             case epk =>
@@ -615,7 +614,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             case context: Context if context.method.definedMethod.body.isDefined =>
                 determinePurity(context)
             case context: Context => Result(context, ImpureByLackOfInformation)
-            case _ =>
+            case _                =>
                 throw new IllegalArgumentException(s"$e is not a declared method")
         }
     }
@@ -642,23 +641,8 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     }
 
     def resolveDomainSpecificRater(fqn: String): DomainSpecificRater = {
-        import scala.reflect.runtime.universe.runtimeMirror
-
-        val mirror = runtimeMirror(getClass.getClassLoader)
-        try {
-            val module = mirror.staticModule(fqn)
-            mirror.reflectModule(module).instance.asInstanceOf[DomainSpecificRater]
-        } catch {
-            case ex @ (_: ScalaReflectionException | _: ClassCastException) =>
-                OPALLogger.error(
-                    "analysis configuration",
-                    "resolve of domain specific rater failed, change " +
-                        s"org.opalj.fpcf.${this.getClass.getName}.domainSpecificRater in " +
-                        "ai/reference.conf to an existing DomainSpecificRater implementation",
-                    ex
-                )(GlobalLogContext)
-                new BaseDomainSpecificRater // Provide a safe default if resolution failed
-        }
+        val configuredRater = getObjectReflectively[DomainSpecificRater](fqn, this, "analysis configuration")
+        configuredRater.getOrElse(new BaseDomainSpecificRater)
     }
 
 }

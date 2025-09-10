@@ -317,9 +317,9 @@ class LBFieldValuesAnalysis private[analyses] (
                     Result(FinalEP(f, fv))
 
                 case Some(Some(domain.DomainReferenceValueTag(dv))) =>
-                    if (/* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(
-                            dv.leastUpperType.get
-                        )
+                    if ( /* ultimate refinements => */ dv.isNull.isYes || classHierarchy.isKnownToBeFinal(
+                             dv.leastUpperType.get
+                         )
                     ) {
                         val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                         // println(f.toJava+"!!!!!!>>>>>> "+vi)

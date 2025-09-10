@@ -6,8 +6,8 @@ import java.io.File
 import java.net.URL
 import scala.util.control.ControlThrowable
 
+import org.opalj.bytecode.JavaBase
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.bytecode.RTJar
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -98,7 +98,7 @@ package object reader {
         reader:     ClassFileBinding = new Java11FrameworkWithCaching(cache),
         logContext: LogContext       = GlobalLogContext
     ): Iterable[(ClassFile, URL)] = {
-        val classFiles = reader.ClassFiles(RTJar)
+        val classFiles = reader.ClassFiles(JavaBase)
         if (classFiles.isEmpty) {
             OPALLogger.error("project setup", s"loading the JRE ($JRELibraryFolder) failed")
         }

@@ -971,16 +971,21 @@ class MethodHandleInvokeAnalysis private[analyses] (
         if (definition.isMethodHandleConst) {
             definition.asMethodHandleConst.value match {
                 case handle: InstanceFieldAccessMethodHandle =>
-                    matchers += MatcherUtil.retrieveSuitableNonEssentialMatcher[V](
-                        actualParams.flatMap(_.head),
-                        v => new ActualReceiverBasedFieldMatcher(v.value.asReferenceValue)
-                    )
-                    matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(
-                        handle.declaringClassType,
-                        handle.name,
-                        handle.fieldType,
-                        isStatic = false
-                    )
+                    val receiver = actualParams.flatMap(_.head)
+                    if (receiver.forall(r => r.value.isPrimitiveValue)) {
+                        matchers = Set(NoFieldsMatcher)
+                    } else {
+                        matchers += MatcherUtil.retrieveSuitableNonEssentialMatcher[V](
+                            receiver,
+                            v => new ActualReceiverBasedFieldMatcher(v.value.asReferenceValue)
+                        )
+                        matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(
+                            handle.declaringClassType,
+                            handle.name,
+                            handle.fieldType,
+                            isStatic = false
+                        )
+                    }
 
                 case handle: StaticFieldAccessMethodHandle =>
                     matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(
@@ -1055,10 +1060,11 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
                 if (!matchers.contains(NoFieldsMatcher))
                     if (!handleData.isStatic) {
-                        val receiverValueOpt = actualParams.flatMap(_.head)
-                        if (receiverValueOpt.isDefined && receiverValueOpt.get.value.isReferenceValue)
-                            matchers += new ActualReceiverBasedFieldMatcher(receiverValueOpt.get.value.asReferenceValue)
-                        else
+                        if (actualParams.isDefined && actualParams.get.nonEmpty && actualParams.get.head.isDefined) {
+                            val receiverValue = actualParams.get.head.get.value
+                            if (receiverValue.isReferenceValue)
+                                matchers += new ActualReceiverBasedFieldMatcher(receiverValue.asReferenceValue)
+                        } else
                             matchers += MatcherUtil.retrieveClassBasedFieldMatcher(
                                 context,
                                 handleData.classVar,

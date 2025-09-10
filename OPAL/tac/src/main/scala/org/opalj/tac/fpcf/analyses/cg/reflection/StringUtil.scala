@@ -25,7 +25,7 @@ object StringUtil {
             if (index >= 0) {
                 getString(index, stmts) match {
                     case Some(v) => Set(v)
-                    case _ =>
+                    case _       =>
                         return None;
                 }
             } else {

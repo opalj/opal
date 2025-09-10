@@ -389,9 +389,9 @@ object ConstantsBuffer {
         constantsBuffer.nextIndex = nextIndexAfterLDCRelatedEntries
         val bootstrapMethods = mutable.Buffer.empty[BootstrapMethod]
         ldOtherConstants foreach {
-            case LoadMethodType(value)   => CPEUtf8(value.toJVMDescriptor)
-            case LoadMethodHandle(value) => CPERefOfCPEMethodHandle(value)
-            case LoadString(value)       => CPEUtf8(value)
+            case LoadMethodType(value)                          => CPEUtf8(value.toJVMDescriptor)
+            case LoadMethodHandle(value)                        => CPERefOfCPEMethodHandle(value)
+            case LoadString(value)                              => CPEUtf8(value)
             case LoadDynamic(bootstrapMethod, name, descriptor) =>
                 CPEUtf8(bi.BootstrapMethodsAttribute.Name)
                 CPEMethodHandle(bootstrapMethod.handle, requiresUByteIndex = false)

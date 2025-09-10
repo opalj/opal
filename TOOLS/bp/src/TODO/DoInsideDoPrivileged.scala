@@ -41,7 +41,7 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
      */
     def doAnalyze(
         project:       Project[Source],
-        parameters:    Seq[String]     = List.empty,
+        parameters:    Seq[String] = List.empty,
         isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
@@ -53,15 +53,21 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
             if !classFile.interfaceTypes.contains(PriviledgedActionType) &&
                 !classFile.interfaceTypes.contains(PriviledgedExceptionActionType)
             method @ MethodWithBody(body) <- classFile.methods
-            (_, INVOKEVIRTUAL(ReflectFieldType | ReflectMethodType,
-                "setAccessible", _)) <- body.associateWithIndex
+            (
+                _,
+                INVOKEVIRTUAL(
+                    ReflectFieldType | ReflectMethodType,
+                    "setAccessible",
+                    _
+                )
+            ) <- body.associateWithIndex
         } yield {
             MethodBasedReport(
                 project.source(classFile.thisType),
                 Severity.Warning,
                 classFile.thisType,
                 method,
-                "Calls java.lang.reflect.Field|Method.setAccessible() outside of "+
+                "Calls java.lang.reflect.Field|Method.setAccessible() outside of " +
                     "doPrivileged block"
             )
         }

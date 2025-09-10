@@ -206,7 +206,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
             case (_, TheIntegerValue(0))                  => ThrowsException(VMArithmeticException(pc))
             case (TheIntegerValue(n), TheIntegerValue(d)) => ComputedValue(IntegerValue(pc, n / d))
             case (_, TheIntegerValue(_ /*<=> not 0*/ ))   => ComputedValue(IntegerValue(origin = pc))
-            case _ =>
+            case _                                        =>
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
                 else
@@ -224,7 +224,7 @@ trait IntegerValues extends IntegerValuesDomain with ConcreteIntegerValues {
             case (_, TheIntegerValue(0))                  => ThrowsException(VMArithmeticException(pc))
             case (TheIntegerValue(n), TheIntegerValue(d)) => ComputedValue(IntegerValue(pc, n % d))
             case (_, TheIntegerValue(_ /*<=> not 0*/ ))   => ComputedValue(IntegerValue(origin = pc))
-            case _ =>
+            case _                                        =>
                 if (throwArithmeticExceptions)
                     ComputedValueOrException(IntegerValue(origin = pc), VMArithmeticException(pc))
                 else

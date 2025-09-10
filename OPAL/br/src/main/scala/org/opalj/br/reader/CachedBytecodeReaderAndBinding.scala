@@ -57,14 +57,14 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
             val index = codeLength - in.available
 
             instructions(index) = (in.readUnsignedByte: @scala.annotation.switch) match {
-                case 50 => AALOAD
-                case 83 => AASTORE
-                case 1  => ACONST_NULL
-                case 25 => cache.ALOAD(lvIndex())
-                case 42 => ALOAD_0
-                case 43 => ALOAD_1
-                case 44 => ALOAD_2
-                case 45 => ALOAD_3
+                case 50  => AALOAD
+                case 83  => AASTORE
+                case 1   => ACONST_NULL
+                case 25  => cache.ALOAD(lvIndex())
+                case 42  => ALOAD_0
+                case 43  => ALOAD_1
+                case 44  => ALOAD_2
+                case 45  => ALOAD_3
                 case 189 =>
                     val rt = cp(in.readUnsignedShort).asConstantValue(cp).toReferenceType
                     cache.ANEWARRAY(rt)
@@ -281,7 +281,7 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 148 => LCMP
                 case 9   => LCONST_0
                 case 10  => LCONST_1
-                case 18 =>
+                case 18  =>
                     val constant = cp(in.readUnsignedByte())
                     if (constant.isDynamic) {
                         registerDeferredAction(cp) { classFile =>

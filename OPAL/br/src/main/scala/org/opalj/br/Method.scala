@@ -492,7 +492,7 @@ final class Method private[br] (
     ): Boolean = {
         visibilityModifier match {
             // TODO Respect Java 9 modules
-            case Some(ACC_PUBLIC) => true
+            case Some(ACC_PUBLIC)    => true
             case Some(ACC_PROTECTED) =>
                 declaringClassFile.thisType.packageName == classType.packageName ||
                     classType.isASubtypeOf(declaringClassFile.thisType).isNotNo

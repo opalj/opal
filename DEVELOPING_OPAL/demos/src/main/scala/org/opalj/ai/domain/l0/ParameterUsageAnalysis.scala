@@ -4,6 +4,7 @@ package ai
 package domain
 package l0
 
+import java.io.File
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
@@ -12,7 +13,8 @@ import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -22,19 +24,23 @@ import org.opalj.util.Seconds
  *
  * @author Michael Eichberg
  */
-object ParameterUsageAnalysis extends ProjectAnalysisApplication {
+object ParameterUsageAnalysis extends ProjectsAnalysisApplication {
 
-    override def title: String = "Identifies methods which return a given parameter"
-
-    override def description: String = {
-        "Identifies parameters that are - at least on some paths - directly returned"
+    protected class MethodsReturningParameterConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args) {
+        val description = "Identifies parameters that are - at least on some paths - directly returned or unused"
     }
 
-    override def doAnalyze(
-        theProject:    Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
+    protected type ConfigType = MethodsReturningParameterConfig
+
+    protected def createConfig(args: Array[String]): MethodsReturningParameterConfig =
+        new MethodsReturningParameterConfig(args)
+
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: MethodsReturningParameterConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, _) = analysisConfig.setupProject(cp)
 
         var analysisTime: Seconds = Seconds.None
         val (returnedParameters, unusedParameters) = time {
@@ -43,13 +49,13 @@ object ParameterUsageAnalysis extends ProjectAnalysisApplication {
             val returnedParameters = new ConcurrentLinkedQueue[String]
             val ai = new InterruptableAI[Domain]
 
-            theProject.parForeachMethodWithBody() { m =>
+            project.parForeachMethodWithBody() { m =>
                 val method = m.method
                 val psCount = method.actualArgumentsCount // includes "this" in case of instance methods
                 if (psCount > 0) {
                     val isStatic = method.isStatic
                     val descriptor = method.descriptor
-                    val domain = new BaseDomainWithDefUse(theProject, method)
+                    val domain = new BaseDomainWithDefUse(project, method)
                     val result = ai(method, domain)
                     val instructions = result.domain.code.instructions
                     val methodSignature = method.toJava
@@ -85,11 +91,12 @@ object ParameterUsageAnalysis extends ProjectAnalysisApplication {
         } { t => analysisTime = t.toSeconds }
 
         val occurences = returnedParameters.size
-        BasicReport(
+        val report = BasicReport(
             returnedParameters.mkString("Directly returned parameters:\n", "\n", "\n\n") +
                 unusedParameters.mkString("Unused parameters:\n", "\n", "\n\n") +
                 s"\nThe analysis took $analysisTime and found $occurences direct returns"
         )
+        (project, report)
     }
 
 }

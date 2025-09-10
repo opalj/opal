@@ -56,8 +56,8 @@ class DefaultDomain[Source](
 }
 
 class ChildDefaultDomain[Source](
-    project: Project[Source],
-    method:  Method,
+    project:          Project[Source],
+    method:           Method,
     val callerDomain: PerformInvocationsWithRecursionDetection {
         type CalledMethodDomain = ChildDefaultDomain[Source]
     },
