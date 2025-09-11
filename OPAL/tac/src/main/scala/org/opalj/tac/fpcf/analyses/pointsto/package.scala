@@ -30,14 +30,14 @@ package object pointsto {
     ): Entity = {
         val entity = if (ai.isMethodExternalExceptionOrigin(defSite)) {
             val pc = ai.pcOfMethodExternalException(defSite)
-            CallExceptions(definitionSites(context.method.definedMethod, stmts(pc).pc))
+            CallExceptions(definitionSites(context.method, stmts(pc).pc))
         } else if (ai.isImmediateVMException(defSite)) {
             val pc = ai.pcOfImmediateVMException(defSite)
-            definitionSites(context.method.definedMethod, stmts(pc).pc)
+            definitionSites(context.method, stmts(pc).pc)
         } else if (defSite < 0) {
             formalParameters.apply(context.method)(-1 - defSite)
         } else {
-            definitionSites(context.method.definedMethod, stmts(defSite).pc)
+            definitionSites(context.method, stmts(defSite).pc)
         }
         contextProvider match {
             case _: SimpleContextProvider => entity

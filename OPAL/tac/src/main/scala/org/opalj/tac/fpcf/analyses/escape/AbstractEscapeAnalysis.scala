@@ -424,7 +424,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     protected[this] def determineEscapeOfDS(
         dsl: (Context, DefinitionSiteLike)
     ): ProperPropertyComputationResult = {
-        val ctx = createContext(dsl, dsl._2.method)
+        // TODO: Handle VirtualDeclaredMethods
+        val ctx = createContext(dsl, dsl._2.method.definedMethod)
         doDetermineEscape(ctx, createState)
     }
 

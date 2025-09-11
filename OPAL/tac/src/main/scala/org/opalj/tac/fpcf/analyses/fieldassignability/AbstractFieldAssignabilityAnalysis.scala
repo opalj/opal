@@ -228,7 +228,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 else {
                     var hasEscaped = false
                     callers.forNewCalleeContexts(null, method) { context =>
-                        val entity = (context, definitionSites(method.definedMethod, definition.pc))
+                        val entity = (context, definitionSites(method, definition.pc))
                         val escapeProperty = propertyStore(entity, EscapeProperty.key)
                         hasEscaped ||= handleEscapeProperty(escapeProperty)
                     }

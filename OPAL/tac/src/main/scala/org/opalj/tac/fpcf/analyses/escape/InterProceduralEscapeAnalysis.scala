@@ -197,8 +197,8 @@ object EagerInterProceduralEscapeAnalysis
         }.flatten
 
         val ass = p.get(DefinitionSitesKey).getAllocationSites.collect {
-            case as if reachableMethods.contains(declaredMethods(as.method)) =>
-                val dm = declaredMethods(as.method)
+            case as if reachableMethods.contains(as.method) =>
+                val dm = as.method
                 reachableMethods(dm).calleeContexts(dm).iterator.map((_, as))
         }.flatten
 

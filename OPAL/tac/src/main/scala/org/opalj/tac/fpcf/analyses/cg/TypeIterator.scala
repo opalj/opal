@@ -19,6 +19,7 @@ import org.opalj.br.DeclaredField
 import org.opalj.br.DefinedMethod
 import org.opalj.br.PCs
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
@@ -1001,7 +1002,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                     result,
                     typesProperty(
                         field,
-                        DefinitionSite(method, defPC),
+                        DefinitionSite(declaredMethods(method), defPC),
                         depender,
                         newContext(definedMethod),
                         theTAC.stmts
@@ -1200,6 +1201,8 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
     extends AbstractAllocationSitesPointsToTypeIterator(project)
     with CallStringContextProvider {
 
+    private val declaredMethods = project.get(DeclaredMethodsKey)
+
     assert(k > 0 && l > 0 && k >= l - 1)
 
     override def typesProperty(
@@ -1245,13 +1248,22 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
 
                 result = combine(
                     result,
-                    typesProperty(field, DefinitionSite(method, defPC), depender, calleeContext, theTAC.stmts)
+                    typesProperty(
+                        field,
+                        DefinitionSite(declaredMethods(method), defPC),
+                        depender,
+                        calleeContext,
+                        theTAC.stmts
+                    )
                 )
             }
 
             result
         }
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation ++ Seq(DeclaredMethodsKey)
 
     // TODO several field-related methods are missing here!
 }

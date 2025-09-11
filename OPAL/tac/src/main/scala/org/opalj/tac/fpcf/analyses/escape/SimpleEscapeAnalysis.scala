@@ -116,15 +116,12 @@ object EagerSimpleEscapeAnalysis
         super.requiredProjectInformation ++ Seq(DefinitionSitesKey, SimpleContextsKey)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val declaredMethods = p.get(DeclaredMethodsKey)
         val simpleContexts = p.get(SimpleContextsKey)
 
         val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.map { fp =>
             (simpleContexts(fp.method), fp)
         }
-        val ass = p.get(DefinitionSitesKey).getAllocationSites.map { as =>
-            (simpleContexts(declaredMethods(as.method)), as)
-        }
+        val ass = p.get(DefinitionSitesKey).getAllocationSites.map { as => (simpleContexts(as.method), as) }
 
         val analysis = new SimpleEscapeAnalysis(p)
         ps.scheduleEagerComputationsForEntities(fps ++ ass)(analysis.determineEscape)
