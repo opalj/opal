@@ -114,7 +114,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
         val annotationToMethod = methods.map { case (m, _, a) => (a, m) }.toMap ++
             formalParameters.map { case (ds, _, a) => (a, ds.method.definedMethod) }
         val annotationToClass = fields.map { case (f, _, a) => (a, f.classFile) }.toMap ++
-            allocations.map { case ((_, method), _, a) => (a, method.classFile) } ++
+            allocations.map { case ((_, method), _, a) => (a, method.definedMethod.classFile) } ++
             formalParameters.map { case (ds, _, a) => (a, ds.method.definedMethod.classFile) } ++
             methods.map { case (m, _, a) => (a, m.classFile) }
 
