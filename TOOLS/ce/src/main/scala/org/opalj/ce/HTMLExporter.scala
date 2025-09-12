@@ -46,7 +46,8 @@ class HTMLExporter(config: Config) {
                 pageHTML ++= "<hr>\n"
             }
         }
-        fileContent = template.replace("$body", pageHTML.toString())
+        fileContent =
+            template.replaceAll("\\$version", ConfigurationExplorer.buildVersion).replace("$body", pageHTML.toString())
 
         // Write to file
         Files.createDirectories(exportFile.toPath.getParent)

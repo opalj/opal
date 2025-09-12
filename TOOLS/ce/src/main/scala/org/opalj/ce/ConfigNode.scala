@@ -45,7 +45,7 @@ trait ConfigNode {
             pageHTML ++= splitContent(0)
             comment.toHTML(pageHTML)
             entriesToHTML(exporter, pageHTML)
-            pageHTML ++= "<br>\n"
+            pageHTML ++= "\n"
             pageHTML ++= splitContent(1)
         }
     }
