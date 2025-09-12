@@ -145,6 +145,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         implicit val state: State =
             new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, null)
 
+
         var pc = -1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
         for (PointsToRelation(lhs, rhs) <- data) {
@@ -268,7 +269,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 )
 
             case StaticFieldDescription(cf, name, fieldType) =>
-                handlePutStatic(declaredFields(ClassType(cf), name, FieldType(fieldType)), IntTrieSet(0))
+                handlePutStatic(declaredFields(ClassType(cf), name, FieldType(fieldType)), IntTrieSet(pc))
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
@@ -277,14 +278,16 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     if (fp.origin == -1) {
                         handleCallReceiver(
                             IntTrieSet(pc),
-                            typeIterator.expandContext(state.callContext, method, pc),
+                            // Configured Calls are made at PC=0, so we need to expand the context accordingly
+                            typeIterator.expandContext(state.callContext, method, 0),
                             isNonVirtualCall = true
                         )
                     } else {
                         handleCallParameter(
                             IntTrieSet(pc),
                             -fp.origin - 2,
-                            typeIterator.expandContext(state.callContext, method, pc)
+                            // Configured calls are made at PC=0, so we need to expand the context accordingly
+                            typeIterator.expandContext(state.callContext, method, 0)
                         )
                     }
                 }
