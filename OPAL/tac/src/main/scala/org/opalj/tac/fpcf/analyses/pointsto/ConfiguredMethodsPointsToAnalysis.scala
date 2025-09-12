@@ -145,7 +145,6 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         implicit val state: State =
             new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, null)
 
-
         var pc = -1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
         for (PointsToRelation(lhs, rhs) <- data) {
@@ -178,7 +177,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         rhs match {
             case md: MethodDescription =>
                 val method =
-                    typeIterator.expandContext(state.callContext, md.method(declaredMethods), pc)
+                    // Configured Calls are made at PC=0, so we need to expand the context accordingly
+                    typeIterator.expandContext(state.callContext, md.method(declaredMethods), 0)
                 state.includeSharedPointsToSet(
                     defSiteObject,
                     currentPointsTo(defSiteObject, method, PointsToSetLike.noFilter),
