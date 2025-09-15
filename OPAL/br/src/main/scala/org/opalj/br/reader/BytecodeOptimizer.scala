@@ -292,10 +292,10 @@ trait BytecodeOptimizer extends MethodsBinding {
                             if (newBranchoffset >= Short.MinValue &&
                                 newBranchoffset <= Short.MaxValue
                             ) {
-                                // Replace it by a short goto
-                                instructions(pc + 0) = NOP
+                                // Replace it by a short goto, which has length 3 instead of length 5
+                                instructions(pc + 0) = GOTO(newBranchoffset)
                                 instructions(pc + 1) = NOP
-                                instructions(pc + 2) = GOTO(newBranchoffset)
+                                instructions(pc + 2) = NOP
                                 simplified = true
                             } else {
                                 // let's replace the original jump
