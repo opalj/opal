@@ -971,7 +971,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         if (definition.isMethodHandleConst) {
             definition.asMethodHandleConst.value match {
                 case handle: InstanceFieldAccessMethodHandle =>
-                    val receiver = actualParams.flatMap(_.head)
+                    val receiver = actualParams.flatMap(_.headOption).flatten
                     if (receiver.forall(r => r.value.isPrimitiveValue)) {
                         matchers = Set(NoFieldsMatcher)
                     } else {
