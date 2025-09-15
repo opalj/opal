@@ -34,8 +34,8 @@ import org.opalj.fpcf.UBP
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.alias.TacBasedAliasAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
-import org.opalj.tac.fpcf.analyses.pointsto.toEntity
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -77,11 +77,11 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
         ase match {
             case AliasUVar(uVar, _, _) =>
                 uVar.defPCs.foreach(ds => {
-                    handlePointsToEntity(ase, getPointsToOfDefSite(ds, context.contextOf(ase), tac.get))
+                    handlePointsToEntity(ase, getPointsToOfDefSite(ds, context.contextOf(ase)))
                 })
 
             case AliasFormalParameter(fp) =>
-                handlePointsToEntity(ase, getPointsToOfDefSite(fp.origin, context.contextOf(ase), tac.get))
+                handlePointsToEntity(ase, getPointsToOfDefSite(fp.origin, context.contextOf(ase)))
 
             case AliasStaticField(field) => handlePointsToEntity(ase, getPointsToOfStaticField(field))
 
@@ -96,10 +96,13 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
 
     /**
      * Retrieves the points-to set of the given definition site.
+     *
+     * @param defSitePC The program counter (not TAC index!) of the definition site, in value origin form
+     * @param context The context in which the defSitePC is valid
      */
-    private[this] def getPointsToOfDefSite(defSite: Int, context: Context, tac: Tac): EOptionP[Entity, PointsToSet] = {
+    private[this] def getPointsToOfDefSite(defSitePC: Int, context: Context): EOptionP[Entity, PointsToSet] = {
         propertyStore(
-            toEntity(if (defSite < 0) defSite else tac.properStmtIndexForPC(defSite), context, tac.stmts),
+            pointsto.toEntity(defSitePC, context),
             pointsToPropertyKey
         )
     }
@@ -126,7 +129,9 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
 
         val allocationSites = ArrayBuffer.empty[ElementType]
 
-        field.fieldReference.defSites.map(getPointsToOfDefSite(_, fieldContext, tac))
+        field.fieldReference.defSites.map { defSite =>
+            getPointsToOfDefSite(if (defSite < 0) defSite else tac.stmts(defSite).pc, fieldContext)
+        }
             .foreach(pts => {
 
                 if (pts.isEPK) {
