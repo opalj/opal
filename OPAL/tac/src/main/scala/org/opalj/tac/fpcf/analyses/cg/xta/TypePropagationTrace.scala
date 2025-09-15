@@ -80,9 +80,8 @@ private[xta] class TypePropagationTrace {
             else Iterator.empty[Context]
         }
         traceMsg(
-            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(
-                    ", "
-                )}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
+            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, " +
+                s"initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
         )
         _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
     }

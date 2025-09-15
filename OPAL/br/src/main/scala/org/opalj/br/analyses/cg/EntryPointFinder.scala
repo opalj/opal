@@ -4,8 +4,6 @@ package br
 package analyses
 package cg
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
@@ -59,13 +57,13 @@ trait ApplicationEntryPointsFinder extends EntryPointFinder {
 
         val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
 
-        super.collectEntryPoints(project) ++ project.allMethodsWithBody.collect {
+        super.collectEntryPoints(project) ++ project.allMethodsWithBody.iterator.collect {
             case m: Method
                 if m.isStatic
                     && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
                     && (m.name == "main") =>
-                m
-        }.map(declaredMethods.apply)
+                declaredMethods(m)
+        }
     }
 }
 
@@ -147,13 +145,15 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
             }
         }
 
-        val eps = ArrayBuffer.empty[Method]
+        val eps = project
+            .allMethodsWithBody
+            .iterator
+            .collect {
+                case m if isEntryPoint(m) =>
+                    declaredMethods(m)
+            }
 
-        project.allMethodsWithBody.foreach { method =>
-            if (isEntryPoint(method))
-                eps.append(method)
-        }
-        super.collectEntryPoints(project) ++ eps.map(declaredMethods.apply)
+        super.collectEntryPoints(project) ++ eps
     }
 }
 
@@ -279,7 +279,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                             val virtualEntry =
                                 declaredMethods(classType, classType.packageName, classType, name, methodDescriptor.get)
 
-                            entryPoints = entryPoints ++ Set(virtualEntry)
+                            entryPoints = entryPoints + virtualEntry
 
                             OPALLogger.info(
                                 "project configuration",
@@ -367,7 +367,7 @@ object AllEntryPointsFinder extends EntryPointFinder {
         val declaredMethods = project.get(DeclaredMethodsKey)
 
         if (project.config.as[Boolean](ConfigKey))
-            project.allProjectClassFiles.flatMap(_.methodsWithBody).map(declaredMethods.apply)
+            project.allProjectClassFiles.flatMap(_.methodsWithBody.map(declaredMethods.apply))
         else project.allMethodsWithBody.map(declaredMethods.apply)
     }
 }

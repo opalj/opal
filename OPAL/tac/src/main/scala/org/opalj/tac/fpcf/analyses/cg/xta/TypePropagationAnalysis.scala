@@ -76,17 +76,19 @@ final class TypePropagationAnalysis private[analyses] (
         tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
 
-        val methodOpt = if (callContext.method.hasSingleDefinedMethod) {
-            Some(callContext.method.definedMethod)
+        val declaredMethod = callContext.method
+
+        val methodOpt = if (declaredMethod.hasSingleDefinedMethod) {
+            Some(declaredMethod.definedMethod)
         } else None
 
-        val typeSetEntity = selectTypeSetEntity(callContext.method)
+        val typeSetEntity = selectTypeSetEntity(declaredMethod)
         val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
-        val calleesEOptP = propertyStore(callContext.method, Callees.key)
-        val readAccessEOptP = methodOpt.map(m => propertyStore(m, MethodFieldReadAccessInformation.key)).orNull
-        val writeAccessEOptP = methodOpt.map(m => propertyStore(m, MethodFieldWriteAccessInformation.key)).orNull
+        val calleesEOptP = propertyStore(declaredMethod, Callees.key)
+        val readAccessEOptP = methodOpt.map(m => propertyStore(m, MethodFieldReadAccessInformation.key))
+        val writeAccessEOptP = methodOpt.map(m => propertyStore(m, MethodFieldWriteAccessInformation.key))
 
-        if (debug) _trace.traceInit(callContext.method)
+        if (debug) _trace.traceInit(declaredMethod)
 
         implicit val state: TypePropagationState[ContextType] = new TypePropagationState(
             callContext,
@@ -101,10 +103,10 @@ final class TypePropagationAnalysis private[analyses] (
 
         if (calleesEOptP.hasUBP)
             processCallees(calleesEOptP.ub)
-        if (readAccessEOptP != null && readAccessEOptP.hasUBP)
-            processReadAccesses(readAccessEOptP.ub)
-        if (writeAccessEOptP != null && writeAccessEOptP.hasUBP)
-            processWriteAccesses(writeAccessEOptP.ub)
+        if (readAccessEOptP.isDefined && readAccessEOptP.get.hasUBP)
+            processReadAccesses(readAccessEOptP.get.ub)
+        if (writeAccessEOptP.isDefined && writeAccessEOptP.get.hasUBP)
+            processWriteAccesses(writeAccessEOptP.get.ub)
 
         if (state.methodHasBody) {
             processTACStatements
