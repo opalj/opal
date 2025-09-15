@@ -3,33 +3,29 @@ package org.opalj
 package fpcf
 package analyses
 
+import scala.language.postfixOps
+
+import java.io.File
 import java.net.URL
-import scala.util.Try
 
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.fpcf.ContextProviderKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
+import org.opalj.br.fpcf.cli.StringAnalysisArg
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string.StringConstancyProperty
+import org.opalj.cli.AnalysisLevelArg
+import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.string.LazyStringAnalysis
-import org.opalj.tac.fpcf.analyses.string.flowanalysis.LazyMethodStringFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.l0.LazyL0StringFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.l1.LazyL1StringFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.l2.LazyL2StringFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.l3.LazyL3StringFlowAnalysis
-import org.opalj.tac.fpcf.analyses.string.trivial.LazyTrivialStringAnalysis
 import org.opalj.tac.fpcf.analyses.systemproperties.TriggeredSystemPropertiesAnalysisScheduler
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -37,88 +33,45 @@ import org.opalj.util.Seconds
 /**
  * @author Maximilian Rüsch
  */
-object StringAnalysisDemo extends ProjectAnalysisApplication {
+object StringAnalysisDemo extends ProjectsAnalysisApplication {
 
-    private case class Configuration(
-        private val analysisConfig: Configuration.AnalysisConfig
-    ) {
+    protected class StringAnalysisDemoConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
+        with PropertyStoreBasedCommandLineConfig {
+        val description: String =
+            """
+              | Analyses the callees of the Main.entrypoint method of the given project,
+              | e.g. run with the DEVELOPING_OPAL/demos/src/main/resources/opal-xerces-playground.zip package.
+              |
+              | Also contains some live logging of runtime information about the property store.
+              |""".stripMargin
 
-        def analyses: Seq[FPCFLazyAnalysisScheduler] = {
-            analysisConfig match {
-                case Configuration.TrivialAnalysis => Seq(LazyTrivialStringAnalysis)
-                case Configuration.LevelAnalysis(level) =>
-                    Seq(
-                        LazyStringAnalysis,
-                        LazyMethodStringFlowAnalysis,
-                        Configuration.LevelToSchedulerMapping(level)
-                    )
+        private val analysisLevelArg =
+            new AnalysisLevelArg(StringAnalysisArg.description, StringAnalysisArg.levels: _*) {
+                override val defaultValue: Option[String] = Some("trivial")
+                override val withNone = false
             }
-        }
-    }
 
-    private object Configuration {
-
-        private[Configuration] trait AnalysisConfig
-        private[Configuration] case object TrivialAnalysis extends AnalysisConfig
-        private[Configuration] case class LevelAnalysis(level: Int) extends AnalysisConfig
-
-        final val LevelToSchedulerMapping = Map(
-            0 -> LazyL0StringFlowAnalysis,
-            1 -> LazyL1StringFlowAnalysis,
-            2 -> LazyL2StringFlowAnalysis,
-            3 -> LazyL3StringFlowAnalysis
+        args(
+            analysisLevelArg !
         )
+        init()
 
-        def apply(parameters: Seq[String]): Configuration = {
-            val levelParameter = parameters.find(_.startsWith("-level=")).getOrElse("-level=trivial")
-            val analysisConfig = levelParameter.replace("-level=", "") match {
-                case "trivial" => TrivialAnalysis
-                case string    => LevelAnalysis(string.toInt)
-            }
-
-            new Configuration(analysisConfig)
+        val analyses: Seq[FPCFAnalysisScheduler[_]] = {
+            StringAnalysisArg.getAnalyses(apply(analysisLevelArg)).map(getScheduler(_, eager = false))
         }
     }
 
-    override def description: String =
-        """
-          | Analyses the callees of the Main.entrypoint method of the given project,
-          | e.g. run with the DEVELOPING_OPAL/demos/src/main/resources/opal-xerces-playground.zip package.
-          |
-          | Also contains some live logging of runtime information about the property store.
-          |""".stripMargin
+    protected type ConfigType = StringAnalysisDemoConfig
 
-    override def analysisSpecificParametersDescription: String =
-        s"[-level=trivial|${Configuration.LevelToSchedulerMapping.keys.toSeq.sorted.mkString("|")}]"
+    protected def createConfig(args: Array[String]): StringAnalysisDemoConfig = new StringAnalysisDemoConfig(args)
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
-        parameters.flatMap {
-            case levelParameter if levelParameter.startsWith("-level=") =>
-                levelParameter.replace("-level=", "") match {
-                    case "trivial" =>
-                        None
-                    case string
-                        if Try(string.toInt).isSuccess
-                            && Configuration.LevelToSchedulerMapping.keySet.contains(string.toInt) =>
-                        None
-                    case value =>
-                        Some(s"Unknown level parameter value: $value")
-                }
+    override protected def analyze(
+        cp:             Iterable[File],
+        analysisConfig: StringAnalysisDemoConfig,
+        execution:      Int
+    ): (Project[URL], BasicReport) = {
+        val (project, projectTime) = analysisConfig.setupProject()
 
-            case param => Some(s"unknown parameter: $param")
-        }
-    }
-
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () => Boolean
-    ): BasicReport = {
-        implicit val configuration: Configuration = Configuration(parameters)
-        BasicReport(analyze(project))
-    }
-
-    def analyze(project: Project[URL])(implicit configuration: Configuration): String = {
         val domain = classOf[DefaultDomainWithCFGAndDefUse[_]]
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => Set(domain)
@@ -137,7 +90,7 @@ object StringAnalysisDemo extends ProjectAnalysisApplication {
             analysesManager
                 .runAll(
                     cgKey.allCallGraphAnalyses(project)
-                        ++ configuration.analyses
+                        ++ analysisConfig.analyses
                         ++ Seq(
                             ReflectionRelatedCallsAnalysisScheduler,
                             TriggeredSystemPropertiesAnalysisScheduler
@@ -184,7 +137,7 @@ object StringAnalysisDemo extends ProjectAnalysisApplication {
                 .mkString("\n|     ", "\n|     ", "")
         }
 
-        s"""
+        (project, BasicReport(s"""
            |
            | Callees: ${calleesByPC.size} ${getPCMethodsList(calleesByPC)}
            |
@@ -199,7 +152,7 @@ object StringAnalysisDemo extends ProjectAnalysisApplication {
            | Definition depths:
            | ${getDepths(_.getClass.getName.endsWith("VariableDefinition")).mkString("\n|     ", "\n|     ", "")}
            |
-           | took : $analysisTime seconds
-           |""".stripMargin
+           | took : $analysisTime seconds (and $projectTime seconds for project setup)
+           |""".stripMargin))
     }
 }
