@@ -58,7 +58,6 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
     private type State = ConfiguredNativeMethodsTypePropagationState[ContextType]
 
-    // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Array[PointsToRelation]] =
         ConfiguredMethods
             .reader
