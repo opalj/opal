@@ -83,7 +83,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
     /**
      * Analyzes field writes for a single method, returning false if the field may still be
-     * effectively non assignable and true otherwise.
+     * effectively non-assignable and true otherwise.
      */
     def methodUpdatesField(
         definedMethod: DefinedMethod,
@@ -92,19 +92,17 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         pc:            PC,
         receiver:      AccessReceiver
     )(implicit state: AnalysisState): Boolean = {
-
         val field = state.field
         val method = definedMethod.definedMethod
-        val stmts = taCode.stmts
-        val receiverVar = receiver.map(uVarForDefSites(_, taCode.pcToIndex))
+        val receiverVarOpt = receiver.map(uVarForDefSites(_, taCode.pcToIndex))
 
         val index = taCode.pcToIndex(pc)
         if (method.isInitializer && method.classFile == field.classFile) {
             field.isStatic && method.isConstructor ||
-            receiverVar.isDefined && receiverVar.get.definedBy != SelfReferenceParameter ||
-            checkWriteDominance(definedMethod, taCode, receiverVar, index)
+            receiverVarOpt.isDefined && receiverVarOpt.get.definedBy != SelfReferenceParameter ||
+            checkWriteDominance(definedMethod, taCode, receiverVarOpt, index)
         } else {
-            if (field.isStatic || receiverVar.isDefined && receiverVar.get.definedBy == SelfReferenceParameter) {
+            if (field.isStatic || receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter) {
                 // We consider lazy initialization if there is only a single write
                 // outside an initializer, so we can ignore synchronization.
                 state.fieldAssignability == LazilyInitialized ||
@@ -116,7 +114,13 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     } else
                         true
                 }
-            } else if (receiverVar.isDefined && !referenceHasNotEscaped(receiverVar.get, stmts, definedMethod, callers)) {
+            } else if (receiverVarOpt.isDefined && !referenceHasNotEscaped(
+                           receiverVarOpt.get,
+                           taCode.stmts,
+                           definedMethod,
+                           callers
+                       )
+            ) {
                 // Here the clone pattern is determined among others
                 // note that here we assume real three address code (flat hierarchy)
 
@@ -124,15 +128,14 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 // constructor (w.r.t. the currently initialized object!)
 
                 // If the field that is written is not the one referred to by the
-                // self reference, it is not effectively non assignable.
+                // self reference, it is not effectively non-assignable.
 
                 // However, a method (e.g. clone) may instantiate a new object and
                 // write the field as long as that new object did not yet escape.
                 true
             } else {
-                checkWriteDominance(definedMethod, taCode, receiverVar, index)
+                checkWriteDominance(definedMethod, taCode, receiverVarOpt, index)
             }
-
         }
     }
 
@@ -148,14 +151,14 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val writesInMethod = writes.filter { w => contextProvider.contextFromId(w._1).method eq definedMethod }.toSeq
 
         if (writesInMethod.distinctBy(_._2).size > 1) {
-            // There can be multiple assignments of final fields in the constructor
-            // in different branches
+            // There can be multiple assignments of final fields in the constructor in different branches,
+            // but otherwise if field is written in multiple locations it must be assignable.
             if (!definedMethod.definedMethod.isConstructor)
-                return true
-        }; // Otherwise: field is written in multiple locations, thus must be assignable
+                return true;
+        }
 
-        // If we have no information about the receiver, we soundly return true
-        // However, a static field has no receiver
+        // If we have no information about the receiver, we soundly return true.
+        // However, a static field has no receiver.
         if (receiverVar.isEmpty && !state.field.isStatic)
             return true;
 
@@ -169,21 +172,19 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             } else
                 receiverVar.get
 
-        // If there is more than 1 definitionsite, we soundly return true
+        // If there is more than 1 definition site, we soundly return true
         if (assignedValueObject.definedBy.size != 1)
             return true;
 
-        val definitionSite = assignedValueObject.definedBy.head
+        val defSite = assignedValueObject.definedBy.head
 
-        if (definitionSite < -1 ||
-            (definitionSite == -1 && !definedMethod.definedMethod.isConstructor)
-        )
+        if (defSite < -1 || (defSite == -1 && !definedMethod.definedMethod.isConstructor))
             return true;
 
-        val uses = if (definitionSite == -1)
+        val uses = if (defSite == -1)
             taCode.params.thisParameter.useSites
         else {
-            val assignedValueObjectVar = stmts(definitionSite).asAssignment.targetVar.asVar
+            val assignedValueObjectVar = stmts(defSite).asAssignment.targetVar.asVar
             if (assignedValueObjectVar != null)
                 assignedValueObjectVar.usedBy
             else IntTrieSet.empty
@@ -204,8 +205,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         )
             return true;
 
-        val writeAccess = (definedMethod, taCode, receiverVar, index)
-
         if (state.fieldReadAccessDependee.isEmpty) {
             state.fieldReadAccessDependee =
                 Some(propertyStore(declaredFields(state.field), FieldReadAccessInformation.key))
@@ -213,6 +212,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
         val fraiEP = state.fieldReadAccessDependee.get
 
+        val writeAccess = (definedMethod, taCode, receiverVar, index)
         if (fraiEP.hasUBP && fieldReadsNotDominated(fraiEP.ub, 0, 0, Seq(writeAccess)))
             return true;
 

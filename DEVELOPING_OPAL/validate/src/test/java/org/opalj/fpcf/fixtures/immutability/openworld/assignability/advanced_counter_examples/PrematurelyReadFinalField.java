@@ -7,7 +7,7 @@ import org.opalj.fpcf.properties.immutability.field_assignability.AssignableFiel
  * The default value of the field x is assigned to another field n during construction and as
  * a result seen with two different values.
  */
-public class PrematurelyReadOfFinalField {
+public class PrematurelyReadFinalField {
 
     @AssignableField("Field n is assigned with different values.")
     static int n = 5;
@@ -20,11 +20,11 @@ public class PrematurelyReadOfFinalField {
 
 class B {
     B() {
-        PrematurelyReadOfFinalField.n = ((C) this).x;
+        PrematurelyReadFinalField.n = ((C) this).x;
     }
 }
 
-class C extends B{
+class C extends B {
 
     @AssignableField("Is seen with two different values during construction.")
     public final int x;

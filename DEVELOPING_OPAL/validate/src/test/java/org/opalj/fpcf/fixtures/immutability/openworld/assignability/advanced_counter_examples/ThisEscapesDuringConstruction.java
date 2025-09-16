@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.immutability.openworld.assignability.advanced_co
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 /**
- * This test case simulates the fact that the this object escapes in the constructor before (final) fields
+ * This test case simulates the fact that the `this` object escapes in the constructor before (final) fields
  * are assigned.
  */
 public class ThisEscapesDuringConstruction {
@@ -18,6 +18,6 @@ public class ThisEscapesDuringConstruction {
     }
 }
 
-class C2{
+class C2 {
     public static void m(ThisEscapesDuringConstruction c){}
 }
