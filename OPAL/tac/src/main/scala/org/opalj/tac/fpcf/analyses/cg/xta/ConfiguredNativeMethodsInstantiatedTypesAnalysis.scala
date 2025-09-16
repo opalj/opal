@@ -69,22 +69,16 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             .toMap
 
     override def processMethodWithoutBody(callContext: ContextType): ProperPropertyComputationResult = {
-        processMethodInternal(callContext)
-    }
+        val declaredMethod = callContext.method
 
-    override def processMethod(callContext: ContextType, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
-        processMethodInternal(callContext)
-    }
-
-    private def processMethodInternal(callContext: ContextType): ProperPropertyComputationResult = {
-        if (!nativeMethodData.contains(callContext.method)) {
+        if (!nativeMethodData.contains(declaredMethod)) {
             // We have nothing to contribute to this method
             return Results()
         }
 
-        val configuredData = nativeMethodData(callContext.method)
+        val configuredData = nativeMethodData(declaredMethod)
         // Method may be without body (native) or not - we want both to work
-        val typeSetEntity = typeSetEntitySelector(callContext.method)
+        val typeSetEntity = typeSetEntitySelector(declaredMethod)
         val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
 
         implicit val state: ConfiguredNativeMethodsTypePropagationState[ContextType] =
@@ -103,26 +97,40 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         returnResults(partialResults)
     }
 
+    override def processMethod(callContext: ContextType, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
+        processMethodWithoutBody(callContext)
+    }
+
+    /**
+     * Handles the effect of configured type instantiations on the current method
+     * @param state Current method's state
+     * @param partialResults Current partial results
+     */
     private def processStaticConfigurations(implicit
         state:          State,
         partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
         state.configurationData.foreach {
             case PointsToRelation(StaticFieldDescription(cf, name, fieldType), asd: AllocationSiteDescription) =>
+                // This means an instantiated object is configured to be assigned to a static field. We want to add the
+                // instantiated type to the field's TypeSetEntity only if it matches the field type.
                 val theField = declaredFields(ClassType(cf), name, FieldType(fieldType))
                 val allocatedType = FieldType(asd.instantiatedType)
 
                 val fieldSetEntity = typeSetEntitySelector(theField)
 
+                // Check that the field and the configured instantiated type are Reference Types and that they are compatible
                 if (allocatedType.isReferenceType && theField.fieldType.isReferenceType &&
                     candidateMatchesTypeFilter(allocatedType.asReferenceType, theField.fieldType.asReferenceType)
                 ) {
+                    // Update the set of instantiated types for the field's TypeSetEntity
                     partialResults += PartialResult[TypeSetEntity, InstantiatedTypes](
                         fieldSetEntity,
                         InstantiatedTypes.key,
                         InstantiatedTypes.update(fieldSetEntity, UIDSet(allocatedType.asReferenceType))
                     )
                 } else {
+                    // Issue a warning if the configured types are not compatible
                     OPALLogger.warn(
                         "project configuration",
                         s"configured points to data is invalid for ${state.callContext.method.toJava}"
@@ -130,30 +138,58 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
                 }
 
             case PointsToRelation(MethodDescription(cf, name, desc), asd: AllocationSiteDescription) =>
-                val theMethod = state.callContext.method
+                // This means an object instantiation is configured to be the return value of a method - this means the
+                // instantiation happens inside the method. We must thus assign the instantiated type to the method's
+                // TypeSetEntity
+                assignInstantiationToMethod(cf, name, desc, asd)
 
-                if (theMethod.declaringClassType.fqn != cf || theMethod.name != name || theMethod.descriptor.toJVMDescriptor != desc) {
-                    OPALLogger.warn(
-                        "project configuration",
-                        s"configured points to data is invalid for ${state.callContext.method.toJava}"
-                    )
-                } else {
-                    val allocatedType = FieldType(asd.instantiatedType)
-                    val methodSetEntity = state.typeSetEntity
-
-                    if (allocatedType.isReferenceType) {
-                        partialResults += PartialResult[TypeSetEntity, InstantiatedTypes](
-                            methodSetEntity,
-                            InstantiatedTypes.key,
-                            InstantiatedTypes.update(methodSetEntity, UIDSet(allocatedType.asReferenceType))
-                        )
-                    }
-                }
+            case PointsToRelation(ParameterDescription(cf, name, desc, _), asd: AllocationSiteDescription) =>
+                // This means an object instantiated is configured to be the parameter in a method invocation - this
+                // means the instantiation happens inside the calling method. We must thus assign the instantiated type
+                // to the calling method's TypeSetEntity
+                assignInstantiationToMethod(cf, name, desc, asd)
 
             case _ =>
         }
     }
 
+    private def assignInstantiationToMethod(cf: String, name: String, desc: String, asd: AllocationSiteDescription)(
+        implicit
+        state:          State,
+        partialResults: ArrayBuffer[SomePartialResult]
+    ): Unit = {
+        val theMethod = state.callContext.method
+
+        // Assert that the method description matches the current method - we cannot assign instantiations to
+        // a different method.
+        if (theMethod.declaringClassType.fqn != cf || theMethod.name != name || theMethod.descriptor.toJVMDescriptor != desc) {
+            OPALLogger.warn(
+                "project configuration",
+                s"configured points to data is invalid for ${theMethod.toJava}"
+            )
+        } else {
+            val allocatedType = FieldType(asd.instantiatedType)
+            val methodSetEntity = state.typeSetEntity
+
+            // We only allow ReferenceTypes to be configured
+            if (allocatedType.isReferenceType) {
+
+                // Update the set of instantiated types for this method's TypeSetEntity
+                partialResults += PartialResult[TypeSetEntity, InstantiatedTypes](
+                    methodSetEntity,
+                    InstantiatedTypes.key,
+                    InstantiatedTypes.update(methodSetEntity, UIDSet(allocatedType.asReferenceType))
+                )
+            }
+        }
+    }
+
+    /**
+     * Handles the effects of parameters being assigned to relevant method entities via the configuration
+     * @param typesToConsider The types that are considered to be instantiated for the current method's TypeSetEntity
+     * @param state The current method's state
+     * @param partialResults The partial results buffer
+     */
     private def processParameterAssignments(typesToConsider: UIDSet[ReferenceType])(implicit
         state:          State,
         partialResults: ArrayBuffer[SomePartialResult]
@@ -161,10 +197,15 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         state.configurationData.foreach {
 
             case PointsToRelation(StaticFieldDescription(cf, name, fieldType), pd: ParameterDescription) =>
+                // This means that a parameter is configured to be assigned to a static field via this method. We need
+                // to assign all methods that are instantiated for this method's TypeSetEntity **and** that are compatible
+                // to the parameter type to the static field's TypeSetEntity.
+
                 val theField = declaredFields(ClassType(cf), name, FieldType(fieldType))
                 val fieldSetEntity = typeSetEntitySelector(theField)
                 val theParameter = pd.fp(state.callContext.method, virtualFormalParameters)
 
+                // Obtain the parameter type
                 val theParameterType = if (theParameter.origin == -1) {
                     ClassType(pd.cf)
                 } else {
@@ -172,9 +213,12 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
                     state.callContext.method.descriptor.parameterType(paramIdx)
                 }
 
+                // Check that the parameter type is a ReferenceType that matches the field's type
                 if (theField.fieldType.isReferenceType && theParameterType.isReferenceType &&
                     candidateMatchesTypeFilter(theParameterType.asReferenceType, theField.fieldType.asReferenceType)
                 ) {
+                    // Obtain those types that are instantiated in the current context (typeToConsider) and compatible
+                    // to the static field's type. Those types are possible values to add for the field.
                     val filteredTypes =
                         typesToConsider.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, newType) =>
                             if (candidateMatchesTypeFilter(newType, theParameterType.asReferenceType)) {
@@ -183,12 +227,14 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
                             builder
                         }.result()
 
+                    // Update the instantiated types property of the field's TypeSetEntity
                     partialResults += PartialResult[TypeSetEntity, InstantiatedTypes](
                         fieldSetEntity,
                         InstantiatedTypes.key,
                         InstantiatedTypes.update(fieldSetEntity, filteredTypes)
                     )
                 } else {
+                    // Issue warning about incompatible type in configuration
                     OPALLogger.warn(
                         "project configuration",
                         s"configured points to data is invalid for ${state.callContext.method.toJava}"

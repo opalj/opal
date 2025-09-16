@@ -387,7 +387,7 @@ final class TypePropagationAnalysis private[analyses] (
         // If the call is not static, we need to take the implicit "this" parameter into account.
         if (callee.hasSingleDefinedMethod && !callee.definedMethod.isStatic ||
             // If we can't ask the target if it is static, we look in the bytecode. If we do not have any bytecode,
-            // we soundly assume that the call might be virtual, and we need to add "this".
+            // we soundly assume that the call might be virtual and need to add "this".
             !callee.hasSingleDefinedMethod && !bytecodeOpt.exists(_.instructions(pc).isInvokeStatic)
         ) {
             params += callee.declaringClassType
