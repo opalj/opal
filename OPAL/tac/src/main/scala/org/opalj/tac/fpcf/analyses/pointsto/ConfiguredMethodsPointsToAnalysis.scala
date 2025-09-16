@@ -54,7 +54,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private lazy val virtualFormalParameters = project.get(VirtualFormalParametersKey)
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
+    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
         ConfiguredMethods.reader.read(
             p.config,
             "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
@@ -98,7 +98,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 handleCallers(
                     callers,
                     null,
-                    Array(PointsToRelation(
+                    Array(EntityAssignment(
                         MethodDescription(cf, name, desc),
                         AllocationSiteDescription(cf, name, desc, tpe, arrayTypes)
                     )),
@@ -113,7 +113,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     private[this] def handleCallers(
         newCallers:                 EOptionP[DeclaredMethod, Callers],
         oldCallers:                 Callers,
-        data:                       Array[PointsToRelation],
+        data:                       Array[EntityAssignment],
         filterNonInstantiableTypes: Boolean = false
     ): ProperPropertyComputationResult = {
         val dm = newCallers.e
@@ -139,7 +139,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
     private[this] def handleNativeMethod(
         callContext:                ContextType,
-        data:                       Array[PointsToRelation],
+        data:                       Array[EntityAssignment],
         filterNonInstantiableTypes: Boolean
     ): Iterator[ProperPropertyComputationResult] = {
         implicit val state: State =
@@ -147,7 +147,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
         var pc = -1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
-        for (PointsToRelation(lhs, rhs) <- data) {
+        for (EntityAssignment(lhs, rhs) <- data) {
             val nextPC = handleGet(rhs, pc, pc - 1, filterNonInstantiableTypes)
             pc = handlePut(lhs, pc, nextPC)
         }

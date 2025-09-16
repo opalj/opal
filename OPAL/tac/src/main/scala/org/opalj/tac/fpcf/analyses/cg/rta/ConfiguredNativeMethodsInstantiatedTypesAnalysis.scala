@@ -41,7 +41,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     final val project: SomeProject
 ) extends ReachableMethodAnalysis {
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
+    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
         ConfiguredMethods.reader
             .read(p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis")
             .nativeMethods.map { v => (v.method, v.pointsTo) }.toMap
@@ -77,7 +77,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             if (dataO.isEmpty)
                 return Results();
             dataO.get.collect {
-                case PointsToRelation(_, as: AllocationSiteDescription) =>
+                case EntityAssignment(_, as: AllocationSiteDescription) =>
                     as.arrayComponentTypes.map(ReferenceType(_)) :+
                         FieldType(as.instantiatedType).asReferenceType
             }.flatten

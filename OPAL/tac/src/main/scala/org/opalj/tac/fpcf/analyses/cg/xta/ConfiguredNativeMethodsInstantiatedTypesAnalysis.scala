@@ -38,8 +38,8 @@ import org.opalj.fpcf.SomePartialResult
 import org.opalj.log.OPALLogger
 import org.opalj.tac.fpcf.analyses.AllocationSiteDescription
 import org.opalj.tac.fpcf.analyses.ConfiguredMethods
+import org.opalj.tac.fpcf.analyses.EntityAssignment
 import org.opalj.tac.fpcf.analyses.MethodDescription
-import org.opalj.tac.fpcf.analyses.PointsToRelation
 import org.opalj.tac.fpcf.analyses.StaticFieldDescription
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -58,7 +58,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
     private type State = ConfiguredNativeMethodsTypePropagationState[ContextType]
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Array[PointsToRelation]] =
+    private[this] val nativeMethodData: Map[DeclaredMethod, Array[EntityAssignment]] =
         ConfiguredMethods
             .reader
             .read(p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis")
@@ -110,7 +110,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
         state.configurationData.foreach {
-            case PointsToRelation(StaticFieldDescription(cf, name, fieldType), asd: AllocationSiteDescription) =>
+            case EntityAssignment(StaticFieldDescription(cf, name, fieldType), asd: AllocationSiteDescription) =>
                 // This means an instantiated object is configured to be assigned to a static field. We want to add the
                 // instantiated type to the field's TypeSetEntity only if it matches the field type.
                 val theField = declaredFields(ClassType(cf), name, FieldType(fieldType))
@@ -136,13 +136,13 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
                     )
                 }
 
-            case PointsToRelation(MethodDescription(cf, name, desc), asd: AllocationSiteDescription) =>
+            case EntityAssignment(MethodDescription(cf, name, desc), asd: AllocationSiteDescription) =>
                 // This means an object instantiation is configured to be the return value of a method - this means the
                 // instantiation happens inside the method. We must thus assign the instantiated type to the method's
                 // TypeSetEntity
                 assignInstantiationToMethod(cf, name, desc, asd)
 
-            case PointsToRelation(ParameterDescription(cf, name, desc, _), asd: AllocationSiteDescription) =>
+            case EntityAssignment(ParameterDescription(cf, name, desc, _), asd: AllocationSiteDescription) =>
                 // This means an object instantiated is configured to be the parameter in a method invocation - this
                 // means the instantiation happens inside the calling method. We must thus assign the instantiated type
                 // to the calling method's TypeSetEntity
@@ -195,7 +195,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     ): Unit = {
         state.configurationData.foreach {
 
-            case PointsToRelation(StaticFieldDescription(cf, name, fieldType), pd: ParameterDescription) =>
+            case EntityAssignment(StaticFieldDescription(cf, name, fieldType), pd: ParameterDescription) =>
                 // This means that a parameter is configured to be assigned to a static field via this method. We need
                 // to assign all methods that are instantiated for this method's TypeSetEntity **and** that are compatible
                 // to the parameter type to the static field's TypeSetEntity.
