@@ -1188,6 +1188,7 @@ object ReflectionRelatedFieldAccessesAnalysisScheduler extends BasicFPCFEagerAna
         ForNameClasses,
         Callers,
         TACAI,
+        StringConstancyProperty,
         FieldReadAccessInformation,
         FieldWriteAccessInformation,
         MethodFieldReadAccessInformation,

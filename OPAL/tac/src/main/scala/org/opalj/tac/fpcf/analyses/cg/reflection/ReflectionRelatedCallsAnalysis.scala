@@ -1623,7 +1623,8 @@ object ReflectionRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisSch
         Callees,
         LoadedClasses,
         ForNameClasses,
-        TACAI
+        TACAI,
+        StringConstancyProperty
     )
 
     override def uses(p: SomeProject, ps: PropertyStore): Set[PropertyBounds] = {
