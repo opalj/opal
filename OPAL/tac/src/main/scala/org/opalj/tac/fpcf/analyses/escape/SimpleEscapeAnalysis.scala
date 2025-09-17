@@ -5,8 +5,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
+import org.opalj.br.{DeclaredMethod, DefinedMethod}
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -34,7 +33,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 class SimpleEscapeAnalysisContext(
     val entity:                  (Context, Entity),
-    val targetMethod:            Method,
+    val targetMethod:            DeclaredMethod,
     val declaredMethods:         DeclaredMethods,
     val virtualFormalParameters: VirtualFormalParameters,
     val project:                 SomeProject,
@@ -69,7 +68,7 @@ class SimpleEscapeAnalysis(final val project: SomeProject)
             case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
                 Result(fp, AtMost(NoEscape))
             case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer =>
-                val ctx = createContext(fp, dm.definedMethod)
+                val ctx = createContext(fp, dm)
                 doDetermineEscape(ctx, createState)
             case VirtualFormalParameter(_, _) =>
                 Result(fp, AtMost(NoEscape))
@@ -78,7 +77,7 @@ class SimpleEscapeAnalysis(final val project: SomeProject)
 
     override def createContext(
         entity:       (Context, Entity),
-        targetMethod: Method
+        targetMethod: DeclaredMethod
     ): SimpleEscapeAnalysisContext = new SimpleEscapeAnalysisContext(
         entity,
         targetMethod,

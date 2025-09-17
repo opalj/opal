@@ -5,9 +5,7 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
-import org.opalj.br.VirtualDeclaredMethod
+import org.opalj.br.{DeclaredMethod, DefinedMethod, Method, VirtualDeclaredMethod}
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -46,7 +44,7 @@ import org.opalj.value.ValueInformation
 
 class InterProceduralEscapeAnalysisContext(
     val entity:                  (Context, Entity),
-    val targetMethod:            Method,
+    val targetMethod:            DeclaredMethod,
     val declaredMethods:         DeclaredMethods,
     val virtualFormalParameters: VirtualFormalParameters,
     val project:                 SomeProject,
@@ -129,7 +127,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 Result(fp, AtMost(NoEscape))
 
             case VirtualFormalParameter(dm: DefinedMethod, _) =>
-                val ctx = createContext(fp, dm.definedMethod)
+                val ctx = createContext(fp, dm)
                 doDetermineEscape(ctx, createState)
 
             case VirtualFormalParameter(_: VirtualDeclaredMethod, _) =>
@@ -139,7 +137,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
     override def createContext(
         entity:       (Context, Entity),
-        targetMethod: Method
+        targetMethod: DeclaredMethod
     ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
         entity,
         targetMethod,
