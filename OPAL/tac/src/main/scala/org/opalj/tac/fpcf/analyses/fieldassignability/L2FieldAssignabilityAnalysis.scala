@@ -94,23 +94,27 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     )(implicit state: AnalysisState): Boolean = {
         val field = state.field
         val method = definedMethod.definedMethod
+        val writeIndex = taCode.pcToIndex(pc)
         val receiverVarOpt = receiver.map(uVarForDefSites(_, taCode.pcToIndex))
 
-        val index = taCode.pcToIndex(pc)
-        if (method.isInitializer && method.classFile == field.classFile) {
-            field.isStatic && method.isConstructor ||
+        if (field.isStatic && method.isConstructor) {
+            // A static field updated in an arbitrary constructor may be updated with (at least) the first call.
+            // Thus, we may see its initial value or the updated value, making the field assignable.
+            true
+        } else if (method.isInitializer && method.classFile == field.classFile) {
             receiverVarOpt.isDefined && receiverVarOpt.get.definedBy != SelfReferenceParameter ||
-            checkWriteDominance(definedMethod, taCode, receiverVarOpt, index)
+            checkWriteDominance(definedMethod, taCode, receiverVarOpt, writeIndex)
         } else {
             if (field.isStatic || receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter) {
-                // We consider lazy initialization if there is only a single write
-                // outside an initializer, so we can ignore synchronization.
+                // We consider lazy initialization if there is only a single write outside an initializer, so we can
+                // ignore synchronization.
                 state.fieldAssignability == LazilyInitialized ||
                 state.fieldAssignability == UnsafelyLazilyInitialized ||
-                // A field written outside an initializer must be lazily initialized, or it is assignable
                 {
                     if (considerLazyInitialization) {
-                        isAssignable(index, getDefaultValues(), method, taCode)
+                        // A field written outside an initializer must be lazily initialized or it is assignable.
+                        state.fieldAssignability = determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode)
+                        state.fieldAssignability eq Assignable
                     } else
                         true
                 }
@@ -134,7 +138,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 // write the field as long as that new object did not yet escape.
                 true
             } else {
-                checkWriteDominance(definedMethod, taCode, receiverVarOpt, index)
+                checkWriteDominance(definedMethod, taCode, receiverVarOpt, writeIndex)
             }
         }
     }
@@ -172,12 +176,10 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             } else
                 receiverVar.get
 
-        // If there is more than 1 definition site, we soundly return true
         if (assignedValueObject.definedBy.size != 1)
             return true;
 
         val defSite = assignedValueObject.definedBy.head
-
         if (defSite < -1 || (defSite == -1 && !definedMethod.definedMethod.isConstructor))
             return true;
 
@@ -329,23 +331,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         taCode.cfg.dominatorTree
             .strictlyDominates(bbPotentiallyDominator.nodeId, bbPotentiallyDominated.nodeId) ||
             bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominatorIndex < potentiallyDominatedIndex
-    }
-
-    // lazy initialization:
-
-    /**
-     * Handles the lazy initialization determination for a field write in a given method
-     * @author Tobias Roth
-     * @return true if no lazy initialization was recognized
-     */
-    def isAssignable(
-        writeIndex:    Int,
-        defaultValues: Set[Any],
-        method:        Method,
-        taCode:        TACode[TACMethodParameter, V]
-    )(implicit state: AnalysisState): Boolean = {
-        state.fieldAssignability = determineLazyInitialization(writeIndex, defaultValues, method, taCode)
-        state.fieldAssignability eq Assignable
     }
 
     def hasMultipleNonConstructorWrites(method: Method)(implicit state: AnalysisState): Boolean = {
