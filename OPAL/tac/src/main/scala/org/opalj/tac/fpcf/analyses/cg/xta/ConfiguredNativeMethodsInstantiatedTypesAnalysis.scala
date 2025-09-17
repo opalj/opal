@@ -203,12 +203,17 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
                 val theField = declaredFields(ClassType(cf), name, FieldType(fieldType))
                 val fieldSetEntity = typeSetEntitySelector(theField)
+
+                // Obtain the virtual formal parameter. This will be null if the current method is virtual!
                 val theParameter = pd.fp(state.callContext.method, virtualFormalParameters)
 
                 // Obtain the parameter type
-                val theParameterType = if (theParameter.origin == -1) {
+                val theParameterType = if (theParameter == null || theParameter.origin == -1) {
+                    // If the virtual formal parameter is null (we are in a virtual method) or the origin is unknown,
+                    // we return the plain type specified in the parameter description
                     ClassType(pd.cf)
                 } else {
+                    // If the virtual formal parameter is known, we obtain its parameter type
                     val paramIdx = -theParameter.origin - 2
                     state.callContext.method.descriptor.parameterType(paramIdx)
                 }
