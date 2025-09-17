@@ -137,7 +137,9 @@ object StringAnalysisDemo extends ProjectsAnalysisApplication {
                 .mkString("\n|     ", "\n|     ", "")
         }
 
-        (project, BasicReport(s"""
+        (
+            project,
+            BasicReport(s"""
            |
            | Callees: ${calleesByPC.size} ${getPCMethodsList(calleesByPC)}
            |
@@ -153,6 +155,7 @@ object StringAnalysisDemo extends ProjectsAnalysisApplication {
            | ${getDepths(_.getClass.getName.endsWith("VariableDefinition")).mkString("\n|     ", "\n|     ", "")}
            |
            | took : $analysisTime seconds (and $projectTime seconds for project setup)
-           |""".stripMargin))
+           |""".stripMargin)
+        )
     }
 }
