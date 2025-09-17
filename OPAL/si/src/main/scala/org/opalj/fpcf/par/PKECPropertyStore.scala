@@ -4,19 +4,17 @@ package fpcf
 package par
 
 import scala.annotation.switch
-
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.util.control.ControlThrowable
-
 import com.typesafe.config.Config
-
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
+import org.opalj.util.PerformanceEvaluation.memory
 
 /**
  * Yet another parallel property store.
@@ -518,12 +516,22 @@ class PKECPropertyStore(
 
             startThreads(new PartialPropertiesFinalizerThread(_))
 
-            subPhaseId += 1
-
+            subPhaseId += 1//TODO: @Fabian Hier die Zeitmessung rausnehmen
+            println("Memory usage cleared:")
+            memory{clearObsoletePropertyKinds()} { usage => println(usage) }
+            println("")
+            //clearObsoletePropertyKinds()
             ps(AnalysisKeyId).clear()
         }
 
         idle = true
+    }
+    private def clearObsoletePropertyKinds(): Unit = {
+        currentPhaseConf match {
+            case Some(pc) =>
+                pc.toDelete.foreach{ key => ps(key).clear() }
+            case None =>
+        }
     }
 
     private[this] val interimStates: Array[ArrayBuffer[EPKState]] =

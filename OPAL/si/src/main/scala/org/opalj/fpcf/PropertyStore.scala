@@ -136,6 +136,8 @@ abstract class PropertyStore {
 
     private[this] val externalInformation = new ConcurrentHashMap[AnyRef, AnyRef]()
 
+    var currentPhaseConf: Option[PhaseConfiguration[_]] = None
+
     /**
      * Attaches or returns some information associated with the property store using a key object.
      *
@@ -1011,6 +1013,10 @@ abstract class PropertyStore {
             case ct: ControlThrowable => throw ct;
             case t: Throwable         => collectAndThrowException(t)
         }
+    }
+
+    def setCurrentPhaseConfiguration[A](pc: PhaseConfiguration[A]): Unit = {
+        currentPhaseConf = Some(pc)
     }
 }
 

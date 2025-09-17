@@ -117,7 +117,7 @@ package object bytecode {
     lazy val JRELibraryFolder: File = {
         val javaVersion = System.getProperty("java.version")
         if (javaVersion.startsWith("1.")) {
-            val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
+            val sunBootClassPath = System.getProperties.getProperty("sun.boot.class.path")
             val paths = sunBootClassPath.split(File.pathSeparator)
             paths.find(_.endsWith("rt.jar")) match {
 
@@ -148,7 +148,7 @@ package object bytecode {
 
         val javaVersion = System.getProperty("java.version")
         if (javaVersion.startsWith("1.")) {
-            val sunBootClassPath = System.getProperties().getProperty("sun.boot.class.path")
+            val sunBootClassPath = System.getProperties.getProperty("sun.boot.class.path")
             val paths = sunBootClassPath.split(File.pathSeparator)
 
             paths.find(_.endsWith("rt.jar")) match {
