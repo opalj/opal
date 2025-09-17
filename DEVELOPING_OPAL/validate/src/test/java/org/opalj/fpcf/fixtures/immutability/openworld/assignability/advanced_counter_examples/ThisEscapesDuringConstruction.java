@@ -12,12 +12,12 @@ public class ThisEscapesDuringConstruction {
    @AssignableField("The this object escapes in the constructor before the field is assigned.")
    final int n;
 
-    public ThisEscapesDuringConstruction(){
+    public ThisEscapesDuringConstruction() {
         C2.m(this);
         n = 7;
     }
 }
 
 class C2 {
-    public static void m(ThisEscapesDuringConstruction c){}
+    public static void m(ThisEscapesDuringConstruction c) {}
 }

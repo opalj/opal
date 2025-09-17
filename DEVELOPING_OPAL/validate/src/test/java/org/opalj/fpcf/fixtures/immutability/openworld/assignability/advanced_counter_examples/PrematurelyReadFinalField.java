@@ -15,7 +15,6 @@ public class PrematurelyReadFinalField {
     public static void main(String[] args) {
         C c = new C();
     }
-
 }
 
 class B {
