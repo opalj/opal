@@ -115,8 +115,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
         field:           DeclaredField,
         fieldAllocation: DefinitionSite,
         depender:        Entity,
-        context:         Context,
-        stmts:           Array[Stmt[V]]
+        context:         Context
     )(
         implicit
         propertyStore: PropertyStore,
@@ -704,7 +703,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
             } else {
                 combine(
                     result,
-                    currentPointsTo(depender, pointsto.toEntity(defSite, context, stmts))
+                    currentPointsTo(depender, pointsto.toEntity(pc, context))
                 )
             }
         }
@@ -714,8 +713,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         field:           DeclaredField,
         fieldAllocation: DefinitionSite,
         depender:        Entity,
-        context:         Context,
-        stmts:           Array[Stmt[V]]
+        context:         Context
     )(
         implicit
         propertyStore: PropertyStore,
@@ -723,7 +721,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     ): PointsToSet = {
         val objects = currentPointsTo(
             depender,
-            pointsto.toEntity(fieldAllocation.pc, context, stmts)
+            pointsto.toEntity(fieldAllocation.pc, context)
         )
         var pointsTo = emptyPointsToSet
         objects.forNewestNElements(objects.numElements) { as =>
@@ -1002,8 +1000,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                         field,
                         DefinitionSite(definedMethod, defPC),
                         depender,
-                        newContext(definedMethod),
-                        theTAC.stmts
+                        newContext(definedMethod)
                     )
                 )
             }
@@ -1038,7 +1035,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
             val objects = currentPointsTo(
                 depender,
-                pointsto.toEntity(defPC, newContext(definedMethod), theTAC.stmts)(
+                pointsto.toEntity(defPC, newContext(definedMethod))(
                     formalParameters,
                     definitionSites,
                     this
@@ -1247,8 +1244,7 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
                         field,
                         DefinitionSite(definedMethod, defPC),
                         depender,
-                        calleeContext,
-                        theTAC.stmts
+                        calleeContext
                     )
                 )
             }
