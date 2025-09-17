@@ -5,7 +5,10 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.br.{DeclaredMethod, DefinedMethod, Method, VirtualDeclaredMethod}
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys

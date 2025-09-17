@@ -5,7 +5,9 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.br.{ClassType, DeclaredMethod, Method}
+import org.opalj.br.ClassType
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.fpcf.properties.Context

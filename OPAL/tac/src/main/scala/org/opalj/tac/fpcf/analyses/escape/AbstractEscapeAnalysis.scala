@@ -6,7 +6,9 @@ package analyses
 package escape
 
 import scala.annotation.switch
-import org.opalj.br.{DeclaredMethod, Method}
+
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.VirtualFormalParameter
@@ -20,7 +22,13 @@ import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.EscapeViaStaticField
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.fpcf.{Entity, InterimResult, ProperPropertyComputationResult, Result, Results, SomeEPS, UBP}
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -54,10 +62,10 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): ProperPropertyComputationResult = {
-        if(context.targetMethod.hasSingleDefinedMethod){
+        if (context.targetMethod.hasSingleDefinedMethod) {
             retrieveTAC(context.targetMethod.definedMethod)
 
-            if(state.tacai.isDefined){
+            if (state.tacai.isDefined) {
                 analyzeTAC()
             } else {
                 InterimResult(context.entity, GlobalEscape, NoEscape, state.dependees, c)

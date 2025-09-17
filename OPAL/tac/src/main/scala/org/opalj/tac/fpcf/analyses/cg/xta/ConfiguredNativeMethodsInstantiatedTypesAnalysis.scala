@@ -132,54 +132,55 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
                     // Issue a warning if the configured types are not compatible
                     OPALLogger.warn(
                         "project configuration",
-                        s"configured points to data is invalid for ${state.callContext.method.toJava}"
+                        s"configured assignment data is invalid for ${state.callContext.method.toJava}"
                     )
                 }
 
             case EntityAssignment(MethodDescription(cf, name, desc), asd: AllocationSiteDescription) =>
-                // This means an object instantiation is configured to be the return value of a method - this means the
-                // instantiation happens inside the method. We must thus assign the instantiated type to the method's
-                // TypeSetEntity
-                assignInstantiationToMethod(cf, name, desc, asd)
+                // This means an object instantiation is configured to be the return value of the current method - this
+                // means the instantiation happens inside the method. We must thus assign the instantiated type to the
+                // method's TypeSetEntity
+
+                val theMethod = state.callContext.method
+
+                // Assert that the method description matches the current method - we cannot assign instantiations to
+                // a different method.
+                if (theMethod.declaringClassType.fqn != cf || theMethod.name != name || theMethod.descriptor.toJVMDescriptor != desc) {
+                    OPALLogger.warn(
+                        "project configuration",
+                        s"configured assignment data is invalid for ${theMethod.toJava}"
+                    )
+                } else {
+                    assignInstantiationToCurrentMethod(asd)
+                }
 
             case EntityAssignment(ParameterDescription(cf, name, desc, _), asd: AllocationSiteDescription) =>
                 // This means an object instantiated is configured to be the parameter in a method invocation - this
                 // means the instantiation happens inside the calling method. We must thus assign the instantiated type
                 // to the calling method's TypeSetEntity
-                assignInstantiationToMethod(cf, name, desc, asd)
+                assignInstantiationToCurrentMethod(asd)
 
             case _ =>
         }
     }
 
-    private def assignInstantiationToMethod(cf: String, name: String, desc: String, asd: AllocationSiteDescription)(
+    private def assignInstantiationToCurrentMethod(asd: AllocationSiteDescription)(
         implicit
         state:          State,
         partialResults: ArrayBuffer[SomePartialResult]
     ): Unit = {
-        val theMethod = state.callContext.method
+        val allocatedType = FieldType(asd.instantiatedType)
+        val methodSetEntity = state.typeSetEntity
 
-        // Assert that the method description matches the current method - we cannot assign instantiations to
-        // a different method.
-        if (theMethod.declaringClassType.fqn != cf || theMethod.name != name || theMethod.descriptor.toJVMDescriptor != desc) {
-            OPALLogger.warn(
-                "project configuration",
-                s"configured points to data is invalid for ${theMethod.toJava}"
+        // We only allow ReferenceTypes to be configured
+        if (allocatedType.isReferenceType) {
+
+            // Update the set of instantiated types for this method's TypeSetEntity
+            partialResults += PartialResult[TypeSetEntity, InstantiatedTypes](
+                methodSetEntity,
+                InstantiatedTypes.key,
+                InstantiatedTypes.update(methodSetEntity, UIDSet(allocatedType.asReferenceType))
             )
-        } else {
-            val allocatedType = FieldType(asd.instantiatedType)
-            val methodSetEntity = state.typeSetEntity
-
-            // We only allow ReferenceTypes to be configured
-            if (allocatedType.isReferenceType) {
-
-                // Update the set of instantiated types for this method's TypeSetEntity
-                partialResults += PartialResult[TypeSetEntity, InstantiatedTypes](
-                    methodSetEntity,
-                    InstantiatedTypes.key,
-                    InstantiatedTypes.update(methodSetEntity, UIDSet(allocatedType.asReferenceType))
-                )
-            }
         }
     }
 
@@ -236,7 +237,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
                     // Issue warning about incompatible type in configuration
                     OPALLogger.warn(
                         "project configuration",
-                        s"configured points to data is invalid for ${state.callContext.method.toJava}"
+                        s"configured assignment data is invalid for ${state.callContext.method.toJava}"
                     )
                 }
             case _ =>
