@@ -294,8 +294,8 @@ trait BytecodeOptimizer extends MethodsBinding {
                             ) {
                                 // Replace it by a short goto, which has length 3 instead of length 5
                                 instructions(pc + 0) = GOTO(newBranchoffset)
-                                instructions(pc + 1) = NOP
-                                instructions(pc + 2) = NOP
+                                instructions(pc + 3) = NOP
+                                instructions(pc + 4) = NOP
                                 simplified = true
                             } else {
                                 // let's replace the original jump
