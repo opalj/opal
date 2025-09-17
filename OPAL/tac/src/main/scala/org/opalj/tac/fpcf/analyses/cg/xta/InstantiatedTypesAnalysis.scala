@@ -320,10 +320,8 @@ class InstantiatedTypesAnalysisScheduler(
             }
         }
 
-        // Some cooperative analyses originally meant for RTA may require the global type set
-        // to be pre-initialized. Strings and classes can be introduced via constants anywhere.
-        // TODO Only introduce these types to the per-entity type sets where constants are used
-        initialize(p, UIDSet(ClassType.String, ClassType.Class))
+        // The external world will need some initial types to be instantiated. This is required especially when the
+        // Base JAR is not loaded, as the TypeSetEntity of fields like "System.out" will then be "ExternalWorld"
         initialize(ExternalWorld, initialInstantiatedTypes)
 
         def isRelevantArrayType(rt: Type): Boolean =
