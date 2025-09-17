@@ -55,6 +55,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
+import org.opalj.si.ProjectInformationKeys
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -114,8 +115,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
         field:           DeclaredField,
         fieldAllocation: DefinitionSite,
         depender:        Entity,
-        context:         Context,
-        stmts:           Array[Stmt[V]]
+        context:         Context
     )(
         implicit
         propertyStore: PropertyStore,
@@ -152,7 +152,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
                     case Assignment(pc, _, NewArray(_, _, tpe)) => Some((tpe, pc))
                     case Assignment(pc, _, c: Const)            => Some((c.tpe.asClassType, pc))
                     case Assignment(pc, _, fc: FunctionCall[V]) => Some((fc.descriptor.returnType.asReferenceType, pc))
-                    case _ =>
+                    case _                                      =>
                         hasUnknownAllocation = true
                         None
                 }
@@ -487,9 +487,8 @@ class RTATypeIterator(project: SomeProject)
                 handleType(av.theUpperTypeBound)
             case _ =>
         }
-        typesProperty.types.iterator.filter { tpe =>
-            isPossibleType(use, tpe) || additionalTypes.contains(tpe)
-        }.foreach(handleType)
+        typesProperty.types.iterator.filter { tpe => isPossibleType(use, tpe) || additionalTypes.contains(tpe) }
+            .foreach(handleType)
     }
 
     @inline override def foreachType(
@@ -530,6 +529,9 @@ class RTATypeIterator(project: SomeProject)
             isPossibleType(field, _)
         }.foreach(handleNewType)
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ PropertyStoreKey
 }
 
 /**
@@ -645,6 +647,9 @@ class PropagationBasedTypeIterator(
             isPossibleType(field, _)
         }.foreach(handleNewType)
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ PropertyStoreKey
 }
 
 /**
@@ -698,7 +703,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
             } else {
                 combine(
                     result,
-                    currentPointsTo(depender, pointsto.toEntity(defSite, context, stmts))
+                    currentPointsTo(depender, pointsto.toEntity(pc, context))
                 )
             }
         }
@@ -708,8 +713,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         field:           DeclaredField,
         fieldAllocation: DefinitionSite,
         depender:        Entity,
-        context:         Context,
-        stmts:           Array[Stmt[V]]
+        context:         Context
     )(
         implicit
         propertyStore: PropertyStore,
@@ -717,7 +721,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     ): PointsToSet = {
         val objects = currentPointsTo(
             depender,
-            pointsto.toEntity(fieldAllocation.pc, context, stmts)
+            pointsto.toEntity(fieldAllocation.pc, context)
         )
         var pointsTo = emptyPointsToSet
         objects.forNewestNElements(objects.numElements) { as =>
@@ -816,6 +820,9 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
                 None
         }
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :++ Seq(PropertyStoreKey, VirtualFormalParametersKey, DefinitionSitesKey)
 }
 
 /**
@@ -990,13 +997,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
 
                 result = combine(
                     result,
-                    typesProperty(
-                        field,
-                        DefinitionSite(method, defPC),
-                        depender,
-                        newContext(definedMethod),
-                        theTAC.stmts
-                    )
+                    typesProperty(field, DefinitionSite(method, defPC), depender, newContext(definedMethod))
                 )
             }
 
@@ -1030,7 +1031,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
             val objects = currentPointsTo(
                 depender,
-                pointsto.toEntity(defPC, newContext(definedMethod), theTAC.stmts)(
+                pointsto.toEntity(defPC, newContext(definedMethod))(
                     formalParameters,
                     definitionSites,
                     this
@@ -1236,7 +1237,7 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
 
                 result = combine(
                     result,
-                    typesProperty(field, DefinitionSite(method, defPC), depender, calleeContext, theTAC.stmts)
+                    typesProperty(field, DefinitionSite(method, defPC), depender, calleeContext)
                 )
             }
 

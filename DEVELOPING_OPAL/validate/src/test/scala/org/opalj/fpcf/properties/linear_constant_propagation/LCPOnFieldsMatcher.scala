@@ -153,7 +153,7 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEProper
                             expectedVariableElements.forall { index =>
                                 elements.get(index) match {
                                     case Some(linear_constant_propagation.problem.VariableValue) => true
-                                    case None =>
+                                    case None                                                    =>
                                         initValue == linear_constant_propagation.problem.VariableValue
                                     case _ => false
                                 }
@@ -161,7 +161,7 @@ class ArrayValueMatcher extends AbstractRepeatablePropertyMatcher with IDEProper
                             expectedUnknownElements.forall { index =>
                                 elements.get(index) match {
                                     case Some(linear_constant_propagation.problem.UnknownValue) => true
-                                    case None =>
+                                    case None                                                   =>
                                         initValue == linear_constant_propagation.problem.UnknownValue
                                     case _ => false
                                 }

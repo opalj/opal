@@ -759,9 +759,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     private def continuationForFieldAccesses[P <: MethodFieldAccessInformation[P]](
-        oldAccessEOptP: EOptionP[Method, P],
-        noAccesses:     P,
-        key:            PropertyKey[P],
+        oldAccessEOptP:            EOptionP[Method, P],
+        noAccesses:                P,
+        key:                       PropertyKey[P],
         handleIndirectFieldAccess: (
             PC,
             DeclaredField,

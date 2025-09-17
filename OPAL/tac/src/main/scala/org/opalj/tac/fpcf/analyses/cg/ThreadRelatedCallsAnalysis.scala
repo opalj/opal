@@ -329,7 +329,7 @@ class ThreadStartAnalysis private[cg] (
                 // if there is no runnable passed as parameter, we are sound
                 if (indexOfRunnableParameter != -1) {
                     allocationContext match {
-                        case NoContext => partialAnalysisResults.addIncompleteCallSite(callPC)
+                        case NoContext                       => partialAnalysisResults.addIncompleteCallSite(callPC)
                         case context: ContextType @unchecked =>
                             val theReceiver = params(indexOfRunnableParameter).asVar
                             val runnableTypes = typeIterator.typesProperty(
@@ -676,9 +676,7 @@ class ThreadRelatedCallsAnalysis private[cg] (
             new UncaughtExceptionHandlerAnalysis(p, m).registerAPIMethod()
         }
 
-        val threadStartResults = threadStartMethods.iterator.map { m =>
-            new ThreadStartAnalysis(p, m).registerAPIMethod()
-        }
+        val threadStartResults = threadStartMethods.iterator.map { m => new ThreadStartAnalysis(p, m).registerAPIMethod() }
 
         Results(uncaughtExceptionHandlerResults ++ threadStartResults)
     }

@@ -59,7 +59,11 @@ class TamiFlexLogData(
         }
     }
 
-    def methods(source: DeclaredMethod, reflectionTarget: String, sourceLine: Int): scala.collection.Set[DeclaredMethod] = {
+    def methods(
+        source:           DeclaredMethod,
+        reflectionTarget: String,
+        sourceLine:       Int
+    ): scala.collection.Set[DeclaredMethod] = {
         val sourceDesc = toMethodDesc(source)
         val key = (sourceDesc, reflectionTarget, sourceLine)
         if (_methods.contains(key))
@@ -96,7 +100,7 @@ class TamiFlexLogData(
  * @author Florian Kuebler
  */
 object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
-    val configKey = "org.opalj.tac.fpcf.analyses.pointsto.TamiFlex.logFile"
+    val configKey = "org.opalj.br.fpcf.analyses.pointsto.TamiFlex.logFile"
 
     def isConfigured(project: SomeProject): Boolean = project.config.hasPath(configKey)
 

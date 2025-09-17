@@ -1013,7 +1013,7 @@ object Project {
                                     project.staticCall(cf.thisType, invokestatic) match {
                                         case _: Success[_] => /*OK*/
                                         case Empty         => /*OK - partial project*/
-                                        case Failure =>
+                                        case Failure       =>
                                             val ex = InconsistentProjectException(
                                                 s"target method of invokestatic call in " +
                                                     m.toJava(s"pc=$pc; $invokestatic - $disclaimer") +
@@ -1032,7 +1032,7 @@ object Project {
                                     project.specialCall(cf.thisType, invokespecial) match {
                                         case _: Success[_] => /*OK*/
                                         case Empty         => /*OK - partial project*/
-                                        case Failure =>
+                                        case Failure       =>
                                             val ex = InconsistentProjectException(
                                                 s"target method of invokespecial call in " +
                                                     m.toJava(s"pc=$pc; $invokespecial - $disclaimer") +
@@ -1435,7 +1435,7 @@ object Project {
                                 declaredMethodPackageName,
                                 declaredMethod
                             ) match {
-                                case _: NoResult => true
+                                case _: NoResult               => true
                                 case Success(overridingMethod) =>
                                     val nextOverridingMethods = methods(overridingMethod)
                                     if (nextOverridingMethods.nonEmpty) {
@@ -1825,7 +1825,7 @@ object Project {
 
                 classFile.attributes.foreach {
                     case NestHost(hostClassType) => putNestInfo(classType, hostClassType)
-                    case NestMembers(classes) =>
+                    case NestMembers(classes)    =>
                         putNestInfo(classType, classType)
                         classes.foreach(putNestInfo(_, classType))
                     case _ =>

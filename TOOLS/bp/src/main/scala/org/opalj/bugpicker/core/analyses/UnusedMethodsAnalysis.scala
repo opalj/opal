@@ -4,17 +4,17 @@ package bugpicker
 package core
 package analyses
 
+import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.bi.VisibilityModifier
 import org.opalj.br.Method
-import org.opalj.br.analyses.SomeProject
-import org.opalj.ai.analyses.cg.ComputedCallGraph
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.VoidType
+import org.opalj.br.analyses.SomeProject
 import org.opalj.issues.Issue
-import org.opalj.issues.Relevance
-import org.opalj.issues.IssueKind
 import org.opalj.issues.IssueCategory
+import org.opalj.issues.IssueKind
 import org.opalj.issues.MethodLocation
+import org.opalj.issues.Relevance
 
 /**
  * Identifies unused methods and constructors using the given call graph.
@@ -72,7 +72,8 @@ object UnusedMethodsAnalysis {
             // Let's handle the standard methods...
             //
             if ((name == "equals" && descriptor == ObjectEqualsMethodDescriptor) ||
-                (name == "hashCode" && descriptor == ObjectHashCodeMethodDescriptor)) {
+                (name == "hashCode" && descriptor == ObjectHashCodeMethodDescriptor)
+            ) {
                 return Relevance.VeryLow;
             }
 
@@ -81,14 +82,15 @@ object UnusedMethodsAnalysis {
             //
             if (name.length() > 3 &&
                 ((name.startsWith("get") && returnType != VoidType && declaredParametersCount == 0) ||
-                    (name.startsWith("set") && returnType == VoidType && declaredParametersCount == 1)) &&
-                    {
-                        val fieldNameCandidate = name.substring(3)
-                        val fieldName = fieldNameCandidate.charAt(0).toLower + fieldNameCandidate.substring(1)
-                        classFile.findField(fieldName).nonEmpty ||
-                            classFile.findField('_' + fieldName).nonEmpty ||
-                            classFile.findField('_' + fieldNameCandidate).nonEmpty
-                    }) {
+                (name.startsWith("set") && returnType == VoidType && declaredParametersCount == 1)) &&
+                {
+                    val fieldNameCandidate = name.substring(3)
+                    val fieldName = fieldNameCandidate.charAt(0).toLower + fieldNameCandidate.substring(1)
+                    classFile.findField(fieldName).nonEmpty ||
+                        classFile.findField('_' + fieldName).nonEmpty ||
+                        classFile.findField('_' + fieldNameCandidate).nonEmpty
+                }
+            ) {
                 return Relevance.VeryLow;
             }
 

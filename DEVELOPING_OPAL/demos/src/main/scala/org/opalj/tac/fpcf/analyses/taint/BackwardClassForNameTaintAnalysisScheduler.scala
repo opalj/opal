@@ -16,16 +16,15 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.ifds.Callable
 import org.opalj.ifds.IFDSAnalysis
 import org.opalj.ifds.IFDSAnalysisScheduler
 import org.opalj.ifds.IFDSFact
 import org.opalj.ifds.IFDSPropertyMetaInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeIteratorKey
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaICFG
+import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.BasicIFDSEvaluationRunner
-import org.opalj.tac.fpcf.analyses.ifds.JavaMethod
-import org.opalj.tac.fpcf.analyses.ifds.JavaStatement
 import org.opalj.tac.fpcf.analyses.ifds.taint.ArrayElement
 import org.opalj.tac.fpcf.analyses.ifds.taint.FlowFact
 import org.opalj.tac.fpcf.analyses.ifds.taint.InstanceField
@@ -49,7 +48,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     /**
      * The string parameters of all public methods are entry points.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, JavaStatement])] =
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] =
         p.allProjectClassFiles.flatMap {
             case cf if cf.thisType == ClassType.Class =>
                 cf.methods.collect {
@@ -71,7 +70,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
      * Do not perform unbalanced return for methods tha can be called from outside the library.
      */
     override def shouldPerformUnbalancedReturn(
-        source: (Method, IFDSFact[TaintFact, JavaStatement])
+        source: (Method, IFDSFact[TaintFact, Method, JavaStatement])
     ): Boolean = {
         super.shouldPerformUnbalancedReturn(source) &&
         (!icfg.canBeCalledFromOutside(source._1) ||
@@ -86,7 +85,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     override protected def createFlowFactAtCall(
         call:                JavaStatement,
         in:                  TaintFact,
-        unbalancedCallChain: Seq[Callable]
+        unbalancedCallChain: Seq[Method]
     ): Option[FlowFact] = None
 
     /**
@@ -97,7 +96,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
         calleeFact:   FlowFact,
         caller:       Method,
         in:           TaintFact,
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Option[FlowFact] = None
 
     /**
@@ -107,7 +106,7 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     override def createFlowFactAtExit(
         callee:       Method,
         in:           TaintFact,
-        unbCallChain: Seq[Callable]
+        unbCallChain: Seq[Method]
     ): Option[FlowFact] = {
         if (unbCallChain.nonEmpty && // source fact is unbalanced return fact
             icfg.canBeCalledFromOutside(callee) && (in match {
@@ -118,13 +117,13 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
                 case _                                       => false
             })
         ) {
-            Some(FlowFact(unbCallChain.prepended(JavaMethod(callee))))
+            Some(FlowFact(unbCallChain.prepended(callee)))
         } else None
     }
 }
 
 object BackwardClassForNameTaintAnalysisScheduler
-    extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement] {
+    extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement, JavaICFG] {
 
     override def init(
         p:  SomeProject,
@@ -152,7 +151,7 @@ object BackwardClassForNameTaintAnalysisRunner extends BasicIFDSEvaluationRunner
     override def analysisClass(analysisConfig: IFDSRunnerConfig): BackwardClassForNameTaintAnalysisScheduler.type =
         BackwardClassForNameTaintAnalysisScheduler
 
-    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?], ps: PropertyStore): Unit = {
+    override def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?, ?], ps: PropertyStore): Unit = {
         val propertyKey = BackwardClassForNameTaintAnalysisScheduler.property.key
         ps.entities(propertyKey)
             .collect {

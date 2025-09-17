@@ -74,7 +74,7 @@ class LinearConstantPropagationProblem
                         if (isExpressionGeneratedByFact(assignment.expr)(source, sourceFact, target)) {
                             /* Generate fact for target of assignment if the expression is influenced by the source
                              * fact */
-                            Set(sourceFact, VariableFact(assignment.targetVar.name, source.pc))
+                            Set(sourceFact, VariableFact(assignment.targetVar.name, source.tacIndex))
                         } else {
                             Set(sourceFact)
                         }
@@ -296,7 +296,7 @@ class LinearConstantPropagationProblem
                                     /* Only propagate if the variable represented by the source fact is one possible
                                      * initializer of the variable at the return site */
                                     if (returnExpr.asVar.definedBy.contains(definedAtIndex)) {
-                                        Set(VariableFact(assignment.targetVar.name, returnSite.pc))
+                                        Set(VariableFact(assignment.targetVar.name, returnSite.tacIndex))
                                     } else {
                                         Set.empty
                                     }
@@ -562,7 +562,7 @@ class LinearConstantPropagationProblem
                         returnSite.stmt.astID match {
                             case Assignment.ASTID =>
                                 val assignment = returnSite.stmt.asAssignment
-                                Set(VariableFact(assignment.targetVar.name, returnSite.pc))
+                                Set(VariableFact(assignment.targetVar.name, returnSite.tacIndex))
 
                             case _ => Set.empty
                         }
@@ -603,7 +603,7 @@ class LinearConstantPropagationProblem
                             returnSite.stmt.astID match {
                                 case Assignment.ASTID =>
                                     val assignment = returnSite.stmt.asAssignment
-                                    Set(callSiteFact, VariableFact(assignment.targetVar.name, returnSite.pc))
+                                    Set(callSiteFact, VariableFact(assignment.targetVar.name, returnSite.tacIndex))
 
                                 case _ => Set(callSiteFact)
                             }

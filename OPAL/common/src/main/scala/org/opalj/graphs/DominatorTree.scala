@@ -108,7 +108,7 @@ object DominatorTree {
         foreachSuccessorOf:       Int => ((Int => Unit) => Unit),
         foreachPredecessorOf:     Int => ((Int => Unit) => Unit),
         maxNode:                  Int,
-        dominatorTreeFactory: (
+        dominatorTreeFactory:     (
             /*startNode*/ Int, /*hasVirtualStartNode*/ Boolean, /*foreachSuccessorOf*/ Int => ((Int => Unit) => Unit),
             Array[Int]
         ) => D

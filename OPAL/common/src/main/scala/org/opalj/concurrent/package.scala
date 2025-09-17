@@ -1,6 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org
-package opalj
+package org.opalj
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors

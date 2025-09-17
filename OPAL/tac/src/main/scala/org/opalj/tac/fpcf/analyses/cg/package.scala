@@ -73,12 +73,12 @@ package object cg {
                             case _: LoadMethodHandle | _: LoadMethodHandle_W => constantTypes += ClassType.MethodHandle
                             case _: LoadMethodType | _: LoadMethodType_W     => constantTypes += ClassType.MethodType
                             case _: LoadString | _: LoadString_W             => constantTypes += ClassType.String
-                            case _: LoadDynamic =>
+                            case _: LoadDynamic                              =>
                                 constantTypes += inst.asInstanceOf[LoadDynamic].descriptor.asReferenceType
                             case _: LoadDynamic_W =>
                                 constantTypes += inst.asInstanceOf[LoadDynamic_W].descriptor.asReferenceType
                             case ACONST_NULL =>
-                            case _ =>
+                            case _           =>
                                 logOnce(Warn("unknown load constant instruction"))
                         }
                     }

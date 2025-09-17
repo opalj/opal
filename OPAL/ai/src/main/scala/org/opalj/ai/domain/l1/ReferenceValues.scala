@@ -478,7 +478,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             // At most one value represented by MultipleReferenceValues
             // has the same origin as this value.
             other.values find { that => this.origin == that.origin } match {
-                case None => StructuralUpdate(other.addValue(this))
+                case None       => StructuralUpdate(other.addValue(this))
                 case Some(that) =>
                     if (this eq that) {
                         // <=> this value is part of the other "MultipleReferenceValues",
@@ -1238,7 +1238,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          */
         override def summarize(pc: Int): DomainReferenceValue = {
             upperTypeBound /*<= basically creates the summary*/ match {
-                case EmptyUpperTypeBound => NullValue(pc)
+                case EmptyUpperTypeBound    => NullValue(pc)
                 case UIDSet1(referenceType) =>
                     ReferenceValue(pc, isNull, isPrecise, referenceType, refId)
                 case utb =>

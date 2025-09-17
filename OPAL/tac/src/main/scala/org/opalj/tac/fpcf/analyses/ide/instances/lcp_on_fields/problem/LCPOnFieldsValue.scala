@@ -49,7 +49,9 @@ case class ArrayValue(
     elements:  Map[Int, LinearConstantPropagationValue]
 ) extends LCPOnFieldsValue {
     override def toString: String =
-        s"ArrayValue($initValue, ${elements.toSeq.sortBy(_._1).map { case (index, value) => s"$index -> $value" }.mkString(", ")})"
+        s"ArrayValue($initValue, ${elements.toSeq.sortBy(_._1).map { case (index, value) =>
+                s"$index -> $value"
+            }.mkString(", ")})"
 }
 
 /**

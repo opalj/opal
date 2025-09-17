@@ -106,25 +106,13 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             checkWriteDominance(definedMethod, taCode, receiverVarOpt, writeIndex)
         } else {
             if (field.isStatic || receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter) {
-                // We consider lazy initialization if there is only a single write outside an initializer, so we can
-                // ignore synchronization.
-                state.fieldAssignability == LazilyInitialized ||
-                state.fieldAssignability == UnsafelyLazilyInitialized ||
-                {
-                    if (considerLazyInitialization) {
-                        // A field written outside an initializer must be lazily initialized or it is assignable.
-                        state.fieldAssignability = determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode)
-                        state.fieldAssignability eq Assignable
-                    } else
-                        true
-                }
-            } else if (receiverVarOpt.isDefined && !referenceHasNotEscaped(
-                           receiverVarOpt.get,
-                           taCode.stmts,
-                           definedMethod,
-                           callers
-                       )
-            ) {
+                // A field written outside an initializer must be lazily initialized or it is assignable
+                if (considerLazyInitialization) {
+                    state.fieldAssignability = determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode)
+                    state.fieldAssignability eq Assignable
+                } else
+                    true
+            } else if (receiverVarOpt.isDefined && !referenceHasNotEscaped(receiverVarOpt.get, taCode.stmts, definedMethod, callers)) {
                 // Here the clone pattern is determined among others
                 // note that here we assume real three address code (flat hierarchy)
 
@@ -268,8 +256,8 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
         state.checkLazyInit.isDefined && hasMultipleNonConstructorWrites(state.checkLazyInit.get._1) ||
             super.handleFieldWriteAccessInformation(newEP) ||
-            openWrites.exists { writeAccess =>
-                checkWriteDominance(writeAccess._1, writeAccess._2, writeAccess._3, writeAccess._4)
+            openWrites.exists { case (method, tac, receiver, index) =>
+                checkWriteDominance(method, tac, receiver, index)
             }
     }
 
@@ -279,21 +267,20 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         seenIndirectAccesses:       Int,
         writes:                     Seq[(DefinedMethod, TACode[TACMethodParameter, V], Option[V], Int)]
     )(implicit state: State): Boolean = {
-        writes.exists { writeAccess =>
+        writes.exists { case (writeMethod, _, _, writeIndex) =>
             fieldReadAccessInformation.getNewestAccesses(
                 fieldReadAccessInformation.numDirectAccesses - seenDirectAccesses,
                 fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
-            ).exists { readAccess =>
-                val method = contextProvider.contextFromId(readAccess._1).method
-
+            ).exists { case (readContextID, readPC, readReceiver, _) =>
+                val method = contextProvider.contextFromId(readContextID).method
                 method.definedMethod.classFile != state.field.classFile ||
-                    (writeAccess._1 eq method) && {
+                    (writeMethod eq method) && {
                         val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
 
-                        if (readAccess._3.isDefined && readAccess._3.get._2.forall(isFormalParameter)) {
+                        if (readReceiver.isDefined && readReceiver.get._2.forall(isFormalParameter)) {
                             false
                         } else {
-                            !dominates(writeAccess._4, taCode.pcToIndex(readAccess._2), taCode)
+                            !dominates(writeIndex, taCode.pcToIndex(readPC), taCode)
                         }
                     }
             }
@@ -342,8 +329,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             (accessingMethod ne method) && !accessingMethod.isInitializer
         }) ||
             writes.iterator.distinctBy(_._1).size < writes.size // More than one field write per method was detected
-
-        false
     }
 
     /**
@@ -659,7 +644,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         var enqueuedBBs: Set[CFGNode] = startBB.predecessors
         var worklist: List[BasicBlock] = getPredecessors(startBB, Set.empty)
         var seen: Set[BasicBlock] = Set.empty
-        var result: List[(Int, Int, Int)] = List.empty
+        var result: List[(Int, Int, Int)] = List.empty /* guard pc, true target pc, false target pc */
 
         while (worklist.nonEmpty) {
             val curBB = worklist.head
@@ -713,10 +698,10 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
         var finalResult: List[(Int, Int, Int, Int)] = List.empty
         var fieldReadIndex = 0
-        result.foreach(result => {
+        result.foreach { case (guardPC, trueTargetPC, falseTargetPC) =>
             // The field read that defines the value checked by the guard must be used only for the
             // guard or directly if the field's value was not the default value
-            val ifStmt = code(result._1).asIf
+            val ifStmt = code(guardPC).asIf
 
             val expr =
                 if (ifStmt.leftExpr.isConst) ifStmt.rightExpr
@@ -730,14 +715,14 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 val fieldReadUses = code(definitions.head).asAssignment.targetVar.usedBy
 
                 val fieldReadUsedCorrectly =
-                    fieldReadUses.forall(use => use == result._1 || use == result._3)
+                    fieldReadUses.forall(use => use == guardPC || use == falseTargetPC)
 
                 if (definitions.size == 1 && definitions.head >= 0 && fieldReadUsedCorrectly) {
                     // Found proper guard
-                    finalResult = (fieldReadIndex, result._1, result._2, result._3) :: finalResult
+                    finalResult = (fieldReadIndex, guardPC, trueTargetPC, falseTargetPC) :: finalResult
                 }
             }
-        })
+        }
         finalResult
     }
 
