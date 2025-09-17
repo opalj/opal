@@ -8,8 +8,6 @@ package rta
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.br.ArrayType
-import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.FieldType
 import org.opalj.br.Method
@@ -56,16 +54,6 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         }
     }
 
-    private[this] def canBeInstantiated(rt: ReferenceType): Boolean = rt match {
-        case _: ArrayType  => true
-        case ct: ClassType =>
-            val cfOption = project.classFile(ct)
-            cfOption.isDefined && {
-                val cf = cfOption.get
-                !cf.isInterfaceDeclaration && !cf.isAbstract
-            }
-    }
-
     override def processMethod(callContext: ContextType, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult =
         processMethodWithoutBody(callContext)
 
@@ -86,12 +74,11 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         ) {
             val m = dm.definedMethod
             val returnType = m.returnType.asReferenceType
-            // TODO We should probably handle ArrayTypes as well
             val types =
-                if (m.returnType.isArrayType && m.returnType.asArrayType.elementType.isClassType)
-                    Array(returnType, m.returnType.asArrayType.elementType.asClassType)
+                if (returnType.isArrayType && returnType.asArrayType.elementType.isClassType)
+                    Array(returnType, returnType.asArrayType.elementType.asClassType)
                 else Array(returnType)
-            types.filter(canBeInstantiated)
+            types.filter(t => canBeInstantiated(t, project))
         } else
             return Results();
 

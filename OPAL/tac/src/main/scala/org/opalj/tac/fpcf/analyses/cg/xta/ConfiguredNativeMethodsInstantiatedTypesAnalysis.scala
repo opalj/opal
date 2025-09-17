@@ -70,7 +70,15 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     override def processMethodWithoutBody(callContext: ContextType): ProperPropertyComputationResult = {
         val declaredMethod = callContext.method
 
-        if (!nativeMethodData.contains(declaredMethod)) {
+        if (!nativeMethodData.contains(declaredMethod) &&
+            declaredMethod.hasSingleDefinedMethod &&
+            declaredMethod.definedMethod.body.isEmpty &&
+            declaredMethod.descriptor.returnType.isReferenceType
+        ) {
+            // If we do not have configuration for the current method, and the method is defined but has no body
+            // (e.g. native), we soundly assume that the method's return type may be instantiated
+            return assignReturnTypes(callContext)
+        } else if (!nativeMethodData.contains(declaredMethod)) {
             // We have nothing to contribute to this method
             return Results()
         }
@@ -98,6 +106,25 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
     override def processMethod(callContext: ContextType, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         processMethodWithoutBody(callContext)
+    }
+
+    private def assignReturnTypes(callContext: ContextType): ProperPropertyComputationResult = {
+        val declaredMethod = callContext.method
+        val setEntity = typeSetEntitySelector(declaredMethod)
+
+        val returnType = declaredMethod.descriptor.returnType.asReferenceType
+
+        // If we have an array return type, we want the ArrayType and its element type to be considered
+        val types =
+            if (returnType.isArrayType && returnType.asArrayType.elementType.isClassType)
+                Array(returnType, returnType.asArrayType.elementType.asClassType)
+            else Array(returnType)
+
+        // Filter desired types for those that can be instantiated
+        val returnTypesToAssign = UIDSet.fromSpecific(types.filter(t => canBeInstantiated(t, project)))
+
+        // Update entity with new types
+        PartialResult(setEntity, InstantiatedTypes.key, InstantiatedTypes.update(setEntity, returnTypesToAssign))
     }
 
     /**
