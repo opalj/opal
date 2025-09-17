@@ -135,7 +135,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         definedMethod: DefinedMethod,
         taCode:        TACode[TACMethodParameter, V],
         receiverVar:   Option[V],
-        index:         Int
+        writeIndex:    Int
     )(implicit state: State): Boolean = {
         val stmts = taCode.stmts
 
@@ -155,12 +155,12 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             return true;
 
         val assignedValueObject =
-            if (index > 0 && stmts(index).isPutStatic) {
-                stmts(index).asPutStatic.value.asVar
+            if (writeIndex > 0 && stmts(writeIndex).isPutStatic) {
+                stmts(writeIndex).asPutStatic.value.asVar
             } else if (
-                index > 0 && stmts(index).isPutField && stmts(index).asPutField.value.asVar.value.isArrayValue.isYes
+                writeIndex > 0 && stmts(writeIndex).isPutField && stmts(writeIndex).asPutField.value.asVar.value.isArrayValue.isYes
             ) {
-                stmts(index).asPutField.value.asVar
+                stmts(writeIndex).asPutField.value.asVar
             } else
                 receiverVar.get
 
@@ -202,7 +202,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
         val fraiEP = state.fieldReadAccessDependee.get
 
-        val writeAccess = (definedMethod, taCode, receiverVar, index)
+        val writeAccess = (definedMethod, taCode, receiverVar, writeIndex)
         if (fraiEP.hasUBP && fieldReadsNotDominated(fraiEP.ub, 0, 0, Seq(writeAccess)))
             return true;
 
