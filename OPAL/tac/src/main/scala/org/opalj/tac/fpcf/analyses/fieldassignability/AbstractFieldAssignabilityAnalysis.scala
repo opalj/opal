@@ -137,7 +137,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         val thisType = field.classFile.thisType
         if (!field.isFinal) {
             if (field.isPublic) {
-                return Result(field, Assignable)
+                return Result(field, Assignable);
             } else if (field.isProtected) {
                 if (typeExtensibility(thisType).isYesOrUnknown || !closedPackages(thisType.packageName)) {
                     return Result(field, Assignable);
