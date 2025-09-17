@@ -108,11 +108,18 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             if (field.isStatic || receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter) {
                 // A field written outside an initializer must be lazily initialized or it is assignable
                 if (considerLazyInitialization) {
-                    state.fieldAssignability = determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode)
+                    state.fieldAssignability =
+                        determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode)
                     state.fieldAssignability eq Assignable
                 } else
                     true
-            } else if (receiverVarOpt.isDefined && !referenceHasNotEscaped(receiverVarOpt.get, taCode.stmts, definedMethod, callers)) {
+            } else if (receiverVarOpt.isDefined && !referenceHasNotEscaped(
+                           receiverVarOpt.get,
+                           taCode.stmts,
+                           definedMethod,
+                           callers
+                       )
+            ) {
                 // Here the clone pattern is determined among others
                 // note that here we assume real three address code (flat hierarchy)
 
@@ -149,16 +156,16 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 return true;
         }
 
-        // If we have no information about the receiver, we soundly return true.
-        // However, a static field has no receiver.
+        // If we have no information about the receiver, but we should have it, soundly return true.
         if (receiverVar.isEmpty && !state.field.isStatic)
             return true;
 
         val assignedValueObject =
             if (writeIndex > 0 && stmts(writeIndex).isPutStatic) {
                 stmts(writeIndex).asPutStatic.value.asVar
-            } else if (
-                writeIndex > 0 && stmts(writeIndex).isPutField && stmts(writeIndex).asPutField.value.asVar.value.isArrayValue.isYes
+            } else if (writeIndex > 0 && stmts(
+                           writeIndex
+                       ).isPutField && stmts(writeIndex).asPutField.value.asVar.value.isArrayValue.isYes
             ) {
                 stmts(writeIndex).asPutField.value.asVar
             } else
