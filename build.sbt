@@ -612,5 +612,3 @@ ThisBuild / pomExtra := MavenPublishing.pomNodeSeq()
 /******
  * Settings set for benchmarking, allowing for generating heapdumps
  ******/
-run / fork := true
-//TODO: https://github.com/azolotko/sbt-jfr @Fabian

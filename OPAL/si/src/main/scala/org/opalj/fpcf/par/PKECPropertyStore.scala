@@ -516,10 +516,7 @@ class PKECPropertyStore(
 
             startThreads(new PartialPropertiesFinalizerThread(_))
 
-            subPhaseId += 1//TODO: @Fabian Hier die Zeitmessung rausnehmen
-            //println("Memory usage cleared:")
-            //memory{clearObsoletePropertyKinds()} { usage => println(usage) }
-            //println("")
+            subPhaseId += 1
             clearObsoletePropertyKinds()
             ps(AnalysisKeyId).clear()
         }

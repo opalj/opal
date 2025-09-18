@@ -96,9 +96,8 @@ abstract class MultiplePhaseScheduling extends SchedulingStrategy {
             remainingAnalyses --= phaseAnalyses
             computePhase(ps, phaseAnalyses, remainingAnalyses)
         }
-        val disableCleanup = config.getBoolean(DisableCleanup)
 
-        if(!disableCleanup) calculateDeletions(schedule, ps, config) else schedule
+        if(config.getBoolean(DisableCleanup)) calculateDeletions(schedule, ps, config) else schedule
     }
 
     private def calculateDeletions[A](schedule: List[PhaseConfiguration[A]], ps: PropertyStore, config: Config): List[PhaseConfiguration[A]] = {
