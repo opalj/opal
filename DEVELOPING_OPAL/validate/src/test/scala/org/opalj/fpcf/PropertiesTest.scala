@@ -333,7 +333,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             as <- allocationSites
             m = as.method
             pc = as.pc
-            code = m.body.get
+            code = m.definedMethod.body.get
             annotations = code.runtimeInvisibleTypeAnnotations filter { ta =>
                 ta.target match {
                     case TAOfNew(`pc`) => true
@@ -346,7 +346,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                 as,
                 (a: String) =>
                     s"AllocationSite: (pc ${as.pc} in " +
-                        s"${m.toJava(s"@$a").substring(24)})",
+                        s"${m.definedMethod.toJava(s"@$a").substring(24)})",
                 annotations
             )
         }

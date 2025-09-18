@@ -3,6 +3,7 @@ package org.opalj
 package tac
 package common
 
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -16,7 +17,7 @@ import org.opalj.br.analyses.SomeProject
  */
 object DefinitionSitesKey extends ProjectInformationKey[DefinitionSites, Nothing] {
 
-    override def requirements(project: SomeProject): ProjectInformationKeys = Seq.empty
+    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def compute(project: SomeProject): DefinitionSites = new DefinitionSites(project)
 }

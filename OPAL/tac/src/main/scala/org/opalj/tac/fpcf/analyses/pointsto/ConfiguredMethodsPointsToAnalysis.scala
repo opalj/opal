@@ -54,7 +54,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private lazy val virtualFormalParameters = project.get(VirtualFormalParametersKey)
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
+    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
         ConfiguredMethods.reader.read(
             p.config,
             "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
@@ -98,7 +98,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 handleCallers(
                     callers,
                     null,
-                    Array(PointsToRelation(
+                    Array(EntityAssignment(
                         MethodDescription(cf, name, desc),
                         AllocationSiteDescription(cf, name, desc, tpe, arrayTypes)
                     )),
@@ -113,7 +113,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     private[this] def handleCallers(
         newCallers:                 EOptionP[DeclaredMethod, Callers],
         oldCallers:                 Callers,
-        data:                       Array[PointsToRelation],
+        data:                       Array[EntityAssignment],
         filterNonInstantiableTypes: Boolean = false
     ): ProperPropertyComputationResult = {
         val dm = newCallers.e
@@ -139,7 +139,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
     private[this] def handleNativeMethod(
         callContext:                ContextType,
-        data:                       Array[PointsToRelation],
+        data:                       Array[EntityAssignment],
         filterNonInstantiableTypes: Boolean
     ): Iterator[ProperPropertyComputationResult] = {
         implicit val state: State =
@@ -147,7 +147,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
         var pc = -1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
-        for (PointsToRelation(lhs, rhs) <- data) {
+        for (EntityAssignment(lhs, rhs) <- data) {
             val nextPC = handleGet(rhs, pc, pc - 1, filterNonInstantiableTypes)
             pc = handlePut(lhs, pc, nextPC)
         }
@@ -177,7 +177,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         rhs match {
             case md: MethodDescription =>
                 val method =
-                    typeIterator.expandContext(state.callContext, md.method(declaredMethods), pc)
+                    // Configured Calls are made at PC=0, so we need to expand the context accordingly
+                    typeIterator.expandContext(state.callContext, md.method(declaredMethods), 0)
                 state.includeSharedPointsToSet(
                     defSiteObject,
                     currentPointsTo(defSiteObject, method, PointsToSetLike.noFilter),
@@ -268,7 +269,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                 )
 
             case StaticFieldDescription(cf, name, fieldType) =>
-                handlePutStatic(declaredFields(ClassType(cf), name, FieldType(fieldType)), IntTrieSet(0))
+                handlePutStatic(declaredFields(ClassType(cf), name, FieldType(fieldType)), IntTrieSet(pc))
 
             case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
@@ -277,14 +278,16 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     if (fp.origin == -1) {
                         handleCallReceiver(
                             IntTrieSet(pc),
-                            typeIterator.expandContext(state.callContext, method, pc),
+                            // Configured Calls are made at PC=0, so we need to expand the context accordingly
+                            typeIterator.expandContext(state.callContext, method, 0),
                             isNonVirtualCall = true
                         )
                     } else {
                         handleCallParameter(
                             IntTrieSet(pc),
                             -fp.origin - 2,
-                            typeIterator.expandContext(state.callContext, method, pc)
+                            // Configured calls are made at PC=0, so we need to expand the context accordingly
+                            typeIterator.expandContext(state.callContext, method, 0)
                         )
                     }
                 }

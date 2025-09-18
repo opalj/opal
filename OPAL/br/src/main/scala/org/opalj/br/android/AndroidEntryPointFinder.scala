@@ -8,6 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.EntryPointFinder
@@ -29,7 +30,9 @@ object AndroidEntryPointFinder extends EntryPointFinder {
         super.requirements(project) ++ Seq(AndroidManifestKey)
     }
 
-    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
+        val declaredMethods = project.get(DeclaredMethodsKey)
+
         val entryPointDescriptions = getConfiguredEntryPoints(project)
         val manifest: AndroidManifest = project.get(AndroidManifestKey)
 
@@ -51,7 +54,7 @@ object AndroidEntryPointFinder extends EntryPointFinder {
             }
         }
 
-        entryPoints
+        entryPoints.map(declaredMethods.apply)
     }
 
     private def getConfiguredEntryPoints(project: SomeProject) = {
