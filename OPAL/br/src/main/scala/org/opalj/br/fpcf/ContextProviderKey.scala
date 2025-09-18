@@ -8,6 +8,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.SimpleContextProvider
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
 /**
@@ -35,13 +36,19 @@ object ContextProviderKey extends ProjectInformationKey[ContextProvider, Context
     }
 
     override def compute(theProject: SomeProject): ContextProvider = {
+        implicit val logContext: LogContext = theProject.logContext
         theProject.getProjectInformationKeyInitializationData(this) match {
-            case Some(s) => s
-            case None    =>
+            case Some(s) =>
+                OPALLogger.info(
+                    "analysis configuration",
+                    s"ContextProvider $s is selected"
+                )
+                s
+            case None =>
                 OPALLogger.error(
                     "analysis configuration",
                     s"no context provider configured even though requirements were run"
-                )(theProject.logContext)
+                )
                 throw new IllegalStateException()
         }
     }
