@@ -14,7 +14,7 @@ import com.typesafe.config.Config
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
-import org.opalj.util.PerformanceEvaluation.memory
+//import org.opalj.util.PerformanceEvaluation.memory
 
 /**
  * Yet another parallel property store.
@@ -470,7 +470,7 @@ class PKECPropertyStore(
         threads.foreach { _.start }
         threads.foreach { _.join }
         if (doTerminate) {
-            if (exception ne null) throw exception;
+            if (exception ne null) throw exception
             else throw new InterruptedException
         }
     }
@@ -517,10 +517,10 @@ class PKECPropertyStore(
             startThreads(new PartialPropertiesFinalizerThread(_))
 
             subPhaseId += 1//TODO: @Fabian Hier die Zeitmessung rausnehmen
-            println("Memory usage cleared:")
-            memory{clearObsoletePropertyKinds()} { usage => println(usage) }
-            println("")
-            //clearObsoletePropertyKinds()
+            //println("Memory usage cleared:")
+            //memory{clearObsoletePropertyKinds()} { usage => println(usage) }
+            //println("")
+            clearObsoletePropertyKinds()
             ps(AnalysisKeyId).clear()
         }
 
@@ -585,7 +585,7 @@ class PKECPropertyStore(
                     if (tasks.isEmpty) {
                         val active = activeTasks.get()
                         if (active == 0) {
-                            return;
+                            return
                         } else {
                             // try workstealing:
                             val largestQueue = queues.maxBy(_.size())

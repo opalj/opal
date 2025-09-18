@@ -3,10 +3,9 @@ package org.opalj.cli
 import com.typesafe.config.{Config, ConfigValueFactory}
 
 object ClearPropertyKeysArg extends ParsedArg[String, String] {
-    override val name: String = "keepPropertyKeys"
+    override val name: String = "clearPropertyKeys"
     override val description: String = "List of Properties to keep at the end of the analysis"
-    override val defaultValue: Option[String] = Some(String)
-
+    override val defaultValue: Option[String] = None
     override def apply(config: Config, value: Option[String]): Config = {
         val keys = value.getOrElse(Nil)
         config.withValue(
