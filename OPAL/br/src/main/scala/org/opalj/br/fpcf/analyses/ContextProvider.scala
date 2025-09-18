@@ -33,6 +33,8 @@ trait ContextProvider {
     def contextFromId(contextId: Int): Context
 
     def requiredProjectInformation: ProjectInformationKeys = Nil
+
+    override def toString: String = getClass.getName
 }
 
 trait SimpleContextProvider extends ContextProvider {
@@ -91,4 +93,6 @@ trait CallStringContextProvider extends ContextProvider {
     }
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(CallStringContextsKey)
+
+    override def toString: String = s"${super.toString}(k=$k)"
 }

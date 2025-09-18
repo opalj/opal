@@ -41,7 +41,7 @@ object ContextProviderKey extends ProjectInformationKey[ContextProvider, Context
             case Some(s) =>
                 OPALLogger.info(
                     "analysis configuration",
-                    s"the ContextProvider used is $s"
+                    s"ContextProvider $s is selected"
                 )
                 s
             case None =>

@@ -1253,5 +1253,7 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
         }
     }
 
+    override def toString: String = s"${super.toString}(k=$k, l=$l)"
+
     // TODO several field-related methods are missing here!
 }
