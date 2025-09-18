@@ -20,7 +20,6 @@ import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.log.GlobalLogContext
 
 /**
  * @author Arne Lottmann
@@ -45,7 +44,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             .withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
             .withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
 
-        Project(jarFile, GlobalLogContext, config)
+        Project(jarFile, config)
     }
 
     val StaticMethods = ClassType("proxy/StaticMethods")

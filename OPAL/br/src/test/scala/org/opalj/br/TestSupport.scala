@@ -23,7 +23,6 @@ import org.opalj.br.reader.readJREClassFiles
 import org.opalj.br.reader.readRTJarClassFiles
 import org.opalj.bytecode.JavaBase
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.log.GlobalLogContext
 import org.opalj.util.gc
 
 /**
@@ -116,7 +115,7 @@ object TestSupport {
             case None =>
                 (allBITestJARs().iterator ++ allBITestProjectFolders().iterator) map { biProjectJAR =>
                     val readerFactory =
-                        () => Project(biProjectJAR, GlobalLogContext, configForProject(biProjectJAR))
+                        () => Project(biProjectJAR, configForProject(biProjectJAR))
                     (biProjectJAR.getName, readerFactory)
                 }
         }

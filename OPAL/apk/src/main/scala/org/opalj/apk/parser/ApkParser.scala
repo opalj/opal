@@ -254,12 +254,7 @@ object ApkParser {
 
         val jarDir = apkParser.parseDexCode(dexParser)._1
 
-        val project =
-            Project(
-                jarDir.toFile,
-                GlobalLogContext,
-                projectConfig
-            )
+        val project = Project(jarDir.toFile, projectConfig)
 
         project.updateProjectInformationKeyInitializationData(ApkComponentsKey)(_ => apkParser)
         project.get(ApkComponentsKey)

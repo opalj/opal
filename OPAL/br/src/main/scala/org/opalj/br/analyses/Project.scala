@@ -87,74 +87,95 @@ import org.opalj.util.PerformanceEvaluation.time
  *         tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
  *         location of a resource (e.g., a source or class file.)
  *
- * @param  logContext The logging context associated with this project. Using the logging
- *         context after the project is no longer referenced (garbage collected) is not
- *         possible.
+ * @param all[Project|Library]ClassFiles The class files associated with this project, defined in the analyzed project
+ *                                       itself and/or in libraries.
  *
- * @param classFilesCount The number of classes (including inner and annoymous classes as
- *         well as interfaces, annotations, etc.) defined in libraries and in
- *         the analyzed project.
+ * @param libraryClassFilesAreInterfacesOnly If `true`, only the public interfaces of the methods of the library's
+ *                                           classes are available; if `false` all methods are reified including bodies.
  *
- * @param methodsCount The number of methods defined in libraries and in the analyzed project.
+ * @param allMethods All methods defined by this project as well as the visible methods defined by the libraries.
  *
- * @param fieldsCount The number of fields defined in libraries and in the analyzed project.
+ * @param allFields All fields defined by this project as well as the reified fields defined in libraries.
  *
- * @param allMethods All methods defined by this project as well as the visible methods
- *                   defined by the libraries.
- * @param allFields All fields defined by this project as well as the reified fields defined
- *                  in libraries.
- * @param allSourceElements `Iterable` over all source elements of the project. The set of all
- *                         source elements consists of (in this order): all methods + all fields
- *                         + all class files.
+ * @param allSourceElements `Iterable` over all source elements of the project. The set of all source elements consists
+ *                          of (in this order): all methods + all fields + all class files.
  *
- * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interfaces
- *         of the methods of the library's classes are available; if `false` all methods and
- *         method bodies are reified.
+ * @param [project|library]classFilesCount The number of classes (including inner and anonymous classes as well as
+ *         interfaces, annotations, etc.) defined in the analyzed project and/or in libraries.
+ *
+ * @param [project|library]methodsCount The number of methods defined in the analyzed project and/or in libraries.
+ *
+ * @param [project|library]fieldsCount The number of fields defined in the analyzed project and/or in libraries.
+ *
+ * @param codeSize The number of bytes used for method bodies for all reified methods.
+ *
+ * @param classHierarchy The class hierarchy of the analyzed project and libraries, including super-/subtype information
+ *                       and information on interface implementations.
+ *
+ * @param virtualMethodsCount The number of virtual methods (i.e., non-static, instance methods) defined in the analyzed
+ *                            project and libraries.
+ *
+ * @param instanceMethods All instance methods available on a ClassType, including methods inherited from superclasses
+ *                        and default methods from inherited interfaces.
+ *
+ * @param overridingMethods All non-abstract methods overriding a given method, including the method itself.
+ *
+ * @param nests For all nest members, the respective nest host (see JVM specification, §5.4.4)
+ *
+ * @param [Method|Var]HandleSubtypes All subtypes of the class MethodHandle resp. VarHandle
+ *        (cf. JVM specification, §2.9.3) which are defined in the analyzed project and libraries.
+ *
+ * @param config The configuration used for this project. Configuration includes transformations to be applied to the
+ *               analyzed code, algorithms used for scheduling analyses, analysis specific configuration and
+ *               pre-configured results.
+ *
+ * @param logContext The logging context associated with this project. Using the logging context after the project is no
+ *                   longer referenced (garbage collected) is not possible.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
  */
 class Project[Source] private (
-    private[this] val projectModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
-    private[this] val projectClassFiles:          Array[ClassFile], // contains no "module-info" class files
-    private[this] val libraryModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
-    private[this] val libraryClassFiles:          Array[ClassFile],
-    final val libraryClassFilesAreInterfacesOnly: Boolean,
+    private[this] val projectClassFiles:          Array[ClassFile], // class files of the analyzed projec, contains no "module-info" class files
+    private[this] val projectModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files of the analyzed project
+    private[this] val libraryClassFiles:          Array[ClassFile], // class files of the analyzed projec, contains no "module-info" class files
+    private[this] val libraryModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files defined in libraries
     private[this] val methodsWithBody:            Array[Method], // methods with bodies sorted by size
     private[this] val methodsWithBodyAndContext:  Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
     private[this] val projectTypes:               Set[ClassType], // the types defined by the class files belonging to the project's code
-    private[this] val classTypeToClassFile:       Map[ClassType, ClassFile],
-    private[this] val sources:                    Map[ClassType, Source],
-    final val projectClassFilesCount:             Int,
-    final val projectMethodsCount:                Int,
-    final val projectFieldsCount:                 Int,
-    final val libraryClassFilesCount:             Int,
-    final val libraryMethodsCount:                Int,
-    final val libraryFieldsCount:                 Int,
-    final val codeSize:                           Long,
-    final val MethodHandleSubtypes:               Set[ClassType],
-    final val VarHandleSubtypes:                  Set[ClassType],
-    final val classFilesCount:                    Int,
-    final val methodsCount:                       Int,
-    final val fieldsCount:                        Int,
+    private[this] val classTypeToClassFile:       Map[ClassType, ClassFile], // mapping of types to the class files defining them
+    private[this] val sources:                    Map[ClassType, Source], // mapping of class files to their respective sources (usually URL to the defining class file)
+    final val allClassFiles:                      Iterable[ClassFile],
     final val allProjectClassFiles:               ArraySeq[ClassFile],
     final val allLibraryClassFiles:               ArraySeq[ClassFile],
-    final val allClassFiles:                      Iterable[ClassFile],
+    final val libraryClassFilesAreInterfacesOnly: Boolean,
     final val allMethods:                         Iterable[Method],
     final val allFields:                          Iterable[Field],
     final val allSourceElements:                  Iterable[SourceElement],
-    final val virtualMethodsCount:                Int,
+    final val classFilesCount:                    Int,
+    final val projectClassFilesCount:             Int,
+    final val libraryClassFilesCount:             Int,
+    final val methodsCount:                       Int,
+    final val projectMethodsCount:                Int,
+    final val libraryMethodsCount:                Int,
+    final val fieldsCount:                        Int,
+    final val projectFieldsCount:                 Int,
+    final val libraryFieldsCount:                 Int,
+    final val codeSize:                           Long,
     final val classHierarchy:                     ClassHierarchy,
+    final val virtualMethodsCount:                Int,
     final val instanceMethods:                    Map[ClassType, ArraySeq[MethodDeclarationContext]],
     final val overridingMethods:                  Map[Method, immutable.Set[Method]],
     final val nests:                              Map[ClassType, ClassType],
+    final val MethodHandleSubtypes:               Set[ClassType],
+    final val VarHandleSubtypes:                  Set[ClassType],
     // Note that the referenced array will never shrink!
     @volatile protected[this] var projectInformation: AtomicReferenceArray[AnyRef] =
         new AtomicReferenceArray[AnyRef](32)
 )(
     implicit
-    final val logContext: LogContext,
-    final val config:     Config
+    final val config:     Config,
+    final val logContext: LogContext
 ) extends si.Project with ProjectLike {
 
     /**
@@ -183,43 +204,43 @@ class Project[Source] private (
         val newLogContext = logContext.successor
         val newClassHierarchy = classHierarchy.updatedLogContext(newLogContext)
         new Project(
-            projectModules,
             projectClassFiles,
-            libraryModules,
+            projectModules,
             libraryClassFiles,
-            libraryClassFilesAreInterfacesOnly,
+            libraryModules,
             methodsWithBody,
             methodsWithBodyAndContext,
             projectTypes,
             classTypeToClassFile,
             sources,
-            projectClassFilesCount,
-            projectMethodsCount,
-            projectFieldsCount,
-            libraryClassFilesCount,
-            libraryMethodsCount,
-            libraryFieldsCount,
-            codeSize,
-            MethodHandleSubtypes,
-            VarHandleSubtypes,
-            classFilesCount,
-            methodsCount,
-            fieldsCount,
+            allClassFiles,
             allProjectClassFiles,
             allLibraryClassFiles,
-            allClassFiles,
+            libraryClassFilesAreInterfacesOnly,
             allMethods,
             allFields,
             allSourceElements,
-            virtualMethodsCount,
+            classFilesCount,
+            projectClassFilesCount,
+            libraryClassFilesCount,
+            methodsCount,
+            projectMethodsCount,
+            libraryMethodsCount,
+            fieldsCount,
+            projectFieldsCount,
+            libraryFieldsCount,
+            codeSize,
             newClassHierarchy,
+            virtualMethodsCount,
             instanceMethods,
             overridingMethods,
             nests,
+            MethodHandleSubtypes,
+            VarHandleSubtypes,
             newProjectInformation
         )(
-            newLogContext,
-            config
+            config,
+            newLogContext
         )
     }
 
@@ -237,8 +258,15 @@ class Project[Source] private (
 
     final val VarHandleClassFile: Option[ClassFile] = classFile(ClassType.VarHandle)
 
+    /**
+     * All methods in the analyzed project and libraries that have method bodies.
+     */
     final val allMethodsWithBody: ArraySeq[Method] = ArraySeq.unsafeWrapArray(this.methodsWithBody)
 
+    /**
+     * All methods in the analyzed project and libraries that have method bodies, including the source they originate
+     * from.
+     */
     final val allMethodsWithBodyWithContext: ArraySeq[MethodInfo[Source]] = {
         ArraySeq.unsafeWrapArray(this.methodsWithBodyAndContext)
     }
@@ -442,15 +470,18 @@ class Project[Source] private (
     \* ------------------------------------------------------------------------------------------ */
 
     /**
-     * Creates a new `Project` which also includes the given class files.
+     * Creates a new `Project` consisting of the previous project and additional already processed class files.
+     *
+     * @param projectClassFilesWithSources The list of additional class files of this project that are considered
+     *      to belong to the application/library that will be analyzed.
      */
     def extend(projectClassFilesWithSources: Iterable[(ClassFile, Source)]): Project[Source] = {
         Project.extend[Source](this, projectClassFilesWithSources)
     }
 
     /**
-     * Creates a new `Project` which also includes this as well as the other project's
-     * class files.
+     * Creates a new `Project` which includes the class files from this as well as the other project and uses the
+     * configuration and logging of this project.
      */
     def extend(other: Project[Source]): Project[Source] = {
         if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly) {
@@ -463,7 +494,7 @@ class Project[Source] private (
     }
 
     /**
-     * The number of all source elements (fields, methods and class files).
+     * The number of all source elements (fields, methods, and class files).
      */
     def sourceElementsCount: Int = fieldsCount + methodsCount + classFilesCount
 
@@ -480,6 +511,21 @@ class Project[Source] private (
         parForeachArrayElement(classFiles, NumberOfThreadsForCPUBoundTasks, isInterrupted)(f)
     }
 
+    /**
+     * Performs function `f` in parallel on each class file from the analyzed project and libraries.
+     */
+    def parForeachClassFile[T](
+        isInterrupted: () => Boolean = defaultIsInterrupted
+    )(
+        f: ClassFile => T
+    ): Unit = {
+        parForeachProjectClassFile(isInterrupted)(f)
+        parForeachLibraryClassFile(isInterrupted)(f)
+    }
+
+    /**
+     * Performs function `f` in parallel on each class file from the analyzed project (excluding library class files).
+     */
     def parForeachProjectClassFile[T](
         isInterrupted: () => Boolean = defaultIsInterrupted
     )(
@@ -488,21 +534,15 @@ class Project[Source] private (
         doParForeachClassFile(this.projectClassFiles, isInterrupted)(f)
     }
 
+    /**
+     * Performs function `f` in parallel on each class file from the analyzed libraries.
+     */
     def parForeachLibraryClassFile[T](
         isInterrupted: () => Boolean = defaultIsInterrupted
     )(
         f: ClassFile => T
     ): Unit = {
         doParForeachClassFile(this.libraryClassFiles, isInterrupted)(f)
-    }
-
-    def parForeachClassFile[T](
-        isInterrupted: () => Boolean = defaultIsInterrupted
-    )(
-        f: ClassFile => T
-    ): Unit = {
-        parForeachProjectClassFile(isInterrupted)(f)
-        parForeachLibraryClassFile(isInterrupted)(f)
     }
 
     /**
@@ -571,8 +611,8 @@ class Project[Source] private (
     }
 
     /**
-     * Iterates over all methods in parallel; actually, the methods belonging to a specific class
-     * are analyzed sequentially..
+     * Iterates over all methods in parallel; actually, the methods belonging to a specific class are processed
+     * sequentially.
      */
     def parForeachMethod[T](
         isInterrupted: () => Boolean = defaultIsInterrupted
@@ -659,17 +699,31 @@ class Project[Source] private (
         groups
     }
 
+    /**
+     *  All class files of the analyzed project and libraries, together with their sources.
+     */
+    def classFilesWithSources: Iterable[(ClassFile, Source)] = {
+        projectClassFilesWithSources ++ libraryClassFilesWithSources
+    }
+
+    /**
+     *  All class files of the analyzed project (excluding library class files), together with their sources.
+     */
     def projectClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         projectClassFiles.view.map { classFile => (classFile, sources(classFile.thisType)) }
     }
 
+    /**
+     *  All class files of the analyzed libraries, together with their sources.
+     */
     def libraryClassFilesWithSources: Iterable[(ClassFile, Source)] = {
         libraryClassFiles.view.map { classFile => (classFile, sources(classFile.thisType)) }
     }
 
-    def classFilesWithSources: Iterable[(ClassFile, Source)] = {
-        projectClassFilesWithSources ++ libraryClassFilesWithSources
-    }
+    /**
+     * Returns `true` iff the given type belongs to the project and not to a library.
+     */
+    def isProjectType(classType: ClassType): Boolean = projectTypes.contains(classType)
 
     /**
      * Returns `true` if the given class file belongs to the library part of the project.
@@ -686,32 +740,27 @@ class Project[Source] private (
     def isLibraryType(classType: ClassType): Boolean = !projectTypes.contains(classType)
 
     /**
-     * Returns `true` iff the given type belongs to the project and not to a library.
+     * Returns the source (for example, a `File` object or `URL` object) from which
+     * the class file was loaded that defines the given class type, if any.
      */
-    def isProjectType(classType: ClassType): Boolean = projectTypes.contains(classType)
+    def source(classType: ClassType): Option[Source] = sources.get(classType)
 
     /**
      * Returns the source (for example, a `File` object or `URL` object) from which
-     * the class file was loaded that defines the given class type, if any.
-     *
-     * @param classType Some class type.
+     * the class file was loaded.
      */
-    def source(classType: ClassType): Option[Source] = sources.get(classType)
     def source(classFile: ClassFile): Option[Source] = source(classFile.thisType)
 
     /**
      * Returns the class file that defines the given `classType`; if any.
-     *
-     * @param classType Some class type.
      */
     override def classFile(classType: ClassType): Option[ClassFile] = {
         classTypeToClassFile.get(classType)
     }
 
     /**
-     * Returns all available `ClassFile` objects for the given `classTypes` that
-     * pass the given `filter`. `ClassType`s for which no `ClassFile` is available
-     * are ignored.
+     * Returns all available `ClassFile` objects for the given `classTypes` that  pass the given `filter`.
+     * `ClassType`s for which no `ClassFile` is available are ignored.
      */
     def lookupClassFiles(
         classTypes: Iterable[ClassType]
@@ -721,6 +770,9 @@ class Project[Source] private (
         classTypes.view.flatMap(classFile) filter (classFileFilter)
     }
 
+    /**
+     * Determines whether the given ClassType has an instance method of the given name and descriptor.
+     */
     def hasInstanceMethod(
         receiverType:     ClassType,
         name:             String,
@@ -904,6 +956,9 @@ class Project[Source] private (
  */
 object Project {
 
+    /**
+     *  The class file reader to use for library class files that should be loaded without method bodies.
+     */
     lazy val JavaLibraryClassFileReader: Java17LibraryFramework.type = Java17LibraryFramework
 
     @volatile private[this] var theCache: SoftReference[BytecodeInstructionsCache] = {
@@ -923,6 +978,9 @@ object Project {
         cache
     }
 
+    /**
+     *  The class file reader to use for class files that should be loaded with method bodies.
+     */
     def JavaClassFileReader(
         implicit
         theLogContext: LogContext = GlobalLogContext,
@@ -1484,20 +1542,55 @@ object Project {
     //
 
     /**
-     * Given a reference to a class file, jar file or a folder containing jar and class
-     * files, all class files will be loaded and a project will be returned.
+     * Creates a `Project` from a class file, jar file, jmod file, or directory containing class-, jar-, and jmod files.
      *
      * The global logger will be used for logging messages.
+     *
+     * The default configuration (compiled from reference.conf files) will be used for setting up the project.
      */
     def apply(file: File): Project[URL] = {
         Project.apply(file, OPALLogger.globalLogger())
     }
 
+    /**
+     * Creates a `Project` from a class file, jar file, jmod file, or directory containing class-, jar-, and jmod files.
+     *
+     * The specified logger will be used for logging messages.
+     *
+     * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     */
     def apply(file: File, projectLogger: OPALLogger): Project[URL] = {
         apply(JavaClassFileReader().ClassFiles(file), projectLogger = projectLogger)
     }
 
-    def apply(file: File, logContext: LogContext, config: Config): Project[URL] = {
+    /**
+     * Creates a `Project` from a class file, jar file, jmod file, or directory containing class-, jar-, and jmod files.
+     *
+     * The global log context will be used for logging messages.
+     *
+     * The given configuration will be used for setting up the project.
+     */
+    def apply(file: File, config: Config): Project[URL] = {
+        val reader = JavaClassFileReader(GlobalLogContext, config)
+        this(
+            projectClassFilesWithSources = reader.ClassFiles(file),
+            libraryClassFilesWithSources = Iterable.empty,
+            libraryClassFilesAreInterfacesOnly = true,
+            virtualClassFiles = Iterable.empty,
+            handleInconsistentProject = defaultHandlerForInconsistentProjects,
+            config = config,
+            GlobalLogContext
+        )
+    }
+
+    /**
+     * Creates a `Project` from a class file, jar file, jmod file, or directory containing class-, jar-, and jmod files.
+     *
+     * The specified log context will be used for logging messages.
+     *
+     * The given configuration will be used for setting up the project.
+     */
+    def apply(file: File, config: Config, logContext: LogContext): Project[URL] = {
         val reader = JavaClassFileReader(logContext, config)
         this(
             projectClassFilesWithSources = reader.ClassFiles(file),
@@ -1510,11 +1603,21 @@ object Project {
         )
     }
 
+    /**
+     * Creates a `Project` from several class files, jar files, jmod files, or directories containing class-, jar-, and
+     * jmod files.
+     * For files in specified as libary files, method bodies will not be loaded, only the methods' interfaces will be
+     * available.
+     *
+     * The given configuration will be used for setting up the project.
+     *
+     * The specified log context will be used for logging messages.
+     */
     def apply(
         projectFiles: Array[File],
         libraryFiles: Array[File],
-        logContext:   LogContext,
-        config:       Config
+        config:       Config,
+        logContext:   LogContext
     ): Project[URL] = {
         this(
             JavaClassFileReader(logContext, config).AllClassFiles(projectFiles),
@@ -1527,6 +1630,17 @@ object Project {
         )
     }
 
+    /**
+     * Creates a `Project` from already processed class files.
+     *
+     * The global logger will be used for logging messages.
+     *
+     * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     *
+     * @param projectClassFilesWithSources The list of class files of this project that are considered
+     *      to belong to the application/library that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     */
     def apply[Source](
         projectClassFilesWithSources: Iterable[(ClassFile, Source)]
     ): Project[Source] = {
@@ -1536,6 +1650,17 @@ object Project {
         )
     }
 
+    /**
+     * Creates a `Project` from already processed class files.
+     *
+     * The specified logger will be used for logging messages.
+     *
+     * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     *
+     * @param projectClassFilesWithSources The list of class files of this project that are considered
+     *      to belong to the application/library that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     */
     def apply[Source](
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         projectLogger:                OPALLogger
@@ -1548,6 +1673,15 @@ object Project {
         )(projectLogger = projectLogger)
     }
 
+    /**
+     * Creates a `Project` from a class file, jar file, jmod file, or directory containing class-, jar-, and jmod files.
+     * For the file specified as libary files, method bodies will not be loaded, only the methods' interfaces will be
+     * available.
+     *
+     * The global log context will be used for logging messages.
+     *
+     * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     */
     def apply(
         projectFile: File,
         libraryFile: File
@@ -1571,6 +1705,16 @@ object Project {
         )
     }
 
+    /**
+     * Creates a `Project` from several class files, jar files, jmod files, or directories containing class-, jar-, and
+     * jmod files.
+     * For files in specified as libary files, method bodies will not be loaded, only the methods' interfaces will be
+     * available.
+     *
+     * The global logger will be used for logging messages.
+     *
+     * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     */
     def apply(
         projectFiles: Array[File],
         libraryFiles: Array[File]
@@ -1583,13 +1727,19 @@ object Project {
         )
     }
 
+    /**
+     * Creates a new `Project` consisting of the previous Project and an additional class file, jar file, jmod file, or
+     * directory containing class-, jar-, and jmod files, which is fully loaded including method bodies.
+     */
     def extend(project: Project[URL], file: File): Project[URL] = {
         project.extend(JavaClassFileReader().ClassFiles(file))
     }
 
     /**
-     * Creates a new `Project` that consists of the class files of the previous
-     * project and the newly given class files.
+     * Creates a new `Project` consisting of the previous project and additional already processed class files.
+     *
+     * @param projectClassFilesWithSources The list of additional class files of this project that are considered
+     *      to belong to the application/library that will be analyzed.
      */
     def extend[Source](
         project:                      Project[Source],
@@ -1607,8 +1757,14 @@ object Project {
     }
 
     /**
-     * Creates a new `Project` that consists of the class files of the previous
-     * project and the newly given class files.
+     * Creates a new `Project` consisting of the previous project and additional already processed class files,
+     * separated into additional project- and library class files.
+     *
+     * @param projectClassFilesWithSources The list of additional class files of this project that are considered
+     *      to belong to the application/library that will be analyzed.
+     *
+     * @param libraryClassFilesWithSources The list of additional class files of this project that make up
+     *      the libraries used by the project that will be analyzed.
      */
     private def extend[Source](
         project:                      Project[Source],
@@ -1624,6 +1780,22 @@ object Project {
         )(project.config, OPALLogger.logger(project.logContext.successor))
     }
 
+    /**
+     * Creates a `Project` from already processed class files. The flag should be set in accordance to whether the files
+     * given as library class files have been loaded with method bodies or as interfaces only.
+     *
+     * The global logger will be used for logging messages.
+     *
+     * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     *
+     * @param projectClassFilesWithSources The list of class files of this project that are considered
+     *      to belong to the application/library that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     *
+     * @param libraryClassFilesWithSources The list of class files of this project that make up
+     *      the libraries used by the project that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     */
     def apply[Source](
         projectClassFilesWithSources:       Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources:       Iterable[(ClassFile, Source)],
@@ -1661,7 +1833,11 @@ object Project {
     }
 
     /**
-     * Creates a new Project.
+     * Creates a new `Project` from already processed class files.
+     *
+     * The global logger will be used for logging messages.
+     *
+     * The default configuration (compiled from reference.conf files) will be used for setting up the project.
      *
      * @param projectClassFilesWithSources The list of class files of this project that are considered
      *      to belong to the application/library that will be analyzed.
@@ -1715,6 +1891,41 @@ object Project {
         )
     }
 
+    /**
+     * Creates a new `Project` from already processed class files.
+     *
+     * The given configuration will be used for setting up the project.
+     *
+     * The specified logger will be used for logging messages.
+     *
+     * @param projectClassFilesWithSources The list of class files of this project that are considered
+     *      to belong to the application/library that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     *
+     * @param libraryClassFilesWithSources The list of class files of this project that make up
+     *      the libraries used by the project that will be analyzed.
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     *
+     * @param libraryClassFilesAreInterfacesOnly If `true` then only the non-private interface of
+     *         of the classes belonging to the library was loaded. I.e., this setting just reflects
+     *         the way how the class files were loaded; it does not change the classes!
+     *
+     * @param virtualClassFiles A list of virtual class files that have no direct
+     *      representation in the project.
+     *      Such declarations are created, e.g., to handle `invokedynamic`
+     *      instructions.
+     *      '''In general, such class files should be added using
+     *      `projectClassFilesWithSources` and the `Source` should be the file that
+     *      was the reason for the creation of this additional `ClassFile`.'''
+     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     *
+     * @param handleInconsistentProject A function that is called back if the project
+     *      is not consistent. The default behavior
+     *      ([[defaultHandlerForInconsistentProjects]]) is to write a warning
+     *      message to the console. Alternatively it is possible to throw the given
+     *      exception to cancel the loading of the project (which is the only
+     *      meaningful option for several advanced analyses.)
+     */
     def apply[Source](
         projectClassFilesWithSources:       Iterable[(ClassFile, Source)],
         libraryClassFilesWithSources:       Iterable[(ClassFile, Source)],
@@ -2001,39 +2212,39 @@ object Project {
             val allSourceElements: Iterable[SourceElement] = allMethods ++ allFields ++ allClassFiles
 
             val project = new Project(
-                projectModules,
                 projectClassFilesArray,
-                libraryModules,
+                projectModules,
                 libraryClassFilesArray,
-                libraryClassFilesAreInterfacesOnly,
+                libraryModules,
                 methodsWithBodySortedBySize,
                 methodsWithBodySortedBySizeWithContext,
                 projectTypes,
                 classTypeToClassFile,
                 sources,
-                projectClassFilesCount,
-                projectMethodsCount,
-                projectFieldsCount,
-                libraryClassFilesCount,
-                libraryMethodsCount,
-                libraryFieldsCount,
-                codeSize,
-                MethodHandleSubtypes,
-                VarHandleSubtypes,
-                classFilesCount,
-                methodsCount,
-                fieldsCount,
+                allClassFiles,
                 allProjectClassFiles,
                 allLibraryClassFiles,
-                allClassFiles,
+                libraryClassFilesAreInterfacesOnly,
                 allMethods,
                 allFields,
                 allSourceElements,
-                virtualMethodsCount,
+                classFilesCount,
+                projectClassFilesCount,
+                libraryClassFilesCount,
+                methodsCount,
+                projectMethodsCount,
+                libraryMethodsCount,
+                fieldsCount,
+                projectFieldsCount,
+                libraryFieldsCount,
+                codeSize,
                 classHierarchy,
+                virtualMethodsCount,
                 Await.result(instanceMethodsFuture, Duration.Inf),
                 Await.result(overridingMethodsFuture, Duration.Inf),
-                nests
+                nests,
+                MethodHandleSubtypes,
+                VarHandleSubtypes
             )
 
             time {
