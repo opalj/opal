@@ -9,7 +9,7 @@ object DisableCleanupArg extends PlainArg[Boolean] {
     override def apply(config: Config, value: Option[Boolean]): Config = {
         config.withValue(
             "org.opalj.fpcf.AnalysisScenario.DisableCleanup",
-            ConfigValueFactory.fromAnyRef(!value.get)
+            ConfigValueFactory.fromAnyRef(value.getOrElse(false))
         )
     }
 }

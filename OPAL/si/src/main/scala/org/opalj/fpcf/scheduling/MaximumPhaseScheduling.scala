@@ -101,9 +101,17 @@ abstract class MultiplePhaseScheduling extends SchedulingStrategy {
     }
 
     private def calculateDeletions[A](schedule: List[PhaseConfiguration[A]], ps: PropertyStore, config: Config): List[PhaseConfiguration[A]] = {
-        val pkToKeep = if(config.getString(PropertiesToKeepKey).trim.isEmpty) List.empty else config.getString(PropertiesToKeepKey).split(",").map(_.trim.toInt).toList
-        val pkToDelete = if(config.getString(PropertiesToRemoveKey).trim.isEmpty) List.empty else config.getString(PropertiesToRemoveKey).split(",").map(_.trim.toInt).toSet
-        val properties: mutable.Set[Int] =
+        def getSetOrNilForProperty(propertyKey: String) = {
+            if (!config.hasPath(propertyKey)) Nil
+            else {
+                val rawValue = config.getString(propertyKey).trim
+                if (rawValue.isEmpty) Set.empty[Int]
+                else rawValue.split(",").map(_.trim.toInt).toSet
+            }
+        }
+        val pkToKeep = getSetOrNilForProperty(PropertiesToKeepKey)
+        val pkToDelete = getSetOrNilForProperty(PropertiesToRemoveKey)
+         val properties: mutable.Set[Int] =
             schedule.iterator.flatMap(_.propertyKinds.propertyKindsComputedInThisPhase.map(key => key.id)).to(mutable.Set)
 
         val modifiedSchedule: ListBuffer[PhaseConfiguration[A]] = ListBuffer.from(schedule)
