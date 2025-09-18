@@ -57,7 +57,7 @@ object FieldAccessInformationAnalysisDemo extends ProjectsAnalysisApplication {
 
         var analysisTime: Seconds = Seconds.None
 
-        val callGraphKey = analysisConfig(CallGraphArg)
+        val callGraphKey = analysisConfig(CallGraphArg).get
         val typeIterator = callGraphKey.getTypeIterator(project)
         project.updateProjectInformationKeyInitializationData(ContextProviderKey) { _ => typeIterator }
 
