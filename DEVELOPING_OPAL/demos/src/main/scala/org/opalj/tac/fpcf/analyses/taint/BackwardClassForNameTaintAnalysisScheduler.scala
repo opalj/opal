@@ -48,13 +48,12 @@ class BackwardClassForNameTaintProblem(p: SomeProject) extends JavaBackwardTaint
     /**
      * The string parameters of all public methods are entry points.
      */
-    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] =
-        p.allProjectClassFiles.flatMap {
-            case cf if cf.thisType == ClassType.Class =>
-                cf.methods.collect {
-                    case m if m.name == "forName" => (m, new IFDSFact(Variable(-2)))
-                }
-        }
+    override val entryPoints: Seq[(Method, IFDSFact[TaintFact, Method, JavaStatement])] = {
+        val cf = p.classFile(ClassType.Class)
+        if (cf.isDefined)
+            cf.get.findMethod("forName").map((_, new IFDSFact(Variable(-2))))
+        else Seq.empty
+    }
 
     /**
      * There is no sanitizing in this analysis.
