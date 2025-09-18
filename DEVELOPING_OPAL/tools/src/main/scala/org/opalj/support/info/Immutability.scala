@@ -50,7 +50,7 @@ import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.bytecode.JDKArg
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.cli.{AnalysisLevelArg, ChoiceArg, ClearPropertyKeysArg, ConfigurationNameArg, EnableCleanupArg, KeepPropertyKeysArg, LibraryArg, OutputDirArg, ParsedArg, PlainArg, ThreadsNumArg}
+import org.opalj.cli.{AnalysisLevelArg, ChoiceArg, ClearPropertyKeysArg, ConfigurationNameArg, DisableCleanupArg, KeepPropertyKeysArg, LibraryArg, OutputDirArg, ParsedArg, PlainArg, ThreadsNumArg}
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -122,7 +122,7 @@ object Immutability extends ProjectsAnalysisApplication {
             ignoreLazyInitializationArg !,
             ConfigurationNameArg !,
             EscapeArg,
-            EnableCleanupArg,
+            DisableCleanupArg,
             KeepPropertyKeysArg,
             ClearPropertyKeysArg
         )

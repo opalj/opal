@@ -6,7 +6,7 @@ package scheduling
 import com.typesafe.config.Config
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.AnalysisScenario.ConfigKeyPrefix
-import org.opalj.fpcf.scheduling.CleanupCalculation.{EnableCleanup, PropertiesToKeepKey, PropertiesToRemoveKey}
+import org.opalj.fpcf.scheduling.CleanupCalculation.{DisableCleanup, PropertiesToKeepKey, PropertiesToRemoveKey}
 import org.opalj.fpcf.scheduling.MultiplePhaseScheduling.AnalysisScheduleLazyTransformerInMultiplePhasesKey
 import org.opalj.graphs.{sccs, topologicalSort}
 import org.opalj.log.{LogContext, OPALLogger}
@@ -96,9 +96,9 @@ abstract class MultiplePhaseScheduling extends SchedulingStrategy {
             remainingAnalyses --= phaseAnalyses
             computePhase(ps, phaseAnalyses, remainingAnalyses)
         }
-        val enableCleanup = config.getBoolean(EnableCleanup)
+        val disableCleanup = config.getBoolean(DisableCleanup)
 
-        if(enableCleanup) calculateDeletions(schedule, ps, config) else schedule
+        if(!disableCleanup) calculateDeletions(schedule, ps, config) else schedule
     }
 
     private def calculateDeletions[A](schedule: List[PhaseConfiguration[A]], ps: PropertyStore, config: Config): List[PhaseConfiguration[A]] = {
@@ -197,5 +197,5 @@ object MaximumPhaseScheduling extends MultiplePhaseScheduling {
 object CleanupCalculation {
     final val PropertiesToKeepKey = s"${ConfigKeyPrefix}KeepPropertyKeys"
     final val PropertiesToRemoveKey = s"${ConfigKeyPrefix}RemovePropertyKeys"
-    final val EnableCleanup = s"${ConfigKeyPrefix}EnableCleanup"
+    final val DisableCleanup = s"${ConfigKeyPrefix}DisableCleanup"
 }

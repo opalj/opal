@@ -39,7 +39,7 @@ import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.bytecode.JDKArg
 import org.opalj.bytecode.JDKPackages
-import org.opalj.cli.{AnalysisLevelArg, ClearPropertyKeysArg, ConfigurationNameArg, EagerArg, EnableCleanupArg, IndividualArg, KeepPropertyKeysArg, OutputDirArg, PackagesArg}
+import org.opalj.cli.{AnalysisLevelArg, ClearPropertyKeysArg, ConfigurationNameArg, EagerArg, DisableCleanupArg, IndividualArg, KeepPropertyKeysArg, OutputDirArg, PackagesArg}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
@@ -88,7 +88,7 @@ object Purity extends ProjectsAnalysisApplication {
             IndividualArg,
             OutputDirArg,
             PackagesArg,
-            EnableCleanupArg,
+            DisableCleanupArg,
             KeepPropertyKeysArg,
             ClearPropertyKeysArg
         )
