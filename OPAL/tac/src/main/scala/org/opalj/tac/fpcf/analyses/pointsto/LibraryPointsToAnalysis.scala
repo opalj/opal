@@ -52,7 +52,6 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
     def assignInitialPointsToSets(p: SomeProject, ps: PropertyStore): Unit = {
         val packageIsClosed = p.get(ClosedPackagesKey)
-        val declaredMethods = p.get(DeclaredMethodsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
         val formalParameters = p.get(VirtualFormalParametersKey)
         val initialInstantiatedTypes =
@@ -86,19 +85,18 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
         // For each method which is also an entry point, we assume that the caller has passed all
         // subtypes of the method's parameter types to the method.
         for {
-            ep <- entryPoints;
-            dm = declaredMethods(ep)
+            ep <- entryPoints
         } {
-            val fps = formalParameters(dm)
-            val context = typeIterator.newContext(dm)
+            val fps = formalParameters(ep)
+            val context = typeIterator.newContext(ep)
 
-            if (!dm.definedMethod.isStatic) {
-                if (initialInstantiatedTypes.contains(dm.declaringClassType))
-                    initialize(getFormalParameter(0, fps, context), UIDSet(dm.declaringClassType))
+            if (!ep.definedMethod.isStatic) {
+                if (initialInstantiatedTypes.contains(ep.declaringClassType))
+                    initialize(getFormalParameter(0, fps, context), UIDSet(ep.declaringClassType))
             }
 
-            for (i <- 0 until dm.descriptor.parametersCount) {
-                val pt = dm.descriptor.parameterType(i)
+            for (i <- 0 until ep.descriptor.parametersCount) {
+                val pt = ep.descriptor.parameterType(i)
                 val fp = getFormalParameter(i + 1, fps, context)
 
                 if (pt.isClassType) {

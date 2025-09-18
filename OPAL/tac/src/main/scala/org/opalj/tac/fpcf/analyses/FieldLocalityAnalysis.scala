@@ -244,7 +244,7 @@ class FieldLocalityAnalysis private[analyses] (
         // [[org.opalj.fpcf.properties.EscapeViaReturn]] in which case we have a
         // [[org.opalj.fpcf.properties.LocalFieldWithGetter]].
         val escape = propertyStore(
-            (context, definitionSites(context.method.definedMethod, pc)),
+            (context, definitionSites(context.method, pc)),
             EscapeProperty.key
         )
         val isGetFieldOfReceiver =
@@ -388,7 +388,7 @@ class FieldLocalityAnalysis private[analyses] (
                 if (checkFreshnessOfDef(stmt, context.method)) {
                     true
                 } else {
-                    val method = context.method.definedMethod
+                    val method = context.method
                     val defSiteEntity = DefinitionSitesWithoutPutField(method, stmt.pc, putField)
                     val escape = propertyStore((context, defSiteEntity), EscapeProperty.key)
                     // does the value escape?
@@ -506,7 +506,7 @@ class FieldLocalityAnalysis private[analyses] (
         // The cloned object may not escape except for being returned, because we only check
         // that the field is overwritten before the method's exit, not before a potential escape
         // of the object.
-        val escape = propertyStore((context, definitionSites(context.method.definedMethod, pc)), EscapeProperty.key)
+        val escape = propertyStore((context, definitionSites(context.method, pc)), EscapeProperty.key)
         if (clonedInstanceEscapes(escape))
             return false;
 
@@ -895,7 +895,7 @@ object DefinitionSitesWithoutPutField {
         new ConcurrentHashMap[DefinitionSiteWithoutPutField, DefinitionSiteWithoutPutField]()
     }
 
-    def apply(method: Method, pc: Int, putFieldPC: Int): DefinitionSiteWithoutPutField = {
+    def apply(method: DeclaredMethod, pc: Int, putFieldPC: Int): DefinitionSiteWithoutPutField = {
         val defSite = DefinitionSiteWithoutPutField(method, pc, putFieldPC)
         val prev = defSites.putIfAbsent(defSite, defSite)
         if (prev == null) defSite else prev
@@ -913,7 +913,7 @@ object DefinitionSitesWithoutPutField {
  * @author Florian Kuebler
  */
 final case class DefinitionSiteWithoutPutField(
-    method:     Method,
+    method:     DeclaredMethod,
     pc:         Int,
     putFieldPC: Int
 ) extends DefinitionSiteLike {

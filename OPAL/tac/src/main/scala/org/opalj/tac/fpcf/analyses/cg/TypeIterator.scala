@@ -985,9 +985,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                 (accessContextId, _, receiver, _) <- fai.accesses
                 // Extract TAC
                 definedMethod = contextFromId(accessContextId).method
-                method = contextFromId(accessContextId).method.definedMethod
                 tacEP <- extractPropertyUB(
-                    EPK(method, TACAI.key),
+                    EPK(definedMethod.definedMethod, TACAI.key),
                     state.addDependency((depender, definedMethod, receiver), _)
                 )
                 theTAC <- tacEP.tac
@@ -997,7 +996,12 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
 
                 result = combine(
                     result,
-                    typesProperty(field, DefinitionSite(method, defPC), depender, newContext(definedMethod))
+                    typesProperty(
+                        field,
+                        DefinitionSite(definedMethod, defPC),
+                        depender,
+                        newContext(definedMethod)
+                    )
                 )
             }
 
@@ -1218,9 +1222,8 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
 
                 // Extract TAC
                 definedMethod = contextFromId(accessContextId).method.asDefinedMethod
-                method = definedMethod.definedMethod
                 tacEP <- extractPropertyUB(
-                    EPK(method, TACAI.key),
+                    EPK(definedMethod.definedMethod, TACAI.key),
                     state.addDependency((depender, definedMethod, receiver), _)
                 )
                 theTAC <- tacEP.tac
@@ -1237,7 +1240,12 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
 
                 result = combine(
                     result,
-                    typesProperty(field, DefinitionSite(method, defPC), depender, calleeContext)
+                    typesProperty(
+                        field,
+                        DefinitionSite(definedMethod, defPC),
+                        depender,
+                        calleeContext
+                    )
                 )
             }
 
