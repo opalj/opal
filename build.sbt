@@ -608,3 +608,8 @@ ThisBuild / sonatypeCredentialHost := sonatypeCentralHost
 Test / publishArtifact := false
 ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / pomExtra := MavenPublishing.pomNodeSeq()
+
+
+/******
+ * Settings set for benchmarking, allowing for generating heapdumps
+ ******/

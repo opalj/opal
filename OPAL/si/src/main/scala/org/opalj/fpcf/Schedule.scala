@@ -46,13 +46,17 @@ case class Schedule[A](
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
         batches.iterator.zipWithIndex foreach { batchId =>
-            val (PhaseConfiguration(configuration, css), id) = batchId
+            val (PhaseConfiguration(configuration, css, toDelete), id) = batchId
 
             if (trace) {
                 info("analysis progress", s"setting up analysis phase $id: $configuration")
             }
             time {
                 ps.setupPhase(configuration)
+                ps.setCurrentPhaseConfiguration(
+                    PhaseConfiguration(configuration, css, toDelete)
+                )
+                afterPhaseSetup(configuration)
                 afterPhaseSetup(configuration)
                 assert(ps.isIdle, "the property store is not idle after phase setup")
 

@@ -3,17 +3,16 @@ package org.opalj
 package fpcf
 package scheduling
 
-import scala.collection.mutable
-
 import com.typesafe.config.Config
-
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.AnalysisScenario.ConfigKeyPrefix
+import org.opalj.fpcf.scheduling.CleanupCalculation.{DisableCleanup, PropertiesToKeepKey, PropertiesToRemoveKey}
 import org.opalj.fpcf.scheduling.MultiplePhaseScheduling.AnalysisScheduleLazyTransformerInMultiplePhasesKey
-import org.opalj.graphs.sccs
-import org.opalj.graphs.topologicalSort
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
+import org.opalj.graphs.{sccs, topologicalSort}
+import org.opalj.log.{LogContext, OPALLogger}
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
  * Base class for scheduling strategies that create multiple computation phases.
@@ -98,7 +97,31 @@ abstract class MultiplePhaseScheduling extends SchedulingStrategy {
             computePhase(ps, phaseAnalyses, remainingAnalyses)
         }
 
-        schedule
+        if(config.getBoolean(DisableCleanup)) calculateDeletions(schedule, ps, config) else schedule
+    }
+
+    private def calculateDeletions[A](schedule: List[PhaseConfiguration[A]], ps: PropertyStore, config: Config): List[PhaseConfiguration[A]] = {
+        val pkToKeep = if(config.getString(PropertiesToKeepKey).trim.isEmpty) List.empty else config.getString(PropertiesToKeepKey).split(",").map(_.trim.toInt).toList
+        val pkToDelete = if(config.getString(PropertiesToRemoveKey).trim.isEmpty) List.empty else config.getString(PropertiesToRemoveKey).split(",").map(_.trim.toInt).toSet
+        val properties: mutable.Set[Int] =
+            schedule.iterator.flatMap(_.propertyKinds.propertyKindsComputedInThisPhase.map(key => key.id)).to(mutable.Set)
+
+        val modifiedSchedule: ListBuffer[PhaseConfiguration[A]] = ListBuffer.from(schedule)
+
+        var usedDependencies: Set[Int] = Set.empty
+        var alreadyDeleted: Set[Int] = Set.empty
+        for (elem <- modifiedSchedule.reverseIterator) {
+
+            val currentSchedule = elem.scheduled
+            usedDependencies ++= currentSchedule.iterator.flatMap(_.uses(ps).iterator.map(_.pk.id))
+            usedDependencies ++= pkToKeep
+            val remaining: Set[Int] = properties.toSet diff usedDependencies diff alreadyDeleted
+
+            elem.toDelete = remaining
+            alreadyDeleted ++= remaining
+        }
+        modifiedSchedule.last.toDelete ++= pkToDelete
+        modifiedSchedule.toList
     }
 
     /**
@@ -168,4 +191,10 @@ object MaximumPhaseScheduling extends MultiplePhaseScheduling {
     ): (Map[Int, List[Int]], Map[Int, Set[Int]]) = {
         (initialPhaseDependencyGraph.toMap, initialPhaseIndexToAnalyses.toMap)
     }
+}
+
+object CleanupCalculation {
+    final val PropertiesToKeepKey = s"${ConfigKeyPrefix}KeepPropertyKeys"
+    final val PropertiesToRemoveKey = s"${ConfigKeyPrefix}RemovePropertyKeys"
+    final val DisableCleanup = s"${ConfigKeyPrefix}DisableCleanup"
 }

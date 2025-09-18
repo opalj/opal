@@ -4,19 +4,17 @@ package fpcf
 package par
 
 import scala.annotation.switch
-
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.util.control.ControlThrowable
-
 import com.typesafe.config.Config
-
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
+//import org.opalj.util.PerformanceEvaluation.memory
 
 /**
  * Yet another parallel property store.
@@ -472,7 +470,7 @@ class PKECPropertyStore(
         threads.foreach { _.start }
         threads.foreach { _.join }
         if (doTerminate) {
-            if (exception ne null) throw exception;
+            if (exception ne null) throw exception
             else throw new InterruptedException
         }
     }
@@ -519,11 +517,18 @@ class PKECPropertyStore(
             startThreads(new PartialPropertiesFinalizerThread(_))
 
             subPhaseId += 1
-
+            clearObsoletePropertyKinds()
             ps(AnalysisKeyId).clear()
         }
 
         idle = true
+    }
+    private def clearObsoletePropertyKinds(): Unit = {
+        currentPhaseConf match {
+            case Some(pc) =>
+                pc.toDelete.foreach{ key => ps(key).clear() }
+            case None =>
+        }
     }
 
     private[this] val interimStates: Array[ArrayBuffer[EPKState]] =
@@ -577,7 +582,7 @@ class PKECPropertyStore(
                     if (tasks.isEmpty) {
                         val active = activeTasks.get()
                         if (active == 0) {
-                            return;
+                            return
                         } else {
                             // try workstealing:
                             val largestQueue = queues.maxBy(_.size())

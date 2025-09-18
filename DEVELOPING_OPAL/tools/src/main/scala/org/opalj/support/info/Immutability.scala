@@ -4,7 +4,6 @@ package support
 package info
 
 import scala.language.postfixOps
-
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -13,13 +12,10 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import scala.collection.immutable.SortedSet
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
-
 import org.rogach.scallop.flagConverter
 import org.rogach.scallop.stringConverter
-
 import org.opalj.ai.cli.DomainArg
 import org.opalj.br.ClassType
 import org.opalj.br.Field
@@ -54,14 +50,7 @@ import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.bytecode.JDKArg
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.cli.AnalysisLevelArg
-import org.opalj.cli.ChoiceArg
-import org.opalj.cli.ConfigurationNameArg
-import org.opalj.cli.LibraryArg
-import org.opalj.cli.OutputDirArg
-import org.opalj.cli.ParsedArg
-import org.opalj.cli.PlainArg
-import org.opalj.cli.ThreadsNumArg
+import org.opalj.cli.{AnalysisLevelArg, ChoiceArg, ClearPropertyKeysArg, ConfigurationNameArg, DisableCleanupArg, KeepPropertyKeysArg, LibraryArg, OutputDirArg, ParsedArg, PlainArg, ThreadsNumArg}
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
@@ -132,7 +121,10 @@ object Immutability extends ProjectsAnalysisApplication {
             analysisLevelArg !,
             ignoreLazyInitializationArg !,
             ConfigurationNameArg !,
-            EscapeArg
+            EscapeArg,
+            DisableCleanupArg,
+            KeepPropertyKeysArg,
+            ClearPropertyKeysArg
         )
         init()
 
