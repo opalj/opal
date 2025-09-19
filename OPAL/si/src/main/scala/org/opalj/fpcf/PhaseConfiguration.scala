@@ -5,5 +5,5 @@ package fpcf
 case class PhaseConfiguration[A](
     propertyKinds: PropertyKindsConfiguration,
     scheduled:     List[ComputationSpecification[A]],
-    var toDelete:  Set[Int] = Set.empty
+    toDelete:      Set[Int] = Set.empty
 )

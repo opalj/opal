@@ -1,6 +1,8 @@
-package org.opalj.cli
+package org.opalj
+package cli
 
-import com.typesafe.config.{Config, ConfigValueFactory}
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 
 object DisableCleanupArg extends PlainArg[Boolean] {
     override val name: String = "disableCleanup"

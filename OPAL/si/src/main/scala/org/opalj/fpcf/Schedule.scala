@@ -57,7 +57,6 @@ case class Schedule[A](
                     PhaseConfiguration(configuration, css, toDelete)
                 )
                 afterPhaseSetup(configuration)
-                afterPhaseSetup(configuration)
                 assert(ps.isIdle, "the property store is not idle after phase setup")
 
                 var executedAnalyses: List[(ComputationSpecification[A], A)] = Nil

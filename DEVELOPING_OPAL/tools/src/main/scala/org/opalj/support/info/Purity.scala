@@ -4,9 +4,11 @@ package support
 package info
 
 import scala.language.postfixOps
+
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
+
 import org.opalj.ai.cli.DomainArg
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -39,7 +41,15 @@ import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.bytecode.JDKArg
 import org.opalj.bytecode.JDKPackages
-import org.opalj.cli.{AnalysisLevelArg, ClearPropertyKeysArg, ConfigurationNameArg, EagerArg, DisableCleanupArg, IndividualArg, KeepPropertyKeysArg, OutputDirArg, PackagesArg}
+import org.opalj.cli.AnalysisLevelArg
+import org.opalj.cli.ClearPropertyKeysArg
+import org.opalj.cli.ConfigurationNameArg
+import org.opalj.cli.DisableCleanupArg
+import org.opalj.cli.EagerArg
+import org.opalj.cli.IndividualArg
+import org.opalj.cli.KeepPropertyKeysArg
+import org.opalj.cli.OutputDirArg
+import org.opalj.cli.PackagesArg
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
