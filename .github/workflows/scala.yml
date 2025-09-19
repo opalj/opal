@@ -17,6 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
+      - name: Enable Assertions
+        run: mv ./scalac.options.local.template ./scalac.options.local
+
       - name: Build Opal
         run: sbt -J-Xmx20G cleanBuild
       
@@ -34,6 +37,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+
+    - name: Enable Assertions
+      run: mv ./scalac.options.local.template ./scalac.options.local
 
     - name: Run Integration Tests
       run: sbt -J-Xmx40G cleanBuild it:test
