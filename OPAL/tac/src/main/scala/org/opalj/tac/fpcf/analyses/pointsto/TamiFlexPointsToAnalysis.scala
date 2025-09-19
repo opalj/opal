@@ -132,7 +132,7 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
                     ClassType.Class,
                     "forName",
                     MethodDescriptor(
-                        ArraySeq(ClassType.String, BooleanType, ClassType("java/lang/ClassLoader")),
+                        ArraySeq(ClassType.String, BooleanType, ClassType.ClassLoader),
                         ClassType.Class
                     )
                 )

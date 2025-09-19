@@ -246,7 +246,7 @@ trait AssertionExceptionRater extends DomainSpecificRater {
 
     private final val exceptionTypes = Set(
         ClassType("java/lang/AssertionError"),
-        ClassType("java/lang/IllegalArgumentException"),
+        ClassType.IllegalArgumentException,
         ClassType("java/lang/IllegalStateException")
     )
 

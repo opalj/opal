@@ -1563,7 +1563,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     ClassType.Class,
                     "forName",
                     MethodDescriptor(
-                        ArraySeq(ClassType.String, BooleanType, ClassType("java/lang/ClassLoader")),
+                        ArraySeq(ClassType.String, BooleanType, ClassType.ClassLoader),
                         ClassType.Class
                     )
                 )
@@ -1576,7 +1576,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     ClassType.Class,
                     "forName",
                     MethodDescriptor(
-                        ArraySeq(ClassType("java/lang/Module"), ClassType.String),
+                        ArraySeq(ClassType.Module, ClassType.String),
                         ClassType.Class
                     )
                 ),

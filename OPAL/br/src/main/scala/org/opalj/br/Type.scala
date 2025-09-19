@@ -1255,25 +1255,27 @@ object ClassType {
     final val ClassId = 11
     require(Class.id == ClassId)
 
+    final val ClassLoader = ClassType("java/lang/ClassLoader")
+
     final val ModuleInfo = ClassType("module-info")
-    require(ModuleInfo.id == 12)
+    require(ModuleInfo.id == 13)
 
     // the following types are relevant when checking the subtype relation between
     // two reference types where the subtype is an array type
     final val Serializable = ClassType("java/io/Serializable")
-    final val SerializableId = 13
+    final val SerializableId = 14
     require(Serializable.id == SerializableId)
     final val Cloneable = ClassType("java/lang/Cloneable")
-    final val CloneableId = 14
+    final val CloneableId = 15
     require(Cloneable.id == CloneableId)
     final val Comparable = ClassType("java/lang/Comparable")
-    final val ComparableId = 15
+    final val ComparableId = 16
     require(Comparable.id == ComparableId)
     final val StringBuilder = ClassType("java/lang/StringBuilder")
-    final val StringBuilderId = 16
+    final val StringBuilderId = 17
     require(StringBuilder.id == StringBuilderId)
     final val StringBuffer = ClassType("java/lang/StringBuffer")
-    final val StringBufferId = 17
+    final val StringBufferId = 18
     require(StringBuffer.id == StringBufferId)
 
     final val System = ClassType("java/lang/System")
@@ -1286,6 +1288,8 @@ object ClassType {
     final val Thread = ClassType("java/lang/Thread")
     final val ThreadGroup = ClassType("java/lang/ThreadGroup")
     final val Runnable = ClassType("java/lang/Runnable")
+
+    final val Module = ClassType("java/lang/Module")
 
     // Types related to the invokedynamic instruction
     final val VarHandle = ClassType("java/lang/invoke/VarHandle")
@@ -1326,7 +1330,7 @@ object ClassType {
     final val ClassCastException = ClassType("java/lang/ClassCastException")
     final val ArithmeticException = ClassType("java/lang/ArithmeticException")
     final val ClassNotFoundException = ClassType("java/lang/ClassNotFoundException")
-
+    final val IllegalArgumentException = ClassType("java/lang/IllegalArgumentException")
     /**
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.

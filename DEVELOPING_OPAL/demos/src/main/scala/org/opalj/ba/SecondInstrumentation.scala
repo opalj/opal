@@ -33,7 +33,7 @@ import org.opalj.util.InMemoryClassLoader
 object SecondInstrumentation extends App {
 
     val PrintStreamType = ClassType("java/io/PrintStream")
-    val SystemType = ClassType("java/lang/System")
+    val SystemType = ClassType.System
     val CollectionType = ClassType("java/util/Collection")
     val PrintlnDescriptor = JustTakes(ClassType.Object)
 

@@ -189,7 +189,7 @@ object MoreCheckers {
                 comparable <- classHierarchy.allSubtypes(ClassType("java/lang/Comparable"), false)
                 classFile <- getClassFile.get(comparable).toList
                 method @ Method(_, "compareTo", MethodDescriptor(Seq(parameterType), IntegerType)) <- classFile.methods
-                if parameterType != ClassType("java/lang/Object")
+                if parameterType != ClassType.Object
             } yield (classFile, method)
         }(t => collect("CO_SELF_NO_OBJECT/CO_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ + covariantCompareToMethods.size)
@@ -205,7 +205,7 @@ object MoreCheckers {
                 instruction <- method.body.get.instructions
             } {
                 instruction match {
-                    case INVOKESTATIC(ClassType("java/lang/System"), false, "gc", NoArgsAndReturnVoid) |
+                    case INVOKESTATIC(ClassType.System, false, "gc", NoArgsAndReturnVoid) |
                         INVOKEVIRTUAL(ClassType("java/lang/Runtime"), "gc", NoArgsAndReturnVoid) =>
                         garbageCollectingMethods = (classFile, method, instruction) :: garbageCollectingMethods
                     case _ =>
@@ -224,7 +224,7 @@ object MoreCheckers {
                 instruction <- method.body.get.instructions
             } {
                 instruction match {
-                    case INVOKESTATIC(ClassType("java/lang/System"), false, "runFinalizersOnExit", JustTakesBoolean) |
+                    case INVOKESTATIC(ClassType.System, false, "runFinalizersOnExit", JustTakesBoolean) |
                         INVOKESTATIC(ClassType("java/lang/Runtime"), false, "runFinalizersOnExit", JustTakesBoolean) =>
                         methodsThatCallRunFinalizersOnExit =
                             (classFile, method, instruction) :: methodsThatCallRunFinalizersOnExit
@@ -239,7 +239,7 @@ object MoreCheckers {
         //        var abstractClassThatDefinesCovariantEquals = time(t => println("EQ_ABSTRACT_SELF: "+nsToSecs(t))) {
         //            for (
         //                classFile <- classFiles if classFile.isAbstract;
-        //                method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) <- classFile.methods if parameterType != ClassType("java/lang/Object")
+        //                method @ Method(_, "equals", MethodDescriptor(Seq(parameterType), BooleanType), _) <- classFile.methods if parameterType != ClassType.Object
         //            ) yield (classFile, method);
         //        }
         //        println("\tViolations: "+abstractClassThatDefinesCovariantEquals.size)

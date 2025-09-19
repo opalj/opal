@@ -22,7 +22,7 @@ class ClassLoaderAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery
 
     override val apiFeatures: List[APIFeature] = {
 
-        val ClassLoader = ClassType("java/lang/ClassLoader")
+        val ClassLoader = ClassType.ClassLoader
 
         List(
             APIClassExtension("custom ClassLoader implementation", ClassLoader),
