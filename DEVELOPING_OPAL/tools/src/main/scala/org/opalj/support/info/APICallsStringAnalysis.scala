@@ -189,7 +189,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
         val (project, _) = analysisConfig.setupProject(cp)
         implicit val (ps: PropertyStore, _) = analysisConfig.setupPropertyStore(project)
 
-        val callGraphKey = analysisConfig(CallGraphArg)
+        val callGraphKey = analysisConfig(CallGraphArg).get
 
         callGraphKey.requirements(project)
 

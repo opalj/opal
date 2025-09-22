@@ -11,7 +11,9 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.analyses.ContextProvider
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.analyses.string.l1.interpretation.L1InterpretationHandler
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -52,6 +54,8 @@ class L2InterpretationHandler(implicit override val project: SomeProject) extend
 object L2InterpretationHandler {
 
     def requiredProjectInformation: ProjectInformationKeys = Seq(ContextProviderKey)
+
+    def uses: Set[PropertyBounds] = L1InterpretationHandler.uses ++ PropertyBounds.ubs(Callees)
 
     def apply(project: SomeProject): L2InterpretationHandler = new L2InterpretationHandler()(project)
 }

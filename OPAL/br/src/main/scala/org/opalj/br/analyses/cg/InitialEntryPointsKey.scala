@@ -34,7 +34,7 @@ import net.ceedubs.ficus.Ficus.*
  *
  * @author Michael Reif
  */
-object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Nothing] {
+object InitialEntryPointsKey extends ProjectInformationKey[Iterable[DeclaredMethod], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialEntryPointsKey."
     final val ConfigKey = ConfigKeyPrefix + "analysis"
@@ -52,7 +52,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[Method], Not
         Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey) ++ entryPointFinderRequiredKeys
     }
 
-    override def compute(project: SomeProject): Iterable[Method] = {
+    override def compute(project: SomeProject): Iterable[DeclaredMethod] = {
         val epFinder: EntryPointFinder = getEntryPointFinder(project)
         epFinder.collectEntryPoints(project)
     }

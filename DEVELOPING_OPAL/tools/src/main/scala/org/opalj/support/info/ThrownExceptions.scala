@@ -22,8 +22,9 @@ import org.opalj.cli.AnalysisLevelArg
 import org.opalj.cli.IndividualArg
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStoreBasedCommandLineConfig
 import org.opalj.fpcf.SomeEPS
+import org.opalj.tac.cg.CallGraphArg
+import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
@@ -37,7 +38,7 @@ import org.opalj.util.PerformanceEvaluation.time
 object ThrownExceptions extends ProjectsAnalysisApplication {
 
     protected class ThrownExceptionsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
-        with PropertyStoreBasedCommandLineConfig {
+        with CGBasedCommandLineConfig {
         val description = "Computes the set of the exceptions (in)directly thrown by methods"
 
         private val analysisLevelArg =
@@ -48,7 +49,8 @@ object ThrownExceptions extends ProjectsAnalysisApplication {
 
         args(
             analysisLevelArg !,
-            IndividualArg
+            IndividualArg,
+            CallGraphArg ?
         )
         init()
 
@@ -80,6 +82,7 @@ object ThrownExceptions extends ProjectsAnalysisApplication {
                 ps.waitOnPhaseCompletion()
                 ps
             } else /* if no analysis level is specified or L1 */ {
+                analysisConfig.setupCallGaph(project)
                 project.get(FPCFAnalysesManagerKey).runAll(
                     EagerL1ThrownExceptionsAnalysis
                 )

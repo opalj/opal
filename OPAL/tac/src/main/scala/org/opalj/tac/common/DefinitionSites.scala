@@ -7,7 +7,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.*
 
-import org.opalj.br.Method
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.MULTIANEWARRAY
@@ -26,6 +27,8 @@ import org.opalj.br.instructions.NEWARRAY
  */
 class DefinitionSites(val project: SomeProject) {
 
+    private val declaredMethods = project.get(DeclaredMethodsKey)
+
     val definitionSites = new ConcurrentHashMap[DefinitionSite, DefinitionSite]()
 
     /**
@@ -33,7 +36,7 @@ class DefinitionSites(val project: SomeProject) {
      * The definition site is either retrieved from the map (if present) or a new one is created
      * and stored into the map.
      */
-    def apply(m: Method, pc: Int): DefinitionSite = {
+    def apply(m: DeclaredMethod, pc: Int): DefinitionSite = {
         val defSite = DefinitionSite(m, pc)
         val prev = definitionSites.putIfAbsent(defSite, defSite)
         if (prev == null) defSite else prev
@@ -57,7 +60,7 @@ class DefinitionSites(val project: SomeProject) {
                 if (instr != null) {
                     instr.opcode match {
                         case NEW.opcode | NEWARRAY.opcode | ANEWARRAY.opcode | MULTIANEWARRAY.opcode =>
-                            val defSite: DefinitionSite = apply(m, pc)
+                            val defSite: DefinitionSite = apply(declaredMethods(m), pc)
                             allocationSites.add(defSite)
                         case _ =>
                     }

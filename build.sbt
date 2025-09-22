@@ -479,6 +479,7 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
     )
     .dependsOn(
         tools % "it->it;it->test;test->test;compile->compile",
+        demos  % "it->it;it->test;test->test;compile->compile",
         hermes % "it->it;test->test;compile->compile"
     )
     .configs(IntegrationTest)

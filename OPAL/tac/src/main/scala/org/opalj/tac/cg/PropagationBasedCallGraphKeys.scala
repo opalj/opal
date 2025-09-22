@@ -9,8 +9,8 @@ import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeIterator
-import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.FTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler
@@ -61,7 +61,7 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
             new InstantiatedTypesAnalysisScheduler(theTypeSetEntitySelector),
             new ArrayInstantiationsAnalysisScheduler(theTypeSetEntitySelector),
             new TypePropagationAnalysisScheduler(theTypeSetEntitySelector),
-            ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler,
+            new ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler(theTypeSetEntitySelector),
             TriggeredFieldAccessInformationAnalysis,
             ReflectionRelatedFieldAccessesAnalysisScheduler
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)

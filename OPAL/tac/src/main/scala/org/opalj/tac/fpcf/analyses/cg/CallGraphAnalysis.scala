@@ -9,7 +9,6 @@ import org.opalj.br.ClassType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.CallBySignatureKey
@@ -428,7 +427,7 @@ class CallGraphAnalysis private[cg] (
 object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, InitialEntryPointsKey, TypeIteratorKey)
+        Seq(InitialEntryPointsKey, TypeIteratorKey)
 
     override def uses: Set[PropertyBounds] =
         PropertyBounds.ubs(Callers, Callees, TACAI)
@@ -447,8 +446,7 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
      * This will trigger the computation of the callees for these methods (see `processMethod`).
      */
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): CallGraphAnalysis = {
-        val declaredMethods = p.get(DeclaredMethodsKey)
-        val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
+        val entryPoints = p.get(InitialEntryPointsKey)
 
         if (entryPoints.isEmpty)
             OPALLogger.logOnce(

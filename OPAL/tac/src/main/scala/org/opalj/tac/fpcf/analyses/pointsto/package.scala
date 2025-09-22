@@ -10,34 +10,32 @@ import org.opalj.br.fpcf.analyses.SimpleContextProvider
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.fpcf.Entity
 import org.opalj.tac.common.DefinitionSites
-import org.opalj.value.ValueInformation
 
 package object pointsto {
 
     /**
-     * Given a definition site (value origin) in a certain method, this returns the
+     * Given a definition site PC (value origin) in a certain method, this returns the
      * entity to be used to attach/retrieve points-to information from.
      */
     def toEntity(
-        defSite: Int,
-        context: Context,
-        stmts:   Array[Stmt[DUVar[ValueInformation]]]
+        defSitePC: Int,
+        context:   Context
     )(
         implicit
         formalParameters: VirtualFormalParameters,
         definitionSites:  DefinitionSites,
         contextProvider:  ContextProvider
     ): Entity = {
-        val entity = if (ai.isMethodExternalExceptionOrigin(defSite)) {
-            val pc = ai.pcOfMethodExternalException(defSite)
-            CallExceptions(definitionSites(context.method.definedMethod, stmts(pc).pc))
-        } else if (ai.isImmediateVMException(defSite)) {
-            val pc = ai.pcOfImmediateVMException(defSite)
-            definitionSites(context.method.definedMethod, stmts(pc).pc)
-        } else if (defSite < 0) {
-            formalParameters.apply(context.method)(-1 - defSite)
+        val entity = if (ai.isMethodExternalExceptionOrigin(defSitePC)) {
+            val pc = ai.pcOfMethodExternalException(defSitePC)
+            CallExceptions(definitionSites(context.method, pc))
+        } else if (ai.isImmediateVMException(defSitePC)) {
+            val pc = ai.pcOfImmediateVMException(defSitePC)
+            definitionSites(context.method, pc)
+        } else if (defSitePC < 0) {
+            formalParameters.apply(context.method)(-1 - defSitePC)
         } else {
-            definitionSites(context.method.definedMethod, stmts(defSite).pc)
+            definitionSites(context.method, defSitePC)
         }
         contextProvider match {
             case _: SimpleContextProvider => entity

@@ -4,10 +4,12 @@ package tac
 package fpcf
 package analyses
 
+import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.ACONST_NULL
 import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadClass_W
@@ -86,5 +88,21 @@ package object cg {
             }
         }
         constantTypes
+    }
+
+    /**
+     * Checks whether a given reference type could possibly be instantiated in the context of a given project
+     * @param rt The reference type to check
+     * @param project The project context
+     * @return True if the type can be instantiated, false otherwise
+     */
+    def canBeInstantiated(rt: ReferenceType, project: Project[_]): Boolean = rt match {
+        case _: ArrayType  => true
+        case ct: ClassType =>
+            val cfOption = project.classFile(ct)
+            cfOption.isDefined && {
+                val cf = cfOption.get
+                !cf.isInterfaceDeclaration && !cf.isAbstract
+            }
     }
 }

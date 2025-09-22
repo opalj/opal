@@ -261,7 +261,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
         context: Context,
         code:    Array[Stmt[V]]
     )(implicit state: ReturnValueFreshnessState): ProperPropertyComputationResult = {
-        val m = context.method.definedMethod
+        val m = context.method
 
         // for every return-value statement check the def-sites
         for {

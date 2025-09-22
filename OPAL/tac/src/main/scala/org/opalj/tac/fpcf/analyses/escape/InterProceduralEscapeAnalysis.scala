@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package escape
 
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.VirtualDeclaredMethod
@@ -46,7 +47,7 @@ import org.opalj.value.ValueInformation
 
 class InterProceduralEscapeAnalysisContext(
     val entity:                  (Context, Entity),
-    val targetMethod:            Method,
+    val targetMethod:            DeclaredMethod,
     val declaredMethods:         DeclaredMethods,
     val virtualFormalParameters: VirtualFormalParameters,
     val project:                 SomeProject,
@@ -129,7 +130,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 Result(fp, AtMost(NoEscape))
 
             case VirtualFormalParameter(dm: DefinedMethod, _) =>
-                val ctx = createContext(fp, dm.definedMethod)
+                val ctx = createContext(fp, dm)
                 doDetermineEscape(ctx, createState)
 
             case VirtualFormalParameter(_: VirtualDeclaredMethod, _) =>
@@ -139,7 +140,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
     override def createContext(
         entity:       (Context, Entity),
-        targetMethod: Method
+        targetMethod: DeclaredMethod
     ): InterProceduralEscapeAnalysisContext = new InterProceduralEscapeAnalysisContext(
         entity,
         targetMethod,
@@ -197,8 +198,8 @@ object EagerInterProceduralEscapeAnalysis
         }.flatten
 
         val ass = p.get(DefinitionSitesKey).getAllocationSites.collect {
-            case as if reachableMethods.contains(declaredMethods(as.method)) =>
-                val dm = declaredMethods(as.method)
+            case as if reachableMethods.contains(as.method) =>
+                val dm = as.method
                 reachableMethods(dm).calleeContexts(dm).iterator.map((_, as))
         }.flatten
 

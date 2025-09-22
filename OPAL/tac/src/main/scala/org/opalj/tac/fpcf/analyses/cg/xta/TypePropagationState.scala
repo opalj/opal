@@ -43,12 +43,15 @@ final class TypePropagationState[ContextType <: Context](
     override protected[this] var _tacDependee:       EOptionP[Method, TACAI],
     private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
     private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees],
-    private[this] var _readAccessDependee:           EOptionP[Method, MethodFieldReadAccessInformation],
-    private[this] var _writeAccessDependee:          EOptionP[Method, MethodFieldWriteAccessInformation]
+    private[this] var _readAccessDependee:           Option[EOptionP[Method, MethodFieldReadAccessInformation]],
+    private[this] var _writeAccessDependee:          Option[EOptionP[Method, MethodFieldWriteAccessInformation]]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     var methodWritesArrays: Boolean = false
     var methodReadsArrays: Boolean = false
+
+    def methodHasBody: Boolean =
+        callContext.method.hasSingleDefinedMethod && callContext.method.definedMethod.body.isDefined
 
     /////////////////////////////////////////////
     //                                         //
@@ -114,19 +117,19 @@ final class TypePropagationState[ContextType <: Context](
     var seenIndirectWriteAccesses: IntMap[Int] = IntMap.empty
 
     def readAccessDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] = {
-        if (_readAccessDependee.isRefinable) Some(_readAccessDependee) else None
+        if (_readAccessDependee.isDefined && _readAccessDependee.get.isRefinable) _readAccessDependee else None
     }
 
     def updateReadAccessDependee(readAccessDependee: EOptionP[Method, MethodFieldReadAccessInformation]): Unit = {
-        _readAccessDependee = readAccessDependee
+        _readAccessDependee = Some(readAccessDependee)
     }
 
     def writeAccessDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] = {
-        if (_writeAccessDependee.isRefinable) Some(_writeAccessDependee) else None
+        if (_writeAccessDependee.isDefined && _writeAccessDependee.get.isRefinable) _writeAccessDependee else None
     }
 
     def updateWriteAccessDependee(writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation]): Unit = {
-        _writeAccessDependee = writeAccessDependee
+        _writeAccessDependee = Some(writeAccessDependee)
     }
 
     /////////////////////////////////////////////

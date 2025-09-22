@@ -140,7 +140,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         state.meetMostRestrictive(EscapeInCallee)
-        val dm = declaredMethods(context.targetMethod)
+        val dm = context.targetMethod
 
         val mostCurrentCalleesEP = propertyStore(dm, Callees.key)
         val calleesEP =

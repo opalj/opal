@@ -90,8 +90,8 @@ object FieldAndArrayUsageAnalysis extends ProjectsAnalysisApplication {
             as <- ass
             pc = as.pc
             m = as.method
-            body = m.body.get
-            FinalP(tacai) = propertyStore(m, org.opalj.tac.fpcf.properties.TACAI.key)
+            body = m.definedMethod.body.get if m.hasSingleDefinedMethod // This analysis does not support virtual def sites
+            FinalP(tacai) = propertyStore(m.definedMethod, org.opalj.tac.fpcf.properties.TACAI.key)
             code = tacai.tac.get
             stmts = code.stmts
             index = stmts indexWhere { stmt => stmt.pc == pc }

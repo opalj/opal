@@ -11,12 +11,12 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.analyses.DeclaredFieldsKey
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
@@ -270,7 +270,6 @@ class InstantiatedTypesAnalysisScheduler(
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
         ContextProviderKey,
         ClosedPackagesKey,
-        DeclaredMethodsKey,
         InitialEntryPointsKey,
         InitialInstantiatedTypesKey
     )
@@ -298,7 +297,6 @@ class InstantiatedTypesAnalysisScheduler(
 
     def assignInitialTypeSets(p: SomeProject, ps: PropertyStore): Unit = {
         val packageIsClosed = p.get(ClosedPackagesKey)
-        val declaredMethods = p.get(DeclaredMethodsKey)
         val declaredFields = p.get(DeclaredFieldsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
         val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq*)
@@ -322,10 +320,9 @@ class InstantiatedTypesAnalysisScheduler(
             }
         }
 
-        // Some cooperative analyses originally meant for RTA may require the global type set
-        // to be pre-initialized. Strings and classes can be introduced via constants anywhere.
-        // TODO Only introduce these types to the per-entity type sets where constants are used
-        initialize(p, UIDSet(ClassType.String, ClassType.Class))
+        // The external world will need some initial types to be instantiated. This is required especially when the
+        // Base JAR is not loaded, as the TypeSetEntity of fields like "System.out" will then be "ExternalWorld"
+        initialize(ExternalWorld, initialInstantiatedTypes)
 
         def isRelevantArrayType(rt: Type): Boolean =
             rt.isArrayType && rt.asArrayType.elementType.isClassType
@@ -333,17 +330,22 @@ class InstantiatedTypesAnalysisScheduler(
         // For each method which is also an entry point, we assume that the caller has passed all subtypes of the
         // method's parameter types to the method.
         for {
-            ep <- entryPoints;
-            dm = declaredMethods(ep)
+            ep <- entryPoints
         } {
             val typeFilters = UIDSet.newBuilder[ReferenceType]
             val arrayTypeAssignments = UIDSet.newBuilder[ArrayType]
 
-            if (!dm.definedMethod.isStatic) {
-                typeFilters += dm.declaringClassType
+            // If the entry point is not static (or if we do not know whether it may be static), we add the type
+            // to the type filters
+            val expandTypeFilter = ep match {
+                case defM: DefinedMethod => !defM.definedMethod.isStatic
+                case _                   => true
+            }
+            if (expandTypeFilter) {
+                typeFilters += ep.declaringClassType
             }
 
-            for (pt <- dm.descriptor.parameterTypes) {
+            for (pt <- ep.descriptor.parameterTypes) {
                 if (pt.isClassType) {
                     typeFilters += pt.asClassType
                 } else if (isRelevantArrayType(pt)) {
@@ -366,7 +368,7 @@ class InstantiatedTypesAnalysisScheduler(
 
             val initialAssignment = classTypeAssignments ++ arrayTypeAssignments.result()
 
-            val dmSetEntity = selectSetEntity(dm)
+            val dmSetEntity = selectSetEntity(ep)
 
             initialize(dmSetEntity, initialAssignment)
         }

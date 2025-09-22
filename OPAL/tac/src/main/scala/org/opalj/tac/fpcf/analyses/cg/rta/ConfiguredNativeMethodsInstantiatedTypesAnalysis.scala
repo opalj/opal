@@ -8,30 +8,26 @@ package rta
 
 import scala.collection.immutable.ArraySeq
 
-import org.opalj.br.ArrayType
-import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.FieldType
+import org.opalj.br.Method
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Handles the effect of certain (configured native methods) to the set of instantiated types.
@@ -41,12 +37,9 @@ import org.opalj.fpcf.PropertyStore
  */
 class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ReachableMethodAnalysis {
 
-    private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
-
-    // TODO remove dependency to classes in pointsto package
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
+    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
         ConfiguredMethods.reader
             .read(p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis")
             .nativeMethods.map { v => (v.method, v.pointsTo) }.toMap
@@ -61,37 +54,18 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         }
     }
 
-    private[this] def canBeInstantiated(rt: ReferenceType): Boolean = rt match {
-        case _: ArrayType  => true
-        case ct: ClassType =>
-            val cfOption = project.classFile(ct)
-            cfOption.isDefined && {
-                val cf = cfOption.get
-                !cf.isInterfaceDeclaration && !cf.isAbstract
-            }
-    }
+    override def processMethod(callContext: ContextType, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult =
+        processMethodWithoutBody(callContext)
 
-    def analyze(dm: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(dm, Callers.key): @unchecked) match {
-            case FinalP(NoCallers) =>
-                // nothing to do, since there is no caller
-                return NoResult;
-
-            case eps: EPS[_, _] =>
-                if (eps.ub eq NoCallers) {
-                    // we can not create a dependency here, so the analysis is not allowed to create
-                    // such a result
-                    throw new IllegalStateException("illegal immediate result for callers")
-                }
-            // the method is reachable, so we analyze it!
-        }
+    override def processMethodWithoutBody(callContext: ContextType): ProperPropertyComputationResult = {
+        val dm = callContext.method
 
         val instantiatedTypes = if (nativeMethodData.contains(dm)) {
             val dataO = nativeMethodData(dm)
             if (dataO.isEmpty)
-                return NoResult;
+                return Results();
             dataO.get.collect {
-                case PointsToRelation(_, as: AllocationSiteDescription) =>
+                case EntityAssignment(_, as: AllocationSiteDescription) =>
                     as.arrayComponentTypes.map(ReferenceType(_)) :+
                         FieldType(as.instantiatedType).asReferenceType
             }.flatten
@@ -100,14 +74,13 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         ) {
             val m = dm.definedMethod
             val returnType = m.returnType.asReferenceType
-            // TODO We should probably handle ArrayTypes as well
             val types =
-                if (m.returnType.isArrayType && m.returnType.asArrayType.elementType.isClassType)
-                    Array(returnType, m.returnType.asArrayType.elementType.asClassType)
+                if (returnType.isArrayType && returnType.asArrayType.elementType.isClassType)
+                    Array(returnType, returnType.asArrayType.elementType.asClassType)
                 else Array(returnType)
-            types.filter(canBeInstantiated)
+            types.filter(t => canBeInstantiated(t, project))
         } else
-            return NoResult;
+            return Results();
 
         val instantiatedTypesUB =
             getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
@@ -117,7 +90,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         )
 
         if (newInstantiatedTypes.isEmpty)
-            return NoResult;
+            return Results();
 
         PartialResult(
             p,

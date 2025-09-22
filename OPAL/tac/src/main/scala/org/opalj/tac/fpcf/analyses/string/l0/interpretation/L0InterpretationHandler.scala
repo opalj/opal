@@ -9,6 +9,7 @@ package interpretation
 
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationHandler
 import org.opalj.tac.fpcf.analyses.string.interpretation.InterpretationState
 import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
@@ -49,6 +50,8 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
 }
 
 object L0InterpretationHandler {
+
+    def uses: Set[PropertyBounds] = InterpretationHandler.uses
 
     def apply(project: SomeProject): L0InterpretationHandler = new L0InterpretationHandler()(project)
 }

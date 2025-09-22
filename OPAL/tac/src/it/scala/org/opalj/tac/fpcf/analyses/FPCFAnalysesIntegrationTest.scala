@@ -173,7 +173,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
     }
 
     def getProperty(fqn: String): PropertyMetaInformation = {
-        getObjectReflectively[PropertyMetaInformation](fqn, this, "integration test").get
+        getObjectReflectively[PropertyMetaInformation](fqn.trim, this, "integration test").get
     }
 
     def getConfig: Seq[(String, Set[ComputationSpecification[FPCFAnalysis]], Seq[PropertyMetaInformation])] = {

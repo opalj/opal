@@ -192,7 +192,7 @@ object Immutability extends ProjectsAnalysisApplication {
             )
         }
 
-        val callGraphKey = analysisConfig(CallGraphArg)
+        val callGraphKey = analysisConfig(CallGraphArg).get
 
         callGraphKey.requirements(project)
 
