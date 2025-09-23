@@ -31,7 +31,8 @@ import org.opalj.fpcf.PropertyKey
  * @author Maximilian Rüsch
  */
 sealed trait FieldAccesses {
-    final def partialResults(accessContext: Context): IterableOnce[PartialResult[?, ? >: Null <: Property]] = {
+
+    final def partialResults(accessContext: Context): IterableOnce[PartialResult[_, _ >: Null <: Property]] = {
         var results = partialResultsForFieldBasedFieldAccesses
             .iterator
             .asInstanceOf[Iterator[PartialResult[_, _ >: Null <: Property]]]

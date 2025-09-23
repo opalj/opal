@@ -8,8 +8,7 @@ package instances
 package lcp_on_fields
 package problem
 
-import scala.collection.immutable.Set
-import scala.collection.mutable.{Set => MutableSet}
+import scala.collection.mutable.Set as MutableSet
 
 import org.opalj.ai.isImplicitOrExternalException
 import org.opalj.br.Field

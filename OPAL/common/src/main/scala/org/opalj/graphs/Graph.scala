@@ -5,7 +5,7 @@ package graphs
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-import scala.collection.{Map => AMap}
+import scala.collection.Map as AMap
 import scala.collection.mutable
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set

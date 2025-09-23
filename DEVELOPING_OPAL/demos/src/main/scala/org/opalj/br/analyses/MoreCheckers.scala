@@ -248,9 +248,11 @@ object MoreCheckers {
         val abstractCovariantEquals = time {
             for {
                 classFile <- classFiles;
-                case method @ Method(_, "equals", MethodDescriptor(Seq(classFile.thisType), BooleanType)) <-
-                    classFile.methods
-                if method.isAbstract
+                case method @ Method(
+                    _,
+                    "equals",
+                    MethodDescriptor(Seq(classFile.thisType), BooleanType)
+                ) <- classFile.methods if method.isAbstract
             } yield (classFile, method);
         }(t => collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ + abstractCovariantEquals.size)

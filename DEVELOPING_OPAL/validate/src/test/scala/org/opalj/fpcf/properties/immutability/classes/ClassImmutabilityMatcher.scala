@@ -34,7 +34,7 @@ class ClassImmutabilityMatcher(val property: ClassImmutability) extends Abstract
     }
 
     override def validateProperty(
-        p:          Project[?],
+        project:    Project[?],
         as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,
@@ -66,7 +66,8 @@ class DependentlyImmutableClassMatcher
                         val annotationType = a.annotationType.asFieldType.asClassType
                         val annotationParameters =
                             getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(
-                                x => x.asStringValue.value
+                                x =>
+                                    x.asStringValue.value
                             )
                         annotationParameters.toSet.equals(latticeParameters.toSet)
                     case _ => p == property

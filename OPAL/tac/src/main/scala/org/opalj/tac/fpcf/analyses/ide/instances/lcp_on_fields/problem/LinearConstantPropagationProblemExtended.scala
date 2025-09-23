@@ -8,8 +8,6 @@ package instances
 package lcp_on_fields
 package problem
 
-import scala.collection.immutable.Set
-
 import org.opalj.br.ClassType
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
@@ -18,7 +16,7 @@ import org.opalj.ide.problem.EdgeFunctionResult
 import org.opalj.ide.problem.FinalEdgeFunction
 import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.LCPOnFieldsPropertyMetaInformation
-import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.{VariableValue => LCPVariableValue}
+import org.opalj.tac.fpcf.analyses.ide.instances.lcp_on_fields.problem.VariableValue as LCPVariableValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.ConstantValue
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearCombinationEdgeFunction
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationFact
