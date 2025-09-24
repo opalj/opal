@@ -205,19 +205,19 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     /**
      * Checks whether the object reference of a PutField does not escape (except for being returned).
      */
-    def referenceHasNotEscaped(
+    def referenceHasEscaped(
         ref:     V,
         stmts:   Array[Stmt[V]],
         method:  DefinedMethod,
         callers: Callers
     )(implicit state: AnalysisState): Boolean = {
         ref.definedBy.forall { defSite =>
-            if (defSite < 0) false // Must be locally created
+            if (defSite < 0) true // Must be locally created
             else {
                 val definition = stmts(defSite).asAssignment
                 // Must either be null or freshly allocated
-                if (definition.expr.isNullExpr) true
-                else if (!definition.expr.isNew) false
+                if (definition.expr.isNullExpr) false
+                else if (!definition.expr.isNew) true
                 else {
                     var hasEscaped = false
                     callers.forNewCalleeContexts(null, method) { context =>
@@ -225,7 +225,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                         val escapeProperty = propertyStore(entity, EscapeProperty.key)
                         hasEscaped ||= handleEscapeProperty(escapeProperty)
                     }
-                    !hasEscaped
+                    hasEscaped
                 }
             }
         }

@@ -113,12 +113,8 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     state.fieldAssignability eq Assignable
                 } else
                     true
-            } else if (receiverVarOpt.isDefined && !referenceHasNotEscaped(
-                           receiverVarOpt.get,
-                           taCode.stmts,
-                           definedMethod,
-                           callers
-                       )
+            } else if (receiverVarOpt.isDefined &&
+                       referenceHasEscaped(receiverVarOpt.get, taCode.stmts, definedMethod, callers)
             ) {
                 // Here the clone pattern is determined among others
                 // note that here we assume real three address code (flat hierarchy)

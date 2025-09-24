@@ -64,7 +64,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             // write the field as long as that new object did not yet escape.
             (!method.isConstructor ||
                 objRef.definedBy != SelfReferenceParameter) &&
-                !referenceHasNotEscaped(objRef, stmts, definedMethod, callers)
+                referenceHasEscaped(objRef, stmts, definedMethod, callers)
         } else {
             !method.isStaticInitializer
         }
