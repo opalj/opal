@@ -76,7 +76,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     extends AbstractFieldAssignabilityAnalysis
     with FPCFAnalysis {
 
-    val considerLazyInitialization: Boolean =
+    private val considerLazyInitialization: Boolean =
         project.config.getBoolean(
             "org.opalj.fpcf.analyses.L2FieldAssignabilityAnalysis.considerLazyInitialization"
         )
@@ -315,7 +315,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * Determines whether the basic block of a given index dominates the basic block of the other index or is executed
      * before the other index in the case of both indexes belonging to the same basic block.
      */
-    def dominates(
+    private def dominates(
         potentiallyDominatorIndex: Int,
         potentiallyDominatedIndex: Int,
         taCode:                    TACode[TACMethodParameter, V]
@@ -327,7 +327,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominatorIndex < potentiallyDominatedIndex
     }
 
-    def hasMultipleNonConstructorWrites(method: Method)(implicit state: AnalysisState): Boolean = {
+    private def hasMultipleNonConstructorWrites(method: Method)(implicit state: AnalysisState): Boolean = {
         val writes = state.fieldWriteAccessDependee.get.ub.accesses.toSeq
 
         // prevents writes outside the method and the constructor
@@ -342,7 +342,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * Determines the kind of lazy initialization of a given field in the given method through a given field write.
      * @author Tobias Roth
      */
-    def determineLazyInitialization(
+    private def determineLazyInitialization(
         writeIndex:    Int,
         defaultValues: Set[Any],
         method:        Method,
@@ -442,7 +442,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             Assignable
     }
 
-    def doFieldReadsEscape(
+    private def doFieldReadsEscape(
         reads:      Seq[(Int, PC, AccessReceiver, AccessParameter)],
         method:     Method,
         guardIndex: Int,
@@ -515,7 +515,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      *         The throw statements: (the pc, the definitionSites, the bb of the throw statement)
      * @author Tobias Roth
      */
-    def findCatchesAndThrows(
+    private def findCatchesAndThrows(
         tacCode: TACode[TACMethodParameter, V]
     ): (List[(Int, IntTrieSet)], List[(Int, IntTrieSet)]) = {
         var caughtExceptions: List[(Int, IntTrieSet)] = List.empty
@@ -545,7 +545,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * @return the index of the monitor enter and exit
      * @author Tobias Roth
      */
-    def findMonitors(
+    private def findMonitors(
         fieldWrite: Int,
         tacCode:    TACode[TACMethodParameter, V]
     )(implicit state: State): (Option[Int], Option[Int]) = {
@@ -638,7 +638,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * first statement executed if the field does not have its default value and the index of the
      * field read used for the guard and the index of the field-read.
      */
-    def findGuards(
+    private def findGuards(
         fieldWrite:    Int,
         defaultValues: Set[Any],
         taCode:        TACode[TACMethodParameter, V]
@@ -736,7 +736,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     /**
      * Returns all predecessor BasicBlocks of a CFGNode.
      */
-    def getPredecessors(node: CFGNode, visited: Set[CFGNode]): List[BasicBlock] = {
+    private def getPredecessors(node: CFGNode, visited: Set[CFGNode]): List[BasicBlock] = {
         def getPredecessorsInternal(node: CFGNode, visited: Set[CFGNode]): Iterator[BasicBlock] = {
             node.predecessors.iterator.flatMap { currentNode =>
                 if (currentNode.isBasicBlock) {
@@ -754,7 +754,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     /**
      * Determines whether a node is a transitive predecessor of another node.
      */
-    def isTransitivePredecessor(possiblePredecessor: CFGNode, node: CFGNode): Boolean = {
+    private def isTransitivePredecessor(possiblePredecessor: CFGNode, node: CFGNode): Boolean = {
 
         val visited: mutable.Set[CFGNode] = mutable.Set.empty
 
@@ -774,7 +774,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     /**
      * Returns all successors BasicBlocks of a CFGNode
      */
-    def getSuccessors(node: CFGNode, visited: Set[CFGNode]): List[BasicBlock] = {
+    private def getSuccessors(node: CFGNode, visited: Set[CFGNode]): List[BasicBlock] = {
         def getSuccessorsInternal(node: CFGNode, visited: Set[CFGNode]): Iterator[BasicBlock] = {
             node.successors.iterator flatMap { currentNode =>
                 if (currentNode.isBasicBlock)
@@ -790,7 +790,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * Checks if an expression is a field read of the currently analyzed field.
      * For instance fields, the read must be on the `this` reference.
      */
-    def isReadOfCurrentField(
+    private def isReadOfCurrentField(
         expr:    Expr[V],
         tacCode: TACode[TACMethodParameter, V],
         index:   Int
@@ -845,7 +845,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * Determines if an if-Statement is actually a guard for the current field, i.e. it compares
      * the current field to the default value.
      */
-    def isGuard(
+    private def isGuard(
         ifStmt:        If[V],
         defaultValues: Set[Any],
         code:          Array[Stmt[V]],
@@ -944,7 +944,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     /**
      * Checks that the returned value is definitely read from the field.
      */
-    def isFieldValueReturned(
+    private def isFieldValueReturned(
         write:        FieldWriteAccessStmt[V],
         writeIndex:   Int,
         readIndex:    Int,
@@ -1036,11 +1036,7 @@ object LazyL2FieldAssignabilityAnalysis extends L2FieldAssignabilityAnalysisSche
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
-    override final def register(
-        p:      SomeProject,
-        ps:     PropertyStore,
-        unused: Null
-    ): FPCFAnalysis = {
+    override final def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L2FieldAssignabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldAssignability.key,
