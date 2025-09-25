@@ -24,20 +24,18 @@
             color: #DCDCDE;
         }
 
-        .content {
+        .value {
             padding: 1em;
             border: 0.1em solid #DCDCDE;
             border-radius: 0.5em;
             margin-left: 2em;
-        }
-        .content:has(+ .header) {
             display: none;
         }
-        .content ~ .content {
-            display: none;
+        .value.expanded {
+            display: block;
         }
 
-        .header {
+        .key {
             color: #28272D;
             background-color: #FBFAFD;
             margin: 1em 0em;
@@ -49,7 +47,7 @@
             color: #626168;
         }
 
-        .expandBox {
+        .expandButton {
             float: right;
             color: #626168;
             font-size: 0.5em;
@@ -59,27 +57,34 @@
             border-collapse: collapse;
         }
 
-        /* Enforces showing of: */
-        @layer { /* (Enforces precedence of showing results vs. hiding non-results (next rule)) */
-            .search-result, /* - headers and `p`s that contain the search term */
-            .search-result + .content, /* - content divs where the respective header contained the search term */
-            .search-result + .content > p, /* `p`s in content divs where the respective header contained the search term */
+        /* Enforces hiding of value divs with search results on user request */
+        @layer manual {
+            .force-collapsed {
+                display: none !important;
+            }
+        }
 
-            .content:has(.search-result), /* - content divs where any child contains the search term */
-            .header:has(+ .content .search-result) { /* - headers where the respective content div has any child containing the search term */
+        /* Enforces showing of: */
+        @layer search { /* (Enforces precedence of showing results vs. hiding non-results (next rule)) */
+            .search-result, /* - keys and `p`s that contain the search term */
+            .search-result + .value, /* - value divs where the respective key contained the search term */
+            .search-result + .value > p, /* `p`s in value divs where the respective key contained the search term */
+
+            .value:has(.search-result), /* - value divs where any child contains the search term */
+            .key:has(+ .value .search-result) { /* - keys where the respective value div has any child containing the search term */
                 display: block !important;
             }
         }
         /* Hides: */
-        .search-no-result, /* - headers and `p`s that don't contain the search term */
-        .content:has(.search-no-result) { /* - content divs not matched by the @layer rule above when search is performed */
+        .search-no-result, /* - keys and `p`s that don't contain the search term */
+        .value:has(.search-no-result) { /* - value divs not matched by the @layer rule above when search is performed */
             display: none !important;
         }
         /* Hides separator rules where: */
-        /* - the following header does not contain the search term */
-        /* - the content div following the header does not contain the search term
+        /* - the following key does not contain the search term */
+        /* - the value div following the key does not contain the search term
         /* - when search is performed */
-        hr:not(:scope + .search-result):not(:scope + .header + .content:has(.search-result)):has(+ .header + .content .search-no-result) {
+        hr:not(:scope + .search-result):not(:scope + .key + .value:has(.search-result)):has(+ .key + .value .search-no-result) {
             display: none;
         }
 
@@ -88,6 +93,15 @@
           color: black;
           background-color: yellow;
         }
+
+        /* Sets the correct text for the expand box */
+        .key > .expandButton::before {
+            content: "Show";
+        }
+        .key:has(+ .value.expanded, + .value .search-result):not(:has(+ .value.force-collapsed)) > .expandButton::before {
+            content: "Hide";
+        }
+
     </style>
     <script type="module">
         import { highlightSearchTerm } from "https://cdn.jsdelivr.net/npm/highlight-search-term@1.0.2/src/index.js";
@@ -95,7 +109,7 @@
         search.addEventListener("input", () => {
             highlightSearchTerm({
                 search: search.value,
-                selector: ".header, p",
+                selector: ".key, p",
             });
         });
     </script>
@@ -104,12 +118,16 @@
             const searchString = document.getElementById("index-input").value.trim().toLowerCase();
             const contentContainer = document.getElementById("content-container");
             if (searchString === "") {
-                document.querySelectorAll('.header, p').forEach(element => {
+                document.querySelectorAll('.key, p').forEach(element => {
                         element.classList.remove('search-result');
                         element.classList.remove('search-no-result');
                 });
+                document.querySelectorAll('.value').forEach(element => {
+                        element.classList.remove('force-expanded');
+                        element.classList.remove('force-collapsed');
+                });
             } else {
-                document.querySelectorAll('.header, p').forEach(element => {
+                document.querySelectorAll('.key, p').forEach(element => {
                     if (element.textContent.toLowerCase().includes(searchString)) {
                         element.classList.add('search-result');
                         element.classList.remove('search-no-result');
@@ -138,26 +156,24 @@
 </div>
 
 <script>
-    document.querySelectorAll('.header').forEach(header => {
-        const expandBox = header.querySelector('.expandBox');
+    document.querySelectorAll('.key').forEach(key => {
+        const expandButton = key.querySelector('.expandButton');
 
-        if(expandBox) {
-            const content = header.nextElementSibling;
-            header.style.cursor = 'pointer';
-            if (content.checkVisibility()) {
-                expandBox.textContent = 'Hide';
-            }
-            header.addEventListener('click', () => {
+        if(expandButton) {
+            const value = key.nextElementSibling;
+            key.style.cursor = 'pointer';
 
-                if (content.checkVisibility()) {
-                    content.style.display = 'none';
-                    expandBox.textContent = 'Show';
-                } else {
-                    content.style.display = 'block';
-                    expandBox.textContent = 'Hide';
-                }
+            key.addEventListener('click', () => {
+                if(key.classList.contains('search-result') || key.classList.contains('search-no-result'))
+                    value.classList.toggle('force-collapsed');
+                else
+                    value.classList.toggle('expanded');
+
             });
         }
+    });
+    document.querySelectorAll('.value:has(+ .key), .value ~ .value').forEach(value => {
+        value.classList.remove('expanded');
     });
 </script>
 
