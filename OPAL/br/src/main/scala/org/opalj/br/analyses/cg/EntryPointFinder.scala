@@ -253,7 +253,6 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
 trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
     import pureconfig._
-    import pureconfig.generic.derivation.default._
 
     // don't make this a val for initialization reasons
     @inline private def additionalEPConfigKey: String = {
@@ -372,7 +371,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         super.collectEntryPoints(project) ++ entryPoints
     }
 
-    /* Required by Ficus' `ArbitraryTypeReader`*/
+    /* Required by pureconfig */
     private case class EntryPointContainer(
         declaringClass: String,
         name:           String,

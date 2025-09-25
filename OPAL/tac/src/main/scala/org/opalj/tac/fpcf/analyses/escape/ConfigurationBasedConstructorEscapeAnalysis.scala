@@ -9,7 +9,6 @@ import org.opalj.br.ClassType
 import org.opalj.br.fpcf.properties.EscapeProperty
 
 import pureconfig._
-import pureconfig.generic.derivation.default._
 
 /**
  * In the configuration system it is possible to define escape information for the this local in the
@@ -22,7 +21,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
 
     override type AnalysisContext <: AbstractEscapeAnalysisContext
 
-    private case class PredefinedResult(class_type: String, escape_of_this: String) derives ConfigReader
+    private case class PredefinedResult(classType: String, escapeOfThis: String) derives ConfigReader
 
     private val ConfigKey = {
         "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
@@ -37,9 +36,9 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
         ConfigSource.fromConfig(project.config).at(ConfigKey).loadOrThrow[Seq[PredefinedResult]].map { r =>
             import scala.reflect.runtime.*
             val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
-            val module = rootMirror.staticModule(r.escape_of_this)
+            val module = rootMirror.staticModule(r.escapeOfThis)
             val property = rootMirror.reflectModule(module).instance.asInstanceOf[EscapeProperty]
-            (ClassType(r.class_type), property)
+            (ClassType(r.classType), property)
         }.toMap
     }
 

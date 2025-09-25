@@ -15,7 +15,6 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 
 import pureconfig._
-import pureconfig.generic.derivation.default._
 
 /**
  * Meta-information about a project that belongs to a corpus.
@@ -25,10 +24,10 @@ import pureconfig.generic.derivation.default._
  * @author Michael Eichberg
  */
 case class ProjectConfiguration(
-    id:             String,
-    cp:             String,
-    libcp:          Option[String],
-    libcp_defaults: Option[String]
+    id:            String,
+    cp:            String,
+    libcp:         Option[String],
+    libcpDefaults: Option[String]
 ) derives ConfigReader {
 
     @volatile private var theProjectStatistics: immutable.Map[String, Double] = immutable.Map.empty
@@ -70,7 +69,7 @@ case class ProjectConfiguration(
         info(
             "project setup",
             s"creating new project: $id\n\t\t" +
-                s"cp=$cp\n\t\tlibcp=$libcp\n\t\tlibcp_defaults=$libcp_defaults"
+                s"cp=$cp\n\t\tlibcp=$libcp\n\t\tlibcp_defaults=$libcpDefaults"
         )(using GlobalLogContext)
 
         val cpJARs = cp.split(File.pathSeparatorChar).flatMap { jar =>
@@ -106,7 +105,7 @@ case class ProjectConfiguration(
                     }
             }
         }
-        val libraryClassFiles: Iterable[(br.ClassFile, URL)] = libcp_defaults match {
+        val libraryClassFiles: Iterable[(br.ClassFile, URL)] = libcpDefaults match {
             case None            => libcpJARs
             case Some(libraries) =>
                 var predefinedLibrariesClassFiles = Iterable.empty[(br.ClassFile, URL)]

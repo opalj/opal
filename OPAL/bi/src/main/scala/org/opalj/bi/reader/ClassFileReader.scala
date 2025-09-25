@@ -356,7 +356,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         if (jarFile.length() == 0)
             throw new IOException(s"the file $jarFile is empty");
 
-        val levenshteinDistance = new LevenshteinDistance()
+        val levenshteinDistance = LevenshteinDistance.getDefaultInstance
 
         process(new ZipFile(jarFile)) { zf =>
             val jarEntry = zf.getEntry(jarFileEntryName)

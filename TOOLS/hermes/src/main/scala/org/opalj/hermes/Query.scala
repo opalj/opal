@@ -6,7 +6,6 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 
 import pureconfig._
-import pureconfig.generic.derivation.default._
 
 /**
  * Container for feature queries.
