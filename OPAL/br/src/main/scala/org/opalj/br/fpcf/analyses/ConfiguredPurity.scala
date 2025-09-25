@@ -13,8 +13,7 @@ import org.opalj.br.analyses.cg.ClassExtensibilityKey
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.fpcf.PropertyStoreKey
 
-import pureconfig._
-import pureconfig.generic.derivation.default._
+import pureconfig.*
 
 /**
  * @author Dominik Helm

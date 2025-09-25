@@ -1,16 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 
-import com.jsuereth.sbtpgp.PgpKeys.*
-import sbt.*
-import sbt.Keys.*
-import sbt.sbtpgp.Compat.publishSignedConfigurationTask
+import com.jsuereth.sbtpgp.PgpKeys._
+import sbt._
+import sbt.Keys._
 
 object PublishingOverwrite {
 
     val onSnapshotOverwriteSettings = Seq(
         publishConfiguration := withOverwrite(publishConfiguration.value, isSnapshot.value),
         publishSignedConfiguration := withOverwrite(
-            publishSignedConfigurationTask.value,
+            publishSignedConfiguration.value,
             isSnapshot.value
         ),
         publishLocalConfiguration ~= (_.withOverwrite(true)),
