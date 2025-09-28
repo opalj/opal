@@ -26,6 +26,7 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.NoResult
@@ -38,6 +39,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
+import org.opalj.tac.fpcf.properties.NoTACAI
 
 /**
  * Applies the impact of preconfigured methods to the points-to analysis.
@@ -143,7 +145,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         filterNonInstantiableTypes: Boolean
     ): Iterator[ProperPropertyComputationResult] = {
         implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, null)
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, FinalEP(null, NoTACAI))
 
         var pc = -1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
