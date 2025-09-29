@@ -22,6 +22,7 @@ import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
@@ -34,6 +35,7 @@ import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.properties.NoTACAI
 
 /**
  * Introduces object allocations for newInstance reflection methods.
@@ -126,7 +128,7 @@ abstract class NewInstanceMethodAnalysis(
     ): ProperPropertyComputationResult = {
 
         implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, FinalEP(null, NoTACAI))
 
         val defSite = getDefSite(pc)
 
