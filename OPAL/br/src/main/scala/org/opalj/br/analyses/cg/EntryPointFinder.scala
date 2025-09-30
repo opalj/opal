@@ -44,10 +44,14 @@ trait EntryPointFinder {
  * application. Please note that a command-line application can provide multiple entry points. This
  * analysis identifies **all** main methods of the given code.
  *
+ * According to the JVM 25 specification, valid main methods must be named "main", must return void
+ * and may not be private. They must have either one parameter, which must be an array of strings,
+ * or no parameters at all. Main methods can be inherited from interfaces or superclasses.
+ *
  * @note If it is required to find only a specific main method as entry point, please use the
  *       configuration-based entry point finder.
  *
- * @author Michael Reif
+ * @author Johannes Düsing
  */
 trait ApplicationEntryPointsFinder extends EntryPointFinder {
 
@@ -55,15 +59,57 @@ trait ApplicationEntryPointsFinder extends EntryPointFinder {
 
         val declaredMethods = project.get(DeclaredMethodsKey)
 
-        val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
+        val MAIN_METHOD_DESCRIPTOR_WITH_ARGS = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
+        val MAIN_METHOD_DESCRIPTOR_WITHOUT_ARGS = MethodDescriptor.NoArgsAndReturnVoid
 
-        super.collectEntryPoints(project) ++ project.allMethodsWithBody.iterator.collect {
-            case m: Method
-                if m.isStatic
-                    && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
-                    && (m.name == "main") =>
-                declaredMethods(m)
+        def isMainMethodWithArgs(m: Method): Boolean = m.name == "main" &&
+            !m.isPrivate && m.descriptor == MAIN_METHOD_DESCRIPTOR_WITH_ARGS
+
+        def isMainMethodWithoutArgs(m: Method): Boolean = m.name == "main" &&
+            !m.isPrivate && m.descriptor == MAIN_METHOD_DESCRIPTOR_WITHOUT_ARGS
+
+        val allEntryPoints = project.allClassFiles.flatMap { cf =>
+            // Note that static methods are NOT contained in the instance methods - they must be looked up on the
+            // class file's method definitions.
+            val classTypeInstanceMethods = project.instanceMethods(cf.thisType)
+
+            // For any given class, a main method with the string array parameter takes precedence over the one with
+            // no parameters, as per the JVM 25 specification.
+
+            // We start by looking up main methods with the string array parameter that are  defined by the current
+            // class itself - this includes static method definitions.
+            val theMainMethodOpt = cf.methods.find(isMainMethodWithArgs)
+                // If no matching method is found, we look for inherited main methods with string array parameter
+                .orElse(classTypeInstanceMethods.find(mDecl => isMainMethodWithArgs(mDecl.method)).map(_.method))
+                // If no matching method is found, we look for direct definitions of no parameter main methods
+                .orElse(cf.methods.find(isMainMethodWithoutArgs))
+                // If no matching method is found, we look for inherited main methods with no parameters
+                .orElse(classTypeInstanceMethods.find(mDecl => isMainMethodWithoutArgs(mDecl.method)).map(_.method))
+
+            // At this point, theMainMethodOpt contains the main method with the highest precedence for the current
+            // class, or None if no main method exists.
+
+            // If the selected main method is not static, the JVM will invoke a default constructor for the current
+            // class before invoking the main method itself. This constructor must also be treated as an entry point.
+            if (theMainMethodOpt.isDefined && !theMainMethodOpt.get.isStatic) {
+
+                // We search for a default constructor
+                val defaultConstructor = project
+                    .instanceMethods(cf.thisType)
+                    .map(_.method)
+                    .find(m => m.isConstructor && m.descriptor == MethodDescriptor.NoArgsAndReturnVoid)
+
+                // If no default constructor exists, we cannot consider the selected main method - as per the JVM 25
+                // specification the execution will fail if no default constructor is available
+                if (defaultConstructor.isEmpty) Seq.empty
+                else theMainMethodOpt.toSeq ++ defaultConstructor
+            } else {
+                theMainMethodOpt.toSeq
+            }
+
         }
+
+        super.collectEntryPoints(project) ++ allEntryPoints.map(declaredMethods.apply)
     }
 }
 
