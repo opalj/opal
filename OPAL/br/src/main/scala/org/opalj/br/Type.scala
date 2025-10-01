@@ -1307,6 +1307,7 @@ object ClassType {
     final val ScalaSymbolLiteral = ClassType("scala/runtime/SymbolLiteral")
     final val ScalaSymbol = ClassType("scala/Symbol")
     final val ScalaStructuralCallSite = ClassType("scala/runtime/StructuralCallSite")
+    final val ScalaRuntimeObject = ClassType("scala/runtime/ScalaRunTime$")
     final val Method = ClassType("java/lang/reflect/Method")
     final val Constructor = ClassType("java/lang/reflect/Constructor")
     final val Array = ClassType("java/lang/reflect/Array")
@@ -1331,6 +1332,9 @@ object ClassType {
     final val ArithmeticException = ClassType("java/lang/ArithmeticException")
     final val ClassNotFoundException = ClassType("java/lang/ClassNotFoundException")
     final val IllegalArgumentException = ClassType("java/lang/IllegalArgumentException")
+    final val IllegalStateException = ClassType("java/lang/IllegalStateException")
+
+    final val AssertionError = ClassType("java/lang/AssertionError")
     /**
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.
@@ -1347,6 +1351,24 @@ object ClassType {
 
     final val ObjectInputStream = ClassType("java/io/ObjectInputStream")
     final val ObjectOutputStream = ClassType("java/io/ObjectOutputStream")
+    final val ObjectOutput = ClassType("java/io/ObjectOutput")
+    final val ObjectInput = ClassType("java/io/ObjectInput")
+    final val ObjectInputValidation = ClassType("java/io/ObjectInputValidation")
+
+    // Java Security Types for doPrivileged analysis
+    final val AccessController = ClassType("java/security/AccessController")
+    final val PrivilegedAction = ClassType("java/security/PrivilegedAction")
+    final val PrivilegedExceptionAction = ClassType("java/security/PrivilegedExceptionAction")
+    final val AccessControlContext = ClassType("java/security/AccessControlContext")
+    final val Permission = ClassType("java/security/Permission")
+
+    final val PrintStream = ClassType("java/io/PrintStream")
+    final val List = ClassType("java/util/List")
+    final val ThreadUncaughtExceptionHandler = ClassType("java/lang/Thread$UncaughtExceptionHandler")
+    final val Properties = ClassType("java/util/Properties")
+    final val WrapperGenerator = ClassType("WrapperGenerator")
+    final val SunUnsafe = ClassType("sun/misc/Unsafe")
+    final val JdkUnsafe = ClassType("jdk/internal/misc/Unsafe")
 
     private[br] final val highestPredefinedTypeId = nextId.get() - 1
 

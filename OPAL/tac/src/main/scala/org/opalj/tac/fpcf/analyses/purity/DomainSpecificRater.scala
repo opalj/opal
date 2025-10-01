@@ -98,7 +98,7 @@ class BaseDomainSpecificRater extends DomainSpecificRater {
  * Mixin that rates whether a call or GetStatic is part of using `System.out` or `System.err`
  */
 trait SystemOutErrRater extends DomainSpecificRater {
-    private final val printStream = ClassType("java/io/PrintStream")
+    private final val printStream = ClassType.PrintStream
 
     abstract override def handleCall(
         call:     Call[V],
@@ -245,9 +245,9 @@ trait ExceptionRater extends DomainSpecificRater {
 trait AssertionExceptionRater extends DomainSpecificRater {
 
     private final val exceptionTypes = Set(
-        ClassType("java/lang/AssertionError"),
+        ClassType.AssertionError,
         ClassType.IllegalArgumentException,
-        ClassType("java/lang/IllegalStateException")
+        ClassType.IllegalStateException
     )
 
     abstract override def handleCall(

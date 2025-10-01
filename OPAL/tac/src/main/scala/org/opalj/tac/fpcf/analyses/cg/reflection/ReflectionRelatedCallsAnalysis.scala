@@ -467,7 +467,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
     final val project: SomeProject
 ) extends ReflectionAnalysis with TypeConsumerAnalysis {
 
-    private[this] val ConstructorT = ClassType("java/lang/reflect/Constructor")
+    private[this] val ConstructorT = ClassType.Constructor
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         ConstructorT,
@@ -1643,7 +1643,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
                     "",
                     ClassType.MethodHandle,
                     "invokeWithArguments",
-                    MethodDescriptor(ClassType("java/util/List"), ClassType.Object)
+                    MethodDescriptor(ClassType.List, ClassType.Object)
                 ),
                 isSignaturePolymorphic = false
             )

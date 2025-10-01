@@ -48,8 +48,6 @@ class SystemPropertiesAnalysis private[analyses] (
 
     private type State = SystemPropertiesState[ContextType]
 
-    private val propertiesType = ClassType("java/util/Properties")
-
     def processMethod(callContext: ContextType, tacaiEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         // IMPROVE add initialization framework similar to the EntryPointFinder framework
         implicit val state: State = new SystemPropertiesState(callContext, tacaiEP)
@@ -59,7 +57,7 @@ class SystemPropertiesAnalysis private[analyses] (
             case VirtualFunctionCallStatement(call)
                 if (call.name == "setProperty" || call.name == "put") && classHierarchy.isSubtypeOf(
                     call.declaringClass,
-                    propertiesType
+                    ClassType.Properties
                 ) =>
                 values ++= getPossibleStrings(call.pc, call.params(1))
 
