@@ -34,6 +34,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
+import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
@@ -348,7 +349,7 @@ abstract class TamiFlexPointsToNewInstanceAnalysis(
         isDirect:      Boolean
     ): ProperPropertyComputationResult = {
         implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, FinalEP(null, NoTACAI))
 
         val line = callerContext.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
         val allocatedTypes = tamiFlexLogData.classes(callerContext.method, key, line)
@@ -397,7 +398,7 @@ abstract class TamiFlexPointsToClassGetMemberAnalysis(
         }
         if (members.nonEmpty) {
             implicit val state: State =
-                new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
+                new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, FinalEP(null, NoTACAI))
 
             state.includeSharedPointsToSet(
                 getDefSite(pc),
@@ -439,7 +440,7 @@ abstract class TamiFlexPointsToClassGetMembersAnalysis(
         val classTypes = tamiFlexLogData.classes(callerContext.method, s"Class.$method", line)
         if (classTypes.nonEmpty) {
             implicit val state: State =
-                new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
+                new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, FinalEP(null, NoTACAI))
             state.includeSharedPointsToSet(
                 getDefSite(pc),
                 createPointsToSet(pc, callerContext, ArrayType(memberType), isConstant = false),
