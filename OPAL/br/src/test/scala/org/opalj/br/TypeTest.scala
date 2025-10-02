@@ -62,8 +62,8 @@ class TypeTest extends AnyFunSpec {
             val obj = ClassType.lookup(ClassType.ObjectId)
             assert(obj.fqn.equals("java/lang/Object"))
 
-            val oos = ClassType.lookup(ClassType.highestPredefinedTypeId)
-            assert(oos.fqn.equals("java/io/ObjectOutputStream"))
+            val hpt = ClassType.lookup(ClassType.highestPredefinedTypeId)
+            assert(hpt.fqn.equals("androidx/localbroadcastmanager/content/LocalBroadcastManager"))
         }
     }
 
