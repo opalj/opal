@@ -835,7 +835,6 @@ final class PKESequentialPropertyStore protected (
         currentPhaseToDelete.foreach { key => ps(key).clear() }
     }
 
-
     def shutdown(): Unit = {}
 }
 
