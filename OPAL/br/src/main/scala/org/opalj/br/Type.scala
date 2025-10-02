@@ -1289,6 +1289,7 @@ object ClassType {
     final val ThreadGroup = ClassType("java/lang/ThreadGroup")
     final val Runnable = ClassType("java/lang/Runnable")
 
+    final val Runtime = ClassType("java/lang/Runtime")
     final val Module = ClassType("java/lang/Module")
 
     // Types related to the invokedynamic instruction
@@ -1312,6 +1313,9 @@ object ClassType {
     final val Constructor = ClassType("java/lang/reflect/Constructor")
     final val Array = ClassType("java/lang/reflect/Array")
     final val Field = ClassType("java/lang/reflect/Field")
+    final val AnnotatedElement = ClassType("java/lang/reflect/AnnotatedElement")
+    final val GenericDeclaration = ClassType("java/lang/reflect/GenericDeclaration")
+    final val Type = ClassType("java/lang/reflect/Type")
 
     // Types related to dynamic constants
     final val ConstantBootstraps = ClassType("java/lang/invoke/ConstantBootstraps")
@@ -1361,14 +1365,28 @@ object ClassType {
     final val PrivilegedExceptionAction = ClassType("java/security/PrivilegedExceptionAction")
     final val AccessControlContext = ClassType("java/security/AccessControlContext")
     final val Permission = ClassType("java/security/Permission")
+    final val Cipher = ClassType("javax/crypto/Cipher")
+    final val Key = ClassType("java/security/Key")
 
+    final val File = ClassType("java/io/File")
     final val PrintStream = ClassType("java/io/PrintStream")
+    final val Collection = ClassType("java/util/Collection")
+    final val Collections = ClassType("java/util/Collections")
     final val List = ClassType("java/util/List")
+    final val FutureTask = ClassType("java/util/concurrent/FutureTask")
     final val ThreadUncaughtExceptionHandler = ClassType("java/lang/Thread$UncaughtExceptionHandler")
     final val Properties = ClassType("java/util/Properties")
     final val WrapperGenerator = ClassType("WrapperGenerator")
     final val SunUnsafe = ClassType("sun/misc/Unsafe")
     final val JdkUnsafe = ClassType("jdk/internal/misc/Unsafe")
+    final val InterfaceAddress = ClassType("java/net/InterfaceAddress")
+    final val SelectionKey = ClassType("java/nio/channels/SelectionKey")
+
+    // Android types
+    final val Activity = ClassType("android/app/Activity")
+    final val Context = ClassType("android/content/Context")
+    final val IntentFilter = ClassType("android/content/IntentFilter")
+    final val LocalBroadcastManager = ClassType("androidx/localbroadcastmanager/content/LocalBroadcastManager")
 
     private[br] final val highestPredefinedTypeId = nextId.get() - 1
 

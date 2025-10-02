@@ -24,11 +24,8 @@ import org.opalj.value.ValueInformation
  * @author Nicolas Gross
  */
 object ContextRegisteredReceiversAnalysis {
+
     private val RegisterReceiverMethod = "registerReceiver"
-    private val ContextClass = ClassType("android/content/Context")
-    private val LocalBroadcastManagerClass = ClassType("androidx/localbroadcastmanager/content/LocalBroadcastManager")
-    private val ActivityClass = ClassType("android/app/Activity")
-    private val IntentFilterClass = ClassType("android/content/IntentFilter")
 
     def analyze(project: Project[_]): Seq[ApkContextRegisteredReceiver] = {
         val foundReceivers: ListBuffer[ApkContextRegisteredReceiver] = ListBuffer.empty
@@ -87,8 +84,8 @@ object ContextRegisteredReceiversAnalysis {
     }
 
     private def classMatches(clazz: ClassType): Boolean = {
-        clazz == ContextClass || clazz == LocalBroadcastManagerClass ||
-        clazz == ActivityClass
+        clazz == ClassType.Context || clazz == ClassType.LocalBroadcastManager ||
+        clazz == ClassType.Activity
     }
 
     private def classHierarchyMatches(project: Project[_], clazz: ClassType): Boolean = {
@@ -116,12 +113,12 @@ object ContextRegisteredReceiversAnalysis {
         val foundActions: ListBuffer[String] = ListBuffer.empty
         val foundCategories: ListBuffer[String] = ListBuffer.empty
         if (intentDef.isAssignment && intentDef.asAssignment.expr.isNew &&
-            intentDef.asAssignment.expr.asNew.tpe == IntentFilterClass
+            intentDef.asAssignment.expr.asNew.tpe == ClassType.IntentFilter
         ) {
             intentDef.asAssignment.targetVar.usedBy
                 .foreach(tacMethod.stmts(_) match {
                     case VirtualFunctionCallStatement(call)
-                        if call.declaringClass.mostPreciseClassType == IntentFilterClass =>
+                        if call.declaringClass.mostPreciseClassType == ClassType.IntentFilter =>
                         val actionOrCategory = call.params.head.asVar.value.asReferenceValue.toCanonicalForm
                             .asInstanceOf[TheStringValue]
                             .value

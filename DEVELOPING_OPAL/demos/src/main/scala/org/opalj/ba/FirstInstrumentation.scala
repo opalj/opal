@@ -28,7 +28,7 @@ import org.opalj.util.InMemoryClassLoader
  */
 object FirstInstrumentation extends App {
 
-    val PrintStreamType = ClassType("java/io/PrintStream")
+    val PrintStreamType = ClassType.PrintStream
     val SystemType = ClassType.System
 
     val TheType = ClassType("org/opalj/ba/SimpleInstrumentationDemo")

@@ -437,9 +437,9 @@ object FieldValuesAnalysis {
     // IMPROVE Move to configuration file.
     final val ignoredFields: Map[ClassType, Set[String]] = Map(
         ClassType.System -> Set("in", "out", "err"),
-        ClassType("java/net/InterfaceAddress") -> Set("address"),
-        ClassType("java/util/concurrent/FutureTask") -> Set("runner"),
-        ClassType("java/nio/channels/SelectionKey") -> Set("attachment")
+        ClassType.InterfaceAddress -> Set("address"),
+        ClassType.FutureTask -> Set("runner"),
+        ClassType.SelectionKey -> Set("attachment")
     )
 
 }
