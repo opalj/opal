@@ -825,10 +825,16 @@ final class PKESequentialPropertyStore protected (
             }
         } while (continueComputation)
 
+        clearObsoletePropertyKinds()
         idle = true
 
         if (exception != null) throw exception;
     }
+
+    private def clearObsoletePropertyKinds(): Unit = {
+        currentPhaseToDelete.foreach { key => ps(key).clear() }
+    }
+
 
     def shutdown(): Unit = {}
 }
