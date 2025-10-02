@@ -13,95 +13,6 @@ import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis;
  */
 public class VirtualCalls {
 
-    public interface AnInterface {
-
-        // This method has pure (SubClassA) and impure (SubClassB) implementations
-        int interfaceMethod(int i);
-    }
-
-    public abstract class BaseClass {
-
-        // This method has pure (SubClassA) and side-effect free (SubClassB) implementations
-        public abstract int abstractMethod(int i);
-
-        // This (pure) method has an impure override in SubClassB
-        @CompileTimePure("Only returns immutable parameter")
-        @Pure(value = "Only returns immutable parameter",
-                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
-        public int nonAbstractMethod(int i) {
-            return i;
-        }
-
-        @CompileTimePure("Only returns double of immutable parameter")
-        @Pure(value = "Only returns double of immutable parameter",
-                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
-        public final int finalMethod(int i) {
-            return i * 2;
-        }
-    }
-
-    public class SubClassA extends BaseClass implements AnInterface {
-
-        @CompileTimePure("Only returns result of exception-free computation on immutable parameter")
-        @Pure(value = "Only returns result of exception-free computation on immutable parameter",
-                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
-        public int interfaceMethod(int i) {
-            return i * 2;
-        }
-
-        @CompileTimePure("Only returns result of exception-free computation on immutable parameter")
-        @Pure(value = "Only returns result of cexception-free omputation on immutable parameter",
-                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
-        public final int abstractMethod(int i) {
-            return i + 2;
-        }
-
-        @CompileTimePure("Only returns result of exception-free computation on immutable parameter")
-        @Pure(value = "Only returns result of cexception-free omputation on immutable parameter",
-                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
-        public int nonAbstractMethod(int i) {
-            if (i > 0)
-                return i;
-            else
-                return -1;
-        }
-    }
-
-    public class SubClassB extends BaseClass implements AnInterface {
-
-        private int nonFinal = 5;
-
-        @Impure("Uses native method System.nanoTime")
-        public int interfaceMethod(int i) {
-            return (int) (i + System.getenv().size());
-        }
-
-        @SideEffectFree("Uses value of instance field")
-        @Impure(value = "Uses instance field", analyses = L0PurityAnalysis.class)
-        public final int abstractMethod(int i) {
-            return i + nonFinal;
-        }
-
-        @ContextuallySideEffectFree(value = "modifies and returns instance field nonFinal",
-                modifies = {0})
-        @Impure(value = "modifies instance field nonFinal",
-                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
-        public int nonAbstractMethod(int i) {
-            nonFinal += i;
-            return nonFinal;
-        }
-    }
-
-    public final class SubClassC extends BaseClass {
-
-        @CompileTimePure("returns constant 0")
-        @Pure(value = "returns constant 0",
-                analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
-        public int abstractMethod(int i) {
-            return 0;
-        }
-    }
-
     @Impure("interfaceMethod could be implemented in a subclass of SubClassA that is not available")
     public int impureInterfaceCall1(SubClassA a) {
         AnInterface ai = a;
@@ -218,5 +129,46 @@ public class VirtualCalls {
         if (c == null)
             return 0;
         return c.finalMethod(i);
+    }
+}
+
+interface AnInterface {
+
+    // This method has pure (SubClassA) and impure (SubClassB) implementations
+    int interfaceMethod(int i);
+}
+
+class SubClassB extends BaseClass implements AnInterface {
+
+    private int nonFinal = 5;
+
+    @Impure("Uses native method System.nanoTime")
+    public int interfaceMethod(int i) {
+        return (int) (i + System.getenv().size());
+    }
+
+    @SideEffectFree("Uses value of instance field")
+    @Impure(value = "Uses instance field", analyses = L0PurityAnalysis.class)
+    public final int abstractMethod(int i) {
+        return i + nonFinal;
+    }
+
+    @ContextuallySideEffectFree(value = "modifies and returns instance field nonFinal",
+            modifies = {0})
+    @Impure(value = "modifies instance field nonFinal",
+            analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
+    public int nonAbstractMethod(int i) {
+        nonFinal += i;
+        return nonFinal;
+    }
+}
+
+final class SubClassC extends BaseClass {
+
+    @CompileTimePure("returns constant 0")
+    @Pure(value = "returns constant 0",
+            analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
+    public int abstractMethod(int i) {
+        return 0;
     }
 }
