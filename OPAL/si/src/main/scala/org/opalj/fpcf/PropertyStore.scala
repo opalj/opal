@@ -135,8 +135,7 @@ abstract class PropertyStore {
     //
 
     private[this] val externalInformation = new ConcurrentHashMap[AnyRef, AnyRef]()
-
-    var currentPhaseConf: Option[PhaseConfiguration[_]] = None
+    protected[this] var currentPhaseToDelete: Set[Int] = Set.empty
 
     /**
      * Attaches or returns some information associated with the property store using a key object.
@@ -531,7 +530,8 @@ abstract class PropertyStore {
         pc: EOptionP[E, P] => InterimEP[E, P]
     ): Unit
 
-    final def setupPhase(configuration: PropertyKindsConfiguration): Unit = {
+    final def setupPhase(configuration: PropertyKindsConfiguration, toDelete: Set[Int]): Unit = {
+        this.currentPhaseToDelete = toDelete
         setupPhase(
             configuration.propertyKindsComputedInThisPhase,
             configuration.propertyKindsComputedInLaterPhase,
@@ -1013,10 +1013,6 @@ abstract class PropertyStore {
             case ct: ControlThrowable => throw ct;
             case t: Throwable         => collectAndThrowException(t)
         }
-    }
-
-    def setCurrentPhaseConfiguration[A](pc: PhaseConfiguration[A]): Unit = {
-        currentPhaseConf = Some(pc)
     }
 }
 

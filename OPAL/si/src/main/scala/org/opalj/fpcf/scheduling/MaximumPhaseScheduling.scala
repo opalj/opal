@@ -3,16 +3,21 @@ package org.opalj
 package fpcf
 package scheduling
 
-import com.typesafe.config.Config
-import org.opalj.collection.IntIterator
-import org.opalj.fpcf.AnalysisScenario.ConfigKeyPrefix
-import org.opalj.fpcf.scheduling.CleanupCalculation.{DisableCleanup, PropertiesToKeepKey, PropertiesToRemoveKey}
-import org.opalj.fpcf.scheduling.MultiplePhaseScheduling.AnalysisScheduleLazyTransformerInMultiplePhasesKey
-import org.opalj.graphs.{sccs, topologicalSort}
-import org.opalj.log.{LogContext, OPALLogger}
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import com.typesafe.config.Config
+
+import org.opalj.collection.IntIterator
+import org.opalj.fpcf.AnalysisScenario.ConfigKeyPrefix
+import org.opalj.fpcf.scheduling.CleanupCalculation.DisableCleanup
+import org.opalj.fpcf.scheduling.CleanupCalculation.PropertiesToKeepKey
+import org.opalj.fpcf.scheduling.CleanupCalculation.PropertiesToRemoveKey
+import org.opalj.fpcf.scheduling.MultiplePhaseScheduling.AnalysisScheduleLazyTransformerInMultiplePhasesKey
+import org.opalj.graphs.sccs
+import org.opalj.graphs.topologicalSort
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  * Base class for scheduling strategies that create multiple computation phases.
@@ -97,38 +102,59 @@ abstract class MultiplePhaseScheduling extends SchedulingStrategy {
             computePhase(ps, phaseAnalyses, remainingAnalyses)
         }
 
-        if(config.getBoolean(DisableCleanup)) calculateDeletions(schedule, ps, config) else schedule
+        if (!config.getBoolean(DisableCleanup)) calculateDeletions(schedule, ps, config) else schedule
     }
 
-    private def calculateDeletions[A](schedule: List[PhaseConfiguration[A]], ps: PropertyStore, config: Config): List[PhaseConfiguration[A]] = {
-        def getSetOrNilForProperty(propertyKey: String) = {
-            if (!config.hasPath(propertyKey)) Nil
-            else {
-                val rawValue = config.getString(propertyKey).trim
-                if (rawValue.isEmpty) Set.empty[Int]
-                else rawValue.split(",").map(_.trim.toInt).toSet
+    private def calculateDeletions[A](
+        schedule: List[PhaseConfiguration[A]],
+        ps:       PropertyStore,
+        config:   Config
+    ): List[PhaseConfiguration[A]] = {
+        def keyByName(name: String): SomePropertyKey = {
+            val max = PropertyKey.maxId
+            var i = 0
+            while (i <= max) {
+                if (PropertyKey.name(i) == name) return PropertyKey.key(i)
+                i += 1
             }
+            throw new IllegalArgumentException(s"Unknown property name: $name")
         }
-        val pkToKeep = getSetOrNilForProperty(PropertiesToKeepKey)
-        val pkToDelete = getSetOrNilForProperty(PropertiesToRemoveKey)
-         val properties: mutable.Set[Int] =
-            schedule.iterator.flatMap(_.propertyKinds.propertyKindsComputedInThisPhase.map(key => key.id)).to(mutable.Set)
+        def getSetForProperty(propertyKey: String): Set[Int] = {
+            Option(
+                config.getString(propertyKey)
+            ).toSeq.flatMap(_.split(",")).filter(_.nonEmpty).map(name => keyByName(name).id).toSet
+        }
+        val pkToKeep = getSetForProperty(PropertiesToKeepKey)
+        val pkToDelete = getSetForProperty(PropertiesToRemoveKey)
+        val properties: Set[Int] =
+            schedule.iterator.flatMap(
+                _.propertyKinds.propertyKindsComputedInThisPhase.map(_.id)
+            ).toSet
 
         val modifiedSchedule: ListBuffer[PhaseConfiguration[A]] = ListBuffer.from(schedule)
 
         var usedDependencies: Set[Int] = Set.empty
         var alreadyDeleted: Set[Int] = Set.empty
-        for (elem <- modifiedSchedule.reverseIterator) {
-
+        val lastIndex = modifiedSchedule.length - 1
+        var index = lastIndex
+        while (index >= 0) {
+            val elem = modifiedSchedule(index)
             val currentSchedule = elem.scheduled
-            usedDependencies ++= currentSchedule.iterator.flatMap(_.uses(ps).iterator.map(_.pk.id))
+            usedDependencies ++= currentSchedule.iterator.flatMap(_.uses(ps).iterator.map(_.pk.id)).toSet
             usedDependencies ++= pkToKeep
-            val remaining: Set[Int] = properties.toSet diff usedDependencies diff alreadyDeleted
+            val remaining: Set[Int] = {
+                if (index == lastIndex) {
+                    (properties -- pkToKeep) -- alreadyDeleted
+                } else
+                    (properties -- usedDependencies) -- alreadyDeleted
+            }
 
-            elem.toDelete = remaining
             alreadyDeleted ++= remaining
+            index -= 1
         }
-        modifiedSchedule.last.toDelete ++= pkToDelete
+        modifiedSchedule(lastIndex) = modifiedSchedule(lastIndex).copy(
+            toDelete = (modifiedSchedule(lastIndex).toDelete ++ pkToDelete) -- pkToKeep
+        )
         modifiedSchedule.toList
     }
 
@@ -203,6 +229,6 @@ object MaximumPhaseScheduling extends MultiplePhaseScheduling {
 
 object CleanupCalculation {
     final val PropertiesToKeepKey = s"${ConfigKeyPrefix}KeepPropertyKeys"
-    final val PropertiesToRemoveKey = s"${ConfigKeyPrefix}RemovePropertyKeys"
+    final val PropertiesToRemoveKey = s"${ConfigKeyPrefix}ClearPropertyKeys"
     final val DisableCleanup = s"${ConfigKeyPrefix}DisableCleanup"
 }

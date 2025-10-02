@@ -52,10 +52,7 @@ case class Schedule[A](
                 info("analysis progress", s"setting up analysis phase $id: $configuration")
             }
             time {
-                ps.setupPhase(configuration)
-                ps.setCurrentPhaseConfiguration(
-                    PhaseConfiguration(configuration, css, toDelete)
-                )
+                ps.setupPhase(configuration, toDelete)
                 afterPhaseSetup(configuration)
                 assert(ps.isIdle, "the property store is not idle after phase setup")
 
@@ -91,7 +88,7 @@ case class Schedule[A](
             }
         }
         // ... we are done now; the computed properties will no longer be computed!
-        ps.setupPhase(Set.empty, Set.empty)
+        ps.setupPhase(Set.empty, propertyKindsComputedInLaterPhase = Set.empty)
 
         allExecutedAnalyses
     }
