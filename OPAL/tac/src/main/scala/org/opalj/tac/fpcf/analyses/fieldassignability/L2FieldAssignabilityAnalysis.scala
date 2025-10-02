@@ -81,6 +81,23 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             "org.opalj.fpcf.analyses.L2FieldAssignabilityAnalysis.considerLazyInitialization"
         )
 
+    case class State(
+        field: Field
+    ) extends AbstractFieldAssignabilityAnalysisState {
+        var checkLazyInit: Option[(Method, Int, Int, TACode[TACMethodParameter, V])] = None
+        var openWrites = List.empty[(DefinedMethod, TACode[TACMethodParameter, V], Option[V], PC)]
+
+        var fieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
+
+        override def hasDependees: Boolean = fieldReadAccessDependee.exists(_.isRefinable) || super.hasDependees
+
+        override def dependees: Set[SomeEOptionP] = super.dependees ++ fieldReadAccessDependee.filter(_.isRefinable)
+    }
+
+    type AnalysisState = State
+
+    override def createState(field: Field): AnalysisState = State(field)
+
     /**
      * Analyzes field writes for a single method, returning false if the field may still be
      * effectively non-assignable and true otherwise.
@@ -289,23 +306,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             }
         }
     }
-
-    case class State(
-        field: Field
-    ) extends AbstractFieldAssignabilityAnalysisState {
-        var checkLazyInit: Option[(Method, Int, Int, TACode[TACMethodParameter, V])] = None
-        var openWrites = List.empty[(DefinedMethod, TACode[TACMethodParameter, V], Option[V], PC)]
-
-        var fieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
-
-        override def hasDependees: Boolean = fieldReadAccessDependee.exists(_.isRefinable) || super.hasDependees
-
-        override def dependees: Set[SomeEOptionP] = super.dependees ++ fieldReadAccessDependee.filter(_.isRefinable)
-    }
-
-    type AnalysisState = State
-
-    override def createState(field: Field): AnalysisState = State(field)
 
     /**
      * Determines whether the basic block of a given index dominates the basic block of the other index or is executed
