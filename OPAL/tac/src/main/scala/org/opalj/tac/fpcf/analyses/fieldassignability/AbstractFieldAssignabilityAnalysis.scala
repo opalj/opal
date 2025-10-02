@@ -37,7 +37,6 @@ import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
 import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.immutability.Assignable
@@ -59,8 +58,6 @@ import org.opalj.fpcf.SomeInterimEP
 import org.opalj.fpcf.UBP
 import org.opalj.tac.DUVar
 import org.opalj.tac.Stmt
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
@@ -72,22 +69,19 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         val field: Field
         var fieldAssignability: FieldAssignability = NonAssignable
-        var fieldAccesses: Map[DefinedMethod, Set[(PC, AccessReceiver)]] = Map.empty
+        var fieldAccesses: Map[DefinedMethod, Map[Int, Set[(PC, AccessReceiver)]]] = Map.empty
         var escapeDependees: Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty
         var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
         var tacDependees: Map[DefinedMethod, EOptionP[Method, TACAI]] = Map.empty
-        var callerDependees: Map[DefinedMethod, EOptionP[DefinedMethod, Callers]] = Map.empty.withDefault { dm =>
-            propertyStore(dm, Callers.key)
-        }
 
         def hasDependees: Boolean = {
             escapeDependees.nonEmpty || fieldWriteAccessDependee.exists(_.isRefinable) ||
-            tacDependees.valuesIterator.exists(_.isRefinable) || callerDependees.valuesIterator.exists(_.isRefinable)
+            tacDependees.valuesIterator.exists(_.isRefinable)
         }
 
         def dependees: Set[SomeEOptionP] = {
             escapeDependees ++ fieldWriteAccessDependee.filter(_.isRefinable) ++
-                callerDependees.valuesIterator.filter(_.isRefinable) ++ tacDependees.valuesIterator.filter(_.isRefinable)
+                tacDependees.valuesIterator.filter(_.isRefinable)
         }
     }
 
@@ -114,25 +108,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
     def createState(field: Field): AnalysisState
 
-    /**
-     * Analyzes the field's assignability.
-     *
-     * This analysis is only ''soundy'' if the class file does not contain native methods and reflections.
-     * Fields can be manipulated by any given native method.
-     * Because the analysis cannot be aware of any given native method,
-     * they are not considered as well as reflections.
-     */
-    private[analyses] def determineFieldAssignability(
-        field: Field
-    ): ProperPropertyComputationResult = {
-
+    private[analyses] def determineFieldAssignability(field: Field): ProperPropertyComputationResult = {
         implicit val state: AnalysisState = createState(field)
-
-        state.fieldAssignability =
-            if (field.isFinal)
-                NonAssignable
-            else
-                EffectivelyNonAssignable
 
         val thisType = field.classFile.thisType
         if (!field.isFinal) {
@@ -149,25 +126,105 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             }
         }
 
-        val fwaiEP = propertyStore(declaredFields(field), FieldWriteAccessInformation.key)
+        state.fieldAssignability =
+            if (field.isFinal) NonAssignable
+            else EffectivelyNonAssignable
 
-        if (handleFieldWriteAccessInformation(fwaiEP))
-            return Result(field, Assignable);
+        handleWriteAccessInformation(propertyStore(declaredFields(field), FieldWriteAccessInformation.key))
+    }
+
+    protected def handleWriteAccessInformation(
+        newEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
+    )(implicit state: AnalysisState): ProperPropertyComputationResult = {
+        if (newEP.hasUBP) {
+            val newFai = newEP.ub
+            val (seenDirectAccesses, seenIndirectAccesses) = state.fieldWriteAccessDependee match {
+                case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                case _              => (0, 0)
+            }
+            state.fieldWriteAccessDependee = Some(newEP)
+
+            newFai.getNewestAccesses(
+                newFai.numDirectAccesses - seenDirectAccesses,
+                newFai.numIndirectAccesses - seenIndirectAccesses
+                ) foreach { case (contextID, pc, receiver, _) =>
+                val method = contextProvider.contextFromId(contextID).method.asDefinedMethod
+                val access = (pc, receiver)
+                state.fieldAccesses = state.fieldAccesses.updatedWith(method) {
+                    case None => Some(Map((contextID, Set(access))))
+                    case Some(map) => Some(map + (contextID -> (map.getOrElse(contextID, Set.empty) + access)))
+                }
+            }
+
+            state.fieldAccesses.foreachEntry { (method, contextIDToAccesses) =>
+                val tacEP = state.tacDependees.get(method) match {
+                    case Some(tacEP) => tacEP
+                    case None        =>
+                        val tacEP = propertyStore(method.definedMethod, TACAI.key)
+                        state.tacDependees += method -> tacEP
+                        tacEP
+                }
+
+                if (tacEP.hasUBP) {
+                    contextIDToAccesses.foreachEntry { (contextID, accesses) =>
+                        val context = contextProvider.contextFromId(contextID)
+                        if (state.fieldAssignability == Assignable ||
+                            doesMethodUpdateFieldInContext(context, method, tacEP.ub.tac.get, accesses))
+                            state.fieldAssignability = Assignable
+                    }
+                }
+            }
+        } else {
+            state.fieldWriteAccessDependee = Some(newEP)
+        }
 
         createResult()
     }
 
     /**
-     * Analyzes field writes for a single method, returning false if the field may still be
-     * effectively final and true otherwise.
+     * Returns true when the method in the given context definitely updates the field in a way that forces it to be
+     * assignable, and false when it does not, or we are not yet sure.
+     *
+     * @note Callers must pass ALL write accesses of this method in this context discovered so far.
      */
-    def methodUpdatesField(
-        method:   DefinedMethod,
-        taCode:   TACode[TACMethodParameter, V],
-        callers:  Callers,
-        pc:       PC,
-        receiver: AccessReceiver
+    protected def doesMethodUpdateFieldInContext(
+        context: Context,
+        definedMethod: DefinedMethod,
+        taCode: TACode[TACMethodParameter, V],
+        writeAccesses: Iterable[(PC, AccessReceiver)]
     )(implicit state: AnalysisState): Boolean
+
+    def createResult()(implicit state: AnalysisState): ProperPropertyComputationResult = {
+        if (state.hasDependees && (state.fieldAssignability ne Assignable))
+            InterimResult(state.field, lb = Assignable, ub = state.fieldAssignability, state.dependees, continuation)
+        else
+            Result(state.field, state.fieldAssignability)
+    }
+
+    def continuation(eps: SomeEPS)(implicit state: AnalysisState): ProperPropertyComputationResult = {
+        eps.pk match {
+            case FieldWriteAccessInformation.key =>
+                handleWriteAccessInformation(eps.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]])
+
+            case EscapeProperty.key =>
+                val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
+                state.escapeDependees = state.escapeDependees.filter(_.e != newEP.e)
+                if (handleEscapeProperty(newEP))
+                    Result(state.field, Assignable)
+                else
+                    createResult()
+
+            case TACAI.key =>
+                val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
+                val method = declaredMethods(newEP.e)
+                val accessesByContext = state.fieldAccesses(method)
+                state.tacDependees += method -> newEP
+                if (accessesByContext.exists(kv => doesMethodUpdateFieldInContext(contextProvider.contextFromId(kv._1), method, newEP.ub.tac.get, kv._2)))
+                    Result(state.field, Assignable)
+                else
+                    createResult()
+        }
+    }
 
     /**
      * Handles the influence of an escape property on the field immutability.
@@ -209,7 +266,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         ref:     V,
         stmts:   Array[Stmt[V]],
         method:  DefinedMethod,
-        callers: Callers
+        context: Context
     )(implicit state: AnalysisState): Boolean = {
         ref.definedBy.forall { defSite =>
             if (defSite < 0) true // Must be locally created
@@ -219,120 +276,11 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
                 else {
-                    var hasEscaped = false
-                    callers.forNewCalleeContexts(null, method) { context =>
-                        val entity = (context, definitionSites(method.definedMethod, definition.pc))
-                        val escapeProperty = propertyStore(entity, EscapeProperty.key)
-                        hasEscaped ||= handleEscapeProperty(escapeProperty)
-                    }
-                    hasEscaped
+                    val entity = (context, definitionSites(method.definedMethod, definition.pc))
+                    val escapeProperty = propertyStore(entity, EscapeProperty.key)
+                    handleEscapeProperty(escapeProperty)
                 }
             }
-        }
-    }
-
-    protected[this] def handleFieldWriteAccessInformation(
-        newEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
-    )(implicit state: AnalysisState): Boolean = {
-        val assignable = if (newEP.hasUBP) {
-            val newFai = newEP.ub
-            val (seenDirectAccesses, seenIndirectAccesses) = state.fieldWriteAccessDependee match {
-                case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-                case _              => (0, 0)
-            }
-            state.fieldWriteAccessDependee = Some(newEP)
-
-            newFai.getNewestAccesses(
-                newFai.numDirectAccesses - seenDirectAccesses,
-                newFai.numIndirectAccesses - seenIndirectAccesses
-            ) exists { case (contextID, pc, receiver, _) =>
-                val method = contextProvider.contextFromId(contextID).method.asDefinedMethod
-                state.fieldAccesses += method -> (state.fieldAccesses.getOrElse(method, Set.empty) +
-                    ((pc, receiver)))
-
-                val tacEP = state.tacDependees.get(method) match {
-                    case Some(tacEP) => tacEP
-                    case None        =>
-                        val tacEP = propertyStore(method.definedMethod, TACAI.key)
-                        state.tacDependees += method -> tacEP
-                        tacEP
-                }
-
-                val callersEP = state.callerDependees.get(method) match {
-                    case Some(callersEP) => callersEP
-                    case None            =>
-                        val callersEP = propertyStore(method, Callers.key)
-                        state.callerDependees += method -> callersEP
-                        callersEP
-                }
-
-                if (tacEP.hasUBP && callersEP.hasUBP)
-                    methodUpdatesField(method, tacEP.ub.tac.get, callersEP.ub, pc, receiver)
-                else
-                    false
-            }
-        } else {
-            state.fieldWriteAccessDependee = Some(newEP)
-            false
-        }
-
-        assignable
-    }
-
-    /**
-     * Continuation function handling updates to the FieldPrematurelyRead property or to the purity
-     * property of the method that initializes a (potentially) lazy initialized field.
-     */
-    def c(eps: SomeEPS)(implicit state: AnalysisState): ProperPropertyComputationResult = {
-        val isNonFinal = eps.pk match {
-            case EscapeProperty.key =>
-                val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
-                state.escapeDependees = state.escapeDependees.filter(_.e != newEP.e)
-                handleEscapeProperty(newEP)
-            case TACAI.key =>
-                val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
-                val method = declaredMethods(newEP.e)
-                val accesses = state.fieldAccesses.get(method)
-                state.tacDependees += method -> newEP
-                val callersProperty = state.callerDependees(method)
-                if (callersProperty.hasUBP && accesses.isDefined)
-                    accesses.get.exists(access =>
-                        methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, access._1, access._2)
-                    )
-                else false
-            case Callers.key =>
-                val newEP = eps.asInstanceOf[EOptionP[DefinedMethod, Callers]]
-                val method = newEP.e
-                val accesses = state.fieldAccesses.get(method)
-                state.callerDependees += newEP.e -> newEP
-                val tacProperty = state.tacDependees(method)
-                if (tacProperty.hasUBP && tacProperty.ub.tac.isDefined && accesses.isDefined)
-                    accesses.get.exists(access =>
-                        methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, access._1, access._2)
-                    )
-                else false
-            case FieldWriteAccessInformation.key =>
-                val newEP = eps.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]]
-                handleFieldWriteAccessInformation(newEP)
-        }
-
-        if (isNonFinal)
-            Result(state.field, Assignable)
-        else
-            createResult()
-    }
-
-    def createResult()(implicit state: AnalysisState): ProperPropertyComputationResult = {
-        if (state.hasDependees && (state.fieldAssignability ne Assignable)) {
-            InterimResult(
-                state.field,
-                Assignable,
-                state.fieldAssignability,
-                state.dependees,
-                c
-            )
-        } else {
-            Result(state.field, state.fieldAssignability)
         }
     }
 
@@ -361,8 +309,7 @@ trait AbstractFieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         TACAI,
         EscapeProperty,
-        FieldWriteAccessInformation,
-        Callers
+        FieldWriteAccessInformation
     )
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
