@@ -33,6 +33,7 @@ import org.opalj.br.fpcf.properties.fieldaccess.FieldWriteAccessInformation
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
@@ -118,60 +119,76 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      *
      * @note Callers must pass ALL write accesses of this method in this context discovered so far.
      */
-    override def doesMethodUpdateFieldInContext(
-        context: Context,
+    override def determineAssignabilityFromWritesInContext(
+        context:       Context,
         definedMethod: DefinedMethod,
-        taCode: TACode[TACMethodParameter, V],
+        taCode:        TACode[TACMethodParameter, V],
         writeAccesses: Iterable[(PC, AccessReceiver)]
-    )(implicit state: AnalysisState): Boolean = {
+    )(implicit state: AnalysisState): FieldAssignability = {
         assert(writeAccesses.nonEmpty)
 
         val field = state.field
-        val method = definedMethod.definedMethod
-
-        if (field.isStatic && method.isConstructor) {
+        if (field.isStatic && definedMethod.definedMethod.isConstructor) {
             // A static field updated in an arbitrary constructor may be updated with (at least) the first call.
             // Thus, we may see its initial value or the updated value, making the field assignable.
-            return true;
+            return Assignable;
         }
 
         if (writeAccesses.size > 1) {
             // TODO handle multi-branches with domination and making sure its the same variable (this is difficult across multiple variables, may need to fall back soundly)
-            return true;
+            return Assignable;
         }
 
-        val (pc, persistentReceiverOpt) = writeAccesses.head
+        val assignabilities = writeAccesses.map { access => {
+            determineAssignabilityFromAccess(context, definedMethod, taCode)(access._1, access._2)
+        }}
+        assignabilities.reduce(_.meet(_))
+    }
+
+    private def determineAssignabilityFromAccess(
+        context:       Context,
+        definedMethod: DefinedMethod,
+        taCode:        TACode[TACMethodParameter, V]
+    )(
+        pc: PC,
+        persistentReceiverOpt: AccessReceiver
+    )(implicit state: State): FieldAssignability = {
+        val field = state.field
+        val method = definedMethod.definedMethod
         val writeIndex = taCode.pcToIndex(pc)
         val receiverVarOpt = persistentReceiverOpt.map(uVarForDefSites(_, taCode.pcToIndex))
 
         // If we have no information about the receiver, but we should have it, soundly return true.
         if (state.field.isNotStatic && receiverVarOpt.isEmpty)
-            return true;
+            return Assignable;
 
         if (method.isInitializer && method.classFile == field.classFile) {
             if (state.field.isNotStatic && receiverVarOpt.get.definedBy != SelfReferenceParameter) {
                 // An instance field that is modified in an initializer of a different class must be assignable
-                return true;
+                return Assignable;
             }
         } else {
-            if (field.isStatic || receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter) {
+            if (field.isStatic ||
+                receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter) {
                 // A field written outside an initializer must be lazily initialized or it is assignable
                 if (considerLazyInitialization) {
-                    state.fieldAssignability = determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode)
-                    return state.fieldAssignability eq Assignable;
+                    return determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode);
                 } else
-                    return true;
-            }
-
-            if (receiverVarOpt.isDefined && referenceHasEscaped(receiverVarOpt.get, taCode.stmts, definedMethod, context)) {
+                    return Assignable;
+            } else if (receiverVarOpt.isDefined &&
+                referenceHasEscaped(receiverVarOpt.get, taCode.stmts, definedMethod, context)) {
                 // Arbitrary methods may instantiate new objects and write instance fields, as long as the new object did
                 // not yet escape. This effectively determines usage of the `clone` pattern. If the reference has escaped,
                 // we need to assume that someone observed the old field value before modification, thus soundly return.
-                return true;
+                return Assignable;
             }
         }
 
-        !doesWriteDominateAllReads(definedMethod, taCode, receiverVarOpt, writeIndex)
+        if (!doesWriteDominateAllReads(definedMethod, taCode, receiverVarOpt, writeIndex)) {
+            Assignable
+        } else {
+            NonAssignable
+        }
     }
 
     /**

@@ -14,7 +14,9 @@ import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
+import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
@@ -42,33 +44,51 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      *
      * @note Callers must pass ALL write accesses of this method in this context discovered so far.
      */
-    override def doesMethodUpdateFieldInContext(
+    override def determineAssignabilityFromWritesInContext(
         context: Context,
         definedMethod: DefinedMethod,
         taCode: TACode[TACMethodParameter, V],
         writeAccesses: Iterable[(PC, AccessReceiver)],
-    )(implicit state: AnalysisState): Boolean = {
+    )(implicit state: AnalysisState): FieldAssignability = {
+        assert(writeAccesses.nonEmpty)
+
+        val field = state.field
         val method = definedMethod.definedMethod
-        writeAccesses.exists { access =>
+
+        if (field.isStatic && method.isConstructor) {
+            // A static field updated in an arbitrary constructor may be updated with (at least) the first call.
+            // Thus, we may see its initial value or the updated value, making the field assignable.
+            return Assignable;
+        }
+
+        if (writeAccesses.size > 1) {
+            // Multi-branch access detection is not available on this level.
+            return Assignable;
+        }
+
+        val assignabilities: Iterable[FieldAssignability] = writeAccesses.map { access =>
             val receiverVarOpt = access._2.map(uVarForDefSites(_, taCode.pcToIndex))
             if (receiverVarOpt.isDefined) {
                 val receiverVar = receiverVarOpt.get
-                // note that here we assume real three address code (flat hierarchy)
-
-                // for instance fields it is okay if they are written in the
-                // constructor (w.r.t. the currently initialized object!)
-
-                // If the field that is written is not the one referred to by the
-                // self reference, it is not effectively final.
-
-                // However, a method (e.g. clone) may instantiate a new object and
-                // write the field as long as that new object did not yet escape.
-                (!method.isConstructor || receiverVar.definedBy != SelfReferenceParameter) &&
-                    referenceHasEscaped(receiverVar, taCode.stmts, definedMethod, context)
+                if (method.isConstructor && receiverVar.definedBy == SelfReferenceParameter) {
+                    // for instance fields it is okay if they are written in the
+                    // constructor (w.r.t. the currently initialized object!)
+                    NonAssignable
+                } else if (!referenceHasEscaped(receiverVar, taCode.stmts, definedMethod, context)) {
+                    // A method (e.g. clone) may instantiate a new object and write the field as long as that new object
+                    // did not yet escape.
+                    NonAssignable
+                } else {
+                    Assignable
+                }
+            } else if (!method.isStaticInitializer) {
+                Assignable
             } else {
-                !method.isStaticInitializer
+                NonAssignable
             }
         }
+
+        assignabilities.reduce(_.meet(_))
     }
 }
 
