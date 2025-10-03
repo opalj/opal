@@ -147,7 +147,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         }
 
         val assignabilities = writeAccesses.map { access => {
-            determineAssignabilityFromAccess(context, definedMethod, taCode)(access._1, access._2)
+            determineAssignabilityFromAccess(context, definedMethod, taCode)(taCode.pcToIndex(access._1), access._2)
         }}
         assignabilities.reduce(_.meet(_))
     }
@@ -157,12 +157,11 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         definedMethod: DefinedMethod,
         taCode:        TACode[TACMethodParameter, V]
     )(
-        pc: PC,
+        writeIndex: PC,
         persistentReceiverOpt: AccessReceiver
     )(implicit state: State): FieldAssignability = {
         val field = state.field
         val method = definedMethod.definedMethod
-        val writeIndex = taCode.pcToIndex(pc)
         val receiverVarOpt = persistentReceiverOpt.map(uVarForDefSites(_, taCode.pcToIndex))
 
         // If we have no information about the receiver, but we should have it, soundly return true.
@@ -191,10 +190,54 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             }
         }
 
-        if (!doesWriteDominateAllReads(definedMethod, receiverVarOpt, writeIndex)) {
+        if ((state.field.isNotStatic &&
+            isInstanceUsedSuspiciously(definedMethod, taCode, writeIndex, receiverVarOpt.get)) ||
+            !doesWriteDominateAllReads(definedMethod, receiverVarOpt, writeIndex)
+        ) {
             Assignable
         } else {
             NonAssignable
+        }
+    }
+
+    /**
+     * @return Whether the given instance on which a field is written is used in a statement that cannot be identified
+     *         as preserving non-assignability, in which case we can soundly return.
+     *
+     * IMPROVE handle static fields and obfuscated variable uses
+     */
+    private def isInstanceUsedSuspiciously(
+        definedMethod: DefinedMethod,
+        taCode:        TACode[TACMethodParameter, V],
+        writeIndex: Int,
+        receiverVar: V,
+    )(implicit state: State): Boolean = {
+        val stmts = taCode.stmts
+        if (receiverVar.definedBy.size != 1)
+            return true;
+
+        val defSite = receiverVar.definedBy.head
+        if (defSite < -1 || (defSite == -1 && !definedMethod.definedMethod.isConstructor))
+            return true;
+
+        val uses = if (defSite == -1)
+            taCode.params.thisParameter.useSites
+        else
+            stmts(defSite).asAssignment.targetVar.asVar.usedBy
+
+        // Analyze usages of the current variable for suspicious behaviour
+        uses.exists { index =>
+            val stmt = stmts(index)
+
+            // We ignore the given write ...
+            writeIndex != index &&
+                // ... and ignore fresh initializations of the object, as they cannot read fields ...
+                !(stmt.isMethodCall && stmt.asMethodCall.name == "<init>") &&
+                // ... and ignore easily recognizable assignments of other fields (read dominance is checked later)
+                // IMPROVE: Use field access information to incorporate reflective accesses
+                !(stmt.isPutField && stmt.asPutField.name != state.field.name) &&
+                // ... and ignore the case in which the statement is dominated by the given write anyway
+                !dominates(writeIndex, index, taCode)
         }
     }
 
