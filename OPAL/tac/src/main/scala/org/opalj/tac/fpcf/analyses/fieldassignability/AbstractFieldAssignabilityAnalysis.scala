@@ -227,7 +227,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Handles the influence of an escape property on the field immutability.
+     * Handles the influence of an escape property on the field assignability.
      *
      * @return true if the object - on which a field write occurred - escapes, false otherwise.
      * @note (Re-)Adds dependees as necessary.
@@ -260,7 +260,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Checks whether the object reference of a PutField does not escape (except for being returned).
+     * Checks whether the object reference of a field access does not escape (except for being returned).
      */
     def referenceHasEscaped(
         ref:     V,

@@ -129,16 +129,14 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val field = state.field
         val method = definedMethod.definedMethod
 
-        if (writeAccesses.size > 1) {
-            // There can be multiple assignments of final fields in the constructor in different branches,
-            // but otherwise if a field is written in multiple locations it must be assignable.
-            //if (!method.isConstructor) TODO handle multi-branches with domination
-            return true;
-        }
-
         if (field.isStatic && method.isConstructor) {
             // A static field updated in an arbitrary constructor may be updated with (at least) the first call.
             // Thus, we may see its initial value or the updated value, making the field assignable.
+            return true;
+        }
+
+        if (writeAccesses.size > 1) {
+            // TODO handle multi-branches with domination and making sure its the same variable (this is difficult across multiple variables, may need to fall back soundly)
             return true;
         }
 
@@ -150,32 +148,28 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         if (state.field.isNotStatic && receiverVarOpt.isEmpty)
             return true;
 
-        if (state.field.isNotStatic &&
-            method.isInitializer && method.classFile == field.classFile &&
-            receiverVarOpt.get.definedBy != SelfReferenceParameter) {
-            // An instance field that is modified in an initializer of a different class must be assignable
-            return true;
-        }
-
-        if (field.isStatic || receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter) {
-            // A field written outside an initializer must be lazily initialized or it is assignable
-            if (considerLazyInitialization) {
-                state.fieldAssignability = determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode)
-                return state.fieldAssignability eq Assignable;
-            } else
+        if (method.isInitializer && method.classFile == field.classFile) {
+            if (state.field.isNotStatic && receiverVarOpt.get.definedBy != SelfReferenceParameter) {
+                // An instance field that is modified in an initializer of a different class must be assignable
                 return true;
-        }
+            }
+        } else {
+            if (field.isStatic || receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter) {
+                // A field written outside an initializer must be lazily initialized or it is assignable
+                if (considerLazyInitialization) {
+                    state.fieldAssignability = determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode)
+                    return state.fieldAssignability eq Assignable;
+                } else
+                    return true;
+            }
 
-        if (receiverVarOpt.isDefined && referenceHasEscaped(receiverVarOpt.get, taCode.stmts, definedMethod, context)) {
-            // Arbitrary methods may instantiate new objects and write instance fields, as long as the new object did
-            // not yet escape. This effectively determines usage of the `clone` pattern. If the reference has escaped,
-            // we need to assume that someone observed the old field value before modification, thus soundly return.
-            return true;
+            if (receiverVarOpt.isDefined && referenceHasEscaped(receiverVarOpt.get, taCode.stmts, definedMethod, context)) {
+                // Arbitrary methods may instantiate new objects and write instance fields, as long as the new object did
+                // not yet escape. This effectively determines usage of the `clone` pattern. If the reference has escaped,
+                // we need to assume that someone observed the old field value before modification, thus soundly return.
+                return true;
+            }
         }
-
-        //if (method.isInitializer && method.classFile == field.classFile) {
-        //    checkWriteDominance(definedMethod, taCode, receiverVarOpt, writeIndex)
-        //}
 
         !doesWriteDominateAllReads(definedMethod, taCode, receiverVarOpt, writeIndex)
     }
@@ -245,7 +239,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 val readMethod = contextProvider.contextFromId(readContextID).method
                 writes.exists { case (writeMethod, writeIndex) =>
                     (readMethod eq writeMethod) && {
-                        val taCode = state.tacDependees(readMethod.asDefinedMethod).ub.tac.get
+                        val taCode = state.tacDependees(readMethod.asDefinedMethod).ub.tac.get // TODO check that the receiver is the same (what about static fields?)
                         !dominates(writeIndex, taCode.pcToIndex(readPC), taCode)
                     }
                 }
