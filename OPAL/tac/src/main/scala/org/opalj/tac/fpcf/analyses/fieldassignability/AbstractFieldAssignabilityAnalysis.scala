@@ -69,10 +69,13 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         val field: Field
         var fieldAssignability: FieldAssignability = NonAssignable
-        var fieldAccesses: Map[DefinedMethod, Map[Int, Set[(PC, AccessReceiver)]]] = Map.empty
+        var fieldAccesses: Map[Context, Set[(PC, AccessReceiver)]] = Map.empty
         var escapeDependees: Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty
         var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
         var tacDependees: Map[DefinedMethod, EOptionP[Method, TACAI]] = Map.empty
+
+        def forEachFieldAccess(definedMethod: DefinedMethod)(f: (Context, Set[(PC, AccessReceiver)]) => Unit): Unit =
+            fieldAccesses.iterator.filter(_._1.method eq definedMethod).foreach(kv => f(kv._1, kv._2))
 
         def hasDependees: Boolean = {
             escapeDependees.nonEmpty || fieldWriteAccessDependee.exists(_.isRefinable) ||
@@ -148,15 +151,16 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 newFai.numDirectAccesses - seenDirectAccesses,
                 newFai.numIndirectAccesses - seenIndirectAccesses
                 ) foreach { case (contextID, pc, receiver, _) =>
-                val method = contextProvider.contextFromId(contextID).method.asDefinedMethod
+                val context = contextProvider.contextFromId(contextID)
                 val access = (pc, receiver)
-                state.fieldAccesses = state.fieldAccesses.updatedWith(method) {
-                    case None => Some(Map((contextID, Set(access))))
-                    case Some(map) => Some(map + (contextID -> (map.getOrElse(contextID, Set.empty) + access)))
+                state.fieldAccesses = state.fieldAccesses.updatedWith(context) {
+                    case None => Some(Set(access))
+                    case Some(accesses) => Some(accesses + access)
                 }
             }
 
-            state.fieldAccesses.foreachEntry { (method, accessesByContext) =>
+            state.fieldAccesses.foreachEntry { (context, accesses) =>
+                val method = context.method.asDefinedMethod
                 val tacEP = state.tacDependees.get(method) match {
                     case Some(tacEP) => tacEP
                     case None        =>
@@ -165,14 +169,9 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                         tacEP
                 }
 
-                if (tacEP.hasUBP) {
-                    accessesByContext.foreachEntry { (contextID, accesses) =>
-                        val context = contextProvider.contextFromId(contextID)
-                        if (state.fieldAssignability != Assignable) {
-                            state.fieldAssignability = state.fieldAssignability.meet {
-                                determineAssignabilityFromWritesInContext(context, method, tacEP.ub.tac.get, accesses)
-                            }
-                        }
+                if (tacEP.hasUBP && state.fieldAssignability != Assignable) {
+                    state.fieldAssignability = state.fieldAssignability.meet {
+                        determineAssignabilityFromWritesInContext(context, method, tacEP.ub.tac.get, accesses)
                     }
                 }
             }
@@ -218,16 +217,14 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             case TACAI.key =>
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val method = declaredMethods(newEP.e)
-                val accessesByContext = state.fieldAccesses(method)
                 state.tacDependees += method -> newEP
-                accessesByContext.foreachEntry((contextId, accesses) => {
-                    val context = contextProvider.contextFromId(contextId)
+                state.forEachFieldAccess(method) { (context, accesses) =>
                     if (state.fieldAssignability != Assignable) {
                         state.fieldAssignability = state.fieldAssignability.meet {
                             determineAssignabilityFromWritesInContext(context, method, newEP.ub.tac.get, accesses)
                         }
                     }
-                })
+                }
                 createResult()
         }
     }
