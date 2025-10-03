@@ -128,14 +128,21 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         assert(writeAccesses.nonEmpty)
 
         val field = state.field
-        if (field.isStatic && definedMethod.definedMethod.isConstructor) {
+        val method = definedMethod.definedMethod
+        if (field.isStatic && method.isConstructor) {
             // A static field updated in an arbitrary constructor may be updated with (at least) the first call.
             // Thus, we may see its initial value or the updated value, making the field assignable.
             return Assignable;
         }
 
-        if (writeAccesses.size > 1) {
-            // TODO handle multi-branches with domination and making sure its the same variable (this is difficult across multiple variables, may need to fall back soundly)
+        if (writeAccesses.exists { access1 => writeAccesses.exists { access2 =>
+            access1._1 != access2._1 &&
+                dominates(taCode.pcToIndex(access1._1), taCode.pcToIndex(access2._1), taCode)
+        }}) {
+            // When one write is detected to dominate another, the field is definitively assigned multiple times
+            // and cannot be effectively non-assignable, even in initializers.
+            // IMPROVE reduce this to modifications on the same instance and consider cases where not every path
+            // contains multiple writes to be more sound.
             return Assignable;
         }
 
