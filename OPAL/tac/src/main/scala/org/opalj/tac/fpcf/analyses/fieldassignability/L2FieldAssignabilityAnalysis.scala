@@ -90,7 +90,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         field: Field
     ) extends AbstractFieldAssignabilityAnalysisState {
         var checkLazyInit: Option[(Method, Int, Int, TACode[TACMethodParameter, V])] = None
-        var writesToCheckForReadDominance = List.empty[(DefinedMethod, PC)]
+        var writesToCheckForReadDominance = List.empty[(DefinedMethod, PC, Option[V])]
 
         var fieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
 
@@ -206,11 +206,12 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         }
 
         val fraiEP = state.fieldReadAccessDependee.get
-        val writeAccess = (definedMethod, writeIndex)
+        val writeAccess = (definedMethod, writeIndex, receiverVar)
         if (fraiEP.hasUBP && fieldReadsNotDominated(fraiEP.ub.accesses, Seq(writeAccess)))
             return false;
 
-        state.writesToCheckForReadDominance ::= writeAccess
+        if (fraiEP.isRefinable)
+            state.writesToCheckForReadDominance ::= writeAccess
 
         true
     }
@@ -249,15 +250,26 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      */
     private def fieldReadsNotDominated(
         reads: IterableOnce[(Int, PC, AccessReceiver, AccessParameter)],
-        writes: Seq[(DefinedMethod, Int)]
+        writes: Seq[(DefinedMethod, Int, Option[V])]
     )(implicit state: State): Boolean = {
         reads.iterator.exists {
             case (readContextID, readPC, readReceiver, _) =>
                 val readMethod = contextProvider.contextFromId(readContextID).method
-                writes.exists { case (writeMethod, writeIndex) =>
+                writes.exists { case (writeMethod, writeIndex, writeReceiverVarOpt) =>
                     (readMethod eq writeMethod) && {
-                        val taCode = state.tacDependees(readMethod.asDefinedMethod).ub.tac.get // TODO check that the receiver is the same (what about static fields?)
-                        !dominates(writeIndex, taCode.pcToIndex(readPC), taCode)
+                        val taCode = state.tacDependees(readMethod.asDefinedMethod).ub.tac.get
+                        val readReceiverVarOpt = readReceiver.map(uVarForDefSites(_, taCode.pcToIndex))
+                        // A field read needs to be dominated if the field is static ...
+                        if (state.field.isStatic ||
+                            // ... OR we can infer no information about the read receiver ...
+                            readReceiverVarOpt.isEmpty ||
+                            // ... OR the read receiver is the write receiver, i.e. they have overlapping def sites
+                            // IMPROVE this does not consider obfuscating reassignments, consider using PDUWebs
+                            readReceiverVarOpt.get.definedBy.intersect(writeReceiverVarOpt.get.definedBy).nonEmpty
+                        ) {
+                            !dominates(writeIndex, taCode.pcToIndex(readPC), taCode)
+                        } else
+                            false
                     }
                 }
         }
