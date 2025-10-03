@@ -191,7 +191,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         }
 
         if ((state.field.isNotStatic &&
-            isInstanceUsedSuspiciously(definedMethod, taCode, writeIndex, receiverVarOpt.get)) ||
+            isInstanceUsedSuspiciously(context, definedMethod, taCode, writeIndex, receiverVarOpt.get)) ||
             !doesWriteDominateAllReads(definedMethod, receiverVarOpt, writeIndex)
         ) {
             Assignable
@@ -207,6 +207,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * IMPROVE handle static fields and obfuscated variable uses
      */
     private def isInstanceUsedSuspiciously(
+        context: Context,
         definedMethod: DefinedMethod,
         taCode:        TACode[TACMethodParameter, V],
         writeIndex: Int,
@@ -225,17 +226,23 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         else
             stmts(defSite).asAssignment.targetVar.asVar.usedBy
 
-        // Analyze usages of the current variable for suspicious behaviour
+        // Analyze uses of the current variable for suspicious usage while excluding known safe cases
+        val writeIndices = state.fieldAccesses(context).map(access => taCode.pcToIndex(access._1))
         uses.exists { index =>
             val stmt = stmts(index)
 
-            // We ignore the given write ...
-            writeIndex != index &&
+            // We ignore any writes (possibly disruptive reads are checked for dominance later)
+            !writeIndices.contains(index) &&
                 // ... and ignore fresh initializations of the object, as they cannot read fields ...
-                !(stmt.isMethodCall && stmt.asMethodCall.name == "<init>") &&
-                // ... and ignore easily recognizable assignments of other fields (read dominance is checked later)
+                !(stmt.isMethodCall
+                    && stmt.asMethodCall.name == "<init>"
+                    && (stmt.asMethodCall.declaringClass eq ClassType.Object)) &&
+                // ... and ignore easily recognizable assignments of other fields (again, reads are checked later) ...
                 // IMPROVE: Use field access information to incorporate reflective accesses
                 !(stmt.isPutField && stmt.asPutField.name != state.field.name) &&
+                // ... and ignore easily recognizable field reads of arbitrary fields on the current instance ...
+                stmt.forallSubExpressions(expr => !expr.isGetField ||
+                    !expr.asGetField.objRef.asVar.definedBy.contains(defSite)) &&
                 // ... and ignore the case in which the statement is dominated by the given write anyway
                 !dominates(writeIndex, index, taCode)
         }
