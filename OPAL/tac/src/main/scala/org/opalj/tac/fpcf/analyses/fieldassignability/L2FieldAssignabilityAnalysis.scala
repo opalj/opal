@@ -139,8 +139,8 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             access1._1 != access2._1 &&
                 dominates(taCode.pcToIndex(access1._1), taCode.pcToIndex(access2._1), taCode)
         }}) {
-            // When one write is detected to dominate another, the field is definitively assigned multiple times
-            // and cannot be effectively non-assignable, even in initializers.
+            // When one write is detected to dominate another within the same method, the field is definitively assigned
+            // multiple times and cannot be effectively non-assignable, even in initializers.
             // IMPROVE reduce this to modifications on the same instance and consider cases where not every path
             // contains multiple writes to be more sound.
             return Assignable;
@@ -191,7 +191,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             }
         }
 
-        if (!doesWriteDominateAllReads(definedMethod, taCode, receiverVarOpt, writeIndex)) {
+        if (!doesWriteDominateAllReads(definedMethod, receiverVarOpt, writeIndex)) {
             Assignable
         } else {
             NonAssignable
@@ -203,7 +203,6 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      */
     private def doesWriteDominateAllReads(
         definedMethod: DefinedMethod,
-        taCode:        TACode[TACMethodParameter, V],
         receiverVar:   Option[V],
         writeIndex:    Int
     )(implicit state: State): Boolean = {
