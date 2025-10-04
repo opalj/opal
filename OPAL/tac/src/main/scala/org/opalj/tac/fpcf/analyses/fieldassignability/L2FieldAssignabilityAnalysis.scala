@@ -113,32 +113,28 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         }
     }
 
-    /**
-     * Returns true when the method in the given context definitely updates the field in a way that forces it to be
-     * assignable, and false when it does not, or we are not yet sure.
-     *
-     * @note Callers must pass ALL write accesses of this method in this context discovered so far.
-     */
-    override def determineAssignabilityFromWritesInContext(
+    override def determineAssignabilityFromWriteInContext(
         context:       Context,
         definedMethod: DefinedMethod,
         taCode:        TACode[TACMethodParameter, V],
-        writeAccesses: Iterable[(PC, AccessReceiver)]
+        writePC: PC,
+        receiver: AccessReceiver
     )(implicit state: AnalysisState): FieldAssignability = {
-        assert(writeAccesses.nonEmpty)
-
         val field = state.field
         val method = definedMethod.definedMethod
+        val writeIndex = taCode.pcToIndex(writePC)
         if (field.isStatic && method.isConstructor) {
             // A static field updated in an arbitrary constructor may be updated with (at least) the first call.
             // Thus, we may see its initial value or the updated value, making the field assignable.
             return Assignable;
         }
 
-        if (writeAccesses.exists { access1 => writeAccesses.exists { access2 =>
-            access1._1 != access2._1 &&
-                dominates(taCode.pcToIndex(access1._1), taCode.pcToIndex(access2._1), taCode)
-        }}) {
+        if (state.fieldAccesses(context).exists { case(otherWritePC, _) =>
+            writePC != otherWritePC && (
+                dominates(writeIndex, taCode.pcToIndex(otherWritePC), taCode) ||
+                dominates(taCode.pcToIndex(otherWritePC), writeIndex, taCode)
+            )
+        }) {
             // When one write is detected to dominate another within the same method, the field is definitively assigned
             // multiple times and cannot be effectively non-assignable, even in initializers.
             // IMPROVE reduce this to modifications on the same instance and consider cases where not every path
@@ -146,30 +142,13 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             return Assignable;
         }
 
-        val assignabilities = writeAccesses.map { access => {
-            determineAssignabilityFromAccess(context, definedMethod, taCode)(taCode.pcToIndex(access._1), access._2)
-        }}
-        assignabilities.reduce(_.meet(_))
-    }
-
-    private def determineAssignabilityFromAccess(
-        context:       Context,
-        definedMethod: DefinedMethod,
-        taCode:        TACode[TACMethodParameter, V]
-    )(
-        writeIndex: PC,
-        persistentReceiverOpt: AccessReceiver
-    )(implicit state: State): FieldAssignability = {
-        val field = state.field
-        val method = definedMethod.definedMethod
-        val receiverVarOpt = persistentReceiverOpt.map(uVarForDefSites(_, taCode.pcToIndex))
-
+        val receiverVarOpt = receiver.map(uVarForDefSites(_, taCode.pcToIndex))
         // If we have no information about the receiver, but we should have it, soundly return true.
-        if (state.field.isNotStatic && receiverVarOpt.isEmpty)
+        if (field.isNotStatic && receiverVarOpt.isEmpty)
             return Assignable;
 
         if (method.isInitializer && method.classFile == field.classFile) {
-            if (state.field.isNotStatic && receiverVarOpt.get.definedBy != SelfReferenceParameter) {
+            if (field.isNotStatic && receiverVarOpt.get.definedBy != SelfReferenceParameter) {
                 // An instance field that is modified in an initializer of a different class must be assignable
                 return Assignable;
             }
@@ -190,7 +169,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             }
         }
 
-        if ((state.field.isNotStatic &&
+        if ((field.isNotStatic &&
             isInstanceUsedSuspiciously(context, definedMethod, taCode, writeIndex, receiverVarOpt.get)) ||
             !doesWriteDominateAllReads(definedMethod, receiverVarOpt, writeIndex)
         ) {

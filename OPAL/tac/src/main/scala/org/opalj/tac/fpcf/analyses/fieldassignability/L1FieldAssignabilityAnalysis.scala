@@ -38,20 +38,13 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     type AnalysisState = State
     override def createState(field: Field): AnalysisState = State(field)
 
-    /**
-     * Returns true when the method in the given context definitely updates the field in a way that forces it to be
-     * assignable, and false when it does not, or we are not yet sure.
-     *
-     * @note Callers must pass ALL write accesses of this method in this context discovered so far.
-     */
-    override def determineAssignabilityFromWritesInContext(
+    override def determineAssignabilityFromWriteInContext(
         context: Context,
         definedMethod: DefinedMethod,
         taCode: TACode[TACMethodParameter, V],
-        writeAccesses: Iterable[(PC, AccessReceiver)],
+        writePC: PC,
+        receiver: AccessReceiver
     )(implicit state: AnalysisState): FieldAssignability = {
-        assert(writeAccesses.nonEmpty)
-
         val field = state.field
         val method = definedMethod.definedMethod
 
@@ -61,34 +54,30 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             return Assignable;
         }
 
-        if (writeAccesses.size > 1) {
+        if (state.fieldAccesses(context).size > 1) {
             // Multi-branch access detection is not available on this level.
             return Assignable;
         }
 
-        val assignabilities: Iterable[FieldAssignability] = writeAccesses.map { access =>
-            val receiverVarOpt = access._2.map(uVarForDefSites(_, taCode.pcToIndex))
-            if (receiverVarOpt.isDefined) {
-                val receiverVar = receiverVarOpt.get
-                if (method.isConstructor && receiverVar.definedBy == SelfReferenceParameter) {
-                    // for instance fields it is okay if they are written in the
-                    // constructor (w.r.t. the currently initialized object!)
-                    NonAssignable
-                } else if (!referenceHasEscaped(receiverVar, taCode.stmts, definedMethod, context)) {
-                    // A method (e.g. clone) may instantiate a new object and write the field as long as that new object
-                    // did not yet escape.
-                    NonAssignable
-                } else {
-                    Assignable
-                }
-            } else if (!method.isStaticInitializer) {
-                Assignable
-            } else {
+        val receiverVarOpt = receiver.map(uVarForDefSites(_, taCode.pcToIndex))
+        if (receiverVarOpt.isDefined) {
+            val receiverVar = receiverVarOpt.get
+            if (method.isConstructor && receiverVar.definedBy == SelfReferenceParameter) {
+                // for instance fields it is okay if they are written in the
+                // constructor (w.r.t. the currently initialized object!)
                 NonAssignable
+            } else if (!referenceHasEscaped(receiverVar, taCode.stmts, definedMethod, context)) {
+                // A method (e.g. clone) may instantiate a new object and write the field as long as that new object
+                // did not yet escape.
+                NonAssignable
+            } else {
+                Assignable
             }
+        } else if (!method.isStaticInitializer) {
+            Assignable
+        } else {
+            NonAssignable
         }
-
-        assignabilities.reduce(_.meet(_))
     }
 }
 

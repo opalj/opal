@@ -147,10 +147,11 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             }
             state.fieldWriteAccessDependee = Some(newEP)
 
+            // Register all field accesses in the state first to enable cross access comparisons
             newFai.getNewestAccesses(
                 newFai.numDirectAccesses - seenDirectAccesses,
                 newFai.numIndirectAccesses - seenIndirectAccesses
-                ) foreach { case (contextID, pc, receiver, _) =>
+            ) foreach { case (contextID, pc, receiver, _) =>
                 val context = contextProvider.contextFromId(contextID)
                 val access = (pc, receiver)
                 state.fieldAccesses = state.fieldAccesses.updatedWith(context) {
@@ -159,19 +160,26 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 }
             }
 
-            state.fieldAccesses.foreachEntry { (context, accesses) =>
-                val method = context.method.asDefinedMethod
-                val tacEP = state.tacDependees.get(method) match {
-                    case Some(tacEP) => tacEP
-                    case None        =>
-                        val tacEP = propertyStore(method.definedMethod, TACAI.key)
-                        state.tacDependees += method -> tacEP
-                        tacEP
-                }
+            // Then determine assignability impact per access individually
+            newFai.getNewestAccesses(
+                newFai.numDirectAccesses - seenDirectAccesses,
+                newFai.numIndirectAccesses - seenIndirectAccesses
+            ) foreach { case (contextID, pc, receiver, _) =>
+                if (state.fieldAssignability != Assignable) {
+                    val context = contextProvider.contextFromId(contextID)
+                    val method = context.method.asDefinedMethod
+                    val tacEP = state.tacDependees.get(method) match {
+                        case Some(tacEP) => tacEP
+                        case None        =>
+                            val tacEP = propertyStore(method.definedMethod, TACAI.key)
+                            state.tacDependees += method -> tacEP
+                            tacEP
+                    }
 
-                if (tacEP.hasUBP && state.fieldAssignability != Assignable) {
-                    state.fieldAssignability = state.fieldAssignability.meet {
-                        determineAssignabilityFromWritesInContext(context, method, tacEP.ub.tac.get, accesses)
+                    if (tacEP.hasUBP) {
+                        state.fieldAssignability = state.fieldAssignability.meet {
+                            determineAssignabilityFromWriteInContext(context, method, tacEP.ub.tac.get, pc, receiver)
+                        }
                     }
                 }
             }
@@ -183,16 +191,18 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Returns true when the method in the given context definitely updates the field in a way that forces it to be
-     * assignable, and false when it does not, or we are not yet sure.
+     * @return The assignability inferrable from the relationship of the given write to other writes / reads in the
+     *         same context.
      *
-     * @note Callers must pass ALL write accesses of this method in this context discovered so far.
+     * @note Callers must register ALL writes discovered so far in the state before calling this method.
+     *       TODO think about if this is really necessary
      */
-    protected def determineAssignabilityFromWritesInContext(
+    protected def determineAssignabilityFromWriteInContext(
         context: Context,
         definedMethod: DefinedMethod,
         taCode: TACode[TACMethodParameter, V],
-        writeAccesses: Iterable[(PC, AccessReceiver)]
+        writePC: PC,
+        receiver: AccessReceiver
     )(implicit state: AnalysisState): FieldAssignability
 
     def createResult()(implicit state: AnalysisState): ProperPropertyComputationResult = {
@@ -218,11 +228,14 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val method = declaredMethods(newEP.e)
                 state.tacDependees += method -> newEP
+                // Renew field assignability analysis for all field accesses
                 state.forEachFieldAccess(method) { (context, accesses) =>
-                    if (state.fieldAssignability != Assignable) {
-                        state.fieldAssignability = state.fieldAssignability.meet {
-                            determineAssignabilityFromWritesInContext(context, method, newEP.ub.tac.get, accesses)
-                        }
+                    val taCode = newEP.ub.tac.get
+                    accesses.foreach { case (pc, receiver) =>
+                        if (state.fieldAssignability != Assignable)
+                            state.fieldAssignability = state.fieldAssignability.meet {
+                                determineAssignabilityFromWriteInContext(context, method, taCode, pc, receiver)
+                            }
                     }
                 }
                 createResult()
