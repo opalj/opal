@@ -292,7 +292,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
                 else {
-                    val entity = (context, definitionSites(method.definedMethod, definition.pc))
+                    val entity = (context, definitionSites(method, definition.pc))
                     val escapeProperty = propertyStore(entity, EscapeProperty.key)
                     handleEscapeProperty(escapeProperty)
                 }

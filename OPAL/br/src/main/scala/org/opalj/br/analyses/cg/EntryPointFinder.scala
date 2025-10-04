@@ -4,8 +4,6 @@ package br
 package analyses
 package cg
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
@@ -22,18 +20,23 @@ import net.ceedubs.ficus.Ficus._
  */
 trait EntryPointFinder {
 
-    /*
-     * Returns the entry points with respect to a concrete scenario.
+    /**
+     * Returns the set of entry points for a given project under analysis. Entry points may be virtual, if they are
+     * defined by the configuration but not contained in the project.
      *
-     * This method must be implemented by any subtype.
+     * @param project The concrete project for which to compute entry points
+     * @return Set of entry points to the project
      */
-    def collectEntryPoints(project: SomeProject): Iterable[Method] = Set.empty[Method]
+    def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = Set.empty[DeclaredMethod]
 
     /**
      * Returns ProjectInformationKeys required by this EntryPointFinder
      * If no extra keys are required, `Nil` can be returned.
+     *
+     * @param project The concrete project for which to compute requirements
+     * @return The set of required project information key
      */
-    def requirements(project: SomeProject): ProjectInformationKeys = Nil
+    def requirements(project: SomeProject): ProjectInformationKeys = Seq(DeclaredMethodsKey)
 }
 
 /**
@@ -41,23 +44,92 @@ trait EntryPointFinder {
  * application. Please note that a command-line application can provide multiple entry points. This
  * analysis identifies **all** main methods of the given code.
  *
+ * According to the JVM 25 specification, valid main methods must be named "main", must return void
+ * and may not be private. They must have either one parameter, which must be an array of strings,
+ * or no parameters at all. Main methods can be inherited from interfaces or superclasses. The old
+ * semantics before Java 25 can be applied by setting the following configuration value to false:
+ *
+ *  org.opalj.br.analyses.cg.InitialEntryPointsKey.useJava25Semantics
+ *
  * @note If it is required to find only a specific main method as entry point, please use the
  *       configuration-based entry point finder.
  *
- * @author Michael Reif
+ * @author Johannes Düsing
  */
 trait ApplicationEntryPointsFinder extends EntryPointFinder {
 
-    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
-        val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
+    private val java25ConfigKey = "org.opalj.br.analyses.cg.InitialEntryPointsKey.useJava25Semantics"
 
-        super.collectEntryPoints(project) ++ project.allMethodsWithBody.collect {
-            case m: Method
-                if m.isStatic
-                    && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
-                    && (m.name == "main") =>
-                m
+    override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
+
+        val useJava25Semantics = project.config.getBoolean(java25ConfigKey)
+
+        val declaredMethods = project.get(DeclaredMethodsKey)
+
+        val MAIN_METHOD_DESCRIPTOR_WITH_ARGS = MethodDescriptor.JustTakes(ArrayType(ClassType.String))
+        val MAIN_METHOD_DESCRIPTOR_WITHOUT_ARGS = MethodDescriptor.NoArgsAndReturnVoid
+
+        def isMainMethodWithArgs(m: Method): Boolean = m.name == "main" &&
+            !m.isPrivate && m.descriptor == MAIN_METHOD_DESCRIPTOR_WITH_ARGS
+
+        def isMainMethodWithoutArgs(m: Method): Boolean = m.name == "main" &&
+            !m.isPrivate && m.descriptor == MAIN_METHOD_DESCRIPTOR_WITHOUT_ARGS
+
+        if (useJava25Semantics) {
+            val allEntryPoints = project.allClassFiles.flatMap { cf =>
+                // Note that static methods are NOT contained in the instance methods - they must be looked up on the
+                // class file's method definitions.
+                val classTypeInstanceMethods = project.instanceMethods(cf.thisType)
+
+                // For any given class, a main method with the string array parameter takes precedence over the one with
+                // no parameters, as per JLS 25 §12.1.4 (and JVM Specification 25 §5.2).
+
+                // We start by looking up main methods with the string array parameter that are defined by the current
+                // class itself - this includes static method definitions.
+                val theMainMethodOpt = cf.methods.find(isMainMethodWithArgs)
+                    // If no matching method is found, we look for inherited main methods with string array parameter
+                    .orElse(classTypeInstanceMethods.find(mDecl => isMainMethodWithArgs(mDecl.method)).map(_.method))
+                    // If no matching method is found, we look for direct definitions of no parameter main methods
+                    .orElse(cf.methods.find(isMainMethodWithoutArgs))
+                    // If no matching method is found, we look for inherited main methods with no parameters
+                    .orElse(classTypeInstanceMethods.find(mDecl => isMainMethodWithoutArgs(mDecl.method)).map(_.method))
+
+                // At this point, theMainMethodOpt contains the main method with the highest precedence for the current
+                // class, or None if no main method exists.
+
+                // If the selected main method is not static, the JVM will invoke a default constructor for the current
+                // class before invoking the main method itself. This constructor must also be treated as an entry point.
+                if (theMainMethodOpt.isDefined && !theMainMethodOpt.get.isStatic) {
+
+                    // We search for a default constructor
+                    val defaultConstructor = cf
+                        .methods
+                        .find(m => m.isConstructor && m.descriptor == MethodDescriptor.NoArgsAndReturnVoid)
+
+                    // If no default constructor exists, we cannot consider the selected main method - as per the JVM 25
+                    // specification the execution will fail if no default constructor is available
+                    if (defaultConstructor.isEmpty) Seq.empty
+                    else Seq(theMainMethodOpt.get, defaultConstructor.get)
+                } else {
+                    theMainMethodOpt.toSeq
+                }
+
+            }
+
+            super.collectEntryPoints(project) ++ allEntryPoints.map(declaredMethods.apply)
+        } else {
+            // Before Java 25, entry points must be methods named "main" that are public and static, and have one
+            // parameter of type String[].
+            super.collectEntryPoints(project) ++ project.allMethodsWithBody.iterator.collect {
+                case m: Method
+                    if m.isStatic
+                        && (m.descriptor == MAIN_METHOD_DESCRIPTOR_WITH_ARGS)
+                        && (m.name == "main")
+                        && m.isPublic =>
+                    declaredMethods(m)
+            }
         }
+
     }
 }
 
@@ -72,16 +144,16 @@ trait ApplicationEntryPointsFinder extends EntryPointFinder {
 trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinder {
     private val packagesToExclude = Set("com/sun", "sun", "oracle", "jdk", "java", "com/oracle", "javax", "sunw")
 
-    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
         super.collectEntryPoints(project).filterNot { ep =>
             packagesToExclude.exists { prefix =>
-                ep.declaringClassFile.thisType.packageName.startsWith(prefix) &&
+                ep.declaringClassType.packageName.startsWith(prefix) &&
                 ep.name == "main"
             }
         }.filterNot { ep =>
             // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
             // default package.
-            ep.classFile.thisType == ClassType("WrapperGenerator")
+            ep.declaringClassType == ClassType("WrapperGenerator")
         }
     }
 }
@@ -98,7 +170,9 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
  */
 trait LibraryEntryPointsFinder extends EntryPointFinder {
 
-    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
+        val declaredMethods = project.get(DeclaredMethodsKey)
+
         val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
         val isExtensible = project.get(TypeExtensibilityKey)
         val classHierarchy = project.classHierarchy
@@ -137,12 +211,14 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
             }
         }
 
-        val eps = ArrayBuffer.empty[Method]
+        val eps = project
+            .allMethodsWithBody
+            .iterator
+            .collect {
+                case m if isEntryPoint(m) =>
+                    declaredMethods(m)
+            }
 
-        project.allMethodsWithBody.foreach { method =>
-            if (isEntryPoint(method))
-                eps.append(method)
-        }
         super.collectEntryPoints(project) ++ eps
     }
 }
@@ -181,11 +257,14 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         InitialEntryPointsKey.ConfigKeyPrefix + "entryPoints"
     }
 
-    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
         import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
         implicit val logContext: LogContext = project.logContext
-        var entryPoints = Set.empty[Method]
+
+        val declaredMethods = project.get(DeclaredMethodsKey)
+
+        var entryPoints = Set.empty[DeclaredMethod]
 
         if (!project.config.hasPath(additionalEPConfigKey)) {
             OPALLogger.info(
@@ -222,7 +301,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
             }
 
             val classType = ClassType(typeName)
-            val methodDescriptor: Option[MethodDescriptor] = descriptor.map { md =>
+            val methodDescriptor: Option[MethodDescriptor] = descriptor.flatMap { md =>
                 try {
                     Some(MethodDescriptor(md))
                 } catch {
@@ -233,14 +312,14 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                         )
                         None
                 }
-            }.getOrElse(None)
+            }
 
             def findMethods(classType: ClassType, isSubtype: Boolean = false): Unit = {
                 project.classFile(classType) match {
                     case Some(cf) =>
                         var methods: List[Method] = cf.findMethod(name)
 
-                        if (methods.size == 0)
+                        if (methods.isEmpty)
                             OPALLogger.warn(
                                 "project configuration",
                                 s"$typeName does not define a method $name; entry point ignored"
@@ -258,22 +337,21 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                                 )
                         }
 
-                        if (methods.exists(_.body.isEmpty)) {
-                            OPALLogger.warn(
-                                "project configuration",
-                                s"$typeName has an empty method $name); " +
-                                    "entry point ignored"
-                            )
-                            methods = methods.filter(_.body.isDefined)
-                        }
-
-                        entryPoints = entryPoints ++ methods
+                        entryPoints = entryPoints ++ methods.map(declaredMethods.apply).toSet
 
                     case None if !isSubtype =>
-                        OPALLogger.warn(
-                            "project configuration",
-                            s"the declaring class $typeName of the entry point has not been found"
-                        )
+
+                        if (methodDescriptor.isDefined) {
+                            val virtualEntry =
+                                declaredMethods(classType, classType.packageName, classType, name, methodDescriptor.get)
+
+                            entryPoints = entryPoints + virtualEntry
+
+                            OPALLogger.info(
+                                "project configuration",
+                                s"the declaring class $typeName of the entry point has not been found, using virtual method ${virtualEntry.toString} as entry"
+                            )
+                        }
 
                     case None => throw new MatchError(None) // TODO: Pattern match not exhaustive
                 }
@@ -282,8 +360,8 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
             findMethods(classType)
             if (considerSubtypes) {
-                project.classHierarchy.allSubtypes(classType, false).foreach {
-                    ct => findMethods(ct, true)
+                project.classHierarchy.allSubtypes(classType, reflexive = false).foreach {
+                    ct => findMethods(ct, isSubtype = true)
                 }
             }
 
@@ -351,9 +429,11 @@ object AllEntryPointsFinder extends EntryPointFinder {
     final val ConfigKey =
         InitialEntryPointsKey.ConfigKeyPrefix + "AllEntryPointsFinder.projectMethodsOnly"
 
-    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
+        val declaredMethods = project.get(DeclaredMethodsKey)
+
         if (project.config.as[Boolean](ConfigKey))
-            project.allProjectClassFiles.flatMap(_.methodsWithBody)
-        else project.allMethodsWithBody
+            project.allProjectClassFiles.flatMap(_.methodsWithBody.map(declaredMethods.apply))
+        else project.allMethodsWithBody.map(declaredMethods.apply)
     }
 }

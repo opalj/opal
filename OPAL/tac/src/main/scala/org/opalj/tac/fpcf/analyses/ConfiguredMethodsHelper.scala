@@ -36,7 +36,7 @@ case class ConfiguredMethodData(
     cf:                String,
     name:              String,
     desc:              String,
-    pointsTo:          Option[Array[PointsToRelation]],
+    pointsTo:          Option[Array[EntityAssignment]],
     methodInvocations: Option[Array[MethodDescription]]
 ) {
     def method(
@@ -56,7 +56,7 @@ object ConfiguredMethodData {
         val desc = c.getString("desc")
         val pointsTo =
             if (c.hasPath("pointsTo"))
-                Some(c.getConfigList("pointsTo").asScala.toArray.map(c => PointsToRelation.reader.read(c, "")))
+                Some(c.getConfigList("pointsTo").asScala.toArray.map(c => EntityAssignment.reader.read(c, "")))
             else
                 None
 
@@ -70,14 +70,14 @@ object ConfiguredMethodData {
     }
 }
 
-case class PointsToRelation(lhs: EntityDescription, rhs: EntityDescription)
+case class EntityAssignment(lhs: EntityDescription, rhs: EntityDescription)
 
-object PointsToRelation {
-    implicit val reader: ValueReader[PointsToRelation] = (config: Config, path: String) => {
+object EntityAssignment {
+    implicit val reader: ValueReader[EntityAssignment] = (config: Config, path: String) => {
         val c = if (path.nonEmpty) config.getConfig(path) else config
         val lhs = EntityDescription.reader.read(c.getConfig("lhs"), "")
         val rhs = EntityDescription.reader.read(c.getConfig("rhs"), "")
-        PointsToRelation(lhs, rhs)
+        EntityAssignment(lhs, rhs)
     }
 }
 

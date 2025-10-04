@@ -10,7 +10,6 @@ import org.opalj.br.ArrayType
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ClassType
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.collection.immutable.UIDSet
@@ -58,28 +57,6 @@ final class TypeCheckingDomain(
     type DomainArrayValue = AnArrayValue
 
     val TheNullValue: DomainNullValue = new ANullValue()
-
-    // -----------------------------------------------------------------------------------
-    //
-    // REPRESENTATION OF REFERENCE VALUES
-    //
-    // -----------------------------------------------------------------------------------
-
-    override def invokespecial(
-        pc:               Int,
-        declaringClass:   ClassType,
-        isInterface:      Boolean,
-        name:             String,
-        methodDescriptor: MethodDescriptor,
-        operands:         Operands
-    ): MethodCallResult = {
-        if (name == "<init>") {
-            val receiver = operands.last
-            // the value is now initialized and we have to update the stack/locals
-            updateAfterExecution(receiver, receiver, TheIllegalValue)
-        }
-        super.invokespecial(pc, declaringClass, isInterface, name, methodDescriptor, operands)
-    }
 
     // --------------------------------------------------------------------------------------------
     //
