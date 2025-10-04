@@ -111,6 +111,10 @@ object PropertyKey {
         create(name, fpc)
     }
 
+    lazy val byName: Map[String, SomePropertyKey] = {
+        propertyKeys.iterator.map { k => PropertyKey.name(k.id) -> k }.toMap
+    }
+
     //
     // Query the core properties of each property kind
     // ===============================================
@@ -122,6 +126,9 @@ object PropertyKey {
      * Returns the unique name of the kind of properties associated with the given key id.
      */
     def name(id: Int): String = propertyKeyNames(id)
+
+    def idByName(name: String): Int =
+        byName.getOrElse(name, throw new IllegalArgumentException(s"Unknown property name: $name")).id
 
     final def name(pKind: PropertyKind): String = name(pKind.id)
 

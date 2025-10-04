@@ -16,5 +16,7 @@ object KeepPropertyKeysArg extends ParsedArg[List[String], List[String]] {
         )
     }
 
-    override def parse(arg: List[String]): List[String] = ???
+    override def parse(arg: List[String]): List[String] = {
+        arg.flatMap(_.split(","))
+    }
 }

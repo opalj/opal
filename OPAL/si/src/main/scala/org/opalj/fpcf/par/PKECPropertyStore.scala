@@ -17,6 +17,7 @@ import com.typesafe.config.Config
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
+import org.opalj.util.PerformanceEvaluation.memory
 
 /**
  * Yet another parallel property store.
@@ -526,9 +527,7 @@ class PKECPropertyStore(
         idle = true
     }
 
-    private def clearObsoletePropertyKinds(): Unit = {
-        currentPhaseToDelete.foreach { key => ps(key).clear() }
-    }
+    override protected def clearSlot(id: Int): Unit = ps(id).clear()
 
     private[this] val interimStates: Array[ArrayBuffer[EPKState]] =
         Array.fill(THREAD_COUNT)(null)

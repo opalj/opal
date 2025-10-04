@@ -135,7 +135,7 @@ abstract class PropertyStore {
     //
 
     private[this] val externalInformation = new ConcurrentHashMap[AnyRef, AnyRef]()
-    protected[this] var currentPhaseToDelete: Set[Int] = Set.empty
+    protected[this] var currentPhaseDeletionMask: Array[Boolean] = Array.fill(PropertyKey.maxId + 1)(false)
 
     /**
      * Attaches or returns some information associated with the property store using a key object.
@@ -500,6 +500,19 @@ abstract class PropertyStore {
 
     protected[this] def doSet(e: Entity, p: Property): Unit
 
+    protected[fpcf] final def clearObsoletePropertyKinds(): Unit = {
+        val mask = currentPhaseDeletionMask
+        var index = 0
+        while (index < mask.length) {
+            if (mask(index)) {
+                clearSlot(index)
+            }
+            index += 1
+        }
+    }
+
+    protected def clearSlot(id: Int): Unit
+
     /**
      * Associates the given entity with the newly computed intermediate property P.
      *
@@ -530,13 +543,13 @@ abstract class PropertyStore {
         pc: EOptionP[E, P] => InterimEP[E, P]
     ): Unit
 
-    final def setupPhase(configuration: PropertyKindsConfiguration, toDelete: Set[Int]): Unit = {
-        this.currentPhaseToDelete = toDelete
+    final def setupPhase(configuration: PropertyKindsConfiguration): Unit = {
         setupPhase(
             configuration.propertyKindsComputedInThisPhase,
             configuration.propertyKindsComputedInLaterPhase,
             configuration.suppressInterimUpdates,
-            configuration.collaborativelyComputedPropertyKindsFinalizationOrder
+            configuration.collaborativelyComputedPropertyKindsFinalizationOrder,
+            toDelete = Set.empty
         )
     }
 
@@ -572,7 +585,8 @@ abstract class PropertyStore {
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind]                    = Set.empty,
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]] = Map.empty,
-        finalizationOrder:                 List[List[PropertyKind]]             = List.empty
+        finalizationOrder:                 List[List[PropertyKind]]             = List.empty,
+        toDelete:                          Set[Int]                             = Set.empty
     ): Unit = handleExceptions {
         if (!isIdle) {
             throw new IllegalStateException("computations are already running");
@@ -585,6 +599,11 @@ abstract class PropertyStore {
             },
             "illegal self dependency"
         )
+
+        val mask = currentPhaseDeletionMask
+        java.util.Arrays.fill(mask, false)
+
+        toDelete.foreach(id => mask(id) = true)
 
         // Step 1
         // Copy all property kinds that were computed in the previous phase that are no

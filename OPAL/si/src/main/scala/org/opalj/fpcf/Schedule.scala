@@ -46,13 +46,21 @@ case class Schedule[A](
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
         batches.iterator.zipWithIndex foreach { batchId =>
-            val (PhaseConfiguration(configuration, css, toDelete), id) = batchId
+            val (phase, id) = batchId
+            val configuration = phase.propertyKinds
+            val css = phase.scheduled
 
             if (trace) {
                 info("analysis progress", s"setting up analysis phase $id: $configuration")
             }
             time {
-                ps.setupPhase(configuration, toDelete)
+                ps.setupPhase(
+                    configuration.propertyKindsComputedInThisPhase,
+                    configuration.propertyKindsComputedInLaterPhase,
+                    configuration.suppressInterimUpdates,
+                    configuration.collaborativelyComputedPropertyKindsFinalizationOrder,
+                    phase.toDelete
+                )
                 afterPhaseSetup(configuration)
                 assert(ps.isIdle, "the property store is not idle after phase setup")
 
@@ -88,7 +96,7 @@ case class Schedule[A](
             }
         }
         // ... we are done now; the computed properties will no longer be computed!
-        ps.setupPhase(Set.empty, propertyKindsComputedInLaterPhase = Set.empty)
+        ps.setupPhase(Set.empty, Set.empty)
 
         allExecutedAnalyses
     }

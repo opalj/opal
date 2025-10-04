@@ -831,9 +831,7 @@ final class PKESequentialPropertyStore protected (
         if (exception != null) throw exception;
     }
 
-    private def clearObsoletePropertyKinds(): Unit = {
-        currentPhaseToDelete.foreach { key => ps(key).clear() }
-    }
+    override protected def clearSlot(id: Int): Unit = ps(id).clear()
 
     def shutdown(): Unit = {}
 }
