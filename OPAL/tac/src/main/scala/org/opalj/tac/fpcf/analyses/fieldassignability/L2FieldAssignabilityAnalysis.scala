@@ -117,8 +117,8 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         context:       Context,
         definedMethod: DefinedMethod,
         taCode:        TACode[TACMethodParameter, V],
-        writePC: PC,
-        receiver: AccessReceiver
+        writePC:       PC,
+        receiver:      AccessReceiver
     )(implicit state: AnalysisState): FieldAssignability = {
         val field = state.field
         val method = definedMethod.definedMethod
@@ -129,12 +129,13 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             return Assignable;
         }
 
-        if (state.fieldAccesses(context).exists { case(otherWritePC, _) =>
-            writePC != otherWritePC && (
-                dominates(writeIndex, taCode.pcToIndex(otherWritePC), taCode) ||
-                dominates(taCode.pcToIndex(otherWritePC), writeIndex, taCode)
-            )
-        }) {
+        if (state.fieldAccesses(context).exists { case (otherWritePC, _) =>
+                writePC != otherWritePC && (
+                    dominates(writeIndex, taCode.pcToIndex(otherWritePC), taCode) ||
+                    dominates(taCode.pcToIndex(otherWritePC), writeIndex, taCode)
+                )
+            }
+        ) {
             // When one write is detected to dominate another within the same method, the field is definitively assigned
             // multiple times and cannot be effectively non-assignable, even in initializers.
             // IMPROVE reduce this to modifications on the same instance and consider cases where not every path
@@ -154,14 +155,16 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             }
         } else {
             if (field.isStatic ||
-                receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter) {
+                receiverVarOpt.isDefined && receiverVarOpt.get.definedBy == SelfReferenceParameter
+            ) {
                 // A field written outside an initializer must be lazily initialized or it is assignable
                 if (considerLazyInitialization) {
                     return determineLazyInitialization(writeIndex, getDefaultValues(), method, taCode);
                 } else
                     return Assignable;
             } else if (receiverVarOpt.isDefined &&
-                referenceHasEscaped(receiverVarOpt.get, taCode.stmts, definedMethod, context)) {
+                       referenceHasEscaped(receiverVarOpt.get, taCode.stmts, definedMethod, context)
+            ) {
                 // Arbitrary methods may instantiate new objects and write instance fields, as long as the new object did
                 // not yet escape. This effectively determines usage of the `clone` pattern. If the reference has escaped,
                 // we need to assume that someone observed the old field value before modification, thus soundly return.
@@ -170,7 +173,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         }
 
         if ((field.isNotStatic &&
-            isInstanceUsedSuspiciously(context, definedMethod, taCode, writeIndex, receiverVarOpt.get)) ||
+                isInstanceUsedSuspiciously(context, definedMethod, taCode, writeIndex, receiverVarOpt.get)) ||
             !doesWriteDominateAllReads(definedMethod, receiverVarOpt, writeIndex)
         ) {
             Assignable
@@ -186,11 +189,11 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * IMPROVE handle static fields and obfuscated variable uses
      */
     private def isInstanceUsedSuspiciously(
-        context: Context,
+        context:       Context,
         definedMethod: DefinedMethod,
         taCode:        TACode[TACMethodParameter, V],
-        writeIndex: Int,
-        receiverVar: V,
+        writeIndex:    Int,
+        receiverVar:   V
     )(implicit state: State): Boolean = {
         val stmts = taCode.stmts
         if (receiverVar.definedBy.size != 1)
@@ -220,8 +223,10 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 // IMPROVE: Use field access information to incorporate reflective accesses
                 !(stmt.isPutField && stmt.asPutField.name != state.field.name) &&
                 // ... and ignore easily recognizable field reads of arbitrary fields on the current instance ...
-                stmt.forallSubExpressions(expr => !expr.isGetField ||
-                    !expr.asGetField.objRef.asVar.definedBy.contains(defSite)) &&
+                stmt.forallSubExpressions(expr =>
+                    !expr.isGetField ||
+                        !expr.asGetField.objRef.asVar.definedBy.contains(defSite)
+                ) &&
                 // ... and ignore the case in which the statement is dominated by the given write anyway
                 !dominates(writeIndex, index, taCode)
         }
@@ -284,7 +289,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      *         that does not dominate the read.
      */
     private def fieldReadsNotDominated(
-        reads: IterableOnce[(Int, PC, AccessReceiver, AccessParameter)],
+        reads:  IterableOnce[(Int, PC, AccessReceiver, AccessParameter)],
         writes: Seq[(DefinedMethod, Int, Option[V])]
     )(implicit state: State): Boolean = {
         reads.iterator.exists {

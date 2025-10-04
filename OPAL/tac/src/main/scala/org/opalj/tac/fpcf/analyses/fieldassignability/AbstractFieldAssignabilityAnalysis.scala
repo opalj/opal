@@ -155,7 +155,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
                 val context = contextProvider.contextFromId(contextID)
                 val access = (pc, receiver)
                 state.fieldAccesses = state.fieldAccesses.updatedWith(context) {
-                    case None => Some(Set(access))
+                    case None           => Some(Set(access))
                     case Some(accesses) => Some(accesses + access)
                 }
             }
@@ -198,11 +198,11 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
      *       TODO think about if this is really necessary
      */
     protected def determineAssignabilityFromWriteInContext(
-        context: Context,
+        context:       Context,
         definedMethod: DefinedMethod,
-        taCode: TACode[TACMethodParameter, V],
-        writePC: PC,
-        receiver: AccessReceiver
+        taCode:        TACode[TACMethodParameter, V],
+        writePC:       PC,
+        receiver:      AccessReceiver
     )(implicit state: AnalysisState): FieldAssignability
 
     def createResult()(implicit state: AnalysisState): ProperPropertyComputationResult = {

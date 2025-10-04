@@ -39,11 +39,11 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     override def createState(field: Field): AnalysisState = State(field)
 
     override def determineAssignabilityFromWriteInContext(
-        context: Context,
+        context:       Context,
         definedMethod: DefinedMethod,
-        taCode: TACode[TACMethodParameter, V],
-        writePC: PC,
-        receiver: AccessReceiver
+        taCode:        TACode[TACMethodParameter, V],
+        writePC:       PC,
+        receiver:      AccessReceiver
     )(implicit state: AnalysisState): FieldAssignability = {
         val field = state.field
         val method = definedMethod.definedMethod
