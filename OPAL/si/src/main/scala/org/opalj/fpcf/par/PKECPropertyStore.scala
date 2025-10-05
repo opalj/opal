@@ -17,7 +17,6 @@ import com.typesafe.config.Config
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
-import org.opalj.util.PerformanceEvaluation.memory
 
 /**
  * Yet another parallel property store.

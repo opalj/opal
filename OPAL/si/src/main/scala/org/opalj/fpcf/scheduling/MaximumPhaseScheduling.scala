@@ -9,7 +9,6 @@ import com.typesafe.config.Config
 
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.AnalysisScenario.ConfigKeyPrefix
-import org.opalj.fpcf.scheduling.CleanupCalculation.DisableCleanupKey
 import org.opalj.fpcf.scheduling.MultiplePhaseScheduling.AnalysisScheduleLazyTransformerInMultiplePhasesKey
 import org.opalj.graphs.sccs
 import org.opalj.graphs.topologicalSort
@@ -98,17 +97,7 @@ abstract class MultiplePhaseScheduling extends SchedulingStrategy {
             remainingAnalyses --= phaseAnalyses
             computePhase(ps, phaseAnalyses, remainingAnalyses)
         }
-
-        if (!config.getBoolean(DisableCleanupKey)) calculateDeletions(schedule, ps, config) else schedule
-    }
-
-    private def calculateDeletions[A](
-        schedule: List[PhaseConfiguration[A]],
-        ps:       PropertyStore,
-        config:   Config
-    ): List[PhaseConfiguration[A]] = {
-        val spec = Cleanup.fromConfig(config)
-        Cleanup.withPerPhaseCleanup(schedule, ps, spec)
+        schedule
     }
 
     /**

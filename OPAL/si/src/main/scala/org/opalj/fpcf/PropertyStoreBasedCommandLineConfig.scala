@@ -3,6 +3,7 @@ package org.opalj
 package fpcf
 
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
 
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.flagConverter
@@ -12,6 +13,7 @@ import org.opalj.cli.Arg
 import org.opalj.cli.ConvertedArg
 import org.opalj.cli.ForwardingArg
 import org.opalj.cli.OPALCommandLineConfig
+import org.opalj.cli.ParsedArg
 import org.opalj.cli.PlainArg
 import org.opalj.fpcf.par.SchedulingStrategyArg
 import org.opalj.log.LogContext
@@ -89,5 +91,51 @@ trait PropertyStoreBasedCommandLineConfig extends OPALCommandLineConfig { self: 
     def getScheduler(analysisName: String, eager: Boolean): FPCFAnalysisScheduler[_] = {
         if (eager) FPCFAnalysesRegistry.eagerFactory(analysisName)
         else FPCFAnalysesRegistry.lazyFactory(analysisName)
+    }
+}
+
+object DisableCleanupArg extends PlainArg[Boolean] {
+    override val name: String = "disableCleanup"
+    override def description: String = "Disable cleanup of the PropertyStore inbetween phases"
+    override val defaultValue: Option[Boolean] = Some(false)
+    override def apply(config: Config, value: Option[Boolean]): Config = {
+        config.withValue(
+            "org.opalj.fpcf.AnalysisScenario.DisableCleanup",
+            ConfigValueFactory.fromAnyRef(value.getOrElse(false))
+        )
+    }
+}
+
+object KeepPropertyKeysArg extends ParsedArg[List[String], List[SomePropertyKey]] {
+    override val name: String = "keepPropertyKeys"
+    override val description: String = "List of Properties to keep at the end of the analysis"
+    override val defaultValue: Option[List[String]] = None
+
+    override def apply(config: Config, value: Option[List[SomePropertyKey]]): Config = {
+        config.withValue(
+            "org.opalj.fpcf.AnalysisScenario.KeepPropertyKeys",
+            ConfigValueFactory.fromAnyRef(value.getOrElse(""))
+        )
+    }
+
+    override def parse(arg: List[String]): List[SomePropertyKey] = {
+        arg.flatMap(_.split(",")).map(PropertyKey.getByName)
+    }
+}
+
+object ClearPropertyKeysArg extends ParsedArg[List[String], List[SomePropertyKey]] {
+    override val name: String = "clearPropertyKeys"
+    override val description: String = "List of Properties to keep at the end of the analysis"
+    override val defaultValue: Option[List[String]] = None
+
+    override def apply(config: Config, value: Option[List[SomePropertyKey]]): Config = {
+        config.withValue(
+            "org.opalj.fpcf.AnalysisScenario.ClearPropertyKeys",
+            ConfigValueFactory.fromAnyRef(value.getOrElse(""))
+        )
+    }
+
+    override def parse(arg: List[String]): List[SomePropertyKey] = {
+        arg.flatMap(_.split(",")).map(PropertyKey.getByName)
     }
 }

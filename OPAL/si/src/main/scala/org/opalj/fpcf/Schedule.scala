@@ -43,9 +43,14 @@ case class Schedule[A](
     ): List[(ComputationSpecification[A], A)] = {
         implicit val logContext: LogContext = ps.logContext
 
+        val config = ps.context(classOf[com.typesafe.config.Config])
+        val cleanupSpec = scheduling.Cleanup.fromConfig(config)
+        val phases =
+            if (cleanupSpec.disable) batches else scheduling.Cleanup.withPerPhaseCleanup(batches, ps, cleanupSpec)
+
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
-        batches.iterator.zipWithIndex foreach { batchId =>
+        phases.iterator.zipWithIndex foreach { batchId =>
             val (phase, id) = batchId
             val configuration = phase.propertyKinds
             val css = phase.scheduled
@@ -95,8 +100,10 @@ case class Schedule[A](
                     )
             }
         }
+        val finalToDelete: Set[Int] = if (cleanupSpec.disable) Set.empty else cleanupSpec.clear -- cleanupSpec.keep
+
         // ... we are done now; the computed properties will no longer be computed!
-        ps.setupPhase(Set.empty, Set.empty)
+        ps.setupPhase(Set.empty, Set.empty, toDelete = finalToDelete)
 
         allExecutedAnalyses
     }

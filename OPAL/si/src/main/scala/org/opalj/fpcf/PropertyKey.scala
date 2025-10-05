@@ -128,7 +128,10 @@ object PropertyKey {
     def name(id: Int): String = propertyKeyNames(id)
 
     def idByName(name: String): Int =
-        byName.getOrElse(name, throw new IllegalArgumentException(s"Unknown property name: $name")).id
+        getByName(name).id
+
+    def getByName(name: String): SomePropertyKey =
+        byName.getOrElse(name, throw new IllegalArgumentException(s"Unknown property name: $name"))
 
     final def name(pKind: PropertyKind): String = name(pKind.id)
 
