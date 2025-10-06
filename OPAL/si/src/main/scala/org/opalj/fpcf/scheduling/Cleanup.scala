@@ -17,7 +17,10 @@ final case class CleanupSpec(
 object Cleanup {
 
     /**
-     * Creates a [[CleanupSpec]] from given [[PropertyKey]]-names to keep and/or to clear.
+     * Creates a [[CleanupSpec]] from given [[PropertyKey]]-names to keep and/or to clear. Also allows disabling the cleanup by setting 'disable' to 'true'.
+     * @param keep Names of PropertyKeys to be kept after the analyses
+     * @param clear Names of PropertyKeys to be removed after the analyses
+     * @param disable Setting this to 'true' disables the cleanup inbetween the phases
      * @return A new [[CleanupSpec]]
      */
     def fromArgs(keep: Set[String], clear: Set[String], disable: Boolean): CleanupSpec = {
