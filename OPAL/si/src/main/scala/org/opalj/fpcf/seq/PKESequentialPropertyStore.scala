@@ -831,7 +831,7 @@ final class PKESequentialPropertyStore protected (
         if (exception != null) throw exception;
     }
 
-    override protected def clearSlot(id: Int): Unit = ps(id).clear()
+    override protected def clearPK(id: Int): Unit = ps(id).clear()
 
     def shutdown(): Unit = {}
 }

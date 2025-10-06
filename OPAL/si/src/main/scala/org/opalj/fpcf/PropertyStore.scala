@@ -500,18 +500,25 @@ abstract class PropertyStore {
 
     protected[this] def doSet(e: Entity, p: Property): Unit
 
+    /**
+     * Removes [[PropertyKind]] from a [[PropertyStore]] using a pre-calculated [[currentPhaseDeletionMask]]. Calls [[clearPK]] which need to be implemented in the implementations of the [[PropertyStore]].
+     */
     protected[fpcf] final def clearObsoletePropertyKinds(): Unit = {
         val mask = currentPhaseDeletionMask
         var index = 0
         while (index < mask.length) {
             if (mask(index)) {
-                clearSlot(index)
+                clearPK(index)
             }
             index += 1
         }
     }
 
-    protected def clearSlot(id: Int): Unit
+    /**
+     * Placeholder to remove a given [[PropertyKey]] from a [[PropertyStore]]. Needs to be overriden in the implementation for access to the given [[PropertyStore]].
+     * @param id ID of the [[PropertyKey]] to be removed
+     */
+    protected def clearPK(id: Int): Unit
 
     /**
      * Associates the given entity with the newly computed intermediate property P.
@@ -543,13 +550,13 @@ abstract class PropertyStore {
         pc: EOptionP[E, P] => InterimEP[E, P]
     ): Unit
 
-    final def setupPhase(configuration: PropertyKindsConfiguration): Unit = {
+    final def setupPhase(configuration: PropertyKindsConfiguration, toDelete: Set[Int]): Unit = {
         setupPhase(
             configuration.propertyKindsComputedInThisPhase,
             configuration.propertyKindsComputedInLaterPhase,
             configuration.suppressInterimUpdates,
             configuration.collaborativelyComputedPropertyKindsFinalizationOrder,
-            toDelete = Set.empty
+            toDelete
         )
     }
 

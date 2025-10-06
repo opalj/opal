@@ -526,7 +526,7 @@ class PKECPropertyStore(
         idle = true
     }
 
-    override protected def clearSlot(id: Int): Unit = ps(id).clear()
+    override protected def clearPK(id: Int): Unit = ps(id).clear()
 
     private[this] val interimStates: Array[ArrayBuffer[EPKState]] =
         Array.fill(THREAD_COUNT)(null)

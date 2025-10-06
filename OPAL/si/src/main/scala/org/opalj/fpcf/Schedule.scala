@@ -2,6 +2,7 @@
 package org.opalj
 package fpcf
 
+import org.opalj.fpcf.scheduling.CleanupSpec
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
@@ -17,7 +18,8 @@ import org.opalj.util.PerformanceEvaluation.time
  */
 case class Schedule[A](
     batches:            List[PhaseConfiguration[A]],
-    initializationData: Map[ComputationSpecification[A], Any]
+    initializationData: Map[ComputationSpecification[A], Any],
+    cleanupSpec:        Option[CleanupSpec]
 ) extends (
         (
             PropertyStore,
@@ -43,10 +45,7 @@ case class Schedule[A](
     ): List[(ComputationSpecification[A], A)] = {
         implicit val logContext: LogContext = ps.logContext
 
-        val config = ps.context(classOf[com.typesafe.config.Config])
-        val cleanupSpec = scheduling.Cleanup.fromConfig(config)
-        val phases =
-            if (cleanupSpec.disable) batches else scheduling.Cleanup.withPerPhaseCleanup(batches, ps, cleanupSpec)
+        val phases = cleanupSpec.map(scheduling.Cleanup.withPerPhaseCleanup(batches, ps, _)).getOrElse(batches)
 
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
@@ -100,7 +99,10 @@ case class Schedule[A](
                     )
             }
         }
-        val finalToDelete: Set[Int] = if (cleanupSpec.disable) Set.empty else cleanupSpec.clear -- cleanupSpec.keep
+        val finalToDelete: Set[Int] = cleanupSpec match {
+            case Some(spec) if !spec.disable => spec.clear -- spec.keep
+            case _                           => Set.empty
+        }
 
         // ... we are done now; the computed properties will no longer be computed!
         ps.setupPhase(Set.empty, Set.empty, toDelete = finalToDelete)

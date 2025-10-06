@@ -294,7 +294,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
         Schedule(
             scheduledBatches,
-            initializationData
+            initializationData,
+            None
         )
     }
 }

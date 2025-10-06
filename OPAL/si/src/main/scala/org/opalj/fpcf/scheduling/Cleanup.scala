@@ -2,12 +2,6 @@ package org.opalj
 package fpcf
 package scheduling
 
-import com.typesafe.config.Config
-
-import org.opalj.fpcf.scheduling.CleanupCalculation.DisableCleanupKey
-import org.opalj.fpcf.scheduling.CleanupCalculation.PropertiesToKeepKey
-import org.opalj.fpcf.scheduling.CleanupCalculation.PropertiesToRemoveKey
-
 /**
  * Class that allows to configure the cleanup of the PropertyStore inbetween phases programmatically
  * @param keep IDs of the PropertyKeys to be kept at the end
@@ -23,19 +17,12 @@ final case class CleanupSpec(
 object Cleanup {
 
     /**
-     * Creates a [[CleanupSpec]] reading the optionally set Values from a given config.
-     * @param config Config to be read from
+     * Creates a [[CleanupSpec]] from given [[PropertyKey]]-names to keep and/or to clear.
      * @return A new [[CleanupSpec]]
      */
-    def fromConfig(config: Config): CleanupSpec = {
-        def getSetForProperty(propertyKey: String): Set[Int] = {
-            Option(
-                config.getString(propertyKey)
-            ).toSeq.flatMap(_.split(",")).filter(_.nonEmpty).map(PropertyKey.idByName).toSet
-        }
-        val toKeep = getSetForProperty(PropertiesToKeepKey)
-        val toClear = getSetForProperty(PropertiesToRemoveKey)
-        val disable = config.getBoolean(DisableCleanupKey)
+    def fromArgs(keep: Set[String], clear: Set[String], disable: Boolean): CleanupSpec = {
+        val toKeep = keep.map(PropertyKey.idByName)
+        val toClear = clear.map(PropertyKey.idByName)
         CleanupSpec(toKeep, toClear, disable)
     }
 
@@ -49,21 +36,22 @@ object Cleanup {
     ): List[PhaseConfiguration[A]] = {
         if (spec.disable) return schedule
 
-        val producedInAllPhases: Set[Int] =
+        val producedInAnyPhase: Set[Int] =
             schedule.iterator.flatMap(_.propertyKinds.propertyKindsComputedInThisPhase.map(_.id)).toSet
         val neededLater = Array.fill[Set[Int]](schedule.size + 1)(Set.empty)
         var index = schedule.size - 1
-        var acc: Set[Int] = Set.empty
+        var usedInAnyPhase: Set[Int] = Set.empty
         while (index >= 0) {
-            val used: Set[Int] = schedule(index).scheduled.iterator.flatMap(_.uses(ps).iterator).map(_.pk.id).toSet
-            acc = acc union used
-            neededLater(index) = acc
+            val usedInThisPhase: Set[Int] =
+                schedule(index).scheduled.iterator.flatMap(_.uses(ps).iterator).map(_.pk.id).toSet
+            usedInAnyPhase = usedInAnyPhase union usedInThisPhase
+            neededLater(index) = usedInAnyPhase
             index -= 1
         }
 
         schedule.indices.iterator.map { index =>
             val producedHere = schedule(index)
-            val toDelete = ((producedInAllPhases -- neededLater(index)) -- spec.keep) union spec.clear
+            val toDelete = ((producedInAnyPhase -- neededLater(index)) -- spec.keep) union spec.clear
             producedHere.copy(toDelete = toDelete)
         }.toList
     }
