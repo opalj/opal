@@ -9,7 +9,7 @@
 // If your CPU uses hyperthreading, it is recommended to specify the
 // number of physical cores and the number of hyperthreaded cores;
 // this will spead up the overall execution.
-ThisBuild / javaOptions in  ++= Seq(
+ThisBuild / javaOptions ++= Seq(
 	"-Dorg.opalj.threads.CPUBoundTasks=4", // Number of physical (not hyperthreaded) cores/CPUs
 	"-Dorg.opalj.threads.IOBoundTasks=12" // Number of (hyperthreaded) cores * 1,5
 )
