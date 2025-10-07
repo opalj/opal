@@ -56,14 +56,14 @@ object CipherGetInstanceStrings extends ProjectsAnalysisApplication {
             val result = BaseAI(m, new DefaultDomainWithCFGAndDefUse(project, m))
             val code = result.domain.code
             for {
-                PCAndInstruction(pc, INVOKESTATIC(ClassType.Cipher, false, "getInstance", _)) <- code
+                PCAndInstruction(pc, INVOKESTATIC(ClassType.JavaSecurityCipher, false, "getInstance", _)) <- code
                 vos <- result.domain.operandOrigin(pc, 0)
             } {
                 // getInstance is static, algorithm is first param
                 code.instructions(vos) match {
                     case LoadString(value) =>
                         report.add(m.toJava(s"passed value ($pc): $value"))
-                    case invoke @ INVOKEINTERFACE(ClassType.Key, "getAlgorithm", JustReturnsString) =>
+                    case invoke @ INVOKEINTERFACE(ClassType.JavaSecurityKey, "getAlgorithm", JustReturnsString) =>
                         report.add(m.toJava(s"return value of ($pc): ${invoke.toString}"))
 
                     case get @ GETFIELD(_, _, _) => println("uknown value: " + get)

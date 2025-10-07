@@ -1360,33 +1360,23 @@ object ClassType {
     final val ObjectInputValidation = ClassType("java/io/ObjectInputValidation")
 
     // Java Security Types for doPrivileged analysis
-    final val AccessController = ClassType("java/security/AccessController")
-    final val PrivilegedAction = ClassType("java/security/PrivilegedAction")
-    final val PrivilegedExceptionAction = ClassType("java/security/PrivilegedExceptionAction")
-    final val AccessControlContext = ClassType("java/security/AccessControlContext")
-    final val Permission = ClassType("java/security/Permission")
-    final val Cipher = ClassType("javax/crypto/Cipher")
-    final val Key = ClassType("java/security/Key")
+    final val JavaSecurityAccessController = ClassType("java/security/AccessController")
+    final val JavaSecurityPrivilegedAction = ClassType("java/security/PrivilegedAction")
+    final val JavaSecurityPrivilegedExceptionAction = ClassType("java/security/PrivilegedExceptionAction")
+    final val JavaSecurityAccessControlContext = ClassType("java/security/AccessControlContext")
+    final val JavaSecurityPermission = ClassType("java/security/Permission")
+    final val JavaSecurityCipher = ClassType("javax/crypto/Cipher")
+    final val JavaSecurityKey = ClassType("java/security/Key")
 
     final val File = ClassType("java/io/File")
     final val PrintStream = ClassType("java/io/PrintStream")
     final val Collection = ClassType("java/util/Collection")
     final val Collections = ClassType("java/util/Collections")
     final val List = ClassType("java/util/List")
-    final val FutureTask = ClassType("java/util/concurrent/FutureTask")
     final val ThreadUncaughtExceptionHandler = ClassType("java/lang/Thread$UncaughtExceptionHandler")
     final val Properties = ClassType("java/util/Properties")
-    final val WrapperGenerator = ClassType("WrapperGenerator")
     final val SunUnsafe = ClassType("sun/misc/Unsafe")
     final val JdkUnsafe = ClassType("jdk/internal/misc/Unsafe")
-    final val InterfaceAddress = ClassType("java/net/InterfaceAddress")
-    final val SelectionKey = ClassType("java/nio/channels/SelectionKey")
-
-    // Android types
-    final val Activity = ClassType("android/app/Activity")
-    final val Context = ClassType("android/content/Context")
-    final val IntentFilter = ClassType("android/content/IntentFilter")
-    final val LocalBroadcastManager = ClassType("androidx/localbroadcastmanager/content/LocalBroadcastManager")
 
     private[br] final val highestPredefinedTypeId = nextId.get() - 1
 

@@ -26,6 +26,10 @@ import org.opalj.value.ValueInformation
 object ContextRegisteredReceiversAnalysis {
 
     private val RegisterReceiverMethod = "registerReceiver"
+    private val ContextClass = ClassType("android/content/Context")
+    private val LocalBroadcastManagerClass = ClassType("androidx/localbroadcastmanager/content/LocalBroadcastManager")
+    private val ActivityClass = ClassType("android/app/Activity")
+    private val IntentFilterClass = ClassType("android/content/IntentFilter")
 
     def analyze(project: Project[_]): Seq[ApkContextRegisteredReceiver] = {
         val foundReceivers: ListBuffer[ApkContextRegisteredReceiver] = ListBuffer.empty
@@ -84,8 +88,8 @@ object ContextRegisteredReceiversAnalysis {
     }
 
     private def classMatches(clazz: ClassType): Boolean = {
-        clazz == ClassType.Context || clazz == ClassType.LocalBroadcastManager ||
-        clazz == ClassType.Activity
+        clazz == ContextClass || clazz == LocalBroadcastManagerClass ||
+        clazz == ActivityClass
     }
 
     private def classHierarchyMatches(project: Project[_], clazz: ClassType): Boolean = {
@@ -113,12 +117,12 @@ object ContextRegisteredReceiversAnalysis {
         val foundActions: ListBuffer[String] = ListBuffer.empty
         val foundCategories: ListBuffer[String] = ListBuffer.empty
         if (intentDef.isAssignment && intentDef.asAssignment.expr.isNew &&
-            intentDef.asAssignment.expr.asNew.tpe == ClassType.IntentFilter
+            intentDef.asAssignment.expr.asNew.tpe == IntentFilterClass
         ) {
             intentDef.asAssignment.targetVar.usedBy
                 .foreach(tacMethod.stmts(_) match {
                     case VirtualFunctionCallStatement(call)
-                        if call.declaringClass.mostPreciseClassType == ClassType.IntentFilter =>
+                        if call.declaringClass.mostPreciseClassType == IntentFilterClass =>
                         val actionOrCategory = call.params.head.asVar.value.asReferenceValue.toCanonicalForm
                             .asInstanceOf[TheStringValue]
                             .value

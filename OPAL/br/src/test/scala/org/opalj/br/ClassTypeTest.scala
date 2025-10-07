@@ -19,8 +19,8 @@ class ClassTypeTest extends AnyFunSuite {
 
     test("toJavaClass method") {
         val ot2 = ClassType.Object
-        val ot3 = ClassType("java/lang/String")
-        val ot4 = ClassType("java/util/List")
+        val ot3 = ClassType.String
+        val ot4 = ClassType.List
 
         assert(ot2.toJavaClass == classOf[Object])
         assert(ot3.toJavaClass == classOf[String])
@@ -30,7 +30,7 @@ class ClassTypeTest extends AnyFunSuite {
     test("equals method") {
         val ot1 = ClassType.Object
         val ot2 = ClassType.Object
-        val ot3 = ClassType("java/lang/String")
+        val ot3 = ClassType.String
 
         assert(ot1 == ot2)
         assert(ot1 != ot3)
@@ -73,7 +73,7 @@ class ClassTypeTest extends AnyFunSuite {
     test("reference equality property") {
         val ot1 = ClassType.Object
         val ot2 = ClassType.Object
-        val ot3 = ClassType("java/lang/String")
+        val ot3 = ClassType.String
 
         assert(ot1 eq ot2)
         assert(ot1 ne ot3)

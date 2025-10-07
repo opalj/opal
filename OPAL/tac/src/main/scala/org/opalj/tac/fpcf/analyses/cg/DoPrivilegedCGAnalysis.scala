@@ -160,34 +160,34 @@ class DoPrivilegedCGAnalysis private[cg] (
     def analyze(p: SomeProject): PropertyComputationResult = {
         var analyses: List[DoPrivilegedMethodAnalysis] = Nil
 
-        val permissionsArray = ArrayType(ClassType.Permission)
+        val permissionsArray = ArrayType(ClassType.JavaSecurityPermission)
 
         val declaredMethods = p.get(DeclaredMethodsKey)
         val runMethod = declaredMethods(
-            ClassType.PrivilegedAction,
+            ClassType.JavaSecurityPrivilegedAction,
             "java/security",
-            ClassType.PrivilegedAction,
+            ClassType.JavaSecurityPrivilegedAction,
             "run",
             MethodDescriptor.JustReturnsObject
         )
 
         val doPrivileged1 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivileged",
-            MethodDescriptor(ClassType.PrivilegedAction, ClassType.Object)
+            MethodDescriptor(ClassType.JavaSecurityPrivilegedAction, ClassType.Object)
         )
         if (doPrivileged1.hasSingleDefinedMethod)
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged1, runMethod, p)
 
         val doPrivileged2 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivileged",
             MethodDescriptor(
-                ArraySeq(ClassType.PrivilegedAction, ClassType.AccessControlContext),
+                ArraySeq(ClassType.JavaSecurityPrivilegedAction, ClassType.JavaSecurityAccessControlContext),
                 ClassType.Object
             )
         )
@@ -195,12 +195,16 @@ class DoPrivilegedCGAnalysis private[cg] (
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged2, runMethod, p)
 
         val doPrivileged3 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivileged",
             MethodDescriptor(
-                ArraySeq(ClassType.PrivilegedAction, ClassType.AccessControlContext, permissionsArray),
+                ArraySeq(
+                    ClassType.JavaSecurityPrivilegedAction,
+                    ClassType.JavaSecurityAccessControlContext,
+                    permissionsArray
+                ),
                 ClassType.Object
             )
         )
@@ -208,22 +212,22 @@ class DoPrivilegedCGAnalysis private[cg] (
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged3, runMethod, p)
 
         val doPrivileged4 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivileged",
-            MethodDescriptor(ClassType.PrivilegedExceptionAction, ClassType.Object)
+            MethodDescriptor(ClassType.JavaSecurityPrivilegedExceptionAction, ClassType.Object)
         )
         if (doPrivileged4.hasSingleDefinedMethod)
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged4, runMethod, p)
 
         val doPrivileged5 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivileged",
             MethodDescriptor(
-                ArraySeq(ClassType.PrivilegedExceptionAction, ClassType.AccessControlContext),
+                ArraySeq(ClassType.JavaSecurityPrivilegedExceptionAction, ClassType.JavaSecurityAccessControlContext),
                 ClassType.Object
             )
         )
@@ -231,12 +235,16 @@ class DoPrivilegedCGAnalysis private[cg] (
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged5, runMethod, p)
 
         val doPrivileged6 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivileged",
             MethodDescriptor(
-                ArraySeq(ClassType.PrivilegedExceptionAction, ClassType.AccessControlContext, permissionsArray),
+                ArraySeq(
+                    ClassType.JavaSecurityPrivilegedExceptionAction,
+                    ClassType.JavaSecurityAccessControlContext,
+                    permissionsArray
+                ),
                 ClassType.Object
             )
         )
@@ -244,22 +252,26 @@ class DoPrivilegedCGAnalysis private[cg] (
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged6, runMethod, p)
 
         val doPrivilegedWithCombiner1 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivilegedWithCombiner",
-            MethodDescriptor(ClassType.PrivilegedAction, ClassType.Object)
+            MethodDescriptor(ClassType.JavaSecurityPrivilegedAction, ClassType.Object)
         )
         if (doPrivilegedWithCombiner1.hasSingleDefinedMethod)
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner1, runMethod, p)
 
         val doPrivilegedWithCombiner2 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
-                ArraySeq(ClassType.PrivilegedAction, ClassType.AccessControlContext, permissionsArray),
+                ArraySeq(
+                    ClassType.JavaSecurityPrivilegedAction,
+                    ClassType.JavaSecurityAccessControlContext,
+                    permissionsArray
+                ),
                 ClassType.Object
             )
         )
@@ -267,12 +279,12 @@ class DoPrivilegedCGAnalysis private[cg] (
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner2, runMethod, p)
 
         val doPrivilegedWithCombiner3 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
-                ArraySeq(ClassType.PrivilegedExceptionAction),
+                ArraySeq(ClassType.JavaSecurityPrivilegedExceptionAction),
                 ClassType.Object
             )
         )
@@ -280,12 +292,16 @@ class DoPrivilegedCGAnalysis private[cg] (
             analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner3, runMethod, p)
 
         val doPrivilegedWithCombiner4 = declaredMethods(
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "java/security",
-            ClassType.AccessController,
+            ClassType.JavaSecurityAccessController,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
-                ArraySeq(ClassType.PrivilegedExceptionAction, ClassType.AccessControlContext, permissionsArray),
+                ArraySeq(
+                    ClassType.JavaSecurityPrivilegedExceptionAction,
+                    ClassType.JavaSecurityAccessControlContext,
+                    permissionsArray
+                ),
                 ClassType.Object
             )
         )

@@ -153,7 +153,7 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
         }.filterNot { ep =>
             // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
             // default package.
-            ep.declaringClassType == ClassType.WrapperGenerator
+            ep.declaringClassType == ClassType("WrapperGenerator")
         }
     }
 }
