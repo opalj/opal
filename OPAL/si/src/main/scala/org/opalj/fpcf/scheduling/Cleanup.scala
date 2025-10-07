@@ -14,6 +14,9 @@ final case class CleanupSpec(
     disable: Boolean  = false
 )
 
+/**
+ * Factory for creating [[CleanupSpec]]-objects, also handles calculation of per-phase cleanup
+ */
 object Cleanup {
 
     /**
