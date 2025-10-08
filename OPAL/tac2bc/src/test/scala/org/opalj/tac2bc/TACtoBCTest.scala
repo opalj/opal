@@ -1,0 +1,191 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj
+package tac2bc
+
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.net.URL
+import java.nio.file.Files
+import java.nio.file.Paths
+import scala.sys.process._
+
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+
+import org.opalj.ba.CODE
+import org.opalj.ba.CodeElement
+import org.opalj.ba.toDA
+import org.opalj.bc.Assembler
+import org.opalj.bi.TestResources
+import org.opalj.br.BaseConfig
+import org.opalj.br.ClassFile
+import org.opalj.br.Code
+import org.opalj.br.Method
+import org.opalj.br.analyses.Project
+import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.log.OPALLogger
+import org.opalj.log.StandardLogContext
+import org.opalj.tac.LazyDetachedTACAIKey
+import org.opalj.util.InMemoryClassLoader
+
+trait TACtoBCTest extends AnyFunSpec with Matchers {
+
+    val testRoot: String = s"${System.getProperty("user.dir")}/OPAL/tac2bc/src/test/resources"
+
+    def dirName: String
+    def packageName: String
+
+    def getSourceDir(originalFileName: String): String
+
+    def description(originalFileName: String, testFileName: String): String
+
+    def getTestFiles(file: File, fileName: String): IterableOnce[(String, String)]
+
+    def extraFilesToLoad(testClassFileName: String, testInputDir: String): List[String] = List.empty
+
+    def executeTest(
+        testInputDirName: String
+    ): Unit = {
+        // define paths
+        val javaFileDir = s"$testRoot/$dirName"
+        val originalInputDir: String = s"$testRoot/generatedClassFiles/$dirName/original"
+        val testInputDir: String = s"$testRoot/generatedClassFiles/$dirName/$testInputDirName"
+        val outputDir: String = s"$testRoot/generatedClassFiles/$dirName/generated"
+
+        val resourcesDir: File = TestResources.locateTestResources(dirName, "tac2bc")
+
+        // load test files from directory
+        val testFiles = for {
+            file <- resourcesDir.listFiles()
+            fileName = file.getName
+            testFile <- getTestFiles(file, fileName).iterator
+        } yield testFile
+
+        testFiles.foreach { case (testFileName, originalFileName) =>
+            val originalClassPath = s"$packageName/${originalFileName.replace(".java", ".class")}"
+            val testClassFileName = testFileName.replace(".java", ".class")
+            val testClassPath = s"$packageName/$testClassFileName"
+
+            it(description(originalFileName, testFileName)) {
+
+                // (1) Compile the original Java file to generate its .class file
+                compileJavaFile(getSourceDir(originalFileName), originalFileName, javaFileDir, originalInputDir)
+
+                // (2) Compile the test Java file to generate its .class file if it is not the same as the original
+                if (testInputDir != originalInputDir) {
+                    compileJavaFile(getSourceDir(originalFileName), testFileName, javaFileDir, testInputDir)
+                }
+
+                val config: Config = BaseConfig.withValue(
+                    InvokedynamicRewriting.InvokedynamicRewritingConfigKey,
+                    ConfigValueFactory.fromAnyRef(false)
+                )
+                val logContext = new StandardLogContext()
+                OPALLogger.register(logContext)
+                implicit val project: Project[URL] =
+                    Project(Paths.get(testInputDir, testClassPath).toFile, logContext, config)
+
+                // Load the test class file
+                val classFile = project.allClassFiles.head
+
+                // Compile the TAC from the test class file
+                val tacProvider = project.get(LazyDetachedTACAIKey)
+                val byteCodes = for {
+                    m <- classFile.methods
+                    if m.body.isDefined
+                } yield {
+                    val tac = tacProvider(m)
+                    val bytecodeInstructions = TACtoBC.translateTACtoBC(m.descriptor, m.isStatic, tac)
+                    m -> bytecodeInstructions
+                }
+
+                // Generate the new class file
+                generateClassFile(
+                    classFile,
+                    byteCodes.toMap,
+                    outputDir,
+                    testClassPath
+                )
+
+                // Load the original class and the generated class
+                val originalClass = loadClasses(List((originalInputDir, originalClassPath))).head
+                val classesToLoad = (outputDir, testClassPath) +: extraFilesToLoad(
+                    testClassFileName,
+                    s"$testInputDir/$packageName"
+                ).map(fileName => (testInputDir, s"$packageName/$fileName"))
+                val generatedClass = loadClasses(classesToLoad).head
+
+                // Compare the output of the main method in the original and generated classes
+                val originalOutput = invokeMainMethod(originalClass)
+                val generatedOutput = invokeMainMethod(generatedClass)
+
+                // Assert that the outputs are the same
+                originalOutput shouldEqual generatedOutput
+            }
+        }
+    }
+
+    def generateClassFile(
+        classFile:     ClassFile,
+        byteCodes:     Map[Method, IndexedSeq[CodeElement[Nothing]]],
+        outputDirPath: String,
+        classFileName: String
+    ): Unit = {
+        val outputFile = Paths.get(outputDirPath, classFileName)
+
+        val newMethods = for (m <- classFile.methods) yield {
+            m.body match {
+                case None =>
+                    m.copy() // methods which are native or abstract
+                case _: Some[Code] =>
+                    val codeAttrBuilder = CODE(byteCodes(m))
+                    val newBody = codeAttrBuilder(classFile.version, m)
+                    m.copy(body = Some(newBody._1))
+            }
+        }
+
+        val cfWithNewInstructions = classFile.copy(methods = newMethods)
+        val daClassFile = toDA(cfWithNewInstructions)
+        val newRawCF = Assembler(daClassFile)
+        Files.createDirectories(outputFile.getParent)
+        Files.write(outputFile, newRawCF)
+    }
+
+    def compileJavaFile(
+        sourceFolder: String,
+        fileName:     String,
+        javaFileDir:  String,
+        inputDir:     String
+    ): Unit = {
+        val javaFilePath = Paths.get(javaFileDir, sourceFolder, fileName).toString
+        val command = s"javac -d $inputDir $javaFilePath"
+        val result = command.!
+
+        if (result != 0)
+            throw new RuntimeException(s"Compilation of Java file ($fileName) failed.")
+    }
+
+    def invokeMainMethod(clazz: Class[_]): String = {
+        val outputStream = new ByteArrayOutputStream()
+        Console.withOut(outputStream) {
+            clazz.getMethod("main", classOf[Array[String]]).invoke(null, Array[String]())
+        }
+        outputStream.toString.trim
+    }
+
+    def loadClasses(files: List[(String, String)]): Iterable[Class[_]] = {
+        val classes = files.map { case (dir, file) =>
+            val className = file.replace(".class", "").replace('/', '.')
+            className -> Files.readAllBytes(Paths.get(dir, file))
+        }
+
+        val classLoader = new InMemoryClassLoader(classes.toMap)
+
+        classes.map { case (className, _) =>
+            classLoader.findClass(className)
+        }
+    }
+}

@@ -9,6 +9,7 @@ flowchart BT
     AbstractInterpretationFramework[Abstract Interpretation Framework<br>ai]
     Hermes[Hermes<br>hermes]
     Common[Common<br>common]
+    ThreeAddressCodeToBytecode[Three Address Code to Bytecode<br>tac2bc]
     BytecodeDisassembler[Bytecode Disassembler<br>da]
     StaticAnalysisInfrastructure[Static Analysis Infrastructure<br>si]
     IFDS[IFDS<br>ifds]
@@ -22,9 +23,8 @@ flowchart BT
     style Framework fill:#c0ffc0
     style Hermes fill:#ffd7cf
 
-    Framework --> BytecodeAssembler
     Framework --> ArchitectureValidation
-    Framework --> ThreeAddressCode
+    Framework --> ThreeAddressCodeToBytecode
     ThreeAddressCode --> AbstractInterpretationFramework
     ThreeAddressCode --> IFDS
     APK --> ThreeAddressCode
@@ -34,6 +34,8 @@ flowchart BT
     BytecodeInfrastructure --> Common
     AbstractInterpretationFramework --> BytecodeRepresentation
     Hermes --> Framework
+    ThreeAddressCodeToBytecode --> BytecodeAssembler
+    ThreeAddressCodeToBytecode --> ThreeAddressCode
     BytecodeDisassembler --> BytecodeInfrastructure
     StaticAnalysisInfrastructure --> Common
     IFDS --> IDE
