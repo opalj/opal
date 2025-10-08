@@ -6,13 +6,14 @@ package analyses
 package fieldaccess
 package reflection
 
+import java.util.regex.Pattern
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ClassType
 import org.opalj.br.Field
 import org.opalj.br.FieldType
-import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.value.IsReferenceValue
 
 /**
@@ -29,13 +30,18 @@ trait FieldMatcher {
 
 }
 
-final class NameBasedFieldMatcher(val possibleNames: Set[String]) extends FieldMatcher {
+final class NameBasedFieldMatcher(val possibleNames: StringTreeNode) extends FieldMatcher {
+    val pattern = Pattern.compile(possibleNames.regex)
+
     override def initialFields(implicit p: SomeProject): Iterator[Field] = {
-        val projectIndex = p.get(ProjectIndexKey)
-        possibleNames.iterator.flatMap(projectIndex.findFields)
+        p.allFields.filter(f => pattern.matcher(f.name).matches()).iterator
     }
+
     override def priority: Int = 2
-    override def contains(f: Field)(implicit p: SomeProject): Boolean = possibleNames.contains(f.name)
+
+    override def contains(f: Field)(implicit p: SomeProject): Boolean = {
+        pattern.matcher(f.name).matches()
+    }
 }
 
 class ClassBasedFieldMatcher(

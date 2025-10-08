@@ -12,6 +12,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.string.StringTreeConst
 
 object MethodHandlesUtil {
     // TODO what about the case of an constructor?
@@ -36,7 +37,7 @@ object MethodHandlesUtil {
                         MethodDescriptor(desc.parameterTypes.tail, desc.returnType)
                 )
             ),
-            new NameBasedMethodMatcher(Set(name)),
+            new NameBasedMethodMatcher(StringTreeConst(name)),
             if (receiver.isArrayType)
                 new ClassBasedMethodMatcher(
                     Set(ClassType.Object),

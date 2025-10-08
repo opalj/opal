@@ -6,6 +6,7 @@ package analyses
 package cg
 package reflection
 
+import java.util.regex.Pattern
 import scala.collection.immutable.ArraySeq
 
 import org.opalj.br.ClassHierarchy
@@ -13,8 +14,8 @@ import org.opalj.br.ClassType
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.value.IsReferenceValue
 
 /**
@@ -30,17 +31,17 @@ trait MethodMatcher {
     def contains(m: Method)(implicit p: SomeProject): Boolean
 }
 
-final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends MethodMatcher {
+final class NameBasedMethodMatcher(val possibleNames: StringTreeNode) extends MethodMatcher {
+    val pattern = Pattern.compile(possibleNames.regex)
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = {
-        val projectIndex = p.get(ProjectIndexKey)
-        possibleNames.iterator.flatMap(projectIndex.findMethods)
+        p.allMethods.filter(m => pattern.matcher(m.name).matches()).iterator
     }
 
     override def priority: Int = 2
 
     override def contains(m: Method)(implicit p: SomeProject): Boolean = {
-        possibleNames.contains(m.name)
+        pattern.matcher(m.name).matches()
     }
 }
 

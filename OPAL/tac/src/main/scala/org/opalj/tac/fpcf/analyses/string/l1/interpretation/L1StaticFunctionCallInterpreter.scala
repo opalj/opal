@@ -43,8 +43,8 @@ case class L1StaticFunctionCallInterpreter()(
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         call.name match {
-            case "getProperty" if call.declaringClass eq ClassType.System => interpretGetSystemPropertiesCall(target)
-            case "valueOf" if call.declaringClass eq ClassType.String     => processStringValueOf(target, call)
+            case "getProperty" if call.declaringClass == ClassType.System => interpretGetSystemPropertiesCall(target)
+            case "valueOf" if call.declaringClass == ClassType.String     => processStringValueOf(target, call)
             case _
                 if (call.descriptor.returnType eq ClassType.String) || (call.descriptor.returnType eq ClassType.Object) =>
                 interpretArbitraryCall(target, call)

@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.cli
+package org.opalj
+package br
+package fpcf
+package cli
 
 import org.opalj.cli.AnalysisLevelArg
 

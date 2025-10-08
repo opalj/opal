@@ -10,6 +10,7 @@ import org.opalj.br.ClassType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.fieldaccess.IncompleteFieldAccesses
+import org.opalj.br.fpcf.properties.string.StringTreeNode
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
@@ -62,23 +63,21 @@ object MatcherUtil {
      * provides allocation sites of Strings to be used as the method name.
      */
     private[reflection] def retrieveNameBasedFieldMatcher(
-        context:  Context,
-        expr:     V,
-        depender: Entity,
         pc:       Int,
-        stmts:    Array[Stmt[V]],
-        failure:  () => Unit
+        value:    V,
+        context:  Context,
+        depender: Entity,
+        stmts:    Array[Stmt[V]]
     )(
         implicit
-        typeIterator:            TypeIterator,
         state:                   TypeIteratorState,
         ps:                      PropertyStore,
         highSoundness:           Boolean,
         incompleteFieldAccesses: IncompleteFieldAccesses
     ): FieldMatcher = {
-        val names = StringUtil.getPossibleStrings(expr, context, depender, stmts, failure)
-        retrieveSuitableMatcher[Set[String]](
-            Some(names),
+        val names = StringUtil.getPossibleStrings(pc, value, context, depender, stmts)
+        retrieveSuitableMatcher[StringTreeNode](
+            names,
             pc,
             v => new NameBasedFieldMatcher(v)
         )

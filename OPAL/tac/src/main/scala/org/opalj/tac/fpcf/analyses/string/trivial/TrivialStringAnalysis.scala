@@ -96,7 +96,7 @@ class TrivialStringAnalysis(override val project: SomeProject) extends FPCFAnaly
             case PUVar(_, defPCs) =>
                 StringTreeOr(defPCs.map(pc => mapDefPCToStringTree(pc)))
 
-            case PDVar(_, _) =>
+            case PDVar(_, _, _) =>
                 mapDefPCToStringTree(state.entity.pc)
         }
 
