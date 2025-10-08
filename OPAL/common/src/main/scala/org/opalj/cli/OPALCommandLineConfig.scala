@@ -5,12 +5,15 @@ package cli
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
+import org.rogach.scallop.LazyMap
 import org.rogach.scallop.ScallopConf
 import org.rogach.scallop.ScallopOption
+import org.rogach.scallop.ScallopOptionBase
 import org.rogach.scallop.ScallopOptionGroup
 import org.rogach.scallop.ValueConverter
 import org.rogach.scallop.exceptions.Help
 import org.rogach.scallop.exceptions.ScallopException
+import org.rogach.scallop.propsConverter
 
 import org.opalj.log.DevNullLogger
 import org.opalj.log.GlobalLogContext
@@ -36,7 +39,7 @@ trait OPALCommandLineConfig {
     private val generalConfigGroup = group("General configuration:")
     protected var argGroups: Map[Arg[_, _], ScallopOptionGroup] = Map.empty
 
-    generalArgs(NoLogsArg, ConfigFileArg, RenderConfigArg)
+    generalArgs(NoLogsArg, ConfigFileArg, RenderConfigArg, ConfigOverrideArg)
 
     /**
      * Defines (additional) args for this configuration
@@ -122,14 +125,14 @@ trait OPALCommandLineConfig {
 
     def init(): Unit = {
 
-        def getScallopOptionFlat(a: Arg[_, _]): ScallopOption[_] = a match {
+        def getScallopOptionFlat(a: Arg[_, _]): ScallopOptionBase = a match {
             case choiceArg: ChoiceArg[_]          => getChoiceScallopOption(choiceArg)
-            case convertedArg: ConvertedArg[_, _] =>
-                getRegularScallopOption(convertedArg)(convertedArg.conv)
-            case _: MutuallyExclusive => throw new IllegalArgumentException("Cannot nest mutually exclusive arguments")
+            case propertyArg: PropertyArg[_]      => getPropertyScallopOption(propertyArg)(propsConverter(propertyArg.conv))
+            case convertedArg: ConvertedArg[_, _] => getRegularScallopOption(convertedArg)(convertedArg.conv)
+            case _: MutuallyExclusive             => throw new IllegalArgumentException("Cannot nest mutually exclusive arguments")
         }
 
-        def getScallopOption(a: Arg[_, _]): IterableOnce[(Arg[_, _], ScallopOption[_])] = a match {
+        def getScallopOption(a: Arg[_, _]): IterableOnce[(Arg[_, _], ScallopOptionBase)] = a match {
             case me: MutuallyExclusive => {
                 val options = me.as.map { c => c -> getScallopOptionFlat(c) }
                 if (required.contains(a))
@@ -145,6 +148,13 @@ trait OPALCommandLineConfig {
 
         verify()
 
+        def getValue[T, R](arg: Arg[T, R], value: T): Any = {
+            arg match {
+                case parsedArg: ParsedArg[T, _] => parsedArg.parse(value)
+                case _: Arg[_, _]               => value
+            }
+        }
+
         def forwardedArgs(forwardedArg: Arg[_, _]): Iterator[Arg[_, _]] = {
             forwardedArg match {
                 case forwardingArg: ForwardingArg[_, _, _] => Iterator(forwardingArg) ++ forwardedArgs(forwardingArg.arg)
@@ -153,14 +163,28 @@ trait OPALCommandLineConfig {
         }
 
         values = rawValues.flatMap {
-            case (arg, scallopOpt) if scallopOpt.isDefined =>
-                val value = arg match {
-                    case parsedArg: ParsedArg[_, _] => parseArgWithParser(scallopOpt, parsedArg.parse)
-                    case _: Arg[_, _]               => scallopOpt()
-                }
+            case (arg, scallopOpt: ScallopOption[_]) if scallopOpt.isDefined =>
+                val value = getValue(arg, scallopOpt.apply())
                 forwardedArgs(arg).map { arg => arg -> value }
+            case (arg, properties: LazyMap[_, _]) =>
+                val values = properties.iterator.map {
+                    case (key: String, value) => (key, getValue(arg, value))
+                }.toMap
+                forwardedArgs(arg).map { arg => arg -> values }
             case _ => None
         }
+    }
+
+    private def getPropertyScallopOption[T](arg: PropertyArg[T])(implicit
+        conv: ValueConverter[Map[String, T]]
+    ): LazyMap[String, T] = {
+        props[T](
+            name = arg.char,
+            descr = arg.description,
+            keyName = arg.keyName,
+            valueName = arg.valueName,
+            group = argGroups.getOrElse(arg, runnerSpecificGroup)
+        )
     }
 
     private def getRegularScallopOption[T](arg: ConvertedArg[T, _])(implicit
@@ -189,9 +213,6 @@ trait OPALCommandLineConfig {
             required = required.contains(arg),
             group = argGroups.getOrElse(arg, runnerSpecificGroup)
         )
-
-    private def parseArgWithParser[T, R](value: ScallopOption[_], parse: T => R): R =
-        parse(value.apply().asInstanceOf[T])
 
     def setupConfig(isLibrary: Boolean): Config = {
         if (get(NoLogsArg, false))
