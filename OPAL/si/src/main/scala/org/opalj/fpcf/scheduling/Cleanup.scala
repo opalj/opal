@@ -51,8 +51,8 @@ object Cleanup {
         while (index >= 0) {
             val usedInThisPhase: Set[Int] =
                 schedule(index).scheduled.iterator.flatMap(_.uses(ps).iterator).map(_.pk.id).toSet
-            usedInAnyPhase = usedInAnyPhase union usedInThisPhase
             neededLater(index) = usedInAnyPhase
+            usedInAnyPhase = usedInAnyPhase union usedInThisPhase
             index -= 1
         }
 

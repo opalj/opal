@@ -550,6 +550,15 @@ abstract class PropertyStore {
         pc: EOptionP[E, P] => InterimEP[E, P]
     ): Unit
 
+    final def setupPhase(configuration: PropertyKindsConfiguration): Unit = {
+        setupPhase(
+            configuration.propertyKindsComputedInThisPhase,
+            configuration.propertyKindsComputedInLaterPhase,
+            configuration.suppressInterimUpdates,
+            configuration.collaborativelyComputedPropertyKindsFinalizationOrder
+        )
+    }
+
     final def setupPhase(configuration: PropertyKindsConfiguration, toDelete: Set[Int]): Unit = {
         setupPhase(
             configuration.propertyKindsComputedInThisPhase,

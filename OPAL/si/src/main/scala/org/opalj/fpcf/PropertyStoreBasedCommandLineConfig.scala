@@ -70,7 +70,10 @@ trait PropertyStoreBasedCommandLineConfig extends OPALCommandLineConfig { self: 
     generalArgs(
         PropertyStoreThreadsNumArg,
         PropertyStoreDebugArg,
-        SchedulingStrategyArg
+        SchedulingStrategyArg,
+        DisableCleanupArg,
+        KeepPropertyKeysArg,
+        ClearPropertyKeysArg
     )
 
     def setupPropertyStore(project: Project): (PropertyStore, Seconds) = {
