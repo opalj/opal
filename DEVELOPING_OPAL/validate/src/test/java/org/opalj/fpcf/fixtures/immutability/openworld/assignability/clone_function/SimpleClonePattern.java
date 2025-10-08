@@ -15,7 +15,7 @@ import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 public final class SimpleClonePattern {
 
     @TransitivelyImmutableField("Field is effectively non assignable and has a primitive type")
-    @EffectivelyNonAssignableField("Field is only assigned ones due to the clone function pattern")
+    @EffectivelyNonAssignableField("Field is only assigned once due to the clone function pattern")
     private int i;
 
     public SimpleClonePattern clone(){
@@ -28,7 +28,7 @@ public final class SimpleClonePattern {
 class CloneNonAssignableWithNewObject {
 
     @TransitivelyImmutableField("field is effectively non assignable and assigned with a transitively immutable object")
-    @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
+    @EffectivelyNonAssignableField("field is only assigned once due to the clone function pattern")
     private Integer integer;
 
     public CloneNonAssignableWithNewObject clone(){
@@ -41,7 +41,7 @@ class CloneNonAssignableWithNewObject {
 class EscapesAfterAssignment {
 
     @TransitivelyImmutableField("field is effectively non assignable and assigned with a transitively immutable object")
-    @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
+    @EffectivelyNonAssignableField("field is only assigned once due to the clone function pattern")
     private Integer integer;
 
     private Integer integerCopy;
@@ -77,7 +77,7 @@ final class MultipleFieldsAssignedInCloneFunction {
 class ConstructorWithParameter {
 
     @TransitivelyImmutableField("field is effectively non assignable and has a transitively immutable type")
-    @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
+    @EffectivelyNonAssignableField("field is only assigned once due to the clone function pattern")
     private Integer integer;
 
     public ConstructorWithParameter(Integer integer){

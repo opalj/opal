@@ -12,9 +12,11 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.fieldaccess.AccessReceiver
+import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
+import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
@@ -36,37 +38,45 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     type AnalysisState = State
     override def createState(field: Field): AnalysisState = State(field)
 
-    /**
-     * Analyzes field writes for a single method, returning false if the field may still be
-     * effectively final and true otherwise.
-     */
-    def methodUpdatesField(
+    override def determineAssignabilityFromWriteInContext(
+        context:       Context,
         definedMethod: DefinedMethod,
         taCode:        TACode[TACMethodParameter, V],
-        callers:       Callers,
-        pc:            PC,
+        writePC:       PC,
         receiver:      AccessReceiver
-    )(implicit state: AnalysisState): Boolean = {
-        val stmts = taCode.stmts
+    )(implicit state: AnalysisState): FieldAssignability = {
+        val field = state.field
         val method = definedMethod.definedMethod
 
-        if (receiver.isDefined) {
-            val objRef = uVarForDefSites(receiver.get, taCode.pcToIndex).asVar
-            // note that here we assume real three address code (flat hierarchy)
+        if (field.isStatic && method.isConstructor) {
+            // A static field updated in an arbitrary constructor may be updated with (at least) the first call.
+            // Thus, we may see its initial value or the updated value, making the field assignable.
+            return Assignable;
+        }
 
-            // for instance fields it is okay if they are written in the
-            // constructor (w.r.t. the currently initialized object!)
+        if (state.fieldAccesses(context).size > 1) {
+            // Multi-branch access detection is not available on this level.
+            return Assignable;
+        }
 
-            // If the field that is written is not the one referred to by the
-            // self reference, it is not effectively final.
-
-            // However, a method (e.g. clone) may instantiate a new object and
-            // write the field as long as that new object did not yet escape.
-            (!method.isConstructor ||
-                objRef.definedBy != SelfReferenceParameter) &&
-                !referenceHasNotEscaped(objRef, stmts, definedMethod, callers)
+        val receiverVarOpt = receiver.map(uVarForDefSites(_, taCode.pcToIndex))
+        if (receiverVarOpt.isDefined) {
+            val receiverVar = receiverVarOpt.get
+            if (method.isConstructor && receiverVar.definedBy == SelfReferenceParameter) {
+                // for instance fields it is okay if they are written in the
+                // constructor (w.r.t. the currently initialized object!)
+                NonAssignable
+            } else if (!referenceHasEscaped(receiverVar, taCode.stmts, definedMethod, context)) {
+                // A method (e.g. clone) may instantiate a new object and write the field as long as that new object
+                // did not yet escape.
+                NonAssignable
+            } else {
+                Assignable
+            }
+        } else if (!method.isStaticInitializer) {
+            Assignable
         } else {
-            !method.isStaticInitializer
+            NonAssignable
         }
     }
 }

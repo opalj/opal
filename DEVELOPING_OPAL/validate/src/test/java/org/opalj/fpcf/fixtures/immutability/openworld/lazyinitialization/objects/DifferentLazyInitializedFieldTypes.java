@@ -16,8 +16,8 @@ import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitiali
  */
 public class DifferentLazyInitializedFieldTypes {
 
-     @TransitivelyImmutableField("Lazy initialized field with primitive type.")
-     @LazilyInitializedField("field is thread safely lazy initialized")
+    @TransitivelyImmutableField("Lazy initialized field with primitive type.")
+    @LazilyInitializedField("field is thread safely lazy initialized")
     private int inTheGetterLazyInitializedIntField;
 
     public synchronized int getInTheGetterLazyInitializedIntField(){
