@@ -32,7 +32,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     type V = DUVar[KnownTypedValue]
 
     // required types and descriptors
-    val ClassLoaderT = ClassType("java/lang/ClassLoader")
+    val ClassLoaderT = ClassType.ClassLoader
 
     val loadClassMD = MethodDescriptor(ClassType.String, ClassType.Class)
 

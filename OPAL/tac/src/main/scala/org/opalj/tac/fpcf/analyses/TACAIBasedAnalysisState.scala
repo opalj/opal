@@ -26,7 +26,7 @@ trait TACAIBasedAnalysisState[TheContextType <: Context]
     def callContext: ContextType
 
     protected[this] var _tacDependee: EOptionP[Method, TACAI]
-    assert(_tacDependee.hasUBP)
+    assert(_tacDependee != null && _tacDependee.hasUBP)
 
     abstract override def hasOpenDependencies: Boolean = _tacDependee.isRefinable || super.hasOpenDependencies
     final def isTACDependeeRefinable: Boolean = _tacDependee.isRefinable

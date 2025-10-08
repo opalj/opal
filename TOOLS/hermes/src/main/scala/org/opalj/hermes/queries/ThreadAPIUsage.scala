@@ -20,7 +20,7 @@ class ThreadAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
 
         val Thread = ClassType("java/lang/Thread")
         val ThreadGroup = ClassType("java/lang/ThreadGroup")
-        val Object = ClassType("java/lang/Object")
+        val Object = ClassType.Object
 
         val constructor = "<init>"
 

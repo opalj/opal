@@ -24,6 +24,7 @@ import org.opalj.value.ValueInformation
  * @author Nicolas Gross
  */
 object ContextRegisteredReceiversAnalysis {
+
     private val RegisterReceiverMethod = "registerReceiver"
     private val ContextClass = ClassType("android/content/Context")
     private val LocalBroadcastManagerClass = ClassType("androidx/localbroadcastmanager/content/LocalBroadcastManager")
