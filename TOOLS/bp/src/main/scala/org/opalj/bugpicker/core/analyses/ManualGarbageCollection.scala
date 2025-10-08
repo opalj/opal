@@ -30,8 +30,6 @@ import org.opalj.issues.Relevance
  */
 object ManualGarbageCollection {
 
-    final val Runtime = ClassType("java/lang/Runtime")
-
     def description: String =
         "Reports methods outside of java.lang that explicitly invoke the garbage collector."
 
@@ -54,7 +52,7 @@ object ManualGarbageCollection {
             (pc, gcCall) <- body.collectWithIndex {
                 case (pc, INVOKESTATIC(ClassType.System, false, "gc", NoArgsAndReturnVoid)) =>
                     (pc, "System.gc()")
-                case (pc, INVOKEVIRTUAL(Runtime, "gc", NoArgsAndReturnVoid)) =>
+                case (pc, INVOKEVIRTUAL(ClassType.Runtime, "gc", NoArgsAndReturnVoid)) =>
                     (pc, "Runtime.gc()")
             }
         } yield Issue(
