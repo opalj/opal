@@ -335,7 +335,7 @@ object CommentParser {
          * @return Returns the Comment text if the line is a comment. Else, returns an empty string.
          */
         private def getSingleLineComment: Option[String] = {
-            if (line.startsWith("#") || line.startsWith("//")) {
+            if (line.startsWith("#")) {
                 // Add the comment in the same line of the list as well
                 val currentComment = line.stripPrefix("#").stripPrefix("//").trim
                 line = ""
