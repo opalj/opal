@@ -43,8 +43,6 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
     final val project: SomeProject
 ) extends PointsToAnalysisBase { self =>
 
-    private[this] val SunUnsafeT = ClassType("sun/misc/Unsafe")
-    private[this] val JDKUnsafeT = ClassType("jdk/internal/misc/Unsafe")
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
@@ -201,7 +199,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
     }
 
     def process(p: SomeProject): PropertyComputationResult = {
-        val analyses = getAnalyses(SunUnsafeT) ++ getAnalyses(JDKUnsafeT)
+        val analyses = getAnalyses(ClassType.SunUnsafe) ++ getAnalyses(ClassType.JdkUnsafe)
 
         Results(analyses.map(_.registerAPIMethod()))
     }

@@ -358,7 +358,7 @@ class MethodBuilderTest extends AnyFlatSpec {
     }
 
     it should "aggressively remove useless try markers if no exceptions are thrown" in {
-        val SystemType = ClassType("java/lang/System")
+        val SystemType = ClassType.System
         val PrintStreamType = ClassType("java/io/PrintStream")
         val ExceptionType = ClassType("java/lang/Exception")
 
@@ -411,7 +411,7 @@ class MethodBuilderTest extends AnyFlatSpec {
     }
 
     it should "not remove live code in nested exception handlers" in {
-        val SystemType = ClassType("java/lang/System")
+        val SystemType = ClassType.System
         val PrintStreamType = ClassType("java/io/PrintStream")
         val ExceptionType = ClassType("java/lang/Exception")
 

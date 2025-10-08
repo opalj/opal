@@ -8,8 +8,6 @@ package cg
 import scala.annotation.tailrec
 
 import org.opalj.br.ClassType
-import org.opalj.br.ClassType.{ObjectInputStream => ObjectInputStreamType}
-import org.opalj.br.ClassType.{ObjectOutputStream => ObjectOutputStreamType}
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ElementReferenceType
 import org.opalj.br.Method
@@ -53,16 +51,15 @@ class OOSWriteObjectAnalysis private[analyses] (
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectOutputStreamType,
+        ClassType.ObjectOutputStream,
         "",
-        ObjectOutputStreamType,
+        ClassType.ObjectOutputStream,
         "writeObject",
         MethodDescriptor.JustTakesObject
     )
 
-    final val ObjectOutputType = ClassType("java/io/ObjectOutput")
-    final val WriteExternalDescriptor = MethodDescriptor.JustTakes(ObjectOutputType)
-    final val WriteObjectDescriptor = MethodDescriptor.JustTakes(ObjectOutputStreamType)
+    final val WriteExternalDescriptor = MethodDescriptor.JustTakes(ClassType.ObjectOutput)
+    final val WriteObjectDescriptor = MethodDescriptor.JustTakes(ClassType.ObjectOutputStream)
 
     override def processNewCaller(
         calleeContext:  ContextType,
@@ -244,16 +241,13 @@ class OISReadObjectAnalysis private[analyses] (
     final val project: SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
-    final val ObjectInputValidationType = ClassType("java/io/ObjectInputValidation")
-    final val ObjectInputType = ClassType("java/io/ObjectInput")
-
-    final val ReadObjectDescriptor = MethodDescriptor.JustTakes(ObjectInputStreamType)
-    final val ReadExternalDescriptor = MethodDescriptor.JustTakes(ObjectInputType)
+    final val ReadObjectDescriptor = MethodDescriptor.JustTakes(ClassType.ObjectInputStream)
+    final val ReadExternalDescriptor = MethodDescriptor.JustTakes(ClassType.ObjectInput)
 
     override val apiMethod: DeclaredMethod = declaredMethods(
-        ObjectInputStreamType,
+        ClassType.ObjectInputStream,
         "",
-        ObjectInputStreamType,
+        ClassType.ObjectInputStream,
         "readObject",
         MethodDescriptor.JustReturnsObject
     )
@@ -394,7 +388,7 @@ class OISReadObjectAnalysis private[analyses] (
                     )
 
                     // call to `validateObject`
-                    if (ch.isSubtypeOf(t, ObjectInputValidationType)) {
+                    if (ch.isSubtypeOf(t, ClassType.ObjectInputValidation)) {
                         val validateObject =
                             p.instanceCall(t, t, "validateObject", JustReturnsObject)
                         calleesAndCallers.addCallOrFallback(

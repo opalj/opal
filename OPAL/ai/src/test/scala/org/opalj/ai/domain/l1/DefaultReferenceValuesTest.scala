@@ -129,7 +129,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("a NullValue should be more precise than an ObjectValue but not vice versa") {
                 val v1 = NullValue(-1)
-                val v2 = ObjectValue(-1, Unknown, true, ClassType("java/lang/Object"), 1)
+                val v2 = ObjectValue(-1, Unknown, true, ClassType.Object, 1)
                 v1.isMorePreciseThan(v2) should be(true)
                 v2.isMorePreciseThan(v1) should be(false)
             }
@@ -137,7 +137,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
             it("an ObjectValue of type java/lang/String should be more precise than " +
                 "an ObjectValue of type java/lang/Object but not vice versa") {
                 val v1 = ObjectValue(-1, Unknown, true, ClassType("java/lang/String"), 1)
-                val v2 = ObjectValue(-1, Unknown, true, ClassType("java/lang/Object"), 2)
+                val v2 = ObjectValue(-1, Unknown, true, ClassType.Object, 2)
                 v1.isMorePreciseThan(v2) should be(true)
                 v2.isMorePreciseThan(v1) should be(false)
             }
@@ -217,7 +217,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
             it("should be able to correctly handle the refinement of the upper type bound of a multiple reference value that has a more precise bound than any reference value to a single value") {
 
-                val v1 = ObjectValue(111, Unknown, true, ClassType("java/lang/Object"), 1)
+                val v1 = ObjectValue(111, Unknown, true, ClassType.Object, 1)
                 val v2 = ObjectValue(222, Unknown, false, ClassType("java/lang/Cloneable"), 2)
                 val v3 = ObjectValue(
                     222,
