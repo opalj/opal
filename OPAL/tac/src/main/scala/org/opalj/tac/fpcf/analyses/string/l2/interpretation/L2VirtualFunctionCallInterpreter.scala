@@ -46,12 +46,10 @@ class L2VirtualFunctionCallInterpreter(
 
     override type E = VirtualFunctionCall[V]
 
-    private val propertiesType = ClassType("java/util/Properties")
-
     override protected def interpretArbitraryCall(target: PV, call: E)(
         implicit state: InterpretationState
     ): ProperPropertyComputationResult = {
-        if (call.name == "getProperty" && (call.declaringClass eq propertiesType)) {
+        if (call.name == "getProperty" && (call.declaringClass eq ClassType.Properties)) {
             interpretGetSystemPropertiesCall(target)
         } else {
             interpretArbitraryCallWithCallees(target, call)

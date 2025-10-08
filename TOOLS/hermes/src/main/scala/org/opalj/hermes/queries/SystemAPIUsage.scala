@@ -46,7 +46,7 @@ class SystemAPIUsage(implicit hermes: HermesConfig) extends APIFeatureQuery {
         val constructor = "<init>"
 
         val Runtime = ClassType("java/lang/Runtime")
-        val System = ClassType("java/lang/System")
+        val System = ClassType.System
         val ProcessBuilder = ClassType("java/lang/ProcessBuilder")
 
         List(

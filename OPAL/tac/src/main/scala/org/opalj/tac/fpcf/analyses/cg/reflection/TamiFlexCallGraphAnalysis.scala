@@ -43,7 +43,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    val ConstructorT: ClassType = ClassType("java/lang/reflect/Constructor")
+    val ConstructorT: ClassType = ClassType.Constructor
 
     def process(p: SomeProject): PropertyComputationResult = {
         val analyses = List(

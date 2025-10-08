@@ -281,28 +281,28 @@ private object ClassValues {
 
     final val forName_String_boolean_ClassLoader = {
         MethodDescriptor(
-            ArraySeq(ClassType.String, BooleanType, ClassType("java/lang/ClassLoader")),
+            ArraySeq(ClassType.String, BooleanType, ClassType.ClassLoader),
             ClassType.Class
         )
     }
 
     final val forName_String_boolean_ClassLoader_Class = {
         MethodDescriptor(
-            ArraySeq(ClassType.String, BooleanType, ClassType("java/lang/ClassLoader"), ClassType.Class),
+            ArraySeq(ClassType.String, BooleanType, ClassType.ClassLoader, ClassType.Class),
             ClassType.Class
         )
     }
 
     final val forName_Module_String = {
         MethodDescriptor(
-            ArraySeq(ClassType("java/lang/Module"), ClassType.String),
+            ArraySeq(ClassType.Module, ClassType.String),
             ClassType.Class
         )
     }
 
     final val forName_Module_String_Class = {
         MethodDescriptor(
-            ArraySeq(ClassType("java/lang/Module"), ClassType.String, ClassType.Class),
+            ArraySeq(ClassType.Module, ClassType.String, ClassType.Class),
             ClassType.Class
         )
     }

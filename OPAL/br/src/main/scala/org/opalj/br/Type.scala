@@ -1255,25 +1255,27 @@ object ClassType {
     final val ClassId = 11
     require(Class.id == ClassId)
 
+    final val ClassLoader = ClassType("java/lang/ClassLoader")
+
     final val ModuleInfo = ClassType("module-info")
-    require(ModuleInfo.id == 12)
+    require(ModuleInfo.id == 13)
 
     // the following types are relevant when checking the subtype relation between
     // two reference types where the subtype is an array type
     final val Serializable = ClassType("java/io/Serializable")
-    final val SerializableId = 13
+    final val SerializableId = 14
     require(Serializable.id == SerializableId)
     final val Cloneable = ClassType("java/lang/Cloneable")
-    final val CloneableId = 14
+    final val CloneableId = 15
     require(Cloneable.id == CloneableId)
     final val Comparable = ClassType("java/lang/Comparable")
-    final val ComparableId = 15
+    final val ComparableId = 16
     require(Comparable.id == ComparableId)
     final val StringBuilder = ClassType("java/lang/StringBuilder")
-    final val StringBuilderId = 16
+    final val StringBuilderId = 17
     require(StringBuilder.id == StringBuilderId)
     final val StringBuffer = ClassType("java/lang/StringBuffer")
-    final val StringBufferId = 17
+    final val StringBufferId = 18
     require(StringBuffer.id == StringBufferId)
 
     final val System = ClassType("java/lang/System")
@@ -1286,6 +1288,9 @@ object ClassType {
     final val Thread = ClassType("java/lang/Thread")
     final val ThreadGroup = ClassType("java/lang/ThreadGroup")
     final val Runnable = ClassType("java/lang/Runnable")
+
+    final val Runtime = ClassType("java/lang/Runtime")
+    final val Module = ClassType("java/lang/Module")
 
     // Types related to the invokedynamic instruction
     final val VarHandle = ClassType("java/lang/invoke/VarHandle")
@@ -1303,10 +1308,14 @@ object ClassType {
     final val ScalaSymbolLiteral = ClassType("scala/runtime/SymbolLiteral")
     final val ScalaSymbol = ClassType("scala/Symbol")
     final val ScalaStructuralCallSite = ClassType("scala/runtime/StructuralCallSite")
+    final val ScalaRuntimeObject = ClassType("scala/runtime/ScalaRunTime$")
     final val Method = ClassType("java/lang/reflect/Method")
     final val Constructor = ClassType("java/lang/reflect/Constructor")
     final val Array = ClassType("java/lang/reflect/Array")
     final val Field = ClassType("java/lang/reflect/Field")
+    final val AnnotatedElement = ClassType("java/lang/reflect/AnnotatedElement")
+    final val GenericDeclaration = ClassType("java/lang/reflect/GenericDeclaration")
+    final val Type = ClassType("java/lang/reflect/Type")
 
     // Types related to dynamic constants
     final val ConstantBootstraps = ClassType("java/lang/invoke/ConstantBootstraps")
@@ -1326,7 +1335,10 @@ object ClassType {
     final val ClassCastException = ClassType("java/lang/ClassCastException")
     final val ArithmeticException = ClassType("java/lang/ArithmeticException")
     final val ClassNotFoundException = ClassType("java/lang/ClassNotFoundException")
+    final val IllegalArgumentException = ClassType("java/lang/IllegalArgumentException")
+    final val IllegalStateException = ClassType("java/lang/IllegalStateException")
 
+    final val AssertionError = ClassType("java/lang/AssertionError")
     /**
      * Least upper type bound of Java arrays. That is, every Java array
      * is always `Serializable` and `Cloneable`.
@@ -1343,6 +1355,28 @@ object ClassType {
 
     final val ObjectInputStream = ClassType("java/io/ObjectInputStream")
     final val ObjectOutputStream = ClassType("java/io/ObjectOutputStream")
+    final val ObjectOutput = ClassType("java/io/ObjectOutput")
+    final val ObjectInput = ClassType("java/io/ObjectInput")
+    final val ObjectInputValidation = ClassType("java/io/ObjectInputValidation")
+
+    // Java Security Types for doPrivileged analysis
+    final val JavaSecurityAccessController = ClassType("java/security/AccessController")
+    final val JavaSecurityPrivilegedAction = ClassType("java/security/PrivilegedAction")
+    final val JavaSecurityPrivilegedExceptionAction = ClassType("java/security/PrivilegedExceptionAction")
+    final val JavaSecurityAccessControlContext = ClassType("java/security/AccessControlContext")
+    final val JavaSecurityPermission = ClassType("java/security/Permission")
+    final val JavaSecurityCipher = ClassType("javax/crypto/Cipher")
+    final val JavaSecurityKey = ClassType("java/security/Key")
+
+    final val File = ClassType("java/io/File")
+    final val PrintStream = ClassType("java/io/PrintStream")
+    final val Collection = ClassType("java/util/Collection")
+    final val Collections = ClassType("java/util/Collections")
+    final val List = ClassType("java/util/List")
+    final val ThreadUncaughtExceptionHandler = ClassType("java/lang/Thread$UncaughtExceptionHandler")
+    final val Properties = ClassType("java/util/Properties")
+    final val SunUnsafe = ClassType("sun/misc/Unsafe")
+    final val JdkUnsafe = ClassType("jdk/internal/misc/Unsafe")
 
     private[br] final val highestPredefinedTypeId = nextId.get() - 1
 

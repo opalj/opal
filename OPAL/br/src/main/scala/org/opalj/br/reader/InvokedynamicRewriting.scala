@@ -171,8 +171,6 @@ trait InvokedynamicRewriting
         logUnknownInvokeDynamics
     }
 
-    val ScalaRuntimeObject: ClassType = ClassType("scala/runtime/ScalaRunTime$")
-
     /**
      * Generates a new, internal name for the proxy class for a rewritten invokedynamic.
      *
@@ -726,7 +724,7 @@ trait InvokedynamicRewriting
 
         val body = new InstructionsBuilder(18)
 
-        body ++= GETSTATIC(ScalaRuntimeObject, "MODULE$", ScalaRuntimeObject)
+        body ++= GETSTATIC(ClassType.ScalaRuntimeObject, "MODULE$", ClassType.ScalaRuntimeObject)
 
         body ++= ALOAD_0
 
@@ -1423,7 +1421,7 @@ object InvokedynamicRewriting {
                         )
                     ) &&
                     instructions(31) == INVOKEVIRTUAL(
-                        ClassType("scala/runtime/ScalaRunTime$"),
+                        ClassType.ScalaRuntimeObject,
                         "ensureAccessible",
                         MethodDescriptor(ClassType.Method, ClassType.Method)
                     )
