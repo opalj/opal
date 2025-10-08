@@ -150,7 +150,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
                 info("project configuration", effectiveConfiguration)
             }
         } { t =>
-            OPALLogger.info("analysis progress", s"setting up project took ${t.toSeconds} ")(project.logContext)
+            OPALLogger.info("analysis progress", s"setting up project took ${t.toSeconds} ")(GlobalLogContext)
             projectTime = t.toSeconds
         }
         (project, projectTime)
