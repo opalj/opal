@@ -48,13 +48,10 @@ import org.opalj.cli.IndividualArg
 import org.opalj.cli.OutputDirArg
 import org.opalj.cli.PackagesArg
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.ClearPropertyKeysArg
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.DisableCleanupArg
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.KeepPropertyKeysArg
 import org.opalj.tac.cg.CallGraphArg
 import org.opalj.tac.cg.CGBasedCommandLineConfig
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis

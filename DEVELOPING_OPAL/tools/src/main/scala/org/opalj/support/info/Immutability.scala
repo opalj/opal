@@ -62,15 +62,12 @@ import org.opalj.cli.OutputDirArg
 import org.opalj.cli.ParsedArg
 import org.opalj.cli.PlainArg
 import org.opalj.cli.ThreadsNumArg
-import org.opalj.fpcf.ClearPropertyKeysArg
 import org.opalj.fpcf.ComputationSpecification
-import org.opalj.fpcf.DisableCleanupArg
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.FPCFAnalysisScheduler
-import org.opalj.fpcf.KeepPropertyKeysArg
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey

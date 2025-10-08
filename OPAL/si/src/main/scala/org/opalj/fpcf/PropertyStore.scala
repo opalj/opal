@@ -607,11 +607,6 @@ abstract class PropertyStore {
             "illegal self dependency"
         )
 
-        val mask = currentPhaseDeletionMask
-        java.util.Arrays.fill(mask, false)
-
-        toDelete.foreach(id => mask(id) = true)
-
         // Step 1
         // Copy all property kinds that were computed in the previous phase that are no
         // longer computed to the "propertyKindsComputedInEarlierPhase" array.
@@ -674,6 +669,13 @@ abstract class PropertyStore {
             suppressInterimUpdates,
             finalizationOrder
         )
+
+        // Step 6
+        // Set up a new deletionMask by resetting it first, then filling it with the help of toDelete.
+        val mask = currentPhaseDeletionMask
+        java.util.Arrays.fill(mask, false)
+
+        toDelete.foreach(id => mask(id) = true)
     }
 
     /**
