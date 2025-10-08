@@ -97,10 +97,7 @@ object Purity extends ProjectsAnalysisApplication {
             RaterArg !,
             IndividualArg,
             OutputDirArg,
-            PackagesArg,
-            DisableCleanupArg,
-            KeepPropertyKeysArg,
-            ClearPropertyKeysArg
+            PackagesArg
         )
         generalArgs(
             DomainArg

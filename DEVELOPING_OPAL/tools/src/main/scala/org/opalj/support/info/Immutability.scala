@@ -135,10 +135,7 @@ object Immutability extends ProjectsAnalysisApplication {
             analysisLevelArg !,
             ignoreLazyInitializationArg !,
             ConfigurationNameArg !,
-            EscapeArg,
-            DisableCleanupArg,
-            KeepPropertyKeysArg,
-            ClearPropertyKeysArg
+            EscapeArg
         )
         init()
 

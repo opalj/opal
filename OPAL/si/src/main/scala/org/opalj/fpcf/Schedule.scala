@@ -58,13 +58,8 @@ case class Schedule[A](
                 info("analysis progress", s"setting up analysis phase $id: $configuration")
             }
             time {
-                ps.setupPhase(
-                    configuration.propertyKindsComputedInThisPhase,
-                    configuration.propertyKindsComputedInLaterPhase,
-                    configuration.suppressInterimUpdates,
-                    configuration.collaborativelyComputedPropertyKindsFinalizationOrder,
-                    phase.toDelete
-                )
+                ps.setupPhase(configuration, phase.toDelete)
+
                 afterPhaseSetup(configuration)
                 assert(ps.isIdle, "the property store is not idle after phase setup")
 
