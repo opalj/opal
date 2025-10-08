@@ -181,6 +181,7 @@ lazy val `OPAL` = (project in file("."))
         //  bp, (just temporarily...)
         tools,
         hermes,
+        ce,
         validate, // Not deployed to maven central
         demos // Not deployed to maven central
     )
