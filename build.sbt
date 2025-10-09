@@ -9,7 +9,7 @@ import xerial.sbt.Sonatype.sonatypeCentralHost
 name := "OPAL Library"
 
 // SNAPSHOT
-ThisBuild / version := "6.0.0"
+ThisBuild / version := "6.0.0" // October 9th, 2025
 // RELEASED version in ThisBuild := "5.0.0" // January 23rd, 2023
 // RELEASED version in ThisBuild := "4.0.0" // May 7th, 2021
 // SNAPSHOT version in ThisBuild := "3.0.0-SNAPSHOT" // available since June 7th, 2019
@@ -481,7 +481,7 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
     )
     .dependsOn(
         tools % "it->it;it->test;test->test;compile->compile",
-        demos  % "it->it;it->test;test->test;compile->compile",
+        demos % "it->it;it->test;test->test;compile->compile",
         hermes % "it->it;test->test;compile->compile"
     )
     .configs(IntegrationTest)

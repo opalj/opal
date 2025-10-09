@@ -1,6 +1,6 @@
 # Changes
 
-## 6.0.0
+## 6.0.0 - Released October 9th 2025
 - *we are now using sbt 1.9.7*
 - *we are now using scalafmt instead of Scalariform*
   - introduce auto formatting via `sbt format`
