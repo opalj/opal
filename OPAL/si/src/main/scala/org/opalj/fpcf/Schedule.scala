@@ -97,13 +97,9 @@ case class Schedule[A](
                     )
             }
         }
-        val finalToDelete: Set[Int] = cleanupSpec match {
-            case Some(spec) if !spec.disable => spec.clear -- spec.keep
-            case _                           => Set.empty
-        }
 
         // ... we are done now; the computed properties will no longer be computed!
-        ps.setupPhase(Set.empty, Set.empty, toDelete = finalToDelete)
+        ps.setupPhase(Set.empty, propertyKindsComputedInLaterPhase = Set.empty)
 
         allExecutedAnalyses
     }
