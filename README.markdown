@@ -19,6 +19,8 @@ OPAL consists of several projects:
 
 * **Bytecode Creator** (OPAL/bc): Most basic infrastructure to engineer Java bytecode.
 
+* **Bytecode Assembler** (OPAL/ba): DSL for assembling Java bytecode.
+
 * **Bytecode Representation** (OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses of Java class files.
 
 * **Abstract Interpretation Framework** (OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at different levels of precision.

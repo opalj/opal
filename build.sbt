@@ -1,5 +1,6 @@
 import java.io.FileWriter
 
+import sbt.Keys.javaOptions
 import sbt.Test
 import sbtassembly.AssemblyPlugin.autoImport._
 import sbtunidoc.ScalaUnidocPlugin
@@ -180,6 +181,7 @@ lazy val `OPAL` = (project in file("."))
         //  bp, (just temporarily...)
         tools,
         hermes,
+        ce,
         validate, // Not deployed to maven central
         demos // Not deployed to maven central
     )
@@ -498,6 +500,33 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
     .dependsOn(framework)
     .configs(IntegrationTest)
 
+lazy val ce = `ConfigurationExplorer`
+
+lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
+    .settings(buildSettings: _*)
+    .settings(
+        fork := true,
+        javaOptions += s"-Dbuild.version=${version.value}",
+        name := "Configuration Explorer",
+        libraryDependencies ++= Dependencies.ce,
+        Compile / doc := {
+            // Overrides doc method to include config documentation at doc
+            val originalDoc = (Compile / doc).value
+            (Compile / compile).value
+            (Compile / run).toTask("").value
+            originalDoc
+        },
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer")
+    )
+    .dependsOn(
+        br % "compile->compile",
+        apk % "runtime->compile",
+        demos % "runtime->compile",
+        // bp % "runtime->compile",
+        hermes % "runtime->compile"
+    )
+    .configs(IntegrationTest)
+
 /* ***************************************************************************
  *
  * TASKS, etc
@@ -545,8 +574,8 @@ runProjectDependencyGeneration := {
         s"-u $uid:$gid"
     }.getOrElse("")
 
-    val mmd = new StringBuilder();
-    mmd.append("%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear' } } }%%\n")
+    val mmd = new StringBuilder()
+    mmd.append("%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear', 'padding': 10, 'wrappingWidth': 205 } } }%%\n")
     mmd.append("flowchart BT\n")
 
     val excludedProjects = Seq("OPAL", "Validate", "Tools")
@@ -577,9 +606,10 @@ runProjectDependencyGeneration := {
     for {
         (subproject, ref) <- allProjects
         if !excludedProjects.contains(subproject.id)
-        dependency <- subproject.referenced
+        dependency <- subproject.dependencies
+        if dependency.configuration.forall(_.contains("compile->compile"))
     } {
-        val project = allProjects.find { case (p, r) => r == dependency }.get._1
+        val project = allProjects.find { case (p, r) => r == dependency.project }.get._1
         mmd.append(s"    ${subproject.id} --> ${project.id}\n")
     }
 

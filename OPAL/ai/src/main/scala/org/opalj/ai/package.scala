@@ -19,11 +19,11 @@ import org.opalj.log.OPALLogger
 import org.opalj.util.AnyToAnyThis
 
 /**
- * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
+ * Implementation of an abstract interpretation (ai) framework.
  *
- * Please note that OPAL/the abstract interpreter just refers to the classes and traits
+ * Please note that the abstract interpreter just refers to the classes and traits
  * defined in this package (`ai`). The classes and traits defined in the sub-packages
- * (in particular in `domain`) are not considered to be part of the core of OPAL/the
+ * (in particular in `domain`) are not considered to be part of the core of the
  * abstract interpreter.
  *
  * @note This framework assumes that the analyzed bytecode is valid; i.e., the JVM's

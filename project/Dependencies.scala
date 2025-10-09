@@ -87,4 +87,5 @@ object Dependencies {
     val tools = Seq(txtmark, jacksonDF)
     val hermes = Seq(txtmark, jacksonDF, javafxBase)
     val apk = Seq(apkparser, scalaxml)
+    val ce = Seq(commonstext)
 }
