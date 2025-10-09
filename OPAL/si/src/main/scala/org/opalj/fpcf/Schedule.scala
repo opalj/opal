@@ -57,7 +57,7 @@ case class Schedule[A](
             if (trace) {
                 info("analysis progress", s"setting up analysis phase $id: $configuration")
                 if (phase.toDelete.nonEmpty) {
-                    info("cleanup", s"to be deleted after this phase: " + phase.toDelete.map(PropertyKey.name))
+                    info("analysis progress", s"to be deleted after this phase: " + phase.toDelete.map(PropertyKey.name))
                 }
             }
             time {

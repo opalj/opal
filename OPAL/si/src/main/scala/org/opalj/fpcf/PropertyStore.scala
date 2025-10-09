@@ -670,21 +670,23 @@ abstract class PropertyStore {
         hasSuppressedNotifications = suppressInterimUpdates.nonEmpty
 
         // Step 5
+        // Set up a new deletionMask by resetting it first, then filling it with the help of toDelete.
+        val mask = currentPhaseDeletionMask
+        java.util.Arrays.fill(mask, false)
+
+        toDelete.foreach(id => mask(id) = true)
+
+        // Step 6
         // Call `newPhaseInitialized` to enable subclasses to perform custom initialization steps
         // when a phase was setup.
         newPhaseInitialized(
             propertyKindsComputedInThisPhase,
             propertyKindsComputedInLaterPhase,
             suppressInterimUpdates,
-            finalizationOrder
+            finalizationOrder,
+            currentPhaseDeletionMask
         )
 
-        // Step 6
-        // Set up a new deletionMask by resetting it first, then filling it with the help of toDelete.
-        val mask = currentPhaseDeletionMask
-        java.util.Arrays.fill(mask, false)
-
-        toDelete.foreach(id => mask(id) = true)
     }
 
     /**
@@ -695,7 +697,8 @@ abstract class PropertyStore {
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind],
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
-        finalizationOrder:                 List[List[PropertyKind]]
+        finalizationOrder:                 List[List[PropertyKind]],
+        phaseDeletionMask:                 Array[Boolean]
     ): Unit = { /*nothing to do*/ }
 
     /**
