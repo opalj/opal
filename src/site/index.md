@@ -5,9 +5,9 @@ It does so by hosting a wide and extensible collection of modular analyses modul
 OPAL manages the execution of analysis modules and adjusts it as needed for scalability.<center><iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/-V25yQDXPqg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></center>
 
 OPAL can be used for Java bytecode processing, engineering, manipulation and analysis.
-It is written in Scala 2.13.x and supports Java 24 Bytecode; OPAL in particular provides support to facilitate the analysis of Java 8 lambda expressions (*Invokedynamic* instructions) and Java 15 dynamic constants. 
+It is written in Scala 2.13.x and supports Java 25 Bytecode; OPAL in particular provides support to facilitate the analysis of Java 8 lambda expressions (*Invokedynamic* instructions) and Java 15 dynamic constants. 
 
-The latest release is *5.0.0*, the latest snapshot version is *5.0.1-SNAPSHOT*.
+The latest release is *6.0.0*, the latest snapshot version is *6.0.1-SNAPSHOT*.
 Both versions are found on [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cde.opal-project).
 Look [here](/UsingOPAL.html) for information on how to use OPAL in your project.
 
