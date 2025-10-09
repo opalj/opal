@@ -57,7 +57,7 @@ package object bi {
      * class file.
      */
     def jdkVersion(majorVersion: Int): String = {
-        // 68 == 24, 67 == 23, 66 == 22,
+        // 69 == 25, 68 == 24, 67 == 23, 66 == 22,
         // 65 == 21, 64 == 20, 63 == 19, 62 == 18, 61 == 17, 60 == 16, 59 == 15, 58 == 14, 57 == 13, 56 == 12, 55 == 11,
         // 54 == 10, 53 == 9, 52 == 8, 51 == 7, 50 == 6, 49 == 5.0, 48 == 1.4, 47 == 1.3, 46 == 1.2, 45 == 1.1/1.0.2
         if (majorVersion >= 49) {
@@ -112,17 +112,19 @@ package object bi {
     final val Java23Version = UShortPair(0, Java23MajorVersion)
     final val Java24MajorVersion = 68
     final val Java24Version = UShortPair(0, Java24MajorVersion)
+    final val Java25MajorVersion = 69
+    final val Java25Version = UShortPair(0, Java25MajorVersion)
 
     /**
      * The latest major version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaMajorVersion = Java24MajorVersion
+    final val LatestSupportedJavaMajorVersion = Java25MajorVersion
     /**
      * The latest version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaVersion = Java24Version
+    final val LatestSupportedJavaVersion = Java25Version
 
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.
