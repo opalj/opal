@@ -15,7 +15,6 @@ import java.time.Instant
 import scala.collection.mutable
 
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.Context
@@ -59,15 +58,15 @@ private[xta] class TypePropagationTrace {
     }
 
     private def simplifiedName(e: Any): String = e match {
-        case defM: DefinedMethod => s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
-        case m: Method           => s"${simplifiedName(m.classFile.thisType)}.${m.name}(...)"
-        case rt: ReferenceType   => rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
-        case _                   => e.toString
+        case defM: DeclaredMethod => s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
+        case m: Method            => s"${simplifiedName(m.classFile.thisType)}.${m.name}(...)"
+        case rt: ReferenceType    => rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
+        case _                    => e.toString
     }
 
     @elidable(elidable.ASSERTION)
     def traceInit(
-        method: DefinedMethod
+        method: DeclaredMethod
     )(implicit ps: PropertyStore, typeIterator: TypeIterator): Unit = {
         val initialTypes = {
             val typeEOptP = ps(method, InstantiatedTypes.key)
@@ -78,16 +77,17 @@ private[xta] class TypePropagationTrace {
             val calleesEOptP = ps(method, Callees.key)
             if (calleesEOptP.hasUBP)
                 calleesEOptP.ub.callSites(typeIterator.newContext(method)).flatMap(_._2)
-            else Iterator.empty
+            else Iterator.empty[Context]
         }
         traceMsg(
-            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
+            s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, " +
+                s"initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})"
         )
         _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
     }
 
     @elidable(elidable.ASSERTION)
-    def traceCalleesUpdate(receiver: DefinedMethod): Unit = {
+    def traceCalleesUpdate(receiver: DeclaredMethod): Unit = {
         traceMsg(s"callee property update: ${simplifiedName(receiver)}")
         _trace.events += TypePropagationTrace.CalleesUpdate(receiver)
     }
@@ -125,7 +125,7 @@ object TypePropagationTrace {
     trait Event {
         val typePropagations: mutable.ArrayBuffer[TypePropagation] = new mutable.ArrayBuffer[TypePropagation]()
     }
-    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context])
+    case class Init(method: DeclaredMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context])
         extends Event
     trait UpdateEvent extends Event
     case class TypeSetUpdate(receiver: Entity, source: Entity, sourceTypes: UIDSet[ReferenceType]) extends UpdateEvent

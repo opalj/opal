@@ -288,7 +288,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     @inline private[this] def getCallExceptions(pc: Int)(implicit state: State): Entity = {
-        val exceptions = CallExceptions(definitionSites(state.callContext.method.definedMethod, pc))
+        val exceptions = CallExceptions(definitionSites(state.callContext.method, pc))
         typeIterator match {
             case _: SimpleContextProvider => exceptions
             case _                        => (state.callContext, exceptions)

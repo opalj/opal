@@ -935,11 +935,6 @@ trait IsClassValue
     extends IsPreciseNonNullReferenceValue
     with ConstantValueInformationProvider[Type] {
 
-    // We hard-code the type hierarchy related to "java.lang.Class".
-    val AnnotatedElement = ClassType("java/lang/reflect/AnnotatedElement")
-    val GenericDeclaration = ClassType("java/lang/reflect/GenericDeclaration")
-    val Type = ClassType("java/lang/reflect/Type")
-
     def value: Type
 
     override final def theUpperTypeBound: ClassType = ClassType.Class
@@ -956,9 +951,9 @@ trait IsClassValue
             case ClassType.ObjectId
                 | ClassType.ClassId
                 | ClassType.SerializableId
-                | AnnotatedElement.id
-                | Type.id
-                | GenericDeclaration.id =>
+                | ClassType.AnnotatedElement.id
+                | ClassType.Type.id
+                | ClassType.GenericDeclaration.id =>
                 Yes
             case _ => No
         }

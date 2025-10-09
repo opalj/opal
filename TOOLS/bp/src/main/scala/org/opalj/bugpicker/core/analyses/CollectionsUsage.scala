@@ -32,9 +32,7 @@ import org.opalj.issues.Relevance
  */
 object CollectionsUsage {
 
-    final val Collection = ClassType("java/util/Collection")
-    final val UnmodifiableCollectionMethodDescriptor = MethodDescriptor(Collection, Collection)
-    final val Collections = ClassType("java/util/Collections")
+    final val UnmodifiableCollectionMethodDescriptor = MethodDescriptor(ClassType.Collection, ClassType.Collection)
 
     def apply(
         theProject:    SomeProject,
@@ -59,7 +57,7 @@ object CollectionsUsage {
             instruction match {
 
                 case INVOKESTATIC(
-                        Collections,
+                        ClassType.Collections,
                         false,
                         "unmodifiableCollection",
                         UnmodifiableCollectionMethodDescriptor

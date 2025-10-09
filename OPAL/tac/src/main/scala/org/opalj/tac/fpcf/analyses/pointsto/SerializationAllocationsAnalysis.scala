@@ -19,12 +19,14 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
+import org.opalj.tac.fpcf.properties.NoTACAI
 
 /**
  * Introduces additional allocation sites for serialization methods.
@@ -93,7 +95,7 @@ abstract class SerializationAllocationsAnalysis(
         isDirect:       Boolean
     ): ProperPropertyComputationResult = {
         implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, null)
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callerContext, FinalEP(null, NoTACAI))
 
         if (tgtVarOption.isDefined) {
             handleOISReadObject(callerContext, tgtVarOption.get, pc, tac.stmts)

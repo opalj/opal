@@ -591,7 +591,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         callPC:             Int,
         vmReachableMethods: VMReachableMethods
     ): Unit = {
-        if (classHierarchy.isASubtypeOf(receiverType, ClassType("java/lang/Thread$UncaughtExceptionHandler")).isNo)
+        if (classHierarchy.isASubtypeOf(receiverType, ClassType.ThreadUncaughtExceptionHandler).isNo)
             return
 
         val thisType = callContext.method.declaringClassType
@@ -638,7 +638,7 @@ class ThreadRelatedCallsAnalysis private[cg] (
         val declaredMethods = p.get(DeclaredMethodsKey)
 
         val setUncaughtExceptionHandlerDescriptor = {
-            MethodDescriptor(ClassType("java/lang/Thread$UncaughtExceptionHandler"), VoidType)
+            MethodDescriptor(ClassType.ThreadUncaughtExceptionHandler, VoidType)
         }
 
         var setUncaughtExceptionHandlerMethods: List[DeclaredMethod] = List(

@@ -1,0 +1,102 @@
+title: "OPAL"
+cff-version: 1.2.0
+authors:
+  - name: "OPAL Team"
+    email: opal@st.informatik.tu-darmstadt.de.
+    website: "https://www.opal-project.de"
+message: "If you are using OPAL for your research, please cite the following paper."
+preferred-citation:
+  title: "Modular Collaborative Program Analysis in OPAL"
+  type: conference-paper
+  authors:
+    - family-names: Helm
+      given-names: Dominik
+    - family-names: Kübler
+      given-names: Florian
+    - family-names: Reif
+      given-names: Michael
+    - family-names: Eichberg
+      given-names: Michael
+    - family-names: Mezini
+      given-names: Mira
+  collection-title: "Proceedings of the 28th ACM Joint Meeting on European Software Engineering Conference and Symposium on the Foundations of Software Engineering"
+  doi: 10.1145/3368089.3409765
+  year: 2020
+  start: 184
+  end: 196
+  publisher: 
+    name: ACM
+  conference:
+    name: "ESEC/FSE'20"
+    location: "Virtual Event, USA"
+references:
+  - notes: "If you are using OPAL's call graphs, you can also cite this paper."
+    title: "Unimocg: Modular Call-Graph Algorithms for Consistent Handling of Language Features"
+    type: conference-paper
+    authors:
+      - family-names: Helm
+        given-names: Dominik
+      - family-names: Roth
+        given-names: Tobias
+      - family-names: Keidel
+        given-names: Sven
+      - family-names: Reif
+        given-names: Michael
+      - family-names: Mezini
+        given-names: Mira
+    collection-title: "33rd ACM SIGSOFT International Symposium on Software Testing and Analysis"
+    doi: 10.1145/3650212.3652109
+    year: 2024
+    start: 51
+    end: 62
+    publisher: 
+      name: ACM
+    conference:
+      name: "ISSTA'24"
+      location: "Vienna, Austria"
+  - notes: "You can cite this older publication if you are relying on OPAL's bytecode parsing, instrumentation, and generation capabilities."
+    title: "A software product line for static analyses: the OPAL framework"
+    type: conference-paper
+    authors:
+      - family-names: Eichberg
+        given-names: Michael
+      - family-names: Hermann
+        given-names: Ben
+    collection-title: "Proceedings of the 3rd ACM SIGPLAN International Workshop on the State of the Art in Java Program Analysis"
+    doi: 10.1145/2614628.2614630
+    year: 2014
+    publisher: 
+      name: ACM
+    conference:
+      name: "SOAP'14"
+      location: "Edinburgh, UK"
+  - notes: "You can cite this paper if you particularly rely on the Three-Address Code."
+    title: "TACAI: An Intermediate Representation Based on Abstract Interpretation"
+    type: conference-paper
+    authors:
+      - family-names: Reif
+        given-names: Michael
+      - family-names: Kübler
+        given-names: Florian
+      - family-names: Helm
+        given-names: Dominik
+      - family-names: Hermann
+        given-names: Ben
+      - family-names: Eichberg
+        given-names: Michael
+      - family-names: Mezini
+        given-names: Mira
+    collection-title: "Proceedings of the 9th ACM SIGPLAN International Workshop on the State Of the Art in Program Analysis"
+    doi: 10.1145/3394451.3397204
+    year: 2020
+    start: 2
+    end: 7
+    publisher: 
+      name: ACM
+    conference:
+      name: "SOAP'20"
+      location: "London, UK"
+type: software
+license: BSD-2-Clause
+url: "https://www.opal-project.de"
+repository-code: "https://github.com/opalj/opal"

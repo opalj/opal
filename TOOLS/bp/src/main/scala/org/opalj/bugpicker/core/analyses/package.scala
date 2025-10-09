@@ -20,7 +20,7 @@ package object analyses {
 
     type BugPickerResults = (Nanoseconds, Iterable[Issue], Iterable[AnalysisException])
 
-    final val AssertionError = ClassType("java/lang/AssertionError")
+    final val AssertionError = ClassType.AssertionError
 
     final val ObjectEqualsMethodDescriptor = MethodDescriptor(ClassType.Object, BooleanType)
 

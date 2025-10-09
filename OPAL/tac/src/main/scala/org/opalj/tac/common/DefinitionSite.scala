@@ -3,7 +3,7 @@ package org.opalj
 package tac
 package common
 
-import org.opalj.br.Method
+import org.opalj.br.DeclaredMethod
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value.ValueInformation
 
@@ -18,7 +18,7 @@ import org.opalj.value.ValueInformation
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-case class DefinitionSite(method: Method, pc: Int) extends DefinitionSiteLike {
+case class DefinitionSite(method: DeclaredMethod, pc: Int) extends DefinitionSiteLike {
 
     override def usedBy[V <: ValueInformation](
         tacode: TACode[TACMethodParameter, DUVar[V]]

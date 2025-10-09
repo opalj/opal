@@ -115,8 +115,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
         field:           DeclaredField,
         fieldAllocation: DefinitionSite,
         depender:        Entity,
-        context:         Context,
-        stmts:           Array[Stmt[V]]
+        context:         Context
     )(
         implicit
         propertyStore: PropertyStore,
@@ -704,7 +703,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
             } else {
                 combine(
                     result,
-                    currentPointsTo(depender, pointsto.toEntity(defSite, context, stmts))
+                    currentPointsTo(depender, pointsto.toEntity(pc, context))
                 )
             }
         }
@@ -714,8 +713,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         field:           DeclaredField,
         fieldAllocation: DefinitionSite,
         depender:        Entity,
-        context:         Context,
-        stmts:           Array[Stmt[V]]
+        context:         Context
     )(
         implicit
         propertyStore: PropertyStore,
@@ -723,7 +721,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     ): PointsToSet = {
         val objects = currentPointsTo(
             depender,
-            pointsto.toEntity(fieldAllocation.pc, context, stmts)
+            pointsto.toEntity(fieldAllocation.pc, context)
         )
         var pointsTo = emptyPointsToSet
         objects.forNewestNElements(objects.numElements) { as =>
@@ -987,9 +985,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                 (accessContextId, _, receiver, _) <- fai.accesses
                 // Extract TAC
                 definedMethod = contextFromId(accessContextId).method
-                method = contextFromId(accessContextId).method.definedMethod
                 tacEP <- extractPropertyUB(
-                    EPK(method, TACAI.key),
+                    EPK(definedMethod.definedMethod, TACAI.key),
                     state.addDependency((depender, definedMethod, receiver), _)
                 )
                 theTAC <- tacEP.tac
@@ -1001,10 +998,9 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
                     result,
                     typesProperty(
                         field,
-                        DefinitionSite(method, defPC),
+                        DefinitionSite(definedMethod, defPC),
                         depender,
-                        newContext(definedMethod),
-                        theTAC.stmts
+                        newContext(definedMethod)
                     )
                 )
             }
@@ -1039,7 +1035,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
             val objects = currentPointsTo(
                 depender,
-                pointsto.toEntity(defPC, newContext(definedMethod), theTAC.stmts)(
+                pointsto.toEntity(defPC, newContext(definedMethod))(
                     formalParameters,
                     definitionSites,
                     this
@@ -1226,9 +1222,8 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
 
                 // Extract TAC
                 definedMethod = contextFromId(accessContextId).method.asDefinedMethod
-                method = definedMethod.definedMethod
                 tacEP <- extractPropertyUB(
-                    EPK(method, TACAI.key),
+                    EPK(definedMethod.definedMethod, TACAI.key),
                     state.addDependency((depender, definedMethod, receiver), _)
                 )
                 theTAC <- tacEP.tac
@@ -1245,13 +1240,20 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
 
                 result = combine(
                     result,
-                    typesProperty(field, DefinitionSite(method, defPC), depender, calleeContext, theTAC.stmts)
+                    typesProperty(
+                        field,
+                        DefinitionSite(definedMethod, defPC),
+                        depender,
+                        calleeContext
+                    )
                 )
             }
 
             result
         }
     }
+
+    override def toString: String = s"${super.toString}(k=$k, l=$l)"
 
     // TODO several field-related methods are missing here!
 }

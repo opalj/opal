@@ -29,7 +29,7 @@ import org.opalj.da.ClassFile
 class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     val Class = ClassType("java/lang/Class")
-    val Object = ClassType("java/lang/Object")
+    val Object = ClassType.Object
 
     override def featureIDs: Seq[String] = {
         Seq(
