@@ -35,7 +35,7 @@ object NoPropertyStoreArg extends PlainArg[Boolean] {
 }
 
 object PropertyStoreDebugArg extends ConvertedArg[Boolean, Boolean] with ForwardingArg[Boolean, Boolean, Boolean] {
-    val arg = org.opalj.cli.DebugArg
+    val arg: Arg[Boolean, Boolean] = org.opalj.cli.DebugArg
 
     override def apply(config: Config, value: Option[Boolean]): Config = {
         PropertyStore.updateDebug(value.getOrElse(false))
@@ -45,7 +45,7 @@ object PropertyStoreDebugArg extends ConvertedArg[Boolean, Boolean] with Forward
 
 object PropertyStoreThreadsNumArg extends ConvertedArg[Int, Int] with ForwardingArg[Int, Int, Int]
     with PropertyStoreBasedArg[Int, Int] {
-    val arg = org.opalj.cli.ThreadsNumArg
+    val arg: Arg[Int, Int] = org.opalj.cli.ThreadsNumArg
 
     override def apply(project: Project, value: Option[Int]): Unit = {
         val numThreads = value.get

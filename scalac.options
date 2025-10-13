@@ -24,5 +24,7 @@
 -Ybackend-parallelism 8
 // Scala 2.13 is not able to turn certain `match` expressions to `tableswitch` statements.
 // Therefore, we suppress the warnings of switch annotations. This issue is fixed in Scala 3.
+// Also, case classes with private constructors have a private `copy` and `apply` method in Scala 3.
+// This is fine since we don't use them anywhere, so we suppress the warning for now.
 // TODO: remove this option in Scala 3
--Wconf:cat=unused-nowarn:s,msg=could\snot\semit\sswitch:s
+-Wconf:cat=unused-nowarn:s,msg=could\snot\semit\sswitch:s,msg=`copy`:s,msg=`apply`:s

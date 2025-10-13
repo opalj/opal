@@ -256,7 +256,7 @@ object PerformInvocationsTestFixture {
         def calledMethodDomain(method: Method): Domain & MethodCallResults =
             createInvocationDomain(project, method)
 
-        def calledMethodAI = BaseAI
+        def calledMethodAI: BaseAI = BaseAI
 
     }
 

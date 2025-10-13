@@ -17,7 +17,7 @@ import org.opalj.collection.mutable.IntArrayStack
  *
  * @author Michael Eichberg
  */
-sealed trait InterpretationFailedException {
+sealed trait InterpretationFailedException extends Throwable {
     def cause: Throwable
 
     val domain: Domain

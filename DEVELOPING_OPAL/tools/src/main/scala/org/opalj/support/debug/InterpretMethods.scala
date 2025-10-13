@@ -241,7 +241,7 @@ object InterpretMethods extends MethodAnalysisApplication {
 
         val xHTMLTracer: XHTMLTracer = new XHTMLTracer {}
 
-        override val tracer = Some(new MultiTracer(consoleTracer, xHTMLTracer))
+        override val tracer: Option[AITracer] = Some(new MultiTracer(consoleTracer, xHTMLTracer))
     }
 
     override def renderResult(result: String): String = result

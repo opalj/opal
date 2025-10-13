@@ -104,7 +104,7 @@ object CallGraph extends ProjectsAnalysisApplication {
 
         val algorithm = analysisConfig(CallGraphArg)
 
-        if (algorithm.isInstanceOf[PointsToCallGraphKey]) {
+        if (algorithm.get.isInstanceOf[PointsToCallGraphKey]) {
             val ptss = ps.entities(AllocationSitePointsToSet.key).toList
 
             println(s"PTSs ${ptss.size}")

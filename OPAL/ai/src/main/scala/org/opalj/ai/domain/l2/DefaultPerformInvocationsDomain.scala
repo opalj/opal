@@ -23,7 +23,7 @@ class DefaultPerformInvocationsDomain[Source](
         new SharedDefaultDomain(project, method) with DefaultRecordMethodCallResults
     }
 
-    def calledMethodAI = BaseAI
+    def calledMethodAI: BaseAI = BaseAI
 
 }
 

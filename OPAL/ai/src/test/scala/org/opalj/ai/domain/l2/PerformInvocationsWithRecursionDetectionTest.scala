@@ -130,7 +130,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
         type CalledMethodDomain = ChildInvocationDomain
 
-        val coordinatingDomain = new BaseDomain(project) with ValuesCoordinatingDomain
+        val coordinatingDomain: BaseDomain & ValuesCoordinatingDomain =
+            new BaseDomain(project) with ValuesCoordinatingDomain
     }
 
     class InvocationDomain(
@@ -173,7 +174,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         override def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, this)
 
-        def calledMethodAI = BaseAI
+        def calledMethodAI: BaseAI = BaseAI
 
     }
 
