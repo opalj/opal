@@ -21,13 +21,13 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
 
     override def asString = value
 
-    private[this] var methodDescriptor: MethodDescriptor = null // to cache the result
+    private var methodDescriptor: MethodDescriptor = null // to cache the result
     override def asMethodDescriptor = {
         if (methodDescriptor eq null) { methodDescriptor = MethodDescriptor(value) };
         methodDescriptor
     }
 
-    private[this] var fieldType: FieldType = null // to cache the result
+    private var fieldType: FieldType = null // to cache the result
     override def asFieldType = {
         if (fieldType eq null) { fieldType = FieldType(value) };
         fieldType

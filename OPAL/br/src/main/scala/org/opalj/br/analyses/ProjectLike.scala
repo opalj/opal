@@ -7,6 +7,8 @@ import scala.collection.Map as SomeMap
 import scala.collection.Set as SomeSet
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
+import scala.util.boundary
+import scala.util.boundary.break
 
 import com.typesafe.config.Config
 
@@ -22,12 +24,11 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.control.find
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
-
-import control.find
 
 /**
  * Enables project wide lookups of methods and fields as required to determine the target(s) of an
@@ -47,12 +48,12 @@ import control.find
  */
 trait ProjectLike extends ClassFileRepository { project =>
 
-    private[this] implicit final val thisProjectLike: this.type = this
+    private implicit final val thisProjectLike: this.type = this
 
     implicit val classHierarchy: ClassHierarchy
     implicit val config: Config
 
-    protected[this] val allClassFiles: Iterable[ClassFile]
+    protected val allClassFiles: Iterable[ClassFile]
 
     /**
      * Returns the minimum version number of the JVM required to run the code of the project, i.e.,
@@ -118,7 +119,7 @@ trait ProjectLike extends ClassFileRepository { project =>
         fieldType:          FieldType
     ): Option[Field] = {
         // for more details see JVM 7/8 Spec. Section 5.4.3.2
-        declaringClassFile findField (fieldName, fieldType) orElse {
+        declaringClassFile.findField(fieldName, fieldType) orElse {
             declaringClassFile.interfaceTypes collectFirst { supertype =>
                 resolveFieldReference(supertype, fieldName, fieldType) match {
                     case Some(resolvedFieldReference) => resolvedFieldReference
@@ -178,7 +179,7 @@ trait ProjectLike extends ClassFileRepository { project =>
      * a specific method. If the given method is a concrete method, this method is also
      * included in the set of `overridingMethods`.
      */
-    protected[this] val overridingMethods: SomeMap[Method, SomeSet[Method]]
+    protected val overridingMethods: SomeMap[Method, SomeSet[Method]]
 
     /**
      * Returns the set of methods which directly override the given method. Note that
@@ -216,7 +217,7 @@ trait ProjectLike extends ClassFileRepository { project =>
      * enable fast look-up of the target method. (See [[MethodDeclarationContext]]'s
      * `compareAccessibilityAware` method for further details.)
      */
-    protected[this] val instanceMethods: SomeMap[ClassType, ArraySeq[MethodDeclarationContext]]
+    protected val instanceMethods: SomeMap[ClassType, ArraySeq[MethodDeclarationContext]]
 
     /**
      * Returns the nest host (see JVM 11 Spec. 5.4.4) for the given type, if explicitly given. For
@@ -238,7 +239,8 @@ trait ProjectLike extends ClassFileRepository { project =>
      *          requires at most O(n log n) steps where n is the number of callable instance
      *          methods of the given class type; the class hierarchy is not traversed.
      */
-    def hasVirtualMethod(classType: ClassType, method: Method): Answer = {
+
+    def hasVirtualMethod(classType: ClassType, method: Method): Answer = boundary {
         //  ... instanceMethods: Map[ClassType, Array[MethodDeclarationContext]]
         val definedMethodsOption = instanceMethods.get(classType)
         if (definedMethodsOption.isEmpty) {
@@ -252,19 +254,19 @@ trait ProjectLike extends ClassFileRepository { project =>
             if (definedMethod eq method)
                 0
             else {
-                val methodComparison = definedMethod compare method
+                val methodComparison = definedMethod.compare(method)
                 if (methodComparison == 0) {
                     if (definedMethod.isPrivate) {
                         // If there is a matching private method, the given method could still be
                         // invoked by a virtual call for a supertype
-                        return hasVirtualMethod(
+                        break(hasVirtualMethod(
                             classFile(classType).get.superclassType.get,
                             method
-                        );
+                        ));
                     } else {
                         // We may have multiple methods with the same signature, but which belong
                         // to different packages!
-                        definedMethodContext.packageName compare declaringPackageName
+                        definedMethodContext.packageName.compare(declaringPackageName)
                     }
                 } else
                     methodComparison
@@ -552,7 +554,7 @@ trait ProjectLike extends ClassFileRepository { project =>
             name,
             descriptor,
             analyzedSuperinterfaceTypes
-        )(this.classFile, this.classHierarchy, this.logContext)
+        )(using this.classFile, this.classHierarchy, this.logContext)
     }
 
     /**
@@ -573,7 +575,7 @@ trait ProjectLike extends ClassFileRepository { project =>
             name,
             descriptor,
             analyzedSuperinterfaceTypes
-        )(this.classFile, this.classHierarchy, this.logContext)
+        )(using this.classFile, this.classHierarchy, this.logContext)
     }
 
     /**
@@ -985,7 +987,7 @@ trait ProjectLike extends ClassFileRepository { project =>
                     // is an abstract class in a closed package/module
                     if (!mdc.method.isPrivate)
                         methods ++=
-                            overriddenBy(mdc.method).iterator.filter { m => m.classFile.thisType isSubtypeOf subtype }
+                            overriddenBy(mdc.method).iterator.filter { m => m.classFile.thisType.isSubtypeOf(subtype) }
 
                     // for interfaces we have to continue, because we may have inherited a
                     // a concrete method from a class type which is not in the set of
@@ -1270,10 +1272,10 @@ object ProjectLike {
                         currentMaximallySpecificMethods =
                             currentMaximallySpecificMethods.filter { currentMaximallySpecificMethod =>
                                 val specificMethodDeclaringClassType = currentMaximallySpecificMethod.classFile.thisType
-                                if (specificMethodDeclaringClassType isSubtypeOf newMethodDeclaringClassType) {
+                                if (specificMethodDeclaringClassType.isSubtypeOf(newMethodDeclaringClassType)) {
                                     addNewMethod = false
                                     true
-                                } else if (newMethodDeclaringClassType isSubtypeOf specificMethodDeclaringClassType) {
+                                } else if (newMethodDeclaringClassType.isSubtypeOf(specificMethodDeclaringClassType)) {
                                     false
                                 } else {
                                     // ... we have an incomplete class hierarchy;

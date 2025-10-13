@@ -19,7 +19,7 @@ object Palindromes {
             case PropertyIsNotComputedByAnyAnalysis               => NoAnalysisForPalindromeProperty
             case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => PalindromePropertyNotAnalyzed
         }
-        PropertyKey.create[Entity, PalindromeProperty]("Palindrome", fallback _)
+        PropertyKey.create[Entity, PalindromeProperty]("Palindrome", fallback)
     }
 
     sealed trait PalindromeProperty extends Property {

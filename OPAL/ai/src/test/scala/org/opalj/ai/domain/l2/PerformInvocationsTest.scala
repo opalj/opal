@@ -244,7 +244,7 @@ object PerformInvocationsTestFixture {
 
         def shouldInvocationBePerformed(method: Method): Boolean = true
 
-        protected[this] def createInvocationDomain(
+        protected def createInvocationDomain(
             project: Project[java.net.URL],
             method:  Method
         ): InvocationDomain
@@ -265,7 +265,7 @@ object PerformInvocationsTestFixture {
         method:  Method
     ) extends InvocationDomain(project, method) with LiDomain {
 
-        protected[this] def createInvocationDomain(
+        protected def createInvocationDomain(
             project: Project[java.net.URL],
             method:  Method
         ): InvocationDomain = new LiInvocationDomain(project, method)
@@ -274,7 +274,7 @@ object PerformInvocationsTestFixture {
     class L1InvocationDomain(project: Project[java.net.URL], method: Method)
         extends InvocationDomain(project, method) with L1Domain {
 
-        protected[this] def createInvocationDomain(
+        protected def createInvocationDomain(
             project: Project[java.net.URL],
             method:  Method
         ): InvocationDomain = new L1InvocationDomain(project, method)

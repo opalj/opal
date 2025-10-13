@@ -64,7 +64,7 @@ object ConstantIfs extends ProjectsAnalysisApplication {
             collectPCWithOperands(result.domain)(method.body.get, result.operandsArray) {
                 case (
                         pc,
-                        _: IFICMPInstruction[_],
+                        _: IFICMPInstruction[?],
                         Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
                     ) =>
                     val context = method.toJava

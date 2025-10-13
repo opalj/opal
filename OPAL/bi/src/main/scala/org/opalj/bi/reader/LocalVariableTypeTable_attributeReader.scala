@@ -21,8 +21,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
 
     type LocalVariableTypeTable_attribute >: Null <: Attribute
 
-    type LocalVariableTypeTableEntry <: AnyRef
-    implicit val localVariableTypeTableEntryType: ClassTag[LocalVariableTypeTableEntry] // TODO: Replace in Scala 3 by `type LocalVariableTypeTableEntry : ClassTag`
+    type LocalVariableTypeTableEntry <: AnyRef: ClassTag
     type LocalVariableTypes = ArraySeq[LocalVariableTypeTableEntry]
 
     def LocalVariableTypeTable_attribute(
@@ -61,7 +60,7 @@ trait LocalVariableTypeTable_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parserFactory() = (
+    private def parserFactory() = (
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,

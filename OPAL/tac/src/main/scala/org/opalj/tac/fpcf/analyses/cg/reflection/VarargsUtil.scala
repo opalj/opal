@@ -44,7 +44,7 @@ object VarargsUtil {
         getTFromVarArgs(expr, stmts, fillType)
     }
 
-    private[this] def getTFromVarArgs[T >: Null](
+    private def getTFromVarArgs[T >: Null](
         expr:      Expr[V],
         stmts:     Array[Stmt[V]],
         fillEntry: (ArrayStore[V], Array[Stmt[V]], ArraySeq[T]) => Option[ArraySeq[T]]
@@ -86,7 +86,7 @@ object VarargsUtil {
     }
 
     // todo: merge both methods
-    @inline private[this] def fillParam(
+    @inline private def fillParam(
         use:    ArrayStore[V],
         stmts:  Array[Stmt[V]],
         params: ArraySeq[V]
@@ -107,7 +107,7 @@ object VarargsUtil {
         }
     }
 
-    @inline private[this] def fillType(
+    @inline private def fillType(
         use:    ArrayStore[V],
         stmts:  Array[Stmt[V]],
         params: ArraySeq[FieldType]

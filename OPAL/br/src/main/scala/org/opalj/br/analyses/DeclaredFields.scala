@@ -11,13 +11,13 @@ import org.opalj.br.instructions.FieldAccess
 import org.opalj.log.OPALLogger.info
 
 class DeclaredFields(
-    private[this] val project:                SomeProject,
-    private[this] var id2declaredField:       Array[DeclaredField],
-    private[this] val declaredInformation2id: ConcurrentHashMap[
+    private val project:                SomeProject,
+    private var id2declaredField:       Array[DeclaredField],
+    private val declaredInformation2id: ConcurrentHashMap[
         ClassType,
         ConcurrentHashMap[String, ConcurrentHashMap[FieldType, DeclaredField]]
     ],
-    private[this] val nextId: AtomicInteger
+    private val nextId: AtomicInteger
 ) {
     private var extensionSize = 1000
     private val rwLock = new ReentrantReadWriteLock()
@@ -91,7 +91,7 @@ class DeclaredFields(
                 info(
                     "project",
                     "too many declared fields; extended the underlying array"
-                )(project.logContext)
+                )(using project.logContext)
                 val id2declaredFieldExt = new Array[DeclaredField](id2declaredField.length + extensionSize)
                 extensionSize = Math.min(extensionSize * 2, 32000)
                 Array.copy(id2declaredField, 0, id2declaredFieldExt, 0, id2declaredField.length)

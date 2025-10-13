@@ -53,10 +53,10 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     final val project: SomeProject
 ) extends PointsToAnalysisBase with TypeConsumerAnalysis {
 
-    private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+    private implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private lazy val virtualFormalParameters = project.get(VirtualFormalParametersKey)
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
+    private val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
         ConfiguredMethods.reader.read(
             p.config,
             "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
@@ -112,7 +112,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             NoResult
     }
 
-    private[this] def handleCallers(
+    private def handleCallers(
         newCallers:                 EOptionP[DeclaredMethod, Callers],
         oldCallers:                 Callers,
         data:                       Array[EntityAssignment],
@@ -139,7 +139,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         Results(results)
     }
 
-    private[this] def handleNativeMethod(
+    private def handleNativeMethod(
         callContext:                ContextType,
         data:                       Array[EntityAssignment],
         filterNonInstantiableTypes: Boolean
@@ -154,14 +154,14 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             pc = handlePut(lhs, pc, nextPC)
         }
 
-        createResults(state).iterator
+        createResults.iterator
     }
 
-    @inline override protected[this] def toEntity(defSite: Int)(implicit state: State): Entity = {
+    @inline override protected def toEntity(defSite: Int)(implicit state: State): Entity = {
         getDefSite(defSite)
     }
 
-    private[this] def canBeInstantiated(ct: ClassType): Boolean = {
+    private def canBeInstantiated(ct: ClassType): Boolean = {
         val cfOption = project.classFile(ct)
         cfOption.isDefined && {
             val cf = cfOption.get
@@ -169,7 +169,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         }
     }
 
-    private[this] def handleGet(
+    private def handleGet(
         rhs:                        EntityDescription,
         pc:                         Int,
         nextPC:                     Int,
@@ -253,7 +253,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         nextPC
     }
 
-    private[this] def handlePut(
+    private def handlePut(
         lhs:    EntityDescription,
         pc:     Int,
         nextPC: Int

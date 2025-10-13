@@ -7,6 +7,8 @@ package cg
 package xta
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
@@ -69,7 +71,7 @@ class InstantiatedTypesAnalysis private[analyses] (
     val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
 
-    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 
@@ -113,7 +115,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         processCallers(declaredMethod, declaredType, ArrayBuffer(instantiatedTypes), callersEOptP, callersUB, null)
     }
 
-    private[this] def processCallers(
+    private def processCallers(
         declaredMethod: DeclaredMethod,
         declaredType:   ClassType,
         partialResults: ArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]],
@@ -139,13 +141,13 @@ class InstantiatedTypesAnalysis private[analyses] (
         }
     }
 
-    private[this] def processCaller(
+    private def processCaller(
         declaredMethod: DeclaredMethod,
         declaredType:   ClassType,
         callContext:    Context,
         isDirect:       Boolean,
         partialResults: ArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]]
-    ): Unit = {
+    ): Unit = boundary {
         // a constructor is called from an unknown context, there could be an initialization.
         if (!callContext.hasContext) {
             partialResults += partialResult(declaredType, ExternalWorld)
@@ -178,7 +180,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             cf.superclassType.foreach { supertype =>
                 if (supertype != declaredType) {
                     partialResults += partialResult(declaredType, caller)
-                    return;
+                    break();
                 }
             }
         }
@@ -225,7 +227,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             partialResults += partialResult(declaredType, caller)
     }
 
-    private[this] def continuation(
+    private def continuation(
         declaredMethod: DeclaredMethod,
         declaredType:   ClassType,
         seenCallers:    Callers
@@ -310,13 +312,12 @@ class InstantiatedTypesAnalysisScheduler(
         import p.classHierarchy
 
         def initialize(setEntity: TypeSetEntity, types: UIDSet[ReferenceType]): Unit = {
-            ps.preInitialize(setEntity, InstantiatedTypes.key) {
-                case UBP(typeSet) =>
-                    InterimEUBP(setEntity, typeSet.updated(types))
-                case _: EPK[_, _] =>
-                    InterimEUBP(setEntity, InstantiatedTypes(types))
-                case eps =>
-                    sys.error(s"unexpected property: $eps")
+            ps.preInitialize(setEntity, InstantiatedTypes.key) { pc =>
+                (pc: @unchecked) match
+                    case UBP(typeSet: InstantiatedTypes) =>
+                        InterimEUBP(setEntity, typeSet.updated(types))
+                    case _: EPK[_, _] =>
+                        InterimEUBP(setEntity, InstantiatedTypes(types))
             }
         }
 

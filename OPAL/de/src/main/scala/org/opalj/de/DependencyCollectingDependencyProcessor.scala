@@ -27,18 +27,18 @@ class DependencyCollectingDependencyProcessor(
     val virtualSourceElementsCountHint: Option[Int]
 ) extends DependencyProcessor {
 
-    private[this] val deps =
+    private val deps =
         new CMap[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]](
             // assumption: every source element has ~ten dependencies on other source elements
             virtualSourceElementsCountHint.getOrElse(16000) * 10
         )
 
-    private[this] val depsOnArrayTypes =
+    private val depsOnArrayTypes =
         new CMap[VirtualSourceElement, CMap[ArrayType, Set[DependencyType]]](
             virtualSourceElementsCountHint.getOrElse(4000)
         )
 
-    private[this] val depsOnBaseTypes =
+    private val depsOnBaseTypes =
         new CMap[VirtualSourceElement, CMap[BaseType, Set[DependencyType]]](
             virtualSourceElementsCountHint.getOrElse(4000)
         )

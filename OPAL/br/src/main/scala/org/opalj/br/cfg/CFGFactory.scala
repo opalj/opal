@@ -35,7 +35,7 @@ import org.opalj.collection.immutable.IntArraySet
 object CFGFactory {
 
     def apply(method: Method, classHierarchy: ClassHierarchy): Option[CFG[Instruction, Code]] = {
-        method.body.map(code => apply(code, classHierarchy))
+        method.body.map(code => apply(using code, classHierarchy))
     }
 
     /**

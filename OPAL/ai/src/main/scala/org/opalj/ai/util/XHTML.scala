@@ -3,7 +3,7 @@ package org.opalj
 package ai
 package util
 
-import scala.language.reflectiveCalls
+import scala.reflect.Selectable.reflectiveSelectable
 
 import scala.xml.Node
 import scala.xml.NodeSeq

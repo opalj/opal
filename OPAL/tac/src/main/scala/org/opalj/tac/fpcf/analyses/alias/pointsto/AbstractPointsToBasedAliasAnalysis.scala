@@ -44,14 +44,14 @@ import org.opalj.tac.fpcf.properties.TACAI
 trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with AbstractPointsToBasedAnalysis
     with SetBasedAliasAnalysis {
 
-    override protected[this] type AnalysisContext = AliasAnalysisContext
-    override protected[this] type AnalysisState <: PointsToBasedAliasAnalysisState[
+    override protected type AnalysisContext = AliasAnalysisContext
+    override protected type AnalysisState <: PointsToBasedAliasAnalysisState[
         AliasElementType,
         AliasSet,
         PointsToSet
     ]
 
-    override protected[this] def analyzeTAC()(implicit
+    override protected def analyzeTAC()(implicit
         context: AnalysisContext,
         state:   AnalysisState
     ): ProperPropertyComputationResult = {
@@ -68,7 +68,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
      * It is responsible for retrieving current the points-to set of the given [[AliasSourceElement]] and handling it
      * by updating the analysis state accordingly.
      */
-    private[this] def handleElement(ase: AliasSourceElement, tac: Option[Tac])(
+    private def handleElement(ase: AliasSourceElement, tac: Option[Tac])(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -89,8 +89,6 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
                 handlePointsToEntities(ase, getPointsToOfField(field, context.contextOf(ase), tac.get))
 
             case arv: AliasReturnValue => handlePointsToEntity(arv, getPointsToOfReturnValue(context.contextOf(arv)))
-
-            case _ =>
         }
     }
 
@@ -100,7 +98,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
      * @param defSitePC The program counter (not TAC index!) of the definition site, in value origin form
      * @param context The context in which the defSitePC is valid
      */
-    private[this] def getPointsToOfDefSite(defSitePC: Int, context: Context): EOptionP[Entity, PointsToSet] = {
+    private def getPointsToOfDefSite(defSitePC: Int, context: Context): EOptionP[Entity, PointsToSet] = {
         propertyStore(
             pointsto.toEntity(defSitePC, context),
             pointsToPropertyKey
@@ -110,7 +108,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
     /**
      * Retrieves the points-to set of the given static field.
      */
-    private[this] def getPointsToOfStaticField(field: Field): EOptionP[Entity, PointsToSet] = {
+    private def getPointsToOfStaticField(field: Field): EOptionP[Entity, PointsToSet] = {
         propertyStore(
             declaredFields.apply(field),
             pointsToPropertyKey
@@ -121,7 +119,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
      * Retrieves the points-to set of the given non-static field.
      * If the points-to set of one of the defSites of the fieldReference is refineable, it is added as a field dependency.
      */
-    private[this] def getPointsToOfField(field: AliasField, fieldContext: Context, tac: Tac)(
+    private def getPointsToOfField(field: AliasField, fieldContext: Context, tac: Tac)(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -163,7 +161,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
     /**
      * Retrieves the points-to set of the return value of the given method.
      */
-    private[this] def getPointsToOfReturnValue(callContext: Context): EOptionP[Entity, PointsToSet] = {
+    private def getPointsToOfReturnValue(callContext: Context): EOptionP[Entity, PointsToSet] = {
         propertyStore(
             callContext,
             pointsToPropertyKey
@@ -173,7 +171,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
     /**
      * Handles all given points-to entities associated with given [[AliasSourceElement]] by updating the analysis state.
      */
-    private[this] def handlePointsToEntities(ase: AliasSourceElement, eps: Iterable[EOptionP[Entity, PointsToSet]])(
+    private def handlePointsToEntities(ase: AliasSourceElement, eps: Iterable[EOptionP[Entity, PointsToSet]])(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -184,7 +182,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
     /**
      * Handles the given points-to entity associated with the given [[AliasSourceElement]] by updating the analysis state.
      */
-    private[this] def handlePointsToEntity(ase: AliasSourceElement, eps: EOptionP[Entity, PointsToSet])(
+    private def handlePointsToEntity(ase: AliasSourceElement, eps: EOptionP[Entity, PointsToSet])(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -205,7 +203,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
      * @param pointsToEntity The pointsTo entity the pointTo Set belongs to.
      * @param pointsToSet The pointsTo set to handle.
      */
-    private[this] def handlePointsToSet(ase: AliasSourceElement, pointsToEntity: Entity, pointsToSet: PointsToSet)(
+    private def handlePointsToSet(ase: AliasSourceElement, pointsToEntity: Entity, pointsToSet: PointsToSet)(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -225,7 +223,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
      * @param pointsToEntity The pointsTo entity the pointTo Set belongs to.
      * @param element The pointsTo Element to handle.
      */
-    protected[this] def handlePointsToSetElement(ase: AliasSourceElement, pointsToEntity: Entity, element: ElementType)(
+    protected def handlePointsToSetElement(ase: AliasSourceElement, pointsToEntity: Entity, element: ElementType)(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -234,7 +232,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
     /**
      * Continues the computation when any depending property is updated.
      */
-    override protected[this] def continuation(someEPS: SomeEPS)(
+    override protected def continuation(someEPS: SomeEPS)(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
@@ -284,7 +282,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
         }
     }
 
-    override protected[this] def createContext(
+    override protected def createContext(
         entity: AliasEntity
     ): AnalysisContext =
         new AliasAnalysisContext(entity, project, propertyStore)

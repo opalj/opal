@@ -2,6 +2,7 @@
 package org.opalj
 package da
 
+import scala.collection.mutable
 import scala.io.Source
 import scala.xml.Node
 import scala.xml.NodeSeq
@@ -11,7 +12,6 @@ import scala.xml.Unparsed
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.AccessFlags
-import org.opalj.bi.reader.Constant_PoolAbstractions
 import org.opalj.io.process
 
 /**
@@ -36,7 +36,9 @@ case class ClassFile(
 
     assert({
         val cp0 = constant_pool(0)
-        (cp0 eq null) || cp0.isInstanceOf[Constant_PoolAbstractions#DeferredActionsStore]
+        (cp0 eq null) || cp0.isInstanceOf[mutable.Buffer[?]] && cp0.asInstanceOf[mutable.Buffer[?]].headOption.forall(
+            _.isInstanceOf[? => ?]
+        )
     })
 
     /**
@@ -67,7 +69,7 @@ case class ClassFile(
 
     def jdkVersion: String = org.opalj.bi.jdkVersion(major_version)
 
-    private[this] implicit val cp: Constant_Pool = constant_pool
+    private implicit val cp: Constant_Pool = constant_pool
 
     /**
      * The fully qualified name of this class in Java notation (i.e., using dots
@@ -116,7 +118,7 @@ case class ClassFile(
     def attributeToXHTML(attribute: Attribute): Node = {
         attribute match {
             case ica: InnerClasses_attribute => ica.toXHTML(thisType)
-            case _                           => attribute.toXHTML(cp)
+            case _                           => attribute.toXHTML
         }
     }
 
@@ -206,7 +208,7 @@ case class ClassFile(
 
     // this file is private to ensure that no meaningless html files are generated
     // (i.e. with the fields for the filter, but without the necessary logic)
-    private[this] def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node = {
+    private def classFileToXHTML(source: Option[AnyRef], withMethodsFilter: Boolean): Node = {
 
         val (sourceFileAttributes, attributes0) = partitionByType(attributes, classOf[SourceFile_attribute])
         val (signatureAttributes, attributes1) = partitionByType(attributes0, classOf[Signature_attribute])

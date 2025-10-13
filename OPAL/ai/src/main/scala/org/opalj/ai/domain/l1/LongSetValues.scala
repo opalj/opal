@@ -265,7 +265,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 
-    protected[this] def createLongValueOrArithmeticException(
+    protected def createLongValueOrArithmeticException(
         pc:        PC,
         exception: Boolean,
         results:   SortedSet[Long]

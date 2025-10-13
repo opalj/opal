@@ -51,7 +51,7 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
         c(null)(callersEOptP)
     }
 
-    private[this] def c(
+    private def c(
         oldCallers: Callers
     )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
         (callersEOptP: @unchecked) match {

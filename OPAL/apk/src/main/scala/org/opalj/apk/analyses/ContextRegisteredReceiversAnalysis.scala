@@ -71,7 +71,7 @@ object ContextRegisteredReceiversAnalysis {
                                                 categories,
                                                 m,
                                                 s.pc
-                                            )(project.config)
+                                            )(using project.config)
                                         )
                                     }
                                 }

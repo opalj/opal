@@ -69,8 +69,8 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                     a <- annotations.iterator
                     if a.annotationType == InvokedMethods
                     evp <- a.elementValuePairs
-                    ArrayValue(values) = evp.value
-                    ev @ AnnotationValue(annotation) <- values
+                    ArrayValue(values) = evp.value: @unchecked
+                    case ev @ AnnotationValue(annotation) <- values
                     innerAnnotation = ArraySeq(annotation)
                     expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
                     actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)

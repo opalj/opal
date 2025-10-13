@@ -5,6 +5,8 @@ package domain
 package l1
 
 import java.lang.reflect.InvocationTargetException
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.br.*
 
@@ -37,8 +39,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
         name:           String,
         descriptor:     MethodDescriptor,
         operands:       Operands
-    ): Option[MethodCallResult] = {
-
+    ): Option[MethodCallResult] = boundary {
         val (method, jReceiver, jOperands) =
             try {
                 val declaredParametersCount = descriptor.parametersCount
@@ -52,7 +53,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                     val jObject =
                         toJavaObject(pc, op) match {
                             case Some(jObject) => jObject
-                            case _             => return None /* <------- EARLY RETURN FROM METHOD */
+                            case _             => break(None); /* <------- EARLY RETURN FROM METHOD */
                         }
                     if (operandCount > declaredParametersCount) {
                         // this is also the last operand

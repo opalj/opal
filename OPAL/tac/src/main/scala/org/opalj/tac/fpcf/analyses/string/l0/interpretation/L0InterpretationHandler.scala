@@ -33,7 +33,7 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
 
         case ExprStmt(_, call: FunctionCall[V])           => StringInterpreter.uninterpretedCall(call)
         case Assignment(_, target, call: FunctionCall[V]) =>
-            StringInterpreter.uninterpretedCall(call, Some(target.asVar.toPersistentForm(state.tac.stmts)))
+            StringInterpreter.uninterpretedCall(call, Some(target.asVar.toPersistentForm(using state.tac.stmts)))
         case call: MethodCall[V] => StringInterpreter.uninterpretedCall(call)
 
         case Assignment(_, target, _) => StringInterpreter.failure(target)
@@ -41,7 +41,7 @@ class L0InterpretationHandler(implicit override val project: SomeProject) extend
         case ReturnValue(pc, expr) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(
                 pc,
-                expr.asVar.toPersistentForm(state.tac.stmts)
+                expr.asVar.toPersistentForm(using state.tac.stmts)
             ))
 
         case _ =>
@@ -53,5 +53,5 @@ object L0InterpretationHandler {
 
     def uses: Set[PropertyBounds] = InterpretationHandler.uses
 
-    def apply(project: SomeProject): L0InterpretationHandler = new L0InterpretationHandler()(project)
+    def apply(project: SomeProject): L0InterpretationHandler = new L0InterpretationHandler()(using project)
 }

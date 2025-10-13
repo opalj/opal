@@ -175,11 +175,9 @@ object StructuralAnalysis {
                 var n = post(postCtr)
 
                 val gPostMap =
-                    post.reverse.zipWithIndex.map(ni =>
-                        (flowGraph.get(ni._1).asInstanceOf[MFlowGraph#NodeT], ni._2)
-                    ).toMap
+                    post.reverse.zipWithIndex.map(ni => (flowGraph.get(ni._1), ni._2)).toMap
                 val (newStartingNode, acyclicRegionOpt) =
-                    locateAcyclicRegion[FlowGraphNode, MFlowGraph](flowGraph, gPostMap, allDominators)(n)
+                    locateAcyclicRegion[FlowGraphNode, flowGraph.type](flowGraph, allDominators)(gPostMap)(n)
                 n = newStartingNode
                 if (acyclicRegionOpt.isDefined) {
                     val (arType, nodes, entry) = acyclicRegionOpt.get
@@ -305,10 +303,9 @@ object StructuralAnalysis {
      *         region, 2. a set containing all region nodes and 3. the entry node to the region.
      */
     private def locateAcyclicRegion[A <: FlowGraphNode, G <: MutableGraph[A, DiEdge[A]]](
-        graph:              G,
-        postOrderTraversal: Map[G#NodeT, Int],
-        allDominators:      mutable.Map[A, Seq[A]]
-    )(startingNode: A): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
+        graph:         G,
+        allDominators: mutable.Map[A, Seq[A]]
+    )(postOrderTraversal: Map[graph.NodeT, Int])(startingNode: A): (A, Option[(AcyclicRegionType, Set[A], A)]) = {
         var nSet = Set.empty[graph.NodeT]
         var entry: graph.NodeT = graph.get(startingNode)
 

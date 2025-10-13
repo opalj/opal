@@ -68,7 +68,7 @@ case class CONSTANT_MethodHandle_info(
         })</span>
 
     override def toString(implicit cp: Constant_Pool): String = {
-        val reference_indexAsString = cp(reference_index).toString(cp)
+        val reference_indexAsString = cp(reference_index).toString
         s"CONSTANT_MethodHandle_info($reference_kind, $reference_indexAsString/*$reference_index */)"
     }
 }

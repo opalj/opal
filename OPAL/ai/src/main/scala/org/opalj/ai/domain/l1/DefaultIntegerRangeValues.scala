@@ -112,7 +112,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
                         StructuralUpdate(IntegerRange(newLB, newUB))
                     } else if (abs(newLB.toLong - newUB.toLong) > maxCardinalityOfIntegerRanges) {
                         // let's just use one of the default ranges..
-                        var adjustedNewLB =
+                        var adjustedNewLB: Int =
                             if (newLB < Short.MinValue) {
                                 Int.MinValue
                             } else if (newLB < Byte.MinValue) {
@@ -123,7 +123,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
                                 0
                             }
 
-                        val adjustedNewUB =
+                        val adjustedNewUB: Int =
                             if (newUB > Char.MaxValue) {
                                 Int.MaxValue
                             } else if (newUB > Short.MaxValue) {

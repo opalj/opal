@@ -11,6 +11,7 @@ import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.time.Instant
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
@@ -74,7 +75,7 @@ private[xta] class TypePropagationTrace {
             val calleesEOptP = ps(method, Callees.key)
             if (calleesEOptP.hasUBP)
                 calleesEOptP.ub.callSites(typeIterator.newContext(method)).flatMap(_._2)
-            else Iterator.empty[Context]
+            else Iterable.empty[Context]
         }
         traceMsg(
             s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, " +
@@ -126,7 +127,7 @@ object TypePropagationTrace {
     case class WriteAccessUpdate(receiver: Entity) extends UpdateEvent
 
     // Global variable holding the type propagation trace of the last executed XTA analysis.
-    var LastTrace: Trace = _
+    var LastTrace: Trace = uninitialized
     var WriteTextualTrace: Boolean = false
 
     // Tracing and assert are on the same level of elision. Thus, if assertions are turned on, the tracing is also

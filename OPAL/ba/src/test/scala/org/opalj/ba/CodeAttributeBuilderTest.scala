@@ -54,13 +54,16 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     it should "fail with unresolvable labels in branch instructions" in {
         assertThrows[java.util.NoSuchElementException](CODE(IFGE(Symbol("label"))))
         assertThrows[java.util.NoSuchElementException](
-            CODE(Symbol("default"), LOOKUPSWITCH(Symbol("default"), ArraySeq((0, Symbol("label")))))
+            CODE(Symbol("default"), LOOKUPSWITCH(Symbol("default"), ArraySeq[(Int, InstructionLabel)]((0, Symbol("label")))))
         )
         assertThrows[java.util.NoSuchElementException](
             CODE(
                 Symbol("default"),
                 Symbol("label1"),
-                LOOKUPSWITCH(Symbol("default"), ArraySeq((0, Symbol("label1")), (0, Symbol("label2"))))
+                LOOKUPSWITCH(
+                    Symbol("default"),
+                    ArraySeq[(Int, InstructionLabel)]((0, Symbol("label1")), (0, Symbol("label2")))
+                )
             )
         )
     }
@@ -94,7 +97,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
                     theCode.exceptionHandlers.mkString("Exception Handlers:\n\t\t", "\n\t\t", "\n")
                 )
                 info(
-                    theCode.liveVariables(PreInitializedClassHierarchy).zipWithIndex
+                    theCode.liveVariables(using PreInitializedClassHierarchy).zipWithIndex
                         .filter(_._1 != null).map(_.swap)
                         .mkString("Live variables:\n\t\t", "\n\t\t", "\n")
                 )

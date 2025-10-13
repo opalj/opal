@@ -198,8 +198,11 @@ trait ConsoleTracer extends AITracer { tracer =>
 
         print(Console.BLUE + pc + line(domain, pc) + ": JOIN: ")
         result match {
-            case NoUpdate                                         => println("no changes")
-            case u @ SomeUpdate((updatedOperands, updatedLocals)) =>
+            case NoUpdate => println("no changes")
+            case u @ SomeUpdate((
+                    updatedOperands: domain.Operands @unchecked,
+                    updatedLocals: domain.Locals @unchecked
+                )) =>
                 println(u.updateType)
                 println(
                     thisOperands.zip(otherOperands).zip(updatedOperands).map { v =>

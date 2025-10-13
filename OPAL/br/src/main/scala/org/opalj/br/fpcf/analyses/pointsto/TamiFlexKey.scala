@@ -23,20 +23,20 @@ import org.opalj.log.OPALLogger
  * @author Florian Kuebler
  */
 class TamiFlexLogData(
-    private[this] val _classes: scala.collection.Map[
+    private val _classes: scala.collection.Map[
         (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
         scala.collection.Set[ReferenceType]
     ],
-    private[this] val _methods: scala.collection.Map[
+    private val _methods: scala.collection.Map[
         (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
         scala.collection.Set[DeclaredMethod]
     ],
-    private[this] val _fields: scala.collection.Map[
+    private val _fields: scala.collection.Map[
         (String /*Caller*/, String /*Reflection Method*/, Int /*Line Number*/ ),
         scala.collection.Set[Field]
     ]
 ) {
-    private[this] def toMethodDesc(method: DeclaredMethod): String = {
+    private def toMethodDesc(method: DeclaredMethod): String = {
         s"${method.declaringClassType.toJava}.${method.name}"
     }
 
@@ -165,7 +165,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
         if (project.config.hasPath(configKey)) {
             val logName = project.config.getString(configKey)
-            OPALLogger.info("analysis configuration", s"Using tamiflex log file: $logName")(project.logContext)
+            OPALLogger.info("analysis configuration", s"Using tamiflex log file: $logName")(using project.logContext)
             processSource(Source.fromFile(logName)) { s =>
                 s.getLines().foreach { line =>
                     val entries = line.split(";", -1)
@@ -276,7 +276,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         new TamiFlexLogData(classes, methods, fields)
     }
 
-    private[this] def toJVMType(javaType: String): String = {
+    private def toJVMType(javaType: String): String = {
         val trimmedType = javaType.trim
         if (trimmedType.endsWith("[]")) "[" + toJVMType(trimmedType.substring(0, trimmedType.length - 2))
         else trimmedType match {
@@ -293,7 +293,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         }
     }
 
-    private[this] def toDeclaredMethod(
+    private def toDeclaredMethod(
         methodDesc: String
     )(implicit declaredMethods: DeclaredMethods): DeclaredMethod = {
         val regex = "<([^:]+): ([^ ]+) ([^(]+)\\(([^)]*)\\)>".r
@@ -313,7 +313,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
     }
 
-    private[this] def toField(fieldDesc: String, project: SomeProject): Option[Field] = {
+    private def toField(fieldDesc: String, project: SomeProject): Option[Field] = {
         val regex = "<([^:]+): ([^ ]+) ([^>]+)>".r
         fieldDesc match {
             case regex(declaringClass, fieldTypeDesc, name) =>

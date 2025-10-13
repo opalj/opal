@@ -28,7 +28,7 @@ class TACAITest extends AnyFunSpec with Matchers {
     describe("the data-flow based three-address code") {
 
         val configInputStream = this.getClass.getResourceAsStream("TACAITest.config")
-        val configLines = Source.fromInputStream(configInputStream)(UTF8).getLines()
+        val configLines = Source.fromInputStream(configInputStream)(using UTF8).getLines()
         val rawConfigs = configLines.filterNot(l => l.trim.isEmpty || l.trim.startsWith("#"))
         val configs = rawConfigs.map(c => /* get values: */ c.split(':')(1).trim).sliding(6, 6)
         for {
@@ -75,7 +75,7 @@ class TACAITest extends AnyFunSpec with Matchers {
                                 s"missing expected 3-adddress code representation: $expectedFileName;" +
                                     s"current representation:\n${actual.mkString("\n")}"
                             )
-                        val expected = Source.fromInputStream(expectedInputStream)(UTF8).getLines().toList
+                        val expected = Source.fromInputStream(expectedInputStream)(using UTF8).getLines().toList
 
                         // check that both files are identical:
                         val actualIt = actual.iterator

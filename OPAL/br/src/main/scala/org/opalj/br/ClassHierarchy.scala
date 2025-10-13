@@ -14,6 +14,8 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration.Inf
 import scala.io.BufferedSource
 import scala.jdk.CollectionConverters.*
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.br.ClassType.Object
 import org.opalj.collection.CompleteCollection
@@ -103,26 +105,26 @@ import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
  */
 class ClassHierarchy private (
     // the case "java.lang.Object" is handled explicitly!
-    private[this] val knownTypesMap:       Array[ClassType],
-    private[this] val isKnownTypeMap:      Array[Boolean],
-    private[this] val isInterfaceTypeMap:  Array[Boolean],
-    private[this] val isKnownToBeFinalMap: Array[Boolean],
+    private val knownTypesMap:       Array[ClassType],
+    private val isKnownTypeMap:      Array[Boolean],
+    private val isInterfaceTypeMap:  Array[Boolean],
+    private val isKnownToBeFinalMap: Array[Boolean],
 
     // The element is null for types for which we have no complete information
     // (unless it is java.lang.Object)!
-    private[this] val superclassTypeMap:      Array[ClassType],
-    private[this] val superinterfaceTypesMap: Array[UIDSet[ClassType]],
+    private val superclassTypeMap:      Array[ClassType],
+    private val superinterfaceTypesMap: Array[UIDSet[ClassType]],
 
     // In the following all elements are non-null for each known type!
-    private[this] val subclassTypesMap:     Array[UIDSet[ClassType]],
-    private[this] val subinterfaceTypesMap: Array[UIDSet[ClassType]],
+    private val subclassTypesMap:     Array[UIDSet[ClassType]],
+    private val subinterfaceTypesMap: Array[UIDSet[ClassType]],
 
     // DERIVED INFORMATION
-    val rootTypes:                                       UIDSet[ClassType],
-    val leafTypes:                                       UIDSet[ClassType],
-    private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
-    private[this] val supertypeInformationMap:           Array[SupertypeInformation],
-    private[this] val subtypeInformationMap:             Array[SubtypeInformation]
+    val rootTypes:                                 UIDSet[ClassType],
+    val leafTypes:                                 UIDSet[ClassType],
+    private val isSupertypeInformationCompleteMap: Array[Boolean],
+    private val supertypeInformationMap:           Array[SupertypeInformation],
+    private val subtypeInformationMap:             Array[SubtypeInformation]
 )(
     implicit val logContext: LogContext
 ) {
@@ -143,7 +145,7 @@ class ClassHierarchy private (
             supertypeInformationMap,
             subtypeInformationMap
         )(
-            newLogContext
+            using newLogContext
         )
     }
 
@@ -273,10 +275,10 @@ class ClassHierarchy private (
     //
     //
 
-    private[this] var classTypesMap: Array[ClassType] = new Array(ClassType.classTypesCount)
-    private[this] final val classTypesMapRWLock = new ReentrantReadWriteLock()
+    private var classTypesMap: Array[ClassType] = new Array(ClassType.classTypesCount)
+    private final val classTypesMapRWLock = new ReentrantReadWriteLock()
 
-    private[this] final def classTypesCreationListener(classType: ClassType): Unit = {
+    private final def classTypesCreationListener(classType: ClassType): Unit = {
         val id = classType.id
         val writeLock = classTypesMapRWLock.writeLock()
         writeLock.lock()
@@ -454,7 +456,7 @@ class ClassHierarchy private (
     }
 
     /** Returns  `true` if and only if the given type is known to define an interface! */
-    @inline private[this] def isInterface(classTypeId: Int): Boolean = {
+    @inline private def isInterface(classTypeId: Int): Boolean = {
         isKnown(classTypeId) && isInterfaceTypeMap(classTypeId)
     }
 
@@ -812,11 +814,11 @@ class ClassHierarchy private (
         project:   ClassFileRepository
     )(
         p: ClassFile => Boolean
-    ): Boolean = {
+    ): Boolean = boundary {
         foreachSubtype(classType) { classType =>
-            val cfOption = project.classFile(classType) // IMPROVE implement Project.classFile(ClassTypeID:Int)
+            val cfOption = project.classFile(classType) // IMPROVE implement Project.classFile(ObjectTypeID:Int)
             if (cfOption.isDefined && p(cfOption.get))
-                return true;
+                break(true);
         }
         false
     }
@@ -990,11 +992,13 @@ class ClassHierarchy private (
             superinterfacetypes
     }
 
-    private[this] def interpolateSupertypeInformation(ct: ClassType): SupertypeInformation = {
+    private def interpolateSupertypeInformation(ct: ClassType): SupertypeInformation = {
         val allClassTypes = UIDSet.empty[ClassType] ++ allSuperclassTypesInInitializationOrder(ct).s
 
         var allInterfaceTypes = UIDSet.empty[ClassType]
-        foreachSuperinterfaceType(ct) { supertype => allInterfaceTypes += supertype; true }
+        foreachSuperinterfaceType(ct) { supertype =>
+            allInterfaceTypes += supertype; true
+        }
 
         SupertypeInformation.forSubtypesOfObject(
             isKnownTypeMap,
@@ -1552,7 +1556,7 @@ class ClassHierarchy private (
     def isASubtypeOf(
         subtypes:   UIDSet[? <: ReferenceType],
         supertypes: UIDSet[? <: ReferenceType]
-    ): Answer = {
+    ): Answer = boundary {
         if (subtypes.isEmpty /* <=> upper type bound of "null" values */ || subtypes == supertypes)
             return Yes;
 
@@ -1571,7 +1575,7 @@ class ClassHierarchy private (
                 if (subtypeExists)
                     true
                 else if (subtypingRelationUnknown)
-                    return Unknown;
+                    break(Unknown);
                 else
                     false
             }
@@ -1582,15 +1586,15 @@ class ClassHierarchy private (
      * Returns `Yes` if the subtype is a subtype of '''all''' given supertypes. Hence,
      * supertypes should not contain more than one class type.
      */
-    def isASubtypeOf(subtype: ReferenceType, supertypes: UIDSet[? <: ReferenceType]): Answer = {
+    def isASubtypeOf(subtype: ReferenceType, supertypes: UIDSet[? <: ReferenceType]): Answer = boundary {
         if (supertypes.isEmpty /* <=> upper type bound of "null" values */ )
             return No;
 
         supertypes foreach { (supertype: ReferenceType) =>
             isASubtypeOf(subtype, supertype) match {
                 case Yes     => /*Nothing to do*/
-                case Unknown => return Unknown; // FIXME No should have precedence over Unknown even if some supertypes are Unknown...
-                case No      => return No;
+                case Unknown => break(Unknown); // FIXME No should have precedence over Unknown even if some supertypes are Unknown...
+                case No      => break(No);
             }
         }
         // subtype is a subtype of all supertypes
@@ -1689,7 +1693,7 @@ class ClassHierarchy private (
      * we have to check two different things. First compare the [[ClassType]]s, if they are equal
      * we still have to care about the [[TypeArgument]]s since we are dealing with generics.
      */
-    private[this] def isASubtypeOfByTypeArgument(
+    private def isASubtypeOfByTypeArgument(
         subtype:   TypeArgument,
         supertype: TypeArgument
     )(
@@ -1720,7 +1724,7 @@ class ClassHierarchy private (
         }
     }
 
-    @inline @tailrec private[this] final def compareTypeArguments(
+    @inline @tailrec private final def compareTypeArguments(
         subtypeArgs:   List[TypeArgument],
         supertypeArgs: List[TypeArgument]
     )(
@@ -1764,18 +1768,17 @@ class ClassHierarchy private (
         supertype: ClassType
     )(
         implicit project: ClassFileRepository
-    ): Option[ClassTypeSignature] = {
-
+    ): Option[ClassTypeSignature] = boundary {
         val signaturesToCheck = subtype.superClassSignature :: subtype.superInterfacesSignature
         for {
             cts <- signaturesToCheck if cts.classType eq supertype
-        } { return Some(cts) }
+        } { break(Some(cts)); }
 
         for {
             cts <- signaturesToCheck
             superCs <- getClassSignature(cts.classType)
             matchingType <- getSupertypeDeclaration(superCs, supertype)
-        } { return Some(matchingType) }
+        } { break(Some(matchingType)); }
 
         None
     }
@@ -1784,7 +1787,7 @@ class ClassHierarchy private (
      * Returns the class type's class signature if the class files is available and
      * a class signature is defined.
      */
-    @inline private[this] final def getClassSignature(
+    @inline private final def getClassSignature(
         ct: ClassType
     )(
         implicit p: ClassFileRepository
@@ -1869,7 +1872,7 @@ class ClassHierarchy private (
         supertype: ClassTypeSignature
     )(
         implicit project: ClassFileRepository
-    ): Answer = {
+    ): Answer = boundary {
         def compareTypeArgumentsOfClassSuffixes(
             suffix:      List[SimpleClassTypeSignature],
             superSuffix: List[SimpleClassTypeSignature]
@@ -1879,7 +1882,7 @@ class ClassHierarchy private (
 
             suffix.zip(superSuffix).foldLeft(Yes: Answer)((acc, value) =>
                 (acc, compareTypeArguments(value._1.typeArguments, value._2.typeArguments)) match {
-                    case (_, Unknown)     => return Unknown;
+                    case (_, Unknown)     => break(Unknown);
                     case (x, y) if x ne y => No
                     case (x, _ /*x*/ )    => x
                 }
@@ -2054,14 +2057,13 @@ class ClassHierarchy private (
         supertype: FormalTypeParameter
     )(
         implicit p: ClassFileRepository
-    ): Answer = {
-
+    ): Answer = boundary {
         // IMPROVE Avoid creating the list by using an inner function (def).
         (supertype.classBound.toList ++ supertype.interfaceBound)
             .collect { case s: ClassTypeSignature => s }
             .foldLeft(Yes: Answer) { (a, superCTS) =>
                 (a, isASubtypeOf(subtype, superCTS)) match {
-                    case (_, Unknown)     => return Unknown;
+                    case (_, Unknown)     => break(Unknown);
                     case (x, y) if x ne y => No
                     case (x, _ /*x*/ )    => x
                 }
@@ -2271,7 +2273,7 @@ class ClassHierarchy private (
             return upperTypeBound;
         }
 
-        if (upperTypeBoundB contains upperTypeBoundA) {
+        if (upperTypeBoundB.contains(upperTypeBoundA)) {
             // The upperTypeBoundB contains more than one type; hence, considering
             // "reflexive" is no longer necessary...
             // if (isKnownToBeFinal(upperTypeBoundA)) the upper type bound (hopefully)
@@ -2708,7 +2710,7 @@ class ClassHierarchy private (
  */
 object ClassHierarchy {
 
-    private[this] implicit val classHierarchyEC: ExecutionContext = OPALUnboundedExecutionContext
+    private implicit val classHierarchyEC: ExecutionContext = OPALUnboundedExecutionContext
 
     final val JustObject: UIDSet[ClassType] = new UIDSet1(ClassType.Object)
 
@@ -2721,7 +2723,7 @@ object ClassHierarchy {
      * This class hierarchy is primarily useful for testing purposes.
      */
     lazy val PreInitializedClassHierarchy: ClassHierarchy = {
-        apply(classFiles = Iterable.empty, defaultTypeHierarchyDefinitions())(GlobalLogContext)
+        apply(classFiles = Iterable.empty, defaultTypeHierarchyDefinitions())(using GlobalLogContext)
     }
 
     def noDefaultTypeHierarchyDefinitions(): List[() => java.io.InputStream] = List.empty
@@ -2750,7 +2752,7 @@ object ClassHierarchy {
                 """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
             processSource(new BufferedSource(in)) { source =>
                 source.getLines().map(_.trim).filterNot { l => l.startsWith("#") || l.length == 0 }.map { l =>
-                    val typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) = l
+                    val typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) = l: @unchecked
                     TypeDeclaration(
                         ClassType(theType),
                         typeKind == "interface",

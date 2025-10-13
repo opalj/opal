@@ -68,7 +68,7 @@ object UnusedResults extends ProjectsAnalysisApplication {
         analysisConfig: UnusedResultsConfig,
         execution:      Int
     ): (Project[URL], BasicReport) = {
-        implicit val (project, _) = analysisConfig.setupProject(cp)()
+        implicit val (project: Project[URL], _) = analysisConfig.setupProject(cp)()
         implicit val (ps, _) = analysisConfig.setupPropertyStore(project)
         analysisConfig.setupCallGaph(project)
 

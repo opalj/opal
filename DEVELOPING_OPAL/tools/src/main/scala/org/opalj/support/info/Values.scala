@@ -51,7 +51,7 @@ object Values extends ProjectsAnalysisApplication {
                 org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
                 org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
             )
-        } { t => OPALLogger.info("analysis progress", s"finished in ${t.toSeconds} ")(project.logContext) }
+        } { t => OPALLogger.info("analysis progress", s"finished in ${t.toSeconds} ")(using project.logContext) }
 
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
 

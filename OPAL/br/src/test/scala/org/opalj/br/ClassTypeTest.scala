@@ -12,7 +12,7 @@ class ClassTypeTest extends AnyFunSuite {
 
     test("FieldType factory method") {
         val fieldType = FieldType("Ljava/lang/Object;")
-        val ClassType(className) = fieldType
+        val ClassType(className) = fieldType: @unchecked
 
         assert(className === "java/lang/Object")
     }

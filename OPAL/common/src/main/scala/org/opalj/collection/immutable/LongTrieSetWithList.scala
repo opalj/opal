@@ -187,7 +187,7 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
             new LongTrieSetWithListN(4, this.grow(i, 0), Long2List(i, i1, i2, i3))
     }
 
-    private[this] def grow(i: Long, level: Int): LongTrieSetNode = {
+    private def grow(i: Long, level: Int): LongTrieSetNode = {
         val l = new LongTrieSet1(i)
         var r: LongTrieSetNode = new LongTrieSetNode1(((i >> level) & 7L).toInt, l)
         r = r.add(i1, level)

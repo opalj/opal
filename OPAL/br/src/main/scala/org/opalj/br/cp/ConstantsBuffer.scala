@@ -4,6 +4,7 @@ package br
 package cp
 
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 
 import org.opalj.br.instructions.INCOMPLETE_LDC
 import org.opalj.br.instructions.LDC
@@ -30,10 +31,10 @@ class ConstantsBuffer private (
     private val constantPool: mutable.Map[Constant_Pool_Entry, Constant_Pool_Index] // IMPROVE[L3] Use ObjectToIntMap
 ) extends ConstantsPoolLike {
 
-    private[this] val bootstrapMethods = new BootstrapMethodsBuffer()
-    private[this] var bootstrapMethodAttributeNameIndex: Int = _
+    private val bootstrapMethods = new BootstrapMethodsBuffer()
+    private var bootstrapMethodAttributeNameIndex: Int = uninitialized
 
-    private[this] def getOrElseUpdate(cpEntry: Constant_Pool_Entry, entry_size: Int): Int = {
+    private def getOrElseUpdate(cpEntry: Constant_Pool_Entry, entry_size: Int): Int = {
         constantPool.getOrElseUpdate(
             cpEntry, {
                 val index = nextIndex
@@ -44,7 +45,7 @@ class ConstantsBuffer private (
     }
 
     @throws[ConstantPoolException]
-    private[this] def validateIndex(index: Int, requiresUByteIndex: Boolean): Int = {
+    private def validateIndex(index: Int, requiresUByteIndex: Boolean): Int = {
         if (requiresUByteIndex && index > UByte.MaxValue) {
             val message = s"the constant pool index $index is larger than  ${UByte.MaxValue}"
             throw new ConstantPoolException(message)
@@ -54,7 +55,7 @@ class ConstantsBuffer private (
     }
 
     @throws[ConstantPoolException]
-    private[this] def validateUShortIndex(index: Int): Int = {
+    private def validateUShortIndex(index: Int): Int = {
         if (index > UShort.MaxValue) {
             val message = s"the constant pool index $index is larger than ${UShort.MaxValue}"
             throw new ConstantPoolException(message)
@@ -293,7 +294,7 @@ object ConstantsBuffer {
         val allLDC = for {
             method <- classFile.methods.iterator
             if method.body.isDefined
-            ldc <- method.body.get.instructionIterator.collect { case ldc: LDC[_] => ldc }
+            ldc <- method.body.get.instructionIterator.collect { case ldc: LDC[?] => ldc }
         } yield {
             ldc
         }

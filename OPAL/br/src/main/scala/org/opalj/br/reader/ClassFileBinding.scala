@@ -94,7 +94,7 @@ trait ClassFileBinding extends ClassFileReader {
             var hasSynthesizedClassFilesAttribute = false
             val newAttributes = classFile.attributes.filterNot { a =>
                 if (a.kindId == SynthesizedClassFiles.KindId) {
-                    val SynthesizedClassFiles(synthesizedClassFiles) = a
+                    val SynthesizedClassFiles(synthesizedClassFiles) = a: @unchecked
                     synthesizedClassFiles.foreach { cfAndReason => classFilesToProcess ::= cfAndReason._1 }
                     hasSynthesizedClassFilesAttribute = true
                     true

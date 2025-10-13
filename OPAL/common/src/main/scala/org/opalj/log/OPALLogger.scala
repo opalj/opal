@@ -67,7 +67,7 @@ trait OPALLogger {
  */
 object OPALLogger extends OPALLogger {
 
-    @volatile private[this] var loggers: Array[OPALLogger] = new Array(32);
+    @volatile private var loggers: Array[OPALLogger] = new Array(32);
 
     def updateLogger(ctx: LogContext, logger: OPALLogger): Unit = this.synchronized {
         val id = ctx.id

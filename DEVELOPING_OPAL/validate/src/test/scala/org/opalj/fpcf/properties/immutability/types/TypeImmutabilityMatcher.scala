@@ -65,7 +65,7 @@ class DependentlyImmutableTypeMatcher
     ): Option[String] = {
         if (!properties.exists(p =>
                 p match {
-                    case DependentlyImmutableType(latticeParameters) =>
+                    case org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType(latticeParameters) =>
                         val annotationType = a.annotationType.asFieldType.asClassType
                         val annotationParameters =
                             getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values

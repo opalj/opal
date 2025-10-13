@@ -70,11 +70,11 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         doProcessMethod(
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, tacEP)
+            using new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, tacEP)
         )
     }
 
-    private[this] def doProcessMethod(
+    private def doProcessMethod(
         implicit state: State
     ): ProperPropertyComputationResult = {
         if (state.isTACDependeeRefinable)
@@ -103,7 +103,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         filter
                     )
 
-                case Assignment(_, _, _: Call[_]) | ExprStmt(_, _: Call[_]) | _: Call[_] =>
+                case Assignment(_, _, _: Call[?]) | ExprStmt(_, _: Call[?]) | _: Call[?] =>
                     val entity = MethodExceptions(state.callContext)
                     val callSite = getCallExceptions(throwingStmt.pc)
                     val filter = (t: ReferenceType) =>
@@ -217,7 +217,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 }
                 handleCall(call, pc)
 
-            case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) =>
+            case Assignment(pc, _, idc: InvokedynamicFunctionCall[?]) =>
                 state.addIncompletePointsToInfo(pc)
                 logOnce(
                     Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
@@ -229,7 +229,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
                 )
 
-            case idc: InvokedynamicMethodCall[_] =>
+            case idc: InvokedynamicMethodCall[?] =>
                 state.addIncompletePointsToInfo(idc.pc)
                 logOnce(
                     Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
@@ -238,10 +238,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             case Assignment(_, DVar(_: IsReferenceValue, _), _) =>
                 throw new IllegalArgumentException(s"unexpected assignment: $stmt")
 
-            case call: Call[_] =>
+            case call: Call[?] =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], call.pc)
 
-            case ExprStmt(pc, call: Call[_]) =>
+            case ExprStmt(pc, call: Call[?]) =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
             case PutField(
@@ -284,10 +284,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
         // TODO: we have to handle the exceptions that might implicitly be thrown by this method
 
-        Results(createResults(state))
+        Results(createResults)
     }
 
-    @inline private[this] def getCallExceptions(pc: Int)(implicit state: State): Entity = {
+    @inline private def getCallExceptions(pc: Int)(implicit state: State): Entity = {
         val exceptions = CallExceptions(definitionSites(state.callContext.method, pc))
         typeIterator match {
             case _: SimpleContextProvider => exceptions
@@ -295,7 +295,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    @inline private[this] def handleAllocation(
+    @inline private def handleAllocation(
         pc:  Int,
         tpe: ReferenceType
     )(implicit state: State): Unit = {
@@ -308,7 +308,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    @inline private[this] def handleArrayAllocation(
+    @inline private def handleArrayAllocation(
         pc:     Int,
         counts: Seq[Expr[V]],
         tpe:    ArrayType
@@ -359,7 +359,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     // maps the points-to set of actual parameters (including *this*) the the formal parameters
-    private[this] def handleCall(
+    private def handleCall(
         call: Call[DUVar[ValueInformation]],
         pc:   Int
     )(implicit state: State): Unit = {
@@ -394,7 +394,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    private[this] def handleDirectCall(
+    private def handleDirectCall(
         call:   Call[V],
         pc:     Int,
         target: Context
@@ -490,7 +490,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    private[this] def handleIndirectFieldAccesses(implicit state: State): Unit = {
+    private def handleIndirectFieldAccesses(implicit state: State): Unit = {
         val tac = state.tac
         val readAccesses = state.readAccesses(ps)
         val writeAccesses = state.writeAccesses(ps)
@@ -564,10 +564,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    override protected[this] def createResults(
+    override protected def createResults(
         implicit state: State
     ): ArrayBuffer[ProperPropertyComputationResult] = {
-        val results = super.createResults(state)
+        val results = super.createResults
 
         if (state.hasCalleesDepenedee) {
             val calleesDependee = state.calleesDependee
@@ -592,7 +592,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     NoMethodFieldReadAccessInformation,
                     MethodFieldReadAccessInformation.key,
                     (pc, target, newAccesses, tac, state) =>
-                        handleIndirectFieldReadAccess(pc, target, newAccesses, tac)(state),
+                        handleIndirectFieldReadAccess(pc, target, newAccesses, tac)(using state),
                     (currentState, newDependee) => currentState.setReadAccessDependee(newDependee),
                     new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
                         state.callContext,
@@ -611,7 +611,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     NoMethodFieldWriteAccessInformation,
                     MethodFieldWriteAccessInformation.key,
                     (pc, target, newAccesses, tac, state) =>
-                        handleIndirectFieldWriteAccess(pc, target, newAccesses, tac)(state),
+                        handleIndirectFieldWriteAccess(pc, target, newAccesses, tac)(using state),
                     (currentState, newDependee) => currentState.setWriteAccessDependee(newDependee),
                     new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
                         state.callContext,
@@ -624,7 +624,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         results
     }
 
-    override protected[this] def continuationForShared(
+    override protected def continuationForShared(
         e:         Entity,
         dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)],
         state:     State
@@ -671,7 +671,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     newDependees,
                     { old => old.included(newPointsToSet, typeFilter) },
                     true
-                )(state)
+                )(using state)
 
                 Results(results)
 
@@ -708,7 +708,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     newDependees,
                     { old => old.included(newPointsToSet, typeFilter) },
                     true
-                )(state)
+                )(using state)
 
                 Results(results)
 
@@ -739,7 +739,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                             case e =>
                                 throw new IllegalArgumentException(s"unexpected stmt $e")
                         }
-                        handleDirectCall(call, pc, target)(state)
+                        handleDirectCall(call, pc, target)(using state)
                     }
                 }
                 for {
@@ -747,13 +747,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     target <- targets
                 } {
                     if (!oldCallees.containsIndirectCall(state.callContext, pc, target)) {
-                        handleIndirectCall(pc, target, newCallees, tac)(state)
+                        handleIndirectCall(pc, target, newCallees, tac)(using state)
                     }
                 }
 
                 state.setCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
 
-                Results(createResults(state))
+                Results(createResults(using state))
             case _ => throw new IllegalArgumentException(s"unexpected eps $eps")
         }
     }
@@ -792,7 +792,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                 setDependee(state, eps.asInstanceOf[EPS[Method, P]])
 
-                Results(createResults(state))
+                Results(createResults(using state))
             case _ => throw new IllegalArgumentException(s"unexpected eps $eps")
         }
     }

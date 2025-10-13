@@ -3,6 +3,7 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
+import scala.reflect.classTag
 import scala.reflect.runtime.universe.*
 
 import java.io.ByteArrayInputStream
@@ -88,7 +89,7 @@ class FieldBuilderTest extends AnyFlatSpec {
     )
 
     val fieldInstance = loader.loadClass(javaClassName).getDeclaredConstructor().newInstance()
-    val mirror = runtimeMirror(loader).reflect(fieldInstance)
+    val mirror = runtimeMirror(loader).reflect(fieldInstance)(using classTag[AnyRef])
 
     val brClassFile = Java8Framework.ClassFile(() => new ByteArrayInputStream(rawClassFile)).head
 

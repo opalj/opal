@@ -37,7 +37,7 @@ class CFGsSmokeTest extends AbstractCFGTest {
             val method = mi.method
             implicit val code: Code = method.body.get
 
-            val cfg = time { CFGFactory(code) } { t => executionTime.addAndGet(t.timeSpan) }
+            val cfg = time { CFGFactory(using code, classHierarchy) } { t => executionTime.addAndGet(t.timeSpan) }
 
             // check that each instruction is associated with a basic block
             code.programCounters foreach { pc =>

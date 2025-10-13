@@ -4,6 +4,7 @@ package ai
 package domain
 
 import scala.collection.immutable.IntMap
+import scala.compiletime.uninitialized
 
 import org.opalj.br.Code
 import org.opalj.collection.immutable.IntTrieSet
@@ -36,7 +37,7 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
      * @see For details study the documentation of the abstract type `ReturnedValue`
      *      and study the subclass(es) of `RecordReturnedValues`.
      */
-    protected[this] def recordReturnedValue(pc: Int, value: DomainValue): ReturnedValue
+    protected def recordReturnedValue(pc: Int, value: DomainValue): ReturnedValue
 
     /**
      * Joins the previously returned value and the newly given `value`. Both values
@@ -49,13 +50,13 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
      * @see For details study the documentation of the abstract type `ReturnedValue`
      *      and study the subclass(es) of `RecordReturnedValues`.
      */
-    protected[this] def joinReturnedValues(
+    protected def joinReturnedValues(
         pc:                      Int,
         previouslyReturnedValue: ReturnedValue,
         value:                   DomainValue
     ): ReturnedValue
 
-    private[this] var returnedValues: IntMap[ReturnedValue] = _
+    private var returnedValues: IntMap[ReturnedValue] = uninitialized
 
     abstract override def initProperties(
         code:          Code,
@@ -71,7 +72,7 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
      */
     def allReturnedValues: IntMap[ReturnedValue] = returnedValues
 
-    protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
+    protected def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
         returnedValues.get(pc) match {
             case None =>
                 returnedValues = returnedValues.updated(pc, recordReturnedValue(pc, value))

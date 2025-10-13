@@ -14,10 +14,10 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
 
 final class ConfiguredNativeMethodsTypePropagationState[ContextType <: Context](
-    val callContext:                                 ContextType,
-    val configurationData:                           Array[EntityAssignment],
-    val typeSetEntity:                               TypeSetEntity,
-    private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes]
+    val callContext:                           ContextType,
+    val configurationData:                     Array[EntityAssignment],
+    val typeSetEntity:                         TypeSetEntity,
+    private var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes]
 ) extends BaseAnalysisState {
 
     /////////////////////////////////////////////

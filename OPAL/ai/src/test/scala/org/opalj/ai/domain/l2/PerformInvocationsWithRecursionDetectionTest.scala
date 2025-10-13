@@ -4,7 +4,7 @@ package ai
 package domain
 package l2
 
-import scala.language.reflectiveCalls
+import scala.reflect.Selectable.reflectiveSelectable
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
@@ -185,7 +185,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     ) extends SharedInvocationDomain(project, method)
         with ChildPerformInvocationsWithRecursionDetection { callingDomain =>
 
-        final def calledMethodAI: AI[? >: CalledMethodDomain] = callerDomain.calledMethodAI
+        final def calledMethodAI: AI[Domain] = callerDomain.calledMethodAI
 
         def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, callingDomain)

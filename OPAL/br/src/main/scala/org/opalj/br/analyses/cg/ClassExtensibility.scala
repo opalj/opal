@@ -44,7 +44,7 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
      *
      * @return  Those types for which the direct extensibility is explicit configured.
      */
-    protected[this] def configuredExtensibleClasses: Iterator[(ClassType, Answer)] = Iterator.empty
+    protected def configuredExtensibleClasses: Iterator[(ClassType, Answer)] = Iterator.empty
 
     /**
      * Get the list of configured types using the configured config key.
@@ -55,7 +55,7 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
      *          respective analysis;
      *          [[AbstractClassExtensibility#configuredExtensibleClasses]].
      */
-    protected[this] def parseSpecifiedClassesList(simpleKey: String): List[ClassType] = {
+    protected def parseSpecifiedClassesList(simpleKey: String): List[ClassType] = {
         val completeKey = ClassExtensibilityKey.ConfigKeyPrefix + simpleKey
         val fqns = project.config.as[Option[List[String]]](completeKey).getOrElse(List.empty)
 
@@ -73,7 +73,7 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
         }
     }
 
-    private[this] val classExtensibility: ArrayMap[Answer] = {
+    private val classExtensibility: ArrayMap[Answer] = {
 
         val isClosedPackage = project.get(ClosedPackagesKey)
 

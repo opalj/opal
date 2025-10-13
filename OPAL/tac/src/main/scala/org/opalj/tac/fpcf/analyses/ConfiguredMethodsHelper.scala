@@ -26,7 +26,7 @@ case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])
 object ConfiguredMethods {
     implicit val reader: ValueReader[ConfiguredMethods] = (config: Config, path: String) => {
         val c = config.getConfig(path)
-        val configs = c.getConfigList("nativeMethods").asScala.toArray
+        val configs = c.getConfigList("nativeMethods").asScala.toArray[Config]
         val data = configs.map(c => ConfiguredMethodData.reader.read(c, ""))
         ConfiguredMethods(data)
     }
@@ -56,13 +56,15 @@ object ConfiguredMethodData {
         val desc = c.getString("desc")
         val pointsTo =
             if (c.hasPath("pointsTo"))
-                Some(c.getConfigList("pointsTo").asScala.toArray.map(c => EntityAssignment.reader.read(c, "")))
+                Some(c.getConfigList("pointsTo").asScala.toArray[Config].map(c => EntityAssignment.reader.read(c, "")))
             else
                 None
 
         val methodInvocations =
             if (c.hasPath("methodInvocations"))
-                Some(c.getConfigList("methodInvocations").asScala.toArray.map(c => MethodDescription.reader.read(c, "")))
+                Some(c.getConfigList("methodInvocations").asScala.toArray[Config].map(c =>
+                    MethodDescription.reader.read(c, "")
+                ))
             else
                 None
 

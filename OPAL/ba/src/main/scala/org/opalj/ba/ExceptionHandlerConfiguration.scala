@@ -22,9 +22,9 @@ private[ba] class ExceptionHandlerConfiguration(
  */
 class ExceptionHandlerTableBuilder {
 
-    private[this] val map: mutable.Map[Symbol, ExceptionHandlerConfiguration] = mutable.Map.empty
+    private val map: mutable.Map[Symbol, ExceptionHandlerConfiguration] = mutable.Map.empty
 
-    private[this] def getExceptionHandlerBuilder(id: Symbol): ExceptionHandlerConfiguration = {
+    private def getExceptionHandlerBuilder(id: Symbol): ExceptionHandlerConfiguration = {
         map.getOrElseUpdate(id, new ExceptionHandlerConfiguration())
     }
 

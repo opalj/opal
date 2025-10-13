@@ -89,6 +89,7 @@ class AssemblerTest extends AnyFlatSpec with Matchers {
                                 val size = raw.length
                                 val failAfterStream = new FailAfterByteArrayOutputStream(i)(size)
                                 Assembler.serialize(classFile)(
+                                    using
                                     Assembler.RichClassFile,
                                     new DataOutputStream(failAfterStream),
                                     (s, i) => {}

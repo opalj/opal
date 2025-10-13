@@ -35,7 +35,7 @@ sealed trait StringMatcher extends AbstractPropertyMatcher {
 sealed abstract class ConstancyStringMatcher(val constancyLevel: StringConstancyLevel) extends StringMatcher {
 
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
@@ -69,7 +69,7 @@ class DynamicStringMatcher extends ConstancyStringMatcher(StringConstancyLevel.D
 class InvalidStringMatcher extends StringMatcher {
 
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,

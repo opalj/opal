@@ -113,7 +113,7 @@ object MoreCheckers {
                 "Memory required for the bytecode representation (" + classFilesCount + "): " + (mu / 1024.0 / 1024.0) + " MByte"
             )
         )
-        val classHierarchy = ClassHierarchy(classFiles)(GlobalLogContext)
+        val classHierarchy = ClassHierarchy(classFiles)(using GlobalLogContext)
 
         val getClassFile: Map[ClassType, ClassFile] = classFiles.map(cf => (cf.thisType, cf)).toMap // SAME AS IN PROJECT
         println("Press return to continue."); System.in.read()

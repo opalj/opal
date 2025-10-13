@@ -63,8 +63,8 @@ class Java8Invokedynamics(
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            case m @ MethodWithBody(code) <- project.allMethodsWithBody
-            pcAndInvocation <- code collect ({
+            case m @ MethodWithBody(body) <- project.allMethodsWithBody
+            pcAndInvocation <- body.collect({
                 case dynInv: INVOKEDYNAMIC => dynInv
             }: PartialFunction[Instruction, Instruction])
         } {
@@ -92,14 +92,15 @@ class Java8Invokedynamics(
                         val handle = bm.arguments(1).asInstanceOf[MethodCallMethodHandle]
 
                         if (bm.handle.isInvokeStaticMethodHandle) {
-                            val InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) = bm.handle
+                            val InvokeStaticMethodHandle(LambdaMetafactory, false, name, descriptor) =
+                                bm.handle: @unchecked
                             if (descriptor == MethodDescriptor.LambdaAltMetafactoryDescriptor &&
                                 name == "altMetafactory"
                             ) {
                                 10 /*Lambda4 */
-                            } else if (code.pcOfNextInstruction(pc) != -1) {
-                                val nextPC = code.pcOfNextInstruction(pc)
-                                if (code.instructions(nextPC).opcode == ARETURN.opcode)
+                            } else if (body.pcOfNextInstruction(pc) != -1) {
+                                val nextPC = body.pcOfNextInstruction(pc)
+                                if (body.instructions(nextPC).opcode == ARETURN.opcode)
                                     8 /* Lambda2*/
                                 else {
                                     val ai = new InterruptableAI[Domain]
@@ -135,8 +136,8 @@ class Java8Invokedynamics(
         handle.referenceKind match {
             case REF_invokeInterface => 0 /* MR1*/
             case REF_invokeStatic    => {
-                val InvokeStaticMethodHandle(_, _, name, descriptor) = handle
-                // this just the called method is defined in the same class..
+                val InvokeStaticMethodHandle(_, _, name, descriptor) = handle: @unchecked
+                // this just the called method is defined in the same class.
                 // if there is a method in the same class with the same name and descriptor,
                 // this check is tricked.
                 val localMethod = m.classFile.findMethod(name, descriptor)
@@ -162,7 +163,7 @@ class Java8Invokedynamics(
                 }
             }
             case REF_invokeSpecial => {
-                val InvokeSpecialMethodHandle(_, isInterface, name, methodDescriptor) = handle
+                val InvokeSpecialMethodHandle(_, isInterface, name, methodDescriptor) = handle: @unchecked
                 val localMethod = m.classFile.findMethod(name, methodDescriptor)
                 val isLocal = localMethod.isDefined
                 if (isLocal) {

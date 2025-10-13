@@ -26,7 +26,7 @@ import org.opalj.log.LogContext
 sealed abstract class PropertyStoreTest[PS <: PropertyStore]
     extends AnyFunSpec
     with Matchers
-    with BeforeAndAfterAll {
+    with BeforeAndAfterAll { self =>
 
     implicit val logContext: LogContext = GlobalLogContext
 
@@ -857,10 +857,10 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 // incremental computation
                 def c(dependeeP: SomeEPS): ProperPropertyComputationResult = {
                     // Get the set of currently reachable nodes:
-                    val EUBPS(dependeeE, ReachableNodes(depeendeeReachableNodes), _) = dependeeP
+                    val EUBPS(dependeeE, dependeeReachableNodes: ReachableNodes @unchecked, _) = dependeeP: @unchecked
 
                     // Compute the new set of reachable nodes:
-                    allDependees ++= depeendeeReachableNodes
+                    allDependees ++= dependeeReachableNodes.nodes
                     val newUB = ReachableNodes(allDependees)
 
                     // Adapt the set of dependeePs to ensure termination
@@ -913,8 +913,8 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         ReachableNodes.Key,
                         (eOptionP: EOptionP[?, ReachableNodes]) =>
                             eOptionP match {
-                                case _: EPK[_, _]  => Some(InterimEUBP(n, ReachableNodes(currentNodes)))
-                                case InterimUBP(p) =>
+                                case _: EPK[_, _]                             => Some(InterimEUBP(n, ReachableNodes(currentNodes)))
+                                case InterimUBP(p: ReachableNodes @unchecked) =>
                                     val oldReachableNodes = p.nodes
                                     val newReachableNodes = oldReachableNodes ++ currentNodes
                                     if (oldReachableNodes != newReachableNodes) {
@@ -930,9 +930,9 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
 
                 def c(dependeeP: SomeEPS): ProperPropertyComputationResult = {
                     // Get the set of currently reachable nodes of the dependee:
-                    val EUBP(dependeeE, ReachableNodes(depeendeeReachableNodes)) = dependeeP
+                    val EUBP(dependeeE, dependeeReachableNodes: ReachableNodes @unchecked) = dependeeP: @unchecked
                     // Compute the new set of reachable nodes
-                    val pr = createPartialResult(depeendeeReachableNodes)
+                    val pr = createPartialResult(dependeeReachableNodes.nodes)
                     dependeePs = dependeePs.filter(_.e ne dependeeP.e)
                     if (dependeeP.isRefinable)
                         dependeePs += dependeeP.asInstanceOf[EOptionP[Entity, ? <: ReachableNodes]]
@@ -941,10 +941,10 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
 
                 val allNodes =
                     ps(nTargets, ReachableNodes.Key).foldLeft(immutable.Set.empty[Node]) { (c, n) =>
-                        n match {
-                            case epk: EPK[Node, _] => c + epk.e
-                            case InterimEUBP(n, p) => c ++ p.nodes + n
-                            case FinalEP(n, p)     => immutable.Set.from(p.nodes) + n
+                        (n: @unchecked) match {
+                            case epk: EPK[Node, _]                                  => c + epk.e
+                            case InterimEUBP(n: Node, p: ReachableNodes @unchecked) => c ++ p.nodes + n
+                            case FinalEP(n, p)                                      => immutable.Set.from(p.nodes) + n
                         }
                     }
 
@@ -998,7 +998,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                             ub = TooManyNodesReachable.value
                             false // we are done...
                         } else {
-                            ps(successor, ReachableNodesCount.Key) match {
+                            (ps(successor, ReachableNodesCount.Key): @unchecked) match {
                                 case epk: EPK[_, _] =>
                                     dependees += epk
                                     true
@@ -1044,13 +1044,13 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
 
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
                         (eps: @unchecked) match {
-                            case eps @ InterimUBP(ReachableNodes(nodes)) =>
+                            case eps @ InterimUBP(reachable: ReachableNodes @unchecked) =>
                                 val lb = TooManyNodesReachable
-                                val ub = ReachableNodesCount(nodes.size)
+                                val ub = ReachableNodesCount(reachable.nodes.size)
                                 InterimResult(n, lb, ub, Set(eps), c)
 
-                            case FinalP(ReachableNodes(nodes)) =>
-                                Result(n, ReachableNodesCount(nodes.size))
+                            case FinalP(reachable: ReachableNodes @unchecked) =>
+                                Result(n, ReachableNodesCount(reachable.nodes.size))
                         }
                     }
 
@@ -1081,7 +1081,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                         (eOptionP) match {
                             case _: EPK[_, _] =>
                                 Some(InterimEUBP("reached nodes", ReachedEntities(Set(e.toString))))
-                            case InterimUBP(p) =>
+                            case InterimUBP(p: ReachedEntities) =>
                                 val oldEntities = p.entities
                                 val newEntities = oldEntities + e.toString
                                 if (oldEntities ne newEntities)
@@ -1681,21 +1681,6 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
         }
 
         it("should be possible to execute an analysis incrementally") {
-            import scala.collection.mutable
-
-            class Node(val name: String, val targets: mutable.Set[Node] = mutable.Set.empty) {
-                override def hashCode: Int = name.hashCode()
-
-                override def equals(other: Any): Boolean = other match {
-                    case that: Node => this.name equals that.name
-                    case _          => false
-                }
-
-                override def toString: String = name
-            }
-            object Node {
-                def apply(name: String) = new Node(name)
-            }
 
             // DESCRIPTION OF A TREE
             val nodeRoot = Node("Root")
@@ -1731,7 +1716,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
              * the set of observed dependees.
              */
             def analysis(level: Int)(n: Node): PropertyComputationResult = {
-                val nextPCs = n.targets.map(t => (analysis(level + 1) _, t)).iterator
+                val nextPCs = n.targets.map(t => ((n: Node) => analysis(level + 1)(n), t)).iterator
                 IncrementalResult(Result(n, TreeLevel(level)), nextPCs)
             }
 
@@ -1925,8 +1910,8 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
 
 abstract class PropertyStoreTestWithDebugging[PS <: PropertyStore] extends PropertyStoreTest[PS] {
 
-    private[this] val oldPropertyStoreUpdateSetting = PropertyStore.Debug
-    private[this] val oldPropertyStoreTraceFallbacksSetting = PropertyStore.TraceFallbacks
+    private val oldPropertyStoreUpdateSetting = PropertyStore.Debug
+    private val oldPropertyStoreTraceFallbacksSetting = PropertyStore.TraceFallbacks
 
     override def beforeAll(): Unit = {
         PropertyStore.updateDebug(true)
@@ -2209,7 +2194,7 @@ abstract class PropertyStoreTestWithDebugging[PS <: PropertyStore] extends Prope
 
 abstract class PropertyStoreTestWithoutDebugging[PS <: PropertyStore] extends PropertyStoreTest[PS] {
 
-    private[this] val oldPropertyStoreUpdateSetting = PropertyStore.Debug
+    private val oldPropertyStoreUpdateSetting = PropertyStore.Debug
     override def beforeAll(): Unit = PropertyStore.updateDebug(false)
     override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
 

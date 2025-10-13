@@ -86,7 +86,7 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
 trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     // don't make this a val for initialization reasons
-    @inline private[this] def additionalInstantiatedTypesKey: String = {
+    @inline private def additionalInstantiatedTypesKey: String = {
         InitialInstantiatedTypesKey.ConfigKeyPrefix + "instantiatedTypes"
     }
 

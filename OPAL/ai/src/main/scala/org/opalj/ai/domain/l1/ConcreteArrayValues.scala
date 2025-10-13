@@ -41,7 +41,7 @@ trait ConcreteArrayValues
     with PostEvaluationMemoryManagement {
     domain: CorrelationalDomain & ConcreteIntegerValues & LogContextProvider =>
 
-    private[this] val debug: Boolean = false
+    private val debug: Boolean = false
 
     /**
      * Determines the maximum size of those arrays for which we track the content.
@@ -224,7 +224,7 @@ trait ConcreteArrayValues
                                 joinResult match {
                                     case NoUpdate =>
                                         v1
-                                    case SomeUpdate(newValue) =>
+                                    case SomeUpdate(newValue: DomainValue) =>
                                         if (v2 ne newValue) {
                                             isOther = false
                                         }
@@ -293,7 +293,7 @@ trait ConcreteArrayValues
                 case DomainConcreteArrayValueTag(that) =>
                     (that eq this) ||
                         (
-                            (that canEqual this) &&
+                            that.canEqual(this) &&
                             this.origin == that.origin &&
                             (this.theUpperTypeBound eq that.theUpperTypeBound) &&
                             this.values == that.values

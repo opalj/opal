@@ -34,7 +34,7 @@ object Feature {
     def apply[S](
         id:         String,
         count:      Int               = 0,
-        extensions: List[Location[S]] = List.empty
+        extensions: List[Location[S]] = List.empty[Location[S]]
     )(
         implicit hermes: HermesConfig
     ): Feature[S] = {

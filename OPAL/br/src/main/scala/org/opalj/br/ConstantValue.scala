@@ -30,7 +30,7 @@ trait ConstantValue[T >: Nothing] extends BootstrapArgument {
      */
     def valueToString: String
 
-    private[this] def className: String = this.getClass.getSimpleName
+    private def className: String = this.getClass.getSimpleName
 
     def toBoolean: Boolean =
         throw new BytecodeProcessingFailedException(

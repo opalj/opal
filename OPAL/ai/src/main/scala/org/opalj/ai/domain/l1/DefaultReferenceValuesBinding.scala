@@ -21,7 +21,7 @@ trait DefaultReferenceValuesBinding extends l1.ReferenceValues with DefaultExcep
 
     type AReferenceValue = TheReferenceValue
     final val AReferenceValueTag: ClassTag[AReferenceValue] = implicitly
-    type DomainReferenceValue = AReferenceValue
+    type DomainReferenceValue = TheReferenceValue
     final val DomainReferenceValueTag: ClassTag[DomainReferenceValue] = implicitly
 
     type DomainSingleOriginReferenceValue = SingleOriginReferenceValue

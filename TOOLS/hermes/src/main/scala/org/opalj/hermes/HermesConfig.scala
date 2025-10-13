@@ -22,9 +22,9 @@ trait HermesConfig {
     //
     // ---------------------------------------------------------------------------------------------
 
-    private[this] var isInitialized: Boolean = false
+    private var isInitialized: Boolean = false
 
-    private[this] var config: Config = null
+    private var config: Config = null
 
     /**
      * The global configuration file.
@@ -68,7 +68,7 @@ trait HermesConfig {
         isInitialized = true
     }
 
-    private[this] def validateInitialized[@specialized(Int, Boolean, Long, Double, Float) T](
+    private def validateInitialized[@specialized(Int, Boolean, Long, Double, Float) T](
         f: => T
     ): T = {
         if (!isInitialized)

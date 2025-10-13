@@ -5,7 +5,7 @@ package domain
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 import scala.xml.NodeSeq
 
 import org.scalatest.flatspec.AnyFlatSpec
@@ -38,7 +38,7 @@ import org.opalj.util.PerformanceEvaluation
  */
 abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec with Matchers {
 
-    private[this] implicit val logContext: LogContext = GlobalLogContext
+    private implicit val logContext: LogContext = GlobalLogContext
 
     type AnalyzedDomain <: Domain
 
@@ -93,8 +93,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 methodsCount.incrementAndGet()
                 None
             } catch {
-                case ct: ControlThrowable => throw ct
-                case t: Throwable         =>
+                case b: Break[?]  => throw b
+                case t: Throwable =>
                     // basically, we want to catch everything!
                     Some((project.source(classFile).get.toString, classFile, method, t))
             }

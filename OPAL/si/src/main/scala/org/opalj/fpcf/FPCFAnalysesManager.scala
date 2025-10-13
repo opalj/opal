@@ -20,12 +20,12 @@ import org.opalj.util.PerformanceEvaluation.*
 class FPCFAnalysesManager private[fpcf] (val project: Project) {
 
     // caching (by means of using local fields) is not necessary
-    private[this] implicit final def logContext: LogContext = project.logContext
-    private[this] final def config: Config = project.config
-    private[this] final def propertyStore: PropertyStore = project.get(PropertyStoreKey)
-    private[this] final def trace: Boolean = config.getBoolean(FPCFAnalysesManager.TraceConfigKey)
+    private implicit final def logContext: LogContext = project.logContext
+    private final def config: Config = project.config
+    private final def propertyStore: PropertyStore = project.get(PropertyStoreKey)
+    private final def trace: Boolean = config.getBoolean(FPCFAnalysesManager.TraceConfigKey)
 
-    private[this] var schedules: List[Schedule[FPCFAnalysis]] = Nil
+    private var schedules: List[Schedule[FPCFAnalysis]] = Nil
 
     /**
      * Returns the executed schedules. The head is the latest executed schedule.

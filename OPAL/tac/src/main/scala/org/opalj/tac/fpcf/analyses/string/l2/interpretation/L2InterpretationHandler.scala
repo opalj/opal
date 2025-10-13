@@ -39,7 +39,7 @@ class L2InterpretationHandler(implicit override val project: SomeProject) extend
         case stmt: FieldWriteAccessStmt[V] =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identityForVariableAt(
                 stmt.pc,
-                stmt.value.asVar.toPersistentForm(state.tac.stmts)
+                stmt.value.asVar.toPersistentForm(using state.tac.stmts)
             ))
 
         case stmt @ AssignmentLikeStmt(_, expr: VirtualFunctionCall[V]) =>
@@ -47,7 +47,7 @@ class L2InterpretationHandler(implicit override val project: SomeProject) extend
 
         // IMPROVE add call-graph based interpreters for other call types than virtual function calls to L2
 
-        case stmt => super.processStatement(state)(stmt)
+        case stmt => super.processStatement(using state)(stmt)
     }
 }
 
@@ -57,5 +57,5 @@ object L2InterpretationHandler {
 
     def uses: Set[PropertyBounds] = L1InterpretationHandler.uses ++ PropertyBounds.ubs(Callees)
 
-    def apply(project: SomeProject): L2InterpretationHandler = new L2InterpretationHandler()(project)
+    def apply(project: SomeProject): L2InterpretationHandler = new L2InterpretationHandler()(using project)
 }

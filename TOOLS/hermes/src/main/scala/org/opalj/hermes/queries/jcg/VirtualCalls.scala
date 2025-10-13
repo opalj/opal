@@ -46,7 +46,7 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             callerType = classFile.thisType
             case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case iv: INVOKEVIRTUAL   => iv
                 case ii: INVOKEINTERFACE => ii
             }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])

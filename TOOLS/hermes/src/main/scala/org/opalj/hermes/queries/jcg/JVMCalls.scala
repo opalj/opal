@@ -63,7 +63,7 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 locations(1) += methodLocation
             } else if (method.body.nonEmpty) {
                 val body = method.body.get
-                val pcAndInvocation = body collect ({ case mii: VirtualMethodInvocationInstruction =>
+                val pcAndInvocation = body.collect({ case mii: VirtualMethodInvocationInstruction =>
                     mii
                 }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
                 pcAndInvocation.foreach { pcAndInvocation =>

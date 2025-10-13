@@ -6,6 +6,8 @@ package reader
 import java.lang.invoke.LambdaMetafactory
 import scala.collection.IndexedSeqView
 import scala.collection.immutable.ArraySeq
+import scala.util.boundary
+import scala.util.boundary.break
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
@@ -577,7 +579,7 @@ trait InvokedynamicRewriting
         instructions:          Array[Instruction],
         pc:                    PC,
         invokedynamic:         INVOKEDYNAMIC
-    ): ClassFile = {
+    ): ClassFile = boundary {
         val INVOKEDYNAMIC(bootstrapMethod, targetMethodName, _) = invokedynamic
 
         val newMethodName =
@@ -593,7 +595,7 @@ trait InvokedynamicRewriting
                             s"$t - unresolvable INVOKEDYNAMIC: $invokedynamic"
                         )
                     }
-                    return classFile;
+                    break(classFile);
                 }
 
         val newInvokestatic = INVOKESTATIC(
@@ -913,7 +915,8 @@ trait InvokedynamicRewriting
 
         val (markerInterfaces, bridges, serializable) = extractAltMetafactoryArguments(altMetafactoryArgs)
 
-        val MethodCallMethodHandle(targetMethodOwner: ClassType, targetMethodName, targetMethodDescriptor) = implMethod
+        val MethodCallMethodHandle(targetMethodOwner: ClassType, targetMethodName, targetMethodDescriptor) =
+            implMethod: @unchecked
 
         // In case of nested classes, we have to change the invoke instruction from
         // invokespecial to invokevirtual, because the special handling used for private
@@ -1066,8 +1069,6 @@ trait InvokedynamicRewriting
                     } else {
                         handle.isInterface
                     }
-
-                case other => throw new UnknownError("unexpected handle: " + other)
             }
 
         // Creates forwarding method for private method `m` that can be accessed by the proxy class.
@@ -1272,13 +1273,13 @@ trait InvokedynamicRewriting
         }
 
         var argCount = 0
-        val ConstantInteger(flags) = altMetafactoryArgs(argCount)
+        val ConstantInteger(flags) = altMetafactoryArgs(argCount): @unchecked
         argCount += 1
 
         // Extract the marker interfaces. They are the first in the argument list if the flag
         // FLAG_MARKERS is present.
         if ((flags & LambdaMetafactory.FLAG_MARKERS) > 0) {
-            val ConstantInteger(markerCount) = altMetafactoryArgs(argCount)
+            val ConstantInteger(markerCount) = altMetafactoryArgs(argCount): @unchecked
             argCount += 1
             markerInterfaces = altMetafactoryArgs.iterator
                 .slice(argCount, argCount + markerCount)
@@ -1289,7 +1290,7 @@ trait InvokedynamicRewriting
 
         // bridge methods come afterwards if FLAG_BRIDGES is set.
         if ((flags & LambdaMetafactory.FLAG_BRIDGES) > 0) {
-            val ConstantInteger(bridgesCount) = altMetafactoryArgs(argCount)
+            val ConstantInteger(bridgesCount) = altMetafactoryArgs(argCount): @unchecked
             argCount += 1
             bridges = altMetafactoryArgs.iterator
                 .slice(argCount, argCount + bridgesCount)

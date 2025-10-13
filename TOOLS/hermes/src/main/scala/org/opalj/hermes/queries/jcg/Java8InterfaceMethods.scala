@@ -55,7 +55,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             callerType = classFile.thisType
             case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   => iv
                 case ii: INVOKEINTERFACE if isPotentialCallOnDefaultMethod(ii, project) => ii
                 case is: INVOKESTATIC if is.isInterface                                 => is
@@ -144,7 +144,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
     }
 
     // This method determines whether the called interface method might be dispatched to a default method.
-    private[this] def isPotentialCallOnDefaultMethod[S](
+    private def isPotentialCallOnDefaultMethod[S](
         mii:     MethodInvocationInstruction,
         project: Project[S]
     ): Boolean = {

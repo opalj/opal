@@ -3,7 +3,9 @@ package org.opalj
 package concurrent
 
 import java.util.concurrent.atomic.AtomicInteger
-import scala.util.control.ControlThrowable
+import scala.util.boundary
+import scala.util.boundary.Break
+import scala.util.boundary.break
 
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
@@ -44,14 +46,14 @@ class ParForeachArrayElementTest extends AnyFunSpec with Matchers {
 
         it("it should catch a non-local return and report it") {
             val processed = new AtomicInteger(0)
-            def test(): Unit = {
+            def test(): Unit = boundary {
                 val data = Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
                 try {
-                    parForeachArrayElement(data, 8) { e => if (e == 7) return; else processed.incrementAndGet() }
+                    parForeachArrayElement(data, 8) { e => if (e == 7) break(); else processed.incrementAndGet() }
                 } catch {
                     case ce: ConcurrentExceptions =>
                         assert(ce.getSuppressed().length == 1)
-                        assert(ce.getSuppressed()(0).getCause.isInstanceOf[ControlThrowable])
+                        assert(ce.getSuppressed()(0).getCause.isInstanceOf[Break[?]])
                 }
             }
             test()

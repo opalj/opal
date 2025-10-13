@@ -50,7 +50,7 @@ sealed abstract class UIDTrieSet[T <: UID] { set =>
 
     override final def equals(other: Any): Boolean = {
         other match {
-            case that: UIDTrieSet[_] => this.equals(that)
+            case that: UIDTrieSet[?] => this.equals(that)
             case _                   => false
         }
     }
@@ -177,7 +177,7 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
 
     override def equals(other: UIDTrieSet[?]): Boolean = {
         (other eq this) || (other match {
-            case that: UIDTrieSet1[_] => this.i.id == that.i.id
+            case that: UIDTrieSet1[?] => this.i.id == that.i.id
             case that                 => false
         })
     }
@@ -238,7 +238,7 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
     override def equals(other: UIDTrieSet[?]): Boolean = {
         (other eq this) || (
             other match {
-                case that: UIDTrieSet2[_] =>
+                case that: UIDTrieSet2[?] =>
                     (this.i1.id == that.i1.id && this.i2.id == that.i2.id) ||
                         (this.i1.id == that.i2.id && this.i2.id == that.i1.id)
                 case that =>
@@ -298,7 +298,7 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
     override def equals(other: UIDTrieSet[?]): Boolean = {
         (other eq this) || (
             other match {
-                case that: UIDTrieSet3[_] =>
+                case that: UIDTrieSet3[?] =>
                     that.containsId(this.i1.id) &&
                         that.containsId(this.i2.id) &&
                         that.containsId(this.i3.id)
@@ -471,9 +471,9 @@ private[immutable] final class UIDTrieSetN[T <: UID](
     override def foldLeft[B](z: B)(op: (B, T) => B): B = root.foldLeft(z)(op)
 
     override def iterator: Iterator[T] = new Iterator[T] {
-        private[this] var currentNode = root
-        private[this] var index = 0
-        private[this] val furtherNodes = mutable.Stack.empty[UIDTrieSetNode[T]]
+        private var currentNode = root
+        private var index = 0
+        private val furtherNodes = mutable.Stack.empty[UIDTrieSetNode[T]]
         def hasNext: Boolean = currentNode ne null
         def next(): T = {
             (this.currentNode: @unchecked) match {

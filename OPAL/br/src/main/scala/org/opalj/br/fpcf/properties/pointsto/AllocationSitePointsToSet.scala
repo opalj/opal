@@ -42,7 +42,7 @@ sealed trait AllocationSitePointsToSet
         }
     }
 
-    protected[this] def orderedTypes: List[ReferenceType]
+    protected def orderedTypes: List[ReferenceType]
     override def types: UIDSet[ReferenceType]
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
@@ -235,9 +235,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 }
 
 case class AllocationSitePointsToSetN private[pointsto] (
-    override val elements:                     LongLinkedSet,
-    override val types:                        UIDSet[ReferenceType],
-    override protected[this] val orderedTypes: List[ReferenceType]
+    override val elements:               LongLinkedSet,
+    override val types:                  UIDSet[ReferenceType],
+    override protected val orderedTypes: List[ReferenceType]
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = types.size
@@ -299,7 +299,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 
     override def types: UIDSet[ReferenceType] = UIDSet.empty
 
-    override protected[this] def orderedTypes: List[ReferenceType] = List.empty
+    override protected def orderedTypes: List[ReferenceType] = List.empty
 
     override def numElements: Int = 0
 
@@ -325,7 +325,7 @@ case class AllocationSitePointsToSet1(
 
     override def types: UIDSet[ReferenceType] = UIDSet(allocatedType)
 
-    override protected[this] def orderedTypes: List[ReferenceType] = List(allocatedType)
+    override protected def orderedTypes: List[ReferenceType] = List(allocatedType)
 
     override def numElements: Int = 1
 
@@ -365,8 +365,6 @@ case class AllocationSitePointsToSet1(
                     otherTypes + allocatedType,
                     newOrderedTypes
                 )
-            case _ =>
-                throw new IllegalArgumentException(s"unexpected list $other")
         }
     }
 

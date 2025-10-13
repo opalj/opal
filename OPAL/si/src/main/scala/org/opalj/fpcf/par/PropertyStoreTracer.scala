@@ -8,8 +8,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import scala.jdk.CollectionConverters.*
 
-import org.opalj.io
-
 /**
  * Enables the tracing of key events during the analysis progress.
  *
@@ -305,16 +303,16 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
 
     val eventCounter = new AtomicInteger(0)
 
-    private[this] def nextEventId(): Int = eventCounter.incrementAndGet()
+    private def nextEventId(): Int = eventCounter.incrementAndGet()
 
-    private[this] val events = new ConcurrentLinkedQueue[StoreEvent]
+    private val events = new ConcurrentLinkedQueue[StoreEvent]
 
     override def set(epkState: EPKState): Unit = {
-        events offer SetPropertyEvent(nextEventId(), epkState)
+        events.offer(SetPropertyEvent(nextEventId(), epkState))
     }
 
     override def preInitialize(oldEPKState: EPKState, newEPKState: EPKState): Unit = {
-        events offer PreInitializationEvent(nextEventId(), oldEPKState, newEPKState)
+        events.offer(PreInitializationEvent(nextEventId(), oldEPKState, newEPKState))
     }
 
     override def triggeredComputation(
@@ -322,26 +320,26 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         pkId:        UShort,
         triggeredPC: SomePropertyComputation
     ): Unit = {
-        events offer TriggeredComputationEvent(nextEventId(), e, pkId, triggeredPC)
+        events.offer(TriggeredComputationEvent(nextEventId(), e, pkId, triggeredPC))
     }
 
     override def scheduledResultProcessing(r: PropertyComputationResult): Unit = {
-        events offer DeferredProcessingResultEvent(nextEventId(), r)
+        events.offer(DeferredProcessingResultEvent(nextEventId(), r))
     }
 
     override def enqueueingEPKToForce(epk: SomeEPK): Unit = {
-        events offer EnqueuedEPKToForceEvent(nextEventId(), epk)
+        events.offer(EnqueuedEPKToForceEvent(nextEventId(), epk))
     }
 
     override def force(epk: SomeEPK): Unit = {
-        events offer ForcingEPKEvaluationEvent(nextEventId(), epk)
+        events.offer(ForcingEPKEvaluationEvent(nextEventId(), epk))
     }
 
     override def scheduledLazyComputation(
         requestedEPK: SomeEPK,
         lazyPC:       SomePropertyComputation
     ): Unit = {
-        events offer ScheduledLazyComputationEvent(nextEventId(), requestedEPK, lazyPC)
+        events.offer(ScheduledLazyComputationEvent(nextEventId(), requestedEPK, lazyPC))
     }
 
     override def immediateEvaluationOfLazyComputation(
@@ -349,24 +347,24 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         evaluationDepthCounter: Int,
         lazyPC:                 SomePropertyComputation
     ): Unit = {
-        events offer ImmediatelyExecutedLazyComputationEvent(
+        events.offer(ImmediatelyExecutedLazyComputationEvent(
             nextEventId(),
             newEOptionP,
             evaluationDepthCounter,
             lazyPC
-        )
+        ))
     }
 
     override def computedFallback(ep: SomeFinalEP, why: String): Unit = {
-        events offer ComputedFallbackEvent(nextEventId(), ep, why)
+        events.offer(ComputedFallbackEvent(nextEventId(), ep, why))
     }
 
     override def evaluatedTransformer(source: SomeEOptionP, target: SomeFinalEP): Unit = {
-        events offer EvaluatedTransformerEvent(nextEventId(), source, target)
+        events.offer(EvaluatedTransformerEvent(nextEventId(), source, target))
     }
 
     override def registeredTransformer(source: EPKState, target: EPKState): Unit = {
-        events offer RegisteredTransformerEvent(nextEventId(), source, target)
+        events.offer(RegisteredTransformerEvent(nextEventId(), source, target))
     }
 
     override def scheduledOnUpdateComputation(
@@ -375,14 +373,13 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         newEOptionP: SomeEOptionP,
         c:           OnUpdateContinuation
     ): Unit = {
-        events offer ScheduledOnUpdateComputationEvent(
+        events.offer(ScheduledOnUpdateComputationEvent(
             nextEventId(),
             dependerEPK,
             oldEOptionP,
             newEOptionP,
             c
-        )
-
+        ))
     }
 
     override def immediatelyRescheduledOnUpdateComputation(
@@ -391,14 +388,13 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         newEOptionP: SomeEOptionP,
         c:           OnUpdateContinuation
     ): Unit = {
-        events offer ImmediatelyRescheduledOnUpdateComputationEvent(
+        events.offer(ImmediatelyRescheduledOnUpdateComputationEvent(
             nextEventId(),
             dependerEPK,
             oldEOptionP,
             newEOptionP,
             c
-        )
-
+        ))
     }
 
     override def scheduledOnUpdateComputation(
@@ -407,65 +403,65 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         finalEP:     SomeFinalEP,
         c:           OnUpdateContinuation
     ): Unit = {
-        events offer ScheduledOnUpdateComputationForFinalEPEvent(
+        events.offer(ScheduledOnUpdateComputationForFinalEPEvent(
             nextEventId(),
             dependerEPK,
             oldEOptionP,
             finalEP,
             c
-        )
+        ))
     }
 
     override def idempotentUpdate(epkState: EPKState): Unit = {
-        events offer IdempotentUpdateEvent(nextEventId(), epkState)
+        events.offer(IdempotentUpdateEvent(nextEventId(), epkState))
     }
 
     override def removedDepender(dependerEPK: SomeEPK, dependeeEPKState: EPKState): Unit = {
-        events offer RemovedDependerEvent(nextEventId(), dependerEPK, dependeeEPKState)
+        events.offer(RemovedDependerEvent(nextEventId(), dependerEPK, dependeeEPKState))
     }
 
     override def appliedUpdateComputation(
         newEPKState: EPKState,
         result:      Option[(SomeEOptionP, SomeInterimEP, Iterable[SomeEPK])]
     ): Unit = {
-        events offer AppliedUpdateComputationEvent(nextEventId(), newEPKState, result)
+        events.offer(AppliedUpdateComputationEvent(nextEventId(), newEPKState, result))
     }
 
     override def processingResult(r: PropertyComputationResult): Unit = {
-        events offer ProcessingResultEvent(nextEventId(), r)
+        events.offer(ProcessingResultEvent(nextEventId(), r))
     }
 
     override def startedMainLoop(): Unit = {
-        events offer StartedMainLoopEvent(nextEventId())
+        events.offer(StartedMainLoopEvent(nextEventId()))
     }
 
     override def handlingInterimEPKsDueToSuppression(interimEPKS: String, cSCCs: String): Unit = {
-        events offer HandlingInterimEPKsDueToSuppressionEvent(nextEventId(), interimEPKS, cSCCs)
+        events.offer(HandlingInterimEPKsDueToSuppressionEvent(nextEventId(), interimEPKS, cSCCs))
     }
 
     override def makingIntermediateEPKStateFinal(interimEPKState: EPKState): Unit = {
-        events offer MakingIntermediateEPKStateFinalEvent(nextEventId(), interimEPKState)
+        events.offer(MakingIntermediateEPKStateFinalEvent(nextEventId(), interimEPKState))
     }
 
     override def subphaseFinalization(finalizedProperties: String): Unit = {
-        events offer SubphaseFinalizationEvent(nextEventId(), finalizedProperties)
+        events.offer(SubphaseFinalizationEvent(nextEventId(), finalizedProperties))
     }
 
     override def finalizedProperty(oldEOptionP: SomeEOptionP, finalEP: SomeFinalEP): Unit = {
-        events offer FinalizedPropertyEvent(nextEventId(), oldEOptionP, finalEP)
+        events.offer(FinalizedPropertyEvent(nextEventId(), oldEOptionP, finalEP))
     }
 
     override def reachedQuiescence(): Unit = {
-        events offer ReachedQuiescenceEvent(eventCounter.incrementAndGet())
+        events.offer(ReachedQuiescenceEvent(eventCounter.incrementAndGet()))
     }
 
     override def firstException(t: Throwable): Unit = {
-        events offer FirstExceptionEvent(
+        events.offer(FirstExceptionEvent(
             eventCounter.incrementAndGet(),
             t,
             Thread.currentThread().getName,
             Thread.currentThread().getStackTrace.mkString("\n\t", "\n\t", "\n") // dropWhile(_.getMethodName != "handleException")
-        )
+        ))
     }
 
     //

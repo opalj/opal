@@ -14,7 +14,7 @@ import org.opalj.br.ConcreteSourceElement
  */
 trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean) { left =>
 
-    def and[T <: ConcreteSourceElement, X <: S & T](
+    infix def and[T <: ConcreteSourceElement, X <: S & T](
         right: SourceElementPredicate[T]
     ): SourceElementPredicate[X] = {
 

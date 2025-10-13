@@ -67,7 +67,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                     if (ub == NoAIResult)
                         NoTACAI
                     else {
-                        val AnAIResult(initialUBAIResult) = ub
+                        val AnAIResult(initialUBAIResult) = ub: @unchecked
                         computeTheTACAI(m, initialUBAIResult, false)
                     }
 

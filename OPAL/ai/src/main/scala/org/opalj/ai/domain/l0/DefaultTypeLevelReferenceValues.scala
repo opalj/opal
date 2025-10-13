@@ -4,6 +4,9 @@ package ai
 package domain
 package l0
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
 import org.opalj.br.ReferenceType
@@ -35,7 +38,7 @@ trait DefaultTypeLevelReferenceValues
     type DomainObjectValue <: AnObjectValue & AReferenceValue // <= SObject.. and MObject...
     type DomainArrayValue <: AnArrayValue & AReferenceValue
 
-    protected[this] class ANullValue() extends super.NullValueLike { this: DomainNullValue =>
+    protected class ANullValue() extends super.NullValueLike { this: DomainNullValue =>
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
@@ -52,13 +55,13 @@ trait DefaultTypeLevelReferenceValues
         }
     }
 
-    protected[this] trait AnArrayValue
+    protected trait AnArrayValue
         extends super.ArrayValueLike
         with IsSArrayValue
         with SReferenceValue[ArrayType] {
         this: DomainArrayValue =>
 
-        override def isAssignable(value: DomainValue): Answer = {
+        override def isAssignable(value: DomainValue): Answer = boundary {
             value match {
 
                 case IsPrimitiveValue(primitiveType) =>
@@ -101,10 +104,10 @@ trait DefaultTypeLevelReferenceValues
                             thisIsPrecise
                         ) match {
                             case Yes =>
-                                return Yes;
+                                break(Yes);
 
                             case intermediateAnswer =>
-                                finalAnswer = finalAnswer join intermediateAnswer
+                                finalAnswer = finalAnswer.join(intermediateAnswer)
                                 false
                         }
                     }

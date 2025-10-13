@@ -60,7 +60,7 @@ sealed trait CalleesAndCallers {
 
     protected def receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] = IntMap.empty
 
-    private[this] def partialResultForCallees(
+    private def partialResultForCallees(
         callerContext: Context
     ): PartialResult[DeclaredMethod, Callees] = {
         PartialResult[DeclaredMethod, Callees](
@@ -109,7 +109,7 @@ sealed trait CalleesAndCallers {
 }
 
 trait IncompleteCallSites extends CalleesAndCallers {
-    private[this] var _incompleteCallSites = IntTrieSet.empty
+    private var _incompleteCallSites = IntTrieSet.empty
     override protected def incompleteCallSites: IntTrieSet = _incompleteCallSites
 
     private[cg] def addIncompleteCallSite(pc: Int): Unit = _incompleteCallSites += pc
@@ -151,7 +151,7 @@ trait Calls extends CalleesAndCallers {
 
     protected var _callees: IntMap[IntTrieSet] = IntMap.empty
 
-    private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, Callers]] =
+    private var _partialResultsForCallers: List[PartialResult[DeclaredMethod, Callers]] =
         List.empty
 
     def addCall(
@@ -191,7 +191,7 @@ trait IndirectCallsBase extends Calls {
 
     override val isDirect: Boolean = false
 
-    private[this] var _parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] =
+    private var _parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] =
         IntMap.empty
 
     override protected def parameters: IntMap[IntMap[Seq[Option[(ValueInformation, IntTrieSet)]]]] =
@@ -200,7 +200,7 @@ trait IndirectCallsBase extends Calls {
     override protected def receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] =
         _receivers
 
-    private[this] var _receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] =
+    private var _receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] =
         IntMap.empty
 
     override protected def indirectCallees: IntMap[IntTrieSet] = _callees
@@ -266,7 +266,7 @@ trait IndirectCallsBase extends Calls {
 }
 
 trait VMReachableMethodsBase extends CalleesAndCallers {
-    private[this] var vmReachableMethods: Set[DeclaredMethod] = Set.empty
+    private var vmReachableMethods: Set[DeclaredMethod] = Set.empty
 
     def addVMReachableMethod(declaredMethod: DeclaredMethod): Unit =
         vmReachableMethods += declaredMethod

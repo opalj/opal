@@ -112,7 +112,7 @@ class LoadedClassesAnalysis(
         }
     }
 
-    private[this] def continuationForTAC(
+    private def continuationForTAC(
         method: DeclaredMethod
     )(eps: SomeEPS): PropertyComputationResult = {
         eps match {
@@ -127,7 +127,7 @@ class LoadedClassesAnalysis(
         }
     }
 
-    private[this] def processMethod(
+    private def processMethod(
         declaredMethod: DeclaredMethod,
         tacaiEP:        EPS[Method, TACAI]
     ): PropertyComputationResult = {
@@ -157,7 +157,7 @@ class LoadedClassesAnalysis(
         }
     }
 
-    private[this] def update(
+    private def update(
         newLoadedClasses: UIDSet[ClassType]
     )(
         eop: EOptionP[?, LoadedClasses]
@@ -222,14 +222,14 @@ class LoadedClassesAnalysis(
         newLoadedClasses
     }
 
-    private[this] def getSuperclassesNotYetLoaded(
+    private def getSuperclassesNotYetLoaded(
         declClassType:        ClassType,
         currentLoadedClasses: UIDSet[ClassType]
     ): UIDSet[ClassType] = {
         ch.allSupertypes(declClassType, reflexive = true).filterNot(currentLoadedClasses.contains)
     }
 
-    private[this] def getCurrentLoadedClasses(): UIDSet[ClassType] = {
+    private def getCurrentLoadedClasses(): UIDSet[ClassType] = {
         val currentLoadedClassesEPS: EOptionP[SomeProject, LoadedClasses] =
             propertyStore(project, LoadedClasses.key)
 

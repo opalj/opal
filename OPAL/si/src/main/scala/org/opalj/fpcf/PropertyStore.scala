@@ -6,7 +6,8 @@ import java.util.Arrays as JArrays
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.RejectedExecutionException
 import scala.collection.mutable
-import scala.util.control.ControlThrowable
+import scala.compiletime.uninitialized
+import scala.util.boundary.Break
 
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
@@ -134,7 +135,7 @@ abstract class PropertyStore {
     //
     //
 
-    private[this] val externalInformation = new ConcurrentHashMap[AnyRef, AnyRef]()
+    private val externalInformation = new ConcurrentHashMap[AnyRef, AnyRef]()
 
     /**
      * Attaches or returns some information associated with the property store using a key object.
@@ -297,7 +298,7 @@ abstract class PropertyStore {
      * If a property is queried for which we have no value, then this information is used
      * to determine which kind of fallback is required.
      */
-    protected[this] final val propertyKindsComputedInEarlierPhase: Array[Boolean] = {
+    protected final val propertyKindsComputedInEarlierPhase: Array[Boolean] = {
         new Array(SupportedPropertyKinds)
     }
 
@@ -305,7 +306,7 @@ abstract class PropertyStore {
         IntIterator.upUntil(0, SupportedPropertyKinds).filter(propertyKindsComputedInEarlierPhase)
     }
 
-    protected[this] final val propertyKindsComputedInThisPhase: Array[Boolean] = {
+    protected final val propertyKindsComputedInThisPhase: Array[Boolean] = {
         new Array(SupportedPropertyKinds)
     }
 
@@ -313,11 +314,11 @@ abstract class PropertyStore {
      * Used to identify situations where a property is queried, which is only going to be computed
      * in the future - in this case, the specification of an analysis is broken!
      */
-    protected[this] final val propertyKindsComputedInLaterPhase: Array[Boolean] = {
+    protected final val propertyKindsComputedInLaterPhase: Array[Boolean] = {
         new Array(SupportedPropertyKinds)
     }
 
-    protected[this] final val suppressInterimUpdates: Array[Array[Boolean]] = {
+    protected final val suppressInterimUpdates: Array[Array[Boolean]] = {
         Array.fill(SupportedPropertyKinds) { new Array[Boolean](SupportedPropertyKinds) }
     }
 
@@ -325,7 +326,7 @@ abstract class PropertyStore {
      * `true` if entities with a specific property kind (EP) may have dependers with suppressed
      * notifications. (I.e., suppressInteriumUpdates("depender")("EP") is `true`.)
      */
-    protected[this] final val hasSuppressedDependers: Array[Boolean] = {
+    protected final val hasSuppressedDependers: Array[Boolean] = {
         Array.fill(SupportedPropertyKinds) { false }
     }
 
@@ -334,32 +335,32 @@ abstract class PropertyStore {
      * the clean-up phase and will contain all remaining properties that were not explicitly
      * finalized previously.
      */
-    protected[this] final var subPhaseFinalizationOrder: Array[List[PropertyKind]] = Array.empty
+    protected final var subPhaseFinalizationOrder: Array[List[PropertyKind]] = Array.empty
 
     /**
      * The set of computations that will only be scheduled if the result is required.
      */
-    protected[this] final val lazyComputations: Array[SomeProperPropertyComputation] = {
+    protected final val lazyComputations: Array[SomeProperPropertyComputation] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
     /**
      * The set of transformers that will only be executed when required.
      */
-    protected[this] final val transformersByTargetPK: Array[(
+    protected final val transformersByTargetPK: Array[(
         /*source*/ PropertyKey[Property],
         (Entity, Property) => FinalEP[Entity, Property]
     )] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
-    protected[this] final val transformersBySourcePK: Array[(
+    protected final val transformersBySourcePK: Array[(
         /*target*/ PropertyKey[Property],
         (Entity, Property) => FinalEP[Entity, Property]
     )] = {
         new Array(PropertyKind.SupportedPropertyKinds)
     }
 
-    protected[this] def computeFallback[E <: Entity, P <: Property](
+    protected def computeFallback[E <: Entity, P <: Property](
         e:    E,
         pkId: Int
     ): FinalEP[E, P] = {
@@ -497,7 +498,7 @@ abstract class PropertyStore {
         doSet(e, p)
     }
 
-    protected[this] def doSet(e: Entity, p: Property): Unit
+    protected def doSet(e: Entity, p: Property): Unit
 
     /**
      * Associates the given entity with the newly computed intermediate property P.
@@ -522,7 +523,7 @@ abstract class PropertyStore {
         doPreInitialize(e, pk)(pc)
     }
 
-    protected[this] def doPreInitialize[E <: Entity, P <: Property](
+    protected def doPreInitialize[E <: Entity, P <: Property](
         e:  E,
         pk: PropertyKey[P]
     )(
@@ -538,9 +539,9 @@ abstract class PropertyStore {
         )
     }
 
-    protected[this] var subPhaseId: Int = 0
+    protected var subPhaseId: Int = 0
 
-    protected[this] var hasSuppressedNotifications: Boolean = false
+    protected var hasSuppressedNotifications: Boolean = false
 
     /**
      * Needs to be called before an analysis is scheduled to inform the property store which
@@ -652,7 +653,7 @@ abstract class PropertyStore {
      * Called when a new phase was initialized. Intended to be overridden by subclasses if
      * special handling is required.
      */
-    protected[this] def newPhaseInitialized(
+    protected def newPhaseInitialized(
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind],
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
@@ -733,7 +734,7 @@ abstract class PropertyStore {
         apply(epk, e, pk, pkId)
     }
 
-    private[this] def apply[E <: Entity, P <: Property](
+    private def apply[E <: Entity, P <: Property](
         epk:  EPK[E, P],
         e:    E,
         pk:   PropertyKey[P],
@@ -749,7 +750,7 @@ abstract class PropertyStore {
         doApply(epk, e, pkId)
     }
 
-    protected[this] def doApply[E <: Entity, P <: Property](
+    protected def doApply[E <: Entity, P <: Property](
         epk:  EPK[E, P],
         e:    E,
         pkId: Int
@@ -875,7 +876,7 @@ abstract class PropertyStore {
         doRegisterTriggeredComputation(pk, pc)
     }
 
-    protected[this] def doRegisterTriggeredComputation[E <: Entity, P <: Property](
+    protected def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit
@@ -912,7 +913,7 @@ abstract class PropertyStore {
         doScheduleEagerComputationForEntity(e)(pc)
     }
 
-    protected[this] def doScheduleEagerComputationForEntity[E <: Entity](
+    protected def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
     )(
         pc: PropertyComputation[E]
@@ -957,7 +958,7 @@ abstract class PropertyStore {
      * Called when the first top-level exception occurs.
      * Intended to be overridden by subclasses.
      */
-    protected[this] def onFirstException(t: Throwable): Unit = {
+    protected def onFirstException(t: Throwable): Unit = {
         doTerminate = true
         shutdown()
         if (!suppressError) {
@@ -970,7 +971,7 @@ abstract class PropertyStore {
         }
     }
 
-    @volatile protected[this] var exception: Throwable = _ /*null*/
+    @volatile protected var exception: Throwable = uninitialized /*null*/
 
     protected[fpcf] def collectException(t: Throwable): Unit = {
         if (exception != null) {
@@ -1008,8 +1009,8 @@ abstract class PropertyStore {
         try {
             f
         } catch {
-            case ct: ControlThrowable => throw ct;
-            case t: Throwable         => collectAndThrowException(t)
+            case b: Break[?]  => throw b
+            case t: Throwable => collectAndThrowException(t)
         }
     }
 }
@@ -1022,7 +1023,7 @@ object PropertyStore {
 
     final val DebugKey = "org.opalj.fpcf.PropertyStore.Debug"
 
-    private[this] var debug: Boolean = {
+    private var debug: Boolean = {
         val initialDebug = BaseConfig.getBoolean(DebugKey)
         updateDebug(initialDebug)
         initialDebug
@@ -1057,7 +1058,7 @@ object PropertyStore {
 
     final val TraceFallbacksKey = "org.opalj.fpcf.PropertyStore.TraceFallbacks"
 
-    private[this] var traceFallbacks: Boolean = {
+    private var traceFallbacks: Boolean = {
         val initialTraceFallbacks = BaseConfig.getBoolean(TraceFallbacksKey)
         updateTraceFallbacks(initialTraceFallbacks)
         initialTraceFallbacks
@@ -1088,7 +1089,7 @@ object PropertyStore {
         "org.opalj.fpcf.PropertyStore.TraceSuppressedNotifications"
     }
 
-    private[this] var traceSuppressedNotifications: Boolean = {
+    private var traceSuppressedNotifications: Boolean = {
         val initialTraceSuppressedNotifications = BaseConfig.getBoolean(TraceSuppressedNotificationsKey)
         updateTraceDependersNotificationsKey(initialTraceSuppressedNotifications)
         initialTraceSuppressedNotifications

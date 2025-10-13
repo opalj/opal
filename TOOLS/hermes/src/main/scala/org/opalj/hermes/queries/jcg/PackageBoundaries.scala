@@ -47,7 +47,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
             callerPackage = callerType.packageName
             case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case iv: INVOKEVIRTUAL => iv
             }: PartialFunction[Instruction, INVOKEVIRTUAL])
         } {
@@ -64,9 +64,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                 val rtCt = receiver.asClassType
                 val rcf = project.classFile(rtCt)
 
-                val isPackageVisibleMethod = rcf.map {
-                    _.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
-                }.getOrElse(false)
+                val isPackageVisibleMethod = rcf.exists(_.findMethod(name, methodDescriptor).exists(_.isPackagePrivate))
 
                 val matchesPreconditions = isPackageVisibleMethod &&
                     isMethodOverriddenInDiffPackage(
@@ -86,7 +84,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                         }
                     ) {
                         instructionsLocations(1) += l
-                        1 /* it exists a subtype `S` within the same package as the declared typed `D`
+                        /* it exists a subtype `S` within the same package as the declared typed `D`
                         that inherits transitively from type `D`, such that `S` <: `S'` <: `D` where
                         `S'` overrides the package private method `D.m` */
                     } else {
@@ -113,7 +111,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         }
     }
 
-    private[this] def isMethodOverriddenInDiffPackage[S](
+    private def isMethodOverriddenInDiffPackage[S](
         declaredType:     ClassType,
         targetType:       ClassType,
         name:             String,

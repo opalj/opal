@@ -141,7 +141,7 @@ package object graphs {
         OPALLogger.info(
             "setup",
             "initialzing JavaScript engine for rendering dot graphics"
-        )(GlobalLogContext)
+        )(using GlobalLogContext)
         val engineManager = new ScriptEngineManager()
         val engine: ScriptEngine = engineManager.getEngineByName("nashorn")
         var visJS: InputStream = null
@@ -157,7 +157,7 @@ package object graphs {
         OPALLogger.info(
             "setup",
             "finished initialization of JavaScript engine for rendering dot graphics"
-        )(GlobalLogContext)
+        )(using GlobalLogContext)
 
         (dot: String) => invocable.invokeFunction("Viz", dot).toString
     }
@@ -323,7 +323,7 @@ package object graphs {
     }
 
     /*
-    private[this] val Undetermined: Int = -1
+    private val Undetermined: Int = -1
 
     final def closedSCCs[N >: Null <: AnyRef](
         ns: Traversable[N],
@@ -668,7 +668,7 @@ package object graphs {
                 // If wsSuccessors(x) is not null then we have to pop the two values which identify
                 // the processed edge; if wsSuccessors is null, the stack just contains the id of
                 // the next node that should be processed.
-                do {
+                while {
                     val n = ws.pop()
                     var remainingSuccessors = wsSuccessors.pop()
                     if (remainingSuccessors eq null) {
@@ -707,11 +707,13 @@ package object graphs {
                         if (nLowLink(n) == nIndex(n)) {
                             var nextSCC = List.empty[Int]
                             var w: Int = -1
-                            do {
+                            while {
                                 w = s.pop()
                                 nOnStack(w) = false
                                 nextSCC ::= w
-                            } while (n != w)
+
+                                n != w
+                            } do ()
                             if (!filterSingletons ||
                                 nextSCC.tail.nonEmpty ||
                                 es(n).exists(_ == n)
@@ -720,7 +722,9 @@ package object graphs {
                             }
                         }
                     }
-                } while (ws.nonEmpty)
+
+                    ws.nonEmpty
+                } do ()
 
             }
             n += 1

@@ -66,7 +66,7 @@ object ThirdInstrumentation extends App {
                 m.copy() // these are native and abstract methods
 
             case Some(code) =>
-                val cfg = CFGFactory(code, classHierarchy)
+                val cfg = CFGFactory(using code, classHierarchy)
                 val lCode = LabeledCode(code)
                 var removeDeadCode = false
                 if (m.name == "killMe1") {

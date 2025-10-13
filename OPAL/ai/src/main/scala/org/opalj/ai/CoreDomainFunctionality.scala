@@ -186,9 +186,9 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * @note This method is intended to be overwritten by clients to perform custom
      *      operations.
      */
-    protected[this] def beforeBaseJoin(pc: Int): Unit = { /*empty*/ }
+    protected def beforeBaseJoin(pc: Int): Unit = { /*empty*/ }
 
-    protected[this] def joinValues(
+    protected def joinValues(
         pc:    Int,
         left:  DomainValue,
         right: DomainValue
@@ -201,7 +201,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * `joinPostProcessing` will be called.
      * @param pc
      */
-    protected[this] def afterBaseJoin(pc: Int): Unit = { /*empty*/ }
+    protected def afterBaseJoin(pc: Int): Unit = { /*empty*/ }
 
     /**
      * Enables the customization of the behavior of the base [[join]] method.
@@ -218,7 +218,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * @param   newOperands The new operands; may be updated.
      * @param   newLocals The new locals; may be updated.
      */
-    protected[this] def joinPostProcessing(
+    protected def joinPostProcessing(
         updateType:  UpdateType,
         pc:          Int,
         oldOperands: Operands,
@@ -415,7 +415,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
      * – if so – returns the given worklist. Otherwise the instruction
      * is scheduled in the correct (subroutine-)context.
      */
-    protected[this] def schedule(
+    protected def schedule(
         successorPC:                      Int,
         abruptSubroutineTerminationCount: Int,
         worklist:                         List[Int /*PC*/ ]

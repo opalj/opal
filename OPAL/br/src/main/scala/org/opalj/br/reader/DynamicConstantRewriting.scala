@@ -146,7 +146,7 @@ trait DynamicConstantRewriting
             return updatedClassFile;
 
         val load = instructions(pc)
-        val LDCDynamic(bootstrapMethod, name, descriptor) = load
+        val LDCDynamic(bootstrapMethod, name, descriptor) = load: @unchecked
         val instructionLength = if (load.opcode == LDC.opcode) 2 else 3
 
         // Generate instructions to load the constant and add matching return

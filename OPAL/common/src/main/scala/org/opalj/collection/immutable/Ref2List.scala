@@ -152,8 +152,8 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
 
     override def iterator: Iterator[T] = {
         new Iterator[T] {
-            private[this] var currentList: Ref2List[T] = list
-            private[this] var head: Boolean = list.h != null
+            private var currentList: Ref2List[T] = list
+            private var head: Boolean = list.h != null
             def hasNext: Boolean = currentList ne Ref2ListEnd
             def next(): T = {
                 if (head) {

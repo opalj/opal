@@ -100,7 +100,7 @@ package object da {
     }
 
     def asJavaReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): FieldTypeInfo = {
-        val t = cp(cpIndex).toString(cp)
+        val t = cp(cpIndex).toString
         if (t.charAt(0) == '[')
             parseFieldType(t)
         else
@@ -112,7 +112,7 @@ package object da {
     )(
         implicit cp: Constant_Pool
     ): ClassTypeInfo = {
-        asJavaClassType(cp(cpIndex).toString(cp))
+        asJavaClassType(cp(cpIndex).toString)
     }
 
     def asJavaClassType(t: String): ClassTypeInfo = ClassTypeInfo(t.replace('/', '.'))

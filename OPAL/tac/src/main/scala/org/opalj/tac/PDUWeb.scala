@@ -24,7 +24,7 @@ case class PDUWeb(
     def combine(other: PDUWeb): PDUWeb = PDUWeb(other.defPCs ++ defPCs, other.usePCs ++ usePCs)
 
     // Performance optimizations
-    private lazy val _hashCode = scala.util.hashing.MurmurHash3.productHash(this)
+    private lazy val _hashCode = scala.util.hashing.MurmurHash3.caseClassHash(this)
     override def hashCode(): Int = _hashCode
     override def equals(obj: Any): Boolean = obj.hashCode() == _hashCode && super.equals(obj)
 }

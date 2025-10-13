@@ -68,7 +68,7 @@ object MapsEval extends App {
         ls.foreach { s =>
             anyRefMap += (s -> theObject) // <= faster then adding it using pairs...
             // anyRefMap += ((s, theObject()))
-        }
+        }: @nowarn("msg=deprecated")
     } { t => println("mutable AnyRefMap.add: " + t.toSeconds) }
 
     time {

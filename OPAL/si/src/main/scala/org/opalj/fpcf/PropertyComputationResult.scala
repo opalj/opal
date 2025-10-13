@@ -178,7 +178,7 @@ final class InterimResult[P >: Null <: Property] private (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimResult[_] if this.eps == that.eps =>
+            case that: InterimResult[?] if this.eps == that.eps =>
                 val dependees = this.dependees
                 dependees.size == that.dependees.size &&
                     dependees.forall(thisDependee => that.dependees.contains(thisDependee))

@@ -59,7 +59,7 @@ object InterpretAllMethods extends ProjectsAnalysisApplication {
                 analysisConfig(DomainArg),
                 verbose,
                 6d
-            )(project.logContext)
+            )(using project.logContext)
 
         (
             project,
@@ -79,7 +79,7 @@ object InterpretMethodsAnalysis {
 
     def interpret[Source](
         project:             Project[Source],
-        domainClass:         Class[_ <: Domain],
+        domainClass:         Class[? <: Domain],
         beVerbose:           Boolean,
         maxEvaluationFactor: Double = 3d
     )(

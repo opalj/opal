@@ -44,6 +44,7 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
     )
 
     val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
+        EagerFieldAccessInformationAnalysis,
         EagerL1FieldAssignabilityAnalysis,
         EagerFieldImmutabilityAnalysis,
         EagerClassImmutabilityAnalysis,

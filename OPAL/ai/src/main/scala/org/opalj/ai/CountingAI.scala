@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class CountingAI[D <: Domain] extends InterruptableAI[D] {
 
-    private[this] val evaluationCount = new AtomicLong(0)
+    private val evaluationCount = new AtomicLong(0)
 
     def currentEvaluationCount: Long = evaluationCount.get
 

@@ -97,7 +97,7 @@ trait BasePerformInvocationBugPickerAnalysisDomain
 
     type CalledMethodDomain = InvocationBugPickerAnalysisDomain
 
-    override protected[this] def doInvoke(
+    override protected def doInvoke(
         method:             Method,
         calledMethodDomain: CalledMethodDomain
     )(

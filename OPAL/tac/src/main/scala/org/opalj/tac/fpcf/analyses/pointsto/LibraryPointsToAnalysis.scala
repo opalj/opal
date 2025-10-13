@@ -69,13 +69,12 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
         def initialize(param: Entity, types: UIDSet[ReferenceType]): Unit = {
             val pts = types.foldLeft(emptyPointsToSet) { (all, tpe) => all.included(createExternalAllocation(tpe)) }
-            ps.preInitialize(param, pointsToPropertyKey) {
-                case UBP(oldPts) =>
-                    InterimEUBP(param, oldPts.included(pts))
-                case _: EPK[_, _] =>
-                    InterimEUBP(param, pts)
-                case eps =>
-                    sys.error(s"unexpected property: $eps")
+            ps.preInitialize(param, pointsToPropertyKey) { pc =>
+                (pc: @unchecked) match
+                    case UBP(oldPts: PointsToSet @unchecked) =>
+                        InterimEUBP(param, oldPts.included(pts))
+                    case _: EPK[_, _] =>
+                        InterimEUBP(param, pts)
             }
         }
 

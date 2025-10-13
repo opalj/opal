@@ -130,7 +130,7 @@ trait ArrayValues extends l1.ReferenceValues {
         override def equals(other: Any): Boolean = other match {
             case DomainInitializedArrayValueTag(that) =>
                 (that eq this) || (
-                    (that canEqual this) &&
+                    that.canEqual(this) &&
                     this.origin == that.origin &&
                     this.theLength == that.theLength &&
                     (this.theUpperTypeBound eq that.theUpperTypeBound)

@@ -46,7 +46,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
 
     override type AnalysisContext <: AbstractEscapeAnalysisContext & PropertyStoreContainer & VirtualFormalParametersContainer & DeclaredMethodsContainer
 
-    abstract override protected[this] def handleThisLocalOfConstructor(
+    abstract override protected def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(
         implicit
@@ -86,7 +86,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         }
     }
 
-    private[this] def handleEscapeState(
+    private def handleEscapeState(
         eOptionP: EOptionP[Entity, Property]
     )(
         implicit state: AnalysisState
@@ -153,7 +153,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         }
     }
 
-    abstract override protected[this] def c(
+    abstract override protected def c(
         someEPS: SomeEPS
     )(
         implicit

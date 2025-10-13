@@ -78,8 +78,8 @@ import org.opalj.value.ValueInformation
  * @author Maximilian Rüsch
  */
 private[reflection] class ReflectionState[ContextType <: Context](
-    override val callContext:                  ContextType,
-    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+    override val callContext:   ContextType,
+    protected var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TypeIteratorState with TACAIBasedAnalysisState[ContextType]
 
 sealed trait ReflectionAnalysis extends TACAIBasedAPIBasedAnalysis {
@@ -530,7 +530,7 @@ class FieldGetAnalysis private[analyses] (
             )
         )
 
-        val persistentReceiver = fieldGetReceiver.flatMap(r => persistentUVar(r)(stmts))
+        val persistentReceiver = fieldGetReceiver.flatMap(r => persistentUVar(r)(using stmts))
         val depender = FieldDepender(accessPC, persistentReceiver, None, baseMatchers)
 
         AllocationsUtil.handleAllocations(
@@ -621,8 +621,8 @@ class FieldSetAnalysis private[analyses] (
             )
         )
 
-        val persistentReceiver = fieldSetReceiver.flatMap(persistentUVar(_)(stmts))
-        val persistentActualParam = fieldSetActualParameter.flatMap(persistentUVar(_)(stmts))
+        val persistentReceiver = fieldSetReceiver.flatMap(persistentUVar(_)(using stmts))
+        val persistentActualParam = fieldSetActualParameter.flatMap(persistentUVar(_)(using stmts))
         val depender = FieldDepender(accessPC, persistentReceiver, Some(persistentActualParam), baseMatchers)
 
         AllocationsUtil.handleAllocations(
@@ -681,7 +681,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
             "",
             ClassType.MethodHandle,
             apiMethodName,
-            MethodDescriptor(parameterType.map(ArraySeq(_)).getOrElse(ArraySeq.empty), ClassType.Object)
+            MethodDescriptor(parameterType.map(ArraySeq(_)).getOrElse(ArraySeq.empty[FieldType]), ClassType.Object)
         )
 
     override def processNewCaller(
@@ -882,7 +882,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         returnResult(methodHandle, indirectFieldAccesses)
     }
 
-    private[this] def failure(
+    private def failure(
         accessPC: Int,
         params:   Seq[Option[(ValueInformation, PCs)]],
         matchers: Set[FieldMatcher]
@@ -893,7 +893,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
             indirectFieldAccesses.addIncompleteAccessSite(accessPC)
     }
 
-    private[this] def handleMethodHandleInvoke(
+    private def handleMethodHandleInvoke(
         accessContext:          ContextType,
         accessPC:               Int,
         methodHandle:           V,
@@ -912,7 +912,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 None
 
         val persistentActualParams = actualInvokeParamsOpt.map(_.map(
-            _.flatMap(persistentUVar(_)(stmts))
+            _.flatMap(persistentUVar(_)(using stmts))
         )).getOrElse(Seq.empty)
 
         var matchers = Set.empty[FieldMatcher]
@@ -954,7 +954,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         }
     }
 
-    private[this] def handleGetMethodHandle(
+    private def handleGetMethodHandle(
         context:                ContextType,
         accessPC:               Int,
         methodHandleDefSite:    Int,
@@ -1096,7 +1096,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
         matchers
     }
 
-    private[this] def addFieldAccesses(
+    private def addFieldAccesses(
         accessContext:          ContextType,
         accessPC:               Int,
         matchers:               Set[FieldMatcher],

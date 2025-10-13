@@ -3,6 +3,7 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
+import scala.reflect.classTag
 import scala.reflect.runtime.universe.*
 
 import java.io.ByteArrayInputStream
@@ -82,7 +83,7 @@ class JumpLabelsTest extends AnyFlatSpec {
         def testClass(clazz: Class[?]): Unit = {
             val testJumpInstance = clazz.getDeclaredConstructor().newInstance()
 
-            val mirror = runtimeMirror(loader).reflect(testJumpInstance)
+            val mirror = runtimeMirror(loader).reflect(testJumpInstance)(using classTag[AnyRef])
             val method = mirror.symbol.typeSignature.member(TermName("returnInt")).asMethod
 
             assert(mirror.reflectMethod(method)(0) == 0)

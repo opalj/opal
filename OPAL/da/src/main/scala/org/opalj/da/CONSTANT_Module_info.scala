@@ -31,7 +31,7 @@ case class CONSTANT_Module_info(name_index: Constant_Pool_Index) extends Constan
         </span>
     }
 
-    override def toString(implicit cp: Constant_Pool): String = cp(name_index).toString(cp)
+    override def toString(implicit cp: Constant_Pool): String = cp(name_index).toString
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
         throw new UnsupportedOperationException("unexpected usage in combination with instructions")

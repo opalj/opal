@@ -144,7 +144,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
         new AbstractIterator[(Int, T)] {
 
-            private[this] def getNextIndex(startIndex: Int): Int = {
+            private def getNextIndex(startIndex: Int): Int = {
                 val data = self.data
                 val max = data.length
                 var i = startIndex
@@ -156,7 +156,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
                 return max;
             }
 
-            private[this] var i = getNextIndex(-1)
+            private var i = getNextIndex(-1)
 
             def hasNext: Boolean = i < data.length
 
@@ -183,7 +183,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: ArrayMap[_] =>
+            case that: ArrayMap[?] =>
                 val thisData = this.data.asInstanceOf[Array[Object]]
                 val thisLength = thisData.length
                 val thatData = that.data.asInstanceOf[Array[Object]]

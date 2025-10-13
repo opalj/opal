@@ -3410,7 +3410,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     fail("expected one result; found: " + domain.allReturnedValues)
 
                 // we don't know the size of the array
-                domain.allReturnedValues.head._2 abstractsOver (
+                domain.allReturnedValues.head._2.abstractsOver(
                     domain.InitializedArrayValue(2, ArrayType(IntegerType), 10)
                 ) should be(true)
 

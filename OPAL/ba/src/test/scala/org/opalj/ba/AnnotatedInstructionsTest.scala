@@ -47,8 +47,7 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
             daClassFile,
             methodAnnotations: Map[br.Method, (Map[br.PC, String], List[String])]
         ) = brClassTemplate.toDA()
-        val (pcAnnotations: List[Map[br.PC, String]], warnings) =
-            methodAnnotations.values.unzip
+        val (pcAnnotations: List[Map[br.PC, String]], warnings) = methodAnnotations.values.unzip: @unchecked
 
         println(pcAnnotations)
 
@@ -95,8 +94,7 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
                     )
                 )
             ).toDA()
-        val (pcAnnotations: List[Map[br.PC, (Symbol, String)]], warnings) =
-            methodAnnotations.values.unzip
+        val (pcAnnotations: List[Map[br.PC, (Symbol, String)]], warnings) = methodAnnotations.values.unzip: @unchecked
 
         "[Tuple Annotated Instructions] the class generation" should "have no warnings" in {
             assert(warnings.flatten.isEmpty)

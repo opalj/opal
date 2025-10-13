@@ -138,7 +138,7 @@ trait SystemOutErrRater extends DomainSpecificRater {
                 assert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
                 if (stmt.asAssignment.expr.astID != GetStatic.ASTID) false
                 else {
-                    val GetStatic(_, declaringClass, name, _) = stmt.asAssignment.expr
+                    val GetStatic(_, declaringClass, name, _) = stmt.asAssignment.expr: @unchecked
                     declaringClass == ClassType.System && (name == "out" || name == "err")
                 }
             }
@@ -176,7 +176,7 @@ trait LoggingRater extends DomainSpecificRater {
     ): Option[Purity] = {
         if (call.declaringClass.isClassType) {
             val declClass = call.declaringClass.asClassType
-            if (loggers.exists(declClass.isSubtypeOf(_)(project.classHierarchy)))
+            if (loggers.exists(declClass.isSubtypeOf(_)(using project.classHierarchy)))
                 Some(DPure)
             else super.handleCall(call, receiver)
         } else super.handleCall(call, receiver)

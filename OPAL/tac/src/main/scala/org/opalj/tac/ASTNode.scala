@@ -9,7 +9,7 @@ import org.opalj.value.ValueInformation
  *
  * @author Michael Eichberg
  */
-trait ASTNode[+V <: Var[V]] {
+trait ASTNode[+V] {
 
     /**
      * Each type of node is assigned a different `id` to make it easily possible

@@ -28,7 +28,7 @@ class JoinClassTypesTest extends AnyFunSpec with Matchers {
         ClassHierarchy(
             Iterable.empty,
             List(() => in)
-        )(GlobalLogContext)
+        )(using GlobalLogContext)
     }
 
     implicit def stringToUIDSetClassType(str: String): UIDSet[ClassType] = UIDSet(ClassType(str))

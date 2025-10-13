@@ -1291,7 +1291,7 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                         fail("expected one result; found: " + domain.allReturnedValues)
 
                     // we don't know the size of the array
-                    domain.allReturnedValues.head._2 abstractsOver (
+                    domain.allReturnedValues.head._2.abstractsOver(
                         domain.ReferenceValue(2, ArrayType(IntegerType))
                     ) should be(true)
 

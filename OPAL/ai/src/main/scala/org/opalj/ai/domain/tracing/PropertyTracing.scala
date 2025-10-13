@@ -4,6 +4,8 @@ package ai
 package domain
 package tracing
 
+import scala.compiletime.uninitialized
+
 import org.opalj.br.*
 import org.opalj.collection.immutable.IntTrieSet
 
@@ -35,7 +37,7 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
      * The array which stores the value the property has when the respective.
      * instruction is executed.
      */
-    private var propertiesArray: Array[DomainProperty] = _
+    private var propertiesArray: Array[DomainProperty] = uninitialized
 
     abstract override def initProperties(code: Code, cfJoins: IntTrieSet, locals: Locals): Unit = {
 
@@ -89,7 +91,7 @@ trait PropertyTracing extends CoreDomainFunctionality with CustomInitialization 
 
         val forceScheduling: Boolean = {
             if (wasJoinPerformed) {
-                propertiesArray(successorPC) join propertiesArray(currentPC) match {
+                propertiesArray(successorPC).join(propertiesArray(currentPC)) match {
                     case NoUpdate =>
                         false
                     case StructuralUpdate(property) =>

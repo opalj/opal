@@ -17,19 +17,19 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
  */
 trait Locking {
 
-    protected[this] final val rwLock = new ReentrantReadWriteLock()
+    protected final val rwLock = new ReentrantReadWriteLock()
 
     /**
      * Acquires the write lock associated with this instance and then executes the function `f`.
      * Afterwards, the lock is released.
      */
-    @inline protected[this] final def withWriteLock[B](f: => B): B = Locking.withWriteLock(rwLock)(f)
+    @inline protected final def withWriteLock[B](f: => B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
      * Acquires the read lock associated with this instance and then executes the function `f`.
      * Afterwards, the lock is released.
      */
-    @inline protected[this] final def withReadLock[B](f: => B): B = Locking.withReadLock(rwLock)(f)
+    @inline protected final def withReadLock[B](f: => B): B = Locking.withReadLock(rwLock)(f)
 }
 
 /**

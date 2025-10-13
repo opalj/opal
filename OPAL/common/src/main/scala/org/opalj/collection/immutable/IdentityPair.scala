@@ -40,7 +40,7 @@ final case class IdentityPair[+T1 <: AnyRef, +T2 <: AnyRef](
     }
 
     /*
-    @volatile private[this] var hash: Int = 0
+    @volatile private var hash: Int = 0
     override def hashCode: Int = {
         var hash = this.hash
         if (hash == 0) {

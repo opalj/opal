@@ -322,7 +322,7 @@ object Assembler {
                     writeShort(as[ClassValue](ev).class_info_index)
                 case '@' =>
                     val av = as[AnnotationValue](ev)
-                    serialize(av.annotation)(RichAnnotation, out, segmentInformation)
+                    serialize(av.annotation)(using RichAnnotation, out, segmentInformation)
                 case '[' =>
                     val av = as[ArrayValue](ev)
                     writeShort(av.values.length)
@@ -381,7 +381,7 @@ object Assembler {
                     writeByte(tt.formal_parameter_index)
 
                 case 0x17 =>
-                    val TATThrows(throws_type_index) = target_type
+                    val TATThrows(throws_type_index) = target_type: @unchecked
                     writeShort(throws_type_index)
 
                 case 0x40 | 0x41 =>
@@ -834,7 +834,7 @@ object Assembler {
     ): Array[Byte] = {
         val data = new ByteArrayOutputStream(classFile.size)
         val out = new DataOutputStream(data)
-        serialize(classFile)(RichClassFile, out, segmentInformation)
+        serialize(classFile)(using RichClassFile, out, segmentInformation)
         out.flush()
         data.toByteArray
     }

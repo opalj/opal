@@ -22,7 +22,7 @@ package object analyses {
     type StringConstantsInformation = Map[String, ArraySeq[PCInMethod]]
 
     implicit object MethodDeclarationContextOrdering extends Ordering[MethodDeclarationContext] {
-        def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = x compare y
+        def compare(x: MethodDeclarationContext, y: MethodDeclarationContext): Int = x.compare(y)
     }
 
 }

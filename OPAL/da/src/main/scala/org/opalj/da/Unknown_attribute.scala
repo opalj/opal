@@ -2,6 +2,8 @@
 package org.opalj
 package da
 
+import scala.annotation.nowarn
+
 import scala.xml.Node
 
 /**
@@ -14,6 +16,7 @@ case class Unknown_attribute(
 
     override final def attribute_length: Int = info.size
 
+    @nowarn("msg=Discarded non-Unit value") // TODO Remove once scala compiler is fixed: https://github.com/scala/bug/issues/12658
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         val attributeName = cp(attribute_name_index).toString
         <div class="simple_attribute">

@@ -3,6 +3,8 @@ package org.opalj
 package ai
 
 import java.util.IdentityHashMap
+import scala.util.boundary
+import scala.util.boundary.break
 
 /**
  * Identifies situations (based on a '''reference comparison of the domain values''')
@@ -65,15 +67,14 @@ import java.util.IdentityHashMap
 trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
 
     /* NOT abstract override [this trait is by purpose NOT stackable] */
-    override protected[this] def joinPostProcessing(
+    override protected def joinPostProcessing(
         updateType:  UpdateType,
         pc:          Int,
         oldOperands: Operands,
         oldLocals:   Locals,
         newOperands: Operands,
         newLocals:   Locals
-    ): Update[(Operands, Locals)] = {
-
+    ): Update[(Operands, Locals)] = boundary {
         if (updateType.isMetaInformationUpdate) {
             val aliasInformation = new IdentityHashMap[DomainValue, Integer]()
 
@@ -86,7 +87,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                     // let's check if we can no-longer find the same alias
                     // relation in the new operands
                     if (newOperands(-previousLocation - 1) ne newOperands(-opi - 1))
-                        return StructuralUpdate((newOperands, newLocals));
+                        break(StructuralUpdate((newOperands, newLocals)));
                 }
                 opi -= 1
             }
@@ -104,7 +105,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                             if ((newOperands(-previousLocation - 1) ne v2) &&
                                 (v2 ne TheIllegalValue)
                             )
-                                return StructuralUpdate((newOperands, newLocals));
+                                break(StructuralUpdate((newOperands, newLocals)));
                         } else /*previousLocation >= 0*/ {
                             val v1 = newLocals(previousLocation)
                             val v2 = newLocals(li)
@@ -112,7 +113,7 @@ trait IdentityBasedCorrelationChangeDetection extends CoreDomainFunctionality {
                                 // but, does it matter?
                                 (v1 ne TheIllegalValue) && (v2 ne TheIllegalValue)
                             )
-                                return StructuralUpdate((newOperands, newLocals));
+                                break(StructuralUpdate((newOperands, newLocals)));
                         }
                     }
                 }

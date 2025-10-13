@@ -32,9 +32,9 @@ import org.opalj.util.PerformanceEvaluation.time
 @RunWith(classOf[JUnitRunner])
 class RecordDefUseTest extends AnyFunSpec with Matchers {
 
-    protected[this] object DominatorsPerformanceEvaluation extends PerformanceEvaluation
+    protected object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    protected[this] class DefUseDomain(
+    protected class DefUseDomain(
         val method:  Method,
         val project: Project[URL]
     ) extends CorrelationalDomain
@@ -56,13 +56,13 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with RecordDefUse // <=== we are going to test!
 
-    protected[this] class RefinedDefUseDomain(
+    protected class RefinedDefUseDomain(
         method:  Method,
         project: Project[URL]
     ) extends DefUseDomain(method, project)
         with RefineDefUseUsingOrigins // this should not really affect the results...
 
-    protected[this] def analyzeDefUse(
+    protected def analyzeDefUse(
         m:                        Method,
         r:                        AIResult { val domain: DefUseDomain },
         identicalOrigins:         AtomicLong,
@@ -210,7 +210,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
         }
     }
 
-    protected[this] def analyzeProject(name: String, project: Project[URL]): Unit = {
+    protected def analyzeProject(name: String, project: Project[URL]): Unit = {
         info(s"$name contains ${project.methodsCount} methods")
 
         val identicalOrigins = new AtomicLong(0)
@@ -245,10 +245,10 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
             val failureMessages = for { (m, exception) <- failures.asScala } yield {
                 var root: Throwable = exception
                 var location: String = ""
-                do {
+                while {
                     location += {
                         val st = root.getStackTrace
-                        if (st != null && st.length > 0) {
+                        if ((st ne null) && st.nonEmpty) {
                             st.take(5).map { ste =>
                                 s"${ste.getClassName}{ ${ste.getMethodName}:${ste.getLineNumber}}"
                             }.mkString("; ")
@@ -257,9 +257,11 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                         }
                     }
                     root = root.getCause
-                    if (root != null)
+                    if (root ne null)
                         location += "\n- next cause -\n"
-                } while (root != null)
+
+                    root ne null
+                } do ()
                 val containsJSR =
                     m.body.get.instructionIterator.find(i => i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
                 val details = exception.getMessage.replace("\n", "\n\t")

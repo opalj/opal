@@ -130,7 +130,7 @@ class CLASS[T](
     def toDA(
         implicit classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (da.ClassFile, Map[br.Method, T]) = {
-        val (brClassFile, annotations) = toBR(classHierarchy)
+        val (brClassFile, annotations) = toBR
         (ba.toDA(brClassFile), annotations)
     }
 

@@ -25,6 +25,6 @@ object DependencyStoreWithoutSelfDependenciesKey
             new DependencyExtractor(baseProcessor)
         }
 
-        DependencyStore(project.allClassFiles, createDependencyProcessor)(project.logContext)
+        DependencyStore(project.allClassFiles, createDependencyProcessor)(using project.logContext)
     }
 }

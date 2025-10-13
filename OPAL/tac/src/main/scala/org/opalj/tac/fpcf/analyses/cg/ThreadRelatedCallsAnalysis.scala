@@ -200,7 +200,7 @@ class ThreadStartAnalysis private[cg] (
      * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
      * updated set.
      */
-    private[this] def handleStart(
+    private def handleStart(
         callContext:            ContextType,
         callPC:                 Int,
         receiver:               V,
@@ -258,7 +258,7 @@ class ThreadStartAnalysis private[cg] (
         }
     }
 
-    private[this] def handleTypeAndHasRunnable(
+    private def handleTypeAndHasRunnable(
         tpe:                    ReferenceType,
         callContext:            ContextType,
         callPC:                 Int,
@@ -287,7 +287,7 @@ class ThreadStartAnalysis private[cg] (
     /**
      * For the given `expr`, it collects all calls to `<init>` on that expression.
      */
-    private[this] def getConstructorCalls(
+    private def getConstructorCalls(
         expr:    Expr[V],
         defSite: Int,
         stmts:   Array[Stmt[V]]
@@ -309,7 +309,7 @@ class ThreadStartAnalysis private[cg] (
      * Handles the case of a call to `run` of a thread object, that holds a instance of
      * [[Runnable]] (passed as an argument to the constructor).
      */
-    private[this] def handleThreadInit(
+    private def handleThreadInit(
         callContext:            ContextType,
         callPC:                 Int,
         allocationContext:      Context,
@@ -392,7 +392,7 @@ class ThreadStartAnalysis private[cg] (
      * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
      * updated set.
      */
-    private[this] def addRunnableMethod(
+    private def addRunnableMethod(
         callContext:            ContextType,
         callPC:                 Int,
         receiverType:           ClassType,
@@ -421,7 +421,7 @@ class ThreadStartAnalysis private[cg] (
         )
     }
 
-    private[this] def addThreadGroupMethod(
+    private def addThreadGroupMethod(
         callContext:        ContextType,
         callPC:             Int,
         receiverValue:      IsReferenceValue,
@@ -464,7 +464,7 @@ class ThreadStartAnalysis private[cg] (
      * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
      * updated set.
      */
-    private[this] def addMethod(
+    private def addMethod(
         callContext:            ContextType,
         callPC:                 Int,
         receiver:               Option[V],
@@ -476,7 +476,7 @@ class ThreadStartAnalysis private[cg] (
         partialAnalysisResults: IndirectCalls
     ): Unit = {
         val caller = callContext.method.asDefinedMethod
-        val persistentReceiver = receiver.flatMap(persistentUVar(_)(stmts))
+        val persistentReceiver = receiver.flatMap(persistentUVar(_)(using stmts))
         if (target.hasValue) {
             partialAnalysisResults.addCall(
                 callContext,
@@ -523,7 +523,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         if (params.nonEmpty && params.head.isDefined) {
             val receiver = params.head.get.asVar
             handleUncaughtExceptionHandler(callerContext, receiver, callPC, vmReachableMethods)
-            returnResult(receiver, vmReachableMethods)(state)
+            returnResult(receiver, vmReachableMethods)(using state)
         } else {
             vmReachableMethods.addIncompleteCallSite(callPC)
             Results(vmReachableMethods.partialResults(callerContext))
@@ -542,7 +542,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
 
         typeIterator.continuation(receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType =>
             handleType(newType, state.callContext, pc, vmReachableMethods)
-        }(state)
+        }(using state)
 
         if (eps.isFinal) {
             state.removeDependee(epk)
@@ -550,7 +550,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
             state.updateDependency(eps)
         }
 
-        returnResult(receiver, vmReachableMethods)(state)
+        returnResult(receiver, vmReachableMethods)(using state)
     }
 
     def returnResult(
@@ -575,7 +575,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
      * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
      * updated set.
      */
-    private[this] def handleUncaughtExceptionHandler(
+    private def handleUncaughtExceptionHandler(
         callContext:        ContextType,
         receiver:           V,
         callPC:             Int,
@@ -588,7 +588,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
     }
 
     // todo refactor
-    private[this] def handleType(
+    private def handleType(
         receiverType:       ReferenceType,
         callContext:        ContextType,
         callPC:             Int,

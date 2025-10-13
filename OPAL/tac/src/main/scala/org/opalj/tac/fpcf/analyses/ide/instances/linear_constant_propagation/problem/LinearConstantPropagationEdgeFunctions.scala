@@ -57,8 +57,8 @@ case class LinearCombinationEdgeFunction(
             case VariableValueEdgeFunction => secondEdgeFunction
             case UnknownValueEdgeFunction  => secondEdgeFunction
 
-            case IdentityEdgeFunction     => this
-            case _: AllTopEdgeFunction[V] => secondEdgeFunction
+            case IdentityEdgeFunction                => this
+            case _: AllTopEdgeFunction[V @unchecked] => secondEdgeFunction
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -86,8 +86,8 @@ case class LinearCombinationEdgeFunction(
             case VariableValueEdgeFunction => otherEdgeFunction
             case UnknownValueEdgeFunction  => this
 
-            case IdentityEdgeFunction     => this
-            case _: AllTopEdgeFunction[V] => this
+            case IdentityEdgeFunction                => this
+            case _: AllTopEdgeFunction[V @unchecked] => this
 
             case _ =>
                 throw new UnsupportedOperationException(s"Meeting $this with $otherEdgeFunction is not implemented!")
@@ -122,8 +122,8 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
             case VariableValueEdgeFunction => secondEdgeFunction
             case UnknownValueEdgeFunction  => secondEdgeFunction
 
-            case IdentityEdgeFunction     => this
-            case _: AllTopEdgeFunction[V] => this
+            case IdentityEdgeFunction                => this
+            case _: AllTopEdgeFunction[V @unchecked] => this
 
             case _ =>
                 throw new UnsupportedOperationException(s"Composing $this with $secondEdgeFunction is not implemented!")
@@ -134,9 +134,9 @@ object UnknownValueEdgeFunction extends AllTopEdgeFunction[LinearConstantPropaga
         otherEdgeFunction: EdgeFunction[V]
     ): EdgeFunction[V] = {
         otherEdgeFunction match {
-            case _: AllTopEdgeFunction[V] => this
-            case IdentityEdgeFunction     => this
-            case _                        => otherEdgeFunction
+            case _: AllTopEdgeFunction[V @unchecked] => this
+            case IdentityEdgeFunction                => this
+            case _                                   => otherEdgeFunction
         }
     }
 

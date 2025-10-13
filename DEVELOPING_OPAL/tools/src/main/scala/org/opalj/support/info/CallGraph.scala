@@ -32,6 +32,7 @@ import org.opalj.cli.OutputFileArg
 import org.opalj.cli.PlainArg
 import org.opalj.cli.ResultFileArg
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.CallGraphArg
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CGBasedCommandLineConfig
@@ -40,6 +41,7 @@ import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
+import org.opalj.util.Seconds
 
 /**
  * Computes a call graph and reports its size.
@@ -93,7 +95,7 @@ object CallGraph extends ProjectsAnalysisApplication {
         execution:      Int
     ): (Project[URL], BasicReport) = {
         val (project, projectTime) = analysisConfig.setupProject()
-        implicit val (ps, propertyStoreTime) = analysisConfig.setupPropertyStore(project)
+        implicit val (ps: PropertyStore, propertyStoreTime: Seconds) = analysisConfig.setupPropertyStore(project)
         val (cg, callGraphTime) = analysisConfig.setupCallGaph(project)
 
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)

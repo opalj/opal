@@ -5,6 +5,8 @@ package fpcf
 package analyses
 package escape
 
+import scala.compiletime.uninitialized
+
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
@@ -31,16 +33,16 @@ trait AbstractEscapeAnalysisState {
     // we have dependencies to escape values of formal parameters, tac of methods and
     // callees of declared methods, i.e. different entities for each property kind.
     // therefore using a map is safe!
-    private[this] var _dependees = Map.empty[Entity, EOptionP[Entity, Property]]
-    private[this] var _dependeesSet = Set.empty[SomeEOptionP]
+    private var _dependees = Map.empty[Entity, EOptionP[Entity, Property]]
+    private var _dependeesSet = Set.empty[SomeEOptionP]
 
-    private[this] var _mostRestrictiveProperty: EscapeProperty = NoEscape
+    private var _mostRestrictiveProperty: EscapeProperty = NoEscape
 
-    private[this] var _tacai: Option[TACode[TACMethodParameter, V]] = None
+    private var _tacai: Option[TACode[TACMethodParameter, V]] = None
 
-    private[this] var _uses: IntTrieSet = _
+    private var _uses: IntTrieSet = uninitialized
 
-    private[this] var _defSite: Int = _
+    private var _defSite: Int = uninitialized
 
     /**
      * Sets mostRestrictiveProperty to the greatest lower bound of its current value and the
@@ -48,9 +50,9 @@ trait AbstractEscapeAnalysisState {
      */
     @inline private[escape] final def meetMostRestrictive(prop: EscapeProperty): Unit = {
         assert {
-            (_mostRestrictiveProperty meet prop).lessOrEqualRestrictive(_mostRestrictiveProperty)
+            _mostRestrictiveProperty.meet(prop).lessOrEqualRestrictive(_mostRestrictiveProperty)
         }
-        _mostRestrictiveProperty = _mostRestrictiveProperty meet prop
+        _mostRestrictiveProperty = _mostRestrictiveProperty.meet(prop)
     }
 
     /**
@@ -111,7 +113,7 @@ trait AbstractEscapeAnalysisState {
     )(implicit context: AbstractEscapeAnalysisContext): Unit = {
         _tacai = Some(tacai)
 
-        context.entity match {
+        (context.entity: @unchecked) match {
             case (_: Context, ds: DefinitionSiteLike) =>
                 _defSite = tacai.properStmtIndexForPC(ds.pc)
                 _uses = ds.usedBy(tacai)

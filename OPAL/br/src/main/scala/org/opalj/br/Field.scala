@@ -114,7 +114,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      * Returns this field's constant value.
      */
     def constantFieldValue: Option[ConstantFieldValue[?]] = {
-        attributes collectFirst { case cv: ConstantFieldValue[_] => cv }
+        attributes collectFirst { case cv: ConstantFieldValue[?] => cv }
     }
 
     def signatureToJava(withAccessFlags: Boolean = false): String = {
@@ -136,7 +136,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      */
     def compare(other: JVMField): Int = {
         if (this.name eq other.name) {
-            this.fieldType compare other.fieldType
+            this.fieldType.compare(other.fieldType)
         } else if (this.name < other.name) {
             -1
         } else {

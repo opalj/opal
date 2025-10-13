@@ -4,6 +4,7 @@ package ai
 package domain
 
 import scala.collection.immutable.ArraySeq
+import scala.compiletime.uninitialized
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
@@ -25,7 +26,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
-    private[this] val IrrelevantPC = Int.MinValue
+    private val IrrelevantPC = Int.MinValue
 
     import MethodsPlainTest.*
 
@@ -1196,7 +1197,7 @@ private object MethodsPlainTest {
         with DefaultHandlingForThrownExceptions
         with PredefinedClassHierarchy {
 
-        var returnedValue: Option[DomainValue] = _
+        var returnedValue: Option[DomainValue] = uninitialized
 
         override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
             returnedValue = Some(value)

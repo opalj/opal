@@ -135,7 +135,7 @@ trait StringValues
         }
     }
 
-    abstract override def toDomainValue(pc: Int, value: Object): DomainReferenceValue = {
+    override def toDomainValue(pc: Int, value: Object): DomainReferenceValue = {
         value match {
             case s: String => StringValue(pc, s)
             case _         => super.toDomainValue(pc, value)

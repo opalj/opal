@@ -42,7 +42,7 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
             pcAndInstruction <- body
             if pcAndInstruction.instruction.opcode == INVOKEINTERFACE.opcode
         } {
-            val INVOKEINTERFACE(declaringClass, name, desc) = pcAndInstruction.instruction
+            val INVOKEINTERFACE(declaringClass, name, desc) = pcAndInstruction.instruction: @unchecked
 
             val targets = project.resolveAllMethodReferences(declaringClass, name, desc)
 

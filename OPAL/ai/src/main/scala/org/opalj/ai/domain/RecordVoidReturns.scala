@@ -26,7 +26,7 @@ package domain
 trait RecordVoidReturns extends ReturnInstructionsDomain {
     domain: ValuesDomain & Configuration & ExceptionsFactory =>
 
-    private[this] var returnVoidInstructions: PCs = NoPCs
+    private var returnVoidInstructions: PCs = NoPCs
 
     def allReturnVoidInstructions: PCs = returnVoidInstructions
 

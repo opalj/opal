@@ -2,6 +2,9 @@
 package org.opalj
 package br
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 /**
  * Defines methods to return common attributes from the attributes table of
  * [[ClassFile]], [[Field]], [[Method]] and [[Code]] declarations.
@@ -37,10 +40,10 @@ trait CommonAttributes {
      * @return None, if both attribute lists are similar;
      *         Some(&lt;description of the difference&gt;) otherwise.
      */
-    protected[this] def compareAttributes(
+    protected def compareAttributes(
         other:  Attributes,
         config: SimilarityTestConfiguration
-    ): Option[AnyRef] = {
+    ): Option[AnyRef] = boundary {
         val (thisAttributes, otherAttributes) = config.compareAttributes(this, this.attributes, other)
         if (thisAttributes.size != otherAttributes.size) {
             val message =
@@ -53,7 +56,7 @@ trait CommonAttributes {
         // (We have not seen any case of multiple occurences of an attribute in practice so far.)
         thisAttributes.find { a => !otherAttributes.exists(o => a.similar(o, config)) } map { missingAttribute =>
             val message = "missing attribute: " + missingAttribute
-            return Some((message, thisAttributes, otherAttributes));
+            break(Some((message, thisAttributes, otherAttributes)));
         }
 
         None

@@ -173,7 +173,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
     override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
         val declaredMethods = project.get(DeclaredMethodsKey)
 
-        val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
+        val isClosedPackage = (pkg) => project.get(ClosedPackagesKey).isClosed(pkg)
         val isExtensible = project.get(TypeExtensibilityKey)
         val classHierarchy = project.classHierarchy
 
@@ -252,13 +252,15 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  */
 trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
+    import pureconfig._
+    import pureconfig.generic.derivation.default._
+
     // don't make this a val for initialization reasons
-    @inline private[this] def additionalEPConfigKey: String = {
+    @inline private def additionalEPConfigKey: String = {
         InitialEntryPointsKey.ConfigKeyPrefix + "entryPoints"
     }
 
     override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
-        import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
 
         implicit val logContext: LogContext = project.logContext
 
@@ -276,7 +278,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         }
         val configEntryPoints: List[EntryPointContainer] =
             try {
-                project.config.as[List[EntryPointContainer]](additionalEPConfigKey)
+                ConfigSource.fromConfig(project.config).at(additionalEPConfigKey).loadOrThrow[List[EntryPointContainer]]
             } catch {
                 case e: Throwable =>
                     OPALLogger.error(
@@ -375,7 +377,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         declaringClass: String,
         name:           String,
         descriptor:     Option[String]
-    )
+    ) derives ConfigReader
 }
 
 /**

@@ -5,6 +5,7 @@ package concurrent
 import java.util.concurrent.locks.Condition
 // OLD import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
+import scala.compiletime.uninitialized
 import scala.concurrent.ExecutionContext
 
 import org.opalj.concurrent.Locking.withLock
@@ -32,13 +33,13 @@ sealed trait Tasks[T] {
  * @tparam T Type of the processed data.
  */
 final class SequentialTasks[T](
-    val process:                               (Tasks[T], T) => Unit,
-    val abortOnExceptions:                     Boolean       = false,
-    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
+    val process:                         (Tasks[T], T) => Unit,
+    val abortOnExceptions:               Boolean       = false,
+    @volatile private var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
 ) extends Tasks[T] {
 
-    private[this] val tasksQueue = scala.collection.mutable.Queue.empty[T]
-    private[this] var concurrentExceptions: ConcurrentExceptions = _
+    private val tasksQueue = scala.collection.mutable.Queue.empty[T]
+    private var concurrentExceptions: ConcurrentExceptions = uninitialized
 
     def currentTasksCount: Int = tasksQueue.size
 
@@ -106,17 +107,17 @@ final class SequentialTasks[T](
  * @author Michael Eichberg
  */
 final class ConcurrentTasks[T](
-    val process:                               (Tasks[T], T) => Unit,
-    val abortOnExceptions:                     Boolean       = false,
-    @volatile private[this] var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
+    val process:                         (Tasks[T], T) => Unit,
+    val abortOnExceptions:               Boolean       = false,
+    @volatile private var isInterrupted: () => Boolean = () => Thread.currentThread().isInterrupted()
 )(
     implicit val executionContext: ExecutionContext
 ) extends Tasks[T] { self =>
 
-    @volatile private[this] var tasksCount = 0
-    private[this] val tasksLock: ReentrantLock = new ReentrantLock()
-    private[this] val isFinished: Condition = tasksLock.newCondition()
-    @volatile private[this] var exceptions: ConcurrentExceptions = _ /*null*/ // lazy initialized
+    @volatile private var tasksCount = 0
+    private val tasksLock: ReentrantLock = new ReentrantLock()
+    private val isFinished: Condition = tasksLock.newCondition()
+    @volatile private var exceptions: ConcurrentExceptions = uninitialized /*null*/ // lazy initialized
 
     def currentTasksCount: Int = tasksCount
 
@@ -246,7 +247,7 @@ object Tasks {
         if (executionContext eq null) {
             new SequentialTasks[T](process, abortOnExceptions, isInterrupted)
         } else {
-            new ConcurrentTasks[T](process, abortOnExceptions, isInterrupted)(executionContext)
+            new ConcurrentTasks[T](process, abortOnExceptions, isInterrupted)(using executionContext)
         }
     }
 

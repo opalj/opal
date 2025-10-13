@@ -151,7 +151,7 @@ object MethodHandlesUtil {
     /**
      * Returns method types that a call to MethodType.methodType may return.
      */
-    private[this] def getPossibleMethodTypes(
+    private def getPossibleMethodTypes(
         params:     Seq[Expr[V]],
         descriptor: MethodDescriptor,
         stmts:      Array[Stmt[V]],

@@ -94,8 +94,8 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
     override def foreach[U](f: Int => U): Unit = while (this.hasNext) f(this.next())
 
     def flatMap(f: Int => IntIterator): IntIterator = new IntIterator {
-        private[this] var it: IntIterator = IntIterator.empty
-        private[this] def advanceIterator(): Unit = {
+        private var it: IntIterator = IntIterator.empty
+        private def advanceIterator(): Unit = {
             while (!it.hasNext) {
                 if (self.hasNext) {
                     it = f(self.next())
@@ -110,12 +110,12 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
         def next(): Int = { val e = it.next(); advanceIterator(); e }
     }
 
-    def flatMap[T](f: Int => Iterator[T]): Iterator[T] = new Iterator[T] {
-        private[this] var it: Iterator[T] = Iterator.empty
-        private[this] def advanceIterator(): Unit = {
+    override def flatMap[T](f: Int => IterableOnce[T]): Iterator[T] = new Iterator[T] {
+        private var it: Iterator[T] = Iterator.empty
+        private def advanceIterator(): Unit = {
             while (!it.hasNext) {
                 if (self.hasNext) {
-                    it = f(self.next())
+                    it = f(self.next()).iterator
                 } else {
                     it = null
                     return;
@@ -128,9 +128,9 @@ abstract class IntIterator extends AbstractIterator[Int] { self =>
     }
 
     override def withFilter(p: Int => Boolean): IntIterator = new IntIterator {
-        private[this] var hasNextValue: Boolean = true
-        private[this] var v: Int = 0
-        private[this] def goToNextValue(): Unit = {
+        private var hasNextValue: Boolean = true
+        private var v: Int = 0
+        private def goToNextValue(): Unit = {
             while (self.hasNext) {
                 v = self.next()
                 if (p(v)) return;
@@ -245,7 +245,7 @@ object IntIterator {
      * @return An iterator over the given values.
      */
     def upTo(start: Int, end: Int): IntIterator = new IntIterator {
-        private[this] var i: Int = start
+        private var i: Int = start
         override def hasNext: Boolean = i <= end
         override def next(): Int = {
             if (i > end) IntIterator.empty.next(); // <= will throw the expected exception
@@ -263,7 +263,7 @@ object IntIterator {
      * @return An iterator over the given values.
      */
     def upUntil(start: Int, end: Int): IntIterator = new IntIterator {
-        private[this] var i: Int = start
+        private var i: Int = start
         override def hasNext: Boolean = i < end
         override def next(): Int = {
             if (i >= end) IntIterator.empty.next(); // <= will throw the expected exception
@@ -274,7 +274,7 @@ object IntIterator {
     }
 
     def apply(i: Int): IntIterator = new IntIterator {
-        private[this] var returned = false
+        private var returned = false
         def hasNext: Boolean = !returned
         def next(): Int = { returned = true; i }
         override def toArray: Array[Int] = Array(i)
@@ -282,7 +282,7 @@ object IntIterator {
     }
 
     def apply(i1: Int, i2: Int): IntIterator = new IntIterator {
-        private[this] var nextId = 0
+        private var nextId = 0
         def hasNext: Boolean = nextId < 2
         def next(): Int = {
             if (nextId == 0) { nextId = 1; i1 }
@@ -293,7 +293,7 @@ object IntIterator {
     }
 
     def apply(i1: Int, i2: Int, i3: Int): IntIterator = new IntIterator {
-        private[this] var nextId: Int = 0
+        private var nextId: Int = 0
         def hasNext: Boolean = nextId < 3
         def next(): Int = { nextId += 1; if (nextId == 1) i1 else if (nextId == 2) i2 else i3 }
         override def toArray: Array[Int] = Array(i1, i2, i3)

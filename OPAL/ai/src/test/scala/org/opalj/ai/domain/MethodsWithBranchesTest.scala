@@ -82,14 +82,14 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             )
 
             domain.allConstraints exists { constraint =>
-                val ReifiedSingleValueConstraint(pc, value, kind) = constraint
+                val ReifiedSingleValueConstraint(pc, value, kind) = constraint: @unchecked
                 pc == 4 &&
                     domain.isValueASubtypeOf(value, ClassType.Object).isYes &&
                     kind == "is null"
             } should be(true)
 
             domain.allConstraints exists { constraint =>
-                val ReifiedSingleValueConstraint(pc, value, kind) = constraint
+                val ReifiedSingleValueConstraint(pc, value, kind) = constraint: @unchecked
                 pc == 6 &&
                     domain.isValueASubtypeOf(value, ClassType.Object).isYes &&
                     kind == "is not null"
@@ -111,14 +111,14 @@ class MethodsWithBranchesTest extends AnyFlatSpec with Matchers {
             )
 
             domain.allConstraints exists { constraint =>
-                val ReifiedSingleValueConstraint(pc, value, kind) = constraint
+                val ReifiedSingleValueConstraint(pc, value, kind) = constraint: @unchecked
                 pc == 6 &&
                     domain.isValueASubtypeOf(value, ClassType.Object).isYes &&
                     kind == "is null"
             } should be(true)
 
             domain.allConstraints exists { constraint =>
-                val ReifiedSingleValueConstraint(pc, value, kind) = constraint
+                val ReifiedSingleValueConstraint(pc, value, kind) = constraint: @unchecked
                 pc == 4 &&
                     domain.isValueASubtypeOf(value, ClassType.Object).isYes &&
                     kind == "is not null"

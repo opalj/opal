@@ -29,9 +29,9 @@ private[analyses] class IsOverridableMethodAnalysis(
     isTypeExtensible:  ClassType => Answer
 ) extends (Method => Answer) {
 
-    // private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
+    // private val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
 
-    private[this] def isAlwaysFinallyOverridden(classType: ClassType, method: Method): Answer = {
+    private def isAlwaysFinallyOverridden(classType: ClassType, method: Method): Answer = {
         if (isClassExtensible(classType).isYes && !method.isFinal)
             return No;
 

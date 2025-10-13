@@ -4,9 +4,6 @@ package br
 package collection
 package mutable
 
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.ClassType
-
 /**
  * An efficient representation of a set of types if some types are actually upper type bounds
  * and hence already represent sets of types.
@@ -20,8 +17,8 @@ class TypesSet(final val classHierarchy: ClassHierarchy) extends collection.Type
 
     import classHierarchy.isSubtypeOf
 
-    protected[this] var theConcreteTypes: Set[ClassType] = Set.empty
-    protected[this] var theUpperTypeBounds: Set[ClassType] = Set.empty
+    protected var theConcreteTypes: Set[ClassType] = Set.empty
+    protected var theUpperTypeBounds: Set[ClassType] = Set.empty
 
     /**
      * The set of concrete types which are not subtypes of any type which
@@ -31,7 +28,7 @@ class TypesSet(final val classHierarchy: ClassHierarchy) extends collection.Type
     final def upperTypeBounds: Set[ClassType] = theUpperTypeBounds
 
     def toImmutableTypesSet: immutable.TypesSet =
-        immutable.TypesSet(theConcreteTypes, theUpperTypeBounds)(classHierarchy)
+        immutable.TypesSet(theConcreteTypes, theUpperTypeBounds)(using classHierarchy)
 
     def +=(tpe: ClassType): Unit = {
         if (!theConcreteTypes.contains(tpe) &&

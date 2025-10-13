@@ -48,7 +48,7 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             classFileLocation = ClassFileLocation(source, classFile)
             case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case spec: INVOKESPECIAL => spec
                 case stat: INVOKESTATIC  => stat
             }: PartialFunction[Instruction, Instruction])

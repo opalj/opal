@@ -39,7 +39,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
 
     import project.nonVirtualCall
 
-    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
+    private val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Retrieves and commits the methods allocation freeness as calculated for its declaring class
@@ -142,10 +142,12 @@ class L0AllocationFreenessAnalysis private[analyses] (
                             }
                     }
 
-                case ASTORE_0.opcode if !method.isStatic =>
-                    if (mayOverwriteSelf) overwritesSelf = true
-                    else // A GETFIELD/PUTFIELD may result in a NPE raised (and therefore allocated)
-                        return Result(definedMethod, MethodWithAllocations)
+                case ASTORE_0.opcode =>
+                    if (!method.isStatic) {
+                        if (mayOverwriteSelf) overwritesSelf = true
+                        else // A GETFIELD/PUTFIELD may result in a NPE raised (and therefore allocated)
+                            return Result(definedMethod, MethodWithAllocations)
+                    }
 
                 case GETFIELD.opcode => // may allocate NPE (but not on `this`)
                     if (method.isStatic || overwritesSelf)

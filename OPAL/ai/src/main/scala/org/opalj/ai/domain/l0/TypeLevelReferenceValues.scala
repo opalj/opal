@@ -4,6 +4,9 @@ package ai
 package domain
 package l0
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
 import org.opalj.br.FieldType
@@ -73,7 +76,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * `ExceptionValues`. If values are merged the merged value will use the
      * specified `pc`.
      */
-    protected[this] def mergeDEsComputations(
+    protected def mergeDEsComputations(
         pc: Int,
         c1: Computation[DomainValue, ExceptionValues],
         c2: Computation[DomainValue, ExceptionValues]
@@ -125,7 +128,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *
      * If values are merged the merged value will use the specified `pc`.
      */
-    protected[this] def mergeEsComputations(
+    protected def mergeEsComputations(
         pc: Int,
         c1: Computation[Nothing, ExceptionValues],
         c2: Computation[Nothing, ExceptionValues]
@@ -149,7 +152,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *
      * If values are merged the merged value will use the specified `pc`.
      */
-    protected[this] def mergeDEComputations(
+    protected def mergeDEComputations(
         pc: Int,
         c1: Computation[DomainValue, ExceptionValue],
         c2: Computation[DomainValue, ExceptionValue]
@@ -240,7 +243,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     /**
      * A reference value with a single (upper) type (bound).
      */
-    protected[this] trait SReferenceValue[T <: ReferenceType]
+    protected trait SReferenceValue[T <: ReferenceType]
         extends ReferenceValueLike
         with IsSReferenceValue[T] {
         this: AReferenceValue =>
@@ -296,7 +299,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      * Represents a class/interface value which may have a single class and/or
      * multiple interfaces as its upper type bound.
      */
-    protected[this] trait ObjectValueLike extends ReferenceValueLike {
+    protected trait ObjectValueLike extends ReferenceValueLike {
         value: DomainObjectValue =>
 
     }
@@ -304,7 +307,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     /**
      * Represents an array value.
      */
-    protected[this] trait ArrayValueLike extends ReferenceValueLike with IsSArrayValue {
+    protected trait ArrayValueLike extends ReferenceValueLike with IsSArrayValue {
         value: DomainArrayValue =>
 
         /**
@@ -562,12 +565,12 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
         pc:        Int,
         counts:    Operands,
         arrayType: ArrayType
-    ): Computation[DomainArrayValue, ExceptionValue] = {
+    ): Computation[DomainArrayValue, ExceptionValue] = boundary {
         var validCounts: Answer = Yes
         counts foreach { (count) =>
             val validCount = intIsSomeValueInRange(pc, count, 0, Int.MaxValue)
             if (validCount.isNo)
-                return throws(VMNegativeArraySizeException(pc))
+                break(throws(VMNegativeArraySizeException(pc)))
             else if (validCount.isUnknown)
                 validCounts = Unknown
         }

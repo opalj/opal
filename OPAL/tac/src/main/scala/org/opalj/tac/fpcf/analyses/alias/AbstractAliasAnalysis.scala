@@ -22,9 +22,9 @@ import org.opalj.value.ValueInformation
  */
 trait AbstractAliasAnalysis extends FPCFAnalysis {
 
-    protected[this] type AnalysisContext <: AliasAnalysisContext
-    protected[this] type AnalysisState <: AliasAnalysisState
-    protected[this] type Tac = TACode[TACMethodParameter, DUVar[ValueInformation]]
+    protected type AnalysisContext <: AliasAnalysisContext
+    protected type AnalysisState <: AliasAnalysisState
+    protected type Tac = TACode[TACMethodParameter, DUVar[ValueInformation]]
 
     /**
      * Determines the alias relation for the given entity.
@@ -34,10 +34,10 @@ trait AbstractAliasAnalysis extends FPCFAnalysis {
     def determineAlias(e: Entity): ProperPropertyComputationResult = {
         e match {
             case entity: AliasEntity =>
-                val context = createContext(entity)
+                implicit val context: AnalysisContext = createContext(entity)
 
-                if (checkTypeCompatibility(context)) doDetermineAlias(context, createState)
-                else result(NoAlias)(context)
+                if (checkTypeCompatibility(context)) doDetermineAlias(using context, createState)
+                else result(NoAlias)
             case _ => throw new UnknownError("unhandled entity type")
         }
     }
@@ -50,7 +50,7 @@ trait AbstractAliasAnalysis extends FPCFAnalysis {
      * @param context The alias analysis context to check the types for.
      * @return True if the types are compatible, false otherwise.
      */
-    private[this] def checkTypeCompatibility(context: AliasAnalysisContext): Boolean = {
+    private def checkTypeCompatibility(context: AliasAnalysisContext): Boolean = {
 
         if (context.element1.isNullValue || context.element2.isNullValue)
             return true
@@ -76,7 +76,7 @@ trait AbstractAliasAnalysis extends FPCFAnalysis {
      * @param state The state to use for the computation.
      * @return
      */
-    protected[this] def doDetermineAlias(
+    protected def doDetermineAlias(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
@@ -85,7 +85,7 @@ trait AbstractAliasAnalysis extends FPCFAnalysis {
     /**
      * Creates the result of the analysis based on the current state.
      */
-    protected[this] def createResult()(
+    protected def createResult()(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -94,14 +94,14 @@ trait AbstractAliasAnalysis extends FPCFAnalysis {
     /**
      * Creates a final [[Result]] with the given alias property.
      */
-    protected[this] def result(alias: Alias)(implicit context: AnalysisContext): ProperPropertyComputationResult = {
+    protected def result(alias: Alias)(implicit context: AnalysisContext): ProperPropertyComputationResult = {
         Result(context.entity, alias)
     }
 
     /**
      * Creates a intermediate result for the given upper and lower bounds of the alias properties.
      */
-    protected[this] def interimResult(lb: Alias, ub: Alias)(implicit
+    protected def interimResult(lb: Alias, ub: Alias)(implicit
         context: AnalysisContext,
         state:   AnalysisState
     ): ProperPropertyComputationResult = {
@@ -113,7 +113,7 @@ trait AbstractAliasAnalysis extends FPCFAnalysis {
      * A continuation function that will be invoked when an entity-property pair that this analysis depends on
      * is updated
      */
-    protected[this] def continuation(
+    protected def continuation(
         someEPS: SomeEPS
     )(
         implicit
@@ -124,12 +124,12 @@ trait AbstractAliasAnalysis extends FPCFAnalysis {
     /**
      * Creates the state to use for the computation.
      */
-    protected[this] def createState: AnalysisState
+    protected def createState: AnalysisState
 
     /**
      * Creates the context to use for the computation.
      */
-    protected[this] def createContext(
+    protected def createContext(
         entity: AliasEntity
     ): AnalysisContext
 

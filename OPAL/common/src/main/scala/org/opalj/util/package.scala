@@ -2,10 +2,12 @@
 package org.opalj
 
 import scala.annotation.nowarn
+import scala.annotation.tailrec
 
 import java.lang.management.ManagementFactory
 import java.lang.management.MemoryMXBean
 import scala.util.Properties.versionNumberString
+import scala.util.Using
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
@@ -28,7 +30,22 @@ package object util {
     }
 
     val ScalaMajorVersion: String = {
-        versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
+        // TODO Simplify this again once Scala 3 uses a corresponding runtime library
+
+        @tailrec
+        def getVersionNumber(res: java.util.Enumeration[java.net.URL]): String =
+            if (!res.hasMoreElements)
+                versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
+            else {
+                val manifest = new java.util.Properties()
+                Using(res.nextElement().openStream()) { stream => manifest.load(stream) }
+                manifest.getProperty("Specification-Title") match {
+                    case "scala3-library-bootstrapped" => manifest.getProperty("Implementation-Version")
+                    case _                             => getVersionNumber(res)
+                }
+            }
+
+        getVersionNumber(this.getClass.getClassLoader.getResources("META-INF/MANIFEST.MF"))
     }
 
     def avg(ts: IterableOnce[Nanoseconds]): Nanoseconds = {
@@ -66,13 +83,13 @@ package object util {
     ): Unit = {
         val startTime = System.nanoTime()
         var run = 0
-        do {
+        while {
             if (logContext.isDefined) {
                 val pendingCount = memoryMXBean.getObjectPendingFinalizationCount()
                 OPALLogger.info(
                     "performance",
                     s"garbage collection run $run (pending finalization: $pendingCount)"
-                )(logContext.get)
+                )(using logContext.get)
             }
             // In general it is **not possible to guarantee** that the garbage collector is really
             // run, but we still do our best.
@@ -84,9 +101,11 @@ package object util {
                 memoryMXBean.gc()
             }
             run += 1
-        } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
-                 ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan
-        )
+
+            memoryMXBean.getObjectPendingFinalizationCount() > 0 && ns2ms(
+                System.nanoTime() - startTime
+            ) < maxGCTime.timeSpan
+        } do ()
     }
 
     def renderConfig(config: Config, withComments: Boolean = true): String = {

@@ -164,7 +164,7 @@ object UIDSetProperties extends Properties("UIDSet") {
     }
 
     property("findById") = forAll { (s: Set[Int], e: Set[Int]) =>
-        val us = toSUIDSet(s) ++ UIDSet(e.slice(0, e.size / 2).map(SUID.apply).toSeq: _*)
+        val us = toSUIDSet(s) ++ UIDSet(e.slice(0, e.size / 2).map(SUID.apply).toSeq*)
         classify(us.size > 0, "non-empty set") {
             e.forall(v => us.find(_.id == v) == us.findById(v))
         }
@@ -264,7 +264,7 @@ object UIDSetProperties extends Properties("UIDSet") {
         val s = orig.map(SUID(_)).map(f)
         val us: Set[SUID] = toSUIDSet(orig).mapUIDSet(f)
         (s.forall(us.contains) && us.forall(s.contains)) :| s"content $s vs. $us" &&
-            classOf[UIDSet[_]].isInstance(us) :| "unexpected type"
+            classOf[UIDSet[?]].isInstance(us) :| "unexpected type"
     }
 
     property("can handle large sets") = forAll(largeSetGen) { (v) =>

@@ -72,7 +72,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             classFileLocation = ClassFileLocation(source, classFile)
             case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD)
                     if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
             }: PartialFunction[Instruction, Instruction])

@@ -52,7 +52,7 @@ class Parameters[P <: AnyRef](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: Parameters[_] =>
+            case that: Parameters[?] =>
                 JArrays.equals(
                     this.parameters.asInstanceOf[Array[AnyRef]],
                     that.parameters.asInstanceOf[Array[AnyRef]]

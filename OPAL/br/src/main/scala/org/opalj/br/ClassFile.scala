@@ -83,8 +83,12 @@ final class ClassFile private (
     val attributes:     Attributes
 ) extends ConcreteSourceElement {
 
-    methods.foreach { m => assert(m.declaringClassFile == null); m.declaringClassFile = this }
-    fields.foreach { f => assert(f.declaringClassFile == null); f.declaringClassFile = this }
+    methods.foreach { m =>
+        assert(m.declaringClassFile == null); m.declaringClassFile = this
+    }
+    fields.foreach { f =>
+        assert(f.declaringClassFile == null); f.declaringClassFile = this
+    }
 
     /**
      * Compares this class file with the given one; returns (the first) differences if any. The
@@ -494,7 +498,7 @@ final class ClassFile private (
                     )
                     .map[ClassType](_.innerClassType)
             }.getOrElse {
-                ArraySeq.empty
+                ArraySeq.empty[ClassType]
             }
 
         // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED
@@ -522,7 +526,7 @@ final class ClassFile private (
                         classTypes.foreach { classType =>
                             classFileRepository.classFile(classType) match {
                                 case Some(classFile) =>
-                                    nestedTypes ++= classFile.nestedClasses(classFileRepository)
+                                    nestedTypes ++= classFile.nestedClasses(using classFileRepository)
                                 case None =>
                                     OPALLogger.warn(
                                         "class file reader",
@@ -536,7 +540,7 @@ final class ClassFile private (
 
                     // let's filter those classes that are known innerclasses of this type's
                     // (indirect) outertype (they cannot be innerclasses of this class..)
-                    var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
+                    var nestedClassesOfOuterClass = outerClass.nestedClasses(using classFileRepository)
                     while (nestedClassesOfOuterClass.nonEmpty &&
                            !nestedClassesOfOuterClass.contains(thisType) &&
                            !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)
@@ -584,7 +588,7 @@ final class ClassFile private (
     )(
         implicit classFileRepository: ClassFileRepository
     ): Unit = {
-        nestedClasses(classFileRepository) foreach { nestedType =>
+        nestedClasses foreach { nestedType =>
             classFileRepository.classFile(nestedType) foreach { nestedClassFile =>
                 f(nestedClassFile)
                 nestedClassFile.foreachNestedClass(f)
@@ -640,9 +644,9 @@ final class ClassFile private (
      * (This does not include the static initializer.)
      */
     def constructors: Iterator[Method] = new Iterator[Method] {
-        private[this] var i = -1
+        private var i = -1
 
-        private[this] def gotoNextConstructor(): Unit = {
+        private def gotoNextConstructor(): Unit = {
             i += 1
             if (i >= methods.size) {
                 i = -1

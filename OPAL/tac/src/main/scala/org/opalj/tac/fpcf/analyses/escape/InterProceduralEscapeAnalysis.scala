@@ -79,8 +79,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
 
-    private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
-    private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
+    private val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
+    private val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
 
     override def determineEscapeOfFP(
         fp: (Context, VirtualFormalParameter)
@@ -131,7 +131,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
             case VirtualFormalParameter(dm: DefinedMethod, _) =>
                 val ctx = createContext(fp, dm)
-                doDetermineEscape(ctx, createState)
+                doDetermineEscape(using ctx, createState)
 
             case VirtualFormalParameter(_: VirtualDeclaredMethod, _) =>
                 throw new IllegalArgumentException()

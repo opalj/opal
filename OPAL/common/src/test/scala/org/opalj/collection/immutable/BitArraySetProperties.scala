@@ -132,14 +132,20 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     property("- (in order)") = forAll { (s: IntArraySet, other: IntArraySet) =>
         var bas = s.foldLeft(BitArraySet.empty)(_ + _)
-        other.forall({ v => bas -= v; !bas.contains(v) }) :| "when we delete a value it is no longer in the set" &&
-            s.forall({ v => bas -= v; !bas.contains(v) }) :| "we successively delete the initial values" &&
+        other.forall({ v =>
+            bas -= v; !bas.contains(v)
+        }) :| "when we delete a value it is no longer in the set" &&
+            s.forall({ v =>
+                bas -= v; !bas.contains(v)
+            }) :| "we successively delete the initial values" &&
             (bas == BitArraySet0) :| "the empty set is always represented by the singleton instance"
     }
 
     property("- (in reverse order)") = forAll { (s: IntArraySet, other: IntArraySet) =>
         var bas = s.foldLeft(BitArraySet.empty)(_ + _)
-        other.forall({ v => bas -= v; !bas.contains(v) }) :| "when we delete a value it is no longer in the set" &&
+        other.forall({ v =>
+            bas -= v; !bas.contains(v)
+        }) :| "when we delete a value it is no longer in the set" &&
             s.toList.reverse.forall({ v =>
                 bas -= v
                 !bas.contains(v)

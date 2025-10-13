@@ -18,7 +18,7 @@ import org.opalj.tac.common.DefinitionSitesKey
 trait PointsToCallGraphKey extends CallGraphKey {
 
     val pointsToType: String
-    val contextKey: ProjectInformationKey[_ <: Contexts[_], Nothing]
+    val contextKey: ProjectInformationKey[? <: Contexts[?], Nothing]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
         super.requirements(project) ++ Seq(DefinitionSitesKey, VirtualFormalParametersKey) :+ contextKey
@@ -40,7 +40,7 @@ trait PointsToCallGraphKey extends CallGraphKey {
         )
     }
 
-    override protected[this] def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
+    override protected def registeredAnalyses(project: SomeProject): scala.collection.Seq[FPCFAnalysisScheduler] = {
         implicit val logContext: LogContext = project.logContext
         val config = project.config
 
@@ -52,7 +52,7 @@ trait PointsToCallGraphKey extends CallGraphKey {
         }
     }
 
-    private[this] def getModuleFQN(moduleName: String): String = {
+    private def getModuleFQN(moduleName: String): String = {
         s"org.opalj.tac.fpcf.analyses.pointsto.${pointsToType}${moduleName}AnalysisScheduler"
     }
 }

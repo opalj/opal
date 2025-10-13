@@ -3,6 +3,7 @@ package org.opalj
 package av
 package checking
 
+import java.net.URL
 import scala.collection.IndexedSeq
 
 import org.junit.runner.RunWith
@@ -33,7 +34,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
-    val project = Project(ClassFiles(locateTestResources("classfiles/entity.jar", "av")))
+    implicit val project: Project[URL] = Project(ClassFiles(locateTestResources("classfiles/entity.jar", "av")))
 
     /*
      * SimpleNamePredicate
@@ -63,35 +64,34 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
             MethodWithName("lastName")
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
 
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
             MethodWithSignature("lastName", MethodDescriptor.JustReturnsString)
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
 
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
             MethodWithSignature("lastName", MethodDescriptor.JustReturnsBoolean)
-        ).extension(project).size should be(0)
+        ).extension.size should be(0)
     }
 
     test("the combination of simple (Method)Predicates") {
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
             MethodWithName("lastName") and AccessFlags(PUBLIC)
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
 
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
-            MethodWithSignature("lastName", MethodDescriptor.JustReturnsString) and
-                AccessFlags(PUBLIC)
-        ).extension(project).size should be(1)
+            MethodWithSignature("lastName", MethodDescriptor.JustReturnsString) and AccessFlags(PUBLIC)
+        ).extension.size should be(1)
 
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
-            AnyMethod having AccessFlags(STATIC)
-        ).extension(project).size should be(0)
+            AnyMethod.having(AccessFlags(STATIC))
+        ).extension.size should be(0)
     }
 
     /*
@@ -245,35 +245,35 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             namePredicate = Equals("entity.impl.User"),
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
 
         DefaultClassMatcher(
             namePredicate = Equals("entity/impl/User"),
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
 
         DefaultClassMatcher(
             namePredicate = StartsWith("entity"),
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(8)
+        ).extension.size should be(8)
 
         DefaultClassMatcher(
             namePredicate = RegexNamePredicate(""".+User""".r),
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
     }
 
     test("the ClassMatcher should not match any class") {
-        ClassMatcher("entity.impl.Contact").extension(project) should be(empty)
+        ClassMatcher("entity.impl.Contact").extension should be(empty)
 
-        ClassMatcher(Equals("entity/impl/Contact")).extension(project) should be(empty)
+        ClassMatcher(Equals("entity/impl/Contact")).extension should be(empty)
 
-        ClassMatcher(StartsWith("entity/impl/C")).extension(project) should be(empty)
+        ClassMatcher(StartsWith("entity/impl/C")).extension should be(empty)
 
-        ClassMatcher(RegexNamePredicate(""".+Contact""".r)).extension(project) should be(empty)
+        ClassMatcher(RegexNamePredicate(""".+Contact""".r)).extension should be(empty)
     }
 
     /*
@@ -285,31 +285,31 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             NOT_ABSTRACT,
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(2)
+        ).extension.size should be(2)
 
         DefaultClassMatcher(
             PUBLIC_ABSTRACT,
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(6)
+        ).extension.size should be(6)
 
         DefaultClassMatcher(
             PUBLIC,
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(8)
+        ).extension.size should be(8)
 
         DefaultClassMatcher(
             ANY,
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(8)
+        ).extension.size should be(8)
 
         DefaultClassMatcher(
             PUBLIC && NOT_ABSTRACT,
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(2)
+        ).extension.size should be(2)
     }
 
     test("the ClassMatcher should not match any class with the given access flags") {
@@ -317,19 +317,19 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             PRIVATE_FINAL,
             matchMethods = false,
             matchFields = false
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
 
         DefaultClassMatcher(
             PUBLIC_STATIC_FINAL,
             matchMethods = false,
             matchFields = false
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
 
         DefaultClassMatcher(
             PUBLIC_STATIC,
             matchMethods = false,
             matchFields = false
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
     }
 
     /*
@@ -341,7 +341,7 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             annotationsPredicate = HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Entity")),
             matchMethods = false,
             matchFields = false
-        ).extension(project).size should be(2)
+        ).extension.size should be(2)
     }
 
     test("the ClassMatcher should not match any class with the given annotation") {
@@ -349,30 +349,30 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
             annotationsPredicate = HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Transient")),
             matchMethods = false,
             matchFields = false
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
     }
 
     /*
      * ClassMatcher matching complete classes
      */
     test("the ClassMatcher should match any element of the class") {
-        ClassMatcher("entity.impl.User").extension(project).size should be(19)
+        ClassMatcher("entity.impl.User").extension.size should be(19)
 
-        ClassMatcher(Equals("entity/impl/User")).extension(project).size should be(19)
+        ClassMatcher(Equals("entity/impl/User")).extension.size should be(19)
 
-        ClassMatcher(StartsWith("entity")).extension(project).size should be(46)
+        ClassMatcher(StartsWith("entity")).extension.size should be(46)
 
-        ClassMatcher(RegexNamePredicate(""".+User""".r)).extension(project).size should be(19)
+        ClassMatcher(RegexNamePredicate(""".+User""".r)).extension.size should be(19)
     }
 
     test("the ClassMatcher should not match any element") {
-        ClassMatcher("entity.impl.Contact").extension(project) should be(empty)
+        ClassMatcher("entity.impl.Contact").extension should be(empty)
 
-        ClassMatcher(Equals("entity/impl/Contact")).extension(project) should be(empty)
+        ClassMatcher(Equals("entity/impl/Contact")).extension should be(empty)
 
-        ClassMatcher(StartsWith("entity/impl/C")).extension(project) should be(empty)
+        ClassMatcher(StartsWith("entity/impl/C")).extension should be(empty)
 
-        ClassMatcher(RegexNamePredicate(""".+Contact""".r)).extension(project) should be(empty)
+        ClassMatcher(RegexNamePredicate(""".+Contact""".r)).extension should be(empty)
     }
 
     /*
@@ -382,14 +382,14 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
         ClassMatcher(
             HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Entity"))
-        ).extension(project).size should be(34)
+        ).extension.size should be(34)
     }
 
     test("the ClassMatcher should not match any element with the given annotation") {
 
         ClassMatcher(
             HasAtLeastTheAnnotations(AnnotatedWith("entity.annotation.Transient"))
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
     }
 
     /*
@@ -398,58 +398,58 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
     test("the PackageMatcher should match only classes") {
         val classMatcher = DefaultClassMatcher(matchMethods = false, matchFields = false)
 
-        PackageMatcher("entity", classMatcher).extension(project).size should be(1)
+        PackageMatcher("entity", classMatcher).extension.size should be(1)
 
-        PackageMatcher("entity", classMatcher, true).extension(project).size should be(8)
+        PackageMatcher("entity", classMatcher, true).extension.size should be(8)
 
-        PackageMatcher(Equals("entity"), classMatcher).extension(project).size should be(1)
+        PackageMatcher(Equals("entity"), classMatcher).extension.size should be(1)
 
         PackageMatcher(
             RegexNamePredicate(""".+impl""".r),
             classMatcher
-        ).extension(project).size should be(2)
+        ).extension.size should be(2)
     }
 
     test("the PackageMatcher should not match any class") {
         val classMatcher = DefaultClassMatcher(matchMethods = false, matchFields = false)
 
-        PackageMatcher("entity.user", classMatcher).extension(project) should be(empty)
+        PackageMatcher("entity.user", classMatcher).extension should be(empty)
 
-        PackageMatcher(Equals("entity/user"), classMatcher).extension(project) should be(empty)
+        PackageMatcher(Equals("entity/user"), classMatcher).extension should be(empty)
 
-        PackageMatcher(StartsWith("entity/u"), classMatcher).extension(project) should be(empty)
+        PackageMatcher(StartsWith("entity/u"), classMatcher).extension should be(empty)
 
         PackageMatcher(
             RegexNamePredicate(""".+user""".r),
             classMatcher
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
     }
 
     /*
      * PackageMatcher matching complete classes
      */
     test("the PackageMatcher should match all elements of the class") {
-        PackageMatcher("entity").extension(project).size should be(3)
+        PackageMatcher("entity").extension.size should be(3)
 
-        PackageMatcher("entity", true).extension(project).size should be(46)
+        PackageMatcher("entity", true).extension.size should be(46)
 
-        PackageMatcher(Equals("entity")).extension(project).size should be(3)
+        PackageMatcher(Equals("entity")).extension.size should be(3)
 
         PackageMatcher(
             RegexNamePredicate(""".+impl""".r)
-        ).extension(project).size should be(34)
+        ).extension.size should be(34)
     }
 
     test("the PackageMatcher should not match any element") {
-        PackageMatcher("entity.user").extension(project) should be(empty)
+        PackageMatcher("entity.user").extension should be(empty)
 
-        PackageMatcher(Equals("entity/user")).extension(project) should be(empty)
+        PackageMatcher(Equals("entity/user")).extension should be(empty)
 
-        PackageMatcher(StartsWith("entity/u")).extension(project) should be(empty)
+        PackageMatcher(StartsWith("entity/u")).extension should be(empty)
 
         PackageMatcher(
             RegexNamePredicate(""".+user""".r)
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
     }
 
     /*
@@ -466,22 +466,22 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
                     Map("name" -> StringValue("first_name"), "nullable" -> BooleanValue(false))
                 )
             )
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
 
         FieldMatcher(
             ClassMatcher("entity.impl.User"),
             theType = Some("Ljava.lang.String;")
-        ).extension(project).size should be(3)
+        ).extension.size should be(3)
 
         FieldMatcher(
             ClassMatcher("entity.impl.User"),
             theName = Some("firstName")
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
     }
 
     test("the FieldMatcher should not match any element") {
 
-        FieldMatcher(ClassMatcher("entity.impl.Contact")).extension(project) should be(empty)
+        FieldMatcher(ClassMatcher("entity.impl.Contact")).extension should be(empty)
 
         FieldMatcher(
             ClassMatcher("entity.impl.User"),
@@ -492,17 +492,17 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
                     "nullable" -> BooleanValue(false)
                 )
             )
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
 
         FieldMatcher(
             ClassMatcher("entity.impl.User"),
             theType = Some("Ljava.lang.Integer;")
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
 
         FieldMatcher(
             ClassMatcher("entity.impl.User"),
             theName = Some("street")
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
     }
 
     /*
@@ -512,23 +512,23 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
         MethodMatcher(
             ClassMatcher("entity.impl.User")
-        ).extension(project).size should be(12)
+        ).extension.size should be(12)
 
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
             AnnotatedWith("entity.annotation.Transient")
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
 
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
             MethodWithName("getFullName")
-        ).extension(project).size should be(1)
+        ).extension.size should be(1)
     }
 
     test("the MethodMatcher should not match any element") {
         MethodMatcher(
             ClassMatcher("entity.impl.Contact")
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
 
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
@@ -537,12 +537,12 @@ class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
                 "name" -> StringValue("street"),
                 "nullable" -> BooleanValue(false)
             )
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
 
         MethodMatcher(
             ClassMatcher("entity.impl.User"),
             MethodWithName("getStreet")
-        ).extension(project) should be(empty)
+        ).extension should be(empty)
     }
 
 }

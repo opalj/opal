@@ -11,7 +11,7 @@ package domain
 trait ReturnInstructionsDomain extends ai.ReturnInstructionsDomain {
     domain: ValuesDomain & Configuration & ExceptionsFactory =>
 
-    protected[this] def handleReturn(pc: Int): Computation[Nothing, ExceptionValue] = {
+    protected def handleReturn(pc: Int): Computation[Nothing, ExceptionValue] = {
         if (throwIllegalMonitorStateException) {
             val exception = VMIllegalMonitorStateException(pc)
             ComputationWithSideEffectOrException(exception)

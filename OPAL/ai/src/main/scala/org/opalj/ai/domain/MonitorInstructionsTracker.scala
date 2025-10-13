@@ -3,6 +3,8 @@ package org.opalj
 package ai
 package domain
 
+import scala.compiletime.uninitialized
+
 import org.opalj.br.Code
 import org.opalj.collection.immutable.IntTrieSet
 
@@ -17,7 +19,7 @@ import org.opalj.collection.immutable.IntTrieSet
 trait MonitorInstructionsTracker extends MonitorInstructionsDomain with CustomInitialization {
     this: ValuesDomain & ExceptionsFactory & Configuration =>
 
-    protected[this] var usesMonitorInstruction: Boolean = _
+    protected var usesMonitorInstruction: Boolean = uninitialized
 
     def isMonitorInstructionUsed: Boolean = usesMonitorInstruction
 

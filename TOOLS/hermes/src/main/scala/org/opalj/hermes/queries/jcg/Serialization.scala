@@ -104,7 +104,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             classFileLocation = ClassFileLocation(source, classFile)
             case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case i @ INVOKEVIRTUAL(declClass, "writeObject", OOSwriteObject)
                     if classHierarchy.isSubtypeOf(declClass, OOS) => i
                 case i @ INVOKEVIRTUAL(declClass, "readObject", JustReturnsObject)

@@ -78,7 +78,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
     def keys: Iterator[K] = ArraySeq.unsafeWrapArray(theKeys).iterator.filter(key => key != null)
 
     def entries: Iterator[(K, V)] = new Iterator[(K, V)] {
-        private[this] def getNextIndex(lastIndex: Int): Int = {
+        private def getNextIndex(lastIndex: Int): Int = {
             val keys = self.theKeys
             val max = keys.length
             var i = lastIndex + 1
@@ -88,7 +88,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
             }
             max
         }
-        private[this] var i = getNextIndex(-1)
+        private var i = getNextIndex(-1)
         def hasNext: Boolean = i < theKeys.length
         def next(): (K, V) = { val r = (theKeys(i), theValues(i)); i = getNextIndex(i); r }
     }

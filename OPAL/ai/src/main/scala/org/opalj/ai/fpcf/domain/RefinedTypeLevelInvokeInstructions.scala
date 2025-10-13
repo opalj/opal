@@ -4,7 +4,7 @@ package ai
 package fpcf
 package domain
 
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 
 import org.opalj.ai.domain.MethodCallsHandling
 import org.opalj.ai.domain.TheCode
@@ -31,7 +31,7 @@ trait RefinedTypeLevelInvokeInstructions
         super.usesProperties ++ Set(MethodReturnValue)
     }
 
-    override protected[this] def tryLookup(
+    override protected def tryLookup(
         declaringType: ClassType,
         name:          String,
         descriptor:    MethodDescriptor
@@ -47,14 +47,14 @@ trait RefinedTypeLevelInvokeInstructions
      * @note Intended to be overridden by subclasses. Subclasses should simply call this
      *       method last to get the correct behavior.
      */
-    protected[this] def doInvokeWithRefinedReturnValue(
+    protected def doInvokeWithRefinedReturnValue(
         calledMethod: Method,
         result:       MethodCallResult
     ): MethodCallResult = {
         result
     }
 
-    protected[this] def doInvoke(
+    protected def doInvoke(
         pc:                     PC,
         invokeMethodDescriptor: MethodDescriptor,
         method:                 Method,
@@ -69,7 +69,7 @@ trait RefinedTypeLevelInvokeInstructions
         }
 
         dependees.getOrQueryAndUpdate(method, MethodReturnValue.key) match {
-            case UsedPropertiesBound(mrvProperty) =>
+            case UsedPropertiesBound(mrvProperty: MethodReturnValue) =>
                 mrvProperty.returnValue match {
                     case Some(mrvi) =>
                         val vi = domain.InitializedDomainValue(pc, mrvi)
@@ -99,7 +99,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
      * @param method The called method. In case of MethodHandles, the invoked method's descriptor
      *               will most likely not match the descriptor specified by the invoke instruction.
      */
-    protected[this] def doInvoke(
+    protected def doInvoke(
         pc:                     PC,
         invokeMethodDescriptor: MethodDescriptor,
         method:                 Method,
@@ -111,7 +111,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
      * Currently, if we have multiple targets, `fallback` is called and that result is
      * returned.
      */
-    protected[this] def doVirtualInvoke(
+    protected def doVirtualInvoke(
         pc:            PC,
         declaringType: ClassType,
         isInterface:   Boolean,
@@ -121,7 +121,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         fallback:      () => MethodCallResult
     ): MethodCallResult = {
 
-        val DomainReferenceValueTag(receiver) = operands.last
+        val DomainReferenceValueTag(receiver) = operands.last: @unchecked
         val receiverUTB = receiver.upperTypeBound
         if (!receiverUTB.isSingletonSet || !receiver.upperTypeBound.head.isClassType)
             return fallback();
@@ -160,7 +160,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         }
     }
 
-    protected[this] def doNonVirtualInvoke(
+    protected def doNonVirtualInvoke(
         pc:            PC,
         declaringType: ClassType,
         isInterface:   Boolean,
@@ -198,8 +198,8 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
                     fallback()
             }
         } catch {
-            case ct: ControlThrowable => throw ct
-            case t: Throwable         =>
+            case b: Break[?]  => throw b
+            case t: Throwable =>
                 OPALLogger.error(
                     "internal, project configuration",
                     "resolving the method reference resulted in an exception: " +
@@ -228,7 +228,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
      *       method lookups are actually required by all clients of this domain.
      * @return The default is to return `false`.
      */
-    protected[this] def tryLookup(
+    protected def tryLookup(
         declaringType: ClassType,
         name:          String,
         descriptor:    MethodDescriptor
@@ -253,7 +253,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         if (!tryLookup(declaringClassType, name, descriptor))
             return fallback();
 
-        doVirtualInvoke(pc, declaringClassType, false, name, descriptor, operands, fallback _)
+        doVirtualInvoke(pc, declaringClassType, false, name, descriptor, operands, fallback)
     }
 
     abstract override def invokeinterface(
@@ -271,7 +271,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         if (!tryLookup(declaringType, name, descriptor))
             return fallback();
 
-        doVirtualInvoke(pc, declaringType, true, name, descriptor, operands, fallback _)
+        doVirtualInvoke(pc, declaringType, true, name, descriptor, operands, fallback)
     }
 
     abstract override def invokespecial(
@@ -290,7 +290,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         if (!tryLookup(declaringType, name, descriptor))
             return fallback();
 
-        doNonVirtualInvoke(pc, declaringType, isInterface, name, descriptor, operands, fallback _)
+        doNonVirtualInvoke(pc, declaringType, isInterface, name, descriptor, operands, fallback)
     }
 
     /**
@@ -314,7 +314,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         if (!tryLookup(declaringType, name, descriptor))
             return fallback();
 
-        doNonVirtualInvoke(pc, declaringType, isInterface, name, descriptor, operands, fallback _)
+        doNonVirtualInvoke(pc, declaringType, isInterface, name, descriptor, operands, fallback)
     }
 
 }

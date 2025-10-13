@@ -35,11 +35,9 @@ import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.bytecode.JavaBase
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.FPCFAnalysis
-import org.opalj.fpcf.PropertyStoreKey
 import org.opalj.fpcf.properties.PropertyMatcher
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
@@ -55,8 +53,8 @@ import org.opalj.util.ScalaMajorVersion
  */
 abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
-    private[this] final val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
-    private[this] final val propertyPaths = List(
+    private final val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
+    private final val propertyPaths = List(
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/fpcf/properties",
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/br/analyses/properties"
     )
@@ -67,7 +65,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
      * The representation of the fixture project.
      */
     final val FixtureProject: Project[URL] = {
-        val classFileReader = Project.JavaClassFileReader()
+        val classFileReader = Project.JavaClassFileReader(using GlobalLogContext, BaseConfig)
         import classFileReader.ClassFiles
 
         val fixtureClassFiles = getFixtureClassFiles(classFileReader) // AllClassFiles(List(annotationFiles, fixtureFiles))
@@ -222,8 +220,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                                 "\nexpectation: " + error
                             )
                             fail(m)
-                        case None   => /* OK */
-                        case result => fail("matcher returned unexpected result: " + result)
+                        case None => /* OK */
                     }
                 }
 
@@ -405,7 +402,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         }
     }
 
-    private[this] def getFixtureClassFiles(
+    private def getFixtureClassFiles(
         classFileReader: ClassFileReader
     ): Iterable[(classFileReader.ClassFile, URL)] = {
         import classFileReader.AllClassFiles

@@ -1034,9 +1034,9 @@ final class ClassType private ( // DO NOT MAKE THIS A CASE CLASS!
 object ClassType {
 
     // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
-    @volatile private[this] var classTypes: Array[ClassType] = new Array[ClassType](0)
+    @volatile private var classTypes: Array[ClassType] = new Array[ClassType](0)
 
-    private[this] def updateClassTypes(): Unit = {
+    private def updateClassTypes(): Unit = {
         if (nextId.get > classTypes.length) {
             val newClassTypes = JArrays.copyOf(this.classTypes, nextId.get)
             cacheRWLock.readLock().lock()
@@ -1110,11 +1110,11 @@ object ClassType {
 
     }
 
-    private[this] val nextId = new AtomicInteger(0)
-    private[this] val cacheRWLock = new ReentrantReadWriteLock();
-    private[this] val cache = new WeakHashMap[String, WeakReference[ClassType]]()
+    private val nextId = new AtomicInteger(0)
+    private val cacheRWLock = new ReentrantReadWriteLock();
+    private val cache = new WeakHashMap[String, WeakReference[ClassType]]()
 
-    @volatile private[this] var classTypeCreationListener: ClassType => Unit = null
+    @volatile private var classTypeCreationListener: ClassType => Unit = null
 
     /**
      * Sets the listener and immediately calls it (multiple times) to inform the listener
@@ -1389,7 +1389,7 @@ object ClassType {
      * res1: org.opalj.br.FieldType = IntegerType
      * }}}
      */
-    private[this] lazy val primitiveType: Array[BaseType] = {
+    private lazy val primitiveType: Array[BaseType] = {
         val a = new Array[BaseType](Double.id + 1)
         a(Boolean.id) = BooleanType
         a(Byte.id) = ByteType
@@ -1565,9 +1565,9 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 object ArrayType {
 
     // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
-    @volatile private[this] var arrayTypes: Array[ArrayType] = new Array[ArrayType](0)
+    @volatile private var arrayTypes: Array[ArrayType] = new Array[ArrayType](0)
 
-    private[this] def updateArrayTypes(): Unit = {
+    private def updateArrayTypes(): Unit = {
         if (-nextId.get > arrayTypes.length) {
             val newArrayTypes = JArrays.copyOf(this.arrayTypes, -nextId.get)
             cache.synchronized {
@@ -1640,9 +1640,9 @@ object ArrayType {
         }
     }
 
-    private[this] val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
+    private val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
 
-    private[this] val nextId = new AtomicInteger(-1)
+    private val nextId = new AtomicInteger(-1)
 
     /**
      * Factory method to create objects of type `ArrayType`.

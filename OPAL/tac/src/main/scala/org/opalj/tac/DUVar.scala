@@ -199,7 +199,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def toPersistentForm(
         implicit stmts: Array[Stmt[V]]
-    ): PDVar[Value] = PDVar(value, usedBy.map(pcOfDefSite _))
+    ): PDVar[Value] = PDVar(value, usedBy.map { use => pcOfDefSite(use) })
 
 }
 
@@ -278,7 +278,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UVar[_] => this.defSites == that.defSites
+            case that: UVar[?] => this.defSites == that.defSites
             case _             => false
         }
     }
@@ -289,7 +289,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def toPersistentForm(
         implicit stmts: Array[Stmt[V]]
-    ): PUVar[Value] = PUVar(value, definedBy.map(pcOfDefSite _))
+    ): PUVar[Value] = PUVar(value, definedBy.map(pcOfDefSite))
 
 }
 

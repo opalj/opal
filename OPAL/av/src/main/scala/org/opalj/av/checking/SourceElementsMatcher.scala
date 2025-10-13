@@ -16,11 +16,11 @@ import org.opalj.br.analyses.SomeProject
  */
 trait SourceElementsMatcher extends (SomeProject => immutable.Set[VirtualSourceElement]) { left =>
 
-    final def apply(project: SomeProject): immutable.Set[VirtualSourceElement] = extension(project)
+    final def apply(project: SomeProject): immutable.Set[VirtualSourceElement] = extension(using project)
 
     def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement]
 
-    def and(right: SourceElementsMatcher): SourceElementsMatcher = {
+    infix def and(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
             def extension(implicit project: SomeProject) = {
                 left.extension ++ right.extension
@@ -30,7 +30,7 @@ trait SourceElementsMatcher extends (SomeProject => immutable.Set[VirtualSourceE
         }
     }
 
-    def except(right: SourceElementsMatcher): SourceElementsMatcher = {
+    infix def except(right: SourceElementsMatcher): SourceElementsMatcher = {
         new SourceElementsMatcher {
             def extension(implicit project: SomeProject) = {
                 left.extension -- right.extension

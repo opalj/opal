@@ -11,6 +11,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import scala.io.Source
 import scala.util.Random
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
@@ -83,18 +85,18 @@ object DependencyAnalysis extends ProjectsAnalysisApplication {
 
         val filteredPackages = analysisConfig.get(PackagesArg)
 
-        val dependencyProcessor = new DependencyProcessor {
-            protected[this] val dependencyCount = mutable.HashMap.empty[String, mutable.HashMap[String, Int]]
-            protected[this] val dependencyCounter = new AtomicInteger(0);
+        class TheDependencyProcessor extends DependencyProcessor {
+            protected val dependencyCount = mutable.HashMap.empty[String, mutable.HashMap[String, Int]]
+            protected val dependencyCounter = new AtomicInteger(0);
 
-            def addDependency(sourcePN: String, targetPN: String): Unit = {
+            def addDependency(sourcePN: String, targetPN: String): Unit = boundary {
                 val sourcePackage = getPackageName(sourcePN)
                 val targetPackage = getPackageName(targetPN)
 
                 // filter by --package
                 filteredPackages.foreach { relevantPackages =>
                     if (!relevantPackages.exists(p => sourcePackage.startsWith(p) || targetPackage.startsWith(p)))
-                        return;
+                        break();
                 }
 
                 // ignore intra-package dependencies
@@ -119,13 +121,13 @@ object DependencyAnalysis extends ProjectsAnalysisApplication {
                     )
             }
 
-            def getPackageName(pn: String): String = {
+            def getPackageName(pn: String): String = boundary {
                 if (pn == "") // standard package = <default>
                     return "<default>";
 
                 analysisConfig.get(MainPackageArg).foreach { mainPackage =>
                     if (pn.startsWith(mainPackage))
-                        return pn;
+                        break(pn);
                 }
 
                 rootPackages.getOrElse(pn, pn)
@@ -156,6 +158,7 @@ object DependencyAnalysis extends ProjectsAnalysisApplication {
             def currentMaxDependencyCount = dependencyCounter.doubleValue()
 
         } // dependencyCount(source,target,anzahl)
+        val dependencyProcessor = new TheDependencyProcessor()
         val dependencyExtractor = new DependencyExtractor(dependencyProcessor)
 
         for {
@@ -197,7 +200,7 @@ object DependencyAnalysis extends ProjectsAnalysisApplication {
             else
                 ""
         // read the template
-        var htmlDocument = processSource(Source.fromFile(template.getPath)(scala.io.Codec.UTF8)) { _.mkString }
+        var htmlDocument = processSource(Source.fromFile(template.getPath)(using scala.io.Codec.UTF8)) { _.mkString }
 
         if (!htmlDocument.contains("<%DATA%>") || !htmlDocument.contains("<%PACKAGES%>")) {
             println(Console.RED +

@@ -198,8 +198,8 @@ class LBFieldValuesAnalysis private[analyses] (
         def hasCandidateFields: Boolean = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys
 
-        private[this] var currentMethod: Method = null
-        private[this] var currentCode: Code = null
+        private var currentMethod: Method = null
+        private var currentCode: Code = null
 
         /**
          * Sets the method that is currently analyzed. This method '''must not be called'''
@@ -215,7 +215,7 @@ class LBFieldValuesAnalysis private[analyses] (
         override def code: Code = currentCode
 
         /*
-        override protected[this] def doInvokeWithRefinedReturnValue(
+        override protected def doInvokeWithRefinedReturnValue(
             calledMethod: Method,
             result:       MethodCallResult
         ): MethodCallResult = {
@@ -239,7 +239,7 @@ class LBFieldValuesAnalysis private[analyses] (
                         case Some(previousValue) =>
                             if (previousValue ne value) {
                                 previousValue.join(Int.MinValue, value) match {
-                                    case SomeUpdate(newValue) =>
+                                    case SomeUpdate(newValue: DomainValue) =>
                                         // IMPROVE Remove "irrelevant fields" to check if we can stop the overall process...
                                         fieldInformation += (field -> Some(newValue))
                                     case NoUpdate => /*nothing to do*/
@@ -276,7 +276,7 @@ class LBFieldValuesAnalysis private[analyses] (
         }
     }
 
-    private[this] def analyzeRelevantMethods(
+    private def analyzeRelevantMethods(
         classFile: ClassFile,
         domain:    FieldValuesAnalysisDomain
     ): Unit = {
@@ -376,9 +376,9 @@ class LBFieldValuesAnalysis private[analyses] (
                                 OPALLogger.error(
                                     "analysis state",
                                     s"the field values analysis for ${f} failed miserably: "
-                                )(project.logContext)
+                                )(using project.logContext)
                             }
-                            val domain.DomainReferenceValueTag(dv) = dvOption.get
+                            val domain.DomainReferenceValueTag(dv) = dvOption.get: @unchecked
                             val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                             // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
                             if (newDependees.isEmpty ||

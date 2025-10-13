@@ -85,7 +85,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 }
 
                 val bbBRCFG = dTime(Symbol("BasicBlocksBasedBRCFG")) {
-                    CFGFactory(method.body.get, project.classHierarchy)
+                    CFGFactory(using method.body.get, project.classHierarchy)
                 }
                 val bbAICFG = dTime(Symbol("BasicBlocksBasedAICFG")) { domain.bbCFG }
 

@@ -4,6 +4,9 @@ package value
 
 import scala.annotation.switch
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.ArrayType
 import org.opalj.br.BaseType
 import org.opalj.br.BooleanType
@@ -60,7 +63,7 @@ trait ValueInformation {
      * @throws IllegalStateException if this value is illegal.
      */
     def isPrimitiveValue: Boolean
-    def asPrimitiveValue: IsPrimitiveValue[? <: BaseType] = throw new ClassCastException();
+    def asPrimitiveValue: IsPrimitiveValue[? <: BaseType, ? <: AnyVal] = throw new ClassCastException();
 
     /**
      * Returns `true` if the value has a reference type.
@@ -263,15 +266,15 @@ trait ConstantValueInformationProvider[T] {
 /**
  * The value has the primitive type.
  */
-sealed trait IsPrimitiveValue[T <: BaseType]
+sealed trait IsPrimitiveValue[T <: BaseType, V <: AnyVal]
     extends KnownTypedValue
-    with ConstantValueInformationProvider[T#JType] {
+    with ConstantValueInformationProvider[V] {
 
     override final def isReferenceValue: Boolean = false
 
     override final def isPrimitiveValue: Boolean = true
 
-    override final def asPrimitiveValue: IsPrimitiveValue[T] = this
+    override final def asPrimitiveValue: IsPrimitiveValue[T, V] = this
 
     override final def isArrayValue: Answer = No
 
@@ -283,17 +286,17 @@ sealed trait IsPrimitiveValue[T <: BaseType]
 
 object IsPrimitiveValue {
 
-    def unapply[T <: BaseType](underlying: IsPrimitiveValue[T]): Some[T] = {
+    def unapply[T <: BaseType, V <: AnyVal](underlying: IsPrimitiveValue[T, V]): Some[T] = {
         Some(underlying.primitiveType)
     }
 
 }
 
-sealed trait IsIntegerLikeValue[T <: BaseType] extends IsPrimitiveValue[T] {
+sealed trait IsIntegerLikeValue[T <: BaseType, V <: AnyVal] extends IsPrimitiveValue[T, V] {
     override final def verificationTypeInfo: VerificationTypeInfo = IntegerVariableInfo
 }
 
-trait IsBooleanValue extends IsIntegerLikeValue[BooleanType] {
+trait IsBooleanValue extends IsIntegerLikeValue[BooleanType, Boolean] {
     override final def primitiveType: BooleanType = BooleanType
     override final def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = ABooleanValue
@@ -316,7 +319,7 @@ case object BooleanValueFalse extends IsBooleanValue {
     override def toCanonicalForm: ValueInformation = this
 }
 
-trait IsByteValue extends IsIntegerLikeValue[ByteType] {
+trait IsByteValue extends IsIntegerLikeValue[ByteType, Byte] {
     override final def primitiveType: ByteType = ByteType
     override final def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = AByteValue
@@ -333,7 +336,7 @@ case class TheByteValue(value: Byte) extends IsByteValue {
     override def toCanonicalForm: ValueInformation = this
 }
 
-trait IsCharValue extends IsIntegerLikeValue[CharType] {
+trait IsCharValue extends IsIntegerLikeValue[CharType, Char] {
     override final def primitiveType: CharType = CharType
     override final def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = ACharValue
@@ -350,7 +353,7 @@ case class TheCharValue(value: Char) extends IsCharValue {
     override def toCanonicalForm: ValueInformation = this
 }
 
-trait IsShortValue extends IsIntegerLikeValue[ShortType] {
+trait IsShortValue extends IsIntegerLikeValue[ShortType, Short] {
     override final def primitiveType: ShortType = ShortType
     override final def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = AShortValue
@@ -367,7 +370,7 @@ case class TheShortValue(value: Short) extends IsShortValue {
     override def toCanonicalForm: ValueInformation = this
 }
 
-trait IsIntegerValue extends IsIntegerLikeValue[IntegerType] {
+trait IsIntegerValue extends IsIntegerLikeValue[IntegerType, Int] {
     override final def primitiveType: IntegerType = IntegerType
     override final def hasCategory2ComputationalType: Boolean = false
     override def toCanonicalForm: ValueInformation = {
@@ -393,7 +396,7 @@ case class TheIntegerValue(value: Int) extends IsIntegerValue {
     override def toCanonicalForm: ValueInformation = this
 }
 
-trait IsFloatValue extends IsPrimitiveValue[FloatType] {
+trait IsFloatValue extends IsPrimitiveValue[FloatType, Float] {
     override final def primitiveType: FloatType = FloatType
     override final def hasCategory2ComputationalType: Boolean = false
     override final def verificationTypeInfo: VerificationTypeInfo = FloatVariableInfo
@@ -411,7 +414,7 @@ case class TheFloatValue(value: Float) extends IsFloatValue {
     override def toCanonicalForm: ValueInformation = this
 }
 
-trait IsLongValue extends IsPrimitiveValue[LongType] {
+trait IsLongValue extends IsPrimitiveValue[LongType, Long] {
     override final def primitiveType: LongType = LongType
     override final def hasCategory2ComputationalType: Boolean = true
     override final def verificationTypeInfo: VerificationTypeInfo = LongVariableInfo
@@ -429,7 +432,7 @@ case class TheLongValue(value: Long) extends IsLongValue {
     override def toCanonicalForm: ValueInformation = this
 }
 
-trait IsDoubleValue extends IsPrimitiveValue[DoubleType] {
+trait IsDoubleValue extends IsPrimitiveValue[DoubleType, Double] {
     override final def primitiveType: DoubleType = DoubleType
     override final def hasCategory2ComputationalType: Boolean = true
     override final def verificationTypeInfo: VerificationTypeInfo = DoubleVariableInfo
@@ -676,11 +679,11 @@ trait IsMObjectValue extends IsBaseReferenceValue {
         supertype: ReferenceType
     )(
         implicit classHierarchy: ClassHierarchy
-    ): Answer = {
+    ): Answer = boundary {
         var isASubtypeOf: Answer = No
         upperTypeBound foreach { anUpperTypeBound =>
             classHierarchy.isASubtypeOf(anUpperTypeBound, supertype) match {
-                case Yes     => return Yes; // <= Shortcut evaluation
+                case Yes     => break(Yes); // <= Shortcut evaluation
                 case Unknown => isASubtypeOf = Unknown
                 case No      => /*nothing to do*/
             }
@@ -1000,7 +1003,7 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
         supertype: ReferenceType
     )(
         implicit classHierarchy: ClassHierarchy
-    ): Answer = {
+    ): Answer = boundary {
         // Recall that the client has to make an "isNull" check before calling
         // isValueASubtypeOf. Hence, at least one of the possible reference values
         // has to be non null and this value's upper type bound has to be non-empty.
@@ -1020,9 +1023,9 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
         var answer: Answer = values.next().isValueASubtypeOf(supertype)
         values foreach { value => /* the first value is already removed */
             if (answer eq Unknown)
-                return answer; // isSubtype
+                break(answer); // isSubtype
 
-            answer = answer join value.isValueASubtypeOf(supertype)
+            answer = answer.join(value.isValueASubtypeOf(supertype))
         }
 
         answer

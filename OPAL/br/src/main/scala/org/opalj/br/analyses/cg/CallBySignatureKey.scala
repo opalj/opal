@@ -64,7 +64,7 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
                 i = i + 1
             }
 
-            cbsTargets.put(method, ArraySeq.empty ++ targets)
+            cbsTargets.put(method, ArraySeq.empty[ClassType] ++ targets)
         }
 
         new CallBySignatureTargets(cbsTargets)

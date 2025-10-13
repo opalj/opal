@@ -9,9 +9,9 @@ import org.opalj.br.ReferenceType
 
 trait TypeBasedAliasAnalysis extends SetBasedAliasAnalysis {
 
-    override protected[this] type AliasElementType = ReferenceType
-    override protected[this] type AliasSet = TypeBasedAliasSet
-    override protected[this] type AnalysisState <: TypeBasedAliasAnalysisState
+    override protected type AliasElementType = ReferenceType
+    override protected type AliasSet = TypeBasedAliasSet
+    override protected type AnalysisState <: TypeBasedAliasAnalysisState
 
 }
 
@@ -21,5 +21,5 @@ trait TypeBasedAliasAnalysis extends SetBasedAliasAnalysis {
  */
 class TypeBasedAliasAnalysisState extends SetBasedAliasAnalysisState[ReferenceType, TypeBasedAliasSet] {
 
-    override protected[this] def createAliasSet(): TypeBasedAliasSet = new TypeBasedAliasSet
+    override protected def createAliasSet(): TypeBasedAliasSet = new TypeBasedAliasSet
 }

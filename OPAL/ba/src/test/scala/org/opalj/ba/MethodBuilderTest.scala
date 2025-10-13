@@ -3,6 +3,7 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
+import scala.reflect.classTag
 import scala.reflect.runtime.universe.*
 
 import java.io.ByteArrayInputStream
@@ -58,7 +59,7 @@ class MethodBuilderTest extends AnyFlatSpec {
 
         val simpleMethodClazz = loader.loadClass("SimpleMethodClass")
         val simpleMethodInstance = simpleMethodClazz.getDeclaredConstructor().newInstance()
-        val mirror = runtimeMirror(loader).reflect(simpleMethodInstance)
+        val mirror = runtimeMirror(loader).reflect(simpleMethodInstance)(using classTag[AnyRef])
         val method = mirror.symbol.typeSignature.member(TermName("testMethod")).asMethod
 
         assert(mirror.reflectMethod(method)("test") == null)
@@ -204,7 +205,7 @@ class MethodBuilderTest extends AnyFlatSpec {
         try {
             val attributeMethodClass = loader.loadClass("AttributeMethodClass")
             val attributeTestInstance = attributeMethodClass.getDeclaredConstructor().newInstance()
-            val mirror = runtimeMirror(loader).reflect(attributeTestInstance)
+            val mirror = runtimeMirror(loader).reflect(attributeTestInstance)(using classTag[AnyRef])
             val method = mirror.symbol.typeSignature.member(TermName("tryCatchFinallyTest")).asMethod
             assert(mirror.reflectMethod(method)(-1) == 0)
             assert(mirror.reflectMethod(method)(0) == 1)

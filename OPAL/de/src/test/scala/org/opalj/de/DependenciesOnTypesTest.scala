@@ -38,7 +38,7 @@ class DependenciesOnTypesTest extends AnyFlatSpec with Matchers {
                     dType:  DependencyType
                 ): Unit = {
                     if (target.isClass) {
-                        val VirtualClass(targetType) = target
+                        val VirtualClass(targetType) = target: @unchecked
                         extractedClassTypes += targetType
                     }
                 }

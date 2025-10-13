@@ -192,11 +192,11 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
  * Callees class used for final results where the callees are already aggregated.
  */
 sealed class ConcreteCallees(
-    private[this] val directCalleesIds:        IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
-    private[this] val indirectCalleesIds:      IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
-    private[this] val _incompleteCallSites:    IntMap[br.PCs], // Caller Context => PCs
-    private[this] val _indirectCallReceivers:  IntMap[IntMap[IntMap[Option[(ValueInformation, br.PCs)]]]], // Caller Context => PC => Callee => Receiver
-    private[this] val _indirectCallParameters: IntMap[IntMap[IntMap[Seq[Option[(ValueInformation, br.PCs)]]]]] // Caller Context => PC => Callee => Parameters
+    private val directCalleesIds:        IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
+    private val indirectCalleesIds:      IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
+    private val _incompleteCallSites:    IntMap[br.PCs], // Caller Context => PCs
+    private val _indirectCallReceivers:  IntMap[IntMap[IntMap[Option[(ValueInformation, br.PCs)]]]], // Caller Context => PC => Callee => Receiver
+    private val _indirectCallParameters: IntMap[IntMap[IntMap[Seq[Option[(ValueInformation, br.PCs)]]]]] // Caller Context => PC => Callee => Parameters
 ) extends Callees {
 
     override def incompleteCallSites(callerContext: Context)(implicit propertyStore: PropertyStore): IntIterator = {

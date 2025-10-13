@@ -72,7 +72,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             chaPS = project.get(PropertyStoreKey)
             cha = project.get(CHACallGraphKey)
 
-            checkBidirectionCallerCallee(chaPS)(project.get(ContextProviderKey))
+            checkBidirectionCallerCallee(chaPS)(using project.get(ContextProviderKey))
         }
 
         it should s"have matching callers and callees for RTA" in {
@@ -85,7 +85,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             rtaPS = rtaProject.get(PropertyStoreKey)
             rta = rtaProject.get(RTACallGraphKey)
 
-            checkBidirectionCallerCallee(rtaPS)(rtaProject.get(ContextProviderKey))
+            checkBidirectionCallerCallee(rtaPS)(using rtaProject.get(ContextProviderKey))
         }
 
         it should s"have RTA more precise than CHA" in {
@@ -108,7 +108,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             val pointsToPS = pointsToProject.get(PropertyStoreKey)
             pointsTo = pointsToProject.get(TypeBasedPointsToCallGraphKey)
 
-            checkBidirectionCallerCallee(pointsToPS)(pointsToProject.get(ContextProviderKey))
+            checkBidirectionCallerCallee(pointsToPS)(using pointsToProject.get(ContextProviderKey))
         }
 
         it should s"have PointsTo more precise than RTA" in {
@@ -131,11 +131,11 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             val callersLPCG = lessPreciseCG.callersPropertyOf(method)
             val callersMPCG = morePreciseCG.callersPropertyOf(method)
             if ((callersLPCG eq NoCallers) &&
-                !callersMPCG.callers(method)(morePreciseContextProvider).iterator.forall {
+                !callersMPCG.callers(method)(using morePreciseContextProvider).iterator.forall {
                     callSite =>
                         val callees = lessPreciseCG.calleesPropertyOf(callSite._1)
                         !callSite._3 &&
-                            callees.isIncompleteCallSite(context, callSite._2)(lessPreciseCGPS)
+                            callees.isIncompleteCallSite(context, callSite._2)(using lessPreciseCGPS)
                 }
             ) {
                 unexpectedCalls ::= UnexpectedCallTarget(null, method, -1)
@@ -146,8 +146,9 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             for {
                 (pc, calleesMPCG) <- allCalleesMPCG
                 calleesLPCG = lessPreciseCG.calleesPropertyOf(method)
-                if !calleesLPCG.isIncompleteCallSite(context, pc)(lessPreciseCGPS)
-                allCalleesLPCG = calleesLPCG.callees(context, pc)(lessPreciseCGPS, lessPreciseContextProvider).toSet
+                if !calleesLPCG.isIncompleteCallSite(context, pc)(using lessPreciseCGPS)
+                allCalleesLPCG =
+                    calleesLPCG.callees(context, pc)(using lessPreciseCGPS, lessPreciseContextProvider).toSet
                 calleeMPCG <- calleesMPCG
                 if !allCalleesLPCG(calleeMPCG)
             } {

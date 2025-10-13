@@ -3,7 +3,7 @@ package org.opalj
 package ai
 package common
 
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Text
@@ -34,13 +34,13 @@ object XHTML {
      * We generate dumps on errors only if the specified time has passed by to avoid that
      * we are drowned in dumps. Often, a single bug causes many dumps to be created.
      */
-    private[this] val _lastDump = new java.util.concurrent.atomic.AtomicLong(0L)
+    private val _lastDump = new java.util.concurrent.atomic.AtomicLong(0L)
 
-    private[this] def lastDump_=(currentTimeMillis: Long): Unit = {
+    private def lastDump_=(currentTimeMillis: Long): Unit = {
         _lastDump.set(currentTimeMillis)
     }
 
-    private[this] def lastDump = _lastDump.get()
+    private def lastDump = _lastDump.get()
 
     def dumpOnFailure[T, D <: Domain](
         classFile:           ClassFile,
@@ -58,8 +58,8 @@ object XHTML {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f(result)
         } catch {
-            case ct: ControlThrowable => throw ct
-            case e: Throwable         =>
+            case b: Break[?]  => throw b
+            case e: Throwable =>
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
@@ -103,8 +103,8 @@ object XHTML {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f
         } catch {
-            case ct: ControlThrowable => throw ct
-            case e: Throwable         =>
+            case b: Break[?]  => throw b
+            case e: Throwable =>
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
@@ -254,7 +254,7 @@ object XHTML {
                             cfJoins,
                             operandsArray,
                             localsArray
-                        )(Some(idsLookup))
+                        )(using Some(idsLookup))
                     }
                 </tbody>
             </table>

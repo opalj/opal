@@ -194,7 +194,7 @@ trait IntegerSetValues
         }
     }
 
-    protected[this] def approximateSet(
+    protected def approximateSet(
         origin:     ValueOrigin,
         lowerBound: Int,
         upperBound: Int
@@ -815,7 +815,7 @@ trait IntegerSetValues
         }
     }
 
-    protected[this] def createIntegerValueOrArithmeticException(
+    protected def createIntegerValueOrArithmeticException(
         pc:        PC,
         exception: Boolean,
         results:   SortedSet[Int]

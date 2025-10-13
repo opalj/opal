@@ -4,7 +4,9 @@ package ai
 package domain
 package l2
 
-import scala.util.control.ControlThrowable
+import scala.util.boundary
+import scala.util.boundary.Break
+import scala.util.boundary.break
 
 import org.opalj.br.Method
 import org.opalj.log.LogContext
@@ -55,9 +57,8 @@ trait CalledMethodsStore { rootStore =>
 
     def testOrElseUpdated(
         method:   Method,
-        operands: ValuesDomain#Operands
-    ): Option[CalledMethodsStore { val domain: rootStore.domain.type }] = {
-
+        operands: Operands[? <: ValuesDomain#DomainValue]
+    ): Option[CalledMethodsStore { val domain: rootStore.domain.type }] = boundary {
         val adaptedOperands = mapOperands(operands, domain)
         calledMethods.get(method) match {
             case None                       => Some(updated(method, List(adaptedOperands)))
@@ -74,15 +75,15 @@ trait CalledMethodsStore { rootStore =>
                         }
                         if (abstractsOver)
                             // a previous computation completely abstracts over this computation
-                            return None;
+                            break(None);
                     } catch {
-                        case ct: ControlThrowable => throw ct
-                        case t: Throwable         =>
+                        case b: Break[?]  => throw b
+                        case t: Throwable =>
                             OPALLogger.error(
                                 "internal error",
                                 s"incompatible operands lists: $previousOperands and $adaptedOperands",
                                 t
-                            )(domain.logContext)
+                            )(using domain.logContext)
                             throw t
                     }
                 }

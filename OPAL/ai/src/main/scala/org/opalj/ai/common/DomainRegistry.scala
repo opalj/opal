@@ -33,8 +33,8 @@ object DomainRegistry {
 
     type ClassRegistry = Map[Class[? <: Domain], DomainMetaInformation]
 
-    private[this] var descriptions: Map[String, Class[? <: Domain]] = Map.empty
-    private[this] var classRegistry: ClassRegistry = Map.empty
+    private var descriptions: Map[String, Class[? <: Domain]] = Map.empty
+    private var classRegistry: ClassRegistry = Map.empty
 
     /**
      * Register a new domain that can be used to perform an abstract interpretation

@@ -81,7 +81,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
      * class file object. For further information study the resolving process of
      * `invokedynamic` instructions.
      */
-    protected[this] def createDeferredActionsStore(): DeferredActionsStore
+    protected def createDeferredActionsStore(): DeferredActionsStore
 
     //
     // IMPLEMENTATION

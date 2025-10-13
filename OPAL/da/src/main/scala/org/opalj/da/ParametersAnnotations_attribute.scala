@@ -26,7 +26,7 @@ trait ParametersAnnotations_attribute extends Attribute {
             for { // TODO This doesn't make sense: it is no longer possible to distinguish parameters
                 (perParameterAnnotations, parameterIndex) <- parameters_annotations.zipWithIndex
                 annotation <- perParameterAnnotations
-            } yield annotation.toXHTML(cp)
+            } yield annotation.toXHTML
         }
 
         <div>{ans}</div>

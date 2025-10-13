@@ -77,7 +77,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
                 FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
             )
 
-            val thisActual = persistentUVar(param)(state.tac.stmts)
+            val thisActual = persistentUVar(param)(using state.tac.stmts)
 
             typeIterator.foreachType(
                 param,
@@ -106,7 +106,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
             Results(partialResults)
     }
 
-    private[this] def handleType(
+    private def handleType(
         tpe:               ReferenceType,
         callContext:       ContextType,
         callPC:            Int,
@@ -139,7 +139,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
 
         typeIterator.continuation(thisVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) { newType =>
             handleType(newType, state.callContext, pc, thisActual, indirectCalls)
-        }(state)
+        }(using state)
 
         if (eps.isFinal) {
             state.removeDependee(eps.toEPK)
@@ -147,7 +147,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
             state.updateDependency(eps)
         }
 
-        returnResult(thisVar, thisActual, indirectCalls)(state)
+        returnResult(thisVar, thisActual, indirectCalls)(using state)
     }
 
     override val apiMethod: DeclaredMethod = doPrivilegedMethod

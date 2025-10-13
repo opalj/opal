@@ -66,15 +66,15 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
 
         type ReturnedValue = DomainValue
 
-        private[this] val originalReturnType: ReferenceType =
+        private val originalReturnType: ReferenceType =
             method.descriptor.returnType.asReferenceType
 
-        private[this] var theReturnedValue: DomainValue = null
+        private var theReturnedValue: DomainValue = null
 
         // e.g., a method that always throws an exception...
         def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
-        protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
+        protected def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
             val isUpdated =
                 if (theReturnedValue == null) {
                     theReturnedValue = value.summarize(Int.MinValue)

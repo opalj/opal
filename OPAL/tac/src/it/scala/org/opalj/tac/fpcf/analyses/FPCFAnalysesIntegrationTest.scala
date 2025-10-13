@@ -7,6 +7,7 @@ package analyses
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.GZIPInputStream
+import scala.compiletime.uninitialized
 import scala.io.Source
 
 import org.junit.runner.RunWith
@@ -50,7 +51,7 @@ import org.opalj.util.getObjectReflectively
 @RunWith(classOf[JUnitRunner])
 class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
-    private[this] val analysisConfigurations = getConfig
+    private val analysisConfigurations = getConfig
 
     PropertyStore.updateDebug(true)
 
@@ -215,6 +216,6 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
  */
 object FPCFAnalysesIntegrationTest {
     var factory: () => SomeProject = () => null
-    var p: SomeProject = _
-    var ps: PropertyStore = _
+    var p: SomeProject = uninitialized
+    var ps: PropertyStore = uninitialized
 }

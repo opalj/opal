@@ -124,7 +124,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                     result = ThrownExceptions.UnknownExceptionIsThrown
                     false
                 case INVOKESPECIAL.opcode =>
-                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
+                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction: @unchecked
                     if ((declaringClass eq ClassType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
                             (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||

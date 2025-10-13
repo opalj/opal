@@ -3,6 +3,9 @@ package org.opalj
 package ai
 package domain
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -31,7 +34,7 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
 @RunWith(classOf[JUnitRunner])
 class DomainIndependenceTest extends AnyFlatSpec with Matchers {
 
-    private[this] implicit val logContext: LogContext = GlobalLogContext
+    private implicit val logContext: LogContext = GlobalLogContext
 
     // We use this domain for the comparison of the values; it has the same
     // expressive power as the other domains.
@@ -110,7 +113,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
 
     it should "always calculate the same result" in {
 
-        def corresponds(r1: AIResult, r2: AIResult): Option[String] = {
+        def corresponds(r1: AIResult, r2: AIResult): Option[String] = boundary {
             r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) =>
                 (lOperands == null && rOperands == null) ||
                 (lOperands != null && rOperands != null &&
@@ -118,9 +121,9 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                     val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                     val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                     if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
-                        return Some(
+                        break(Some(
                             Console.RED_B + "the operand stack value " + lVD + " and " + rVD + " do not correspond "
-                        )
+                        ))
                     else
                         true
                 })
@@ -142,15 +145,15 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                                     (rVD.isInstanceOf[ValuesDomain.ReturnAddressValue] &&
                                     !lVD.isInstanceOf[ValuesDomain.ReturnAddressValue])
                                 )
-                                    return Some(
+                                    break(Some(
                                         Console.BLUE_B + "the register value " + lVD + " does not correspond with " + rVD
-                                    )
+                                    ))
                                 else
                                     true
                             } else if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
-                                return Some(
+                                break(Some(
                                     Console.BLUE_B + "the register value " + lVD + " does not correspond with " + rVD
-                                )
+                                ))
                             else
                                 true
                         }

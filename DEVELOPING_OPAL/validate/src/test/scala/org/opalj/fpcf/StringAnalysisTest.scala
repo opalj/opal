@@ -93,17 +93,16 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
         val domain = domainLevel match {
-            case DomainLevel.L1 => classOf[DefaultDomainWithCFGAndDefUse[_]]
-            case DomainLevel.L2 => classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
-            case _              => throw new IllegalArgumentException(s"Invalid domain level for test definition: $domainLevel")
+            case DomainLevel.L1 => classOf[DefaultDomainWithCFGAndDefUse[?]]
+            case DomainLevel.L2 => classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[?]]
         }
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => Set(domain)
             case Some(requirements) => requirements + domain
         }
         p.updateProjectInformationKeyInitializationData(EagerDetachedTACAIKey) {
-            case None    => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
-            case Some(_) => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
+            case None    => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain & RecordDefUse]
+            case Some(_) => m => domain.getConstructors.head.newInstance(p, m).asInstanceOf[Domain & RecordDefUse]
         }
 
         val typeIterator = callGraphKey.getTypeIterator(p)
@@ -158,7 +157,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
         tac.cfg.code.instructions.filter {
             case VirtualMethodCall(_, _, _, name, _, _, _) => name == nameTestMethod
             case _                                         => false
-        }.map { call => (call.pc, call.asVirtualMethodCall.params.head.asVar.toPersistentForm(tac.stmts)) }.toList
+        }.map { call => (call.pc, call.asVirtualMethodCall.params.head.asVar.toPersistentForm(using tac.stmts)) }.toList
     }
 
     def determineEAS(
@@ -181,7 +180,7 @@ sealed abstract class StringAnalysisTest extends PropertiesTest {
                         OPALLogger.error(
                             "string analysis test setup",
                             s"Could not find annotations to check for #$index of ${am._1.toJava.substring(24)}"
-                        )(project.logContext)
+                        )(using project.logContext)
                         detectedMissingAnnotations = true
                     }
 

@@ -50,9 +50,9 @@ object CODE {
     final val LogDeadCodeConfigKey = CodeConfigKeyPrefix + "logDeadCode"
     final val LogCodeRewritingConfigKey = CodeConfigKeyPrefix + "logCodeRewriting"
 
-    @volatile private[this] var logDeadCodeRemoval: Boolean = true
-    @volatile private[this] var logDeadCode: Boolean = true
-    @volatile private[this] var logCodeRewriting: Boolean = true
+    @volatile private var logDeadCodeRemoval: Boolean = true
+    @volatile private var logDeadCode: Boolean = true
+    @volatile private var logCodeRewriting: Boolean = true
 
     def setBaseConfig(config: Config): Unit = {
         logDeadCodeRemoval = config.getBoolean(LogDeadCodeRemovalConfigKey)
@@ -248,7 +248,7 @@ object CODE {
 
                     var currentInstruction: CodeElement[T] = codeElements(currentIndex)
                     var continueIteration = true
-                    do {
+                    while {
                         val isNotYetLive = !isLive(currentIndex)
                         if (isNotYetLive && !currentInstruction.isExceptionHandlerElement) {
                             // This check is primarily required due to the eager marking
@@ -290,16 +290,16 @@ object CODE {
                                 }
                         }
                         currentIndex += 1
-                    } while (continueIteration
-                             && currentIndex < codeElementsSize
-                             && {
-                                 currentInstruction = codeElements(currentIndex)
-                                 // In the following we ignore pseudo instructions
-                                 // (in particular PCLabels)
-                                 // because they may have been set to live already!
-                                 currentInstruction.isPseudoInstruction || !isLive(currentIndex)
-                             }
-                    )
+
+                        continueIteration &&
+                            currentIndex < codeElementsSize && {
+                                currentInstruction = codeElements(currentIndex)
+                                // In the following we ignore pseudo instructions
+                                // (in particular PCLabels)
+                                // because they may have been set to live already!
+                                currentInstruction.isPseudoInstruction || !isLive(currentIndex)
+                            }
+                    } do ()
                 }
             }
         }
@@ -396,7 +396,7 @@ object CODE {
 
         // The main loop processing the worklist data-structure.
         var continueProcessingCode = false
-        do {
+        while {
             continueProcessingCode = false
             processMarkedAsLive()
             val oldIsLiveCount = isLiveCount
@@ -406,7 +406,9 @@ object CODE {
                     continueProcessingCode = true
                 }
             }
-        } while (continueProcessingCode)
+
+            continueProcessingCode
+        } do ()
 
         // Post-processing
         if (isLiveCount < codeElementsSize) {
@@ -468,7 +470,7 @@ object CODE {
         var hasControlTransferInstructions = false
         val pcMapping = new PCMapping(initialSize = codeElements.length) // created based on `PCLabel`s
 
-        var currentPC = 0
+        var currentPC: br.PC = 0
         var nextPC = 0
         var modifiedByWide = false
         // fill the instructionLikes array with `null`s for PCs representing instruction arguments
@@ -477,7 +479,7 @@ object CODE {
                 case ile @ InstructionLikeElement(i) =>
                     currentPC = nextPC
                     nextPC = i.indexOfNextInstruction(currentPC, modifiedByWide)
-                    if (ile.isAnnotated) annotations += ((currentPC, ile.annotation))
+                    if (ile.isAnnotated) annotations += ((currentPC, ile.annotation.asInstanceOf[T]))
                     instructionLikes.append(i)
                     pcToCodeElementIndex.put(currentPC, index)
                     repeat((nextPC - currentPC) - 1) {
@@ -537,7 +539,7 @@ object CODE {
             newCodeElements ++= codeElements
 
             codeElementsToRewrite.reverseIntIterator.foreach { index =>
-                val InstructionElement(i) = codeElements(index)
+                val InstructionElement(i) = codeElements(index): @unchecked
                 i match {
                     case LabeledGOTO(label) => newCodeElements(index) = LabeledGOTO_W(label)
 

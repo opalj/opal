@@ -17,7 +17,7 @@ import org.opalj.br.Method
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations with TheMemoryLayout {
     callingDomain: ValuesFactory & ReferenceValuesDomain & TheProject & TheMethod & Configuration =>
 
-    override type CalledMethodDomain <: TargetDomain & ChildPerformInvocationsWithRecursionDetection & MethodCallResults
+    override type CalledMethodDomain <: Domain & TargetDomain & ChildPerformInvocationsWithRecursionDetection & MethodCallResults
 
     val coordinatingDomain: CalledMethodsStore.BaseDomain
 
@@ -29,7 +29,7 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations with T
     // doInvoke...
     private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = null
 
-    override protected[this] def doInvoke(
+    override protected def doInvoke(
         pc:       Int,
         method:   Method,
         operands: Operands,

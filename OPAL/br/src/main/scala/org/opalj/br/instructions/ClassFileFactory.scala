@@ -210,7 +210,7 @@ object ClassFileFactory {
                     methodDescriptor
                 )
             ) {
-                ArraySeq.empty
+                ArraySeq.empty[FieldTemplate]
             } else {
                 ArraySeq(createField(fieldType = receiverType, name = ReceiverFieldName))
             }
@@ -1351,7 +1351,7 @@ object ClassFileFactory {
                         s"receiver descriptor  = $receiverMethodDescriptor +\n\t " +
                         s"static parameters    = $staticParameters (variableOffset=$variableOffset)",
                     t
-                )(GlobalLogContext)
+                )(using GlobalLogContext)
                 throw t;
         }
 

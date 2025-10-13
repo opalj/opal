@@ -5,6 +5,7 @@ package domain
 package l1
 
 import scala.collection.immutable.ArraySeq
+import scala.compiletime.uninitialized
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
@@ -22,7 +23,7 @@ import br.*
 @RunWith(classOf[JUnitRunner])
 class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
-    private[this] val IrrelevantPC = Int.MinValue
+    private val IrrelevantPC = Int.MinValue
 
     class ReflectiveInvokerTestDomain
         extends CorrelationalDomain
@@ -51,7 +52,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         override def warnOnFailedReflectiveCalls: Boolean = false
 
-        var lastObject: Object = _
+        var lastObject: Object = uninitialized
 
         def lastValue(): Object = lastObject
 
@@ -114,7 +115,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         val stringValue = StringValue(IrrelevantPC, "Test")
         val declaringClass = ClassType.String
-        val descriptor = MethodDescriptor(FieldTypes.empty, IntegerType)
+        val descriptor = MethodDescriptor(FieldTypes.empty[FieldType], IntegerType)
         val operands = List(stringValue)
 
         // int String.length()
@@ -180,7 +181,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         val instanceValue = TypedValue(IrrelevantPC, ClassType.String)
         val declaringClass = ClassType.String
-        val descriptor = MethodDescriptor(FieldTypes.empty, IntegerType)
+        val descriptor = MethodDescriptor(FieldTypes.empty[FieldType], IntegerType)
         val operands = List(instanceValue)
 
         // int String.length()

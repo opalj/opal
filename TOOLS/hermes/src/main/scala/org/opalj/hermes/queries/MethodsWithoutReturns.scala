@@ -38,7 +38,7 @@ class MethodsWithoutReturns(implicit hermes: HermesConfig) extends FeatureQuery 
             hasReturnInstruction = body.instructionIterator.exists { i => i.isInstanceOf[ReturnInstruction] }
             if !hasReturnInstruction
         } {
-            val cfg = CFGFactory(body, project.classHierarchy)
+            val cfg = CFGFactory(using body, project.classHierarchy)
             if (cfg.abnormalReturnNode.predecessors.isEmpty)
                 infiniteLoopMethods += MethodLocation(classFileLocation, method)
             else

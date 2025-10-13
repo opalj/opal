@@ -24,7 +24,7 @@ class Operands(
 
     def toXHTML(basicInfoOnly: Boolean): Node = {
         val detailsNodes = instruction match {
-            case cbi: SimpleConditionalBranchInstruction[_] =>
+            case cbi: SimpleConditionalBranchInstruction[?] =>
                 val condition =
                     if (cbi.operandCount == 1)
                         List(
@@ -85,7 +85,7 @@ class Operands(
 
     override def toIDL: JsValue = {
         instruction match {
-            case cbi: SimpleConditionalBranchInstruction[_] =>
+            case cbi: SimpleConditionalBranchInstruction[?] =>
                 Json.obj(
                     "type" -> "SimpleConditionalBranchInstruction",
                     "operator" -> cbi.operator,

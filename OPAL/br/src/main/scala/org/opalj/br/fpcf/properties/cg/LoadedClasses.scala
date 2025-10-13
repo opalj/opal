@@ -80,7 +80,7 @@ object LoadedClasses extends LoadedClassesMetaInformation {
             (ps: PropertyStore, reason: FallbackReason, _: Entity) =>
                 reason match {
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                        OPALLogger.error("call graph analysis", "there was no class loaded")(ps.logContext)
+                        OPALLogger.error("call graph analysis", "there was no class loaded")(using ps.logContext)
                         NoLoadedClasses
                     case _ =>
                         throw new IllegalStateException(s"analysis required for property: $name")

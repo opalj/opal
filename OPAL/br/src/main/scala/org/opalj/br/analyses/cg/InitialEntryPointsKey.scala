@@ -57,7 +57,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[DeclaredMeth
         epFinder.collectEntryPoints(project)
     }
 
-    private[this] def getEntryPointFinder(project: SomeProject): EntryPointFinder = {
+    private def getEntryPointFinder(project: SomeProject): EntryPointFinder = {
         val configuredAnalysis = project.config.as[Option[String]](ConfigKey)
         val entryPointFinder = configuredAnalysis
         if (entryPointFinder.isEmpty) {

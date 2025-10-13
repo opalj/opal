@@ -4,6 +4,8 @@ package ai
 package domain
 package l1
 
+import scala.compiletime.uninitialized
+
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -138,7 +140,7 @@ object PlainClassesTest {
         with l0.TypeLevelDynamicLoads
         with l1.DefaultClassValuesBinding {
 
-        var returnedValue: Option[DomainValue] = _
+        var returnedValue: Option[DomainValue] = uninitialized
         override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
             returnedValue = Some(value)
             super.areturn(pc, value)

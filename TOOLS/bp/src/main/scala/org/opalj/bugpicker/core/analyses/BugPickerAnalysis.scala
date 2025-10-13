@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters.*
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Unparsed
@@ -415,12 +414,12 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                         } catch {
                             case afe: InterpretationFailedException =>
                                 val ms = method.fullyQualifiedSignature
-                                val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
+                                val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[?]].currentEvaluationCount
                                 val message =
                                     s"the analysis of $ms failed/was aborted after $steps steps"
                                 exceptions add (AnalysisException(message, afe))
-                            case ct: ControlThrowable => throw ct
-                            case t: Throwable         =>
+                            case b: Break[?]                        => throw b
+                            case t: Throwable                       =>
                                 val ms = method.fullyQualifiedSignature
                                 val message = s"the analysis of ${ms} failed"
                                 exceptions add (AnalysisException(message, t))

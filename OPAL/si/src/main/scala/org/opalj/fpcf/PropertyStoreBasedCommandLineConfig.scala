@@ -54,10 +54,10 @@ object PropertyStoreThreadsNumArg extends ConvertedArg[Int, Int] with Forwarding
             (context: List[PropertyStoreContext[AnyRef]]) => {
                 implicit val lg: LogContext = project.logContext
                 if (numThreads == 0) {
-                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context*)
                 } else {
                     org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
-                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                    org.opalj.fpcf.par.PKECPropertyStore(context*)
                 }
             }
         )
@@ -80,13 +80,15 @@ trait PropertyStoreBasedCommandLineConfig extends OPALCommandLineConfig { self: 
             }
             project.get(PropertyStoreKey)
         } { t =>
-            OPALLogger.info("analysis progress", s"setting up property store took ${t.toSeconds} ")(project.logContext)
+            OPALLogger.info("analysis progress", s"setting up property store took ${t.toSeconds} ")(
+                using project.logContext
+            )
             propertyStoreTime = t.toSeconds
         }
         (propertyStore, propertyStoreTime)
     }
 
-    def getScheduler(analysisName: String, eager: Boolean): FPCFAnalysisScheduler[_] = {
+    def getScheduler(analysisName: String, eager: Boolean): FPCFAnalysisScheduler[?] = {
         if (eager) FPCFAnalysesRegistry.eagerFactory(analysisName)
         else FPCFAnalysesRegistry.lazyFactory(analysisName)
     }

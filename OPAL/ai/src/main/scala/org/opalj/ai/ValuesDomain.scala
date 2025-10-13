@@ -229,7 +229,7 @@ trait ValuesDomain { domain =>
          *          '''The given `value` and this value are guaranteed to have
          *          the same computational type, but are not reference equal.'''
          */
-        protected[this] def doJoin(pc: Int, value: DomainValue): Update[DomainValue]
+        protected def doJoin(pc: Int, value: DomainValue): Update[DomainValue]
 
         /**
          * Checks that the given value and this value are compatible with regard to
@@ -639,8 +639,8 @@ trait ValuesDomain { domain =>
             return v1;
 
         v1.join(pc, v2) match {
-            case NoUpdate      => v1
-            case SomeUpdate(v) => v
+            case NoUpdate                   => v1
+            case SomeUpdate(v: DomainValue) => v
         }
     }
 
@@ -663,8 +663,8 @@ trait ValuesDomain { domain =>
         valuesIterator foreach { value =>
             if (summary ne value) {
                 summary.join(pc, value.summarize(pc)) match {
-                    case NoUpdate               => /*nothing to do*/
-                    case SomeUpdate(newSummary) => summary = newSummary.summarize(pc)
+                    case NoUpdate                            => /*nothing to do*/
+                    case SomeUpdate(newSummary: DomainValue) => summary = newSummary.summarize(pc)
                 }
             }
         }

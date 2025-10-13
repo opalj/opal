@@ -7,6 +7,9 @@ package escape
 
 import scala.annotation.switch
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -66,18 +69,18 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 class ReturnValueFreshnessState(val context: Context) {
-    private[this] var returnValueDependees: Map[Context, EOptionP[Context, ReturnValueFreshness]] = Map.empty
-    private[this] var fieldDependees: Map[Field, EOptionP[Field, FieldLocality]] = Map.empty
-    private[this] var defSiteDependees: Map[
+    private var returnValueDependees: Map[Context, EOptionP[Context, ReturnValueFreshness]] = Map.empty
+    private var fieldDependees: Map[Field, EOptionP[Field, FieldLocality]] = Map.empty
+    private var defSiteDependees: Map[
         (Context, DefinitionSite),
         EOptionP[(Context, DefinitionSite), EscapeProperty]
     ] = Map.empty
-    private[this] var tacaiDependee: Option[EOptionP[Method, TACAI]] = None
-    private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
+    private var tacaiDependee: Option[EOptionP[Method, TACAI]] = None
+    private var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
-    private[this] var _callSitePCs: IntTrieSet = IntTrieSet.empty
+    private var _callSitePCs: IntTrieSet = IntTrieSet.empty
 
-    private[this] var upperBound: ReturnValueFreshness = FreshReturnValue
+    private var upperBound: ReturnValueFreshness = FreshReturnValue
 
     // TODO: Use EOptionPSet
     def dependees: Set[SomeEOptionP] = {
@@ -157,7 +160,7 @@ class ReturnValueFreshnessState(val context: Context) {
     }
 
     def atMost(property: ReturnValueFreshness): Unit = {
-        upperBound = upperBound meet property
+        upperBound = upperBound.meet(property)
     }
 
     def ubRVF: ReturnValueFreshness = upperBound
@@ -178,10 +181,10 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
-    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
-    private[this] val definitionSites = project.get(DefinitionSitesKey)
+    private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
+    private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private val definitionSites = project.get(DefinitionSitesKey)
 
     /**
      * Ensures that we invoke [[doDetermineFreshness]] for [[org.opalj.br.DefinedMethod]]s only.
@@ -260,7 +263,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def determineFreshnessForMethod(
         context: Context,
         code:    Array[Stmt[V]]
-    )(implicit state: ReturnValueFreshnessState): ProperPropertyComputationResult = {
+    )(implicit state: ReturnValueFreshnessState): ProperPropertyComputationResult = boundary {
         val m = context.method
 
         // for every return-value statement check the def-sites
@@ -271,9 +274,9 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
             // parameters are not fresh by definition
             if (defSite < 0)
-                return Result(context, NoFreshReturnValue);
+                break(Result(context, NoFreshReturnValue));
 
-            val Assignment(pc, _, rhs) = code(defSite)
+            val Assignment(pc, _, rhs) = code(defSite): @unchecked
 
             // const values are handled as fresh
             if (!rhs.isConst) {
@@ -281,7 +284,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                 // check if the variable is escaped
                 val escape = propertyStore((context, definitionSites(m, pc)), EscapeProperty.key)
                 if (!state.containsDefSiteDependee(escape) && handleEscapeProperty(escape))
-                    return Result(context, NoFreshReturnValue);
+                    break(Result(context, NoFreshReturnValue));
 
                 val isNotFresh = (rhs.astID: @switch) match {
 
@@ -290,15 +293,15 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                     // Values from local fields are fresh if the object is fresh =>
                     // report these as [[org.opalj.fpcf.properties.Getter]]
                     case GetField.ASTID =>
-                        val GetField(_, dc, name, fieldType, objRef) = rhs
+                        val GetField(_, dc, name, fieldType, objRef) = rhs: @unchecked
 
                         // Only a getter if the field is accessed on the method's receiver object
                         if (objRef.asVar.definedBy != IntTrieSet(tac.OriginOfThis))
-                            return Result(context, NoFreshReturnValue);
+                            break(Result(context, NoFreshReturnValue));
 
                         val field = project.resolveFieldReference(dc, name, fieldType) match {
                             case Some(f) => f
-                            case _       => return Result(context, NoFreshReturnValue);
+                            case _       => break(Result(context, NoFreshReturnValue));
                         }
 
                         val locality = propertyStore(field, FieldLocality.key)
@@ -312,12 +315,12 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                         handleCallSite(context, pc)
 
                     // other kinds of assignments like GetStatic etc.
-                    case _ => return Result(context, NoFreshReturnValue);
+                    case _ => break(Result(context, NoFreshReturnValue));
 
                 }
 
                 if (isNotFresh)
-                    return Result(context, NoFreshReturnValue);
+                    break(Result(context, NoFreshReturnValue));
             }
         }
 
@@ -377,7 +380,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
         case FinalP(AtMost(_)) => true
 
-        case _: FinalEP[(Context, DefinitionSite), EscapeProperty] => true // Escape state is worse than via return
+        case FinalP(_) => true // Escape state is worse than via return
 
         case InterimUBP(NoEscape | EscapeInCallee) =>
             state.addDefSiteDependee(ep)

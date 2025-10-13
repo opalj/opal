@@ -28,8 +28,7 @@ trait Record_attributeReader extends AttributeReader {
 
     type Record_attribute >: Null <: Attribute
 
-    type RecordComponent <: AnyRef
-    implicit val recordComponentType: ClassTag[RecordComponent] // TODO: Replace in Scala 3 by `type RecordComponent : ClassTag`
+    type RecordComponent <: AnyRef: ClassTag
     type RecordComponents = ArraySeq[RecordComponent]
 
     def Record_attribute(
@@ -76,7 +75,7 @@ trait Record_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parserFactory() = (
+    private def parserFactory() = (
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,

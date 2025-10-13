@@ -66,7 +66,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
     override def kindId: Int = TACode.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
-        this equals other
+        this == other
     }
 
     def firstLineNumber(code: Code): Option[Int] = {
@@ -103,7 +103,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
             exceptionHandlers.hashCode * 31
     }
 
-    protected[this] def toString(taCodeType: String, additionalParameters: String): String = {
+    protected def toString(taCodeType: String, additionalParameters: String): String = {
         val txtParams = s"params=($params)"
         val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e =>
             val (s, i) = e; s"$i: $s"

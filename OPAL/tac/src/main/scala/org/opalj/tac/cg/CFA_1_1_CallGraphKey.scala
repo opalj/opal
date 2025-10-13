@@ -5,6 +5,7 @@ package cg
 
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.CallStringContexts
 import org.opalj.br.fpcf.properties.CallStringContextsKey

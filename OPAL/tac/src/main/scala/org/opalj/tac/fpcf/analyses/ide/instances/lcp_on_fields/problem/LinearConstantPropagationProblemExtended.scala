@@ -92,7 +92,7 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                     case VariableValue    => VariableValueEdgeFunction
                 })
 
-            case InterimUBP(property) =>
+            case InterimUBP(property: LCPOnFieldsPropertyMetaInformation.Self @unchecked) =>
                 val value = getArrayElementFromProperty(arrayVar, index)(property)
                 value match {
                     case UnknownValue =>
@@ -157,7 +157,7 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                     case VariableValue    => VariableValueEdgeFunction
                 })
 
-            case InterimUBP(property) =>
+            case InterimUBP(property: LCPOnFieldsPropertyMetaInformation.Self @unchecked) =>
                 val value = getObjectFieldFromProperty(objectVar, fieldName)(property)
                 value match {
                     case UnknownValue =>
@@ -211,7 +211,7 @@ class LinearConstantPropagationProblemExtended extends LinearConstantPropagation
                     case VariableValue    => VariableValueEdgeFunction
                 })
 
-            case InterimUBP(property) =>
+            case InterimUBP(property: LCPOnFieldsPropertyMetaInformation.Self @unchecked) =>
                 getStaticFieldFromProperty(classType, fieldName)(property) match {
                     case UnknownValue =>
                         InterimEdgeFunction(UnknownValueEdgeFunction, Set(lcpOnFieldsEOptionP))

@@ -56,9 +56,9 @@ class CodePropertiesTest extends AnyFunSuite {
             val eh = code.exceptionHandlers
             val specifiedMaxStack = code.maxStack
             val specifiedMaxLocals = code.maxLocals
-            val cfg = CFGFactory(code, ch)
+            val cfg = CFGFactory(using code, ch)
 
-            val liveVariables = code.liveVariables(ch)
+            val liveVariables = code.liveVariables(using ch)
             assert(
                 code.programCounters.forall(pc => liveVariables(pc) ne null),
                 s"computation of liveVariables fails for ${method.toJava}"
@@ -180,7 +180,7 @@ class CodePropertiesTest extends AnyFunSuite {
             override def loadsInterfacesOnly: Boolean = false
         }
         val reader = new Reader()
-        val cfs = org.opalj.br.reader.readJREClassFiles()(reader = reader)
+        val cfs = org.opalj.br.reader.readJREClassFiles()(using reader = reader)
         val jreProject = Project(cfs)
         analyzeMaxStackAndLocals(jreProject)
         val count = analyzeStackMapTablePCs(jreProject)

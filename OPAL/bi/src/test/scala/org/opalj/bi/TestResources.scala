@@ -4,6 +4,8 @@ package bi
 
 import java.io.File
 import scala.collection.immutable.ArraySeq
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.io.JARsFileFilter
 import org.opalj.util.ScalaMajorVersion
@@ -56,7 +58,7 @@ object TestResources {
      *
      * @param   subProjectFolder The root folder of the OPAL subproject; e.g., "ai".
      */
-    def locateTestResources(resourceName: String, subProjectFolder: String): File = {
+    def locateTestResources(resourceName: String, subProjectFolder: String): File = boundary {
         val resourceFiles /*CANDIDATES*/ = Array(
             s"$subProjectFolder/$unmanagedResourcesFolder$resourceName",
             s"$subProjectFolder/$managedResourcesFolder/$resourceName"
@@ -65,7 +67,7 @@ object TestResources {
             resourceFiles foreach { rf =>
                 pathFunction(rf) foreach { fCandidate =>
                     val f = new File(fCandidate)
-                    if (f.exists) return f; // <======== NORMAL RETURN
+                    if (f.exists) break(f); // <======== NORMAL RETURN
                 }
             }
         }

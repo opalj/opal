@@ -39,7 +39,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
-    private[this] def mapEntities(
+    private def mapEntities(
         p:  Project[URL],
         es: Iterable[(Entity, String => String, Iterable[AnnotationLike])]
     ): Iterable[(Entity, String => String, Iterable[AnnotationLike])] = {

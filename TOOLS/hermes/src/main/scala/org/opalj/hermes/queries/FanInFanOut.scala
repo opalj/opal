@@ -48,7 +48,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         offset:        Int
     ) {
 
-        private[this] lazy val _maxFeatureIndex = numCategories - 1
+        private lazy val _maxFeatureIndex = numCategories - 1
 
         def featureIndex(value: Int): Int = {
             Math.min(value / categorySize.toInt, _maxFeatureIndex) + offset
@@ -80,7 +80,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             FeatureConfiguration(featureName, numCategories, categorySize, offset)
         }
 
-        private[this] def parseNumCategories(
+        private def parseNumCategories(
             categoriesKey: String
         )(
             implicit config: Config
@@ -97,7 +97,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             }
         }
 
-        private[this] def parseCategorySize(
+        private def parseCategorySize(
             categorySizeKey: String
         )(
             implicit config: Config
@@ -137,7 +137,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
     val DEFAULT_ratioCategories = 4
     val DEFAULT_ratioCategorySize = 0.5d
 
-    private[this] val fanoutFeature = FeatureConfiguration(
+    private val fanoutFeature = FeatureConfiguration(
         fanoutFeatureName,
         fanoutCategories,
         fanoutCategorySize,
@@ -146,7 +146,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         offset = 0
     )
 
-    private[this] val faninFeature = FeatureConfiguration(
+    private val faninFeature = FeatureConfiguration(
         faninFeatureName,
         faninCategories,
         faninCategorySize,
@@ -155,7 +155,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         offset = fanoutFeature.numCategories
     )
 
-    private[this] val ratioFeature = FeatureConfiguration(
+    private val ratioFeature = FeatureConfiguration(
         ratioFeatureName,
         ratioCategories,
         ratioCategorySize,
@@ -164,14 +164,14 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         offset = fanoutFeature.numCategories + faninFeature.numCategories
     )
 
-    private[this] lazy val _featureInfo: Seq[FeatureConfiguration] = Seq(
+    private lazy val _featureInfo: Seq[FeatureConfiguration] = Seq(
         fanoutFeature,
         faninFeature,
         ratioFeature
     )
 
     // Initializes the featureIds from the configuration file.
-    private[this] lazy val _featureIDs: Seq[String] = {
+    private lazy val _featureIDs: Seq[String] = {
 
         val seqBuilder = Seq.newBuilder[String]
 
@@ -204,7 +204,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         val fanOutMap = mutable.Map.empty[Int, Int]
         val fanInMap = mutable.Map.empty[Int, Int]
 
-        @inline def getClassTypeID = project.classHierarchy.getClassType _
+        @inline def getClassTypeID = project.classHierarchy.getClassType
 
         for {
             (classFile, source) <- rawClassFiles
@@ -225,7 +225,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
 
             val referencedTypes = mutable.Set.empty[Int]
             cpEntries.foreach { cpEntry =>
-                val typeInfo = getTypeInfo(cpEntry)(constantPool)
+                val typeInfo = getTypeInfo(cpEntry)
                 if (typeInfo.charAt(0) == '(') {
                     val md = MethodDescriptor(typeInfo)
                     referencedTypes ++= md.parameterTypes.foldLeft(Set.empty[Int])((res, p) =>
@@ -279,7 +279,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         }
     }
 
-    @tailrec private[this] def getTypeInfo(
+    @tailrec private def getTypeInfo(
         constant_Pool_Entry: Constant_Pool_Entry
     )(implicit constant_pool: Constant_Pool): String = {
         constant_Pool_Entry match {

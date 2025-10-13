@@ -21,25 +21,25 @@ import org.opalj.util.getObjectReflectively
  */
 class AnalysisScenario[A](val ps: PropertyStore) {
 
-    private[this] var scheduleComputed: Boolean = false
+    private var scheduleComputed: Boolean = false
 
-    private[this] var allCS: Set[ComputationSpecification[A]] = Set.empty
+    private var allCS: Set[ComputationSpecification[A]] = Set.empty
 
-    private[this] var derivedProperties: Set[PropertyBounds] = Set.empty
-    private[this] var eagerlyDerivedProperties: Set[PropertyBounds] = Set.empty
-    private[this] var collaborativelyDerivedProperties: Set[PropertyBounds] = Set.empty
-    private[this] var lazilyDerivedProperties: Set[PropertyBounds] = Set.empty
+    private var derivedProperties: Set[PropertyBounds] = Set.empty
+    private var eagerlyDerivedProperties: Set[PropertyBounds] = Set.empty
+    private var collaborativelyDerivedProperties: Set[PropertyBounds] = Set.empty
+    private var lazilyDerivedProperties: Set[PropertyBounds] = Set.empty
 
-    private[this] var initializationData: Map[ComputationSpecification[A], Any] = Map.empty
+    private var initializationData: Map[ComputationSpecification[A], Any] = Map.empty
 
-    private[this] var usedProperties: Set[PropertyBounds] = Set.empty
+    private var usedProperties: Set[PropertyBounds] = Set.empty
 
-    private[this] var eagerCS: Set[ComputationSpecification[A]] = Set.empty
-    private[this] var lazyCS: Set[ComputationSpecification[A]] = Set.empty
-    private[this] var triggeredCS: Set[ComputationSpecification[A]] = Set.empty
-    private[this] var transformersCS: Set[ComputationSpecification[A]] = Set.empty
+    private var eagerCS: Set[ComputationSpecification[A]] = Set.empty
+    private var lazyCS: Set[ComputationSpecification[A]] = Set.empty
+    private var triggeredCS: Set[ComputationSpecification[A]] = Set.empty
+    private var transformersCS: Set[ComputationSpecification[A]] = Set.empty
 
-    private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = {
+    private var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = {
         Map.empty
     }
 
@@ -85,8 +85,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         allCS foreach { cs =>
             // all derived properties depend on all used properties
             cs.derives foreach { derived =>
-                psDeps addVertice derived
-                cs.uses(ps) foreach { use => psDeps addEdge (derived, use) }
+                psDeps.addVertice(derived)
+                cs.uses(ps) foreach { use => psDeps.addEdge(derived, use) }
             }
         }
         psDeps
@@ -112,11 +112,11 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             derivedBy
         }
         allCS foreach { cs =>
-            compDeps addVertice cs
+            compDeps.addVertice(cs)
             cs.uses(ps) foreach { usedPK =>
                 derivedBy.get(usedPK).iterator.flatten.foreach { providerCS =>
                     if (providerCS ne cs) {
-                        compDeps addEdge (cs, providerCS)
+                        compDeps.addEdge(cs, providerCS)
                     }
                 }
             }
@@ -126,18 +126,20 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             val cssIt = css.iterator
             val headCS = cssIt.next()
             var lastCS = headCS
-            do {
+            while {
                 val nextCS = cssIt.next()
-                compDeps addEdge (lastCS -> nextCS)
+                compDeps.addEdge(lastCS -> nextCS)
                 lastCS = nextCS
-            } while (cssIt.hasNext)
-            compDeps addEdge (lastCS -> headCS)
+
+                cssIt.hasNext
+            } do ()
+            compDeps.addEdge(lastCS -> headCS)
         }
 
         compDeps
     }
 
-    private[this] def processCS(cs: ComputationSpecification[A]): Unit = {
+    private def processCS(cs: ComputationSpecification[A]): Unit = {
         // 1. check the most basic constraints
         cs.derivesLazily foreach { lazilyDerivedProperty =>
             if (derivedProperties.contains(lazilyDerivedProperty)) {

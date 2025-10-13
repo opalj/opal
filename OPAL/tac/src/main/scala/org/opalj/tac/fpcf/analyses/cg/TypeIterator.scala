@@ -211,7 +211,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
         continuation(field, updatedEPS, oldEOptP, handleNewType)
     }
 
-    @inline protected[this] def continuation(
+    @inline protected def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, PropertyType],
         oldEOptP:        EOptionP[Entity, PropertyType],
@@ -219,7 +219,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
         handleNewType:   ReferenceType => Unit
     ): Unit
 
-    @inline protected[this] def continuation(
+    @inline protected def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -251,7 +251,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
         continuationForAllocations(field, updatedEPS, oldEOptP, handleNewAllocation)
     }
 
-    @inline protected[this] def continuationForAllocations(
+    @inline protected def continuationForAllocations(
         use:                 V,
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
@@ -261,7 +261,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
         // Do nothing
     }
 
-    @inline protected[this] def continuationForAllocations(
+    @inline protected def continuationForAllocations(
         field:               DeclaredField,
         updatedEPS:          EPS[Entity, Property],
         oldEOptP:            EOptionP[Entity, Property],
@@ -280,7 +280,7 @@ abstract class TypeIterator(val project: SomeProject) extends ContextProvider {
             false
         else
             rv.allValues.exists {
-                case sv: IsSReferenceValue[_] =>
+                case sv: IsSReferenceValue[?] =>
                     val tub = sv.theUpperTypeBound
                     if (sv.isPrecise) {
                         tpe eq tub
@@ -344,7 +344,7 @@ class CHATypeIterator(project: SomeProject)
         val ch = project.classHierarchy
         val rvs = use.value.asReferenceValue.allValues
         for (rv <- rvs) rv match {
-            case sv: IsSReferenceValue[_] =>
+            case sv: IsSReferenceValue[?] =>
                 if (sv.isPrecise) {
                     handleType(sv.theUpperTypeBound)
                 } else {
@@ -406,7 +406,7 @@ class CHATypeIterator(project: SomeProject)
             handleType(field.fieldType.asReferenceType)
     }
 
-    @inline override protected[this] def continuation(
+    @inline override protected def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, Nothing],
         oldEOptP:        EOptionP[Entity, Nothing],
@@ -416,7 +416,7 @@ class CHATypeIterator(project: SomeProject)
         throw new UnsupportedOperationException
     }
 
-    @inline override protected[this] def continuation(
+    @inline override protected def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -437,7 +437,7 @@ class RTATypeIterator(project: SomeProject)
 
     val usedPropertyKinds: Set[PropertyBounds] = Set(PropertyBounds.ub(InstantiatedTypes))
 
-    private[this] lazy val propertyStore = project.get(PropertyStoreKey)
+    private lazy val propertyStore = project.get(PropertyStoreKey)
 
     @inline override def typesProperty(
         use:      V,
@@ -504,7 +504,7 @@ class RTATypeIterator(project: SomeProject)
             typesProperty.types.iterator.filter(isPossibleType(field, _)).foreach(handleType)
     }
 
-    @inline protected[this] def continuation(
+    @inline protected def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, InstantiatedTypes],
         oldEOptP:        EOptionP[Entity, InstantiatedTypes],
@@ -517,7 +517,7 @@ class RTATypeIterator(project: SomeProject)
         }.foreach(handleNewType)
     }
 
-    @inline protected[this] def continuation(
+    @inline protected def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -549,7 +549,7 @@ class PropagationBasedTypeIterator(
 
     val usedPropertyKinds: Set[PropertyBounds] = Set(PropertyBounds.ub(InstantiatedTypes))
 
-    private[this] lazy val propertyStore = project.get(PropertyStoreKey)
+    private lazy val propertyStore = project.get(PropertyStoreKey)
 
     @inline override def typesProperty(
         use:      V,
@@ -581,7 +581,7 @@ class PropagationBasedTypeIterator(
         )
     }
 
-    @inline private[this] def getProperty(
+    @inline private def getProperty(
         entity:             TypeSetEntity,
         depender:           Entity,
         requiresDependency: Boolean
@@ -622,7 +622,7 @@ class PropagationBasedTypeIterator(
         typesProperty._2.types.iterator.filter(isPossibleType(field, _)).foreach(handleType)
     }
 
-    @inline protected[this] def continuation(
+    @inline protected def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, InstantiatedTypes],
         oldEOptP:        EOptionP[Entity, InstantiatedTypes],
@@ -635,7 +635,7 @@ class PropagationBasedTypeIterator(
         }.foreach(handleNewType)
     }
 
-    @inline protected[this] def continuation(
+    @inline protected def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -662,16 +662,16 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     override type InformationType = PointsToSet
     override type PropertyType = PointsToSet
 
-    protected[this] def pointsToProperty: PropertyMetaInformation
-    protected[this] def emptyPointsToSet: PointsToSet
+    protected def pointsToProperty: PropertyMetaInformation
+    protected def emptyPointsToSet: PointsToSet
 
-    private[this] lazy val propertyStore = project.get(PropertyStoreKey)
-    protected[this] implicit lazy val formalParameters: VirtualFormalParameters =
+    private lazy val propertyStore = project.get(PropertyStoreKey)
+    protected implicit lazy val formalParameters: VirtualFormalParameters =
         project.get(VirtualFormalParametersKey)
-    protected[this] implicit lazy val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
-    private[this] implicit val typeIterator: TypeIterator = this
+    protected implicit lazy val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
+    private implicit val typeIterator: TypeIterator = this
 
-    protected[this] def createPointsToSet(
+    protected def createPointsToSet(
         pc:            Int,
         context:       ContextType,
         allocatedType: ReferenceType,
@@ -688,7 +688,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         stmts:    Array[Stmt[V]]
     )(implicit state: TypeIteratorState): PointsToSet = {
         use.definedBy.foldLeft(emptyPointsToSet) { (result, defSite) =>
-            val pc = pcOfDefSite(defSite)(stmts)
+            val pc = pcOfDefSite(defSite)(using stmts)
             if (ai.isImmediateVMException(pc)) {
                 // FIXME -  we need to get the actual exception type here
                 combine(
@@ -730,7 +730,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         pointsTo
     }
 
-    @inline protected[this] def combine(pts1: PointsToSet, pts2: PointsToSet): PointsToSet = {
+    @inline protected def combine(pts1: PointsToSet, pts2: PointsToSet): PointsToSet = {
         pts1.included(pts2)
     }
 
@@ -755,7 +755,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe => if (isPossibleType(field, tpe)) handleType(tpe) }
     }
 
-    @inline protected[this] def continuation(
+    @inline protected def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, PointsToSet],
         oldEOptP:        EOptionP[Entity, PointsToSet],
@@ -769,7 +769,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         }
     }
 
-    @inline protected[this] def continuation(
+    @inline protected def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -780,7 +780,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe => if (isPossibleType(field, tpe)) handleNewType(tpe) }
     }
 
-    @inline protected[this] def currentPointsTo(
+    @inline protected def currentPointsTo(
         depender: Entity,
         dependee: Entity
     )(
@@ -795,7 +795,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         pointsToUB(p2s)
     }
 
-    @inline private[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
+    @inline private def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
         if (eOptP.hasUBP)
             eOptP.ub
         else
@@ -812,7 +812,7 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     ): Option[P] = {
         val ep = if (state.hasDependee(epk)) state.getProperty(epk) else propertyStore(epk)
         ep match {
-            case UBPS(ub, isFinal) =>
+            case UBPS(ub: P @unchecked, isFinal) =>
                 if (!isFinal) addDependency(ep)
                 Some(ub)
             case _ =>
@@ -831,9 +831,9 @@ trait PointsToTypeIterator[ElementType, PointsToSet >: Null <: PointsToSetLike[E
 trait TypesBasedPointsToTypeIterator
     extends PointsToTypeIterator[ReferenceType, TypeBasedPointsToSet] {
 
-    protected[this] def pointsToProperty: PropertyMetaInformation = TypeBasedPointsToSet
+    protected def pointsToProperty: PropertyMetaInformation = TypeBasedPointsToSet
 
-    protected[this] val emptyPointsToSet: TypeBasedPointsToSet = NoTypes
+    protected val emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
     override def typesProperty(
         field:    DeclaredField,
@@ -847,7 +847,7 @@ trait TypesBasedPointsToTypeIterator
         types.foldLeft(emptyPointsToSet) { (result, tpe) => combine(result, currentPointsTo(depender, (tpe, field))) }
     }
 
-    @inline override protected[this] def createPointsToSet(
+    @inline override protected def createPointsToSet(
         pc:            Int,
         context:       ContextType,
         allocatedType: ReferenceType,
@@ -877,14 +877,14 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
         handleAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
         typesProperty.forNewestNElements(typesProperty.numElements) { as =>
-            val (context, pc, typeId) = longToAllocationSite(as)(this)
+            val (context, pc, typeId) = longToAllocationSite(as)(using this)
             val tpe = ReferenceType.lookup(typeId)
             if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
                 handleAllocation(tpe, context, pc)
         }
     }
 
-    @inline override protected[this] def continuationForAllocations(
+    @inline override protected def continuationForAllocations(
         use:                 V,
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
@@ -894,18 +894,18 @@ abstract class AbstractAllocationSitesPointsToTypeIterator(project: SomeProject)
         val ub = updatedEPS.ub
         val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
         ub.forNewestNElements(ub.numElements - seenElements) { as =>
-            val (context, pc, typeId) = longToAllocationSite(as)(this)
+            val (context, pc, typeId) = longToAllocationSite(as)(using this)
             val tpe = ReferenceType.lookup(typeId)
             if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
                 handleNewAllocation(tpe, context, pc)
         }
     }
 
-    protected[this] def pointsToProperty: PropertyMetaInformation = AllocationSitePointsToSet
+    protected def pointsToProperty: PropertyMetaInformation = AllocationSitePointsToSet
 
-    protected[this] val emptyPointsToSet: AllocationSitePointsToSet = NoAllocationSites
+    protected val emptyPointsToSet: AllocationSitePointsToSet = NoAllocationSites
 
-    @inline protected[this] def createPointsToSet(
+    @inline protected def createPointsToSet(
         pc:            Int,
         context:       ContextType,
         allocatedType: ReferenceType,
@@ -1016,14 +1016,14 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         handleAllocation: (ReferenceType, Context, Int) => Unit
     ): Unit = {
         typesProperty.forNewestNElements(typesProperty.numElements) { as =>
-            val (context, pc, typeId) = longToAllocationSite(as)(this)
+            val (context, pc, typeId) = longToAllocationSite(as)(using this)
             val tpe = ReferenceType.lookup(typeId)
             if (isPossibleType(field, tpe))
                 handleAllocation(tpe, context, pc)
         }
     }
 
-    @inline protected[this] def handleAllocationTacUpdate(
+    @inline protected def handleAllocationTacUpdate(
         depender:      Entity,
         definedMethod: DefinedMethod,
         theTAC:        TACode[TACMethodParameter, DUVar[ValueInformation]],
@@ -1036,6 +1036,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
             val objects = currentPointsTo(
                 depender,
                 pointsto.toEntity(defPC, newContext(definedMethod))(
+                    using
                     formalParameters,
                     definitionSites,
                     this
@@ -1046,7 +1047,7 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         }
     }
 
-    @inline override protected[this] def continuation(
+    @inline override protected def continuation(
         field:         DeclaredField,
         updatedEPS:    EPS[Entity, Property],
         oldEOptP:      EOptionP[Entity, Property],
@@ -1101,14 +1102,14 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
         }
     }
 
-    @inline override protected[this] def continuationForAllocations(
+    @inline override protected def continuationForAllocations(
         field:               DeclaredField,
         updatedEPS:          EPS[Entity, Property],
         oldEOptP:            EOptionP[Entity, Property],
         handleNewAllocation: (ReferenceType, Context, Int) => Unit
     )(implicit state: TypeIteratorState): Unit = {
         def handleAllocation(as: AllocationSite): Unit = {
-            val (context, pc, typeId) = longToAllocationSite(as)(this)
+            val (context, pc, typeId) = longToAllocationSite(as)(using this)
             val tpe = ReferenceType.lookup(typeId)
             if (isPossibleType(field, tpe))
                 handleNewAllocation(tpe, context, pc)
@@ -1162,8 +1163,8 @@ class AllocationSitesPointsToTypeIterator(project: SomeProject)
     )(implicit state: TypeIteratorState): Unit = {
         val (seenDirectAccesses, seenIndirectAccesses) =
             oldEOptP.asInstanceOf[EOptionP[DeclaredField, FieldWriteAccessInformation]] match {
-                case UBP(fai) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-                case _        => (0, 0)
+                case UBP(fai: FieldWriteAccessInformation) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                case _                                     => (0, 0)
             }
 
         state.dependersOf(updatedEPS.toEPK).foreach { depender =>
@@ -1234,7 +1235,7 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
                     EPK(definedMethod, Callers.key),
                     state.addDependency((depender, definedMethod, receiver), _)
                 )
-                (calleeContext, _, _, _) <- callers.callContexts(definedMethod)(this).iterator
+                (calleeContext, _, _, _) <- callers.callContexts(definedMethod)(using this).iterator
             } {
                 val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
 

@@ -74,7 +74,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
         this
     }
 
-    def --=(vs: IterableOnce[N]): this.type = { vs.iterator.foreach { v => this removeVertice v }; this }
+    def --=(vs: IterableOnce[N]): this.type = { vs.iterator.foreach { v => this.removeVertice(v) }; this }
 
     /**
      * All nodes which only have incoming dependencies/which have no successors.
@@ -120,7 +120,7 @@ object Graph {
         val g = Graph.empty[N]
         edges foreach { e =>
             val (s, ts) = e
-            ts foreach { t => g addEdge (s -> t) }
+            ts foreach { t => g.addEdge(s -> t) }
         }
         g
     }

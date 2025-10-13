@@ -226,7 +226,7 @@ package object instructions {
                     null
                 )
 
-            private[this] lazy val unboxInstructions: Array[Array[Instruction]] = {
+            private lazy val unboxInstructions: Array[Array[Instruction]] = {
                 val a = new Array[Array[Instruction]](ClassType.Double.id + 1)
                 a(ClassType.Boolean.id) = LangBooleanToPrimitiveBoolean
                 a(ClassType.Byte.id) = LangByteToPrimitiveByte

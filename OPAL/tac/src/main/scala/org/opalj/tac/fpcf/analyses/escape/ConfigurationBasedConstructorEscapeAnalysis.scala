@@ -8,8 +8,8 @@ package escape
 import org.opalj.br.ClassType
 import org.opalj.br.fpcf.properties.EscapeProperty
 
-import net.ceedubs.ficus.Ficus.*
-import net.ceedubs.ficus.readers.ArbitraryTypeReader.*
+import pureconfig._
+import pureconfig.generic.derivation.default._
 
 /**
  * In the configuration system it is possible to define escape information for the this local in the
@@ -22,9 +22,9 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
 
     override type AnalysisContext <: AbstractEscapeAnalysisContext
 
-    private[this] case class PredefinedResult(class_type: String, escape_of_this: String)
+    private case class PredefinedResult(class_type: String, escape_of_this: String) derives ConfigReader
 
-    private[this] val ConfigKey = {
+    private val ConfigKey = {
         "org.opalj.fpcf.analyses.ConfigurationBasedConstructorEscapeAnalysis.constructors"
     }
 
@@ -33,8 +33,8 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
      *
      * @note The reflective code assumes that every [[EscapeProperty]] is an object and not a class.
      */
-    private[this] val predefinedConstructors: Map[ClassType, EscapeProperty] = {
-        project.config.as[Seq[PredefinedResult]](ConfigKey).map { r =>
+    private val predefinedConstructors: Map[ClassType, EscapeProperty] = {
+        ConfigSource.fromConfig(project.config).at(ConfigKey).loadOrThrow[Seq[PredefinedResult]].map { r =>
             import scala.reflect.runtime.*
             val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
             val module = rootMirror.staticModule(r.escape_of_this)
@@ -43,7 +43,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
         }.toMap
     }
 
-    abstract override protected[this] def handleThisLocalOfConstructor(
+    abstract override protected def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(call.name == "<init>")

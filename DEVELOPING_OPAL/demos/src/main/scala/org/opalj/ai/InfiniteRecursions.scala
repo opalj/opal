@@ -9,6 +9,8 @@ import java.net.URL
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
@@ -92,8 +94,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
         project:           SomeProject,
         method:            Method,
         pcs:               List[Int /*PC*/ ]
-    ): Option[InfiniteRecursion] = {
-
+    ): Option[InfiniteRecursion] = boundary {
         assert(maxRecursionDepth > 1)
         assert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
 
@@ -167,7 +168,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                                 case _                      => false
                             }
                         )
-                            return Some(InfiniteRecursion(method, callOperands));
+                            break(Some(InfiniteRecursion(method, callOperands)));
 
                         // these operands are not relevant...
                         false
@@ -176,19 +177,11 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                     }
                 }
 
-            callOperandsList foreach { callOperands =>
-                val result = analyze(depth + 1, callOperands)
-                if (result.nonEmpty)
-                    return result;
-            }
+            callOperandsList foreach { callOperands => analyze(depth + 1, callOperands) }
             None
         }
 
-        previousCallOperandsList foreach { callOperands =>
-            val result = analyze(0, callOperands)
-            if (result.nonEmpty)
-                return result;
-        }
+        previousCallOperandsList foreach { callOperands => analyze(0, callOperands) }
         // no recursion...
         None
     }

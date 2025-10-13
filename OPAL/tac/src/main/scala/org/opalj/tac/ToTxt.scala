@@ -2,6 +2,8 @@
 package org.opalj
 package tac
 
+import scala.math.Ordered.orderingToOrdered
+
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -33,7 +35,7 @@ object ToTxt {
 
     @inline final def toTxtExpr[V <: Var[V]](expr: Expr[V]): String = {
         expr match {
-            case v: Var[_] =>
+            case v: Var[?] =>
                 if (v.cTpe == ComputationalTypeReturnAddress)
                     v.name + "/* return address */"
                 else
@@ -107,80 +109,80 @@ object ToTxt {
         stmt.astID match {
             case Return.ASTID      => s"$pc return"
             case ReturnValue.ASTID =>
-                val ReturnValue(_, expr) = stmt
+                val ReturnValue(_, expr) = stmt: @unchecked
                 s"$pc return ${toTxtExpr(expr)}"
             case Throw.ASTID =>
-                val Throw(_, exc) = stmt
+                val Throw(_, exc) = stmt: @unchecked
                 s"$pc throw ${toTxtExpr(exc)}"
 
             case Nop.ASTID => s"$pc ;"
 
             case MonitorEnter.ASTID =>
-                val MonitorEnter(_, objRef) = stmt
+                val MonitorEnter(_, objRef) = stmt: @unchecked
                 s"$pc monitorenter ${toTxtExpr(objRef)}"
             case MonitorExit.ASTID =>
-                val MonitorExit(_, objRef) = stmt
+                val MonitorExit(_, objRef) = stmt: @unchecked
                 s"$pc monitorexit ${toTxtExpr(objRef)}"
 
             case Goto.ASTID =>
-                val Goto(_, target) = stmt
+                val Goto(_, target) = stmt: @unchecked
                 s"$pc goto $target"
 
             case JSR.ASTID =>
-                val JSR(_, target) = stmt
+                val JSR(_, target) = stmt: @unchecked
                 s"$pc jsr $target"
             case Ret.ASTID =>
-                val Ret(_, targets) = stmt
+                val Ret(_, targets) = stmt: @unchecked
                 targets.mkString(s"$pc ret {", ",", "}")
 
             case If.ASTID =>
-                val If(_, left, cond, right, target) = stmt
+                val If(_, left, cond, right, target) = stmt: @unchecked
                 s"$pc if(${toTxtExpr(left)} $cond ${toTxtExpr(right)}) goto $target"
 
             case Switch.ASTID =>
-                val Switch(_, defaultTarget, index, npairs) = stmt
+                val Switch(_, defaultTarget, index, npairs) = stmt: @unchecked
                 var result = "\n"
                 for (x <- npairs) { result = result + "    " + x._1 + ": goto " + x._2 + ";\n" }
                 result = result + "    default: goto " + defaultTarget + "\n"
                 s"$pc switch(${toTxtExpr(index)}){$result}"
 
             case Assignment.ASTID =>
-                val Assignment(_, variable, expr) = stmt
+                val Assignment(_, variable, expr) = stmt: @unchecked
                 s"$pc ${variable.name} = ${toTxtExpr(expr)}"
 
             case ArrayStore.ASTID =>
-                val ArrayStore(_, arrayRef, index, operandVar) = stmt
+                val ArrayStore(_, arrayRef, index, operandVar) = stmt: @unchecked
                 s"$pc ${toTxtExpr(arrayRef)}[${toTxtExpr(index)}] = ${toTxtExpr(operandVar)}"
 
             case PutStatic.ASTID =>
-                val PutStatic(_, declaringClass, name, _, value) = stmt
+                val PutStatic(_, declaringClass, name, _, value) = stmt: @unchecked
                 s"$pc ${declaringClass.toJava}.$name = ${toTxtExpr(value)}"
 
             case PutField.ASTID =>
-                val PutField(_, declaringClass, name, _, receiver, value) = stmt
+                val PutField(_, declaringClass, name, _, receiver, value) = stmt: @unchecked
                 val field = s"${toTxtExpr(receiver)}/*${declaringClass.toJava}*/.$name"
                 s"$pc $field = ${toTxtExpr(value)}"
 
             case StaticMethodCall.ASTID =>
-                val StaticMethodCall(_, declClass, _, name, _ /* descriptor*/, params) = stmt
+                val StaticMethodCall(_, declClass, _, name, _ /* descriptor*/, params) = stmt: @unchecked
                 s"$pc ${declClass.toJava}${callToTxt(name, params)}"
 
             case VirtualMethodCall.ASTID =>
-                val VirtualMethodCall(_, declClass, _, name, _ /*desc.*/, receiver, params) = stmt
+                val VirtualMethodCall(_, declClass, _, name, _ /*desc.*/, receiver, params) = stmt: @unchecked
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(receiver)}/*${declClass.toJava}*/$call"
 
             case NonVirtualMethodCall.ASTID =>
-                val NonVirtualMethodCall(_, declClass, _, name, _ /*desc.*/, rec, params) = stmt
+                val NonVirtualMethodCall(_, declClass, _, name, _ /*desc.*/, rec, params) = stmt: @unchecked
                 val call = callToTxt(name, params)
                 s"$pc ${toTxtExpr(rec)}/*(non-virtual) ${declClass.toJava}*/$call"
 
             case InvokedynamicMethodCall.ASTID =>
-                val InvokedynamicMethodCall(_, bootstrapMethod, name, _ /*desc.*/, params) = stmt
+                val InvokedynamicMethodCall(_, bootstrapMethod, name, _ /*desc.*/, params) = stmt: @unchecked
                 s"$pc invokedynamic[${bootstrapMethod.toJava}]${callToTxt(name, params)}"
 
             case Checkcast.ASTID =>
-                val Checkcast(_, value, tpe) = stmt
+                val Checkcast(_, value, tpe) = stmt: @unchecked
                 s"$pc (${tpe.asReferenceType.toJava}) ${toTxtExpr(value)}"
 
             case CaughtException.ASTID =>
@@ -189,7 +191,7 @@ object ToTxt {
                 s"$pc caught $t /* <= ${e.exceptionLocations.mkString("{", ",", "}")}*/"
 
             case ExprStmt.ASTID =>
-                val ExprStmt(_, expr) = stmt
+                val ExprStmt(_, expr) = stmt: @unchecked
                 s"$pc /*expression value is ignored:*/${toTxtExpr(expr)}"
 
         }
@@ -238,7 +240,7 @@ object ToTxt {
                     if (param ne null) {
                         val paramTxt = indention + "   param" + index.toHexString + ": " + param.toString()
                         javaLikeCode += (param match {
-                            case v: DVar[_] =>
+                            case v: DVar[?] =>
                                 v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
                             case _ =>
                                 paramTxt

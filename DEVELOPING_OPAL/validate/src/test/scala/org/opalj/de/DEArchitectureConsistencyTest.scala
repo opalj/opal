@@ -57,7 +57,7 @@ class DEArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                     "org.opalj.de.*" except DependencyExtractorElements
                 }
 
-                Symbol("DependencyExtractorCore") is_only_allowed_to (USE, empty)
+                Symbol("DependencyExtractorCore").is_only_allowed_to(USE, empty)
             }
 
         val result = expected.analyze()

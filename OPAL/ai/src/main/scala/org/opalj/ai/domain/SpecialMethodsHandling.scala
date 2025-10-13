@@ -52,7 +52,7 @@ trait SpecialMethodsHandling extends MethodCallsHandling {
         // way. Hence, the exceptions are fresh, the type is precise and the value is properly
         // initialized in a well-defined(fixed) manner.
 
-        val length :: destPos :: dest :: sourcePos :: source :: _ = operands
+        val length :: destPos :: dest :: sourcePos :: source :: _ = operands: @unchecked
         val sourceIsNull = refIsNull(pc, source)
         val destIsNull = refIsNull(pc, dest)
         if (sourceIsNull.isYes || destIsNull.isYes) {

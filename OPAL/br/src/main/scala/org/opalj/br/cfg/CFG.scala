@@ -380,7 +380,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     def allBBs: Iterator[BasicBlock] = {
         new AbstractIterator[BasicBlock] {
 
-            private[this] var currentBBPC = 0
+            private var currentBBPC = 0
 
             def hasNext: Boolean = currentBBPC < basicBlocks.length
 
@@ -652,7 +652,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             Arrays.fill(newBasicBlocksArray, 0, endIndex + 1, lastNewBB)
         }
         var startPC = 0
-        do {
+        while {
             val oldBB = basicBlocks(startPC)
             val startIndex = pcToIndex(startPC)
             val endIndex = {
@@ -690,7 +690,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 }
                 startPC += 1
             }
-        } while (startPC < bbsLength)
+
+            startPC < bbsLength
+        } do ()
 
         if (requiresNewStartBlock) {
             val firstBB = newBasicBlocks(0)
@@ -855,7 +857,7 @@ object CFG {
 
     final val ValidateKey = "org.opalj.br.cfg.CFG.Validate"
 
-    private[this] var validate: Boolean = {
+    private var validate: Boolean = {
         val initialValidate = BaseConfig.getBoolean(ValidateKey)
         updateValidate(initialValidate)
         initialValidate
@@ -880,7 +882,7 @@ object CFG {
 
     final val TraceDFSolver: Boolean = {
         val traceDFSolver = BaseConfig.getBoolean(TraceDFSolverKey)
-        info("OPAL", s"$TraceDFSolverKey: $traceDFSolver")(GlobalLogContext)
+        info("OPAL", s"$TraceDFSolverKey: $traceDFSolver")(using GlobalLogContext)
         traceDFSolver
     }
 }

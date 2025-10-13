@@ -104,7 +104,7 @@ class OpenCodeBase(val project: SomeProject) extends ClosedPackages {
  */
 class ClosedPackagesConfiguration(val project: SomeProject) extends ClosedPackages {
 
-    private[this] val closedPackagesRegex = {
+    private val closedPackagesRegex = {
         val configKey = ClosedPackagesKey.ConfigKeyPrefix + "closedPackages"
         val closedPackages = project.config.as[Option[String]](configKey)
 
@@ -118,6 +118,6 @@ class ClosedPackagesConfiguration(val project: SomeProject) extends ClosedPackag
         closedPackages.getOrElse(".*")
     }
 
-    override def isClosed(packageName: String): Boolean = packageName matches closedPackagesRegex
+    override def isClosed(packageName: String): Boolean = packageName.matches(closedPackagesRegex)
 
 }

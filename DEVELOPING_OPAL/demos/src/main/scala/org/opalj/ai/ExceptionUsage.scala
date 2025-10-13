@@ -52,7 +52,7 @@ object ExceptionUsage extends ProjectsAnalysisApplication {
             OPALLogger.error(
                 "analysis configuration",
                 "It seems as if the JDK was not loaded; the results of the analysis might not be useful."
-            )(project.logContext)
+            )(using project.logContext)
         }
 
         val usages = (for {

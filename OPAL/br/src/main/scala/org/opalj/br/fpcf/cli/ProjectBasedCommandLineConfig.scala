@@ -97,7 +97,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
 
             info("creating project", "reading project class files")
             implicit val JavaClassFileReader: (File, (Source, Throwable) => Unit) => Iterable[(ClassFile, URL)] =
-                Project.JavaClassFileReader(initialLogContext, config).ClassFiles
+                Project.JavaClassFileReader.ClassFiles
 
             info("project configuration", s"the classpath is ${cp.mkString}")
 
@@ -121,7 +121,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
                     libraryClassFiles ++ jdkClassFiles,
                     libraryClassFilesAreInterfacesOnly = librariesAsInterfaces,
                     Iterable.empty
-                )(config = config)
+                )(using config = config)
             } catch {
                 case ct: ControlThrowable => throw ct;
                 case t: Throwable         =>
@@ -137,7 +137,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
                     .statistics.map(kv => "- " + kv._1 + ": " + kv._2)
                     .toList.sorted.reverse
                     .mkString("project statistics:\n\t", "\n\t", "\n")
-            info("project", statistics)(project.logContext)
+            info("project", statistics)(using project.logContext)
 
             argsIterator.foreach {
                 case arg: ProjectBasedArg[_, _] => arg(project, this)
@@ -150,7 +150,7 @@ trait ProjectBasedCommandLineConfig extends OPALCommandLineConfig {
                 info("project configuration", effectiveConfiguration)
             }
         } { t =>
-            OPALLogger.info("analysis progress", s"setting up project took ${t.toSeconds} ")(GlobalLogContext)
+            OPALLogger.info("analysis progress", s"setting up project took ${t.toSeconds} ")(using GlobalLogContext)
             projectTime = t.toSeconds
         }
         (project, projectTime)

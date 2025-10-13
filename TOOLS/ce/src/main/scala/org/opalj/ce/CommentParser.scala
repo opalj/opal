@@ -44,7 +44,8 @@ object CommentParser {
                         Seq()
                     )
                 )) {
-                    (accumulatedConfig, mergingConfig) => accumulatedConfig.merge(mergingConfig); accumulatedConfig
+                    (accumulatedConfig, mergingConfig) =>
+                        accumulatedConfig.merge(mergingConfig); accumulatedConfig
                 }
             Some(mergedConfig)
         } else {
@@ -68,7 +69,7 @@ object CommentParser {
         // This prevents the Parser from parsing a file without valid syntax
         ConfigFactory.load(filePath.toString)
 
-        OPALLogger.info("Configuration Explorer", s"Parsing: $filePath")(GlobalLogContext)
+        OPALLogger.info("Configuration Explorer", s"Parsing: $filePath")(using GlobalLogContext)
 
         Using.resource(Source.fromFile(filePath.toFile)) { source =>
             new HOCONParser(source.getLines()).parseFile(filePath, rootDirectory)

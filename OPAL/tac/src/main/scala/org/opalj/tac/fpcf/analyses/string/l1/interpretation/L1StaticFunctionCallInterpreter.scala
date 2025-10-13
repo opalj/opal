@@ -71,11 +71,11 @@ private[string] trait L1ArbitraryStaticFunctionCallInterpreter
         }
 
         val m = calleeMethod.value
-        val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
+        val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(using state.tac.stmts))
         val callState =
             new FunctionCallState(call, target, params, Seq(m), Map((m, ps(m, TACAI.key))), invalidatesParameters = true)
 
-        interpretArbitraryCallToFunctions(state, callState)
+        interpretArbitraryCallToFunctions(using state, callState)
     }
 }
 
@@ -87,7 +87,7 @@ private[string] trait L1StringValueOfFunctionCallInterpreter extends AssignmentB
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         val pc = state.pc
-        val pp = call.params.head.asVar.toPersistentForm(state.tac.stmts)
+        val pp = call.params.head.asVar.toPersistentForm(using state.tac.stmts)
 
         val flowFunction: StringFlowFunction = if (call.descriptor.parameterTypes.head.isCharType) {
             (env: StringTreeEnvironment) =>

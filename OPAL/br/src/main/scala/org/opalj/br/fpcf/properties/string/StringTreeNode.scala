@@ -150,7 +150,7 @@ sealed trait CachedSimplifyNode extends StringTreeNode {
 }
 
 sealed trait CachedHashCode extends Product {
-    override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
+    override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.caseClassHash(this)
     override def canEqual(obj: Any): Boolean = obj.hashCode() == hashCode
 }
 

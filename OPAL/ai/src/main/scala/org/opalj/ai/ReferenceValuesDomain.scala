@@ -20,21 +20,6 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
     // -----------------------------------------------------------------------------------
 
     /**
-     * Tries to determine if the type referred to as `subtype` is a subtype of the
-     * specified reference type `supertype`. If the class hierarchy is not complete
-     * the answer may be Unknown.
-     */
-    /*ABSTRACT*/
-    def isASubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Answer
-
-    /**
-     * Returns `true` if `subtype` is a known subtype of `supertype`. If the typing relation
-     * is unknown OR `subtype` is not a subtype of `supertype` `false` is returned.
-     */
-    /*ABSTRACT*/
-    def isSubtypeOf(subtype: ReferenceType, supertype: ReferenceType): Boolean
-
-    /**
      * Tries to determine – '''under the assumption that the given `value` is not
      * `null`''' – if the runtime type of the given reference value could be a
      * subtype of the specified reference type `supertype`. I.e., if the type of the
