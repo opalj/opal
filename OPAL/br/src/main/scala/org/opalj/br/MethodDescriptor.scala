@@ -534,19 +534,19 @@ object MethodDescriptor {
     }
 
     final val ReadObjectDescriptor = {
-        MethodDescriptor(ClassType("java/io/ObjectInputStream"), VoidType)
+        MethodDescriptor(ClassType.ObjectInputStream, VoidType)
     }
 
     final val WriteObjectDescriptor = {
-        MethodDescriptor(ClassType("java/io/ObjectOutputStream"), VoidType)
+        MethodDescriptor(ClassType.ObjectOutputStream, VoidType)
     }
 
     final val ReadObjectInputDescriptor = {
-        MethodDescriptor(ClassType("java/io/ObjectInput"), VoidType)
+        MethodDescriptor(ClassType.ObjectInput, VoidType)
     }
 
     final val WriteObjectOutputDescriptor = {
-        MethodDescriptor(ClassType("java/io/ObjectOutput"), VoidType)
+        MethodDescriptor(ClassType.ObjectOutput, VoidType)
     }
 
     /**

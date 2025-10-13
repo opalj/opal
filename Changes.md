@@ -1,5 +1,35 @@
 # Changes
 
+## 6.0.0 - Released October 9th 2025
+- *we are now using sbt 1.9.7*
+- *we are now using scalafmt instead of Scalariform*
+  - introduce auto formatting via `sbt format`
+  - add pre-commit hook to verify (`sbt checkFormat`) and apply formatting
+- *unify command line interface for all OPAL runners using Scallop*
+  - all runners support the same syntax and shared subsets of arguments
+  - override custom configuration options via CLI arguments
+- full support for Java 20 up to 25
+  - support for Java 25 main entry method definitions
+  - rename ObjectType to ClassType according to JVM 24 specification
+- OPAL can now select default analyses for properties
+- support for Android call graph generation
+- introduce declared fields
+  - explicitly provide information about field accesses (reads and writes) via dedicated analysis
+  - handle reflective field accesses
+  - field access information is computed as a triggered analysis
+- add alias properties and corresponding analysis
+- made points-to analysis modules configurable
+- move non-Java specific code into SI subproject (analysis manager, registry and schedulers, project and project information keys)
+- introduce PDUWeb, a persistable (i.e., a bytecode program counter based) representation of def-use webs
+- add framework for dataflow analysis based on structural analysis
+- add solver for interprocedural distributed environment (IDE) problems
+- remove `AggregateableValueProperty` and `ExplicitlyNamedProperty`
+- add several scheduling strategies to group analyses into different phases
+- rename `RTJar` to `JavaBase`
+- DependencyExtractor now supports modules, records, nests and permitted subclasses
+- add analysis to track string values
+- add ConfigurationExplorer to better document configuration values
+
 ## 5.0.0 - Released January 23rd 2023
 - *we are now using sbt 1.6.2*
 - *we are now using Scala 2.13*

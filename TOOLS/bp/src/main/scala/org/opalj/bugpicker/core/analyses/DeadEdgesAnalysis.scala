@@ -287,7 +287,7 @@ object DeadEdgesAnalysis {
                                 isYesOrUnknown
                             ) ||
                                 zDomain.asReferenceValue(exceptionValue).
-                                isValueASubtypeOf(ClassType("java/lang/IllegalStateException")).
+                                isValueASubtypeOf(ClassType.IllegalStateException).
                                 isYesOrUnknown
 
                         throwsError

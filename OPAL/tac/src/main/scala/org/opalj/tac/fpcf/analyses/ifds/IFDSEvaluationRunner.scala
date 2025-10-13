@@ -86,7 +86,7 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
 
         if (analysisConfig.get(OutputFileArg).isDefined) {
             val pw = new PrintWriter(analysisConfig(OutputFileArg))
-            pw.println(s"Time: ${analysisTime}ms")
+            pw.println(s"Time: ${analysisTime}")
             pw.println(s"Calls of normalFlow: ${statistics.normalFlow}")
             pw.println(s"Calls of callFlow: ${statistics.callFlow}")
             pw.println(s"Calls of returnFlow: ${statistics.returnFlow}")

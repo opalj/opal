@@ -115,7 +115,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
                 case domain.SObjectValueLike(ClassType("java/lang/UnknownError")) =>
                     foundUnknownError = true
                     true
-                case domain.SObjectValueLike(ClassType("java/lang/IllegalArgumentException")) =>
+                case domain.SObjectValueLike(ClassType.IllegalArgumentException) =>
                     foundIllegalArgumentException = true
                     true
                 case _ =>

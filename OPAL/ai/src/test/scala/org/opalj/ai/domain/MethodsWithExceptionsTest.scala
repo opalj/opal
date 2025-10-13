@@ -89,7 +89,7 @@ class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
             import domain.*
             allThrownExceptions should be(
                 Map(
-                    (19 -> Set(ObjectValue(12, No, true, ClassType("java/lang/IllegalArgumentException")))), // <= finally
+                    (19 -> Set(ObjectValue(12, No, true, ClassType.IllegalArgumentException))), // <= finally
                     (11 -> Set(ObjectValue(4, No, true, ClassType.NullPointerException)))
                 ) // <= if t is null
             )

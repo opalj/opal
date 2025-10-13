@@ -22,8 +22,8 @@ sealed trait InstantiatedTypesFinder {
 }
 
 /**
- * This trait considers only the type java.lang.String as instantiated that is the type that is
- * be instantiated for command line applications for their command line parameters.
+ * This trait considers only the types java.lang.String and java.lang.Class as instantiated, which can be introduced by
+ * constants.
  *
  * @author Florian Kuebler
  */

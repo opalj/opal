@@ -1,5 +1,6 @@
 import java.io.FileWriter
 
+import sbt.Keys.javaOptions
 import sbt.Test
 import sbtassembly.AssemblyPlugin.autoImport._
 import sbtunidoc.ScalaUnidocPlugin
@@ -8,7 +9,8 @@ import xerial.sbt.Sonatype.sonatypeCentralHost
 name := "OPAL Library"
 
 // SNAPSHOT
-ThisBuild / version := "5.0.1-SNAPSHOT"
+ThisBuild / version := "6.0.1-SNAPSHOT"
+// RELEASED version in ThisBuild := "6.0.0" // October 9th, 2025
 // RELEASED version in ThisBuild := "5.0.0" // January 23rd, 2023
 // RELEASED version in ThisBuild := "4.0.0" // May 7th, 2021
 // SNAPSHOT version in ThisBuild := "3.0.0-SNAPSHOT" // available since June 7th, 2019
@@ -180,6 +182,7 @@ lazy val `OPAL` = (project in file("."))
         //  bp, (just temporarily...)
         tools,
         hermes,
+        ce,
         validate, // Not deployed to maven central
         demos // Not deployed to maven central
     )
@@ -479,7 +482,7 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
     )
     .dependsOn(
         tools % "it->it;it->test;test->test;compile->compile",
-        demos  % "it->it;it->test;test->test;compile->compile",
+        demos % "it->it;it->test;test->test;compile->compile",
         hermes % "it->it;test->test;compile->compile"
     )
     .configs(IntegrationTest)
@@ -496,6 +499,33 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
         run / fork := true
     )
     .dependsOn(framework)
+    .configs(IntegrationTest)
+
+lazy val ce = `ConfigurationExplorer`
+
+lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
+    .settings(buildSettings: _*)
+    .settings(
+        fork := true,
+        javaOptions += s"-Dbuild.version=${version.value}",
+        name := "Configuration Explorer",
+        libraryDependencies ++= Dependencies.ce,
+        Compile / doc := {
+            // Overrides doc method to include config documentation at doc
+            val originalDoc = (Compile / doc).value
+            (Compile / compile).value
+            (Compile / run).toTask("").value
+            originalDoc
+        },
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer")
+    )
+    .dependsOn(
+        br % "compile->compile",
+        apk % "runtime->compile",
+        demos % "runtime->compile",
+        // bp % "runtime->compile",
+        hermes % "runtime->compile"
+    )
     .configs(IntegrationTest)
 
 /* ***************************************************************************
@@ -545,8 +575,8 @@ runProjectDependencyGeneration := {
         s"-u $uid:$gid"
     }.getOrElse("")
 
-    val mmd = new StringBuilder();
-    mmd.append("%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear' } } }%%\n")
+    val mmd = new StringBuilder()
+    mmd.append("%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear', 'padding': 10, 'wrappingWidth': 205 } } }%%\n")
     mmd.append("flowchart BT\n")
 
     val excludedProjects = Seq("OPAL", "Validate", "Tools")
@@ -577,9 +607,10 @@ runProjectDependencyGeneration := {
     for {
         (subproject, ref) <- allProjects
         if !excludedProjects.contains(subproject.id)
-        dependency <- subproject.referenced
+        dependency <- subproject.dependencies
+        if dependency.configuration.forall(_.contains("compile->compile"))
     } {
-        val project = allProjects.find { case (p, r) => r == dependency }.get._1
+        val project = allProjects.find { case (p, r) => r == dependency.project }.get._1
         mmd.append(s"    ${subproject.id} --> ${project.id}\n")
     }
 

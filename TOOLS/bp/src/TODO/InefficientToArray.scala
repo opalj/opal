@@ -36,8 +36,6 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
         IndexedSeq(objectArrayType),
         objectArrayType
     )
-    private val collectionInterface = ClassType("java/util/Collection")
-    private val listInterface = ClassType("java/util/List")
 
     /**
      * Checks whether a type inherits from java/util/Collection or is java/util/List.
@@ -51,8 +49,8 @@ class InefficientToArray[Source] extends FindRealBugsAnalysis[Source] {
         checkedType.isClassType &&
         (classHierarchy.isSubtypeOf(
             checkedType.asClassType,
-            collectionInterface
-        ).isNoOrUnknown || checkedType == listInterface)
+            ClassType.Collection
+        ).isNoOrUnknown || checkedType == ClassType.List)
         // TODO needs more heuristic or more analysis
     }
 

@@ -23,15 +23,6 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
     override def description: String =
         "Detects calls to setAccessible() outside of doPrivileged blocks."
 
-    private val ReflectFieldType =
-        ClassType("java/lang/reflect/Field")
-    private val ReflectMethodType =
-        ClassType("java/lang/reflect/Method")
-    private val PriviledgedActionType =
-        ClassType("java/security/PrivilegedAction")
-    private val PriviledgedExceptionActionType =
-        ClassType("java/security/PrivilegedExceptionAction")
-
     /**
      * Runs this analysis on the given project.
      *
@@ -50,13 +41,13 @@ class DoInsideDoPrivileged[Source] extends FindRealBugsAnalysis[Source] {
         // java/lang/reflect/{Field|Method}.
         for {
             classFile <- project.allProjectClassFiles
-            if !classFile.interfaceTypes.contains(PriviledgedActionType) &&
-                !classFile.interfaceTypes.contains(PriviledgedExceptionActionType)
+            if !classFile.interfaceTypes.contains(ClassType.PrivilegedAction) &&
+                !classFile.interfaceTypes.contains(ClassType.PrivilegedExceptionAction)
             method @ MethodWithBody(body) <- classFile.methods
             (
                 _,
                 INVOKEVIRTUAL(
-                    ReflectFieldType | ReflectMethodType,
+                    ClassType.Field | ClassType.Method,
                     "setAccessible",
                     _
                 )

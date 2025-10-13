@@ -1186,7 +1186,7 @@ class ReflectionRelatedFieldAccessesAnalysis private[analyses] (
             new MethodHandleInvokeAnalysis(
                 project,
                 "invokeWithArguments",
-                Some(ClassType("java/util/List")),
+                Some(ClassType.List),
                 isSignaturePolymorphic = false
             )
 

@@ -40,6 +40,8 @@ import org.opalj.control.fillArrayOfInt
 import org.opalj.io.process
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 
 import org.apache.commons.text.similarity.LevenshteinDistance
 
@@ -241,7 +243,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         def unsupportedVersion =
             s"unsupported class file version: $major_version.$minor_version" +
                 " (Supported: 45(Java 1.1) <= version <= " +
-                s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)}))"
+                s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)})); " +
+                "analyses might still work, but fail or produce incorrect results when unsupported features are used"
 
         // let's make sure that we support this class file's version
         if (major_version < 45) // at least JDK 1.1 or we back out
@@ -254,7 +257,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         ) {
             // Just log an error message for newer version, we might still be able to handle the
             // class if it doesn't use any features introduced in an unsupported version
-            error("class file reader", unsupportedVersion)
+            logOnce(Warn("class file reader", unsupportedVersion))
         }
 
         val cp = Constant_Pool(in)

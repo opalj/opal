@@ -13,17 +13,21 @@ OPAL consists of several projects:
 
 * **Static Analysis Infrastructure** (OPAL/si): Contains a generic lattice-based framework for the implementation of modularized static analyses.
 
-* **Bytecode Infrastructure** (OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 21 bytecode.
+* **Bytecode Infrastructure** (OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 25 bytecode.
 
 * **Bytecode Disassembler** (OPAL/da): A Java Bytecode Disassembler that provides a one-to-one representation of the class file and which can be used to create readable HTML representations of Java class files.
 
 * **Bytecode Creator** (OPAL/bc): Most basic infrastructure to engineer Java bytecode.
 
+* **Bytecode Assembler** (OPAL/ba): An embedded DSL for assembling Java class files.
+
 * **Bytecode Representation** (OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses of Java class files.
 
 * **Abstract Interpretation Framework** (OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at different levels of precision.
 
-* **IFDS** (OPAL/ifds) Language Agnostic Implementation of the IFDS Algorithm. Will be moved to si in the future.
+* **IFDS** (OPAL/ifds): Language Agnostic Implementation of the IFDS Algorithm. Will be moved to si in the future.
+
+* **IDE** (OPAL/ide): A generic implementation for IDE analyses.
 
 * **Three Address Code** (OPAL/tac): Provides two 3-address code based intermediate representation. A naive one which is directly created based on the bytecode, and a higher-level SSA-like representation which directly provides a CFG as well as Def-Use information using the results of a basic abstract interpretation. 
 
@@ -38,8 +42,6 @@ OPAL consists of several projects:
 * **APK** (OPAL/apk) Provides support for parsing Android APK packages, supporting DEX and native code.
 
 * **Hermes** (OPAL/TOOLS/hermes): A framework to run various code queries against sets of projects.
-
-* **BugPicker** (OPAL/TOOLS/bp): A tool to find control-/data-flow dependent issues in source code. The kind of issues that are identified range from useless defensive checks to bugs that lead to (unhandled) runtime exceptions.
 
 ## Developer Tools
 

@@ -48,7 +48,7 @@ object ExceptionUsage extends ProjectsAnalysisApplication {
 
         implicit val ch: ClassHierarchy = project.classHierarchy
 
-        if (project.classFile(ClassType("java/lang/Object")).isEmpty) {
+        if (project.classFile(ClassType.Object).isEmpty) {
             OPALLogger.error(
                 "analysis configuration",
                 "It seems as if the JDK was not loaded; the results of the analysis might not be useful."

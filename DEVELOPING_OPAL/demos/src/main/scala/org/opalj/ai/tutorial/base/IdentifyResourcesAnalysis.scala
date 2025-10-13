@@ -74,7 +74,7 @@ object IdentifyResourcesAnalysis extends ProjectsAnalysisApplication {
                     m.body.get.foldLeft(List.empty[Int /*PC*/ ]) { (pcs, pc, instruction) =>
                         instruction match {
                             case INVOKESPECIAL(
-                                    ClassType("java/io/File"),
+                                    ClassType.File,
                                     false /* = isInterface*/,
                                     "<init>",
                                     SingleArgumentMethodDescriptor((ClassType.String, VoidType))

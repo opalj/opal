@@ -189,9 +189,9 @@ class ConstantsBuffer private (
         var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
         if (indexOfBootstrapMethod == -1) {
             bootstrapMethods += bootstrapMethod
+            indexOfBootstrapMethod = bootstrapMethods.size - 1
             CPEMethodHandle(bootstrapMethod.handle, requiresUByteIndex = false)
             bootstrapMethod.arguments.foreach(CPEntryForBootstrapArgument)
-            indexOfBootstrapMethod = bootstrapMethods.size - 1
         }
         val cpNameAndTypeIndex = CPENameAndType(name, jvmDescriptor)
         getOrElseUpdate(CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, cpNameAndTypeIndex), 1)
@@ -252,10 +252,10 @@ class ConstantsBuffer private (
         var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
         if (indexOfBootstrapMethod == -1) {
             bootstrapMethods += bootstrapMethod
+            indexOfBootstrapMethod = bootstrapMethods.size - 1
             CPEMethodHandle(bootstrapMethod.handle, requiresUByteIndex = false)
             if (createBootstrapArgumentEntries)
                 bootstrapMethod.arguments.foreach(CPEntryForBootstrapArgument)
-            indexOfBootstrapMethod = bootstrapMethods.size - 1
         }
         val cpNameAndTypeIndex = CPENameAndType(name, jvmDescriptor)
 

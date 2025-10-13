@@ -66,7 +66,7 @@ class MethodDescriptorTest extends AnyFunSuite {
                         ClassType(_),
                         ArrayType(LongType)
                     ),
-                    ArrayType(ClassType("java/lang/Object"))
+                    ArrayType(ClassType.Object)
                 ) => true
             case _ => false
         })

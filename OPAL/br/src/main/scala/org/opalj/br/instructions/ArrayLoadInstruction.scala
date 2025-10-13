@@ -61,8 +61,7 @@ object ArrayLoadInstruction {
      * stored in an array.
      */
     final val jvmExceptions: List[ClassType] = {
-        import ClassType.*
-        List(ArrayIndexOutOfBoundsException, NullPointerException)
+        List(ClassType.ArrayIndexOutOfBoundsException, ClassType.NullPointerException)
     }
 
 }
