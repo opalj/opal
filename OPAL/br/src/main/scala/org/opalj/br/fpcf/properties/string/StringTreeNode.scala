@@ -6,6 +6,7 @@ package properties
 package string
 
 import scala.util.Try
+import scala.util.hashing.MurmurHash3
 import scala.util.matching.Regex
 
 /**
@@ -150,7 +151,7 @@ sealed trait CachedSimplifyNode extends StringTreeNode {
 }
 
 sealed trait CachedHashCode extends Product {
-    override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.caseClassHash(this)
+    override lazy val hashCode: Int = MurmurHash3.productHash(this)
     override def canEqual(obj: Any): Boolean = obj.hashCode() == hashCode
 }
 

@@ -44,7 +44,7 @@ object Dependencies {
             case _                            => throw new Exception("Unknown platform!")
         }
 
-        def reflect(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-reflect" % "2.13.17" // scalaVersion No scala-reflect available for Scala 3
+        def reflect(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-reflect" % "2.13.16" // scalaVersion No scala-reflect available for Scala 3
 
         val scalaxml = "org.scala-lang.modules" %% "scala-xml" % version.scalaxml
         val scalaparallelcollections =
