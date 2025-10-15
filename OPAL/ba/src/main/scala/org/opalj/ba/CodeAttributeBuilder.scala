@@ -289,8 +289,6 @@ object CodeAttributeBuilder {
         var lastPC = -1 // -1 === initial stack map frame
         var lastVerificationTypeInfoLocals: VerificationTypeInfos =
             computeLocalsVerificationTypeInfo(ils)
-        var lastverificationTypeInfoStack: VerificationTypeInfos =
-            ArraySeq.empty // has to be empty...
 
         val framePCs = c.stackMapTablePCs
         val fs = new Array[StackMapFrame](framePCs.size)
@@ -403,7 +401,6 @@ object CodeAttributeBuilder {
             }
 
             lastVerificationTypeInfoLocals = verificationTypeInfoLocals
-            lastverificationTypeInfoStack = verificationTypeInfoStack
             frameIndex += 1
             lastPC = pc
         }

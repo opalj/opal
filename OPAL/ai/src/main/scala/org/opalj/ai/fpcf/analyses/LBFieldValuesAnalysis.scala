@@ -198,7 +198,6 @@ class LBFieldValuesAnalysis private[analyses] (
         def hasCandidateFields: Boolean = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys
 
-        private var currentMethod: Method = null
         private var currentCode: Code = null
 
         /**
@@ -208,7 +207,6 @@ class LBFieldValuesAnalysis private[analyses] (
          * interpretation of the next method (code block) starts.
          */
         def setMethodContext(method: Method): Unit = {
-            currentMethod = method
             currentCode = method.body.get
         }
 

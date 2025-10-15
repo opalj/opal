@@ -59,7 +59,6 @@ object Disassembler {
 
     def main(args: Array[String]): Unit = {
         // OPTIONS
-        var toStdOut = true
         var toFile: Option[String] = None
         var openHTMLFile: Boolean = false
         var sources: List[String] = List.empty
@@ -84,8 +83,8 @@ object Disassembler {
         while (i < args.length) {
             args(i) match {
                 case "-help" | "--help" => { Console.out.println(Usage); return }
-                case "-o"               => { toFile = Some(readNextArg()); toStdOut = false }
-                case "-open"            => { openHTMLFile = true; toStdOut = false }
+                case "-o"               => toFile = Some(readNextArg())
+                case "-open"            => openHTMLFile = true
                 case "-noDefaultCSS"    => noDefaultCSS = true
                 case "-noMethodsFilter" => noMethodsFilter = true
                 case "-noHeader"        => { noHeader = true; noMethodsFilter = true; noDefaultCSS = true }

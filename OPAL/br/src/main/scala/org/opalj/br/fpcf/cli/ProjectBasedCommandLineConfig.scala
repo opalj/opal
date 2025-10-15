@@ -19,7 +19,6 @@ import org.rogach.scallop.ScallopConf
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.reader
 import org.opalj.br.reader.Source
 import org.opalj.bytecode.JDKArg
 import org.opalj.bytecode.JRELibraryFolder

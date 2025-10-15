@@ -18,7 +18,6 @@ import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
-import scala.collection.mutable.HashMap
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory

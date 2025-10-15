@@ -64,9 +64,7 @@ ScalaUnidoc / unidoc / scalacOptions := {
 
 ScalaUnidoc / unidoc / scalacOptions ++=
     Opts.doc.sourceUrl(
-        "https://raw.githubusercontent.com/opalj/opal/" +
-            (if (isSnapshot.value) "develop" else "master") +
-            "/€{FILE_PATH}.scala"
+        "github://opalj/opal/" + (if (isSnapshot.value) "develop" else "master")
     )
 ScalaUnidoc / unidoc / scalacOptions ++= Opts.doc.version(version.value)
 ScalaUnidoc / unidoc / scalacOptions ++= Opts.doc.title("The OPAL Framework")

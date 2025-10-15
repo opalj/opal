@@ -13,8 +13,6 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.EntryPointFinder
 
-import net.ceedubs.ficus.Ficus.*
-
 /**
  * The AndroidEntryPointFinder considers specific methods of launcher Activity Classes as entry points.
  * An activity is a launcher activity if it contains an intent filter with action "android.intent.action.MAIN"

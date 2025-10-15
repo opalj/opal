@@ -10,14 +10,5 @@
 -feature
 -unchecked
 -Xfatal-warnings
--Wnumeric-widen
--Xlint:nullary-unit
-// -Xlint:nullary-override
--Wunused:imports,privates,locals,implicits
-// Buggy (Scala 2.12.5) "-Ywarn-unused:params,patvars"
--Xlint:infer-any
--Wdead-code
--Xlint:inaccessible
--Xlint:adapted-args
--Xdisable-assertions
+-Wunused:privates,locals,implicits
 -Ybackend-parallelism 8

@@ -1566,7 +1566,7 @@ final class Code private (
      *  }) // .flatten should equal (Seq(...))
      * }}}
      */
-    def collectWithIndex[B: ClassTag](f: PartialFunction[PCAndInstruction, B]): List[B] = {
+    def collectWithIndex[B](f: PartialFunction[PCAndInstruction, B]): List[B] = {
         val max_pc = instructions.length
         var pc = 0
         val vs = List.newBuilder[B]

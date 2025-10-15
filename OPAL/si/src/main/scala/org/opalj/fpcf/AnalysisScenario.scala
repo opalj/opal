@@ -27,17 +27,11 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
     private var derivedProperties: Set[PropertyBounds] = Set.empty
     private var eagerlyDerivedProperties: Set[PropertyBounds] = Set.empty
-    private var collaborativelyDerivedProperties: Set[PropertyBounds] = Set.empty
     private var lazilyDerivedProperties: Set[PropertyBounds] = Set.empty
 
     private var initializationData: Map[ComputationSpecification[A], Any] = Map.empty
 
     private var usedProperties: Set[PropertyBounds] = Set.empty
-
-    private var eagerCS: Set[ComputationSpecification[A]] = Set.empty
-    private var lazyCS: Set[ComputationSpecification[A]] = Set.empty
-    private var triggeredCS: Set[ComputationSpecification[A]] = Set.empty
-    private var transformersCS: Set[ComputationSpecification[A]] = Set.empty
 
     private var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = {
         Map.empty
@@ -52,13 +46,6 @@ class AnalysisScenario[A](val ps: PropertyStore) {
     def +=(cs: ComputationSpecification[A]): this.type = {
         if (scheduleComputed) {
             throw new IllegalStateException("process was already computed");
-        }
-
-        cs.computationType match {
-            case EagerComputation     => eagerCS += cs
-            case TriggeredComputation => triggeredCS += cs
-            case LazyComputation      => lazyCS += cs
-            case Transformer          => transformersCS += cs
         }
 
         allCS += cs
@@ -196,7 +183,6 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
         eagerlyDerivedProperties ++= cs.derivesEagerly
         handleDerivedProperties(cs.derivesEagerly)
-        collaborativelyDerivedProperties ++= cs.derivesCollaboratively
         handleDerivedProperties(cs.derivesCollaboratively)
         lazilyDerivedProperties ++= cs.derivesLazily.toList
         handleDerivedProperties(cs.derivesLazily.toSet)

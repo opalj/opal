@@ -13,8 +13,9 @@ import org.scalacheck.Properties
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
-
 import org.opalj.util.PerformanceEvaluation
+
+import scala.annotation.nowarn
 
 /**
  * Tests `IntTrieSet` by creating a standard Scala Set and comparing
@@ -833,6 +834,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             PerformanceEvaluation.time {
                 for { runs <- 0 until 10000000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
+                    @nowarn("msg=unused")
                     var hits = 0
                     for { i <- 0 to rngGen.nextInt(8) } {
                         s += setValues(i)
@@ -860,6 +862,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             PerformanceEvaluation.time {
                 for { runs <- 0 until 10000000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
+                    @nowarn("msg=unused")
                     var hits = 0
                     for { i <- 0 to 8 + rngGen.nextInt(8) } {
                         s += setValues(i)
@@ -887,6 +890,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             PerformanceEvaluation.time {
                 for { runs <- 0 until 1000000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
+                    @nowarn("msg=unused")
                     var hits = 0
                     for { i <- 0 to 16 + rngGen.nextInt(16) } {
                         s += setValues(i)
@@ -914,6 +918,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             PerformanceEvaluation.time {
                 for { runs <- 0 until 10000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
+                    @nowarn("msg=unused")
                     var hits = 0
                     for { i <- 1 to runs } {
                         s += setValues(i)

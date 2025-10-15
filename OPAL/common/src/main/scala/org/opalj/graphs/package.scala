@@ -1,8 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import scala.reflect.ClassTag
-
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -168,7 +166,7 @@ package object graphs {
     //
     // ---------------------------------------------------------------------------------------
 
-    final def closedSCCs[N >: Null <: AnyRef: ClassTag](g: Graph[N]): List[Iterable[N]] = {
+    final def closedSCCs[N >: Null <: AnyRef](g: Graph[N]): List[Iterable[N]] = {
         closedSCCs(g.vertices, g.asIterable)
     }
 
@@ -190,7 +188,7 @@ package object graphs {
      * @param  es A function that, given a node, returns all successor nodes. Basically, the edges
      *         of the graph.
      */
-    def closedSCCs[N >: Null <: AnyRef: ClassTag](
+    def closedSCCs[N >: Null <: AnyRef](
         ns: Iterable[N],
         es: N => Iterable[N] // TODO Improve(?) N => Iterator[N]
     ): List[Iterable[N]] = {

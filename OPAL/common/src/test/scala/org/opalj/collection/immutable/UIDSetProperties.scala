@@ -373,7 +373,7 @@ class UIDSetTest extends AnyFunSpec with Matchers {
 
                     overallSum += sumForeach
                 }
-                info(s"UIDSet foreach sum took ${overallTime.toSeconds}")
+                info(s"UIDSet foreach sum was $overallSum took ${overallTime.toSeconds}")
             }
 
             {
@@ -395,7 +395,7 @@ class UIDSetTest extends AnyFunSpec with Matchers {
 
                     overallSum += sumForeach
                 }
-                info(s"Set[UID] foreach sum took ${overallTime.toSeconds}")
+                info(s"Set[UID] foreach sum was $overallSum and took ${overallTime.toSeconds}")
             }
         }
 

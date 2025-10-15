@@ -34,7 +34,7 @@ object Long2ListEval extends App {
         var sumForFirstThird = 0L
         PerformanceEvaluation.time {
             l.forFirstN(Elements / 3)(sumForFirstThird += _)
-        } { t => println(s"forFirstN(1/3*Elements) sum took ${t.toSeconds}") }
+        } { t => println(s"forFirstN(1/3*Elements) sum was $sumForFirstThird and took ${t.toSeconds}") }
 
         val sumIterator =
             PerformanceEvaluation.time {

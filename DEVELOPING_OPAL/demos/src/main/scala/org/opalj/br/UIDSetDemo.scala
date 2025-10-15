@@ -108,8 +108,9 @@ object UIDSetDemo extends App {
                     i += 1
                 }
                 runs += 1
+                println(s"Built Scala Set of SUIDs with ${s.size} entries")
             }
-            println("Using Set: " + NS(System.nanoTime - t).toSeconds)
+            println(s"Using Set: " + NS(System.nanoTime - t).toSeconds)
         }
     }
     (0 to 5).foreach(e => evalAdd())
