@@ -13,13 +13,6 @@ import org.opalj.fpcf.fixtures.Palindromes
 
 class EOptionPSetTest extends AnyFunSuite {
 
-    test("always has a definitive size") {
-        val e1 = InterimEUBP(new Object, Marker.IsMarked)
-
-        val set = EOptionPSet[Entity, Property](e1)
-        assert(set.hasDefiniteSize)
-    }
-
     test("we can iterate over the singleton value stored in an EOptionPSet") {
         val e1 = InterimEUBP(new Object, Marker.IsMarked)
         val set = EOptionPSet[Entity, Property](e1)

@@ -66,7 +66,7 @@ object StructuralAnalysis {
         var currentEntry = entry
         val controlTree: MControlTree = MutableGraph.empty[FlowGraphNode, DiEdge[FlowGraphNode]]
 
-        var (immediateDominators, allDominators) = computeDominators(flowGraph, entry)
+        var (_, allDominators) = computeDominators(flowGraph, entry)
         /**
          * @return True when the given node n strictly dominates the node w.
          */
@@ -149,7 +149,6 @@ object StructuralAnalysis {
                         }
                     )
                 )
-                immediateDominators = allDominators.map(kv => (kv._1, kv._2.head))
 
                 // Update remaining graph state
                 controlTree.addAll(subNodes.map(node =>

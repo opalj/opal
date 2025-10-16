@@ -58,7 +58,7 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
                     classNameParameter = operands(classNameParameterIndex)
                 } {
                     classNameParameter match {
-                        case aiResult.domain.StringValue(className) =>
+                        case aiResult.domain.StringValue(_) =>
                             trivialLocations += InstructionLocation(methodLocation, pc)
                         case aiResult.domain.MultipleReferenceValues(classNameParameters) =>
                             val classNames = classNameParameters.collect {

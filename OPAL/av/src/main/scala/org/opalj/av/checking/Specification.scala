@@ -466,7 +466,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                             case _       => IndexedSeq.empty
                         }
 
-                    case vm: VirtualModule => IndexedSeq.empty
+                    case _: VirtualModule => IndexedSeq.empty
                 }
 
                 //              if !annotations.foldLeft(false) {

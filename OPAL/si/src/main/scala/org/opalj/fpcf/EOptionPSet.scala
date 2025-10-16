@@ -29,7 +29,6 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
 
     override def foreach[U](f: EOptionP[E, P] => U): Unit
     override def isEmpty: Boolean
-    override final def hasDefiniteSize: Boolean = true
 
     /** Filters the respective EOptionP values and returns a new EOptionPSet. */
     override def filter(p: EOptionP[E, P] => Boolean): EOptionPSet[E, P] = {
@@ -110,7 +109,7 @@ private[fpcf] class MultiEOptionPSet[E <: Entity, P <: Property](
             val (pkId, eEOptionPs) = entry
             val newEEOptionPs =
                 eEOptionPs.filter { entry =>
-                    val (e, eOptionP) = entry
+                    val (_, eOptionP) = entry
                     if (p(eOptionP)) {
                         true
                     } else {

@@ -87,7 +87,6 @@ object IfNullParameterAnalysis extends ProjectsAnalysisApplication {
                 method <- classFile.methods
                 if method.body.isDefined
                 if method.descriptor.parameterTypes.exists { _.isReferenceType }
-                originalType = method.returnType
             } yield {
                 val ai = new InterruptableAI[Domain]
 

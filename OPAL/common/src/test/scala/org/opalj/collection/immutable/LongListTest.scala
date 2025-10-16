@@ -25,7 +25,7 @@ class LongListTest extends AnyFunSpec with Matchers {
             val seed = 123456789L
             val rngGen = new java.util.Random(seed)
 
-            for { i <- 1 to 10 } {
+            for { _ <- 1 to 10 } {
                 var l = LongList.empty
 
                 PerformanceEvaluation.memory {

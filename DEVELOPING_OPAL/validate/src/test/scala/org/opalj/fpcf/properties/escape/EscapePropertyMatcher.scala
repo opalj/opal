@@ -49,9 +49,9 @@ abstract class EscapePropertyMatcher(
             case (_, VirtualFormalParameter(dm: DefinedMethod, _))
                 if dm.declaringClassType == dm.definedMethod.classFile.thisType =>
                 dm
-            case (_, VirtualFormalParameter(dm: DefinedMethod, _)) => return false;
-            case (_, DefinitionSite(m, _))                         => m
-            case _                                                 => throw new RuntimeException(s"unsuported entity $entity")
+            case (_, VirtualFormalParameter(_: DefinedMethod, _)) => return false;
+            case (_, DefinitionSite(m, _))                        => m
+            case _                                                => throw new RuntimeException(s"unsuported entity $entity")
         }
         if (as.nonEmpty && m.hasSingleDefinedMethod && m.definedMethod.body.isDefined) {
             val domainClass = p.get(AIDomainFactoryKey).domainClass

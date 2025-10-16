@@ -338,8 +338,8 @@ object UIDSetProperties extends Properties("UIDSet") {
         val toBeRemoved = b.size / 2
         val newAUS =
             ((aus ++ b.map(SUID.apply)) -- b.slice(0, toBeRemoved).map(SUID.apply)).filter(i => b.contains(i.id))
-        val newA = (a ++ b -- b.slice(0, toBeRemoved)).filter(b.contains)
-        classify(newA.size == 0, "new A is now empty") {
+        val newA = (a ++ b -- b.slice(0, toBeRemoved)).intersect(b)
+        classify(newA.isEmpty, "new A is now empty") {
             classify(newA.size < a.size, "new A is smaller than a") {
                 newAUS.size == newA.size &&
                 newAUS.iterator.map[Int](_.id).toSet == newA
@@ -360,9 +360,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
 
                 var overallSum = 0
                 var overallTime = Nanoseconds.None
-                for { i <- 1 to 100000 } {
+                for { _ <- 1 to 100000 } {
                     var s = UIDSet.empty[SUID]
-                    for { j <- 1 to 500 } {
+                    for { _ <- 1 to 500 } {
                         s += SUID(rngGen.nextInt())
                     }
 
@@ -382,9 +382,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
 
                 var overallSum = 0
                 var overallTime = Nanoseconds.None
-                for { i <- 1 to 100000 } {
+                for { _ <- 1 to 100000 } {
                     var s = Set.empty[SUID]
-                    for { j <- 1 to 500 } {
+                    for { _ <- 1 to 500 } {
                         s += SUID(rngGen.nextInt())
                     }
 
@@ -406,9 +406,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var lastOpalS = UIDSet.empty[SUID]
-                    for { j <- 0 to 1000000 } {
+                    for { _ <- 0 to 1000000 } {
                         var opalS = UIDSet.empty[SUID]
-                        for { i <- 0 to 50 } {
+                        for { _ <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             opalS += SUID(v)
                         }
@@ -425,9 +425,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var lastScalaS = Set.empty[SUID]
-                    for { j <- 0 to 1000000 } {
+                    for { _ <- 0 to 1000000 } {
                         var scalaS = Set.empty[SUID]
-                        for { i <- 0 to 50 } {
+                        for { _ <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             scalaS += SUID(v)
                         }
@@ -451,9 +451,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var allSets = List.empty[UIDSet[SUID]]
-                    for { j <- 0 to 1000000 } {
+                    for { _ <- 0 to 1000000 } {
                         var opalS = UIDSet.empty[SUID]
-                        for { i <- 0 to 50 } {
+                        for { _ <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             opalS += SUID(v)
                         }
@@ -468,9 +468,9 @@ class UIDSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var allSets = List.empty[Set[SUID]]
-                    for { j <- 0 to 1000000 } {
+                    for { _ <- 0 to 1000000 } {
                         var scalaS = Set.empty[SUID]
-                        for { i <- 0 to 50 } {
+                        for { _ <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             scalaS += SUID(v)
                         }

@@ -163,7 +163,6 @@ object DependencyAnalysis extends ProjectsAnalysisApplication {
 
         for {
             classFile <- project.allClassFiles
-            packageName = classFile.thisType.packageName
         } {
             dependencyExtractor.process(classFile)
         }

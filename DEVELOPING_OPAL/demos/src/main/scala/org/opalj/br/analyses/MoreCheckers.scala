@@ -81,7 +81,7 @@ object MoreCheckers {
         results.clear();
 
         println(Console.BOLD + "\n\n\n\nMEASUREMENT PHASE" + Console.RESET)
-        for (i <- 1 to 20) {
+        for (_ <- 1 to 20) {
             println(); // i+"======================================================================="+i);
             time {
                 analyze(args)
@@ -135,8 +135,8 @@ object MoreCheckers {
             // class (of the JDK) that indirectly inherits from Cloneable.
             if (classHierarchy.isKnown(ClassType.Cloneable)) {
                 for {
-                    cloneables <- classHierarchy.allSubtypes(ClassType.Cloneable, false)
-                    classFile <- getClassFile.get(ClassType.Cloneable).toList
+                    cloneable <- classHierarchy.allSubtypes(ClassType.Cloneable, false)
+                    classFile <- getClassFile.get(cloneable).toList
                     if !classFile.methods.exists({
                         case Method(_, "clone", MethodDescriptor(Seq(), ClassType.Object)) => true
                         case _                                                             => false

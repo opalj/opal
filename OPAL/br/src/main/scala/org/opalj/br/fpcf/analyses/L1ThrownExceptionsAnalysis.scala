@@ -344,7 +344,7 @@ class L1ThrownExceptionsAnalysis(
                 case te: ThrownExceptions =>
                     exceptions = exceptions ++ te.types.concreteTypes
 
-                case c: Callees =>
+                case _: Callees =>
                     callPCs.foreach(handleCall(eps.asInstanceOf[EPS[DeclaredMethod, Callees]], _))
                     if (result != null)
                         return Result(context, result);

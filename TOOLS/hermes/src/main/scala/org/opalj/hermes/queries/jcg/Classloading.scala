@@ -73,11 +73,11 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation <- body.collect({
-                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD)
+                case i @ INVOKEVIRTUAL(declClass, "loadClass", _)
                     if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
             }: PartialFunction[Instruction, Instruction])
-            TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {
+            tacai(method)
             val pc = pcAndInvocation.pc
             val l = InstructionLocation(methodLocation, pc)
 

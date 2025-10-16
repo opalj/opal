@@ -11,21 +11,14 @@
 -feature
 -unchecked
 -Xfatal-warnings
-//-Wunused:imports,implicits
-// Buggy (Scala 3.3.1) "-Wunused:privates,locals"
-// Buggy (Scala 2.12.5) "-Ywarn-unused:params,patvars"
-
-// Not available in Scala 3 yet
-//-Wdead-code
-//-Wnumeric-widen
-//-Ybackend-parallelism 8
-//-Xlint:nullary-unit
-//-Xlint:nullary-override
-//-Xlint:infer-any
-//-Xlint:inaccessible
-//-Xlint:adapted-args
+-Wunused:privates,locals,implicits,patvars
+//,explicits,imports
 
 // Might add in the future
+//-Wnonunit-statements
+//-Ysafe-init
 //-Yexplicit-nulls
+//-language:noAutoTupling
+//-language:strictEquality
 
 // (Should be turned-off during development; i.e., assertions are enabled at development time) -Xdisable-assertions

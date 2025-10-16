@@ -23,13 +23,13 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.fpcf.ELBP
 import org.opalj.fpcf.ELUBP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.LBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
@@ -176,10 +176,10 @@ class L0SelfReferenceLeakageAnalysis(
             )
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
         propertyStore(superTypes, SelfReferenceLeakageKey) foreach {
-            case epk @ EPK(e, _)                   => dependees += ((e, epk))
-            case UBP(LeaksSelfReference)           => break(Result(classType, LeaksSelfReference));
-            case ELBP(e, DoesNotLeakSelfReference) => // nothing to do ...
-            case eps @ EPS(e)                      => dependees += ((e, eps))
+            case epk @ EPK(e, _)               => dependees += ((e, epk))
+            case UBP(LeaksSelfReference)       => break(Result(classType, LeaksSelfReference));
+            case LBP(DoesNotLeakSelfReference) => // nothing to do ...
+            case eps @ EPS(e)                  => dependees += ((e, eps))
         }
 
         // First, let's wait for the results for the supertypes...

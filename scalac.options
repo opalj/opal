@@ -10,5 +10,4 @@
 -feature
 -unchecked
 -Xfatal-warnings
--Wunused:privates,locals,implicits
--Ybackend-parallelism 8
+-Wunused:privates,locals,implicits,patvars

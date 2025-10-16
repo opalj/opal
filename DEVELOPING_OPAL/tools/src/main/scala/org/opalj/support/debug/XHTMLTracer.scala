@@ -144,7 +144,7 @@ trait XHTMLTracer extends AITracer {
             })
         val cfJoins = code.cfJoins
         val flowTable =
-            for ((pc, rowIndex) <- pcsToRowIndex) yield {
+            for (pc <- pcsToRowIndex.keys) yield {
                 <tr>
                     <td>{if (cfJoins.contains(pc)) "⇶ " else ""} <b>{pc}</b></td>
                     {row(pc)}

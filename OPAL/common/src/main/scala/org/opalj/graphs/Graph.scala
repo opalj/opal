@@ -94,8 +94,13 @@ class Graph[@specialized(Int) N: ClassTag] private (
         }
         val es: Int => IntIterator = (index: Int) => {
             successors.get(indexToN(index)) match {
-                case Some(successors) => ??? // successors.mapToIntIterator(nToIndex)
-                case None             => IntIterator.empty
+                case Some(successors) =>
+                    val succIt = successors.iterator
+                    new IntIterator {
+                        override def next(): Int = nToIndex(succIt.next())
+                        override def hasNext: Boolean = succIt.hasNext
+                    }
+                case None => IntIterator.empty
             }
         }
 

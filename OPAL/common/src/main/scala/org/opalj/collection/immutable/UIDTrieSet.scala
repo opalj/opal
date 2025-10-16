@@ -178,7 +178,7 @@ final class UIDTrieSet1[T <: UID](val i: T) extends UIDTrieSetLeaf[T] {
     override def equals(other: UIDTrieSet[?]): Boolean = {
         (other eq this) || (other match {
             case that: UIDTrieSet1[?] => this.i.id == that.i.id
-            case that                 => false
+            case _                    => false
         })
     }
 
@@ -241,7 +241,7 @@ private[immutable] final class UIDTrieSet2[T <: UID] private[immutable] (
                 case that: UIDTrieSet2[?] =>
                     (this.i1.id == that.i1.id && this.i2.id == that.i2.id) ||
                         (this.i1.id == that.i2.id && this.i2.id == that.i1.id)
-                case that =>
+                case _ =>
                     false
             }
         )
@@ -302,7 +302,7 @@ private[immutable] final class UIDTrieSet3[T <: UID] private[immutable] (
                     that.containsId(this.i1.id) &&
                         that.containsId(this.i2.id) &&
                         that.containsId(this.i3.id)
-                case that =>
+                case _ =>
                     false
             }
         )

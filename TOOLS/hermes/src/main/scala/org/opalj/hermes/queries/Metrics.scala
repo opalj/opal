@@ -65,7 +65,7 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
                 case 0            => classLocations(0) += classLocation
                 case x if x <= 3  => classLocations(1) += classLocation
                 case x if x <= 10 => classLocations(2) += classLocation
-                case x            => classLocations(3) += classLocation
+                case _            => classLocations(3) += classLocation
             }
 
             // mpc
@@ -74,7 +74,7 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
                 case 0            => classLocations(4) += classLocation
                 case x if x <= 3  => classLocations(5) += classLocation
                 case x if x <= 10 => classLocations(6) += classLocation
-                case x            => classLocations(7) += classLocation
+                case _            => classLocations(7) += classLocation
             }
 
             // noc
@@ -83,7 +83,7 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
                 case 0            => classLocations(11) += classLocation
                 case x if x <= 3  => classLocations(12) += classLocation
                 case x if x <= 10 => classLocations(13) += classLocation
-                case x            => classLocations(14) += classLocation
+                case _            => classLocations(14) += classLocation
             }
 
             // count the classes per package
@@ -105,7 +105,7 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
                         case 1            => classLocations(15) += methodLocation
                         case x if x <= 3  => classLocations(16) += methodLocation
                         case x if x <= 10 => classLocations(17) += methodLocation
-                        case x            => classLocations(18) += methodLocation
+                        case _            => classLocations(18) += methodLocation
                     }
                 }
             }
@@ -115,7 +115,7 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
             pi.classesCount match {
                 case x if x <= 3  => classLocations(8) += pi.location
                 case x if x <= 10 => classLocations(9) += pi.location
-                case x            => classLocations(10) += pi.location
+                case _            => classLocations(10) += pi.location
             }
         }
 

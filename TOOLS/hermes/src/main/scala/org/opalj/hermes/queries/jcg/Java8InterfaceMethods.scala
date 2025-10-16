@@ -67,7 +67,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind match {
-                case ii @ INVOKEINTERFACE(dc, name, md) => {
+                case INVOKEINTERFACE(dc, name, md) => {
                     val subtypes = project.classHierarchy.allSubtypes(dc.asClassType, false)
                     val hasDefaultMethodTarget = subtypes.exists { ct =>
                         val target = project.instanceCall(callerType, ct, name, md)
@@ -84,7 +84,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                         1 /* interface has default method, but it's always overridden */
                     }
                 }
-                case iv @ INVOKEVIRTUAL(dc, name, md) => {
+                case INVOKEVIRTUAL(dc, name, md) => {
                     val subtypes = project.classHierarchy.allSubtypes(dc.asClassType, true)
                     var subtypeWithMultipleInterfaces = false
                     val hasDefaultMethodTarget = subtypes.exists { ct =>
@@ -122,7 +122,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                     }
 
                 }
-                case is @ INVOKESTATIC(dc, true, name, md) => {
+                case INVOKESTATIC(dc, true, name, md) => {
                     val cf = project.classFile(dc)
                     if (cf.nonEmpty) {
                         val method = cf.get.findMethod(name, md)

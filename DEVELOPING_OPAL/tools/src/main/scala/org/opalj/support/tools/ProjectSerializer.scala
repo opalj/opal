@@ -51,8 +51,6 @@ object ProjectSerializer extends ProjectsAnalysisApplication {
         execution:      Int
     ): Unit = {
 
-        val (project, _) = analysisConfig.setupProject(cp)
-
         def checkOrCreateOutputFolder(outFolder: File): Unit = {
             if ((!outFolder.exists() && !outFolder.mkdirs()) ||
                 (outFolder.exists() && !outFolder.isDirectory)

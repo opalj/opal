@@ -152,7 +152,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         propertyKinds: Set[String]
     )(
         annotation: AnnotationLike
-    ): Option[(AnnotationLike, String, Type /* type of the matcher */ )] = {
+    ): Option[(AnnotationLike, Type /* type of the matcher */ )] = {
         if (!annotation.annotationType.isClassType)
             return None;
 
@@ -166,7 +166,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
                         ElementValuePair("validator", ClassValue(propertyMatcherType))
                     )
                 ) if propertyKinds.contains(propertyKind) =>
-                (annotation, propertyKind, propertyMatcherType)
+                (annotation, propertyMatcherType)
         }
     }
 
@@ -194,7 +194,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         for {
             (e, entityIdentifier, annotations) <- eas.iterator
             augmentedAnnotations = annotations.flatMap(getPropertyMatcher(p, propertyKinds))
-            (annotation, propertyKind, matcherType) <- augmentedAnnotations
+            (annotation, matcherType) <- augmentedAnnotations
         } {
             val annotationTypeName = annotation.annotationType.asClassType.simpleName
             val matcherClass = Class.forName(matcherType.toJava)
