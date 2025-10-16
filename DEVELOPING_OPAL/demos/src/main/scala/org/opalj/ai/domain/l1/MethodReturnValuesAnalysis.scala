@@ -10,7 +10,6 @@ import java.net.URL
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
-import org.opalj.ai.domain
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport

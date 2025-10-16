@@ -6,7 +6,6 @@ package analyses
 
 import scala.collection.mutable
 
-import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
 //import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
@@ -151,25 +150,25 @@ class LBFieldValuesAnalysis private[analyses] (
         val classFile: ClassFile,
         val dependees: EOptionPSet[Entity, Property]
     ) extends CorrelationalDomain
-        with domain.TheProject
-        with domain.TheCode
-        with domain.DefaultSpecialDomainValuesBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
+        with ai.domain.TheProject
+        with ai.domain.TheCode
+        with ai.domain.DefaultSpecialDomainValuesBinding
+        with ai.domain.ThrowAllPotentialExceptionsConfiguration
         // We don't use: "domain.l0.DefaultTypeLevelIntegerValues" because we want constant
         // propagation which helps in case of "ifs" related to type tests etc.::
-        with domain.l1.DefaultIntegerValues
-        with domain.l0.DefaultTypeLevelLongValues
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelPrimitiveValuesConversions
-        with domain.l0.TypeLevelLongValuesShiftOperators
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.TypeLevelDynamicLoads
+        with ai.domain.l1.DefaultIntegerValues
+        with ai.domain.l0.DefaultTypeLevelLongValues
+        with ai.domain.l0.DefaultTypeLevelFloatValues
+        with ai.domain.l0.DefaultTypeLevelDoubleValues
+        with ai.domain.l0.TypeLevelPrimitiveValuesConversions
+        with ai.domain.l0.TypeLevelLongValuesShiftOperators
+        with ai.domain.l0.TypeLevelFieldAccessInstructions
+        with ai.domain.l0.TypeLevelInvokeInstructions
+        with ai.domain.l0.TypeLevelDynamicLoads
         // IT HAST TO BE L0 - we can't deal with "null" values!
-        with domain.l0.DefaultReferenceValuesBinding
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
+        with ai.domain.l0.DefaultReferenceValuesBinding
+        with ai.domain.DefaultHandlingOfMethodResults
+        with ai.domain.IgnoreSynchronization
         // with RefinedTypeLevelInvokeInstructions
         with RefinedTypeLevelFieldAccessInstructions {
 

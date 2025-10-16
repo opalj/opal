@@ -10,4 +10,4 @@
 -feature
 -unchecked
 -Xfatal-warnings
--Wunused:privates,locals,implicits,patvars
+-Wunused:privates,locals,implicits,patvars,imports

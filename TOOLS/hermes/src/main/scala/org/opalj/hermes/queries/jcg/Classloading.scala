@@ -16,7 +16,6 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.da.ClassFile
 import org.opalj.tac.DUVar
 import org.opalj.tac.LazyTACUsingAIKey
-import org.opalj.tac.TACode
 import org.opalj.value.KnownTypedValue
 
 /**

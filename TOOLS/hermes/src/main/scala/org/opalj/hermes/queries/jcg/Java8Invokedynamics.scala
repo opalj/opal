@@ -26,7 +26,6 @@ import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ARETURN
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.da
 
 /**
  * This feature query corresponds to the Java8Invokedynamics.md test cases from the JCG call

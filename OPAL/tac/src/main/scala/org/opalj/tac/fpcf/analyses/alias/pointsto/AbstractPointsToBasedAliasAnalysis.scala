@@ -34,7 +34,6 @@ import org.opalj.fpcf.UBP
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.alias.TacBasedAliasAnalysis
-import org.opalj.tac.fpcf.analyses.pointsto
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -100,7 +99,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
      */
     private def getPointsToOfDefSite(defSitePC: Int, context: Context): EOptionP[Entity, PointsToSet] = {
         propertyStore(
-            pointsto.toEntity(defSitePC, context),
+            analyses.pointsto.toEntity(defSitePC, context),
             pointsToPropertyKey
         )
     }

@@ -21,9 +21,9 @@ import org.opalj.collection.IntIterator
  * @author Michael Eichberg
  */
 class Graph[@specialized(Int) N: ClassTag] private (
-    val vertices:     Set[N],
-    val successors:   LinkedHashMap[N, List[N]],
-    val predecessors: LinkedHashMap[N, List[N]]
+    val vertices:     mutable.Set[N],
+    val successors:   mutable.LinkedHashMap[N, List[N]],
+    val predecessors: mutable.LinkedHashMap[N, List[N]]
 ) extends AbstractGraph[N] {
 
     def apply(s: N): List[N] = successors.getOrElse(s, List.empty)

@@ -11,12 +11,11 @@
 -feature
 -unchecked
 -Xfatal-warnings
--Wunused:privates,locals,implicits,patvars
-//,explicits,imports
+-Wunused:privates,locals,implicits,patvars,imports
 
 // Might add in the future
-//-Wnonunit-statements
-//-Ysafe-init
+//-Wnonunit-statement
+//-Wsafe-init
 //-Yexplicit-nulls
 //-language:noAutoTupling
 //-language:strictEquality

@@ -2,8 +2,6 @@
 package org.opalj
 package tac
 
-import scala.math.Ordered.orderingToOrdered
-
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse

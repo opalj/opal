@@ -31,7 +31,6 @@ import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.ide.problem.MeetLattice
-import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
@@ -180,7 +179,6 @@ class LCPOnFieldsProblem(
                         .map(icfg.getNextStatements)
                         .fold(Set.empty[JavaStatement]) { (nextStmts, stmts) => nextStmts ++ stmts }
                         .diff(seenStmts)
-                        .toSet
                 }
 
             case _ =>

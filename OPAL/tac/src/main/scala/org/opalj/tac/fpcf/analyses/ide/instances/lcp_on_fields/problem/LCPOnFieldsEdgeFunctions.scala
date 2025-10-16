@@ -13,7 +13,6 @@ import org.opalj.ide.problem.AllTopEdgeFunction
 import org.opalj.ide.problem.EdgeFunction
 import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.IDEValue
-import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
 

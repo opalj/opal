@@ -13,7 +13,6 @@ import scala.collection.immutable.LongMap
 
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
-import org.opalj.ai.domain
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
