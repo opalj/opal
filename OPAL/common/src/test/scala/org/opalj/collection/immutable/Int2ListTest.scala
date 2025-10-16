@@ -88,7 +88,9 @@ class Int2ListTest extends AnyFunSpec with Matchers {
                 var sumForFirstThird = 0
                 PerformanceEvaluation.time {
                     l.forFirstN(Elements / 3)(sumForFirstThird += _)
-                } { t => if (i >= 8) info(s"forFirstN(1/3*Elements) sum was $sumForFirstThird and took ${t.toSeconds}") }
+                } { t =>
+                    if (i >= 8) info(s"forFirstN(1/3*Elements) sum was $sumForFirstThird and took ${t.toSeconds}")
+                }
 
                 val sumIterator =
                     PerformanceEvaluation.time {
