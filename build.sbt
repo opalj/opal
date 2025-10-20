@@ -296,8 +296,7 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
     .settings(buildSettings *)
     .settings(
         name := "Abstract Interpretation Framework",
-        Compile / doc / scalacOptions := (Opts.doc
-            .title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
+        Compile / doc / scalacOptions := (Opts.doc.title("OPAL - Abstract Interpretation Framework")),
         run / fork := true
     )
     .dependsOn(br % "it->it;it->test;test->test;compile->compile")
@@ -336,8 +335,7 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
     .settings(buildSettings *)
     .settings(
         name := "Three Address Code",
-        Compile / doc / scalacOptions := (Opts.doc
-            .title("OPAL - Three Address Code") ++ Seq("-groups", "-implicits")),
+        Compile / doc / scalacOptions := (Opts.doc.title("OPAL - Three Address Code")),
         assembly / assemblyJarName := "OPALTACDisassembler.jar",
         assembly / mainClass := Some("org.opalj.tac.TAC"),
         run / fork := true,
