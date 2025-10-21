@@ -167,6 +167,9 @@ object TACtoBC {
         val cfg = tac.cfg
         for (stmt <- cfg.code.instructions.reverse) {
             val currentIdx = tac.pcToIndex(stmt.pc)
+            if(tacContext.isStmtVisitDelayed(stmt)) {
+                StmtProcessor.visitDelayedStmt(stmt, code, labels, currentIdx, tacContext)
+            }
             if(!tacContext.isStmtVisited(stmt)) {
                 StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, tacContext, currentIdx)
             }

@@ -3,7 +3,7 @@ package org.opalj.tac2bc
 import org.opalj.ba.CodeElement
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.{DUP, DUP2, RewriteLabel}
-import org.opalj.tac.{Assignment, Const, DVar, Expr, NewArray, Stmt, UVar, V, Var}
+import org.opalj.tac.{Assignment, Const, DVar, Expr, NewArray, Stmt, UVar, V, Var, New}
 import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
@@ -27,7 +27,10 @@ class Tac2BcContext(
 
     val visitedStmt: ArrayBuffer[Stmt[V]] = ArrayBuffer[Stmt[V]]()
 
-    def emitStmt(defIdx: Int): Unit = {
+    val delayedVisitStmt: ArrayBuffer[Stmt[V]] = ArrayBuffer[Stmt[V]]()
+
+    def emitStmt(defIdx: Int,
+                 delayStmtVisit: Boolean = false): Unit = {
         val variable = getVarFromId(defIdx)
         val stmt = tacStmts(defIdx)._1
         if (!savedDefSites.contains(variable)) {
@@ -36,7 +39,7 @@ class Tac2BcContext(
         }
 
         val stmtIndex = tacStmts(defIdx)._2
-        StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this, stmtIndex)
+        StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this, stmtIndex, delayStmtVisit)
     }
 
     def emitVarUse(variable: Var[V]): Unit = {
@@ -89,7 +92,7 @@ class Tac2BcContext(
 
     /**
      * Emits bytecode for the definition of a variable at the given index.
-     * Loads a constant onto the stack.
+     * Loads an end node to the stack.
      */
     private def emitDef(defIdx: Int): Unit = {
         val stmt = tacStmts(defIdx)._1
@@ -97,6 +100,7 @@ class Tac2BcContext(
             case Assignment(_, _, expr) =>
                 expr match {
                     case const: Const => ExprProcessor.loadConstant(const, code)
+                    case newExpr: New => ExprProcessor.processNewExpr(newExpr.tpe, code)
                     case newArray: NewArray[V] => ExprProcessor.processNewArray(newArray, tacToLVIndex, code, this)
                 }
             case _ =>
@@ -140,6 +144,11 @@ class Tac2BcContext(
     /** Checks if a TAC statement has already been visited. */
     def isStmtVisited(stmt: Stmt[V]): Boolean = {
         visitedStmt.contains(stmt)
+    }
+
+    /** Checks if a TAC statement has been delayed. */
+    def isStmtVisitDelayed(stmt: Stmt[V]): Boolean = {
+        delayedVisitStmt.contains(stmt)
     }
 
     /**

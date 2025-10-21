@@ -89,8 +89,9 @@ object ExprProcessor {
         expr:         Expr[V],
         tacToLVIndex: Map[Int, Int],
         code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext
-    ): Unit = {
+        tacContext:   Tac2BcContext,
+        delayStmtVisit: Boolean = false
+        ): Unit = {
         expr match {
             case getField: GetField[V]     => processGetField(getField, tacToLVIndex, code, tacContext)
             case getStatic: GetStatic      => processGetStatic(getStatic, code)
@@ -110,8 +111,8 @@ object ExprProcessor {
             case newExpr: New => processNewExpr(newExpr.tpe, code)
             case primitiveTypecastExpr: PrimitiveTypecastExpr[V] =>
                 processPrimitiveTypeCastExpr(primitiveTypecastExpr, tacToLVIndex, code, tacContext)
-            case arrayLength: ArrayLength[V] => processArrayLength(arrayLength, tacToLVIndex, code, tacContext)
-            case arrayLoadExpr: ArrayLoad[V] => processArrayLoad(arrayLoadExpr, tacToLVIndex, code, tacContext)
+            case arrayLength: ArrayLength[V] => processArrayLength(arrayLength, tacToLVIndex, code, tacContext, delayStmtVisit)
+            case arrayLoadExpr: ArrayLoad[V] => processArrayLoad(arrayLoadExpr, tacToLVIndex, code, tacContext, delayStmtVisit)
             case newArrayExpr: NewArray[V]   => processNewArray(newArrayExpr, tacToLVIndex, code, tacContext)
             case invokedynamicFunctionCall: InvokedynamicFunctionCall[V] =>
                 processInvokedynamicFunctionCall(invokedynamicFunctionCall, tacToLVIndex, code, tacContext)
@@ -194,6 +195,7 @@ object ExprProcessor {
 
         // Process each parameter
         for (param <- invokedynamicFunctionCall.params.reverse) {
+            //TODO braucht man hier?
             if(param.asVar.definedBy.size > 1) {
                 ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
             } else {
@@ -227,7 +229,8 @@ object ExprProcessor {
         arrayLoadExpr: ArrayLoad[V],
         tacToLVIndex:  Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:    Tac2BcContext
+        tacContext:    Tac2BcContext,
+        delayStmtVisit: Boolean = false
     ): Unit = {
         // Infer the element type from the array reference expression
         val elementType = inferElementType(arrayLoadExpr.arrayRef)
@@ -246,9 +249,9 @@ object ExprProcessor {
         }
 
         // Load the index onto the stack
-        tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head)
+        tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit)
         // Load the array reference onto the stack
-        tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head)
+        tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit)
     }
 
     // Helper function to infer the element type from the array reference expression
@@ -263,11 +266,12 @@ object ExprProcessor {
         arrayLength:  ArrayLength[V],
         tacToLVIndex: Map[Int, Int],
         code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext
+        tacContext:   Tac2BcContext,
+        delayStmtVisit: Boolean = false
     ): Unit = {
         code += ARRAYLENGTH
         // Process the receiver object
-        tacContext.emitStmt(arrayLength.arrayRef.asVar.definedBy.head)
+        tacContext.emitStmt(arrayLength.arrayRef.asVar.definedBy.head, delayStmtVisit)
     }
 
     def processNewExpr(
@@ -309,7 +313,7 @@ object ExprProcessor {
         call.receiverOption.foreach { receiver =>
             val definedByIdx = receiver.asVar.definedBy.head
 
-            if(call.isInstanceOf[NonVirtualMethodCall[V]])
+            if(receiver.asVar.definedBy.head < 0)
                 ExprProcessor.loadVariable(receiver.asVar, tacToLVIndex, code)
             else
                 tacContext.emitStmt(definedByIdx)
@@ -458,8 +462,15 @@ object ExprProcessor {
             }
         }
 
-        tacContext.emitStmt(binaryExpr.right.asVar.definedBy.head)
-        tacContext.emitStmt(binaryExpr.left.asVar.definedBy.head)
+        binaryExpr.right match {
+            case const: Const => ExprProcessor.loadConstant(const, code)
+            case uvar: UVar[_] => tacContext.emitStmt(uvar.definedBy.head)
+        }
+
+        binaryExpr.left match {
+            case const: Const => ExprProcessor.loadConstant(const, code)
+            case uvar: UVar[_] => tacContext.emitStmt(uvar.definedBy.head)
+        }
     }
     def processPrimitiveTypeCastExpr(
         primitiveTypecastExpr: PrimitiveTypecastExpr[V],
