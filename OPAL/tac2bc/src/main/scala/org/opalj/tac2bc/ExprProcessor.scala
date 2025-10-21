@@ -3,7 +3,6 @@ package org.opalj
 package tac2bc
 
 import scala.collection.mutable
-
 import org.opalj.BinaryArithmeticOperators.Add
 import org.opalj.BinaryArithmeticOperators.And
 import org.opalj.BinaryArithmeticOperators.Divide
@@ -84,17 +83,22 @@ object ExprProcessor {
      * @param expr the Expression to be converted into InstructionElements
      * @param tacToLVIndex map that holds information for Local Variable Indices
      * @param code list where bytecode instructions should be added
+     * @param tacContext is responsible for translating TAC to bytecode in reverse order.
+     * @param delayStmtVisit if true, delays emitting the label and marking the statement as visited until later.
+     * @param nestedStmt indicates nested expression and preventing unnecessary variable stores during translation.
      */
     def processExpression(
         expr:         Expr[V],
         tacToLVIndex: Map[Int, Int],
         code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext
+        tacContext:   Tac2BcContext,
+        delayStmtVisit: Boolean = false,
+        nestedStmt:     Boolean = false
     ): Unit = {
         expr match {
             case getField: GetField[V]     => processGetField(getField, tacToLVIndex, code, tacContext)
             case getStatic: GetStatic      => processGetStatic(getStatic, code)
-            case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code, tacContext)
+            case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code, tacContext, nestedStmt)
             case callExpr: Call[V @unchecked] =>
                 val call @ Call(declaringClass, isInterface, name, descriptor) = callExpr
                 processCall(
@@ -110,8 +114,8 @@ object ExprProcessor {
             case newExpr: New => processNewExpr(newExpr.tpe, code)
             case primitiveTypecastExpr: PrimitiveTypecastExpr[V] =>
                 processPrimitiveTypeCastExpr(primitiveTypecastExpr, tacToLVIndex, code, tacContext)
-            case arrayLength: ArrayLength[V] => processArrayLength(arrayLength, tacToLVIndex, code, tacContext)
-            case arrayLoadExpr: ArrayLoad[V] => processArrayLoad(arrayLoadExpr, tacToLVIndex, code, tacContext)
+            case arrayLength: ArrayLength[V] => processArrayLength(arrayLength, tacToLVIndex, code, tacContext, delayStmtVisit)
+            case arrayLoadExpr: ArrayLoad[V] => processArrayLoad(arrayLoadExpr, tacToLVIndex, code, tacContext, delayStmtVisit)
             case newArrayExpr: NewArray[V]   => processNewArray(newArrayExpr, tacToLVIndex, code, tacContext)
             case invokedynamicFunctionCall: InvokedynamicFunctionCall[V] =>
                 processInvokedynamicFunctionCall(invokedynamicFunctionCall, tacToLVIndex, code, tacContext)
@@ -195,7 +199,8 @@ object ExprProcessor {
         // Process each parameter
         for (param <- invokedynamicFunctionCall.params.reverse) {
             if(param.asVar.definedBy.size > 1) {
-                ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
+                tacContext.emitVarDef(param.asVar)
+                //ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
             } else {
                 tacContext.emitStmt(param.asVar.definedBy.head)
             }
@@ -227,7 +232,8 @@ object ExprProcessor {
         arrayLoadExpr: ArrayLoad[V],
         tacToLVIndex:  Map[Int, Int],
         code:          mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:    Tac2BcContext
+        tacContext:    Tac2BcContext,
+        delayStmtVisit: Boolean = false
     ): Unit = {
         // Infer the element type from the array reference expression
         val elementType = inferElementType(arrayLoadExpr.arrayRef)
@@ -246,9 +252,13 @@ object ExprProcessor {
         }
 
         // Load the index onto the stack
-        tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head)
+        if(arrayLoadExpr.index.asVar.definedBy.size > 1) {
+            tacContext.emitVarDef(arrayLoadExpr.index.asVar)
+        } else {
+            tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit)
+        }
         // Load the array reference onto the stack
-        tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head)
+        tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit)
     }
 
     // Helper function to infer the element type from the array reference expression
@@ -263,11 +273,12 @@ object ExprProcessor {
         arrayLength:  ArrayLength[V],
         tacToLVIndex: Map[Int, Int],
         code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext
+        tacContext:   Tac2BcContext,
+        delayStmtVisit: Boolean = false
     ): Unit = {
         code += ARRAYLENGTH
         // Process the receiver object
-        tacContext.emitStmt(arrayLength.arrayRef.asVar.definedBy.head)
+        tacContext.emitStmt(arrayLength.arrayRef.asVar.definedBy.head, delayStmtVisit)
     }
 
     def processNewExpr(
@@ -411,8 +422,14 @@ object ExprProcessor {
         binaryExpr:   BinaryExpr[V],
         tacToLVIndex: Map[Int, Int],
         code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext
+        tacContext:   Tac2BcContext,
+        nestedStmt:   Boolean = false
     ): Unit = {
+        // Used as an indicator for loop-related patterns (e.g., variables reused across iterations)
+        if(binaryExpr.left.asVar.definedBy.size > 1) {
+            if(!nestedStmt) ExprProcessor.storeVariable(binaryExpr.left.asVar, tacToLVIndex, code)
+        }
+
         code += {
             (binaryExpr.cTpe, binaryExpr.op) match {
                 // Double
@@ -458,9 +475,29 @@ object ExprProcessor {
             }
         }
 
-        tacContext.emitStmt(binaryExpr.right.asVar.definedBy.head)
-        tacContext.emitStmt(binaryExpr.left.asVar.definedBy.head)
+        binaryExpr.right match {
+            case const: Const => ExprProcessor.loadConstant(const, code)
+            case uvar: UVar[_] =>
+                if(uvar.definedBy.size > 1) {
+                    //ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
+                    tacContext.emitVarDef(uvar)
+                } else {
+                    tacContext.emitStmt(uvar.definedBy.head, nestedStmt = true)
+                }
+        }
+
+        binaryExpr.left match {
+            case const: Const => ExprProcessor.loadConstant(const, code)
+            case uvar: UVar[_] =>
+                if(uvar.definedBy.size > 1) {
+                    //ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
+                    tacContext.emitVarDef(uvar)
+                } else {
+                    tacContext.emitStmt(uvar.definedBy.head, nestedStmt = true)
+                }
+        }
     }
+
     def processPrimitiveTypeCastExpr(
         primitiveTypecastExpr: PrimitiveTypecastExpr[V],
         tacToLVIndex:          Map[Int, Int],
@@ -499,6 +536,9 @@ object ExprProcessor {
         }
 
         // Process the operand expression and add its instructions to the buffer
-        tacContext.emitStmt(primitiveTypecastExpr.operand.asVar.definedBy.head)
+        if (primitiveTypecastExpr.operand.asVar.definedBy.size > 1)
+            tacContext.emitVarDef(primitiveTypecastExpr.operand.asVar)
+        else
+            tacContext.emitStmt(primitiveTypecastExpr.operand.asVar.definedBy.head)
     }
 }

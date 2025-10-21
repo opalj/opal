@@ -74,7 +74,7 @@ import org.opalj.br.instructions.RewriteLabel
 import org.opalj.br.instructions.SASTORE
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{ArrayStore, Assignment, Call, CaughtException, Checkcast, Const, Expr, ExprStmt, Goto, If, InvokedynamicMethodCall, JSR, MonitorEnter, MonitorExit, Nop, PutField, PutStatic, Ret, Return, ReturnValue, Stmt, Switch, Throw, V, Var}
+import org.opalj.tac.{ArrayStore, Assignment, Call, CaughtException, Checkcast, Const, Expr, ExprStmt, Goto, If, InvokedynamicMethodCall, JSR, MonitorEnter, MonitorExit, Nop, PutField, PutStatic, Ret, Return, ReturnValue, Stmt, Switch, Throw, UVar, V, Var}
 
 object StmtProcessor {
 
@@ -87,18 +87,23 @@ object StmtProcessor {
      * @param tacToLVIndex map that holds information for Local Variable Indices
      * @param labels array that maps tac indices to RewriteLabels as targets for control flow instructions
      * @param code list where bytecode instructions should be added
+     * @param tacContext is responsible for translating TAC to bytecode in reverse order.
+     * @param delayStmtVisit if true, delays emitting the label and marking the statement as visited until later.
+     * @param nestedStmt indicates nested expression and preventing unnecessary variable stores during translation.
      */
     def processStmt(
-        stmt:         Stmt[V],
-        tacToLVIndex: Map[Int, Int],
-        labels:       Array[RewriteLabel],
-        code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext,
-        stmtIndex:    Int
+        stmt:           Stmt[V],
+        tacToLVIndex:   Map[Int, Int],
+        labels:         Array[RewriteLabel],
+        code:           mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:     Tac2BcContext,
+        stmtIndex:      Int,
+        delayStmtVisit: Boolean = false,
+        nestedStmt:     Boolean = false
     )(implicit project: SomeProject): Unit = {
         stmt match {
             case Assignment(_, targetVar, expr) =>
-                processAssignment(targetVar, expr, tacToLVIndex, code, tacContext)
+                processAssignment(targetVar, expr, tacToLVIndex, code, tacContext, delayStmtVisit, nestedStmt)
             case ArrayStore(_, arrayRef, index, value) =>
                 processArrayStore(arrayRef, index, value, tacToLVIndex, code, tacContext)
             case CaughtException(_, exceptionType, throwingStmts) =>
@@ -188,9 +193,22 @@ object StmtProcessor {
                 processNop(code)
             case _ => throw new UnsupportedOperationException(s"Unsupported TAC-Stmt: $stmt")
         }
-        if (!tacContext.isStmtVisited(stmt)) {
-            code += LabelElement(labels(stmtIndex))
+        if(!delayStmtVisit){
+            if (!tacContext.isStmtVisited(stmt)) {
+                code += LabelElement(labels(stmtIndex))
+            }
+            tacContext.visitedStmt += stmt
+        } else {
+            tacContext.delayedVisitStmt += stmt
         }
+    }
+
+    def visitDelayedStmt(stmt: Stmt[V],
+                        code: mutable.ListBuffer[CodeElement[Nothing]],
+                        labels: Array[RewriteLabel],
+                        stmtIndex: Int,
+                        tacContext: Tac2BcContext): Unit = {
+        code += LabelElement(labels(stmtIndex))
         tacContext.visitedStmt += stmt
     }
 
@@ -199,7 +217,9 @@ object StmtProcessor {
         expr:         Expr[V],
         tacToLVIndex: Map[Int, Int],
         code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext
+        tacContext:   Tac2BcContext,
+        delayStmtVisit: Boolean = false,
+        nestedStmt:     Boolean = false
     ): Unit = {
         if (expr.isConst || expr.isNewArray) {
             tacContext.emitVarUse(targetVar)
@@ -207,12 +227,16 @@ object StmtProcessor {
             // Special handling for ArrayLoad:
             // Each ArrayLoad consumes the array reference as many times
             // as the load result is used, so we need to adjust the array reference use count.
-            if (expr.isArrayLoad)
-                tacContext.increaseUseSitesForArrRef(
+            if (expr.isArrayLoad) {
+                tacContext.countUseSitesForArrRef(
                     targetVar,
                     expr.asArrayLoad.arrayRef.asVar.definedBy.head
                 )
-            ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext)
+                if (targetVar.asVar.usedBy.size > 1) {
+                    ExprProcessor.storeVariable(targetVar.asVar, tacToLVIndex, code)
+                }
+            }
+            ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext, delayStmtVisit, nestedStmt)
         }
     }
 
@@ -530,9 +554,18 @@ object StmtProcessor {
         // process the right expr
         right match {
             case const: Const => ExprProcessor.loadConstant(const, code)
+            case uvar: UVar[_] => tacContext.emitStmt(uvar.definedBy.head, delayStmtVisit = true)
         }
 
         // process the left expr
-        tacContext.emitStmt(left.asVar.definedBy.head)
+        left match {
+            case const: Const => ExprProcessor.loadConstant(const, code)
+            case uvar: UVar[_] =>
+                if(uvar.definedBy.size > 1) {
+                    tacContext.emitVarDef(uvar)
+                } else {
+                    tacContext.emitStmt(uvar.definedBy.head)
+                }
+        }
     }
 }
