@@ -379,7 +379,6 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
                 new File("OPAL/ai/src/main/resources/").toURI.toURL,
                 new File("OPAL/ba/src/main/resources/").toURI.toURL,
                 new File("OPAL/bi/src/main/resources/").toURI.toURL,
-                new File("OPAL/bp/src/main/resources/").toURI.toURL,
                 new File("OPAL/br/src/main/resources/").toURI.toURL,
                 new File("OPAL/common/src/main/resources/").toURI.toURL
             ) ++ opalDependencies

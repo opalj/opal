@@ -11,9 +11,6 @@ import org.opalj.br.Method
 /**
  * Enables to perform invocations.
  *
- * ==Example==
- * (PerformInvocationsWithRecursionDetection is in particular used by BugPicker's domain.)
- *
  * @author Michael Eichberg
  */
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations with TheMemoryLayout {
