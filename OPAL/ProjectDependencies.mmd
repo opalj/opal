@@ -3,7 +3,6 @@ flowchart BT
     Framework[Framework<br>framework]
     ThreeAddressCode[Three Address Code<br>tac]
     APK[APK<br>apk]
-    DependenciesExtractionLibrary[Dependencies Extraction Library<br>de]
     IDE[IDE<br>ide]
     BytecodeInfrastructure[Bytecode Infrastructure<br>bi]
     AbstractInterpretationFramework[Abstract Interpretation Framework<br>ai]
@@ -15,7 +14,6 @@ flowchart BT
     IFDS[IFDS<br>ifds]
     BytecodeRepresentation[Bytecode Representation<br>br]
     BytecodeAssembler[Bytecode Assembler<br>ba]
-    ArchitectureValidation[Architecture Validation<br>av]
     Demos[Demos<br>demos]
     BytecodeCreator[Bytecode Creator<br>bc]
 
@@ -24,12 +22,10 @@ flowchart BT
     style Hermes fill:#ffd7cf
 
     Framework --> BytecodeAssembler
-    Framework --> ArchitectureValidation
     Framework --> ThreeAddressCode
     ThreeAddressCode --> AbstractInterpretationFramework
     ThreeAddressCode --> IFDS
     APK --> ThreeAddressCode
-    DependenciesExtractionLibrary --> AbstractInterpretationFramework
     IDE --> StaticAnalysisInfrastructure
     IDE --> BytecodeRepresentation
     BytecodeInfrastructure --> Common
@@ -43,6 +39,5 @@ flowchart BT
     BytecodeRepresentation --> BytecodeInfrastructure
     BytecodeAssembler --> BytecodeCreator
     BytecodeAssembler --> AbstractInterpretationFramework
-    ArchitectureValidation --> DependenciesExtractionLibrary
     Demos --> Framework
     BytecodeCreator --> BytecodeDisassembler
