@@ -49,9 +49,9 @@ trait ClassValues
     with FieldAccessesDomain
     with DynamicLoadsDomain
     with MethodCallsDomain {
-    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration =>
+    domain: CorrelationalDomain & IntegerValuesDomain & TypedValuesFactory & Configuration =>
 
-    type DomainClassValue <: ClassValue with DomainObjectValue
+    type DomainClassValue <: ClassValue & DomainObjectValue
     val DomainClassValueTag: ClassTag[DomainClassValue]
 
     /**
@@ -168,7 +168,7 @@ trait ClassValues
         operands:         Operands
     ): MethodCallResult = {
 
-        import org.opalj.ai.domain.l1.ClassValues._
+        import org.opalj.ai.domain.l1.ClassValues.*
 
         if ((declaringClass eq ClassType.Class) && (name == "forName") && operands.nonEmpty) {
 

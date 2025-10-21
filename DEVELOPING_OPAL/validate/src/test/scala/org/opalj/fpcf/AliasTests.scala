@@ -89,13 +89,13 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-            Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
+            Set[Class[? <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         }
 
         p.get(callGraphKey)
     }
 
-    protected[this] def runAliasTests(scheduler: BasicFPCFLazyAnalysisScheduler): Unit = {
+    protected def runAliasTests(scheduler: BasicFPCFLazyAnalysisScheduler): Unit = {
         implicit val as: TestContext = executeAnalyses(Set(scheduler))
 
         val fields = fieldsWithTypeAnnotations(as.project)
@@ -131,7 +131,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
                     getID(a, annotationToClass(a)) -> {
                         if (isThisParameterAlias(a))
                             AliasFormalParameter(VirtualFormalParameter(declaredMethods(e.asInstanceOf[Method]), -1))
-                        else AliasSourceElement(e)(as.project)
+                        else AliasSourceElement(e)(using as.project)
                     }
                 }
                 .groupMap(_._1)(_._2)
@@ -179,7 +179,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
      * @param IDToEntity Map from id to alias source elements.
      * @return The first element of the alias relation.
      */
-    private[this] def resolveFirstElement(
+    private def resolveFirstElement(
         e:               AnyRef,
         a:               AnnotationLike,
         annotatedMethod: Option[Method],
@@ -195,7 +195,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
         else if (isThisParameterAlias(a))
             AliasFormalParameter(VirtualFormalParameter(declaredMethods(e.asInstanceOf[Method]), -1))
         else
-            AliasSourceElement(e)(as.project)
+            AliasSourceElement(e)(using as.project)
     }
 
     /**
@@ -211,7 +211,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
      * @param IDToEntity Map from id to alias source elements.
      * @return The second element of the alias relation.
      */
-    private[this] def resolveSecondElement(
+    private def resolveSecondElement(
         firstElement:    AliasSourceElement,
         a:               AnnotationLike,
         annotatedMethod: Option[Method],
@@ -241,7 +241,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
      * @param useSecond If true, the second line number is used to resolve the line.
      * @return The alias source element that is described by the given line annotation.
      */
-    private[this] def resolveLine(
+    private def resolveLine(
         a:               AnnotationLike,
         annotatedMethod: Option[Method],
         clazz:           ClassFile,
@@ -272,15 +272,15 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
             ))
             .get
 
-        val stmts = tac.ub.tac.get.stmts
+        implicit val stmts = tac.ub.tac.get.stmts
         val stmt: Stmt[DUVar[ValueInformation]] = tac.ub.tac.get.stmts(tac.ub.tac.get.pcToIndex(pc))
 
-        def handleCall(c: Call[_]): AliasSourceElement = {
+        def handleCall(c: Call[?]): AliasSourceElement = {
             val parameterIndex = getIntValue(a, if (useSecond) "secondParameterIndex" else "parameterIndex")
-            val param: Expr[_] = if (parameterIndex == -1) c.receiverOption.get else c.params(parameterIndex)
+            val param: Expr[?] = if (parameterIndex == -1) c.receiverOption.get else c.params(parameterIndex)
 
             param match {
-                case uVar: UVar[ValueInformation] => AliasUVar(uVar.toPersistentForm(stmts), method, as.project)
+                case uVar: UVar[ValueInformation] => AliasUVar(uVar.toPersistentForm, method, as.project)
                 case _                            => throw new IllegalArgumentException("No UVar found")
             }
         }
@@ -288,7 +288,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
         def handleExpr(expr: Expr[DUVar[ValueInformation]]): AliasSourceElement = {
             expr match {
                 case c: Call[_]                                    => handleCall(c)
-                case uVar: UVar[ValueInformation]                  => AliasUVar(uVar.toPersistentForm(stmts), method, as.project)
+                case uVar: UVar[ValueInformation]                  => AliasUVar(uVar.toPersistentForm, method, as.project)
                 case GetField(_, _, _, _, UVar(_, objRefDefSites)) => AliasField(FieldReference(
                         findField(a, useSecond),
                         simpleContexts(declaredMethods(method)),
@@ -308,7 +308,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
                     simpleContexts(declaredMethods(method)),
                     objRefDefSites
                 ))
-                else AliasUVar(value.toPersistentForm(stmts), method, as.project)
+                else AliasUVar(value.toPersistentForm, method, as.project)
             case returnValue: ReturnValue[DUVar[ValueInformation]] => handleExpr(returnValue.expr)
             case Assignment(_, _, expr)                            => handleExpr(expr)
             case _                                                 => throw new IllegalArgumentException(
@@ -324,7 +324,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
      * @param as The test context.
      * @return The method with the given name.
      */
-    private[this] def findMethod(clazz: ClassFile, methodName: String)(implicit as: TestContext): Method = {
+    private def findMethod(clazz: ClassFile, methodName: String)(implicit as: TestContext): Method = {
         as.project.allMethods.find(m => m.classFile.equals(clazz) && m.name.equals(methodName))
             .getOrElse(throw new IllegalArgumentException("No method found with name " + methodName))
     }
@@ -335,7 +335,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
      * @param as The test context.
      * @return The field with the given name.
      */
-    private[this] def findField(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): Field = {
+    private def findField(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): Field = {
 
         val clazz = getFieldClass(a, useSecond)
         val name = getFieldName(a, useSecond)
@@ -351,7 +351,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
      * @param fun The identifier function to expand.
      * @return A new, unique identifier function.
      */
-    private[this] def createUniqueIdentifierFunction(a: AnnotationLike, clazz: ClassFile, fun: String => String)(
+    private def createUniqueIdentifierFunction(a: AnnotationLike, clazz: ClassFile, fun: String => String)(
         implicit as: TestContext
     ): String => String = {
         a match {
@@ -364,7 +364,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
     /**
      * Creates a context for the given alias source element.
      */
-    private[this] def createContext(ase: AliasSourceElement, second: Boolean)(
+    private def createContext(ase: AliasSourceElement, second: Boolean)(
         implicit simpleContexts: SimpleContexts
     ): Context = {
         if (ase.isMethodBound) simpleContexts(ase.declaredMethod)
@@ -373,27 +373,27 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
 
     // --- Annotation Util --- //
 
-    private[this] def getID(a: AnnotationLike, clazz: ClassFile)(implicit as: TestContext): String = {
+    private def getID(a: AnnotationLike, clazz: ClassFile)(implicit as: TestContext): String = {
         clazz.thisType.simpleName + "." + getIntValue(a, "id")
     }
 
-    private[this] def getMethodName(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): String = {
+    private def getMethodName(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): String = {
         getStringValue(a, if (useSecond) "secondMethodName" else "methodName")
     }
 
-    private[this] def getFieldName(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): String = {
+    private def getFieldName(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): String = {
         getStringValue(a, if (useSecond) "secondFieldName" else "fieldName")
     }
 
-    private[this] def getFieldClass(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): String = {
+    private def getFieldClass(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): String = {
         getStringValue(a, if (useSecond) "secondFieldClass" else "fieldClass")
     }
 
-    private[this] def getIntValue(a: AnnotationLike, element: String)(implicit as: TestContext): Int = {
+    private def getIntValue(a: AnnotationLike, element: String)(implicit as: TestContext): Int = {
         getValue(a, element).asIntValue.value
     }
 
-    private[this] def getStringValue(a: AnnotationLike, element: String)(implicit as: TestContext): String = {
+    private def getStringValue(a: AnnotationLike, element: String)(implicit as: TestContext): String = {
         getValue(a, element) match {
             case str: StringValue => str.value
             case ClassValue(t)    => t.asClassType.fqn
@@ -401,7 +401,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
         }
     }
 
-    private[this] def getValue(a: AnnotationLike, element: String)(implicit as: TestContext): ElementValue = {
+    private def getValue(a: AnnotationLike, element: String)(implicit as: TestContext): ElementValue = {
         a.elementValuePairs.filter(_.name == element).collectFirst {
             case ElementValuePair(`element`, value) => value
         }.getOrElse(as.project.classFile(a.annotationType.asClassType)
@@ -413,19 +413,19 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
             .get)
     }
 
-    private[this] def isLineAlias(a: AnnotationLike)(implicit as: TestContext): Boolean = {
+    private def isLineAlias(a: AnnotationLike)(implicit as: TestContext): Boolean = {
         getIntValue(a, "id") == -1
     }
 
-    private[this] def hasTwoLines(a: AnnotationLike)(implicit as: TestContext): Boolean = {
+    private def hasTwoLines(a: AnnotationLike)(implicit as: TestContext): Boolean = {
         getIntValue(a, "secondLineNumber") != -1
     }
 
-    private[this] def hasMethodName(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): Boolean = {
+    private def hasMethodName(a: AnnotationLike, useSecond: Boolean)(implicit as: TestContext): Boolean = {
         getMethodName(a, useSecond) != ""
     }
 
-    private[this] def isThisParameterAlias(a: AnnotationLike): Boolean = {
+    private def isThisParameterAlias(a: AnnotationLike): Boolean = {
         a.elementValuePairs.find(_.name == "thisParameter").exists(_.value.asBooleanValue.value)
     }
 
@@ -435,7 +435,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
      * @param a The annotation.
      * @return All alias annotations that are contained in the given annotation.
      */
-    private[this] def getAliasAnnotations(a: Iterable[AnnotationLike]): Iterable[AnnotationLike] = {
+    private def getAliasAnnotations(a: Iterable[AnnotationLike]): Iterable[AnnotationLike] = {
         a.filter(annotationName(_).contains("Alias"))
             .flatMap {
                 case a: AnnotationLike if annotationName(a).endsWith("Aliases") =>
@@ -445,11 +445,11 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
             }
     }
 
-    private[this] def annotationName(a: AnnotationLike): String = {
+    private def annotationName(a: AnnotationLike): String = {
         a.annotationType.asClassType.simpleName
     }
 
-    private[this] def fieldsWithTypeAnnotations(
+    private def fieldsWithTypeAnnotations(
         recreatedFixtureProject: SomeProject
     ): Iterable[(Field, String => String, Iterable[AnnotationLike])] = {
         for {

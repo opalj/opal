@@ -107,7 +107,7 @@ object MethodCallMethodHandle {
 
     def unapply(
         handle: MethodCallMethodHandle
-    ): Option[(ReferenceType, String, MethodDescriptor)] = {
+    ): Some[(ReferenceType, String, MethodDescriptor)] = {
         Some((handle.receiverType, handle.name, handle.methodDescriptor))
     }
 

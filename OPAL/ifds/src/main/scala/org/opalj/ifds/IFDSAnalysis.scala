@@ -2,7 +2,7 @@
 package org.opalj
 package ifds
 
-import scala.collection.{Set => SomeSet}
+import scala.collection.Set as SomeSet
 import scala.collection.mutable
 
 import org.opalj.br.analyses.SomeProject
@@ -364,7 +364,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S, ICFG <: ide.solver.
      */
     private def handleCall(
         call:    S,
-        callees: SomeSet[_ <: C],
+        callees: SomeSet[? <: C],
         in:      Fact
     )(
         implicit
@@ -426,7 +426,7 @@ class IFDSAnalysis[Fact <: AbstractIFDSFact, C <: AnyRef, S, ICFG <: ide.solver.
             val exitFacts: Map[S, Set[Fact]] = if (newEntity == state.source) {
                 // handle self dependency on our own because property store can't handle it
                 state.selfDependees += work
-                collectResult(state)
+                collectResult
             } else {
                 // handle all other dependencies using property store
                 val callFlows = state.dependees

@@ -39,7 +39,7 @@ class StringValuesTest extends AnyFlatSpec with Matchers {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelLongValuesShiftOperators
 
-    import AnalysisDomain._
+    import AnalysisDomain.*
 
     val s1t0 = StringValue(-1, "test")
     val s1t1 = StringValue(-1, "test")

@@ -13,7 +13,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
-import org.opalj.bi.TestResources.{locateTestResources => locate}
+import org.opalj.bi.TestResources.locateTestResources as locate
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKESTATIC
@@ -69,8 +69,8 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                     a <- annotations.iterator
                     if a.annotationType == InvokedMethods
                     evp <- a.elementValuePairs
-                    ArrayValue(values) = evp.value
-                    ev @ AnnotationValue(annotation) <- values
+                    ArrayValue(values) = evp.value: @unchecked
+                    case ev @ AnnotationValue(annotation) <- values
                     innerAnnotation = ArraySeq(annotation)
                     expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
                     actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
@@ -175,8 +175,8 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         val method = for {
             invokedMethod <- annotations.filter(_.annotationType == InvokedMethod)
             pairs = invokedMethod.elementValuePairs
-            ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
-            ElementValuePair("name", StringValue(methodName)) <- pairs
+            case ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
+            case ElementValuePair("name", StringValue(methodName)) <- pairs
             classFileOpt = project.classFile(ClassType(receiverType))
         } yield {
             if (classFileOpt.isEmpty) {

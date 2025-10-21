@@ -4,13 +4,13 @@ package tac
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.analyses.AnalysisException
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
@@ -58,9 +58,9 @@ object TACNaive {
         optimizations:  List[TACOptimization[Param, IdBasedVar, NaiveTACode[Param]]] = List.empty
     ): NaiveTACode[Param] = {
 
-        import BinaryArithmeticOperators._
-        import RelationalOperators._
-        import UnaryArithmeticOperators._
+        import BinaryArithmeticOperators.*
+        import RelationalOperators.*
+        import UnaryArithmeticOperators.*
 
         val code = method.body.get
         import code.pcOfNextInstruction
@@ -68,7 +68,7 @@ object TACNaive {
         val codeSize = instructions.length
 
         // (only) used if the code contains jsr/ret instructions or if an optimization requires it
-        val cfg = CFGFactory(code, classHierarchy)
+        val cfg = CFGFactory(using code, classHierarchy)
 
         // Used to determine if we have already transformed the respective instruction.
         val processed = FixedSizeBitSet.create(codeSize)
@@ -96,7 +96,7 @@ object TACNaive {
 
             // Schedules the execution of the instruction using the given stack.
             def schedule(nextPC: PC, newStack: Stack): Unit = {
-                if (processed add nextPC) {
+                if (processed.add(nextPC)) {
                     worklist ::= ((nextPC, newStack))
                 }
             }
@@ -119,7 +119,7 @@ object TACNaive {
             }
 
             def arrayLoad(cTpe: ComputationalType): Unit = {
-                val index :: arrayRef :: rest = stack
+                val index :: arrayRef :: rest = stack: @unchecked
                 val operandVar = OperandVar(cTpe, rest)
                 val source = ArrayLoad(pc, index, arrayRef)
                 statements(pc) = List(Assignment(pc, operandVar, source))
@@ -133,7 +133,7 @@ object TACNaive {
             // value2 may have different computational types, but the resulting type
             // is always determined by the type of value1.
             def binaryArithmeticOperation(operator: BinaryArithmeticOperator): Unit = {
-                val value2 :: value1 :: _ = stack
+                val value2 :: value1 :: _ = stack: @unchecked
                 val cTpe = value1.cTpe
                 val expr = BinaryExpr(pc, cTpe, operator, value1, value2)
                 statements(pc) = List(Assignment(pc, value1, expr))
@@ -141,7 +141,7 @@ object TACNaive {
             }
 
             def prefixArithmeticOperation(operator: UnaryArithmeticOperator): Unit = {
-                val value :: _ = stack
+                val value :: _ = stack: @unchecked
                 val cTpe = value.cTpe
                 val expr = PrefixExpr(pc, cTpe, operator, value)
                 statements(pc) = List(Assignment(pc, value, expr))
@@ -150,7 +150,7 @@ object TACNaive {
 
             def primitiveCastOperation(trgtTpe: BaseType): Unit = {
                 // the value may have computational type category 1 or 2 !
-                val value :: rest = stack
+                val value :: rest = stack: @unchecked
                 val result = OperandVar(trgtTpe.computationalType, rest)
                 val castExpr = PrimitiveTypecastExpr(pc, trgtTpe, value)
                 statements(pc) = List(Assignment(pc, result, castExpr))
@@ -162,14 +162,14 @@ object TACNaive {
             }
 
             def newArray(arrayType: ArrayType): Unit = {
-                val count :: rest = stack
+                val count :: rest = stack: @unchecked
                 val newArray = NewArray(pc, List(count), arrayType)
                 val newVal = OperandVar(ComputationalTypeReference, rest)
                 statements(pc) = List(Assignment(pc, newVal, newArray))
                 schedule(pcOfNextInstruction(pc), newVal :: rest)
             }
 
-            def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
+            def loadConstant(instr: LoadConstantInstruction[?]): Unit = {
                 instr match {
                     case LDCInt(value) =>
                         val newVar = OperandVar(ComputationalTypeInt, stack)
@@ -226,7 +226,7 @@ object TACNaive {
             }
 
             def compareValues(op: RelationalOperator): Unit = {
-                val value2 :: value1 :: rest = stack
+                val value2 :: value1 :: rest = stack: @unchecked
                 val result = OperandVar(ComputationalTypeInt, rest)
                 val compare = Compare(pc, value1, op, value2)
                 statements(pc) = List(Assignment[IdBasedVar](pc, result, compare))
@@ -322,12 +322,12 @@ object TACNaive {
                     FASTORE.opcode | IASTORE.opcode |
                     LASTORE.opcode | SASTORE.opcode |
                     BASTORE.opcode | CASTORE.opcode =>
-                    val operandVar :: index :: arrayRef :: rest = stack
+                    val operandVar :: index :: arrayRef :: rest = stack: @unchecked
                     statements(pc) = List(ArrayStore(pc, arrayRef, index, operandVar))
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case ARRAYLENGTH.opcode =>
-                    val arrayRef :: rest = stack
+                    val arrayRef :: rest = stack: @unchecked
                     val lengthVar = OperandVar(ComputationalTypeInt, rest)
                     val lengthExpr = ArrayLength(pc, arrayRef)
                     statements(pc) = List(Assignment[IdBasedVar](pc, lengthVar, lengthExpr))
@@ -344,7 +344,7 @@ object TACNaive {
                     IF_ICMPLT.opcode | IF_ICMPLE.opcode |
                     IF_ICMPGT.opcode | IF_ICMPGE.opcode =>
                     val ifInstr = instruction.asIFICMPInstruction
-                    val value2 :: value1 :: rest = stack
+                    val value2 :: value1 :: rest = stack: @unchecked
                     // let's calculate the final address
                     val targetPC = pc + ifInstr.branchoffset
                     val stmt = If(pc, value1, ifInstr.condition, value2, targetPC)
@@ -356,7 +356,7 @@ object TACNaive {
                     IFLT.opcode | IFLE.opcode |
                     IFGT.opcode | IFGE.opcode =>
                     val ifInstr = instruction.asIF0Instruction
-                    val value :: rest = stack
+                    val value :: rest = stack: @unchecked
                     // let's calculate the final address
                     val targetPC = pc + ifInstr.branchoffset
                     val stmt = If(pc, value, ifInstr.condition, IntConst(-pc, 0), targetPC)
@@ -366,7 +366,7 @@ object TACNaive {
 
                 case IF_ACMPEQ.opcode | IF_ACMPNE.opcode =>
                     val ifInstr = instruction.asIFACMPInstruction
-                    val value2 :: value1 :: rest = stack
+                    val value2 :: value1 :: rest = stack: @unchecked
                     // let's calculate the final address
                     val targetPC = pc + ifInstr.branchoffset
                     val stmt = If(pc, value1, ifInstr.condition, value2, targetPC)
@@ -376,7 +376,7 @@ object TACNaive {
 
                 case IFNONNULL.opcode | IFNULL.opcode =>
                     val ifInstr = instruction.asIFXNullInstruction
-                    val value :: rest = stack
+                    val value :: rest = stack: @unchecked
                     // let's calculate the final address
                     val targetPC = pc + ifInstr.branchoffset
                     val stmt = If(pc, value, ifInstr.condition, NullExpr(-pc), targetPC)
@@ -389,7 +389,7 @@ object TACNaive {
                 case LCMP.opcode                 => compareValues(CMP)
 
                 case SWAP.opcode =>
-                    val value2 :: value1 :: rest = stack
+                    val value2 :: value1 :: rest = stack: @unchecked
                     val tempVar = TempVar(value2.cTpe)
                     val newValue2 = value2.updated(value1.cTpe)
                     val newValue1 = value1.updated(value2.cTpe)
@@ -415,7 +415,7 @@ object TACNaive {
                     binaryArithmeticOperation(Subtract)
 
                 case IINC.opcode =>
-                    val IINC(index, const) = instruction
+                    val IINC(index, const) = instruction: @unchecked
                     val indexReg = RegisterVar(ComputationalTypeInt, index)
                     val incVal = IntConst(pc, const)
                     val iinc = BinaryExpr(pc, ComputationalTypeInt, Add, indexReg, incVal)
@@ -466,7 +466,7 @@ object TACNaive {
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
                 case LDC.opcode | LDC_W.opcode | LDC2_W.opcode =>
-                    loadConstant(as[LoadConstantInstruction[_]](instruction))
+                    loadConstant(as[LoadConstantInstruction[?]](instruction))
 
                 case INVOKESPECIAL.opcode =>
                     val invoke = as[MethodInvocationInstruction](instruction)
@@ -577,7 +577,7 @@ object TACNaive {
                     }
 
                 case INVOKEDYNAMIC.opcode =>
-                    val call @ INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction
+                    val call @ INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction: @unchecked
                     val numOps = call.numberOfPoppedOperands(x => stack.drop(x).head.cTpe.category)
                     val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
                     val params = paramsInOperandsOrder.reverse
@@ -596,29 +596,29 @@ object TACNaive {
                     }
 
                 case PUTSTATIC.opcode =>
-                    val value :: rest = stack
-                    val PUTSTATIC(declaringClass, name, fieldType) = instruction
+                    val value :: rest = stack: @unchecked
+                    val PUTSTATIC(declaringClass, name, fieldType) = instruction: @unchecked
                     val putStatic = PutStatic(pc, declaringClass, name, fieldType, value)
                     statements(pc) = List(putStatic)
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case PUTFIELD.opcode =>
-                    val value :: objRef :: rest = stack
-                    val PUTFIELD(declaringClass, name, fieldType) = instruction
+                    val value :: objRef :: rest = stack: @unchecked
+                    val PUTFIELD(declaringClass, name, fieldType) = instruction: @unchecked
                     val stmt = PutField(pc, declaringClass, name, fieldType, objRef, value)
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case GETSTATIC.opcode =>
-                    val GETSTATIC(declaringClass, name, fieldType) = instruction
+                    val GETSTATIC(declaringClass, name, fieldType) = instruction: @unchecked
                     val getStatic = GetStatic(pc, declaringClass, name, fieldType)
                     val newVal = OperandVar(fieldType.computationalType, stack)
                     statements(pc) = List(Assignment[IdBasedVar](pc, newVal, getStatic))
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 
                 case GETFIELD.opcode =>
-                    val objRef :: rest = stack
-                    val GETFIELD(declaringClass, name, fieldType) = instruction
+                    val objRef :: rest = stack: @unchecked
+                    val GETFIELD(declaringClass, name, fieldType) = instruction: @unchecked
                     val getField = GetField(pc, declaringClass, name, fieldType, objRef)
                     val newVal = OperandVar(fieldType.computationalType, rest)
                     statements(pc) = List(Assignment(pc, newVal, getField))
@@ -678,7 +678,7 @@ object TACNaive {
                     schedule(pcOfNextInstruction(pc), stack)
 
                 case POP.opcode =>
-                    val _ :: rest = stack
+                    val _ :: rest = stack: @unchecked
                     statements(pc) = List(Nop(pc))
                     schedule(pcOfNextInstruction(pc), rest)
 
@@ -693,7 +693,7 @@ object TACNaive {
                     }
 
                 case INSTANCEOF.opcode =>
-                    val value1 :: rest = stack
+                    val value1 :: rest = stack: @unchecked
                     val resultVar = OperandVar(ComputationalTypeInt, rest)
                     val tpe = as[INSTANCEOF](instruction).referenceType
                     val instanceOf = InstanceOf(pc, value1, tpe)
@@ -701,7 +701,7 @@ object TACNaive {
                     schedule(pcOfNextInstruction(pc), resultVar :: rest)
 
                 case CHECKCAST.opcode =>
-                    val value1 :: rest = stack
+                    val value1 :: rest = stack: @unchecked
                     val resultVar = OperandVar(ComputationalTypeReference, rest)
                     val targetType = as[CHECKCAST](instruction).referenceType
                     val checkcast = Checkcast(pc, value1, targetType)
@@ -709,17 +709,17 @@ object TACNaive {
                     schedule(pcOfNextInstruction(pc), resultVar :: rest)
 
                 case MONITORENTER.opcode =>
-                    val objRef :: rest = stack
+                    val objRef :: rest = stack: @unchecked
                     statements(pc) = List(MonitorEnter(pc, objRef))
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case MONITOREXIT.opcode =>
-                    val objRef :: rest = stack
+                    val objRef :: rest = stack: @unchecked
                     statements(pc) = List(MonitorExit(pc, objRef))
                     schedule(pcOfNextInstruction(pc), rest)
 
                 case TABLESWITCH.opcode =>
-                    val index :: rest = stack
+                    val index :: rest = stack: @unchecked
                     val tableSwitch = as[TABLESWITCH](instruction)
                     val defaultTarget = pc + tableSwitch.defaultOffset
                     var caseValue = tableSwitch.low
@@ -734,7 +734,7 @@ object TACNaive {
                     statements(pc) = List(Switch(pc, defaultTarget, index, npairs))
 
                 case LOOKUPSWITCH.opcode =>
-                    val index :: rest = stack
+                    val index :: rest = stack: @unchecked
                     val lookupSwitch = as[LOOKUPSWITCH](instruction)
                     val defaultTarget = pc + lookupSwitch.defaultOffset
                     val npairs = lookupSwitch.npairs.map[IntIntPair /*(Int, PC)*/ ] { npair =>
@@ -751,7 +751,7 @@ object TACNaive {
                     schedule(pcOfNextInstruction(pc), stack.head :: stack)
 
                 case DUP_X1.opcode =>
-                    val val1 :: val2 :: rest = stack
+                    val val1 :: val2 :: rest = stack: @unchecked
                     statements(pc) = List(Nop(pc))
                     schedule(pcOfNextInstruction(pc), val1 :: val2 :: val1 :: rest)
 

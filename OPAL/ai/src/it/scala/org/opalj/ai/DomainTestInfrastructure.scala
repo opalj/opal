@@ -5,7 +5,7 @@ package domain
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 import scala.xml.NodeSeq
 
 import org.scalatest.flatspec.AnyFlatSpec
@@ -13,9 +13,9 @@ import org.scalatest.matchers.should.Matchers
 
 import org.opalj.ai.util.XHTML
 import org.opalj.bi.TestResources
-import org.opalj.br.{TestSupport => BRTestSupport}
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.TestSupport as BRTestSupport
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -38,7 +38,7 @@ import org.opalj.util.PerformanceEvaluation
  */
 abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec with Matchers {
 
-    private[this] implicit val logContext: LogContext = GlobalLogContext
+    private implicit val logContext: LogContext = GlobalLogContext
 
     type AnalyzedDomain <: Domain
 
@@ -93,8 +93,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 methodsCount.incrementAndGet()
                 None
             } catch {
-                case ct: ControlThrowable => throw ct
-                case t: Throwable         =>
+                case b: Break[?]  => throw b
+                case t: Throwable =>
                     // basically, we want to catch everything!
                     Some((project.source(classFile).get.toString, classFile, method, t))
             }
@@ -108,7 +108,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 val MethodInfo(source, method) = m
                 analyzeClassFile(source.toString, method) foreach { exceptions.add(_) }
             }
-            import scala.jdk.CollectionConverters._
+            import scala.jdk.CollectionConverters.*
             exceptions.asScala
         }
 

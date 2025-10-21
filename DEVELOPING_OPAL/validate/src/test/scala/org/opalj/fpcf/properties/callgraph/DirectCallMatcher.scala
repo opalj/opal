@@ -28,7 +28,7 @@ class DirectCallMatcher extends AbstractRepeatablePropertyMatcher {
     override val containerAnnotationType: ClassType = ClassType("org/opalj/fpcf/properties/callgraph/DirectCalls")
 
     override def validateSingleProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,

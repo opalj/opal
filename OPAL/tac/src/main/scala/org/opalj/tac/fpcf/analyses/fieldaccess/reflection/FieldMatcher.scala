@@ -44,7 +44,7 @@ class ClassBasedFieldMatcher(
 ) extends FieldMatcher {
 
     // IMPROVE use a ProjectInformationKey or WeakHashMap to cache fields per class per project (for the contains check)
-    private[this] def fields(implicit p: SomeProject): Set[Field] = possibleClasses.flatMap { c =>
+    private def fields(implicit p: SomeProject): Set[Field] = possibleClasses.flatMap { c =>
         // IMPROVE consider inherited fields
         p.classFile(c).map(_.fields).getOrElse(ArraySeq.empty)
     }
@@ -63,7 +63,7 @@ class UBTypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
     override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
     override def priority: Int = 3
     override def contains(f: Field)(implicit p: SomeProject): Boolean =
-        isTypeCompatible(fieldType, f.fieldType)(p.classHierarchy)
+        isTypeCompatible(fieldType, f.fieldType)(using p.classHierarchy)
 }
 
 /**
@@ -75,7 +75,7 @@ class LBTypeBasedFieldMatcher(val fieldType: FieldType) extends FieldMatcher {
     override def initialFields(implicit p: SomeProject): Iterator[Field] = p.allFields.iterator.filter(contains)
     override def priority: Int = 3
     override def contains(f: Field)(implicit p: SomeProject): Boolean =
-        isTypeCompatible(f.fieldType, fieldType)(p.classHierarchy)
+        isTypeCompatible(f.fieldType, fieldType)(using p.classHierarchy)
 }
 
 /**
@@ -93,7 +93,8 @@ class ActualReceiverBasedFieldMatcher(val receiver: IsReferenceValue) extends Fi
 
     override def contains(f: Field)(implicit p: SomeProject): Boolean = {
         val isNull = receiver.isNull
-        (isNull.isNoOrUnknown && receiver.isValueASubtypeOf(f.classFile.thisType)(p.classHierarchy).isYesOrUnknown) ||
+        (isNull.isNoOrUnknown &&
+            receiver.isValueASubtypeOf(f.classFile.thisType)(using p.classHierarchy).isYesOrUnknown) ||
             (isNull.isYesOrUnknown && f.isStatic)
     }
 
@@ -109,7 +110,7 @@ class ActualParameterBasedFieldMatcher(val actualParam: V) extends FieldMatcher 
     override def priority: Int = 3
 
     override def contains(f: Field)(implicit p: SomeProject): Boolean =
-        isTypeCompatible(f.fieldType, actualParam.value)(p.classHierarchy)
+        isTypeCompatible(f.fieldType, actualParam.value)(using p.classHierarchy)
 
 }
 

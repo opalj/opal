@@ -43,19 +43,19 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
     final val project: SomeProject
 ) extends PointsToAnalysisBase { self =>
 
-    private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
-        override protected[this] type ElementType = self.ElementType
-        override protected[this] type PointsToSet = self.PointsToSet
-        override protected[this] type DependerType = self.DependerType
+        override protected type ElementType = self.ElementType
+        override protected type PointsToSet = self.PointsToSet
+        override protected type DependerType = self.DependerType
 
-        override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
+        override protected val pointsToPropertyKey: PropertyKey[PointsToSet] =
             self.pointsToPropertyKey
 
-        override protected[this] def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
+        override protected def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
 
-        override protected[this] def createPointsToSet(
+        override protected def createPointsToSet(
             pc:            Int,
             callContext:   ContextType,
             allocatedType: ReferenceType,
@@ -71,15 +71,15 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
             )
         }
 
-        @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
+        @inline override protected def getTypeOf(element: ElementType): ReferenceType = {
             self.getTypeOf(element)
         }
 
-        @inline override protected[this] def getTypeIdOf(element: ElementType): Int = {
+        @inline override protected def getTypeIdOf(element: ElementType): Int = {
             self.getTypeIdOf(element)
         }
 
-        @inline override protected[this] def isEmptyArray(element: ElementType): Boolean = {
+        @inline override protected def isEmptyArray(element: ElementType): Boolean = {
             self.isEmptyArray(element)
         }
     }
@@ -233,7 +233,7 @@ abstract class UnsafeGetPointsToAnalysis(
             handleGetField(None, pc, theObject.get.asVar.definedBy)
         }
 
-        Results(createResults(state))
+        Results(createResults)
     }
 }
 
@@ -266,7 +266,7 @@ abstract class UnsafePutPointsToAnalysis(
             handlePutField(None, baseObject.get.asVar.definedBy, storeObject.get.asVar.definedBy)
         }
 
-        Results(createResults(state))
+        Results(createResults)
     }
 }
 

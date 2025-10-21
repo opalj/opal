@@ -46,7 +46,7 @@ class InstructionCountBoundedAI[D <: Domain](
 
     assert(maxEvaluationCount > 0)
 
-    private[this] val evaluationCount = new java.util.concurrent.atomic.AtomicInteger(0)
+    private val evaluationCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
     def currentEvaluationCount: Int = evaluationCount.get
 

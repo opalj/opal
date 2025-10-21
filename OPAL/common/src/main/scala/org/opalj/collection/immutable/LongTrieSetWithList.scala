@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package immutable
 
-import java.lang.Long.{hashCode => lHashCode}
+import java.lang.Long.hashCode as lHashCode
 
 /**
  * An immutable set of long values which maintains an additional list to enable
@@ -100,7 +100,7 @@ private[immutable] final class LongTrieSetWithList1 private[immutable] (
     override def equals(other: Any): Boolean = {
         other match {
             case that: LongTrieSetWithList1 => (that eq this) || this.i1 == that.i1
-            case that                       => false
+            case _                          => false
         }
     }
     override def hashCode: Int = 31 + lHashCode(i1)
@@ -146,7 +146,7 @@ private[immutable] final class LongTrieSetWithList2 private[immutable] (
     override def equals(other: Any): Boolean = {
         other match {
             case that: LongTrieSetWithList2 => (that eq this) || this.i1 == that.i1 && this.i2 == that.i2
-            case that                       => false
+            case _                          => false
         }
     }
     override def hashCode: Int = 31 * (31 + lHashCode(i1)) + lHashCode(i2)
@@ -187,7 +187,7 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
             new LongTrieSetWithListN(4, this.grow(i, 0), Long2List(i, i1, i2, i3))
     }
 
-    private[this] def grow(i: Long, level: Int): LongTrieSetNode = {
+    private def grow(i: Long, level: Int): LongTrieSetNode = {
         val l = new LongTrieSet1(i)
         var r: LongTrieSetNode = new LongTrieSetNode1(((i >> level) & 7L).toInt, l)
         r = r.add(i1, level)

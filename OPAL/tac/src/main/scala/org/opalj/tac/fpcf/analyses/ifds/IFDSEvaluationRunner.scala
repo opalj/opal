@@ -46,9 +46,9 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
 
     protected def createConfig(args: Array[String]): ConfigType
 
-    protected def analysisClass(analysisConfig: ConfigType): IFDSAnalysisScheduler[_, _, _, _]
+    protected def analysisClass(analysisConfig: ConfigType): IFDSAnalysisScheduler[?, ?, ?, ?]
 
-    protected def printAnalysisResults(analysis: IFDSAnalysis[_, _, _, _], ps: PropertyStore): Unit = ()
+    protected def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?, ?], ps: PropertyStore): Unit = ()
 
     protected type AdditionalResultsType
 
@@ -97,7 +97,7 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
         }
     }
 
-    protected def additionalEvaluationResult(analysis: IFDSAnalysis[_, _, _, _]): Option[AdditionalResultsType] = None
+    protected def additionalEvaluationResult(analysis: IFDSAnalysis[?, ?, ?, ?]): Option[AdditionalResultsType] = None
 
     protected def writeAdditionalEvaluationResultsToFile(
         writer:                      PrintWriter,

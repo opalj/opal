@@ -128,12 +128,15 @@ private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet {
     }
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] var i: Int = java.lang.Integer.numberOfTrailingZeros(set)
+        private var i: Int = java.lang.Integer.numberOfTrailingZeros(set)
         def hasNext: Boolean = i < 32
         def next(): Int = {
             val currentI = this.i
             var i = currentI
-            do { i += 1 } while (i < 32 && (set & (1 << i)) == 0);
+            while {
+                i += 1
+                i < 32 && (set & (1 << i)) == 0
+            } do ()
             this.i = i
             currentI
         }
@@ -222,12 +225,15 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
     }
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] var i: Int = java.lang.Long.numberOfTrailingZeros(set)
+        private var i: Int = java.lang.Long.numberOfTrailingZeros(set)
         def hasNext: Boolean = i < 64
         def next(): Int = {
             val currentI = this.i
             var i = currentI
-            do { i += 1 } while (i < 64 && (set & (1L << i)) == 0L)
+            while {
+                i += 1
+                i < 64 && (set & (1L << i)) == 0L
+            } do ()
             this.i = i
             currentI
         }
@@ -408,15 +414,16 @@ private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArra
     }
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] final val max: Int = set.length * 32
-        private[this] var i: Int = -1
-        private[this] def advanceIterator(): Unit = {
+        private final val max: Int = set.length * 32
+        private var i: Int = -1
+        private def advanceIterator(): Unit = {
             val set = self.set
             var bucket = -1
-            do {
+            while {
                 i += 1
                 bucket = i / 32
-            } while (i < max && (set(bucket) & (1 << (i - 32 * bucket))) == 0)
+                i < max && (set(bucket) & (1 << (i - 32 * bucket))) == 0
+            } do ()
         }
         advanceIterator()
         def hasNext: Boolean = i < max

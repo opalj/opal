@@ -17,13 +17,13 @@ class DefaultPerformInvocationsDomain[Source](
 
     def shouldInvocationBePerformed(method: Method): Boolean = !method.returnType.isVoidType
 
-    type CalledMethodDomain = SharedDefaultDomain[Source] with DefaultRecordMethodCallResults
+    type CalledMethodDomain = SharedDefaultDomain[Source] & DefaultRecordMethodCallResults
 
     def calledMethodDomain(method: Method) = {
         new SharedDefaultDomain(project, method) with DefaultRecordMethodCallResults
     }
 
-    def calledMethodAI = BaseAI
+    def calledMethodAI: BaseAI = BaseAI
 
 }
 

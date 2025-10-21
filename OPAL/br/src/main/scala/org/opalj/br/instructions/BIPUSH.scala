@@ -19,7 +19,7 @@ class BIPUSH private (val value: Int) extends LoadConstantInstruction[Int] {
 
     final def length: Int = 2
 
-    final def computationalType = ComputationalTypeInt
+    final def computationalType: ComputationalTypeInt.type = ComputationalTypeInt
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)
@@ -45,7 +45,7 @@ object BIPUSH extends InstructionMetaInformation {
 
     final val opcode = 16
 
-    private[this] val bipushes = {
+    private val bipushes = {
         val bipushes = new Array[BIPUSH](256)
         for (i <- -128 to 127) { bipushes(i + 128) = new BIPUSH(i) }
         bipushes

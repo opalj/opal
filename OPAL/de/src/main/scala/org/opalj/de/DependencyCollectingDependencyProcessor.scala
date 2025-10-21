@@ -2,10 +2,10 @@
 package org.opalj
 package de
 
-import java.util.concurrent.{ConcurrentHashMap => CMap}
+import java.util.concurrent.ConcurrentHashMap as CMap
 import scala.collection.mutable.Set
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.collection.asScala
 
 /**
@@ -27,18 +27,18 @@ class DependencyCollectingDependencyProcessor(
     val virtualSourceElementsCountHint: Option[Int]
 ) extends DependencyProcessor {
 
-    private[this] val deps =
+    private val deps =
         new CMap[VirtualSourceElement, CMap[VirtualSourceElement, Set[DependencyType]]](
             // assumption: every source element has ~ten dependencies on other source elements
             virtualSourceElementsCountHint.getOrElse(16000) * 10
         )
 
-    private[this] val depsOnArrayTypes =
+    private val depsOnArrayTypes =
         new CMap[VirtualSourceElement, CMap[ArrayType, Set[DependencyType]]](
             virtualSourceElementsCountHint.getOrElse(4000)
         )
 
-    private[this] val depsOnBaseTypes =
+    private val depsOnBaseTypes =
         new CMap[VirtualSourceElement, CMap[BaseType, Set[DependencyType]]](
             virtualSourceElementsCountHint.getOrElse(4000)
         )

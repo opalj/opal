@@ -8,6 +8,9 @@ package rta
 
 import scala.language.existentials
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.ClassType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ReferenceType
@@ -51,7 +54,7 @@ class InstantiatedTypesAnalysis private[analyses] (
     final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
@@ -98,36 +101,36 @@ class InstantiatedTypesAnalysis private[analyses] (
         processCallers(declaredMethod, declaredType, newInstantiatedTypes, callersEOptP, callersUB, null)
     }
 
-    private[this] def processCallers(
+    private def processCallers(
         declaredMethod:    DeclaredMethod,
         declaredType:      ClassType,
         instantiatedTypes: UIDSet[ReferenceType],
         callersEOptP:      EOptionP[DeclaredMethod, Callers],
         callersUB:         Callers,
         seenCallers:       Callers
-    ): PropertyComputationResult = {
+    ): PropertyComputationResult = boundary {
         callersUB.forNewCallerContexts(seenCallers, callersEOptP.e) {
             (_, callerContext, _, isDirect) =>
                 // unknown or VM level calls always have to be treated as instantiations
                 if (!callerContext.hasContext) {
-                    return partialResult(instantiatedTypes + declaredType);
+                    break(partialResult(instantiatedTypes + declaredType));
                 }
 
                 // indirect calls, e.g. via reflection, are to be treated as instantiations as well
                 if (!isDirect) {
-                    return partialResult(instantiatedTypes + declaredType);
+                    break(partialResult(instantiatedTypes + declaredType));
                 }
 
                 val caller = callerContext.method
 
                 // a constructor is called by a non-constructor method, there will be an initialization.
                 if (caller.name != "<init>") {
-                    return partialResult(instantiatedTypes + declaredType);
+                    break(partialResult(instantiatedTypes + declaredType));
                 }
 
                 // if the caller is not available, we have to assume that it was no super call
                 if (!caller.hasSingleDefinedMethod) {
-                    return partialResult(instantiatedTypes + declaredType);
+                    break(partialResult(instantiatedTypes + declaredType));
                 }
 
                 // the constructor is called from another constructor. it is only an new instantiated
@@ -135,7 +138,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                 project.classFile(caller.declaringClassType).foreach { cf =>
                     cf.superclassType.foreach { supertype =>
                         if (supertype != declaredType)
-                            return partialResult(instantiatedTypes + declaredType);
+                            break(partialResult(instantiatedTypes + declaredType));
                     }
                 }
 
@@ -146,7 +149,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                 val newInstr = NEW(declaredType)
                 val hasNew = body.exists(pcInst => pcInst.instruction == newInstr)
                 if (hasNew)
-                    return partialResult(instantiatedTypes + declaredType);
+                    break(partialResult(instantiatedTypes + declaredType));
         }
 
         if (callersEOptP.isFinal) {
@@ -162,7 +165,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         }
     }
 
-    private[this] def continuation(
+    private def continuation(
         declaredMethod:    DeclaredMethod,
         declaredType:      ClassType,
         instantiatedTypes: UIDSet[ReferenceType],
@@ -172,7 +175,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         processCallers(declaredMethod, declaredType, instantiatedTypes, eps, eps.ub, seenCallers)
     }
 
-    private[this] def partialResult(
+    private def partialResult(
         instantiatedTypes: UIDSet[ReferenceType]
     ): PartialResult[SomeProject, InstantiatedTypes] = {
         PartialResult[SomeProject, InstantiatedTypes](
@@ -237,7 +240,7 @@ object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSche
     }
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
-        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
+        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq*)
 
         ps.preInitialize[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key) {
             case _: EPK[_, _] => InterimEUBP(p, InstantiatedTypes(initialInstantiatedTypes))

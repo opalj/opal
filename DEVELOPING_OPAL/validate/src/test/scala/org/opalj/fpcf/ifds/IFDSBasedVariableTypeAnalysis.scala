@@ -41,9 +41,14 @@ class IFDSBasedVariableTypeAnalysis(project: SomeProject, subsumeFacts: Boolean 
 
 class IFDSBasedVariableTypeAnalysisScheduler(subsumeFacts: Boolean = false)
     extends IFDSAnalysisScheduler[VTAFact, Method, JavaStatement, JavaICFG] {
-    override def init(p: SomeProject, ps: PropertyStore) = new IFDSBasedVariableTypeAnalysis(p, subsumeFacts)
+
+    override def init(p: SomeProject, ps: PropertyStore): IFDSBasedVariableTypeAnalysis =
+        new IFDSBasedVariableTypeAnalysis(p, subsumeFacts)
+
     override def property: IFDSPropertyMetaInformation[JavaStatement, VTAFact] = VTAResult
+
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI), PropertyBounds.finalP(Callers))
+
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, ContextProviderKey, PropertyStoreKey)
 }
@@ -99,7 +104,7 @@ object IFDSBasedVariableTypeAnalysisRunner extends IFDSEvaluationRunner {
     override type AdditionalResultsType = Statistics
 
     override protected def additionalEvaluationResult(
-        analysis: IFDSAnalysis[_, _, _, _]
+        analysis: IFDSAnalysis[?, ?, ?, ?]
     ): Option[Statistics] =
         if (analysis.ifdsProblem.subsumeFacts) Some(analysis.statistics) else None
 

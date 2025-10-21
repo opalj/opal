@@ -7,7 +7,7 @@ package cg
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
@@ -173,7 +173,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
     override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
         val declaredMethods = project.get(DeclaredMethodsKey)
 
-        val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
+        val isClosedPackage = (pkg) => project.get(ClosedPackagesKey).isClosed(pkg)
         val isExtensible = project.get(TypeExtensibilityKey)
         val classHierarchy = project.classHierarchy
 
@@ -252,13 +252,14 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  */
 trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
+    import pureconfig._
+
     // don't make this a val for initialization reasons
-    @inline private[this] def additionalEPConfigKey: String = {
+    @inline private def additionalEPConfigKey: String = {
         InitialEntryPointsKey.ConfigKeyPrefix + "entryPoints"
     }
 
     override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
-        import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
         implicit val logContext: LogContext = project.logContext
 
@@ -276,7 +277,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         }
         val configEntryPoints: List[EntryPointContainer] =
             try {
-                project.config.as[List[EntryPointContainer]](additionalEPConfigKey)
+                ConfigSource.fromConfig(project.config).at(additionalEPConfigKey).loadOrThrow[List[EntryPointContainer]]
             } catch {
                 case e: Throwable =>
                     OPALLogger.error(
@@ -370,12 +371,12 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         super.collectEntryPoints(project) ++ entryPoints
     }
 
-    /* Required by Ficus' `ArbitraryTypeReader`*/
+    /* Required by pureconfig */
     private case class EntryPointContainer(
         declaringClass: String,
         name:           String,
         descriptor:     Option[String]
-    )
+    ) derives ConfigReader
 }
 
 /**

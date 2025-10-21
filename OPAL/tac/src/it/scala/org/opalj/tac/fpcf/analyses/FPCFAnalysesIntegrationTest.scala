@@ -7,6 +7,7 @@ package analyses
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.GZIPInputStream
+import scala.compiletime.uninitialized
 import scala.io.Source
 
 import org.junit.runner.RunWith
@@ -50,7 +51,7 @@ import org.opalj.util.getObjectReflectively
 @RunWith(classOf[JUnitRunner])
 class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
-    private[this] val analysisConfigurations = getConfig
+    private val analysisConfigurations = getConfig
 
     PropertyStore.updateDebug(true)
 
@@ -75,9 +76,9 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
                         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
                             case None =>
-                                Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                                Set(classOf[l1.DefaultDomainWithCFGAndDefUse[?]])
                             case Some(requirements) =>
-                                requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                                requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[?]]
                         }
                     } else {
                         // Recreate project keeping all ProjectInformationKeys other than the
@@ -215,6 +216,6 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
  */
 object FPCFAnalysesIntegrationTest {
     var factory: () => SomeProject = () => null
-    var p: SomeProject = _
-    var ps: PropertyStore = _
+    var p: SomeProject = uninitialized
+    var ps: PropertyStore = uninitialized
 }

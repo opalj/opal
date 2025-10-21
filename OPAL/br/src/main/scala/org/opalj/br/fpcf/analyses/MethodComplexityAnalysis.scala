@@ -5,7 +5,7 @@ package fpcf
 package analyses
 
 import org.opalj.br.fpcf.properties.MethodComplexity
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**

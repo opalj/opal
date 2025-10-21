@@ -17,7 +17,7 @@ import org.opalj.br.fpcf.properties.StaticDataUsage
 import org.opalj.br.fpcf.properties.UsesConstantDataOnly
 import org.opalj.br.fpcf.properties.UsesNoStaticData
 import org.opalj.br.fpcf.properties.UsesVaryingData
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -47,7 +47,7 @@ class StaticDataUsageAnalysis private[analyses] (final val project: SomeProject)
     import project.nonVirtualCall
     import project.resolveFieldReference
 
-    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
+    private val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Retrieves and commits the methods static data usage as calculated for its declaring class
@@ -98,7 +98,7 @@ class StaticDataUsageAnalysis private[analyses] (final val project: SomeProject)
             val instruction = instructions(currentPC)
             (instruction.opcode: @switch) match {
                 case GETSTATIC.opcode =>
-                    val GETSTATIC(declaringClass, fieldName, fieldType) = instruction
+                    val GETSTATIC(declaringClass, fieldName, fieldType) = instruction: @unchecked
 
                     maxLevel = UsesConstantDataOnly
 

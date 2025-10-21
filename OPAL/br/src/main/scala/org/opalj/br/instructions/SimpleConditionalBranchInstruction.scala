@@ -40,7 +40,7 @@ trait SimpleConditionalBranchInstruction[T <: SimpleConditionalBranchInstruction
      * is equivalent to `(a &geq; b)`. In other words,  if this IF instruction is an
      * IFGT instruction and IFLE instruction is returned.
      */
-    def negate(newBranchoffset: Int = branchoffset): SimpleConditionalBranchInstruction[_]
+    def negate(newBranchoffset: Int = branchoffset): SimpleConditionalBranchInstruction[?]
 
     override final def isSimpleConditionalBranchInstruction: Boolean = true
     override final def asSimpleConditionalBranchInstruction: this.type = this
@@ -83,7 +83,7 @@ object SimpleConditionalBranchInstruction {
     /**
      * Extracts the instructions branchoffset.
      */
-    def unapply(i: SimpleConditionalBranchInstruction[_ <: SimpleConditionalBranchInstruction[_]]): Some[Int] =
+    def unapply(i: SimpleConditionalBranchInstruction[? <: SimpleConditionalBranchInstruction[?]]): Some[Int] =
         Some(i.branchoffset)
 
 }

@@ -8,7 +8,7 @@ import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
+import org.opalj.br.collection.mutable.TypesSet as BRMutableTypesSet
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
@@ -80,7 +80,7 @@ class L1ThrownExceptionsAnalysis(
     final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     private[analyses] def lazilyDetermineThrownExceptions(
         e: Entity
@@ -141,12 +141,12 @@ class L1ThrownExceptionsAnalysis(
                     callees.ub.callees(context, pc).foreach { callee =>
                         if (callee != context)
                             ps(callee, ThrownExceptions.key) match {
-                                case MethodIsAbstract |
+                                case UBP(MethodIsAbstract |
                                     MethodBodyIsNotAvailable |
                                     MethodIsNative |
                                     UnknownExceptionIsThrown |
                                     AnalysisLimitation |
-                                    UnresolvedInvokeDynamicInstruction =>
+                                    UnresolvedInvokeDynamicInstruction) =>
                                     result = MethodCalledThrowsUnknownExceptions
 
                                 case eps @ UBP(te: ThrownExceptions) =>
@@ -181,8 +181,7 @@ class L1ThrownExceptionsAnalysis(
                     false
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode =>
-                    val MethodInvocationInstruction(declaringClass, _, name, descriptor) =
-                        instruction
+                    val MethodInvocationInstruction(declaringClass, _, name, descriptor) = instruction: @unchecked
 
                     if ((declaringClass eq ClassType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
@@ -345,7 +344,7 @@ class L1ThrownExceptionsAnalysis(
                 case te: ThrownExceptions =>
                     exceptions = exceptions ++ te.types.concreteTypes
 
-                case c: Callees =>
+                case _: Callees =>
                     callPCs.foreach(handleCall(eps.asInstanceOf[EPS[DeclaredMethod, Callees]], _))
                     if (result != null)
                         return Result(context, result);

@@ -79,7 +79,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
         if (descriptionResourceURL == null)
             descriptionResourceURL = this.getClass.getResource(s"$id.md")
         try {
-            processSource(Source.fromURL(descriptionResourceURL)(Codec.UTF8)) { _.mkString }
+            processSource(Source.fromURL(descriptionResourceURL)(using Codec.UTF8)) { _.mkString }
         } catch {
             case t: Throwable => s"not available: $descriptionResourceURL; ${t.getMessage}"
         }

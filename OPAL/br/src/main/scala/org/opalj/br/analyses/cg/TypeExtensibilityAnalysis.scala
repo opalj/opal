@@ -33,7 +33,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ClassType => 
     import classHierarchy.foreachDirectSupertype
     // format: on
 
-    @tailrec private[this] def determineExtensibility(
+    @tailrec private def determineExtensibility(
         typesToProcess:       mutable.Queue[ClassType],
         subtypeExtensibility: Array[Answer],
         isEnqueued:           Array[Boolean],
@@ -89,7 +89,7 @@ class TypeExtensibilityAnalysis(val project: SomeProject) extends (ClassType => 
         }
     }
 
-    private[this] val typeExtensibility: ArrayMap[Answer] = {
+    private val typeExtensibility: ArrayMap[Answer] = {
         implicit val isClassExtensible: ClassExtensibility = project.get(ClassExtensibilityKey)
 
         val leafTypes = classHierarchy.leafTypes

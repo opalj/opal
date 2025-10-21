@@ -70,7 +70,7 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
         (ps: PropertyStore, _: FallbackReason, m: Method) => {
             val p = ps.context(classOf[Project]).asInstanceOf[SomeProject]
             MethodReturnValue(
-                Some(ValueInformation.forProperValue(m.descriptor.returnType)(p.classHierarchy))
+                Some(ValueInformation.forProperValue(m.descriptor.returnType)(using p.classHierarchy))
             )
         }
     )

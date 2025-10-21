@@ -4,14 +4,14 @@ package ai
 package domain
 package l2
 
-import scala.language.reflectiveCalls
+import scala.reflect.Selectable.reflectiveSelectable
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
 import org.opalj.log.LogContext
@@ -24,7 +24,7 @@ import org.opalj.log.LogContext
 @RunWith(classOf[JUnitRunner])
 class PerformInvocationsWithRecursionDetectionTest extends AnyFlatSpec with Matchers {
 
-    import PerformInvocationsWithRecursionDetectionTestFixture._
+    import PerformInvocationsWithRecursionDetectionTestFixture.*
 
     behavior of "PerformInvocationsWithRecursionDetection"
 
@@ -130,7 +130,8 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
 
         type CalledMethodDomain = ChildInvocationDomain
 
-        val coordinatingDomain = new BaseDomain(project) with ValuesCoordinatingDomain
+        val coordinatingDomain: BaseDomain & ValuesCoordinatingDomain =
+            new BaseDomain(project) with ValuesCoordinatingDomain
     }
 
     class InvocationDomain(
@@ -173,7 +174,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         override def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, this)
 
-        def calledMethodAI = BaseAI
+        def calledMethodAI: BaseAI = BaseAI
 
     }
 
@@ -184,7 +185,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
     ) extends SharedInvocationDomain(project, method)
         with ChildPerformInvocationsWithRecursionDetection { callingDomain =>
 
-        final def calledMethodAI: AI[_ >: CalledMethodDomain] = callerDomain.calledMethodAI
+        final def calledMethodAI: AI[Domain] = callerDomain.calledMethodAI
 
         def calledMethodDomain(method: Method) =
             new ChildInvocationDomain(project, method, callingDomain)

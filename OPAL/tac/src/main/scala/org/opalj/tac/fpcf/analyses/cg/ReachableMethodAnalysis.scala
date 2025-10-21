@@ -117,7 +117,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis with TypeConsumerAnalysis {
         }
     }
 
-    private[this] def continuationForCallers(
+    private def continuationForCallers(
         processMethod: EOptionP[DeclaredMethod, Callers] => ProperPropertyComputationResult
     )(someEPS: SomeEPS): ProperPropertyComputationResult = {
         processMethod(someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]])

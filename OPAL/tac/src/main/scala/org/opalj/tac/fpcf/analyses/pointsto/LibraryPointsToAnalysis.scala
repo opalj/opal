@@ -55,7 +55,7 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
         val entryPoints = p.get(InitialEntryPointsKey)
         val formalParameters = p.get(VirtualFormalParametersKey)
         val initialInstantiatedTypes =
-            UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
+            UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq*)
 
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
@@ -69,13 +69,12 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
         def initialize(param: Entity, types: UIDSet[ReferenceType]): Unit = {
             val pts = types.foldLeft(emptyPointsToSet) { (all, tpe) => all.included(createExternalAllocation(tpe)) }
-            ps.preInitialize(param, pointsToPropertyKey) {
-                case UBP(oldPts) =>
-                    InterimEUBP(param, oldPts.included(pts))
-                case _: EPK[_, _] =>
-                    InterimEUBP(param, pts)
-                case eps =>
-                    sys.error(s"unexpected property: $eps")
+            ps.preInitialize(param, pointsToPropertyKey) { pc =>
+                (pc: @unchecked) match
+                    case UBP(oldPts: PointsToSet @unchecked) =>
+                        InterimEUBP(param, oldPts.included(pts))
+                    case _: EPK[_, _] =>
+                        InterimEUBP(param, pts)
             }
         }
 

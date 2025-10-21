@@ -87,7 +87,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         val tacai = project.get(LazyTACUsingAIKey)
 
-        implicit val p: Project[_] = project
+        implicit val p: Project[?] = project
         implicit val classHierarchy: ClassHierarchy = project.classHierarchy
 
         val serializableTypes: Set[ClassType] =
@@ -102,9 +102,9 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case i @ INVOKEVIRTUAL(declClass, "writeObject", OOSwriteObject)
                     if classHierarchy.isSubtypeOf(declClass, OOS) => i
                 case i @ INVOKEVIRTUAL(declClass, "readObject", JustReturnsObject)

@@ -8,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.allManagedBITestJARs
-import org.opalj.br.reader.Java8Framework.{ClassFile => ClassFileReader}
+import org.opalj.br.reader.Java8Framework.ClassFile as ClassFileReader
 
 /**
  * Tests whether all class files contained in the "test/classfiles" directory

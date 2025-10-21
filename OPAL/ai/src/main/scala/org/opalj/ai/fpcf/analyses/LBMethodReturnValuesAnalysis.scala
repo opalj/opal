@@ -4,7 +4,6 @@ package ai
 package fpcf
 package analyses
 
-import org.opalj.ai.domain
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -47,27 +46,27 @@ class LBMethodReturnValuesAnalysis private[analyses] (
      * @author Michael Eichberg
      */
     class MethodReturnValuesAnalysisDomain(
-        val ai:        InterruptableAI[MethodReturnValuesAnalysisDomain],
+        val theAI:     InterruptableAI[MethodReturnValuesAnalysisDomain],
         val method:    Method,
         val dependees: EOptionPSet[Entity, Property]
     ) extends CorrelationalDomain
-        with domain.TheProject
-        with domain.TheMethod
-        with domain.DefaultSpecialDomainValuesBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
-        with domain.l1.DefaultIntegerValues // to enable constant tracking
-        with domain.l0.DefaultTypeLevelLongValues
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelPrimitiveValuesConversions
-        with domain.l0.TypeLevelLongValuesShiftOperators
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.TypeLevelDynamicLoads
-        with domain.l1.DefaultReferenceValuesBinding
-        with domain.DefaultHandlingOfMethodResults
-        with domain.RecordReturnedValue
-        with domain.IgnoreSynchronization
+        with ai.domain.TheProject
+        with ai.domain.TheMethod
+        with ai.domain.DefaultSpecialDomainValuesBinding
+        with ai.domain.ThrowAllPotentialExceptionsConfiguration
+        with ai.domain.l1.DefaultIntegerValues // to enable constant tracking
+        with ai.domain.l0.DefaultTypeLevelLongValues
+        with ai.domain.l0.DefaultTypeLevelFloatValues
+        with ai.domain.l0.DefaultTypeLevelDoubleValues
+        with ai.domain.l0.TypeLevelPrimitiveValuesConversions
+        with ai.domain.l0.TypeLevelLongValuesShiftOperators
+        with ai.domain.l0.TypeLevelFieldAccessInstructions
+        with ai.domain.l0.TypeLevelInvokeInstructions
+        with ai.domain.l0.TypeLevelDynamicLoads
+        with ai.domain.l1.DefaultReferenceValuesBinding
+        with ai.domain.DefaultHandlingOfMethodResults
+        with ai.domain.RecordReturnedValue
+        with ai.domain.IgnoreSynchronization
         with RefinedTypeLevelFieldAccessInstructions
         with RefinedTypeLevelInvokeInstructions {
 
@@ -75,7 +74,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 
         override implicit val project: SomeProject = analysis.project
 
-        override protected[this] def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
+        override protected def doRecordReturnedValue(pc: PC, value: Value): Boolean = {
             val isUpdated = super.doRecordReturnedValue(pc, value)
 
             // The idea is to check if the computed return value can no longer be more
@@ -106,14 +105,14 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 val methodReturnType = method.returnType.asClassType
                 if (!classHierarchy.isSubtypeOf(returnedValueUTB, methodReturnType)) {
                     // the type hierarchy is incomplete...
-                    ai.interrupt()
+                    theAI.interrupt()
                 } else if (returnedReferenceValue.isNull.isUnknown &&
                            returnedValueUTB.isSingletonSet &&
                            returnedValueUTB.head == methodReturnType &&
                            !returnedReferenceValue.isPrecise
                 ) {
                     // we don't get more precise information
-                    ai.interrupt()
+                    theAI.interrupt()
                 }
             }
             isUpdated // <= whether the information about the returned value was updated

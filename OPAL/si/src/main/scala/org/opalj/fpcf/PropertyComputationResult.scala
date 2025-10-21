@@ -14,12 +14,12 @@ sealed abstract class PropertyComputationResult {
     private[fpcf] def id: Int
 
     private[fpcf] def isInterimResult: Boolean = false
-    private[fpcf] def asInterimResult: InterimResult[_ >: Null <: Property] = {
+    private[fpcf] def asInterimResult: InterimResult[? >: Null <: Property] = {
         throw new ClassCastException();
     }
 
     private[fpcf] def isInterimPartialResult: Boolean = false
-    private[fpcf] def asInterimPartialResult: InterimPartialResult[_ >: Null <: Property] = {
+    private[fpcf] def asInterimPartialResult: InterimPartialResult[? >: Null <: Property] = {
         throw new ClassCastException();
     }
 
@@ -178,7 +178,7 @@ final class InterimResult[P >: Null <: Property] private (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimResult[_] if this.eps == that.eps =>
+            case that: InterimResult[?] if this.eps == that.eps =>
                 val dependees = this.dependees
                 dependees.size == that.dependees.size &&
                     dependees.forall(thisDependee => that.dependees.contains(thisDependee))

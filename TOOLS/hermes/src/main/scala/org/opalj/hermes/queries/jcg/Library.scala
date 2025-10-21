@@ -60,11 +60,11 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             fieldTypes = classFile.fields.filter(f => f.isNotFinal && !f.isPrivate).collect {
                 case f: Field if f.fieldType.id >= 0 => f.fieldType.id
             }
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             paramTypes = method.parameterTypes.map(_.id).filter(_ >= 0)
             if (fieldTypes.nonEmpty || paramTypes.nonEmpty)
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case iv: INVOKEVIRTUAL   => iv
                 case ii: INVOKEINTERFACE => ii
             }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
@@ -85,7 +85,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val isParameterType = paramTypes.contains(otID)
             if (isParameterType) {
                 if (invokeKind.opcode == INVOKEINTERFACE.opcode) {
-                    val INVOKEINTERFACE(declClass, name, descriptor) = invokeKind
+                    val INVOKEINTERFACE(declClass, name, descriptor) = invokeKind: @unchecked
                     val cfO = project.classFile(declClass)
                     if (cfO.nonEmpty) {
                         val cf = cfO.get
@@ -203,12 +203,12 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         cbsTargets.toSet
     }
 
-    @inline private[this] def isInheritableMethod(method: Method): Boolean = {
+    @inline private def isInheritableMethod(method: Method): Boolean = {
 
         !method.isPrivate
     }
 
-    private[this] def hasSubclassWhichInheritsFromInterface(
+    private def hasSubclassWhichInheritsFromInterface(
         classType:        ClassType,
         interfaceType:    ClassType,
         methodName:       String,

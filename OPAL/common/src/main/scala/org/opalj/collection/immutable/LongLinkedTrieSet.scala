@@ -5,8 +5,8 @@ package immutable
 
 import scala.annotation.switch
 
-import java.lang.{Integer => JInt}
-import java.lang.{Long => JLong}
+import java.lang.Integer as JInt
+import java.lang.Long as JLong
 
 /**
  * An effectively immutable trie set of long values where the elements are sorted based on the
@@ -339,7 +339,7 @@ private[immutable] object LongLinkedTrieSetNShared {
                         } else {
                             new LongLinkedTrieSetN4_1_3(l._0, l._1)
                         }
-                    case l: LongLinkedTrieSetN4 =>
+                    case _: LongLinkedTrieSetN4 =>
                         if (sharedBits == 0L /*test the last bit...*/ )
                             new LongLinkedTrieSetNShared_0(n)
                         else
@@ -1337,7 +1337,7 @@ private[immutable] class LargeLongLinkedTrieSet(
     }
 
     override final def iterator: LongIterator = new LongIterator {
-        private[this] var currentL = set.l
+        private var currentL = set.l
         override def hasNext: Boolean = currentL ne null
         override def next(): Long = {
             val v = currentL.value

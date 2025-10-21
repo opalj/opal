@@ -19,9 +19,9 @@ class LocalsTest extends AnyFlatSpec with Matchers {
     behavior of "a Locals data structure"
 
     it should ("be empty if it has size 0") in {
-        Locals(0).isEmpty should be(true)
+        Locals[AnyRef](0).isEmpty should be(true)
 
-        Locals(0).nonEmpty should be(false)
+        Locals[AnyRef](0).nonEmpty should be(false)
     }
 
     it should ("be non-empty if it has more than one element") in {
@@ -212,7 +212,9 @@ class LocalsTest extends AnyFlatSpec with Matchers {
             val v = Locals[Integer](size)
             for { i <- 0 until size } { v.set(i, i) }
 
-            val newV = v.mapKV[Integer] { (i, v) => assert(i == v); i }
+            val newV = v.mapKV[Integer] { (i, v) =>
+                assert(i == v); i
+            }
 
             for { i <- 0 until size } {
                 newV(i) should be(i)

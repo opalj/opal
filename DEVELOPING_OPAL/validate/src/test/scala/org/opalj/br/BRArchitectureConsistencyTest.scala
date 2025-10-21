@@ -55,13 +55,18 @@ class BRArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                 }
 
                 // BR and Instructions are considered as one...
-                Symbol("Br") is_only_allowed_to (USE, Symbol("Instructions"), Symbol("CFG"))
-                Symbol("Instructions") is_only_allowed_to (USE, Symbol("Br"), Symbol("CFG"))
-                Symbol("CFG") is_only_allowed_to (USE, Symbol("Br"), Symbol("Instructions"))
+                Symbol("Br").is_only_allowed_to(USE, Symbol("Instructions"), Symbol("CFG"))
+                Symbol("Instructions").is_only_allowed_to(USE, Symbol("Br"), Symbol("CFG"))
+                Symbol("CFG").is_only_allowed_to(USE, Symbol("Br"), Symbol("Instructions"))
 
-                Symbol("Reader") is_only_allowed_to (USE, Symbol("Br"), Symbol("Instructions"))
-                Symbol("Analyses") is_only_allowed_to
-                    (USE, Symbol("Br"), Symbol("CFG"), Symbol("Instructions"), Symbol("Reader"))
+                Symbol("Reader").is_only_allowed_to(USE, Symbol("Br"), Symbol("Instructions"))
+                Symbol("Analyses").is_only_allowed_to(
+                    USE,
+                    Symbol("Br"),
+                    Symbol("CFG"),
+                    Symbol("Instructions"),
+                    Symbol("Reader")
+                )
 
                 // 'Reader is allowed to use everything
 

@@ -246,7 +246,7 @@ private final class SingleArgumentMethodDescriptor(
         (other.parametersCount: @switch) match {
             case 0 => 1
             case 1 =>
-                val c = parameterType compare other.parameterType(0)
+                val c = parameterType.compare(other.parameterType(0))
                 if (c != 0)
                     c
                 else
@@ -283,11 +283,11 @@ private final class TwoArgumentsMethodDescriptor(
         (other.parametersCount: @switch) match {
             case 0 | 1 => 1
             case 2     =>
-                var c = firstParameterType compare other.parameterType(0)
+                var c = firstParameterType.compare(other.parameterType(0))
                 if (c != 0)
                     c
                 else {
-                    c = secondParameterType compare other.parameterType(1)
+                    c = secondParameterType.compare(other.parameterType(1))
                     if (c != 0) {
                         c
                     } else {
@@ -704,7 +704,7 @@ object MethodDescriptor {
         apply(parameterTypesBuilder.result(), returnType)
     }
 
-    private[this] def parseParameterType(md: String, startIndex: Int): (FieldType, Int) = {
+    private def parseParameterType(md: String, startIndex: Int): (FieldType, Int) = {
         val td = md.charAt(startIndex)
         (td: @scala.annotation.switch) match {
             case 'L' =>

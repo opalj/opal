@@ -4,8 +4,6 @@ package bugpicker
 package core
 package analyses
 
-import scala.util.control.ControlThrowable
-
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.analyses.cg.CallGraph
@@ -177,8 +175,8 @@ object UnusedLocalVariables {
                                 relevance = Relevance.OfUtmostRelevance
                             }
                         } catch {
-                            case ct: ControlThrowable => throw ct
-                            case t: Throwable         =>
+                            case b: Break[?]                           => throw b
+                            case t: Throwable                          =>
                                 val message = "assessing analysis result failed; ignoring issue"
                                 OPALLogger.error("error", message, t)(theProject.logContext)
                         }

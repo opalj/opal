@@ -29,18 +29,18 @@ import org.opalj.tac.fpcf.analyses.alias.TacBasedAliasAnalysisState
 trait PointsToBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[
     ElementType,
     AliasSet
-], PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet]]
+], PointsToSet >: Null <: PointsToSetLike[?, ?, PointsToSet]]
     extends TacBasedAliasAnalysisState
     with SetBasedAliasAnalysisState[ElementType, AliasSet] {
 
-    private[this] var _element1Dependees = Set[Entity]()
-    private[this] var _element2Dependees = Set[Entity]()
+    private var _element1Dependees = Set[Entity]()
+    private var _element2Dependees = Set[Entity]()
 
-    private[this] var _oldPointsToSets1: Map[Entity, PointsToSet] = Map.empty[Entity, PointsToSet]
-    private[this] var _oldPointsToSets2: Map[Entity, PointsToSet] = Map.empty[Entity, PointsToSet]
+    private var _oldPointsToSets1: Map[Entity, PointsToSet] = Map.empty[Entity, PointsToSet]
+    private var _oldPointsToSets2: Map[Entity, PointsToSet] = Map.empty[Entity, PointsToSet]
 
-    private[this] var _field1Dependees = Set[Entity]()
-    private[this] var _field2Dependees = Set[Entity]()
+    private var _field1Dependees = Set[Entity]()
+    private var _field2Dependees = Set[Entity]()
 
     /**
      * @return A set containing all elements that the first [[AliasSourceElement]] depends on.

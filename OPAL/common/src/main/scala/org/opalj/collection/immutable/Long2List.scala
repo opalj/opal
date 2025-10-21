@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package immutable
 
-import java.lang.{Long => JLong}
+import java.lang.Long as JLong
 
 /**
  * A growable, immutable linked list based data store for '''long values'''.
@@ -151,8 +151,8 @@ abstract private[immutable] class Long2List1_4 extends Long2List {
 
     final def restIterator(): LongIterator = {
         new LongIterator {
-            private[this] var list: Long2List4 = rest
-            private[this] var index: Int = 0
+            private var list: Long2List4 = rest
+            private var index: Int = 0
             def hasNext: Boolean = list != null
             def next(): Long = {
                 index match {

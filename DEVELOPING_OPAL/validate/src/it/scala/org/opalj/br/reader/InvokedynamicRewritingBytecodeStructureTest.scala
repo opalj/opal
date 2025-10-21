@@ -85,7 +85,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
         val verifiedMethodsCounter = new AtomicInteger(0)
         for {
             classFile <- project.allProjectClassFiles
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             instructions = body.instructions
             if instructions.exists {
                 case i: INVOKESTATIC =>

@@ -5,9 +5,9 @@ package analyses
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.function.{Function => JFunction}
+import java.util.function.Function as JFunction
 import scala.collection.immutable.ArraySeq
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.ClassType.MethodHandle
 import org.opalj.br.ClassType.VarHandle
@@ -328,7 +328,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * of the package name. It only matches another [[PackagePrivateMethodContext]] if the package
      * names are the same, though.
      */
-    private[this] class PackagePrivateMethodContext(
+    private class PackagePrivateMethodContext(
         val packageName: String,
         methodName:      String,
         descriptor:      MethodDescriptor
@@ -354,7 +354,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      * a `MethodContext`, in which case the equals method guarantees that it matches a
      * `MethodContext` with the same signature regardless of the package name.
      */
-    private[this] class ShadowsPackagePrivateMethodContext(
+    private class ShadowsPackagePrivateMethodContext(
         methodName: String,
         descriptor: MethodDescriptor
     ) extends MethodContext(methodName, descriptor) {

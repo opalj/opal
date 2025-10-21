@@ -50,7 +50,7 @@ class L1InterpretationHandler(implicit override val project: SomeProject) extend
         case vmc: VirtualMethodCall[V]     => new L1VirtualMethodCallInterpreter().interpret(vmc)
         case nvmc: NonVirtualMethodCall[V] => L1NonVirtualMethodCallInterpreter().interpret(nvmc)
 
-        case stmt => super.processStatement(state)(stmt)
+        case stmt => super.processStatement(using state)(stmt)
     }
 }
 
@@ -59,5 +59,5 @@ object L1InterpretationHandler {
     def uses: Set[PropertyBounds] = L0InterpretationHandler.uses ++
         PropertyBounds.ubs(StringConstancyProperty, SystemProperties)
 
-    def apply(project: SomeProject): L1InterpretationHandler = new L1InterpretationHandler()(project)
+    def apply(project: SomeProject): L1InterpretationHandler = new L1InterpretationHandler()(using project)
 }

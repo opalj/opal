@@ -144,7 +144,7 @@ package object bi {
     final lazy val isCurrentJREAtLeastJava17: Boolean = isCurrentJREAtLeastJavaX(17)
 
     // only works for Java 8 and above
-    private[this] def isCurrentJREAtLeastJavaX(x: Int): Boolean = {
+    private def isCurrentJREAtLeastJavaX(x: Int): Boolean = {
         require(x >= 8)
         implicit val logContext: LogContext = GlobalLogContext
         val versionString = System.getProperty("java.version")

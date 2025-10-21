@@ -18,7 +18,7 @@ trait DefaultLongSetValues
     extends DefaultSpecialDomainValuesBinding
     with CorrelationalDomain
     with LongSetValues {
-    domain: IntegerRangeValuesFactory with Configuration with ExceptionsFactory =>
+    domain: IntegerRangeValuesFactory & Configuration & ExceptionsFactory =>
 
     class ALongValue() extends super.ALongValueLike {
 

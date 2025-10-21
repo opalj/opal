@@ -4,9 +4,9 @@ package bugpicker
 package core
 package analyses
 
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.br.instructions._
+import org.opalj.br.*
+import org.opalj.br.analyses.*
+import org.opalj.br.instructions.*
 import org.opalj.issues.ClassLocation
 import org.opalj.issues.Issue
 import org.opalj.issues.IssueCategory

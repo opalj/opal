@@ -189,7 +189,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     override def hashCode(): Int = value.id
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UIDSet[_] => that.size == 1 && that.head.id == value.id
+            case that: UIDSet[?] => that.size == 1 && that.head.id == value.id
             case _               => false
         }
     }
@@ -304,7 +304,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     override def hashCode: Int = value1.id ^ value2.id // ordering independent
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UIDSet[_] =>
+            case that: UIDSet[?] =>
                 that.size == 2 && {
                     if (that.head.id == value1.id)
                         that.last.id == value2.id
@@ -336,12 +336,12 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
             case 0 => this
             case 1 => this.incl(es.head)
             case 2 => this.incl(es.head).incl(es.last)
-            case _ => this.foldLeft(es)(_ incl _) // es is larger... which should be less work
+            case _ => this.foldLeft(es)(_.incl(_)) // es is larger... which should be less work
         }
     }
 }
 
-final object UIDSet2 {
+object UIDSet2 {
     def apply[T <: UID](value1: T, value2: T): UIDSet2[T] = new UIDSet2[T](value1, value2)
 }
 
@@ -416,7 +416,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
             return this;
 
         // we only use the trie for sets with more than three elements
-        new UIDSetInnerNode(1, value1, null, null) addMutate value2 addMutate value3 addMutate e
+        new UIDSetInnerNode(1, value1, null, null).addMutate(value2).addMutate(value3).addMutate(e)
     }
 
     override def excl(e: T): UIDSet[T] = {
@@ -434,7 +434,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     override def hashCode: Int = value1.id ^ value2.id ^ value3.id // ordering independent
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UIDSet[_] =>
+            case that: UIDSet[?] =>
                 (that eq this) || {
                     that.size == 3 &&
                     that.containsId(value1.id) &&
@@ -473,7 +473,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
             case 0 => this
             case 1 => this.incl(es.head)
             case 2 => this.incl(es.head).incl(es.last)
-            case _ => this.foldLeft(es)(_ incl _) // es is at least as large as this set
+            case _ => this.foldLeft(es)(_.incl(_)) // es is at least as large as this set
         }
     }
 }
@@ -554,7 +554,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
     }
 
     override def iterator: Iterator[T] = new Iterator[T] {
-        private[this] val nextNodes = mutable.Stack[UIDSetNodeLike[T]](self)
+        private val nextNodes = mutable.Stack[UIDSetNodeLike[T]](self)
         def hasNext: Boolean = nextNodes.nonEmpty
         def next(): T = {
             val currentNode = nextNodes.pop()
@@ -701,7 +701,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
     override def idIterator: IntIterator = {
         new IntIterator {
 
-            private[this] val nextNodes = mutable.Stack[UIDSetNodeLike[T]](self)
+            private val nextNodes = mutable.Stack[UIDSetNodeLike[T]](self)
 
             override def hasNext: Boolean = nextNodes.nonEmpty
 
@@ -725,7 +725,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
     override def findById(id: Int): Option[T] = {
         var currentNode: UIDSetNodeLike[T] = this
         var currentShiftedEId = id
-        do {
+        while {
             if (currentNode.value.id == id)
                 return Some(currentNode.value);
 
@@ -736,7 +736,8 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
 
             currentShiftedEId = currentShiftedEId >>> 1
 
-        } while (currentNode ne null)
+            currentNode ne null
+        } do ()
         None
     }
 
@@ -750,9 +751,9 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
             case 2      => this.incl(es.head).incl(es.last)
             case esSize =>
                 if (this.size > esSize)
-                    es.foldLeft(this: UIDSet[T])(_ incl _)
+                    es.foldLeft(this: UIDSet[T])(_.incl(_))
                 else
-                    this.foldLeft(es: UIDSet[T])(_ incl _)
+                    this.foldLeft(es: UIDSet[T])(_.incl(_))
         }
     }
 
@@ -835,7 +836,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
 
         var currentNode: UIDSetNodeLike[T] = this
         var currentShiftedId = shiftedId
-        do {
+        while {
             if (currentNode.value.id == id)
                 return true;
 
@@ -846,7 +847,8 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
 
             currentShiftedId = currentShiftedId >>> 1
 
-        } while (currentNode ne null)
+            currentNode ne null
+        } do ()
         false
     }
 
@@ -981,7 +983,7 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
 
     override def equals(that: Any): Boolean = {
         that match {
-            case that: UIDSet[_] => that.size == 1 && that.head.id == this.value.id
+            case that: UIDSet[?] => that.size == 1 && that.head.id == this.value.id
             case _               => false
         }
     }
@@ -1033,7 +1035,7 @@ final class UIDSetInnerNode[T <: UID] private[immutable] (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UIDSet[_] =>
+            case that: UIDSet[?] =>
                 (that eq this) ||
                     (that.size == theSize && this.forall(e => that.containsId(e.id)))
             case _ => false
@@ -1138,7 +1140,7 @@ object UIDSet {
         if (vs.isEmpty)
             empty[T]
         else {
-            vs.foldLeft(empty[T]: UIDSet[T])(_ addMutate _)
+            vs.foldLeft(empty[T]: UIDSet[T])(_.addMutate(_))
         }
     }
 

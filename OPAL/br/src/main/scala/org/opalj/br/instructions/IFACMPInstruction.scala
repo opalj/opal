@@ -29,7 +29,7 @@ trait IFACMPInstruction[T <: IFACMPInstruction[T]]
 
 object IFACMPInstruction {
 
-    def unapply(i: IFACMPInstruction[_]): Some[(RelationalOperator, Int)] = {
+    def unapply(i: IFACMPInstruction[?]): Some[(RelationalOperator, Int)] = {
         Some((i.condition, i.branchoffset))
     }
 

@@ -10,11 +10,11 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * to iterate over the flags (synthetic, public, deprecated, etc.) that are set.
  */
 class AccessFlagsIterator private (
-    private[this] var flags:  Int,
+    private var flags:        Int,
     val potentialAccessFlags: IndexedSeq[AccessFlag]
 ) extends Iterator[AccessFlag] {
 
-    private[this] var index = -1
+    private var index = -1
 
     override def hasNext: Boolean = flags != 0
 

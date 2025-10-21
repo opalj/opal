@@ -24,7 +24,7 @@ object ContextProviderKey extends ProjectInformationKey[ContextProvider, Context
                 OPALLogger.warn(
                     "analysis configuration",
                     s"no context provider configured, using SimpleContextProvider as a fallback"
-                )(theProject.logContext)
+                )(using theProject.logContext)
 
                 new SimpleContextProvider {
                     override val project: SomeProject = theProject

@@ -17,7 +17,7 @@ import org.opalj.br.analyses.SomeProject
 object DependencyStoreWithoutSelfDependenciesKey
     extends ProjectInformationKey[DependencyStore, Nothing] {
 
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[? <: AnyRef, Nothing]] = Nil
 
     override def compute(project: SomeProject): DependencyStore = {
         def createDependencyProcessor(dp: DependencyProcessor) = {
@@ -25,6 +25,6 @@ object DependencyStoreWithoutSelfDependenciesKey
             new DependencyExtractor(baseProcessor)
         }
 
-        DependencyStore(project.allClassFiles, createDependencyProcessor)(project.logContext)
+        DependencyStore(project.allClassFiles, createDependencyProcessor)(using project.logContext)
     }
 }

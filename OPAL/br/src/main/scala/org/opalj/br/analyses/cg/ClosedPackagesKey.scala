@@ -6,7 +6,7 @@ package cg
 
 import org.opalj.log.OPALLogger.error
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * The ''key'' object to get a function that determines whether a package is closed or not.
@@ -63,7 +63,7 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackages, Nothing] 
         } catch {
             case t: Throwable =>
                 val m = "cannot compute closed packages; all packages are now considered open"
-                error("project configuration", m, t)(project.logContext)
+                error("project configuration", m, t)(using project.logContext)
                 new OpenCodeBase(project)
         }
     }

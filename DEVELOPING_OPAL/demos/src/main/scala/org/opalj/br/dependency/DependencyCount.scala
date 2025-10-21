@@ -46,7 +46,7 @@ object DependencyCount extends ProjectsAnalysisApplication {
             // process the class files in parallel to speed up the collection process
             project.allClassFiles.par foreach (extractor.process)
             counter
-        } { t => OPALLogger.info("analysis progress", s"Counting the dependencies took $t")(project.logContext) }
+        } { t => OPALLogger.info("analysis progress", s"Counting the dependencies took $t")(using project.logContext) }
 
         (
             project,

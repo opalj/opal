@@ -31,7 +31,7 @@ class BoundedInterruptableAI[D <: Domain](
     IdentifyDeadVariables: Boolean
 ) extends InstructionCountBoundedAI[D](maxEvaluationCount, IdentifyDeadVariables) {
 
-    private[this] var startTime: Long = -1L;
+    private var startTime: Long = -1L;
 
     def this(
         code:                  Code,

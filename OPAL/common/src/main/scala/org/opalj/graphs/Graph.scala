@@ -5,8 +5,8 @@ package graphs
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-import scala.collection.{Map => AMap}
-import scala.collection.mutable.HashMap
+import scala.collection.Map as AMap
+import scala.collection.mutable
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
 
@@ -21,9 +21,9 @@ import org.opalj.collection.IntIterator
  * @author Michael Eichberg
  */
 class Graph[@specialized(Int) N: ClassTag] private (
-    val vertices:     Set[N],
-    val successors:   LinkedHashMap[N, List[N]],
-    val predecessors: LinkedHashMap[N, List[N]]
+    val vertices:     mutable.Set[N],
+    val successors:   mutable.LinkedHashMap[N, List[N]],
+    val predecessors: mutable.LinkedHashMap[N, List[N]]
 ) extends AbstractGraph[N] {
 
     def apply(s: N): List[N] = successors.getOrElse(s, List.empty)
@@ -74,17 +74,17 @@ class Graph[@specialized(Int) N: ClassTag] private (
         this
     }
 
-    def --=(vs: IterableOnce[N]): this.type = { vs.iterator.foreach { v => this removeVertice v }; this }
+    def --=(vs: IterableOnce[N]): this.type = { vs.iterator.foreach { v => this.removeVertice(v) }; this }
 
     /**
      * All nodes which only have incoming dependencies/which have no successors.
      */
-    def leafNodes: Set[N] = vertices.filter(v => !successors.contains(v) || successors(v).isEmpty)
+    def leafNodes: mutable.Set[N] = vertices.filter(v => !successors.contains(v) || successors(v).isEmpty)
 
     def sccs(filterSingletons: Boolean = false): Iterator[Iterator[N]] = {
         val size = vertices.size
         val indexToN = new Array[N](size)
-        val nToIndex = new HashMap[N, Int](size, HashMap.defaultLoadFactor)
+        val nToIndex = new mutable.HashMap[N, Int](size, mutable.HashMap.defaultLoadFactor)
         for {
             e <- vertices.iterator.zipWithIndex // Scalac 2.12.2 will issue an incorrect warning for e @ (n, index)
         } {
@@ -94,8 +94,13 @@ class Graph[@specialized(Int) N: ClassTag] private (
         }
         val es: Int => IntIterator = (index: Int) => {
             successors.get(indexToN(index)) match {
-                case Some(successors) => ??? // successors.mapToIntIterator(nToIndex)
-                case None             => IntIterator.empty
+                case Some(successors) =>
+                    val succIt = successors.iterator
+                    new IntIterator {
+                        override def next(): Int = nToIndex(succIt.next())
+                        override def hasNext: Boolean = succIt.hasNext
+                    }
+                case None => IntIterator.empty
             }
         }
 
@@ -120,7 +125,7 @@ object Graph {
         val g = Graph.empty[N]
         edges foreach { e =>
             val (s, ts) = e
-            ts foreach { t => g addEdge (s -> t) }
+            ts foreach { t => g.addEdge(s -> t) }
         }
         g
     }

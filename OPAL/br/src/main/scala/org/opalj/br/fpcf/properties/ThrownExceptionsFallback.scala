@@ -5,7 +5,7 @@ package fpcf
 package properties
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
+import org.opalj.br.collection.mutable.TypesSet as BRMutableTypesSet
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsNative
 import org.opalj.br.fpcf.properties.ThrownExceptions.NoExceptions
@@ -124,7 +124,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                     result = ThrownExceptions.UnknownExceptionIsThrown
                     false
                 case INVOKESPECIAL.opcode =>
-                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
+                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction: @unchecked
                     if ((declaringClass eq ClassType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
                             (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||

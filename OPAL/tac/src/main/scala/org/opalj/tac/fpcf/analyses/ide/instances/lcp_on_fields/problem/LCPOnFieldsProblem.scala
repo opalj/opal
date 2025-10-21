@@ -8,8 +8,9 @@ package instances
 package lcp_on_fields
 package problem
 
-import scala.collection.immutable.Set
-import scala.collection.mutable.{Set => MutableSet}
+import scala.collection.mutable.Set as MutableSet
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.ai.isImplicitOrExternalException
 import org.opalj.br.Field
@@ -30,7 +31,6 @@ import org.opalj.ide.problem.FlowFunction
 import org.opalj.ide.problem.IdentityEdgeFunction
 import org.opalj.ide.problem.InterimEdgeFunction
 import org.opalj.ide.problem.MeetLattice
-import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.LinearConstantPropagationPropertyMetaInformation
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationLattice
 import org.opalj.tac.fpcf.analyses.ide.instances.linear_constant_propagation.problem.LinearConstantPropagationValue
@@ -136,7 +136,7 @@ class LCPOnFieldsProblem(
         }
     }
 
-    private def getValueForGetStaticExprByStaticInitializer(field: Field): LinearConstantPropagationValue = {
+    private def getValueForGetStaticExprByStaticInitializer(field: Field): LinearConstantPropagationValue = boundary {
         var value: LinearConstantPropagationValue = linear_constant_propagation.problem.UnknownValue
 
         /* Search for statements that write the field in static initializer of the class belonging to the field. */
@@ -161,11 +161,11 @@ class LCPOnFieldsProblem(
                                                         value,
                                                         linear_constant_propagation.problem.ConstantValue(constantValue)
                                                     )
-                                                case _ => return linear_constant_propagation.problem.VariableValue
+                                                case _ => break(linear_constant_propagation.problem.VariableValue)
                                             }
 
                                         case _ =>
-                                            return linear_constant_propagation.problem.VariableValue
+                                            break(linear_constant_propagation.problem.VariableValue)
                                     }
                                 }
 
@@ -179,7 +179,6 @@ class LCPOnFieldsProblem(
                         .map(icfg.getNextStatements)
                         .fold(Set.empty[JavaStatement]) { (nextStmts, stmts) => nextStmts ++ stmts }
                         .diff(seenStmts)
-                        .toSet
                 }
 
             case _ =>
@@ -496,7 +495,7 @@ class LCPOnFieldsProblem(
                         val value = getVariableFromProperty(valueVar)(property)
                         FinalEdgeFunction(PutFieldEdgeFunction(fieldName, value))
 
-                    case InterimUBP(property) =>
+                    case InterimUBP(property: LinearConstantPropagationPropertyMetaInformation.Self @unchecked) =>
                         val value = getVariableFromProperty(valueVar)(property)
                         value match {
                             case linear_constant_propagation.problem.UnknownValue =>
@@ -532,7 +531,7 @@ class LCPOnFieldsProblem(
                         val value = getVariableFromProperty(valueVar)(property)
                         FinalEdgeFunction(PutElementEdgeFunction(index, value))
 
-                    case InterimUBP(property) =>
+                    case InterimUBP(property: LinearConstantPropagationPropertyMetaInformation.Self @unchecked) =>
                         val index = getVariableFromProperty(indexVar)(property)
                         val value = getVariableFromProperty(valueVar)(property)
                         InterimEdgeFunction(PutElementEdgeFunction(index, value), Set(lcpEOptionP))
@@ -559,7 +558,7 @@ class LCPOnFieldsProblem(
                         val value = getVariableFromProperty(valueVar)(property)
                         FinalEdgeFunction(PutStaticFieldEdgeFunction(value))
 
-                    case InterimUBP(property) =>
+                    case InterimUBP(property: LinearConstantPropagationPropertyMetaInformation.Self @unchecked) =>
                         val value = getVariableFromProperty(valueVar)(property)
                         value match {
                             case linear_constant_propagation.problem.UnknownValue =>

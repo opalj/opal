@@ -692,7 +692,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
                         val edgeFunction =
                             handleEdgeFunctionResult(
                                 problem.getAdditionalSeedsEdgeFunction(stmt, fact, callable),
-                                processAdditionalSeed _
+                                () => processAdditionalSeed()
                             )
                         propagateSeed(path, callable, edgeFunction)
                     }

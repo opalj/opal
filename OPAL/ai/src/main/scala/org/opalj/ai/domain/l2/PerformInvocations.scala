@@ -20,7 +20,7 @@ import org.opalj.log.Warn
  * @author Michael Eichberg
  */
 trait PerformInvocations extends MethodCallsHandling {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode =>
+    callingDomain: ValuesFactory & ReferenceValuesDomain & Configuration & TheProject & TheCode =>
 
     /**
      * If `true` the exceptions thrown by the called method will be used
@@ -28,7 +28,7 @@ trait PerformInvocations extends MethodCallsHandling {
      */
     def useExceptionsThrownByCalledMethod: Boolean = false
 
-    type CalledMethodDomain <: TargetDomain with MethodCallResults
+    type CalledMethodDomain <: Domain & TargetDomain & MethodCallResults
 
     /**
      * The domain that will be used to perform the abstract interpretation of the
@@ -37,14 +37,14 @@ trait PerformInvocations extends MethodCallsHandling {
      * In general, explicit support is required to identify recursive calls
      * if the domain also follows method invocations.
      */
-    protected[this] def calledMethodDomain(method: Method): CalledMethodDomain
+    protected def calledMethodDomain(method: Method): CalledMethodDomain
 
     /**
      *  The abstract interpreter that will be used for the abstract interpretation.
      */
-    def calledMethodAI: AI[_ >: CalledMethodDomain]
+    def calledMethodAI: AI[Domain]
 
-    protected[this] def doInvoke(
+    protected def doInvoke(
         method:             Method,
         calledMethodDomain: CalledMethodDomain
     )(
@@ -62,7 +62,7 @@ trait PerformInvocations extends MethodCallsHandling {
      * If the returned value is one of the parameters (determined using reference
      * identity), then the parameter is mapped back to the original operand.
      */
-    protected[this] def transformResult(
+    protected def transformResult(
         callerPC:           Int,
         calledMethod:       Method,
         originalOperands:   callingDomain.Operands,
@@ -95,7 +95,7 @@ trait PerformInvocations extends MethodCallsHandling {
                             callerPC
                         )(
                             originalOperands,
-                            passedParameters
+                            passedParameters.asInstanceOf[domain.Locals]
                         )
                     if (thrownExceptions.nonEmpty) {
                         ComputedValueOrException(returnedValue.get, thrownExceptions)
@@ -133,7 +133,7 @@ trait PerformInvocations extends MethodCallsHandling {
     /**
      * Performs the invocation of the given method using the given operands.
      */
-    protected[this] def doInvoke(
+    protected def doInvoke(
         pc:       Int,
         method:   Method,
         operands: Operands,
@@ -156,7 +156,7 @@ trait PerformInvocations extends MethodCallsHandling {
             transformResult(pc, method, operands, calledMethodDomain)(parameters, aiResult)
     }
 
-    protected[this] def testAndDoInvoke(
+    protected def testAndDoInvoke(
         pc:       Int,
         method:   Method,
         operands: Operands,
@@ -190,7 +190,7 @@ trait PerformInvocations extends MethodCallsHandling {
     //
     // -----------------------------------------------------------------------------------
 
-    protected[this] def doInvokeNonVirtual(
+    protected def doInvokeNonVirtual(
         pc:             Int,
         declaringClass: ClassType, // ... arrays do not have any static/special methods
         isInterface:    Boolean,
@@ -296,7 +296,7 @@ trait PerformInvocations extends MethodCallsHandling {
         def fallback(): MethodCallResult = {
             super.invokevirtual(pc, declaringClass, name, descriptor, operands)
         }
-        doInvokeVirtual(pc, declaringClass, false, name, descriptor, operands, fallback _)
+        doInvokeVirtual(pc, declaringClass, false, name, descriptor, operands, fallback)
     }
 
     abstract override def invokeinterface(
@@ -309,7 +309,7 @@ trait PerformInvocations extends MethodCallsHandling {
         def fallback(): MethodCallResult = {
             super.invokeinterface(pc, declaringClass, name, descriptor, operands)
         }
-        doInvokeVirtual(pc, declaringClass, true, name, descriptor, operands, fallback _)
+        doInvokeVirtual(pc, declaringClass, true, name, descriptor, operands, fallback)
     }
 
     abstract override def invokespecial(
@@ -323,7 +323,7 @@ trait PerformInvocations extends MethodCallsHandling {
         def fallback(): MethodCallResult = {
             super.invokespecial(pc, declaringClass, isInterface, name, descriptor, operands)
         }
-        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback _)
+        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback)
     }
 
     /**
@@ -342,7 +342,7 @@ trait PerformInvocations extends MethodCallsHandling {
         def fallback(): MethodCallResult = {
             super.invokestatic(pc, declaringClass, isInterface, name, descriptor, operands)
         }
-        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback _)
+        doInvokeNonVirtual(pc, declaringClass, isInterface, name, descriptor, operands, fallback)
     }
 
 }

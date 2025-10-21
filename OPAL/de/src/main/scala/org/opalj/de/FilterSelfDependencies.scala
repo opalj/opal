@@ -2,7 +2,7 @@
 package org.opalj
 package de
 
-import br._
+import br.*
 
 /**
  * A `DependencyProcessor` that filters self-dependencies.

@@ -16,7 +16,7 @@ import org.opalj.io.writeAndOpen
  */
 abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAfterAll {
 
-    private[this] val oldCFGValidateSetting = CFG.Validate
+    private val oldCFGValidateSetting = CFG.Validate
 
     override def beforeAll(): Unit = {
         CFG.updateValidate(true)

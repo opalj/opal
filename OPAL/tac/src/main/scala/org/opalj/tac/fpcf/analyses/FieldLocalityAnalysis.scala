@@ -85,7 +85,7 @@ class FieldLocalityAnalysis private[analyses] (
 
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     implicit final val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
-    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
     final val typeExtensiblity = project.get(TypeExtensibilityKey)
     final val definitionSites = project.get(DefinitionSitesKey)
 
@@ -135,7 +135,7 @@ class FieldLocalityAnalysis private[analyses] (
      *
      * Afterwards it calls [[step3]].
      */
-    private[this] def step2(field: Field): ProperPropertyComputationResult = {
+    private def step2(field: Field): ProperPropertyComputationResult = {
 
         val thisType = field.classFile.thisType
 
@@ -179,7 +179,7 @@ class FieldLocalityAnalysis private[analyses] (
      * has to overwritten to prevent it from being leaked by the shallow copy created through
      * `java.lang.Object.clone`.
      */
-    private[this] def step3()(implicit state: FieldLocalityState): ProperPropertyComputationResult = {
+    private def step3()(implicit state: FieldLocalityState): ProperPropertyComputationResult = {
         val fraiEP = propertyStore(declaredFields(state.field), FieldReadAccessInformation.key)
         if (handleFieldReadAccessInformation(fraiEP))
             return Result(state.field, NoLocalField);
@@ -189,7 +189,7 @@ class FieldLocalityAnalysis private[analyses] (
             return Result(state.field, NoLocalField);
 
         val potentialCloneCallers =
-            if ((state.temporaryState meet ExtensibleLocalField) != state.temporaryState)
+            if (state.temporaryState.meet(ExtensibleLocalField) != state.temporaryState)
                 allSubclassMethods(state.field)
             else // No need to examine subclass methods if locality is already 'Extensible'
                 state.field.classFile.methodsWithBody.filter(!_.isStatic).toSet
@@ -234,7 +234,7 @@ class FieldLocalityAnalysis private[analyses] (
     /**
      * Checks a field read or write for locality, i.e, whether the field's value doesn't escape.
      */
-    private[this] def isLocalForFieldReadAccess(
+    private def isLocalForFieldReadAccess(
         context:  Context,
         pc:       Int,
         receiver: AccessReceiver,
@@ -255,7 +255,7 @@ class FieldLocalityAnalysis private[analyses] (
     /**
      * Checks a field read or write for locality, i.e, whether the field's value doesn't escape.
      */
-    private[this] def isLocalForFieldWriteAccess(
+    private def isLocalForFieldWriteAccess(
         context: Context,
         pc:      Int,
         value:   AccessParameter,
@@ -269,7 +269,7 @@ class FieldLocalityAnalysis private[analyses] (
      * Checks whether a method impedes locality by invoking super.clone and not overwriting the
      * field with a new value.
      */
-    private[this] def isLocalForSuperCalls(
+    private def isLocalForSuperCalls(
         context: Context,
         tacai:   TACode[TACMethodParameter, V]
     )(implicit state: FieldLocalityState): Boolean = {
@@ -329,7 +329,7 @@ class FieldLocalityAnalysis private[analyses] (
      * @return false if the field may still be local, true otherwise
      * @note (Re-)Adds dependees as necessary.
      */
-    private[this] def fieldValueEscapes(
+    private def fieldValueEscapes(
         eOptionP:             EOptionP[(Context, DefinitionSiteLike), EscapeProperty],
         isGetFieldOfReceiver: Boolean
     )(
@@ -372,7 +372,7 @@ class FieldLocalityAnalysis private[analyses] (
      * Checks whether the value is fresh and non-escaping (except for the PutField statement given).
      * @return false if the value may be fresh and non-escaping, true otherwise
      */
-    private[this] def checkFreshnessAndEscapeOfValue(
+    private def checkFreshnessAndEscapeOfValue(
         value:    V,
         putField: Int,
         stmts:    Array[Stmt[V]],
@@ -403,7 +403,7 @@ class FieldLocalityAnalysis private[analyses] (
      * is a constant or is the result of call to a method with fresh return value.
      * @return false if the value may be fresh, true otherwise
      */
-    private[this] def checkFreshnessOfDef(
+    private def checkFreshnessOfDef(
         stmt:   Stmt[V],
         caller: DeclaredMethod
     )(implicit state: FieldLocalityState): Boolean = {
@@ -460,7 +460,7 @@ class FieldLocalityAnalysis private[analyses] (
      * @return true if the field may still be local, false otherwise.
      * @note Adds dependees as necessary.
      */
-    private[this] def isFreshReturnValue(
+    private def isFreshReturnValue(
         eOptionP: EOptionP[Context, ReturnValueFreshness]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
         case UBP(NoFreshReturnValue) =>
@@ -491,7 +491,7 @@ class FieldLocalityAnalysis private[analyses] (
      * @note If the field is overwritten, whether it is overwritten with a fresh and non-escaping
      *       value is checked by the general checks for PutField statements.
      */
-    private[this] def isOverwrittenOnEachPathFromClone(
+    private def isOverwrittenOnEachPathFromClone(
         defSite: ValueOrigin,
         pc:      Int,
         context: Context,
@@ -550,7 +550,7 @@ class FieldLocalityAnalysis private[analyses] (
     /**
      * Checks, whether the result of a super.clone call does not escape except for being returned.
      */
-    private[this] def clonedInstanceEscapes(
+    private def clonedInstanceEscapes(
         eOptionP: EOptionP[(Context, DefinitionSiteLike), EscapeProperty]
     )(implicit state: FieldLocalityState): Boolean = eOptionP match {
         case FinalP(NoEscape | EscapeInCallee) => false
@@ -576,7 +576,7 @@ class FieldLocalityAnalysis private[analyses] (
     /**
      * Returns the TACode for a method if available, registering dependencies as necessary.
      */
-    private[this] def getTACAIAndCallers(
+    private def getTACAIAndCallers(
         method: Method
     )(implicit state: FieldLocalityState): Option[(TACode[TACMethodParameter, V], Callers)] = {
         val tacEP = state.getTACDependee(method) match {
@@ -611,8 +611,8 @@ class FieldLocalityAnalysis private[analyses] (
     )(implicit state: FieldLocalityState): Boolean = {
         val isNonLocal = if (faiEP.hasUBP) {
             val (seenDirectAccesses, seenIndirectAccesses) = state.getFieldReadAccessDependee match {
-                case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-                case _              => (0, 0)
+                case Some(UBP(fai: FieldReadAccessInformation)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                case _                                          => (0, 0)
             }
 
             faiEP.ub.getNewestAccesses(
@@ -653,8 +653,8 @@ class FieldLocalityAnalysis private[analyses] (
     )(implicit state: FieldLocalityState): Boolean = {
         val isNonLocal = if (faiEP.hasUBP) {
             val (seenDirectAccesses, seenIndirectAccesses) = state.getFieldWriteAccessDependee match {
-                case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-                case _              => (0, 0)
+                case Some(UBP(fai: FieldWriteAccessInformation)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                case _                                           => (0, 0)
             }
 
             faiEP.ub.getNewestAccesses(
@@ -688,7 +688,7 @@ class FieldLocalityAnalysis private[analyses] (
         isNonLocal
     }
 
-    private[this] def handleNewTACAI(
+    private def handleNewTACAI(
         newEP: EOptionP[Method, TACAI]
     )(implicit state: FieldLocalityState): Boolean = {
         val definedMethod = declaredMethods(newEP.e)
@@ -704,7 +704,7 @@ class FieldLocalityAnalysis private[analyses] (
             false
     }
 
-    private[this] def handleNewCallers(
+    private def handleNewCallers(
         newEP: EOptionP[DeclaredMethod, Callers]
     )(implicit state: FieldLocalityState): Boolean = {
         val definedMethod = newEP.e.asDefinedMethod
@@ -727,7 +727,7 @@ class FieldLocalityAnalysis private[analyses] (
             false
     }
 
-    private[this] def checkIsFieldNonLocalWithAccessPCs(
+    private def checkIsFieldNonLocalWithAccessPCs(
         definedMethod:   DefinedMethod,
         currentCallers:  Callers,
         previousCallers: Callers,
@@ -755,7 +755,7 @@ class FieldLocalityAnalysis private[analyses] (
         !isLocal
     }
 
-    private[this] def checkIsFieldNonLocalWithCloneCallers(
+    private def checkIsFieldNonLocalWithCloneCallers(
         definedMethod:   DefinedMethod,
         currentCallers:  Callers,
         previousCallers: Callers,
@@ -773,7 +773,7 @@ class FieldLocalityAnalysis private[analyses] (
         !isLocal
     }
 
-    private[this] def c(
+    private def c(
         someEPS: SomeEPS
     )(implicit state: FieldLocalityState): ProperPropertyComputationResult = {
         val isNotLocal = someEPS.pk match {
@@ -820,7 +820,7 @@ class FieldLocalityAnalysis private[analyses] (
             returnResult
     }
 
-    private[this] def returnResult(
+    private def returnResult(
         implicit state: FieldLocalityState
     ): ProperPropertyComputationResult = {
         if (state.hasNoDependees)
@@ -925,7 +925,7 @@ final case class DefinitionSiteWithoutPutField(
             // the code is dead
             IntTrieSet.empty
         } else {
-            val Assignment(_, dvar, _) = tacode.stmts(defSite)
+            val Assignment(_, dvar, _) = tacode.stmts(defSite): @unchecked
             dvar.usedBy - tacode.properStmtIndexForPC(putFieldPC)
         }
     }

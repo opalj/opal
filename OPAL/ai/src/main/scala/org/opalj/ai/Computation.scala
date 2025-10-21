@@ -264,7 +264,7 @@ object ComputationWithResultAndException {
 
 object ComputationWithResult {
 
-    def unapply[V](c: Computation[V, _]): Option[V] = {
+    def unapply[V](c: Computation[V, ?]): Option[V] = {
         if (c.hasResult) Some(c.result) else None
     }
 
@@ -272,7 +272,7 @@ object ComputationWithResult {
 
 object ComputationWithException {
 
-    def unapply[E](c: Computation[_, E]): Option[E] = {
+    def unapply[E](c: Computation[?, E]): Option[E] = {
         if (c.throwsException) Some(c.exceptions) else None
     }
 }

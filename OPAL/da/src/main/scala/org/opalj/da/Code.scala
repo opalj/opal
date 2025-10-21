@@ -60,7 +60,7 @@ case class Code(instructions: Array[Byte]) {
         </table>
     }
 
-    private[this] def createTableRowForInstruction(
+    private def createTableRowForInstruction(
         methodIndex:     Int,
         instruction:     Node,
         exceptions:      Seq[Node],
@@ -83,7 +83,7 @@ case class Code(instructions: Array[Byte]) {
         </tr>
     }
 
-    private[this] def InstructionsToXHTML(
+    private def InstructionsToXHTML(
         methodIndex: Int,
         source:      Array[Byte]
     )(

@@ -21,7 +21,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Dominik Helm
  */
 trait TypeIteratorState extends AnalysisState {
-    private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
+    private val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
         mutable.Map.empty
     }
 
@@ -31,10 +31,10 @@ trait TypeIteratorState extends AnalysisState {
     // efficiently perform updates here.
     // If we get an update for a dependee, we have to update all points-to sets for the
     // its dependers (_dependeeToDependers(dependee).
-    private[this] val _dependeeToDependers: mutable.Map[EPK[Entity, Property], mutable.Set[Entity]] = {
+    private val _dependeeToDependers: mutable.Map[EPK[Entity, Property], mutable.Set[Entity]] = {
         mutable.Map.empty
     }
-    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[EPK[Entity, Property]]] = {
+    private val _dependerToDependees: mutable.Map[Entity, mutable.Set[EPK[Entity, Property]]] = {
         mutable.Map.empty
     }
 

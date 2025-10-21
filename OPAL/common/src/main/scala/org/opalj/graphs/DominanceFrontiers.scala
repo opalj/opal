@@ -9,6 +9,7 @@ import org.opalj.collection.immutable.IntRefPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.log.GlobalLogContext
 
 /**
  * Representation of the dominance frontiers.
@@ -59,7 +60,7 @@ final class DominanceFrontiers private (
         val worklist = new IntArrayStack(Math.min(10, maxNodeId / 3))
         worklist.push(x)
 
-        do {
+        while {
             val x = worklist.pop()
 
             df(x) foreach { y =>
@@ -69,7 +70,9 @@ final class DominanceFrontiers private (
                     f(y)
                 }
             }
-        } while (worklist.nonEmpty)
+
+            worklist.nonEmpty
+        } do ()
     }
 
     //
@@ -93,7 +96,7 @@ final class DominanceFrontiers private (
             val (df, s /*index*/ ) = e
             if (isNodeValid(s)) {
                 if (df == null) {
-                    g addVertice s
+                    g.addVertice(s)
                 } else {
                     df.foreach { t => g.addEdge(s, t) }
                 }
@@ -246,7 +249,7 @@ object DominanceFrontiers {
                     org.opalj.log.OPALLogger.warn(
                         "computing dominance frontier",
                         s"the augmentation of $dt is not understood and ignored"
-                    )(org.opalj.log.GlobalLogContext)
+                    )(using GlobalLogContext)
             }
         }
         new DominanceFrontiers(dfs)

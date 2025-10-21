@@ -13,12 +13,12 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 
 trait SetBasedAliasAnalysis extends AbstractAliasAnalysis {
 
-    protected[this] type AliasElementType
-    protected[this] type AliasSet <: AliasSetLike[AliasElementType, AliasSet]
+    protected type AliasElementType
+    protected type AliasSet <: AliasSetLike[AliasElementType, AliasSet]
 
-    override protected[this] type AnalysisState <: SetBasedAliasAnalysisState[AliasElementType, AliasSet]
+    override protected type AnalysisState <: SetBasedAliasAnalysisState[AliasElementType, AliasSet]
 
-    override protected[this] def createResult()(
+    override protected def createResult()(
         implicit
         state:   AnalysisState,
         context: AnalysisContext
@@ -50,7 +50,7 @@ trait SetBasedAliasAnalysis extends AbstractAliasAnalysis {
      * @param intersectingElement The only between the two points-to sets.
      * @return `true` if the two elements can be a [[MustAlias]], `false` otherwise.
      */
-    protected[this] def checkMustAlias(intersectingElement: AliasElementType)(implicit
+    protected def checkMustAlias(intersectingElement: AliasElementType)(implicit
         state:   AnalysisState,
         context: AnalysisContext
     ): Boolean = false
@@ -66,8 +66,8 @@ trait SetBasedAliasAnalysis extends AbstractAliasAnalysis {
 trait SetBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[ElementType, AliasSet]]
     extends AliasAnalysisState {
 
-    private[this] val _pointsTo1: AliasSet = createAliasSet()
-    private[this] val _pointsTo2: AliasSet = createAliasSet()
+    private val _pointsTo1: AliasSet = createAliasSet()
+    private val _pointsTo2: AliasSet = createAliasSet()
 
     /**
      * @return The current [[AliasSetLike]] for the first [[AliasSourceElement]].
@@ -110,6 +110,6 @@ trait SetBasedAliasAnalysisState[ElementType, AliasSet <: AliasSetLike[ElementTy
      *
      * @return
      */
-    protected[this] def createAliasSet(): AliasSet
+    protected def createAliasSet(): AliasSet
 
 }

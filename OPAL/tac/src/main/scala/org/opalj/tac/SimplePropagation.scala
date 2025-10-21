@@ -25,12 +25,12 @@ object SimplePropagation extends TACOptimization[Param, IdBasedVar, NaiveTACode[
 
                 code(index) match {
 
-                    case Assignment(pc, trgtVar, c @ (_: SimpleValueConst | _: IdBasedVar | _: Param)) =>
+                    case Assignment(pc, trgtVar: IdBasedVar, c @ (_: SimpleValueConst | _: IdBasedVar | _: Param)) =>
                         code(index + 1) match {
                             case Throw(nextPC, `trgtVar`) =>
                                 code(index + 1) = Throw(nextPC, c)
 
-                            case Assignment(nextPC, nextTrgtVar, `trgtVar`) =>
+                            case Assignment(nextPC, nextTrgtVar: IdBasedVar, `trgtVar`) =>
                                 wasTransformed = true
                                 if (nextTrgtVar == trgtVar /*immediate kill*/ ) code(index) = Nop(pc)
                                 code(index + 1) = Assignment(nextPC, nextTrgtVar, c)
@@ -48,7 +48,7 @@ object SimplePropagation extends TACOptimization[Param, IdBasedVar, NaiveTACode[
 
                             case Assignment(
                                     nextPC,
-                                    nextTrgtVar,
+                                    nextTrgtVar: IdBasedVar,
                                     GetField(exprPC, declaringClass, name, declaredFieldType, `trgtVar`)
                                 ) =>
                                 wasTransformed = true
@@ -58,8 +58,8 @@ object SimplePropagation extends TACOptimization[Param, IdBasedVar, NaiveTACode[
 
                             case Assignment(
                                     nextPC,
-                                    nextTrgtVar,
-                                    BinaryExpr(exprPC, cTpe, op, `trgtVar`, right)
+                                    nextTrgtVar: IdBasedVar,
+                                    BinaryExpr(exprPC, cTpe, op, `trgtVar`, right: Expr[IdBasedVar])
                                 ) =>
                                 wasTransformed = true
                                 if (nextTrgtVar == trgtVar /*immediate kill*/ ) code(index) = Nop(pc)
@@ -68,18 +68,18 @@ object SimplePropagation extends TACOptimization[Param, IdBasedVar, NaiveTACode[
 
                             case Assignment(
                                     nextPC,
-                                    nextTrgtVar,
-                                    BinaryExpr(exprPC, cTpe, op, left, `trgtVar`)
+                                    nextTrgtVar: IdBasedVar,
+                                    BinaryExpr(exprPC, cTpe, op, left: Expr[IdBasedVar], `trgtVar`)
                                 ) =>
                                 wasTransformed = true
                                 if (nextTrgtVar == trgtVar /*immediate kill*/ ) code(index) = Nop(pc)
                                 val newBinaryExpr = BinaryExpr(exprPC, cTpe, op, left, c)
                                 code(index + 1) = Assignment(nextPC, nextTrgtVar, newBinaryExpr)
 
-                            case If(nextPC, `trgtVar`, condition, rightVar, target) =>
+                            case If(nextPC, `trgtVar`, condition, rightVar: IdBasedVar, target) =>
                                 wasTransformed = true
                                 code(index + 1) = If(nextPC, c, condition, rightVar, target)
-                            case If(nextPC, leftVar, condition, `trgtVar`, target) =>
+                            case If(nextPC, leftVar: IdBasedVar, condition, `trgtVar`, target) =>
                                 wasTransformed = true
                                 code(index + 1) = If(nextPC, leftVar, condition, c, target)
 

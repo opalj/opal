@@ -2,7 +2,7 @@
 package org.opalj
 package de
 
-import org.opalj.br._
+import org.opalj.br.*
 
 /**
  * A dependency processor that just counts the number of dependencies.
@@ -16,7 +16,7 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
 
     import java.util.concurrent.atomic.AtomicInteger
 
-    protected[this] val dependencyCount = new AtomicInteger(0)
+    protected val dependencyCount = new AtomicInteger(0)
     override def processDependency(
         source: VirtualSourceElement,
         target: VirtualSourceElement,
@@ -26,7 +26,7 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     }
     def currentDependencyCount: Int = dependencyCount.get
 
-    protected[this] val dependencyOnArraysCount = new AtomicInteger(0)
+    protected val dependencyOnArraysCount = new AtomicInteger(0)
     override def processDependency(
         source:    VirtualSourceElement,
         arrayType: ArrayType,
@@ -36,7 +36,7 @@ class DependencyCountingDependencyProcessor extends DependencyProcessor {
     }
     def currentDependencyOnArraysCount: Int = dependencyOnArraysCount.get
 
-    protected[this] val dependencyOnPrimitivesCount = new AtomicInteger(0)
+    protected val dependencyOnPrimitivesCount = new AtomicInteger(0)
     override def processDependency(
         source:   VirtualSourceElement,
         baseType: BaseType,

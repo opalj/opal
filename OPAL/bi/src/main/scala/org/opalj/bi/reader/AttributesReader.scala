@@ -108,7 +108,7 @@ trait AttributesReader
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.
      */
-    private[this] var attributeReaders: Map[
+    private var attributeReaders: Map[
         String,
         (
             Constant_Pool,
@@ -139,7 +139,7 @@ trait AttributesReader
         attributeReaders += reader
     }
 
-    private[this] var attributesPostProcessors = ArraySeq.empty[Attributes => Attributes]
+    private var attributesPostProcessors = ArraySeq.empty[Attributes => Attributes]
 
     /**
      * Registers a new processor for the list of all attributes of a given class file
@@ -180,7 +180,7 @@ trait AttributesReader
 
         attributeReaders.getOrElse(
             attribute_name,
-            Unknown_attribute _ // this is a factory method
+            Unknown_attribute // this is a factory method
         )(cp, ap, ap_name_index, ap_descriptor_index, attribute_name_index, in)
     }
 }

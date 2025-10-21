@@ -79,7 +79,9 @@ object ForNameClasses extends ForNameClassesMetaInformation {
             (ps: PropertyStore, reason: FallbackReason, _: Entity) =>
                 reason match {
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                        OPALLogger.error("call graph analysis", "no analysis executed for Class.forName")(ps.logContext)
+                        OPALLogger.error("call graph analysis", "no analysis executed for Class.forName")(
+                            using ps.logContext
+                        )
                         NoForNameClasses
                     case _ =>
                         throw new IllegalStateException(s"analysis required for property: $name")

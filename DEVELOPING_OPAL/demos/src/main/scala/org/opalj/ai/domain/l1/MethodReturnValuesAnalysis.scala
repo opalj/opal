@@ -10,7 +10,6 @@ import java.net.URL
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
-import org.opalj.ai.domain
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
@@ -43,7 +42,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
 
     class AnalysisDomain(
         override val project: SomeProject,
-        val ai:               InterruptableAI[_],
+        val ai:               InterruptableAI[?],
         val method:           Method
     ) extends CorrelationalDomain
         with domain.DefaultSpecialDomainValuesBinding
@@ -66,15 +65,15 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
 
         type ReturnedValue = DomainValue
 
-        private[this] val originalReturnType: ReferenceType =
+        private val originalReturnType: ReferenceType =
             method.descriptor.returnType.asReferenceType
 
-        private[this] var theReturnedValue: DomainValue = null
+        private var theReturnedValue: DomainValue = null
 
         // e.g., a method that always throws an exception...
         def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
-        protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
+        protected def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
             val isUpdated =
                 if (theReturnedValue == null) {
                     theReturnedValue = value.summarize(Int.MinValue)
@@ -148,7 +147,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
 case class RefinedReturnType(method: Method, refinedType: Option[Domain#DomainValue]) {
 
     override def toString(): String = {
-        import Console._
+        import Console.*
         "Refined the return type of " + BOLD + BLUE + method.toJava + " => " +
             GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET
     }

@@ -16,54 +16,54 @@ import org.opalj.br.fpcf.properties.NoEscape
  */
 trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
 
-    override protected[this] def handlePutField(
+    override protected def handlePutField(
         putField: PutField[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.usesDefSite(putField.value))
             state.meetMostRestrictive(AtMost(NoEscape))
     }
 
-    override protected[this] def handleArrayStore(
+    override protected def handleArrayStore(
         arrayStore: ArrayStore[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.usesDefSite(arrayStore.value))
             state.meetMostRestrictive(AtMost(NoEscape))
     }
 
-    override protected[this] def handleThrow(
+    override protected def handleThrow(
         aThrow: Throw[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.usesDefSite(aThrow.exception))
             state.meetMostRestrictive(AtMost(NoEscape))
     }
 
-    override protected[this] def handleStaticMethodCall(
+    override protected def handleStaticMethodCall(
         call: StaticMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    override protected[this] def handleVirtualMethodCall(
+    override protected def handleVirtualMethodCall(
         call: VirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.usesDefSite(call.receiver) || state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    override protected[this] def handleExprStmt(
+    override protected def handleExprStmt(
         exprStmt: ExprStmt[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         handleExpression(exprStmt.expr, hasAssignment = false)
     }
 
-    override protected[this] def handleAssignment(
+    override protected def handleAssignment(
         assignment: Assignment[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         handleExpression(assignment.expr, hasAssignment = true)
     }
 
-    override protected[this] def handleThisLocalOfConstructor(
+    override protected def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(call.name == "<init>")
@@ -71,14 +71,14 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
             state.meetMostRestrictive(AtMost(NoEscape))
     }
 
-    override protected[this] def handleParameterOfConstructor(
+    override protected def handleParameterOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    override protected[this] def handleNonVirtualAndNonConstructorCall(
+    override protected def handleNonVirtualAndNonConstructorCall(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         assert(call.name != "<init>")
@@ -86,7 +86,7 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    override protected[this] def handleVirtualFunctionCall(
+    override protected def handleVirtualFunctionCall(
         call:          VirtualFunctionCall[V],
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
@@ -94,7 +94,7 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    override protected[this] def handleNonVirtualFunctionCall(
+    override protected def handleNonVirtualFunctionCall(
         call:          NonVirtualFunctionCall[V],
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
@@ -102,7 +102,7 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    override protected[this] def handleStaticFunctionCall(
+    override protected def handleStaticFunctionCall(
         call:          StaticFunctionCall[V],
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
@@ -110,7 +110,7 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    override protected[this] def handleInvokedynamicFunctionCall(
+    override protected def handleInvokedynamicFunctionCall(
         call:          InvokedynamicFunctionCall[V],
         hasAssignment: Boolean
     )(
@@ -122,7 +122,7 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    override protected[this] def handleInvokedynamicMethodCall(
+    override protected def handleInvokedynamicMethodCall(
         call: InvokedynamicMethodCall[V]
     )(
         implicit
@@ -133,7 +133,7 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }
 
-    override protected[this] def handleOtherKindsOfExpressions(
+    override protected def handleOtherKindsOfExpressions(
         expr: Expr[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {}
 }

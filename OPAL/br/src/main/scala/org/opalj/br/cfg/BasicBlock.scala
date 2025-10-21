@@ -53,7 +53,7 @@ final class BasicBlock(
      */
     override def endPC: Int = _endPC
 
-    private[this] var _isStartOfSubroutine: Boolean = false // will be initialized at construction time
+    private var _isStartOfSubroutine: Boolean = false // will be initialized at construction time
     def setIsStartOfSubroutine(): Unit = {
         _isStartOfSubroutine = true
     }

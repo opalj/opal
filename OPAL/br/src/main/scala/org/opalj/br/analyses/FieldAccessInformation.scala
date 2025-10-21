@@ -23,9 +23,9 @@ import org.opalj.fpcf.SomeInterimEP
  */
 case class FieldAccessInformation(project: SomeProject) {
 
-    private[this] val propertyStore = project.get(PropertyStoreKey)
+    private val propertyStore = project.get(PropertyStoreKey)
 
-    private[this] def getFieldAccessInformation[S <: fieldaccess.FieldAccessInformation[S]](
+    private def getFieldAccessInformation[S <: fieldaccess.FieldAccessInformation[S]](
         field: DeclaredField,
         key:   PropertyKey[fieldaccess.FieldAccessInformation[S]]
     ): fieldaccess.FieldAccessInformation[S] = {

@@ -18,7 +18,7 @@ import org.opalj.collection.immutable.UIDSet
 trait DefaultReferenceValuesBinding
     extends DefaultTypeLevelReferenceValues
     with DefaultExceptionsFactory {
-    domain: IntegerValuesDomain with TypedValuesFactory with Configuration =>
+    domain: IntegerValuesDomain & TypedValuesFactory & Configuration =>
 
     type AReferenceValue = ReferenceValueLike
     type DomainReferenceValue = AReferenceValue

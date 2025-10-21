@@ -8,7 +8,7 @@ package instructions
  */
 trait DConstInstruction extends LoadConstantInstruction[Double] with ImplicitValue {
 
-    override final def computationalType = ComputationalTypeDouble
+    override final def computationalType: ComputationalTypeDouble.type = ComputationalTypeDouble
 
 }
 

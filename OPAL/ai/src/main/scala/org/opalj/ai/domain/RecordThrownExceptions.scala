@@ -41,7 +41,7 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
      * @see For details study the documentation of the abstract type `ThrownException`
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
-    protected[this] def recordThrownException(
+    protected def recordThrownException(
         pc:    Int,
         value: ExceptionValue
     ): ThrownException
@@ -56,13 +56,13 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
      * @see For details study the documentation of the abstract type `ThrownException`
      *      and study the subclass(es) of `RecordThrownExceptions`.
      */
-    protected[this] def joinThrownExceptions(
+    protected def joinThrownExceptions(
         pc:                        Int,
         previouslyThrownException: ThrownException,
         value:                     ExceptionValue
     ): ThrownException
 
-    @volatile private[this] var thrownExceptions: LongMap[ThrownException] = LongMap.empty
+    @volatile private var thrownExceptions: LongMap[ThrownException] = LongMap.empty
 
     /**
      * Returns all thrown exceptions.

@@ -14,13 +14,13 @@ class ArrayTypeTest extends AnyFunSuite {
 
     test("ArrayType (Array of References) Field Descriptor") {
         val fieldType = FieldType("[Ljava/lang/Object;")
-        val ArrayType(componentType) = fieldType
+        val ArrayType(componentType) = fieldType: @unchecked
         assert(componentType === FieldType("Ljava/lang/Object;"))
     }
 
     test("ArrayType (Array of Primitives) Field Descriptor") {
         val fieldType = FieldType("[J")
-        val ArrayType(componentType) = fieldType
+        val ArrayType(componentType) = fieldType: @unchecked
         assert(componentType === LongType)
     }
 
@@ -37,7 +37,7 @@ class ArrayTypeTest extends AnyFunSuite {
         assert(at1Class == classOf[Array[Object]])
 
         val at2 = ArrayType(ClassType("java/util/List"))
-        assert(at2.toJavaClass == classOf[Array[java.util.List[_]]])
+        assert(at2.toJavaClass == classOf[Array[java.util.List[?]]])
 
         val at3 = ArrayType(IntegerType)
         assert(at3.toJavaClass == classOf[Array[Int]])

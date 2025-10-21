@@ -35,10 +35,11 @@ import org.opalj.tac.fpcf.properties.string.StringFlowFunctionProperty
  * @author Maximilian Rüsch
  */
 class L2VirtualFunctionCallInterpreter(
-    implicit val ps:                     PropertyStore,
-    implicit val contextProvider:        ContextProvider,
-    implicit val project:                SomeProject,
-    override implicit val highSoundness: Boolean
+    implicit
+    val ps:                     PropertyStore,
+    val contextProvider:        ContextProvider,
+    val project:                SomeProject,
+    override val highSoundness: Boolean
 ) extends L1VirtualFunctionCallInterpreter
     with StringInterpreter
     with L1SystemPropertiesInterpreter
@@ -64,7 +65,7 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
 
     override type CallState = CalleeDepender
 
-    protected[this] case class CalleeDepender(
+    protected case class CalleeDepender(
         override val call:       E,
         override val target:     PV,
         override val parameters: Seq[PV],
@@ -82,14 +83,14 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
     protected def interpretArbitraryCallWithCallees(target: PV, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(state.tac.stmts))
+        val params = getParametersForPC(state.pc).map(_.asVar.toPersistentForm(using state.tac.stmts))
         // IMPROVE pass the actual method context through the entity - needs to be differentiated from "upward" entities
         val depender =
             CalleeDepender(call, target, params, contextProvider.newContext(state.dm), ps(state.dm, Callees.key))
 
         if (depender.calleeDependee.isEPK) {
             InterimResult.forUB(
-                InterpretationHandler.getEntity(state),
+                InterpretationHandler.getEntity(using state),
                 StringFlowFunctionProperty.ub(state.pc, target),
                 Set(depender.calleeDependee),
                 continuation(state, depender)
@@ -99,7 +100,7 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
         }
     }
 
-    override protected[this] def continuation(
+    override protected def continuation(
         state:     InterpretationState,
         callState: CallState
     )(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -117,7 +118,7 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
 
                 callState.calleeDependee = eps.asInstanceOf[EOptionP[DefinedMethod, Callees]]
                 if (newMethods.isEmpty && callState.calleeMethods.isEmpty && eps.isFinal) {
-                    failure(callState.target)(state, highSoundness)
+                    failure(callState.target)(using state, highSoundness)
                 } else {
                     for {
                         method <- newMethods
@@ -125,7 +126,7 @@ private[string] trait L2ArbitraryVirtualFunctionCallInterpreter extends L1Functi
                         callState.addCalledMethod(method, ps(method, TACAI.key))
                     }
 
-                    interpretArbitraryCallToFunctions(state, callState)
+                    interpretArbitraryCallToFunctions(using state, callState)
                 }
 
             case _ => super.continuation(state, callState)(eps)

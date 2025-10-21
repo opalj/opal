@@ -120,7 +120,7 @@ package object tac {
         oldEH:      ExceptionHandler,
         newIndexes: Array[Int]
     )(
-        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain & RecordDefUse }
     ): (Int, Int) = {
         val oldStartPC = oldEH.startPC
         var newStartIndex = newIndexes(oldStartPC)
@@ -149,7 +149,7 @@ package object tac {
              */
 
             var lastPC = oldEH.endPC
-            do {
+            while {
                 newEndIndex = newIndexes(lastPC)
                 // it may be the case that an exception handler - which covers the start
                 // of a class file collapses; in this case, we have to make sure that
@@ -158,7 +158,8 @@ package object tac {
                 // 2) decrement lastPC
                 lastPC -= 1
 
-            } while (newEndIndex <= 0 && lastPC >= oldStartPC)
+                newEndIndex <= 0 && lastPC >= oldStartPC
+            } do ()
 
             if (lastPC < oldStartPC) {
                 // the EH is totally dead... i.e., all code in the try block is dead
@@ -201,7 +202,7 @@ package object tac {
     def updateExceptionHandlers(
         newIndexes: Array[Int]
     )(
-        implicit aiResult: AIResult { val domain: Domain with RecordDefUse }
+        implicit aiResult: AIResult { val domain: Domain & RecordDefUse }
     ): ExceptionHandlers = {
         val code = aiResult.code
         val exceptionHandlers = code.exceptionHandlers

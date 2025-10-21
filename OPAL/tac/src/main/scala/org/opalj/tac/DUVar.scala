@@ -81,7 +81,7 @@ object DefSites {
      * Defines an extractor to get the definition site of an expression's/statement's value.
      * Returns the empty set if the value is a constant.
      */
-    def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntTrieSet] = {
+    def unapply(valueExpr: Expr[DUVar[?]] /*Expr to make it fail!*/ ): Some[IntTrieSet] = {
         Some(
             valueExpr match {
                 case UVar(_, defSites) => defSites
@@ -199,7 +199,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def toPersistentForm(
         implicit stmts: Array[Stmt[V]]
-    ): PDVar[Value] = PDVar(value, usedBy.map(pcOfDefSite _))
+    ): PDVar[Value] = PDVar(value, usedBy.map { use => pcOfDefSite(use) })
 
 }
 
@@ -278,7 +278,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UVar[_] => this.defSites == that.defSites
+            case that: UVar[?] => this.defSites == that.defSites
             case _             => false
         }
     }
@@ -289,7 +289,7 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def toPersistentForm(
         implicit stmts: Array[Stmt[V]]
-    ): PUVar[Value] = PUVar(value, definedBy.map(pcOfDefSite _))
+    ): PUVar[Value] = PUVar(value, definedBy.map(pcOfDefSite))
 
 }
 

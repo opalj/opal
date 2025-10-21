@@ -2,7 +2,7 @@
 package org.opalj
 package tac
 
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 
 import org.opalj.ai.ValueOrigin
 
@@ -52,7 +52,7 @@ class Parameters[P <: AnyRef](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: Parameters[_] =>
+            case that: Parameters[?] =>
                 JArrays.equals(
                     this.parameters.asInstanceOf[Array[AnyRef]],
                     that.parameters.asInstanceOf[Array[AnyRef]]

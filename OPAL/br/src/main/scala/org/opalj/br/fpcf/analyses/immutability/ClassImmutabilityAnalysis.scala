@@ -6,15 +6,11 @@ package analyses
 package immutability
 
 import scala.collection.immutable.SortedSet
+import scala.util.boundary
+import scala.util.boundary.break
 
-import org.opalj.br.ClassFile
-import org.opalj.br.ClassType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.immutability.ClassImmutability
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableClass
 import org.opalj.br.fpcf.properties.immutability.DependentlyImmutableField
@@ -84,7 +80,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /**
      * Creates a result object that sets this type and all subclasses of if to the given immutability rating.
      */
-    @inline private[this] def createResultForAllSubtypes(
+    @inline private def createResultForAllSubtypes(
         t:            ClassType,
         immutability: ClassImmutability
     ): MultiResult = {
@@ -92,7 +88,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val r = allSubtypes.map { st => new FinalEP(st, immutability) }.toSeq
         MultiResult(r)
     }
-    @inline private[this] def createIncrementalResult(
+
+    @inline private def createIncrementalResult(
         t:                     ClassType,
         cfImmutability:        EOptionP[Entity, Property],
         cfImmutabilityIsFinal: Boolean,
@@ -184,7 +181,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         lazyComputation:               Boolean
     )(
         cf: ClassFile
-    ): ProperPropertyComputationResult = {
+    ): ProperPropertyComputationResult = boundary {
         val t = cf.thisType
 
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
@@ -206,9 +203,9 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
             case UBP(MutableField) =>
                 if (lazyComputation)
-                    return Result(t, MutableClass);
+                    break(Result(t, MutableClass));
                 else
-                    return createResultForAllSubtypes(t, MutableClass);
+                    break(createResultForAllSubtypes(t, MutableClass));
 
             case ep @ EUBPS(e, NonTransitivelyImmutableField, isFinal) =>
                 hasNonTransitivelyImmutableFields = true
@@ -230,9 +227,9 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
             case _ =>
                 if (lazyComputation) // TODO check
-                    return Result(t, MutableClass);
+                    break(Result(t, MutableClass));
                 else
-                    return createResultForAllSubtypes(t, MutableClass);
+                    break(createResultForAllSubtypes(t, MutableClass));
         }
 
         var minLocalImmutability: ClassImmutability = MutableClass
@@ -369,7 +366,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override type InitializationData = IterableOnce[ClassFile]
 
-    private[this] def setResultsAndComputeEntities(
+    private def setResultsAndComputeEntities(
         project:       SomeProject,
         propertyStore: PropertyStore
     ): IterableOnce[ClassFile] = {

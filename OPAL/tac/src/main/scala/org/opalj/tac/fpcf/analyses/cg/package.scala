@@ -41,7 +41,7 @@ package object cg {
     )(
         implicit stmts: Array[Stmt[V]]
     ): Some[(ValueInformation, IntTrieSet)] = {
-        Some((value.value, value.definedBy.map(pcOfDefSite _)))
+        Some((value.value, value.definedBy.map(pcOfDefSite)))
     }
 
     /**
@@ -67,7 +67,7 @@ package object cg {
                     inst <- code.instructions
                 } {
                     if ((inst ne null) && inst.isLoadConstantInstruction &&
-                        inst.asInstanceOf[LoadConstantInstruction[_]].computationalType ==
+                        inst.asInstanceOf[LoadConstantInstruction[?]].computationalType ==
                             ComputationalTypeReference
                     ) {
                         inst match {
@@ -96,7 +96,7 @@ package object cg {
      * @param project The project context
      * @return True if the type can be instantiated, false otherwise
      */
-    def canBeInstantiated(rt: ReferenceType, project: Project[_]): Boolean = rt match {
+    def canBeInstantiated(rt: ReferenceType, project: Project[?]): Boolean = rt match {
         case _: ArrayType  => true
         case ct: ClassType =>
             val cfOption = project.classFile(ct)

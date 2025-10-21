@@ -9,7 +9,7 @@ import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.collection.immutable.IntTrieSet
 
@@ -21,7 +21,7 @@ import org.opalj.collection.immutable.IntTrieSet
 @RunWith(classOf[JUnitRunner])
 class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
-    import CodeAttributeTest._
+    import CodeAttributeTest.*
 
     behavior of "the \"Code\" attribute handlersFor method"
 
@@ -38,30 +38,30 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut collect ({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should
+        codeOfPut.collect({ case DUP => DUP }: PartialFunction[Instruction, Instruction]) should
             equal(Seq(PCAndAnyRef(31, DUP)))
 
-        codeOfPut collect ({
+        codeOfPut.collect({
             case ICONST_1 => ICONST_1
         }: PartialFunction[Instruction, Instruction]) should
             equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
 
-        codeOfPut collect ({
+        codeOfPut.collect({
             case GETFIELD(declaringClass, "last", _) => declaringClass
         }: PartialFunction[Instruction, ClassType]) should
             equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
 
-        codeOfPut collect ({
+        codeOfPut.collect({
             case RETURN => "The very last instruction."
         }: PartialFunction[Instruction, String]) should equal(Seq(PCAndAnyRef(54, "The very last instruction.")))
 
     }
 
     it should "be able to correctly handle the case if no instruction is matched" in {
-        codeOfPut collect ({ case DUP2_X2 => DUP2_X2 }: PartialFunction[Instruction, Instruction]) should equal(Seq())
+        codeOfPut.collect({ case DUP2_X2 => DUP2_X2 }: PartialFunction[Instruction, Instruction]) should equal(Seq())
     }
 
-    import org.opalj.br.CodeAttributeTest._
+    import org.opalj.br.CodeAttributeTest.*
 
     behavior of "the \"Code\" attribute's collectWithIndex method"
 
@@ -69,7 +69,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
         codeOfPut.collectWithIndex({
             case i: PCAndInstruction if i.instruction.isSimpleConditionalBranchInstruction =>
                 val cbi = i.instruction.asSimpleConditionalBranchInstruction
-                Seq(cbi.indexOfNextInstruction(i.pc)(codeOfPut), i.pc + cbi.branchoffset)
+                Seq(cbi.indexOfNextInstruction(i.pc)(using codeOfPut), i.pc + cbi.branchoffset)
         }).flatten should equal(Seq(11, 15))
     }
 

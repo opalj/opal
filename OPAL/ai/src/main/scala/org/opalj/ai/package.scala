@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import scala.language.existentials
 import scala.reflect.ClassTag
 
 import scala.collection.AbstractIterator
@@ -62,13 +61,13 @@ package object ai {
      *
      * @note This type alias serves comprehension purposes only.
      */
-    type SomeAI[D <: Domain] = AI[_ >: D]
+    type SomeAI[D <: Domain] = AI[? >: D]
 
     type PrimitiveValuesFactory =
-        IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+        IntegerValuesFactory & LongValuesFactory & FloatValuesFactory & DoubleValuesFactory
     type ValuesFactory =
-        PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
-    type TargetDomain = ValuesDomain with ValuesFactory
+        PrimitiveValuesFactory & ReferenceValuesFactory & ExceptionsFactory & TypedValuesFactory
+    type TargetDomain = ValuesDomain & ValuesFactory
 
     final type PCs = org.opalj.br.PCs
 
@@ -383,11 +382,11 @@ package object ai {
 
     final type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
     final type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
-    final type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
+    final type TheOperandsArray[T >: Null <: ValuesDomain#Operands] = Array[T]
 
     final type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.collection.mutable.Locals[T]
     final type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
-    final type TheLocalsArray[T >: Null <: d.Locals forSome { val d: ValuesDomain }] = Array[T]
+    final type TheLocalsArray[T >: Null <: ValuesDomain#Locals] = Array[T]
 
     /**
      * Creates a human-readable textual representation of the current memory layout.
@@ -484,11 +483,11 @@ package object ai {
     ): Iterator[aiResult.domain.DomainValue] = {
         new AbstractIterator[aiResult.domain.DomainValue] {
 
-            private[this] var parameterIndex: Int = 0
-            private[this] val totalParameters: Int = {
+            private var parameterIndex: Int = 0
+            private val totalParameters: Int = {
                 descriptor.parametersCount + (if (isStatic) 0 else 1)
             }
-            private[this] var localsIndex: Int = 0
+            private var localsIndex: Int = 0
 
             override def hasNext: Boolean = parameterIndex < totalParameters
 
@@ -533,9 +532,9 @@ package object ai {
      *      interpretation.
      */
     def mapOperandsToParameters(
-        operands:     Operands[_ <: ValuesDomain#DomainValue],
+        operands:     Operands[? <: ValuesDomain#DomainValue],
         calledMethod: Method,
-        targetDomain: ValuesDomain with ValuesFactory
+        targetDomain: ValuesDomain & ValuesFactory
     ): Locals[targetDomain.DomainValue] = {
 
         assert(
@@ -583,8 +582,8 @@ package object ai {
      * are identical before are identical afterwards.
      */
     def mapOperands(
-        theOperands:  Operands[_ <: ValuesDomain#DomainValue],
-        targetDomain: ValuesDomain with ValuesFactory
+        theOperands:  Operands[? <: ValuesDomain#DomainValue],
+        targetDomain: ValuesDomain & ValuesFactory
     ): Array[targetDomain.DomainValue] = {
         // implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
         import targetDomain.DomainValueTag
@@ -644,7 +643,7 @@ package object ai {
                     result += r.asInstanceOf[B]
                 }
             }
-            pc = instruction.indexOfNextInstruction(pc)(code)
+            pc = instruction.indexOfNextInstruction(pc)(using code)
         }
         result.result()
     }
@@ -666,7 +665,7 @@ package object ai {
             if (operands ne null) {
                 f(pc, instruction, operands)
             }
-            pc = instruction.indexOfNextInstruction(pc)(code)
+            pc = instruction.indexOfNextInstruction(pc)(using code)
         }
     }
 

@@ -783,7 +783,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 it("they are not constructor references") {
                     for {
-                        MethodWithBody(body) <- lambdas.methods
+                        case MethodWithBody(body) <- lambdas.methods
                         invokedynamic <- body.instructions.collect { case i: INVOKEDYNAMIC => i }
                     } {
                         val targetMethodHandle =
@@ -801,7 +801,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
                 it("nor are they virtual method calls") {
                     for {
-                        MethodWithBody(body) <- lambdas.methods
+                        case MethodWithBody(body) <- lambdas.methods
                         invokedynamic <- body.instructions.collect { case i: INVOKEDYNAMIC => i }
                     } {
                         val targetMethodHandle =

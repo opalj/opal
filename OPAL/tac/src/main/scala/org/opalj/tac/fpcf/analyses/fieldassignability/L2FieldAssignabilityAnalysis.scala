@@ -8,6 +8,8 @@ package fieldassignability
 import scala.annotation.switch
 
 import scala.collection.mutable
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
@@ -194,8 +196,8 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredField, FieldReadAccessInformation]]
                 val reads = newEP.ub
                 val (seenDirectAccesses, seenIndirectAccesses) = state.fieldReadAccessDependee match {
-                    case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-                    case _              => (0, 0)
+                    case Some(UBP(fai: FieldReadAccessInformation)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                    case _                                          => (0, 0)
                 }
 
                 if (fieldReadsNotDominated(reads, seenDirectAccesses, seenIndirectAccesses, state.openWrites))
@@ -225,7 +227,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         }
     }
 
-    override protected[this] def handleFieldWriteAccessInformation(
+    override protected def handleFieldWriteAccessInformation(
         newEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
     )(implicit state: State): Boolean = {
         val openWrites = state.openWrites
@@ -434,7 +436,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         guardIndex: Int,
         writeIndex: Int,
         taCode:     TACode[TACMethodParameter, V]
-    )(implicit state: AnalysisState): Boolean = {
+    )(implicit state: AnalysisState): Boolean = boundary {
         // prevents reads outside the method
         if (reads.exists(r => contextProvider.contextFromId(r._1).method.definedMethod ne method))
             return true;
@@ -449,7 +451,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             pcs.exists(pc => {
                 val index = taCode.pcToIndex(pc)
                 if (index == -1)
-                    return true;
+                    break(true);
                 val stmt = taCode.stmts(index)
 
                 if (stmt.isAssignment) {
@@ -793,9 +795,9 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             case GetField.ASTID =>
                 val objRefDefinition = expr.asGetField.objRef.asVar.definedBy
                 if (objRefDefinition != SelfReferenceParameter) false
-                else expr.asGetField.resolveField(project).contains(state.field)
+                else expr.asGetField.resolveField(using project).contains(state.field)
 
-            case GetStatic.ASTID             => expr.asGetStatic.resolveField(project).contains(state.field)
+            case GetStatic.ASTID             => expr.asGetStatic.resolveField(using project).contains(state.field)
             case PrimitiveTypecastExpr.ASTID => false
 
             case Compare.ASTID =>
@@ -946,9 +948,9 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     if (objRefDefinition != SelfReferenceParameter)
                         false
                     else
-                        expr.asGetField.resolveField(project).contains(state.field)
+                        expr.asGetField.resolveField(using project).contains(state.field)
 
-                case GetStatic.ASTID => expr.asGetStatic.resolveField(project).contains(state.field)
+                case GetStatic.ASTID => expr.asGetStatic.resolveField(using project).contains(state.field)
 
                 case _ => false
             }

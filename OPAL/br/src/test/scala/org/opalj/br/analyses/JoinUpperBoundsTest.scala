@@ -23,7 +23,7 @@ class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
         ClassHierarchy(
             Iterable.empty,
             List(() => this.getClass.getResourceAsStream("ClassHierarchyUpperBounds.ths"))
-        )(GlobalLogContext)
+        )(using GlobalLogContext)
 
     implicit def stringToUIDSetClassType(str: String): UIDSet[ClassType] = UIDSet(ClassType(str))
 

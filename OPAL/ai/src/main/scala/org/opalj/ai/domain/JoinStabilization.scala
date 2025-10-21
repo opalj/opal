@@ -2,7 +2,7 @@
 package org.opalj
 package ai
 
-import java.util.{HashMap => JHashMap}
+import java.util.HashMap as JHashMap
 
 import org.opalj.collection.immutable.IdentityPair
 
@@ -36,12 +36,12 @@ trait JoinStabilization extends CoreDomainFunctionality {
     // THE FOLLOWING IS AN ALTERNATIVE IMPLEMENTATION
     // WHICH IS LESS EFFICIENT (BUT WAS EXPECTED TO BE MORE EFFICIENT)
     //
-    //    import java.util.{ IdentityHashMap => IDMap }
+    //    import java.util. IdentityHashMap as IDMap
     //
-    //    private[this] val leftValues =
+    //    private val leftValues =
     //        new IDMap[DomainValue, IDMap[DomainValue, Update[DomainValue]]]()
     //
-    //    abstract override protected[this] def joinValues(
+    //    abstract override protected def joinValues(
     //        pc: PC,
     //        left: DomainValue, right: DomainValue): Update[DomainValue] = {
     //        val rightMap = leftValues.get(left)
@@ -63,17 +63,17 @@ trait JoinStabilization extends CoreDomainFunctionality {
     //        }
     //    }
     //
-    //    abstract override protected[this] def afterBaseJoin(pc: PC): Unit = {
+    //    abstract override protected def afterBaseJoin(pc: PC): Unit = {
     //        super.afterBaseJoin(pc)
     //        leftValues.clear()
     //    }
 
     //    import java.util.HashMap
     //
-    //    private[this] val joinedValues =
+    //    private val joinedValues =
     //        new HashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]()
     //
-    //     override protected[this] def joinValues(
+    //     override protected def joinValues(
     //        pc: PC,
     //        left: DomainValue, right: DomainValue): Update[DomainValue] = {
     //        val key = new IdentityPair(left, right)
@@ -87,18 +87,18 @@ trait JoinStabilization extends CoreDomainFunctionality {
     //        }
     //    }
     //
-    //     override protected[this] def afterBaseJoin(pc: PC): Unit = {
+    //     override protected def afterBaseJoin(pc: PC): Unit = {
     //        super.afterBaseJoin(pc)
     //        joinedValues.clear()
     //    }
 
     /*
-    protected[this] val joinedValues: Map[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] = {
+    protected val joinedValues: Map[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] = {
         AnyRefMap.empty[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]
     }
 
     /** Classes overriding this method generally have to call it! */
-    override protected[this] def joinValues(
+    override protected def joinValues(
         pc:   Int,
         left: DomainValue, right: DomainValue
     ): Update[DomainValue] = {
@@ -107,18 +107,18 @@ trait JoinStabilization extends CoreDomainFunctionality {
     }
 
     /** Classes overriding this method generally have to call it! */
-    override protected[this] def afterBaseJoin(pc: Int): Unit = {
+    override protected def afterBaseJoin(pc: Int): Unit = {
         super.afterBaseJoin(pc)
         joinedValues.clear()
     }
      */
 
-    protected[this] val joinedValues: JHashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] = {
+    protected val joinedValues: JHashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]] = {
         new JHashMap[IdentityPair[AnyRef, AnyRef], Update[DomainValue]]()
     }
 
     /** Classes overriding this method generally have to call it! */
-    override protected[this] def joinValues(
+    override protected def joinValues(
         pc:    Int,
         left:  DomainValue,
         right: DomainValue
@@ -135,7 +135,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
     }
 
     /** Classes overriding this method generally have to call it! */
-    override protected[this] def afterBaseJoin(pc: Int): Unit = {
+    override protected def afterBaseJoin(pc: Int): Unit = {
         super.afterBaseJoin(pc)
         joinedValues.clear()
     }

@@ -103,10 +103,11 @@ final case class IntListNode(
 
     override def foreach[U](f: Int => U): Unit = {
         var list: IntList = this
-        do {
+        while {
             f(list.head)
             list = list.tail
-        } while (list.nonEmpty)
+            list.nonEmpty
+        } do ()
     }
 
     override def forFirstN[U](n: Int)(f: Int => U): Unit = {
@@ -114,16 +115,17 @@ final case class IntListNode(
 
         var i = 0
         var list: IntList = this
-        do {
+        while {
             f(list.head)
             list = list.tail
             i += 1
-        } while (list.nonEmpty && i < n)
+            list.nonEmpty && i < n
+        } do ()
     }
 
     override def iterator: IntIterator = {
         new IntIterator {
-            private[this] var currentList: IntList = list
+            private var currentList: IntList = list
             def hasNext: Boolean = currentList.nonEmpty
             def next(): Int = {
                 val v = currentList.head

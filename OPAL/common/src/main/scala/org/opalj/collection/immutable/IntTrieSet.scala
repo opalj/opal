@@ -132,7 +132,7 @@ final class FilteredIntTrieSet(
     override def contains(value: Int): Boolean = p(value) && s.contains(value)
     override def toList: List[Int] = iterator.toList
 
-    private[this] lazy val filtered: IntTrieSet = s.filter(p)
+    private lazy val filtered: IntTrieSet = s.filter(p)
 
     override def intersect(other: IntTrieSet): IntTrieSet = filtered.intersect(other)
 
@@ -316,7 +316,7 @@ object IntTrieSet1 {
     val Cache2LowerBound = -2048 // inclusive
     val Cache2UpperBound = 48 * 1024 // exclusive
 
-    private[this] val cache1: Array[IntTrieSet1] = {
+    private val cache1: Array[IntTrieSet1] = {
         val a = new Array[IntTrieSet1](Cache1UpperBound + (-Cache1LowerBound))
         var v = Cache1LowerBound
         var index = 0
@@ -328,7 +328,7 @@ object IntTrieSet1 {
         a
     }
 
-    private[this] val cache2: Array[IntTrieSet1] = {
+    private val cache2: Array[IntTrieSet1] = {
         val a = new Array[IntTrieSet1](Cache2UpperBound + (-Cache2LowerBound))
         var v = Cache2LowerBound
         var index = 0
@@ -813,9 +813,9 @@ private[immutable] final class IntTrieSetN private[immutable] (
     def -(i: Int): IntTrieSet = this.remove(i, i)
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] var it: IntIterator = left.iterator
-        private[this] var isRightIterator: Boolean = false
-        private[this] def advanceIterator(): Unit = {
+        private var it: IntIterator = left.iterator
+        private var isRightIterator: Boolean = false
+        private def advanceIterator(): Unit = {
             if (!it.hasNext && !isRightIterator) {
                 isRightIterator = true
                 it = right.iterator
@@ -963,7 +963,7 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
 
         other match {
             case that: IntTrieSetN          => this.right.subsetOf(that.right, level + 1)
-            case that: IntTrieSetNJustLeft  => false
+            case _: IntTrieSetNJustLeft     => false
             case that: IntTrieSetNJustRight => this.right.subsetOf(that.right, level + 1)
             case that                       => this.right.subsetOf(that, level + 1)
         }
@@ -1092,10 +1092,10 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
             return false;
 
         other match {
-            case that: IntTrieSetN          => this.left.subsetOf(that.left, level + 1)
-            case that: IntTrieSetNJustLeft  => this.left.subsetOf(that.left, level + 1)
-            case that: IntTrieSetNJustRight => false
-            case that                       => this.left.subsetOf(that, level + 1)
+            case that: IntTrieSetN         => this.left.subsetOf(that.left, level + 1)
+            case that: IntTrieSetNJustLeft => this.left.subsetOf(that.left, level + 1)
+            case _: IntTrieSetNJustRight   => false
+            case that                      => this.left.subsetOf(that, level + 1)
         }
     }
 
@@ -1175,7 +1175,7 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
 }
 
 class IntTrieSetBuilder extends scala.collection.mutable.Builder[Int, IntTrieSet] {
-    private[this] var s: IntTrieSet = EmptyIntTrieSet
+    private var s: IntTrieSet = EmptyIntTrieSet
     override def addOne(i: Int): this.type = { s +!= i; this }
     def clear(): Unit = s = EmptyIntTrieSet
     def result(): IntTrieSet = s

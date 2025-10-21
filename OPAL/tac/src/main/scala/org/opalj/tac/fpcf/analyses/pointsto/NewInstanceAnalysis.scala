@@ -49,16 +49,16 @@ abstract class NewInstanceAnalysis private[analyses] (
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
-        override protected[this] type ElementType = self.ElementType
-        override protected[this] type PointsToSet = self.PointsToSet
-        override protected[this] type DependerType = self.DependerType
+        override protected type ElementType = self.ElementType
+        override protected type PointsToSet = self.PointsToSet
+        override protected type DependerType = self.DependerType
 
-        override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
+        override protected val pointsToPropertyKey: PropertyKey[PointsToSet] =
             self.pointsToPropertyKey
 
-        override protected[this] def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
+        override protected def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
 
-        override protected[this] def createPointsToSet(
+        override protected def createPointsToSet(
             pc:            Int,
             callContext:   ContextType,
             allocatedType: ReferenceType,
@@ -74,15 +74,15 @@ abstract class NewInstanceAnalysis private[analyses] (
             )
         }
 
-        @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
+        @inline override protected def getTypeOf(element: ElementType): ReferenceType = {
             self.getTypeOf(element)
         }
 
-        @inline override protected[this] def getTypeIdOf(element: ElementType): Int = {
+        @inline override protected def getTypeIdOf(element: ElementType): Int = {
             self.getTypeIdOf(element)
         }
 
-        @inline override protected[this] def isEmptyArray(element: ElementType): Boolean = {
+        @inline override protected def isEmptyArray(element: ElementType): Boolean = {
             self.isEmptyArray(element)
         }
     }
@@ -147,7 +147,7 @@ abstract class NewInstanceMethodAnalysis(
             PointsToSetLike.noFilter
         )
 
-        Results(createResults(state))
+        Results(createResults)
     }
 
     override def continuationForShared(
@@ -172,7 +172,7 @@ abstract class NewInstanceMethodAnalysis(
                     newDependees,
                     { old => old.included(pointsToSet) },
                     true
-                )(state)
+                )(using state)
 
                 Results(results)
             case _ => super.continuationForShared(e, dependees, state)(eps)

@@ -26,17 +26,17 @@ final class DynamicConstant(
         else bsm
     }
 
-    override def value = throw BytecodeProcessingFailedException("value is dynamic")
+    override def value: Nothing = throw BytecodeProcessingFailedException("value is dynamic")
 
-    override def valueToString = {
+    override def valueToString: String = {
         (Iterator(name, descriptor.toJava + ".class") ++
             bootstrapMethod.arguments.iterator.map(_.toJava))
             .mkString(bootstrapMethod.handle.toJava + "(", ",", ")")
     }
 
-    def toJava = valueToString
+    def toJava: String = valueToString
 
-    override def runtimeValueType = descriptor
+    override def runtimeValueType: FieldType = descriptor
 
     override def equals(other: Any): Boolean = {
         other match {

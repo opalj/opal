@@ -275,13 +275,13 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
          ============================================================
          */
         expression.astID match {
-            case Var.ASTID       => expression.asVar.definedBy.map(Variable)
+            case Var.ASTID       => expression.asVar.definedBy.map(Variable.apply)
             case ArrayLoad.ASTID =>
                 val arrayLoad = expression.asArrayLoad
                 val arrayIndex = TaintProblem.getIntConstant(arrayLoad.index, statement.stmts)
                 val arrayDefinedBy = arrayLoad.arrayRef.asVar.definedBy
                 if (arrayIndex.isDefined) arrayDefinedBy.map(ArrayElement(_, arrayIndex.get))
-                else arrayDefinedBy.map(Variable)
+                else arrayDefinedBy.map(Variable.apply)
             case BinaryExpr.ASTID | PrefixExpr.ASTID | Compare.ASTID |
                 PrimitiveTypecastExpr.ASTID | NewArray.ASTID | ArrayLength.ASTID =>
                 (0 until expression.subExprCount).foldLeft(Set.empty[TaintFact])((acc, subExpr) =>

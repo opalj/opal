@@ -23,7 +23,7 @@ import org.opalj.value.IsReferenceValue
  */
 trait ConsoleTracer extends AITracer { tracer =>
 
-    import Console._
+    import Console.*
 
     val printOIDs: Boolean = false
 
@@ -198,8 +198,11 @@ trait ConsoleTracer extends AITracer { tracer =>
 
         print(Console.BLUE + pc + line(domain, pc) + ": JOIN: ")
         result match {
-            case NoUpdate                                         => println("no changes")
-            case u @ SomeUpdate((updatedOperands, updatedLocals)) =>
+            case NoUpdate => println("no changes")
+            case u @ SomeUpdate((
+                    updatedOperands: domain.Operands @unchecked,
+                    updatedLocals: domain.Locals @unchecked
+                )) =>
                 println(u.updateType)
                 println(
                     thisOperands.zip(otherOperands).zip(updatedOperands).map { v =>
@@ -301,7 +304,7 @@ trait ConsoleTracer extends AITracer { tracer =>
         target:       Int,
         nestingLevel: Int
     ): Unit = {
-        import Console._
+        import Console.*
         println(
             s"$pc${line(domain, pc)}:$YELLOW_B$BOLD" +
                 s"JUMP TO SUBROUTINE(Nesting level: $nestingLevel): $target" +
@@ -372,7 +375,7 @@ trait ConsoleTracer extends AITracer { tracer =>
 
     override def domainMessage(
         domain:  Domain,
-        source:  Class[_],
+        source:  Class[?],
         typeID:  String,
         pc:      Option[Int],
         message: => String

@@ -198,7 +198,7 @@ package object bytecode {
      * The list of all JVM instructions in the format: "<OPCODE><MNEMONIC>NewLine".
      */
     def JVMInstructions: List[(Int, String)] = {
-        process(getClass.getClassLoader.getResourceAsStream("JVMInstructionsList.txt")) { stream =>
+        process(this.getClass.getClassLoader.getResourceAsStream("JVMInstructionsList.txt")) { stream =>
             val is = Source.fromInputStream(stream).getLines().toList.map(_.split(" ").map(_.trim))
             is.map { i =>
                 val opcode = i(0)
@@ -209,5 +209,5 @@ package object bytecode {
     }
 
     /** The set of all valid/used opcodes. */
-    def JVMOpcodes = BitSet(JVMInstructions.map(_._1): _*)
+    def JVMOpcodes = BitSet(JVMInstructions.map(_._1)*)
 }

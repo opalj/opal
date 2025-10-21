@@ -45,7 +45,7 @@ object InstructionStatistics extends ProjectsAnalysisApplication {
         for {
             classFile <- project.allClassFiles
             packageName = classFile.thisType.packageName
-            MethodWithBody(body) <- classFile.methods
+            case MethodWithBody(body) <- classFile.methods
         } {
             instructionsPerFQPN.update(
                 packageName,

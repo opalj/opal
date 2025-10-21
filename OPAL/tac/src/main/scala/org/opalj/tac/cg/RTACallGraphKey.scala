@@ -52,5 +52,5 @@ object RTACallGraphKey extends CallGraphKey {
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }
 
-    override def getTypeIterator(project: SomeProject) = new RTATypeIterator(project)
+    override def getTypeIterator(project: SomeProject): RTATypeIterator = new RTATypeIterator(project)
 }

@@ -6,7 +6,7 @@ package cg
 
 import org.opalj.util.getObjectReflectively
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * The ''key'' object to get a traversable of entry points. Entry points are particularly relevant
@@ -57,7 +57,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[DeclaredMeth
         epFinder.collectEntryPoints(project)
     }
 
-    private[this] def getEntryPointFinder(project: SomeProject): EntryPointFinder = {
+    private def getEntryPointFinder(project: SomeProject): EntryPointFinder = {
         val configuredAnalysis = project.config.as[Option[String]](ConfigKey)
         val entryPointFinder = configuredAnalysis
         if (entryPointFinder.isEmpty) {

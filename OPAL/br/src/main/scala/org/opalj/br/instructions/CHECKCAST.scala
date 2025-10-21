@@ -60,7 +60,7 @@ case class CHECKCAST(
 
     override def toString: String = "CHECKCAST(" + referenceType.toJava + ")"
 
-    override final def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString
 
 }
 

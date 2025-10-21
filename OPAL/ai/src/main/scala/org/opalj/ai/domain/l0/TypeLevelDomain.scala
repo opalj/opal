@@ -28,5 +28,5 @@ trait TypeLevelDomain
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
     with TypeLevelDynamicLoads {
-    this: Configuration with TheCode =>
+    this: Configuration & TheCode =>
 }

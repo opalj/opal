@@ -3,8 +3,9 @@ package org.opalj
 package collection
 package immutable
 
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 import scala.collection.mutable.Builder
+import scala.compiletime.uninitialized
 
 /**
  * A sorted set of integer values backed by an ordered array to store the values; this
@@ -151,7 +152,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
     override def min: Int = this.i1
     override def max: Int = this.i2
     override def iterator: IntIterator = new IntIterator {
-        private[this] var i = 0
+        private var i = 0
         def hasNext: Boolean = i < 2
         def next(): Int = { i += 1; if (i == 1) i1 else i2 }
     }
@@ -240,7 +241,7 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def max: Int = this.i3
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] var i = 0
+        private var i = 0
         def hasNext: Boolean = i < 3
         def next(): Int = { i += 1; if (i == 1) i1 else if (i == 2) i2 else i3 }
     }
@@ -481,12 +482,12 @@ case class IntArraySetN private[immutable] (
     }
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] var i = 0
+        private var i = 0
         def hasNext: Boolean = i < is.length
         def next(): Int = { val i = this.i; this.i = i + 1; is(i) }
     }
     override def reverseIntIterator: IntIterator = new IntIterator {
-        private[this] var i = is.length - 1
+        private var i = is.length - 1
         def hasNext: Boolean = i >= 0
         def next(): Int = { val i = this.i; this.i = i - 1; is(i) }
     }
@@ -513,9 +514,9 @@ private[immutable] class FilteredIntArraySet(
     origS: IntArraySetN
 ) extends IntArraySet {
 
-    @volatile private[this] var filteredS: IntArraySet = _
+    @volatile private var filteredS: IntArraySet = uninitialized
 
-    private[this] def getFiltered: IntArraySet = {
+    private def getFiltered: IntArraySet = {
         if (filteredS eq null) {
             this.synchronized {
                 if (filteredS eq null) {
@@ -616,8 +617,8 @@ private[immutable] class FilteredIntArraySet(
 }
 
 class IntArraySetBuilder private[immutable] (
-    private[this] var is:   Array[Int],
-    private[this] var size: Int
+    private var is:   Array[Int],
+    private var size: Int
 ) extends Builder[Int, IntArraySet] {
 
     require(size <= is.length)

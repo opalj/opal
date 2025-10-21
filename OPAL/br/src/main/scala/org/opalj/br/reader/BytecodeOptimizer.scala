@@ -38,7 +38,7 @@ import org.opalj.br.instructions.WIDE
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.log.OPALLogger.info
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * Performs some very basic, in-place control-flow simplifications to make the code more regular.
@@ -70,7 +70,7 @@ import net.ceedubs.ficus.Ficus._
  * @author Michael Eichberg
  */
 trait BytecodeOptimizer extends MethodsBinding {
-    this: ClassFileBinding with ConstantPoolBinding with AttributeBinding =>
+    this: ClassFileBinding & ConstantPoolBinding & AttributeBinding =>
 
     final val PerformControlFlowSimplifications: Boolean = {
         val key = BytecodeOptimizer.SimplifyControlFlowKey
@@ -250,7 +250,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     }
 
                 case GOTO.opcode =>
-                    val GOTO(branchoffset) = instruction
+                    val GOTO(branchoffset) = instruction: @unchecked
                     val jumpTargetPC = pc + branchoffset
                     if (jumpTargetPC == nextPC) {
                         // let's replace the original jump
@@ -274,7 +274,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     }
 
                 case GOTO_W.opcode =>
-                    val GOTO_W(branchoffset) = instruction
+                    val GOTO_W(branchoffset) = instruction: @unchecked
                     val jumpTargetPC = pc + branchoffset
                     if (jumpTargetPC == nextPC) {
                         // let's replace the original jump
@@ -371,7 +371,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                 case JSR.opcode | JSR_W.opcode =>
                     // We do not need to handle the ret instructions... the target is clear
                     // right away... it is the instruction succeeding the jsr instruction.
-                    val JSRInstruction(branchoffset) = instruction
+                    val JSRInstruction(branchoffset) = instruction: @unchecked
 
                     // IMPROVE Consider using +!=
                     jumpTargetInstructions += pc + branchoffset

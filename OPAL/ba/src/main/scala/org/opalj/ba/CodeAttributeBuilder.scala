@@ -89,7 +89,7 @@ class CodeAttributeBuilder[T] private[ba] (
      *
      * (This overrides/disables the automatic computation of this value.)
      */
-    def MAXSTACK(value: Int): this.type = {
+    infix def MAXSTACK(value: Int): this.type = {
         maxStack = Some(value)
         this
     }
@@ -99,7 +99,7 @@ class CodeAttributeBuilder[T] private[ba] (
      *
      * (This overrides/disables the automatic computation of this value.)
      */
-    def MAXLOCALS(value: Int): this.type = {
+    infix def MAXLOCALS(value: Int): this.type = {
         maxLocals = Some(value)
         this
     }
@@ -289,10 +289,8 @@ object CodeAttributeBuilder {
         var lastPC = -1 // -1 === initial stack map frame
         var lastVerificationTypeInfoLocals: VerificationTypeInfos =
             computeLocalsVerificationTypeInfo(ils)
-        var lastverificationTypeInfoStack: VerificationTypeInfos =
-            ArraySeq.empty // has to be empty...
 
-        val framePCs = c.stackMapTablePCs(classHierarchy)
+        val framePCs = c.stackMapTablePCs
         val fs = new Array[StackMapFrame](framePCs.size)
         var frameIndex = 0
         framePCs.foreach { pc =>
@@ -318,11 +316,13 @@ object CodeAttributeBuilder {
                 } else {
                     val os = new Array[VerificationTypeInfo](operandIndex /*HERE == operands.size*/ )
                     operandIndex -= 1
-                    do {
+                    while {
                         os(operandIndex) = operands.head.verificationTypeInfo
                         operands = operands.tail
                         operandIndex -= 1
-                    } while (operandIndex >= 0)
+
+                        operandIndex >= 0
+                    } do ()
                     ArraySeq.unsafeWrapArray[VerificationTypeInfo](os)
                 }
             }
@@ -401,7 +401,6 @@ object CodeAttributeBuilder {
             }
 
             lastVerificationTypeInfoLocals = verificationTypeInfoLocals
-            lastverificationTypeInfoStack = verificationTypeInfoStack
             frameIndex += 1
             lastPC = pc
         }

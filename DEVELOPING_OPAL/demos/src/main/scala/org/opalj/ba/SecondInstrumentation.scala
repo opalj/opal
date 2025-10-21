@@ -59,7 +59,7 @@ object SecondInstrumentation extends App {
                 val lCode = LabeledCode(code)
                 var modified = false
                 for {
-                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
+                    case PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
                     param = operandsArray(pc).head
                     // if param.asDomainReferenceValue.valueType.get == CollectionType
                     if param.asDomainReferenceValue.isValueASubtypeOf(CollectionType).isYes

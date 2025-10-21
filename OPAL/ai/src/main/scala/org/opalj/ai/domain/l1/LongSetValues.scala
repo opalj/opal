@@ -6,7 +6,7 @@ package l1
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.value.IsLongValue
 
 /**
@@ -22,7 +22,7 @@ import org.opalj.value.IsLongValue
  * @author David Becker
  */
 trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
-    domain: IntegerRangeValuesFactory with CorrelationalDomain with Configuration with ExceptionsFactory =>
+    domain: IntegerRangeValuesFactory & CorrelationalDomain & Configuration & ExceptionsFactory =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -265,7 +265,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
         }
     }
 
-    protected[this] def createLongValueOrArithmeticException(
+    protected def createLongValueOrArithmeticException(
         pc:        PC,
         exception: Boolean,
         results:   SortedSet[Long]

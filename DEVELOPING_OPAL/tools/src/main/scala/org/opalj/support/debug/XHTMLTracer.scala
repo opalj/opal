@@ -26,8 +26,8 @@ import org.opalj.io.writeAndOpen
 case class FlowEntity(
     pc:          Int,
     instruction: Instruction,
-    operands:    Operands[_ >: Null <: Domain#DomainValue],
-    locals:      Locals[_ >: Null <: Domain#DomainValue],
+    operands:    Operands[? >: Null <: Domain#DomainValue],
+    locals:      Locals[? >: Null <: Domain#DomainValue],
     properties:  Option[String]
 ) {
     val flowId = FlowEntity.nextFlowId
@@ -46,12 +46,12 @@ object FlowEntity {
  */
 trait XHTMLTracer extends AITracer {
 
-    private[this] var flow: List[List[FlowEntity]] = List(List.empty)
-    private[this] def newBranch(): List[List[FlowEntity]] = {
+    private var flow: List[List[FlowEntity]] = List(List.empty)
+    private def newBranch(): List[List[FlowEntity]] = {
         flow = List.empty[FlowEntity] :: flow
         flow
     }
-    private[this] def addFlowEntity(flowEntity: FlowEntity): Unit = {
+    private def addFlowEntity(flowEntity: FlowEntity): Unit = {
         if (flow.head.exists(_.pc == flowEntity.pc))
             newBranch()
 
@@ -128,9 +128,9 @@ trait XHTMLTracer extends AITracer {
                 val dialogId = "dialog" + flowEntity.flowId
                 <div id={dialogId} title={s"${(index + 1)} - ${flowEntity.pc} (${flowEntity.instruction.mnemonic})"}>
                     <b>Stack</b><br/>
-                    {dumpStack(flowEntity.operands)(Some(idsLookup))}
+                    {dumpStack(flowEntity.operands)(using Some(idsLookup))}
                     <b>Locals</b><br/>
-                    {dumpLocals(flowEntity.locals)(Some(idsLookup))}
+                    {dumpLocals(flowEntity.locals)(using Some(idsLookup))}
                 </div>
             })
         def row(pc: Int) =
@@ -144,7 +144,7 @@ trait XHTMLTracer extends AITracer {
             })
         val cfJoins = code.cfJoins
         val flowTable =
-            for ((pc, rowIndex) <- pcsToRowIndex) yield {
+            for (pc <- pcsToRowIndex.keys) yield {
                 <tr>
                     <td>{if (cfJoins.contains(pc)) "⇶ " else ""} <b>{pc}</b></td>
                     {row(pc)}
@@ -271,7 +271,7 @@ trait XHTMLTracer extends AITracer {
 
     }
 
-    private[this] var continuingWithBranch = true
+    private var continuingWithBranch = true
 
     override def flow(
         domain: Domain
@@ -387,7 +387,7 @@ trait XHTMLTracer extends AITracer {
 
     override def domainMessage(
         domain:  Domain,
-        source:  Class[_],
+        source:  Class[?],
         typeID:  String,
         pc:      Option[Int],
         message: => String

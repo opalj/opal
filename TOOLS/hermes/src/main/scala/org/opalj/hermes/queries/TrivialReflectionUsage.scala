@@ -40,9 +40,9 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
         val trivialLocations = new LocationsContainer[S]
         val nontrivialLocations = new LocationsContainer[S]
 
-        project.parForeachMethodWithBody(isInterrupted = this.isInterrupted _) { mi =>
-            val MethodInfo(source, m @ MethodWithBody(code)) = mi
-            val classForNameCalls = code collect ({
+        project.parForeachMethodWithBody(isInterrupted = () => this.isInterrupted()) { mi =>
+            val MethodInfo(source, m @ MethodWithBody(body)) = mi: @unchecked
+            val classForNameCalls = body.collect({
                 case i @ INVOKESTATIC(Class, false, "forName", ForName1MD | ForName3MD) => i
             }: PartialFunction[Instruction, INVOKESTATIC])
             if (classForNameCalls.nonEmpty) {
@@ -58,7 +58,7 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
                     classNameParameter = operands(classNameParameterIndex)
                 } {
                     classNameParameter match {
-                        case aiResult.domain.StringValue(className) =>
+                        case aiResult.domain.StringValue(_) =>
                             trivialLocations += InstructionLocation(methodLocation, pc)
                         case aiResult.domain.MultipleReferenceValues(classNameParameters) =>
                             val classNames = classNameParameters.collect {

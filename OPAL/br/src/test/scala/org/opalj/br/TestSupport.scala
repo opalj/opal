@@ -15,8 +15,8 @@ import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.AllEntryPointsFinder
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.reader.{ClassFileBinding => ClassFileReader}
 import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.ClassFileBinding as ClassFileReader
 import org.opalj.br.reader.Java11FrameworkWithCaching
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.reader.readJREClassFiles

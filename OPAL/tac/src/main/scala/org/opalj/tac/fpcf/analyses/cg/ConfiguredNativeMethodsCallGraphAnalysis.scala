@@ -54,10 +54,10 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
     val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
 
-    private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
+    private val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
         ConfiguredMethods.reader
             .read(p.config, configKey)
             .nativeMethods.map { v => (v.method, v.methodInvocations) }.toMap
@@ -108,7 +108,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         val callers = eOptP.ub
 
-        var results: Iterator[PartialResult[_, _ >: Null <: Property]] = Iterator.empty
+        var results: Iterator[PartialResult[?, ? >: Null <: Property]] = Iterator.empty
         callers.forNewCalleeContexts(seen, eOptP.e) { calleeContext =>
             val calls = new DirectCallsBase with VMReachableMethodsBase()
             for (tgt <- tgts) {

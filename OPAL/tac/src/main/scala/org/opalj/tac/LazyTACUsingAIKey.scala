@@ -29,7 +29,7 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
      */
     override def requirements(
         project: SomeProject
-    ): Seq[ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
+    ): Seq[ProjectInformationKey[Method => AIResult { val domain: Domain & RecordDefUse }, ? <: AnyRef]] = {
         Seq(SimpleAIKey)
     }
 

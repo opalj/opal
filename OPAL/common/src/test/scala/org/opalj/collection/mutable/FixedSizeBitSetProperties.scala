@@ -30,7 +30,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
     // generates an IntArraySet which only contains positive values
     implicit val arbIntArraySetWithMax: Arbitrary[(IntArraySet, Int)] = Arbitrary {
         Gen.sized { s =>
-            Gen.frequency(frequencies: _*).map { max =>
+            Gen.frequency(frequencies*).map { max =>
                 ((0 until s).foldLeft(IntArraySet.empty) { (c, n) => c + r.nextInt(max) }, max)
             }
         }
@@ -39,7 +39,7 @@ object FixedSizeBitSetProperties extends Properties("FixedSizeBitSet") {
     implicit val arbIntArrayListWithMax: Arbitrary[(List[Int], Int)] = Arbitrary {
         val r = new java.util.Random()
         Gen.sized { s =>
-            Gen.frequency(frequencies: _*).map { max =>
+            Gen.frequency(frequencies*).map { max =>
                 ((0 until s * 2).foldLeft(List.empty[Int]) { (c, n) => r.nextInt(max) :: c }, max)
             }
         }

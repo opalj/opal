@@ -21,7 +21,7 @@ import org.opalj.br.analyses.Project
 @RunWith(classOf[JUnitRunner])
 class PerformInvocationsTest extends AnyFlatSpec with Matchers {
 
-    import PerformInvocationsTestFixture._
+    import PerformInvocationsTestFixture.*
 
     behavior of "PerformInvocations"
 
@@ -228,7 +228,7 @@ object PerformInvocationsTestFixture {
         with IgnoreSynchronization
         with l0.DefaultTypeLevelHandlingOfMethodResults
         with DefaultRecordMethodCallResults {
-        domain: ValuesFactory with Configuration with TheProject with TheMethod =>
+        domain: ValuesFactory & Configuration & TheProject & TheMethod =>
 
         override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
             ExceptionsRaisedByCalledMethods.AllExplicitlyHandled
@@ -244,19 +244,19 @@ object PerformInvocationsTestFixture {
 
         def shouldInvocationBePerformed(method: Method): Boolean = true
 
-        protected[this] def createInvocationDomain(
+        protected def createInvocationDomain(
             project: Project[java.net.URL],
             method:  Method
         ): InvocationDomain
 
         override val useExceptionsThrownByCalledMethod = true
 
-        type CalledMethodDomain = Domain with MethodCallResults
+        type CalledMethodDomain = Domain & MethodCallResults
 
-        def calledMethodDomain(method: Method): Domain with MethodCallResults =
+        def calledMethodDomain(method: Method): Domain & MethodCallResults =
             createInvocationDomain(project, method)
 
-        def calledMethodAI = BaseAI
+        def calledMethodAI: BaseAI = BaseAI
 
     }
 
@@ -265,7 +265,7 @@ object PerformInvocationsTestFixture {
         method:  Method
     ) extends InvocationDomain(project, method) with LiDomain {
 
-        protected[this] def createInvocationDomain(
+        protected def createInvocationDomain(
             project: Project[java.net.URL],
             method:  Method
         ): InvocationDomain = new LiInvocationDomain(project, method)
@@ -274,7 +274,7 @@ object PerformInvocationsTestFixture {
     class L1InvocationDomain(project: Project[java.net.URL], method: Method)
         extends InvocationDomain(project, method) with L1Domain {
 
-        protected[this] def createInvocationDomain(
+        protected def createInvocationDomain(
             project: Project[java.net.URL],
             method:  Method
         ): InvocationDomain = new L1InvocationDomain(project, method)

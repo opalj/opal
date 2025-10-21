@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package immutable
 
-import java.lang.{Long => JLong}
+import java.lang.Long as JLong
 
 /**
  * An immutable linked list for storing long values.
@@ -97,10 +97,11 @@ final case class LongListNode(
 
     override def foreach[U](f: Long => U): Unit = {
         var list: LongList = this
-        do {
+        while {
             f(list.head)
             list = list.tail
-        } while (list.nonEmpty)
+            list.nonEmpty
+        } do ()
     }
 
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {
@@ -108,16 +109,17 @@ final case class LongListNode(
 
         var i = 0
         var list: LongList = this
-        do {
+        while {
             f(list.head)
             list = list.tail
             i += 1
-        } while (list.nonEmpty && i < n)
+            list.nonEmpty && i < n
+        } do ()
     }
 
     override def iterator: LongIterator = {
         new LongIterator {
-            private[this] var currentList: LongList = list
+            private var currentList: LongList = list
             def hasNext: Boolean = currentList.nonEmpty
             def next(): Long = {
                 val v = currentList.head

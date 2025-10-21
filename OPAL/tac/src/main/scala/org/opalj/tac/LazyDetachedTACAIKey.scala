@@ -25,7 +25,7 @@ import org.opalj.value.ValueInformation
  *
  * @author Michael Eichberg
  */
-object LazyDetachedTACAIKey extends TACAIKey[Method => Domain with RecordDefUse] {
+object LazyDetachedTACAIKey extends TACAIKey[Method => Domain & RecordDefUse] {
 
     /**
      * TACAI code has no special prerequisites.

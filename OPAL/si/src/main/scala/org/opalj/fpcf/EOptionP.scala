@@ -102,7 +102,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * results quicker. For example, imagine the following code:
      * {{{
      * def f(a : AnyRef) : Unit = a match {
-     *   case a : List[_] => if (a.exists( _ == null)) throw  new IllegalArgumentException
+     *   case a : List[?] => if (a.exists( _ == null)) throw  new IllegalArgumentException
      *   case _ => throw new UnknownError
      * }
      * def m(){
@@ -782,11 +782,11 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def hasLBP: Boolean = false
     override def lb: Nothing = throw new UnsupportedOperationException();
-    override private[fpcf] def toFinalELBP = throw new UnsupportedOperationException(toString);
+    override private[fpcf] def toFinalELBP: Nothing = throw new UnsupportedOperationException(toString);
 
     override def hasUBP: Boolean = false
     override def ub: Nothing = throw new UnsupportedOperationException();
-    override private[fpcf] def toFinalEUBP = throw new UnsupportedOperationException(toString);
+    override private[fpcf] def toFinalEUBP: Nothing = throw new UnsupportedOperationException(toString);
 
     override def isFinal: Boolean = false
     override def asFinal: FinalEP[E, P] = throw new ClassCastException();

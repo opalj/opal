@@ -27,7 +27,7 @@ trait LabeledSimpleConditionalBranchInstruction
     override def resolveJumpTargets(
         pc:  PC,
         pcs: Map[InstructionLabel, PC]
-    ): SimpleConditionalBranchInstruction[_]
+    ): SimpleConditionalBranchInstruction[?]
 
     override def toString(currentPC: Int): String = {
         s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"

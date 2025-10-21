@@ -16,7 +16,6 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.da.ClassFile
 import org.opalj.tac.DUVar
 import org.opalj.tac.LazyTACUsingAIKey
-import org.opalj.tac.TACode
 import org.opalj.value.KnownTypedValue
 
 /**
@@ -70,14 +69,14 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
-                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD)
+            pcAndInvocation <- body.collect({
+                case i @ INVOKEVIRTUAL(declClass, "loadClass", _)
                     if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
             }: PartialFunction[Instruction, Instruction])
-            TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {
+            tacai(method)
             val pc = pcAndInvocation.pc
             val l = InstructionLocation(methodLocation, pc)
 

@@ -14,6 +14,6 @@ case object FALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
     final val mnemonic = "faload"
 
-    final val elementTypeComputationalType = ComputationalTypeFloat
+    final val elementTypeComputationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
 }

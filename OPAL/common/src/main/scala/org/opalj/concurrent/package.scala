@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.immutable.ArraySeq
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.concurrent.ExecutionContext
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
@@ -256,8 +256,8 @@ package object concurrent {
                 try {
                     f(data(i))
                 } catch {
-                    case ct: ControlThrowable =>
-                        val t = new Throwable("unsupported non-local return", ct)
+                    case b: Break[?] =>
+                        val t = new Throwable("unsupported non-local return", b)
                         addSuppressed(t)
                     case t: Throwable =>
                         addSuppressed(t)

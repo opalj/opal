@@ -14,7 +14,7 @@ import org.opalj.br.ArrayType
 trait DefaultConcreteArrayValuesBinding
     extends DefaultArrayValuesBinding
     with ConcreteArrayValues {
-    domain: CorrelationalDomain with ConcreteIntegerValues with LogContextProvider =>
+    domain: CorrelationalDomain & ConcreteIntegerValues & LogContextProvider =>
 
     type DomainConcreteArrayValue = ConcreteArrayValue
     final val DomainConcreteArrayValueTag: ClassTag[DomainConcreteArrayValue] = implicitly

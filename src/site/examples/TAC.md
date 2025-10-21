@@ -18,7 +18,7 @@ A very straight forward way to get a method's TAC is to use the respective `Proj
 
 *Step 0* - import the respective classes:
 
-    import org.opalj.ai._; import org.opalj.br._ ; import org.opalj.br.analyses._; import org.opalj.br.instructions._; import org.opalj.tac._
+    import org.opalj.ai.*; import org.opalj.br.*; import org.opalj.br.analyses.*; import org.opalj.br.instructions.*; import org.opalj.tac.*
 
 *Step 1* - Load a project's class files - here we load a test project which is part of OPAL - and also load the public API of the JDK; the latter is primarily necessary to get the complete type hierarchy.
 
@@ -38,8 +38,8 @@ A very straight forward way to get a method's TAC is to use the respective `Proj
  E.g., to set the domain to the simplest/most basic supported domain, you can use:
 
     p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-      case None               => Set(classOf[domain.l0.BaseDomainWithDefUse[_]])
-      case Some(requirements) => requirements + classOf[domain.l0.BaseDomainWithDefUse[_]]
+      case None               => Set(classOf[domain.l0.BaseDomainWithDefUse[?]])
+      case Some(requirements) => requirements + classOf[domain.l0.BaseDomainWithDefUse[?]]
     }
 
  For example, creating the TAC using the simplest domain – and a production build of OPAL – takes roughly one third of the time of using the default domain. However, the default domain provides much more information and is therefore the recommended base analysis. To be more precise, on a Core i7 (4 Cores - Sandy Bridge, 2011) generating the standard TAC for the rt.jar of the JDK 8u121 using the simplest possible domain takes 13 seconds and for the default domain 33 seconds.
@@ -146,7 +146,7 @@ The following demonstrates how to get advanced type information about a specific
 
 We can get the 3-address code (using, e.g., the `sbt console`) as follows (the method is part of OPAL's test suite):
 
-    import org.opalj._
+    import org.opalj.*
     val p = br.analyses.Project(new java.io.File("OPAL/bi/target/scala-2.13/resource_managed/test/ai.jar"))
     val tacAIKey = p.get(tac.ComputeTACAIKey)
     val code = tacAIKey(p.classFile(br.ClassType("ai/MethodsWithTypeChecks")).get.findMethod("requiredCast").head)

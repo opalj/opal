@@ -6,7 +6,6 @@ package analyses
 
 import scala.collection.mutable
 
-import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
 //import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
@@ -151,25 +150,25 @@ class LBFieldValuesAnalysis private[analyses] (
         val classFile: ClassFile,
         val dependees: EOptionPSet[Entity, Property]
     ) extends CorrelationalDomain
-        with domain.TheProject
-        with domain.TheCode
-        with domain.DefaultSpecialDomainValuesBinding
-        with domain.ThrowAllPotentialExceptionsConfiguration
+        with ai.domain.TheProject
+        with ai.domain.TheCode
+        with ai.domain.DefaultSpecialDomainValuesBinding
+        with ai.domain.ThrowAllPotentialExceptionsConfiguration
         // We don't use: "domain.l0.DefaultTypeLevelIntegerValues" because we want constant
         // propagation which helps in case of "ifs" related to type tests etc.::
-        with domain.l1.DefaultIntegerValues
-        with domain.l0.DefaultTypeLevelLongValues
-        with domain.l0.DefaultTypeLevelFloatValues
-        with domain.l0.DefaultTypeLevelDoubleValues
-        with domain.l0.TypeLevelPrimitiveValuesConversions
-        with domain.l0.TypeLevelLongValuesShiftOperators
-        with domain.l0.TypeLevelFieldAccessInstructions
-        with domain.l0.TypeLevelInvokeInstructions
-        with domain.l0.TypeLevelDynamicLoads
+        with ai.domain.l1.DefaultIntegerValues
+        with ai.domain.l0.DefaultTypeLevelLongValues
+        with ai.domain.l0.DefaultTypeLevelFloatValues
+        with ai.domain.l0.DefaultTypeLevelDoubleValues
+        with ai.domain.l0.TypeLevelPrimitiveValuesConversions
+        with ai.domain.l0.TypeLevelLongValuesShiftOperators
+        with ai.domain.l0.TypeLevelFieldAccessInstructions
+        with ai.domain.l0.TypeLevelInvokeInstructions
+        with ai.domain.l0.TypeLevelDynamicLoads
         // IT HAST TO BE L0 - we can't deal with "null" values!
-        with domain.l0.DefaultReferenceValuesBinding
-        with domain.DefaultHandlingOfMethodResults
-        with domain.IgnoreSynchronization
+        with ai.domain.l0.DefaultReferenceValuesBinding
+        with ai.domain.DefaultHandlingOfMethodResults
+        with ai.domain.IgnoreSynchronization
         // with RefinedTypeLevelInvokeInstructions
         with RefinedTypeLevelFieldAccessInstructions {
 
@@ -198,8 +197,7 @@ class LBFieldValuesAnalysis private[analyses] (
         def hasCandidateFields: Boolean = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys
 
-        private[this] var currentMethod: Method = null
-        private[this] var currentCode: Code = null
+        private var currentCode: Code = null
 
         /**
          * Sets the method that is currently analyzed. This method '''must not be called'''
@@ -208,14 +206,13 @@ class LBFieldValuesAnalysis private[analyses] (
          * interpretation of the next method (code block) starts.
          */
         def setMethodContext(method: Method): Unit = {
-            currentMethod = method
             currentCode = method.body.get
         }
 
         override def code: Code = currentCode
 
         /*
-        override protected[this] def doInvokeWithRefinedReturnValue(
+        override protected def doInvokeWithRefinedReturnValue(
             calledMethod: Method,
             result:       MethodCallResult
         ): MethodCallResult = {
@@ -239,7 +236,7 @@ class LBFieldValuesAnalysis private[analyses] (
                         case Some(previousValue) =>
                             if (previousValue ne value) {
                                 previousValue.join(Int.MinValue, value) match {
-                                    case SomeUpdate(newValue) =>
+                                    case SomeUpdate(newValue: DomainValue) =>
                                         // IMPROVE Remove "irrelevant fields" to check if we can stop the overall process...
                                         fieldInformation += (field -> Some(newValue))
                                     case NoUpdate => /*nothing to do*/
@@ -276,7 +273,7 @@ class LBFieldValuesAnalysis private[analyses] (
         }
     }
 
-    private[this] def analyzeRelevantMethods(
+    private def analyzeRelevantMethods(
         classFile: ClassFile,
         domain:    FieldValuesAnalysisDomain
     ): Unit = {
@@ -376,9 +373,9 @@ class LBFieldValuesAnalysis private[analyses] (
                                 OPALLogger.error(
                                     "analysis state",
                                     s"the field values analysis for ${f} failed miserably: "
-                                )(project.logContext)
+                                )(using project.logContext)
                             }
-                            val domain.DomainReferenceValueTag(dv) = dvOption.get
+                            val domain.DomainReferenceValueTag(dv) = dvOption.get: @unchecked
                             val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                             // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
                             if (newDependees.isEmpty ||

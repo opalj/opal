@@ -7,14 +7,14 @@ import java.net.URL
 import scala.collection.Map
 import scala.collection.immutable
 
-import org.opalj.br
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.br.analyses.Project.JavaLibraryClassFileReader
-import org.opalj.da
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
+
+import pureconfig._
 
 /**
  * Meta-information about a project that belongs to a corpus.
@@ -24,13 +24,13 @@ import org.opalj.log.OPALLogger.info
  * @author Michael Eichberg
  */
 case class ProjectConfiguration(
-    id:             String,
-    cp:             String,
-    libcp:          Option[String],
-    libcp_defaults: Option[String]
-) {
+    id:            String,
+    cp:            String,
+    libcp:         Option[String],
+    libcpDefaults: Option[String]
+) derives ConfigReader {
 
-    @volatile private[this] var theProjectStatistics: immutable.Map[String, Double] = immutable.Map.empty
+    @volatile private var theProjectStatistics: immutable.Map[String, Double] = immutable.Map.empty
 
     /**
      * General statistics about a project.
@@ -46,7 +46,7 @@ case class ProjectConfiguration(
      * @param  key The unique name of the statistic. If the name is not unique an exception will
      *         be thrown.
      */
-    def addStatistic(key: String, value: Double) = {
+    def addStatistic(key: String, value: Double): Unit = {
         this.synchronized {
             if (theProjectStatistics.contains(key))
                 throw new IllegalArgumentException(s"$id - $key is already set")
@@ -64,18 +64,18 @@ case class ProjectConfiguration(
     def instantiate: ProjectInstantiation = {
 
         // let's try to garbage collect previous projects
-        new Thread(new Runnable { def run: Unit = { System.gc() } }).start
+        new Thread(() => { System.gc() }).start()
 
         info(
             "project setup",
             s"creating new project: $id\n\t\t" +
-                s"cp=$cp\n\t\tlibcp=$libcp\n\t\tlibcp_defaults=$libcp_defaults"
-        )(GlobalLogContext)
+                s"cp=$cp\n\t\tlibcp=$libcp\n\t\tlibcp_defaults=$libcpDefaults"
+        )(using GlobalLogContext)
 
         val cpJARs = cp.split(File.pathSeparatorChar).flatMap { jar =>
             val jarFile = new File(jar)
-            if (!jarFile.exists || !jarFile.canRead()) {
-                error("project configuration", s"invalid class path: $jarFile")(GlobalLogContext)
+            if (!jarFile.exists || !jarFile.canRead) {
+                error("project configuration", s"invalid class path: $jarFile")(using GlobalLogContext)
                 None
             } else {
                 Some(jarFile)
@@ -97,15 +97,15 @@ case class ProjectConfiguration(
                     val libcpJARs = libs.split(File.pathSeparatorChar)
                     libcpJARs.foldLeft(noBRClassFiles) { (classFiles, libcpJAR) =>
                         val libcpJARFile = new File(libcpJAR)
-                        if (!libcpJARFile.exists || !libcpJARFile.canRead()) {
-                            error("project configuration", s"invalid library: $libcpJARFile")(GlobalLogContext)
+                        if (!libcpJARFile.exists || !libcpJARFile.canRead) {
+                            error("project configuration", s"invalid library: $libcpJARFile")(using GlobalLogContext)
                             classFiles
                         } else
                             classFiles ++ JavaLibraryClassFileReader.ClassFiles(libcpJARFile)
                     }
             }
         }
-        val libraryClassFiles: Iterable[(br.ClassFile, URL)] = libcp_defaults match {
+        val libraryClassFiles: Iterable[(br.ClassFile, URL)] = libcpDefaults match {
             case None            => libcpJARs
             case Some(libraries) =>
                 var predefinedLibrariesClassFiles = Iterable.empty[(br.ClassFile, URL)]
@@ -114,12 +114,12 @@ case class ProjectConfiguration(
                     predefinedLibraries.head match {
                         case "RTJar" =>
                             predefinedLibrariesClassFiles ++=
-                                br.reader.readRTJarClassFiles()(reader = JavaLibraryClassFileReader)
+                                br.reader.readRTJarClassFiles()(using reader = JavaLibraryClassFileReader)
                         case "JRE" =>
                             predefinedLibrariesClassFiles ++=
-                                br.reader.readJREClassFiles()(reader = JavaLibraryClassFileReader)
+                                br.reader.readJREClassFiles()(using reader = JavaLibraryClassFileReader)
                         case unmatched =>
-                            error("project configuration", s"unknown library: $unmatched")(GlobalLogContext)
+                            error("project configuration", s"unknown library: $unmatched")(using GlobalLogContext)
 
                     }
                     predefinedLibraries = predefinedLibraries.tail

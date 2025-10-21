@@ -26,7 +26,7 @@ import org.opalj.log.OPALLogger
 class AvailableTypesMatcher extends AbstractPropertyMatcher {
 
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,

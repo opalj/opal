@@ -40,11 +40,11 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
  */
 trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
-    override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with IsMethodOverridableContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
+    override type AnalysisContext <: AbstractEscapeAnalysisContext & PropertyStoreContainer & IsMethodOverridableContainer & VirtualFormalParametersContainer & DeclaredMethodsContainer
 
-    override type AnalysisState <: AbstractEscapeAnalysisState with ReturnValueUseSites
+    override type AnalysisState <: AbstractEscapeAnalysisState & ReturnValueUseSites
 
-    override protected[this] def handleStaticMethodCall(
+    override protected def handleStaticMethodCall(
         call: StaticMethodCall[V]
     )(
         implicit
@@ -54,7 +54,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, None, call.params, hasAssignment = false)
     }
 
-    override protected[this] def handleStaticFunctionCall(
+    override protected def handleStaticFunctionCall(
         call:          StaticFunctionCall[V],
         hasAssignment: Boolean
     )(
@@ -65,7 +65,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, None, call.params, hasAssignment)
     }
 
-    override protected[this] def handleVirtualMethodCall(
+    override protected def handleVirtualMethodCall(
         call: VirtualMethodCall[V]
     )(
         implicit
@@ -75,7 +75,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, Some(call.receiver), call.params, hasAssignment = false)
     }
 
-    override protected[this] def handleVirtualFunctionCall(
+    override protected def handleVirtualFunctionCall(
         call:          VirtualFunctionCall[V],
         hasAssignment: Boolean
     )(
@@ -86,7 +86,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, Some(call.receiver), call.params, hasAssignment)
     }
 
-    override protected[this] def handleParameterOfConstructor(
+    override protected def handleParameterOfConstructor(
         call: NonVirtualMethodCall[V]
     )(
         implicit
@@ -96,7 +96,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, None, call.params, hasAssignment = false)
     }
 
-    override protected[this] def handleNonVirtualAndNonConstructorCall(
+    override protected def handleNonVirtualAndNonConstructorCall(
         call: NonVirtualMethodCall[V]
     )(
         implicit
@@ -106,7 +106,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, Some(call.receiver), call.params, hasAssignment = false)
     }
 
-    override protected[this] def handleNonVirtualFunctionCall(
+    override protected def handleNonVirtualFunctionCall(
         call:          NonVirtualFunctionCall[V],
         hasAssignment: Boolean
     )(
@@ -117,7 +117,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         checkCall(call.pc, Some(call.receiver), call.params, hasAssignment)
     }
 
-    private[this] def checkCall(
+    private def checkCall(
         pc:            Int,
         receiver:      Option[Expr[V]],
         params:        Seq[Expr[V]],
@@ -134,7 +134,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
 
     }
 
-    private[this] def handleCallForParameter(
+    private def handleCallForParameter(
         pc:            Int,
         parameter:     Int,
         hasAssignment: Boolean
@@ -192,7 +192,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
                 indirectCallee <- callees.indirectCallees(context.entity._1, pc)
                 indirectCallReceiver = callees.indirectCallReceiver(context.entity._1, pc, indirectCallee)
                 indirectCallParams = callees.indirectCallParameters(context.entity._1, pc, indirectCallee)
-                (Some(uvar), i) <- (indirectCallReceiver +: indirectCallParams).zipWithIndex
+                case (Some(uvar), i) <- (indirectCallReceiver +: indirectCallParams).zipWithIndex
                 indirectCallParam = uVarForDefSites(uvar, state.tacai.get.pcToIndex)
                 if state.usesDefSite(indirectCallParam)
             } {
@@ -211,7 +211,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         }
     }
 
-    private[this] def handleEscapeState(
+    private def handleEscapeState(
         fp:            (Context, VirtualFormalParameter),
         hasAssignment: Boolean
     )(
@@ -229,7 +229,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         }
     }
 
-    private[this] def caseConditionalNoEscape(
+    private def caseConditionalNoEscape(
         ep:            EOptionP[Entity, Property],
         hasAssignment: Boolean
     )(
@@ -243,7 +243,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         state.addDependency(ep)
     }
 
-    private[this] def handleEscapeState(
+    private def handleEscapeState(
         escapeState:   EOptionP[Entity, Property],
         hasAssignment: Boolean
     )(
@@ -313,7 +313,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         }
     }
 
-    abstract override protected[this] def c(
+    abstract override protected def c(
         someEPS: SomeEPS
     )(
         implicit
@@ -331,7 +331,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
             case EPS((_: Context, VirtualFormalParameter(dm: DefinedMethod, -1))) if dm.definedMethod.isConstructor =>
                 throw new RuntimeException("can't handle the this-reference of the constructor")
 
-            case EPS(other: (_, _)) if other._2.isInstanceOf[VirtualFormalParameter] =>
+            case EPS(other: (?, ?)) if other._2.isInstanceOf[VirtualFormalParameter] =>
                 state.removeDependency(someEPS)
                 handleEscapeState(
                     someEPS,

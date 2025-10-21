@@ -2,7 +2,7 @@
 package org.opalj
 package tac
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.value.ValueInformation
 
 /**
@@ -21,12 +21,7 @@ sealed trait IdBasedVar extends Var[IdBasedVar] {
      * @return `true` if this variable and the given variable use the same location.
      *         Compared to `equals` this test does not consider the computational type.
      */
-    final def hasSameLocation(that: IdBasedVar): Boolean = {
-        that match {
-            case that: IdBasedVar => this.id == that.id
-            case _                => false
-        }
-    }
+    final def hasSameLocation(that: IdBasedVar): Boolean = this.id == that.id
 
     def name: String =
         if (id == Int.MinValue) "t"

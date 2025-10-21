@@ -36,13 +36,13 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     //
     val jlsCHFile = "ClassHierarchyJLS.ths"
     val jlsCHCreator = List(() => getClass.getResourceAsStream(jlsCHFile))
-    val jlsCH = ClassHierarchy(Iterable.empty, jlsCHCreator)(GlobalLogContext)
+    val jlsCH = ClassHierarchy(Iterable.empty, jlsCHCreator)(using GlobalLogContext)
 
     val preInitCH = ClassHierarchy.PreInitializedClassHierarchy
 
     val javaLangCHFile = "JavaLangClassHierarchy.ths"
     val javaLangCHCreator = List(() => getClass.getResourceAsStream(javaLangCHFile))
-    val javaLangCH = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
+    val javaLangCH = ClassHierarchy(Iterable.empty, javaLangCHCreator)(using GlobalLogContext)
 
     val Object = ClassType.Object
     val Throwable = ClassType.Throwable
@@ -869,7 +869,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         ClassHierarchy(
             Iterable.empty,
             List(() => getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
-        )(GlobalLogContext)
+        )(using GlobalLogContext)
 
     it should "be possible to get all supertypes, even if not all information is available" in {
 
@@ -941,7 +941,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
                 false
             } else
                 true
-        }(jvmFeaturesProject)
+        }(using jvmFeaturesProject)
 
         foundSomeEnumerationClass should be(true)
     }

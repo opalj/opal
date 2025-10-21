@@ -154,7 +154,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
             ConfigValueFactory.fromAnyRef(schedulingStrategy.getClass.getName)
         )
         new PropertyStoreConfigurationRecorder() {
-            override val ctx: Map[Class[_], AnyRef] = Map(classOf[Config] -> config)
+            override val ctx: Map[Class[?], AnyRef] = Map(classOf[Config] -> config)
         }
     }
 

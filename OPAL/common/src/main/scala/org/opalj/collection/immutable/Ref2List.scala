@@ -152,8 +152,8 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
 
     override def iterator: Iterator[T] = {
         new Iterator[T] {
-            private[this] var currentList: Ref2List[T] = list
-            private[this] var head: Boolean = list.h != null
+            private var currentList: Ref2List[T] = list
+            private var head: Boolean = list.h != null
             def hasNext: Boolean = currentList ne Ref2ListEnd
             def next(): T = {
                 if (head) {
@@ -178,7 +178,7 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
 
     override def equals(that: Ref2List[AnyRef]): Boolean = {
         (that eq this) || {
-            var thisList: Ref2List[_] = this
+            var thisList: Ref2List[?] = this
             var thatList = that
             while ((thisList ne Ref2ListEnd) && (thatList ne Ref2ListEnd)) {
                 if (thisList.h != thatList.h || thisList.t != thatList.t)
@@ -192,7 +192,7 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
 
     override def hashCode: Int = {
         var h = 31
-        var list: Ref2List[_] = this
+        var list: Ref2List[?] = this
         while (list ne Ref2ListEnd) {
             if (list.h != null) h += list.h.hashCode * 31
             h += list.t.hashCode * 31

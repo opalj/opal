@@ -18,11 +18,11 @@ package domain
 trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
     domain: ValuesDomain =>
 
-    protected[this] var theReturnedValue: DomainValue = null
+    protected var theReturnedValue: DomainValue = null
 
     def returnedValue: Option[DomainValue] = Option(theReturnedValue)
 
-    protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
+    protected def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
         val oldReturnedValue = theReturnedValue
         if (oldReturnedValue eq value)
             return false;

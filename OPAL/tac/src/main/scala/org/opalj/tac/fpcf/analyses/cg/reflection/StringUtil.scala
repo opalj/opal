@@ -6,6 +6,9 @@ package analyses
 package cg
 package reflection
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.ClassType
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.fpcf.Entity
@@ -20,16 +23,16 @@ object StringUtil {
     def getPossibleStrings[ContextType <: Context](
         value: Expr[V],
         stmts: Array[Stmt[V]]
-    ): Option[Set[String]] = {
+    ): Option[Set[String]] = boundary {
         Some(value.asVar.definedBy.map[Set[String]] { index =>
             if (index >= 0) {
                 getString(index, stmts) match {
                     case Some(v) => Set(v)
                     case _       =>
-                        return None;
+                        break(None);
                 }
             } else {
-                return None;
+                break(None);
             }
         }.flatten)
     }

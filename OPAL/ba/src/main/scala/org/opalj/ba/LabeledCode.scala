@@ -5,7 +5,6 @@ package ba
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.br
 import org.opalj.br.Code
 import org.opalj.br.CodeAttribute
 import org.opalj.br.LineNumber
@@ -43,9 +42,9 @@ class LabeledCode(
 
     def removedDeadCode(): Unit = {
         CODE.removeDeadCode(instructions) match {
-            case is: ArrayBuffer[CodeElement[AnyRef]] =>
-                instructions = is
-            case is: IndexedSeq[CodeElement[AnyRef]] =>
+            case is: ArrayBuffer[?] =>
+                instructions = is.asInstanceOf[ArrayBuffer[CodeElement[AnyRef]]]
+            case is: IndexedSeq[?] =>
                 instructions = new ArrayBuffer[CodeElement[AnyRef]](is.size) ++ is
         }
     }
@@ -248,7 +247,7 @@ object LabeledCode {
      *                          output; this is particularly useful to filter dead code.
      * @return The labeled code.
      */
-    def apply(code: Code, filterInstruction: PC => Boolean = (_) => true): LabeledCode = {
+    def apply(code: Code, filterInstruction: PC => Boolean = _ => true): LabeledCode = {
         val codeSize = code.codeSize
         val estimatedSize = codeSize
         val labeledInstructions = new ArrayBuffer[CodeElement[AnyRef]](estimatedSize)

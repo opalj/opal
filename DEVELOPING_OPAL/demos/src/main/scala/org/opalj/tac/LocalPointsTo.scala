@@ -70,13 +70,13 @@ object LocalPointsTo extends ProjectsAnalysisApplication {
             // Let's collect the information where a reference value that is passed
             // to some method is coming from.
             for {
-                (MethodCallParameters(params), stmtIndex) <- tac.stmts.iterator.zipWithIndex
-                (UVar(v, defSites), paramIndex) <- params.iterator.zipWithIndex
+                case (MethodCallParameters(params), stmtIndex) <- tac.stmts.iterator.zipWithIndex
+                case (UVar(v, defSites), paramIndex) <- params.iterator.zipWithIndex
                 if v.computationalType == ComputationalTypeReference
                 defSite <- defSites
             } {
                 if (defSite >= 0) {
-                    val Assignment(_, _, expr) = tac.stmts(defSite) // a def site is always an assignment
+                    val Assignment(_, _, expr) = tac.stmts(defSite): @unchecked // a def site is always an assignment
                     result.append(s"call@$stmtIndex(param=$paramIndex) is " + expr + "\n")
                 } else {
                     result.append(s"call@$stmtIndex(param=$paramIndex) takes param " + (-defSite - 1) + "\n")

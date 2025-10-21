@@ -48,7 +48,7 @@ abstract class ClassPathLikeArg extends ParsedArg[String, Iterable[File]] {
 
         if (cp.isEmpty) cp = ArraySeq.unsafeWrapArray(Array(System.getProperty("user.dir")))
 
-        info("project configuration", s"the $argName is ${cp.mkString}")(GlobalLogContext)
+        info("project configuration", s"the $argName is ${cp.mkString}")(using GlobalLogContext)
         verifyFiles(cp)
     }
 
@@ -81,5 +81,5 @@ abstract class ClassPathLikeArg extends ParsedArg[String, Iterable[File]] {
             Some(file)
     }
 
-    private def showError(message: String): Unit = error("project configuration", message)(GlobalLogContext)
+    private def showError(message: String): Unit = error("project configuration", message)(using GlobalLogContext)
 }

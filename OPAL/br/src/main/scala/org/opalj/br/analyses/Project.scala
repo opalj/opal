@@ -9,14 +9,13 @@ import scala.annotation.tailrec
 import java.io.File
 import java.lang.ref.SoftReference
 import java.net.URL
-import java.util.Arrays.{sort => sortArray}
+import java.util.Arrays.sort as sortArray
 import java.util.concurrent.atomic.AtomicReferenceArray
 import scala.collection.Map
 import scala.collection.Set
 import scala.collection.immutable
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
-import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.Buffer
 
@@ -115,16 +114,16 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Marco Torsello
  */
 class Project[Source] private (
-    private[this] val projectModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
-    private[this] val projectClassFiles:          Array[ClassFile], // contains no "module-info" class files
-    private[this] val libraryModules:             Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
-    private[this] val libraryClassFiles:          Array[ClassFile],
+    private val projectModules:                   Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
+    private val projectClassFiles:                Array[ClassFile], // contains no "module-info" class files
+    private val libraryModules:                   Map[String, ModuleDefinition[Source]], // just contains "module-info" class files
+    private val libraryClassFiles:                Array[ClassFile],
     final val libraryClassFilesAreInterfacesOnly: Boolean,
-    private[this] val methodsWithBody:            Array[Method], // methods with bodies sorted by size
-    private[this] val methodsWithBodyAndContext:  Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
-    private[this] val projectTypes:               Set[ClassType], // the types defined by the class files belonging to the project's code
-    private[this] val classTypeToClassFile:       Map[ClassType, ClassFile],
-    private[this] val sources:                    Map[ClassType, Source],
+    private val methodsWithBody:                  Array[Method], // methods with bodies sorted by size
+    private val methodsWithBodyAndContext:        Array[MethodInfo[Source]], // the concrete methods, sorted by size in descending order
+    private val projectTypes:                     Set[ClassType], // the types defined by the class files belonging to the project's code
+    private val classTypeToClassFile:             Map[ClassType, ClassFile],
+    private val sources:                          Map[ClassType, Source],
     final val projectClassFilesCount:             Int,
     final val projectMethodsCount:                Int,
     final val projectFieldsCount:                 Int,
@@ -149,7 +148,7 @@ class Project[Source] private (
     final val overridingMethods:                  Map[Method, immutable.Set[Method]],
     final val nests:                              Map[ClassType, ClassType],
     // Note that the referenced array will never shrink!
-    @volatile protected[this] var projectInformation: AtomicReferenceArray[AnyRef] =
+    @volatile protected var projectInformation: AtomicReferenceArray[AnyRef] =
         new AtomicReferenceArray[AnyRef](32)
 )(
     implicit
@@ -218,6 +217,7 @@ class Project[Source] private (
             nests,
             newProjectInformation
         )(
+            using
             newLogContext,
             config
         )
@@ -282,7 +282,7 @@ class Project[Source] private (
         // the set of interfaces that are not functional interfaces themselve, but
         // which can be extended.
         var irrelevantInterfaces = UIDSet.empty[ClassType]
-        val functionalInterfaces = AnyRefMap.empty[ClassType, MethodSignature]
+        val functionalInterfaces = mutable.HashMap.empty[ClassType, MethodSignature]
         var otherInterfaces = UIDSet.empty[ClassType]
 
         // our worklist/-set; it only contains those interface types for which
@@ -467,7 +467,7 @@ class Project[Source] private (
      */
     def sourceElementsCount: Int = fieldsCount + methodsCount + classFilesCount
 
-    private[this] def doParForeachClassFile[T](
+    private def doParForeachClassFile[T](
         classFiles:    Array[ClassFile],
         isInterrupted: () => Boolean
     )(
@@ -835,7 +835,7 @@ class Project[Source] private (
      * The count can be higher than the set of names of class members due to method overloading.
      */
     def projectClassMembersPerClassDistribution: Map[Int, (Int, Set[String])] = {
-        val data = AnyRefMap.empty[String, Int]
+        val data = mutable.HashMap.empty[String, Int]
 
         projectClassFiles foreach { classFile =>
             // we want to collect the size in relation to the source code;
@@ -906,10 +906,10 @@ object Project {
 
     lazy val JavaLibraryClassFileReader: Java17LibraryFramework.type = Java17LibraryFramework
 
-    @volatile private[this] var theCache: SoftReference[BytecodeInstructionsCache] = {
+    @volatile private var theCache: SoftReference[BytecodeInstructionsCache] = {
         new SoftReference(new BytecodeInstructionsCache)
     }
-    private[this] def cache: BytecodeInstructionsCache = {
+    private def cache: BytecodeInstructionsCache = {
         var cache = theCache.get
         if (cache == null) {
             this.synchronized {
@@ -940,7 +940,7 @@ object Project {
      * Performs some fundamental validations to make sure that subsequent analyses don't have
      * to deal with completely broken projects/that the user is aware of the issues!
      */
-    private[this] def validate(project: SomeProject): Seq[InconsistentProjectException] = {
+    private def validate(project: SomeProject): Seq[InconsistentProjectException] = {
 
         implicit val logContext: LogContext = project.logContext
 
@@ -997,7 +997,7 @@ object Project {
                         (instruction.opcode: @switch) match {
 
                             case NEW.opcode =>
-                                val NEW(classType) = instruction
+                                val NEW(classType) = instruction: @unchecked
                                 if (isInterface(classType).isYes) {
                                     val ex = InconsistentProjectException(
                                         s"cannot create an instance of interface ${classType.toJava} in " +
@@ -1011,9 +1011,7 @@ object Project {
                                 val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
                                 if (validateReceiverTypeKind(invokestatic)) {
                                     project.staticCall(cf.thisType, invokestatic) match {
-                                        case _: Success[_] => /*OK*/
-                                        case Empty         => /*OK - partial project*/
-                                        case Failure       =>
+                                        case Failure =>
                                             val ex = InconsistentProjectException(
                                                 s"target method of invokestatic call in " +
                                                     m.toJava(s"pc=$pc; $invokestatic - $disclaimer") +
@@ -1023,6 +1021,8 @@ object Project {
                                                 Error
                                             )
                                             addException(ex)
+                                        case Empty => /*OK - partial project*/
+                                        case _     => /*OK*/
                                     }
                                 }
 
@@ -1030,9 +1030,7 @@ object Project {
                                 val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
                                 if (validateReceiverTypeKind(invokespecial)) {
                                     project.specialCall(cf.thisType, invokespecial) match {
-                                        case _: Success[_] => /*OK*/
-                                        case Empty         => /*OK - partial project*/
-                                        case Failure       =>
+                                        case Failure =>
                                             val ex = InconsistentProjectException(
                                                 s"target method of invokespecial call in " +
                                                     m.toJava(s"pc=$pc; $invokespecial - $disclaimer") +
@@ -1042,6 +1040,8 @@ object Project {
                                                 Error
                                             )
                                             addException(ex)
+                                        case Empty => /*OK - partial project*/
+                                        case _     => /*OK*/
                                     }
                                 }
                             case _ => // Nothing special is checked (so far)
@@ -1077,7 +1077,7 @@ object Project {
         logContext: LogContext,
         ex:         InconsistentProjectException
     ): Unit = {
-        OPALLogger.log(ex.severity("project configuration", ex.message))(logContext)
+        OPALLogger.log(ex.severity("project configuration", ex.message))(using logContext)
     }
 
     def instanceMethods(
@@ -1097,8 +1097,8 @@ object Project {
         //      interface A; interface B extends A; interface C extends A, B,
         // we postpone the processing of C until the information is available.
 
-        val methods: AnyRefMap[ClassType, List[MethodDeclarationContext]] = {
-            new AnyRefMap(ClassType.classTypesCount)
+        val methods: mutable.HashMap[ClassType, List[MethodDeclarationContext]] = {
+            new mutable.HashMap(ClassType.classTypesCount, mutable.HashMap.defaultLoadFactor)
         }
 
         // Here, "overridden" is to be taken with a grain of salt, because we have a static
@@ -1110,7 +1110,7 @@ object Project {
 
         // Returns `true` if the potentially available information is not yet available.
         @inline def notYetAvailable(superinterfaceType: ClassType): Boolean = {
-            methods.get(superinterfaceType).isEmpty &&
+            !methods.contains(superinterfaceType) &&
             // If the class file is not known, we will never have any details;
             // hence, the information will "NEVER" be available; or - in other
             // words - all potentially available information is available.
@@ -1121,7 +1121,7 @@ object Project {
             // Due to the fact that we may inherit from multiple interfaces,
             // the computation may have been scheduled multiple times; hence, if we are
             // already done, just return.
-            if (methods.get(classType).nonEmpty)
+            if (methods.contains(classType))
                 return;
 
             val superclassType = classHierarchy.superclassType(classType)
@@ -1251,7 +1251,7 @@ object Project {
                             interfaceMethod.name,
                             interfaceMethod.descriptor,
                             UIDSet.empty[ClassType]
-                        )(classTypeToClassFile, classHierarchy, logContext)
+                        )(using classTypeToClassFile, classHierarchy, logContext)
                     if (maximallySpecificSuperinterfaceMethod.size == 1) {
                         // A maximally specific interface method can only be invoked if it is unique!
                         processMaximallySpecificSuperinterfaceMethod(
@@ -1356,12 +1356,11 @@ object Project {
                 methods(declaringType) filter { mdc => mdc.descriptor != descriptor || mdc.name != name }
         }
 
-        val result = methods.mapValuesNow { mdcs =>
+        val result = methods.map { case (key, mdcs) =>
             val sortedMethods = mdcs.toArray
             sortArray(sortedMethods, MethodDeclarationContextOrdering)
-            ArraySeq.unsafeWrapArray(sortedMethods)
+            key -> ArraySeq.unsafeWrapArray(sortedMethods)
         }
-        result.repack()
         result
     } { t => info("project setup", s"computing defined methods took ${t.toSeconds}") }
 
@@ -1412,7 +1411,8 @@ object Project {
             subtypesToProcessCounts(cid) = classHierarchy.directSubtypesCount(cid)
         }
 
-        val methods = new mutable.AnyRefMap[Method, immutable.Set[Method]](virtualMethodsCount)
+        val methods =
+            new mutable.HashMap[Method, immutable.Set[Method]](virtualMethodsCount, mutable.HashMap.defaultLoadFactor)
 
         def computeOverridingMethods(tasks: Tasks[ClassType], classType: ClassType): Unit = {
             val declaredMethodPackageName = classType.packageName
@@ -1442,6 +1442,7 @@ object Project {
                                         overridingMethods ++= nextOverridingMethods
                                     }
                                     false // we don't have to analyze subsequent subtypes.
+                                case _ /* FilteredSuccess */ => false // Won't happen
                             }
                         }
 
@@ -1473,7 +1474,6 @@ object Project {
                 error("project setup", "computing overriding methods failed, e")
                 ce.getSuppressed foreach { e => error("project setup", "computing the overriding methods failed", e) }
         }
-        methods.repack()
         methods
     } { t => info("project setup", s"computing overriding information took ${t.toSeconds}") }
 
@@ -1498,7 +1498,7 @@ object Project {
     }
 
     def apply(file: File, logContext: LogContext, config: Config): Project[URL] = {
-        val reader = JavaClassFileReader(logContext, config)
+        val reader = JavaClassFileReader(using logContext, config)
         this(
             projectClassFilesWithSources = reader.ClassFiles(file),
             libraryClassFilesWithSources = Iterable.empty,
@@ -1517,7 +1517,7 @@ object Project {
         config:       Config
     ): Project[URL] = {
         this(
-            JavaClassFileReader(logContext, config).AllClassFiles(projectFiles),
+            JavaClassFileReader(using logContext, config).AllClassFiles(projectFiles),
             JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Iterable.empty,
@@ -1545,7 +1545,7 @@ object Project {
             Iterable.empty,
             libraryClassFilesAreInterfacesOnly = false /*it actually doesn't matter*/,
             virtualClassFiles = Iterable.empty
-        )(projectLogger = projectLogger)
+        )(using projectLogger = projectLogger)
     }
 
     def apply(
@@ -1564,7 +1564,7 @@ object Project {
                 libraries
             }
         apply(
-            JavaClassFileReader().ClassFiles(projectFile),
+            JavaClassFileReader(using logContext).ClassFiles(projectFile),
             libraries,
             libraryClassFilesAreInterfacesOnly = true,
             virtualClassFiles = Iterable.empty
@@ -1603,7 +1603,7 @@ object Project {
             project.libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Iterable.empty
-        )(config = project.config, projectLogger = OPALLogger.logger(project.logContext.successor))
+        )(using config = project.config, projectLogger = OPALLogger.logger(project.logContext.successor))
     }
 
     /**
@@ -1621,7 +1621,7 @@ object Project {
             project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Iterable.empty
-        )(project.config, OPALLogger.logger(project.logContext.successor))
+        )(using project.config, OPALLogger.logger(project.logContext.successor))
     }
 
     def apply[Source](
@@ -1655,6 +1655,7 @@ object Project {
             project.libraryClassFilesAreInterfacesOnly,
             virtualClassFiles = Iterable.empty
         )(
+            using
             if (useOldConfigAsFallback) config.withFallback(project.config) else config,
             projectLogger = OPALLogger.logger(project.logContext.successor)
         )
@@ -1732,7 +1733,7 @@ object Project {
             import scala.concurrent.Await
             import scala.concurrent.Future
             import scala.concurrent.duration.Duration
-            import scala.concurrent.ExecutionContext.Implicits.{global => ScalaExecutionContext}
+            import scala.concurrent.ExecutionContext.Implicits.global as ScalaExecutionContext
 
             val classHierarchyFuture: Future[ClassHierarchy] = Future {
                 time {
@@ -1757,16 +1758,16 @@ object Project {
                         typeHierarchyDefinitions
                     )
                 } { t => info("project setup", s"computing type hierarchy took ${t.toSeconds}") }
-            }(ScalaExecutionContext)
+            }(using ScalaExecutionContext)
 
-            val projectModules = AnyRefMap.empty[String, ModuleDefinition[Source]]
+            val projectModules = mutable.HashMap.empty[String, ModuleDefinition[Source]]
             var projectClassFiles = List.empty[ClassFile]
-            val projectTypes = Set.empty[ClassType]
+            val projectTypes = mutable.Set.empty[ClassType]
             var projectClassFilesCount: Int = 0
             var projectMethodsCount: Int = 0
             var projectFieldsCount: Int = 0
 
-            val libraryModules = AnyRefMap.empty[String, ModuleDefinition[Source]]
+            val libraryModules = mutable.HashMap.empty[String, ModuleDefinition[Source]]
             var libraryClassFiles = List.empty[ClassFile]
             var libraryClassFilesCount: Int = 0
             var libraryMethodsCount: Int = 0
@@ -1781,7 +1782,7 @@ object Project {
             def processModule(
                 classFile:        ClassFile,
                 source:           Option[Source],
-                modulesContainer: AnyRefMap[String, ModuleDefinition[Source]]
+                modulesContainer: mutable.HashMap[String, ModuleDefinition[Source]]
             ): Unit = {
                 val moduleName = classFile.module.get.name
                 if (projectModules.contains(moduleName)) {
@@ -2058,7 +2059,7 @@ object Project {
     } { t =>
         // If an exception was thrown, the logContext is no longer available!
         val lc = if (OPALLogger.isUnregistered(logContext)) GlobalLogContext else logContext
-        info("project setup", s"creating the project took ${t.toSeconds}")(lc)
+        info("project setup", s"creating the project took ${t.toSeconds}")(using lc)
     }
 
 }

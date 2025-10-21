@@ -52,7 +52,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
     /**
      * Returns the set of all relevant receiver types.
      */
-    private[this] final lazy val apiTypes: Set[ClassType] = {
+    private final lazy val apiTypes: Set[ClassType] = {
         apiFeatures.foldLeft(Set.empty[ClassType])(_ ++ _.apiMethods.map(_.declClass))
     }
 
@@ -111,8 +111,8 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             cf <- project.allProjectClassFiles
             if !isInterrupted()
             source <- project.source(cf)
-            m @ MethodWithBody(code) <- cf.methods
-            pcAndInvocation <- code collect ({ case mii: MethodInvocationInstruction => mii }: PartialFunction[
+            case m @ MethodWithBody(code) <- cf.methods
+            pcAndInvocation <- code.collect({ case mii: MethodInvocationInstruction => mii }: PartialFunction[
                 Instruction,
                 MethodInvocationInstruction
             ])

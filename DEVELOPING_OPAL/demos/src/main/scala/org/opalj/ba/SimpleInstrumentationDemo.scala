@@ -25,7 +25,7 @@ class SimpleInstrumentationDemo {
             case i: Integer =>
                 println("integer ")
                 println(i.intValue())
-            case c: java.util.Collection[_] =>
+            case c: java.util.Collection[?] =>
                 print("some collection ")
                 println(c) // let's assume that we want to know the type of c
             case s: String =>
@@ -35,11 +35,13 @@ class SimpleInstrumentationDemo {
     }
 
     def endlessLoop(): Unit = {
-        do {
+        while {
             val t = System.currentTimeMillis
             val s = s"Juhu: $t"
             System.out.println(s)
-        } while (System.currentTimeMillis % 200 < 10)
+
+            System.currentTimeMillis % 200 < 10
+        } do ()
         System.out.println("Did it!")
     }
 

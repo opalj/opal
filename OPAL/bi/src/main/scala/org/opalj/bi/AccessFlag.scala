@@ -236,7 +236,7 @@ object ACC_MODULE extends AccessFlag {
 }
 
 object ACC_OPEN extends AccessFlag {
-    final val javaName = Some("open")
+    final val javaName: Some[String] = Some("open")
     final val mask = 0x0020
     override def toString: String = "OPEN"
 }
@@ -253,7 +253,7 @@ object ACC_MANDATED extends AccessFlag {
  * @note Only used in combination with Java 9 modules.
  */
 object ACC_TRANSITIVE extends AccessFlag {
-    override final val javaName = Some("transitive")
+    override final val javaName: Some[String] = Some("transitive")
     override final val mask = 0x0010
     override def toString: String = "TRANSITIVE"
 }
@@ -265,7 +265,7 @@ object ACC_TRANSITIVE extends AccessFlag {
  * @note Only used in combination with Java 9 modules.
  */
 object ACC_STATIC_PHASE extends AccessFlag {
-    override final val javaName = Some("static")
+    override final val javaName: Some[String] = Some("static")
     override final val mask = 0x0040
     override def toString: String = "STATIC_PHASE"
 }

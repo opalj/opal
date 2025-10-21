@@ -487,7 +487,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
             result.domain.operandOrigin(r._1, 0).forall { u =>
                 instructions.contains(u) && (instructions(u).isInstanceOf[FieldReadAccess] ||
                 instructions(u).isInstanceOf[ArrayLoadInstruction] ||
-                instructions(u).isInstanceOf[LoadConstantInstruction[_]])
+                instructions(u).isInstanceOf[LoadConstantInstruction[?]])
             }
         )
     }
@@ -508,12 +508,12 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
             (p._2.isInstanceOf[PUTSTATIC] &&
                 result.domain.operandOrigin(p._1, 0).forall { x =>
                     x < 0 || (instructions.contains(x) &&
-                    instructions(x).isInstanceOf[LoadConstantInstruction[_]])
+                    instructions(x).isInstanceOf[LoadConstantInstruction[?]])
                 }) ||
                 (p._2.isInstanceOf[PUTFIELD] &&
                 result.domain.operandOrigin(p._1, 1).forall { x =>
                     x < 0 || (instructions.contains(x) &&
-                    instructions(x).isInstanceOf[LoadConstantInstruction[_]])
+                    instructions(x).isInstanceOf[LoadConstantInstruction[?]])
                 })
         )
     }

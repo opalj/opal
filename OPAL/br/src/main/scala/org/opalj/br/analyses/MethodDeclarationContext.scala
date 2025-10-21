@@ -66,16 +66,16 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
      * even though the underlying method is not the same one.)
      */
     def compare(that: MethodDeclarationContext): Int = {
-        val result = this.method compare that.method
+        val result = this.method.compare(that.method)
         if (result == 0)
-            this.packageName compareTo that.packageName
+            this.packageName.compareTo(that.packageName)
         else
             result
     }
 
     def compareWithPublicMethod(thatMethod: Method): Int = {
         assert(thatMethod.isPublic, s"${thatMethod.toJava} is not public")
-        this.method compare thatMethod
+        this.method.compare(thatMethod)
     }
 
     /**
@@ -95,7 +95,7 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
         val method = this.method
         val result = method.compare(name, descriptor)
         if (result == 0 && method.hasDefaultVisibility) {
-            this.packageName compareTo packageName
+            this.packageName.compareTo(packageName)
         } else {
             result
         }

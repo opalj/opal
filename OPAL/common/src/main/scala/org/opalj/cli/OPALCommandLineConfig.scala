@@ -2,6 +2,8 @@
 package org.opalj
 package cli
 
+import scala.compiletime.uninitialized
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
@@ -32,43 +34,43 @@ trait OPALCommandLineConfig {
     val description: String
     banner(description + "\n")
 
-    private var definedArgs: Set[Arg[_, _]] = Set.empty
-    def argsIterator: Iterator[Arg[_, _]] = definedArgs.iterator
+    private var definedArgs: Set[Arg[?, ?]] = Set.empty
+    def argsIterator: Iterator[Arg[?, ?]] = definedArgs.iterator
 
     private val runnerSpecificGroup = group("Runner-specific arguments:")
     private val generalConfigGroup = group("General configuration:")
-    protected var argGroups: Map[Arg[_, _], ScallopOptionGroup] = Map.empty
+    protected var argGroups: Map[Arg[?, ?], ScallopOptionGroup] = Map.empty
 
     generalArgs(NoLogsArg, ConfigFileArg, RenderConfigArg, ConfigOverrideArg)
 
     /**
      * Defines (additional) args for this configuration
      */
-    protected def args(as: Arg[_, _]*): Unit = {
+    protected def args(as: Arg[?, ?]*): Unit = {
         definedArgs ++= as
     }
     /**
      * Defines (additional) general args for this configuration
      */
-    protected def generalArgs(as: Arg[_, _]*): Unit = {
+    protected def generalArgs(as: Arg[?, ?]*): Unit = {
         definedArgs ++= as
         argGroups ++= as.iterator.flatMap(_.commands()).map(c => c -> generalConfigGroup)
     }
 
-    private var required: Set[Arg[_, _]] = Set.empty
-    private var values: Map[Arg[_, _], Any] = _
+    private var required: Set[Arg[?, ?]] = Set.empty
+    private var values: Map[Arg[?, ?], Any] = uninitialized
 
     /**
      * Gets the value of an (optional) argument or None if the argument was not supplied
      */
-    def get[R](arg: Arg[_, R]): Option[R] = {
+    def get[R](arg: Arg[?, R]): Option[R] = {
         values.get(arg).asInstanceOf[Option[R]]
     }
 
     /**
      * Gets the value of an (optional) argument or a default value if the argument was not supplied
      */
-    def get[R](arg: Arg[_, R], default: => R): R = {
+    def get[R](arg: Arg[?, R], default: => R): R = {
         get(arg).getOrElse(default)
     }
 
@@ -77,16 +79,16 @@ trait OPALCommandLineConfig {
      *
      * @throws NoSuchElementException if the argument was not supplied (which means it was not marked as required!)
      */
-    def apply[R](arg: Arg[_, R]): R = {
+    def apply[R](arg: Arg[?, R]): R = {
         values(arg).asInstanceOf[R]
     }
 
-    protected implicit class CommandExt(a: Arg[_, _]) {
+    protected implicit class CommandExt(a: Arg[?, ?]) {
 
         /**
          * Makes an argument required
          */
-        def ! : Arg[_, _] = {
+        def ! : Arg[?, ?] = {
             required += a
             a
         }
@@ -94,7 +96,7 @@ trait OPALCommandLineConfig {
         /**
          * Makes an argument optional (if it was required by a super class)
          */
-        def ? : Arg[_, _] = {
+        def ? : Arg[?, ?] = {
             required -= a
             a
         }
@@ -102,20 +104,20 @@ trait OPALCommandLineConfig {
         /**
          * Requires exactly one of the given arguments
          */
-        def ^(a2: Arg[_, _]): Arg[_, _] = {
+        def ^(a2: Arg[?, ?]): Arg[?, ?] = {
             MutuallyExclusive(a, a2)
         }
     }
 
-    private case class MutuallyExclusive(as: Seq[Arg[_, _]]) extends Arg[Any, Any] {
+    private case class MutuallyExclusive(as: Seq[Arg[?, ?]]) extends Arg[Any, Any] {
         override val name: String = ""
         override val description: String = ""
 
-        override def commands(): IterableOnce[Arg[_, _]] = as.iterator.flatMap(_.commands())
+        override def commands(): IterableOnce[Arg[?, ?]] = as.iterator.flatMap(_.commands())
     }
 
     private object MutuallyExclusive {
-        def apply(a1: Arg[_, _], a2: Arg[_, _]): MutuallyExclusive = (a1, a2) match {
+        def apply(a1: Arg[?, ?], a2: Arg[?, ?]): MutuallyExclusive = (a1, a2) match {
             case (r1: MutuallyExclusive, r2: MutuallyExclusive) => new MutuallyExclusive(r1.as ++ r2.as)
             case (r1: MutuallyExclusive, _)                     => new MutuallyExclusive(r1.as :+ a2)
             case (_, r2: MutuallyExclusive)                     => new MutuallyExclusive(r2.as :+ a1)
@@ -125,20 +127,21 @@ trait OPALCommandLineConfig {
 
     def init(): Unit = {
 
-        def getScallopOptionFlat(a: Arg[_, _]): ScallopOptionBase = a match {
-            case choiceArg: ChoiceArg[_]          => getChoiceScallopOption(choiceArg)
-            case propertyArg: PropertyArg[_]      => getPropertyScallopOption(propertyArg)(propsConverter(propertyArg.conv))
-            case convertedArg: ConvertedArg[_, _] => getRegularScallopOption(convertedArg)(convertedArg.conv)
+        def getScallopOptionFlat(a: Arg[?, ?]): ScallopOptionBase = a match {
+            case choiceArg: ChoiceArg[?]     => getChoiceScallopOption(choiceArg)
+            case propertyArg: PropertyArg[?] =>
+                getPropertyScallopOption(propertyArg)(using propsConverter(propertyArg.conv))
+            case convertedArg: ConvertedArg[?, ?] => getRegularScallopOption(convertedArg)(using convertedArg.conv)
             case _: MutuallyExclusive             => throw new IllegalArgumentException("Cannot nest mutually exclusive arguments")
         }
 
-        def getScallopOption(a: Arg[_, _]): IterableOnce[(Arg[_, _], ScallopOptionBase)] = a match {
+        def getScallopOption(a: Arg[?, ?]): IterableOnce[(Arg[?, ?], ScallopOptionBase)] = a match {
             case me: MutuallyExclusive => {
                 val options = me.as.map { c => c -> getScallopOptionFlat(c) }
                 if (required.contains(a))
-                    requireOne(options.map(_._2): _*)
+                    requireOne(options.map(_._2)*)
                 else
-                    mutuallyExclusive(options.map(_._2): _*)
+                    mutuallyExclusive(options.map(_._2)*)
                 options
             }
             case _ => Iterator(a -> getScallopOptionFlat(a))
@@ -150,14 +153,14 @@ trait OPALCommandLineConfig {
 
         def getValue[T, R](arg: Arg[T, R], value: T): Any = {
             arg match {
-                case parsedArg: ParsedArg[T, _] => parsedArg.parse(value)
-                case _: Arg[_, _]               => value
+                case parsedArg: ParsedArg[T @unchecked, ?] => parsedArg.parse(value)
+                case _: Arg[?, ?]                          => value
             }
         }
 
-        def forwardedArgs(forwardedArg: Arg[_, _]): Iterator[Arg[_, _]] = {
+        def forwardedArgs(forwardedArg: Arg[?, ?]): Iterator[Arg[?, ?]] = {
             forwardedArg match {
-                case forwardingArg: ForwardingArg[_, _, _] => Iterator(forwardingArg) ++ forwardedArgs(forwardingArg.arg)
+                case forwardingArg: ForwardingArg[?, ?, ?] => Iterator(forwardingArg) ++ forwardedArgs(forwardingArg.arg)
                 case _                                     => Iterator(forwardedArg)
             }
         }
@@ -166,10 +169,8 @@ trait OPALCommandLineConfig {
             case (arg, scallopOpt: ScallopOption[_]) if scallopOpt.isDefined =>
                 val value = getValue(arg, scallopOpt.apply())
                 forwardedArgs(arg).map { arg => arg -> value }
-            case (arg, properties: LazyMap[_, _]) =>
-                val values = properties.iterator.map {
-                    case (key: String, value) => (key, getValue(arg, value))
-                }.toMap
+            case (arg, properties: LazyMap[?, ?]) =>
+                val values = properties.iterator.map { property => (property._1, getValue(arg, property._2)) }.toMap
                 forwardedArgs(arg).map { arg => arg -> values }
             case _ => None
         }
@@ -187,7 +188,7 @@ trait OPALCommandLineConfig {
         )
     }
 
-    private def getRegularScallopOption[T](arg: ConvertedArg[T, _])(implicit
+    private def getRegularScallopOption[T](arg: ConvertedArg[T, ?])(implicit
         conv: ValueConverter[T]
     ): ScallopOption[T] =
         opt[T](
@@ -201,7 +202,7 @@ trait OPALCommandLineConfig {
             group = argGroups.getOrElse(arg, runnerSpecificGroup)
         )
 
-    private def getChoiceScallopOption(arg: Arg[String, _]): ScallopOption[String] =
+    private def getChoiceScallopOption(arg: Arg[String, ?]): ScallopOption[String] =
         choice(
             name = arg.name,
             argName = arg.argName,

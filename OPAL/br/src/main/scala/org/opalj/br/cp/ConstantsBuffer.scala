@@ -4,6 +4,7 @@ package br
 package cp
 
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 
 import org.opalj.br.instructions.INCOMPLETE_LDC
 import org.opalj.br.instructions.LDC
@@ -30,10 +31,10 @@ class ConstantsBuffer private (
     private val constantPool: mutable.Map[Constant_Pool_Entry, Constant_Pool_Index] // IMPROVE[L3] Use ObjectToIntMap
 ) extends ConstantsPoolLike {
 
-    private[this] val bootstrapMethods = new BootstrapMethodsBuffer()
-    private[this] var bootstrapMethodAttributeNameIndex: Int = _
+    private val bootstrapMethods = new BootstrapMethodsBuffer()
+    private var bootstrapMethodAttributeNameIndex: Int = uninitialized
 
-    private[this] def getOrElseUpdate(cpEntry: Constant_Pool_Entry, entry_size: Int): Int = {
+    private def getOrElseUpdate(cpEntry: Constant_Pool_Entry, entry_size: Int): Int = {
         constantPool.getOrElseUpdate(
             cpEntry, {
                 val index = nextIndex
@@ -44,7 +45,7 @@ class ConstantsBuffer private (
     }
 
     @throws[ConstantPoolException]
-    private[this] def validateIndex(index: Int, requiresUByteIndex: Boolean): Int = {
+    private def validateIndex(index: Int, requiresUByteIndex: Boolean): Int = {
         if (requiresUByteIndex && index > UByte.MaxValue) {
             val message = s"the constant pool index $index is larger than  ${UByte.MaxValue}"
             throw new ConstantPoolException(message)
@@ -54,7 +55,7 @@ class ConstantsBuffer private (
     }
 
     @throws[ConstantPoolException]
-    private[this] def validateUShortIndex(index: Int): Int = {
+    private def validateUShortIndex(index: Int): Int = {
         if (index > UShort.MaxValue) {
             val message = s"the constant pool index $index is larger than ${UShort.MaxValue}"
             throw new ConstantPoolException(message)
@@ -289,11 +290,11 @@ class ConstantsBuffer private (
  */
 object ConstantsBuffer {
 
-    def collectLDCs(classFile: ClassFile): Set[LDC[_]] = {
+    def collectLDCs(classFile: ClassFile): Set[LDC[?]] = {
         val allLDC = for {
             method <- classFile.methods.iterator
             if method.body.isDefined
-            ldc <- method.body.get.instructionIterator.collect { case ldc: LDC[_] => ldc }
+            ldc <- method.body.get.instructionIterator.collect { case ldc: LDC[?] => ldc }
         } yield {
             ldc
         }
@@ -301,8 +302,8 @@ object ConstantsBuffer {
     }
 
     @throws[ConstantPoolException]
-    def getOrCreateCPEntry(ldc: LDC[_])(implicit constantsBuffer: ConstantsBuffer): Int = {
-        import constantsBuffer._
+    def getOrCreateCPEntry(ldc: LDC[?])(implicit constantsBuffer: ConstantsBuffer): Int = {
+        import constantsBuffer.*
         ldc match {
             case LoadInt(value) =>
                 CPEInteger(value, requiresUByteIndex = true)
@@ -349,7 +350,7 @@ object ConstantsBuffer {
      *          To collect a [[org.opalj.br.ClassFile]]'s ldc instructions use [[collectLDCs]].
      */
     @throws[ConstantPoolException]("if it is impossible to create a valid constant pool")
-    def apply(ldcs: Set[LDC[_]]): ConstantsBuffer = {
+    def apply(ldcs: Set[LDC[?]]): ConstantsBuffer = {
         // IMPROVE Use Object2IntMap..
         val buffer = mutable.HashMap.empty[Constant_Pool_Entry, Constant_Pool_Index]
         // the first item is null because the constant_pool starts with the index 1
@@ -376,7 +377,7 @@ object ConstantsBuffer {
         // 1. let's add the referenced CONSTANT_UTF8 entries required by LoadClass instructions
         var nextIndexAfterLDCRelatedEntries = 1 + ldcs.size
         implicit val constantsBuffer: ConstantsBuffer = new ConstantsBuffer(nextIndexAfterLDCRelatedEntries, buffer)
-        import constantsBuffer._
+        import constantsBuffer.*
         ldClasses foreach { ldc => CPEUtf8OfCPEClass(ldc.asInstanceOf[LoadClass].value) }
         nextIndexAfterLDCRelatedEntries = constantsBuffer.nextIndex
 

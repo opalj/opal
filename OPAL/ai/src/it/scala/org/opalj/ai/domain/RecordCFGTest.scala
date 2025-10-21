@@ -5,7 +5,7 @@ package domain
 
 import java.net.URL
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
@@ -34,7 +34,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
     private object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    import DominatorsPerformanceEvaluation.{time => dTime}
+    import DominatorsPerformanceEvaluation.time as dTime
 
     class RecordCFGDomain[I](val method: Method, val project: Project[URL])
         extends CorrelationalDomain
@@ -85,7 +85,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 }
 
                 val bbBRCFG = dTime(Symbol("BasicBlocksBasedBRCFG")) {
-                    CFGFactory(method.body.get, project.classHierarchy)
+                    CFGFactory(using method.body.get, project.classHierarchy)
                 }
                 val bbAICFG = dTime(Symbol("BasicBlocksBasedAICFG")) { domain.bbCFG }
 

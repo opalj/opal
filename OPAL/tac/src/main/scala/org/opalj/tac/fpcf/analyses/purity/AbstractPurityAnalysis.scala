@@ -93,13 +93,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     type StateType <: AnalysisState
 
-    protected[this] def raterFqn: String
+    protected def raterFqn: String
 
     val rater: DomainSpecificRater
 
-    protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private[this] val simpleContexts: Option[SimpleContexts] = project.has(SimpleContextsKey)
-    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private val simpleContexts: Option[SimpleContexts] = project.has(SimpleContextsKey)
+    protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)
 
@@ -107,15 +107,15 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Reduces the maxPurity of the current method to at most the given purity level.
      */
     def reducePurityLB(newLevel: Purity)(implicit state: StateType): Unit = {
-        state.lbPurity = state.lbPurity meet newLevel
+        state.lbPurity = state.lbPurity.meet(newLevel)
     }
 
     /**
      * Reduces the minPurity and maxPurity of the current method to at most the given purity level.
      */
     def atMost(newLevel: Purity)(implicit state: StateType): Unit = {
-        state.lbPurity = state.lbPurity meet newLevel
-        state.ubPurity = state.ubPurity meet newLevel
+        state.lbPurity = state.lbPurity.meet(newLevel)
+        state.ubPurity = state.ubPurity.meet(newLevel)
     }
 
     /**
@@ -249,7 +249,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
             // Reference comparisons may have different results for structurally equal values
             case If.ASTID =>
-                val If(_, left, _, right, _) = stmt
+                val If(_, left, _, right, _) = stmt: @unchecked
                 if (left.cTpe eq ComputationalTypeReference)
                     if (!(isLocal(left, CompileTimePure) || isLocal(right, CompileTimePure)))
                         atMost(SideEffectFree)

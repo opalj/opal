@@ -16,9 +16,9 @@ import org.opalj.br.MethodDescriptor
  * @author Michael Eichberg
  */
 trait MethodCallsHandling extends MethodCallsDomain {
-    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode =>
+    domain: ReferenceValuesDomain & TypedValuesFactory & Configuration & TheCode =>
 
-    protected[this] def getPotentialExceptions(pc: Int): List[ExceptionValue] = {
+    protected def getPotentialExceptions(pc: Int): List[ExceptionValue] = {
         val exceptionTypes: mutable.Set[ClassType] = mutable.Set.empty
         var exceptionValues: List[ExceptionValue] = List.empty
 
@@ -55,7 +55,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
     /** Factory method called to create a [[MethodCallResult]]. */
-    protected[this] def MethodCallResult(
+    protected def MethodCallResult(
         returnValue: DomainValue,
         exceptions:  Iterable[ExceptionValue]
     ): MethodCallResult = {
@@ -66,7 +66,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
     }
 
     /** Factory method called to create a [[MethodCallResult]]. */
-    protected[this] def MethodCallResult(
+    protected def MethodCallResult(
         potentialExceptions: Iterable[ExceptionValue]
     ): MethodCallResult = {
         if (potentialExceptions.isEmpty)
@@ -75,7 +75,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
             ComputationWithSideEffectOrException(potentialExceptions)
     }
 
-    protected[this] def handleInvoke(
+    protected def handleInvoke(
         pc:               Int,
         methodDescriptor: MethodDescriptor
     ): MethodCallResult = {
@@ -88,7 +88,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
         }
     }
 
-    protected[this] def handleInstanceBasedInvoke(
+    protected def handleInstanceBasedInvoke(
         pc:               Int,
         methodDescriptor: MethodDescriptor,
         receiverIsNull:   Answer
@@ -112,7 +112,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
             MethodCallResult(TypedValue(pc, returnType), potentialExceptions)
     }
 
-    protected[this] def handleInstanceBasedInvoke(
+    protected def handleInstanceBasedInvoke(
         pc:               Int,
         methodDescriptor: MethodDescriptor,
         operands:         Operands
@@ -130,7 +130,7 @@ trait MethodCallsHandling extends MethodCallsDomain {
      *      the [[MethodCallResult]] has to satisfy the requirements of the caller. In
      *      particular regarding the return type.
      */
-    protected[this] def handleInstanceBasedInvoke(
+    protected def handleInstanceBasedInvoke(
         pc:               Int,
         methodDescriptor: MethodDescriptor,
         targetMethods:    Set[Method],

@@ -68,9 +68,12 @@ private[mutable] final class FixedSizeBitSet64 extends FixedSizeBitSet { thisSet
     override def contains(i: Int): Boolean = (set & (1L << i)) != 0L
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] var i: Int = -1
-        private[this] def advanceIterator(): Unit = {
-            do { i += 1 } while (i < 64 && !thisSet.contains(i))
+        private var i: Int = -1
+        private def advanceIterator(): Unit = {
+            while {
+                i += 1
+                i < 64 && !thisSet.contains(i)
+            } do ()
         }
         advanceIterator()
         def hasNext: Boolean = i < 64
@@ -139,9 +142,12 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
     }
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] var i: Int = -1
-        private[this] def advanceIterator(): Unit = {
-            do { i += 1 } while (i < 128 && !thisSet.contains(i))
+        private var i: Int = -1
+        private def advanceIterator(): Unit = {
+            while {
+                i += 1
+                i < 128 && !thisSet.contains(i)
+            } do ()
         }
         advanceIterator()
         def hasNext: Boolean = i < 128
@@ -205,10 +211,13 @@ private[mutable] final class FixedSizeBitSetN private[mutable] (
     }
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] val max: Int = set.length * 64
-        private[this] var i: Int = -1
-        private[this] def advanceIterator(): Unit = {
-            do { i += 1 } while (i < max && !thisSet.contains(i))
+        private val max: Int = set.length * 64
+        private var i: Int = -1
+        private def advanceIterator(): Unit = {
+            while {
+                i += 1
+                i < max && !thisSet.contains(i)
+            } do ()
         }
         advanceIterator()
         def hasNext: Boolean = i < max

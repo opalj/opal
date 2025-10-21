@@ -2,9 +2,9 @@
 package org.opalj
 package concurrent
 
-import java.util.concurrent.{Future => JFuture}
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.Future as JFuture
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor
@@ -50,9 +50,9 @@ class OPALBoundedThreadPoolExecutor(
     override def afterExecute(r: Runnable, t: Throwable): Unit = {
         super.afterExecute(r, t)
         var e = t
-        if (e == null && r.isInstanceOf[JFuture[_]]) {
+        if (e == null && r.isInstanceOf[JFuture[?]]) {
             try {
-                r.asInstanceOf[JFuture[_]].get()
+                r.asInstanceOf[JFuture[?]].get()
             } catch {
                 case ce: CancellationException =>
                     e = ce

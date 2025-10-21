@@ -5,7 +5,7 @@ package tac
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 
 /**
@@ -21,7 +21,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
 
     val ControlSequencesClassFile = project.classFile(ControlSequencesType).get
 
-    import RelationalOperators._
+    import RelationalOperators.*
 
     val ICMPNEMethod = ControlSequencesClassFile.findMethod("icmpne").head
     val ICMPEQMethod = ControlSequencesClassFile.findMethod("icmpeq").head
