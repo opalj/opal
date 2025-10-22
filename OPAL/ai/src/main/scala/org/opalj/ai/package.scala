@@ -16,6 +16,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.AnyToAnyThis
+import org.opalj.util.elidedAssert
 
 /**
  * Implementation of an abstract interpretation (ai) framework.
@@ -49,7 +50,7 @@ package object ai {
         implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
-            assert(false) // <= tests whether assertions are on or off...
+            elidedAssert(false) // <= tests whether assertions are on or off...
             info(FrameworkName, "Production Build")
         } catch {
             case _: AssertionError => info(FrameworkName, "Development Build with Assertions")
