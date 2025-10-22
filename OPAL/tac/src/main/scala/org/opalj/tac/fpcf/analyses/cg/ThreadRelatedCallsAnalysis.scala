@@ -35,6 +35,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsReferenceValue
 
 class ThreadStartAnalysisResults extends IndirectCalls with VMReachableMethodsBase
@@ -448,7 +449,7 @@ class ThreadStartAnalysis private[cg] (
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
             )
 
-            assert(!declTgt.hasSingleDefinedMethod)
+            elidedAssert(!declTgt.hasSingleDefinedMethod)
 
             vmReachableMethods.addIncompleteCallSite(callPC)
             vmReachableMethods.addVMReachableMethod(declTgt)
@@ -616,7 +617,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
             )
 
-            assert(!declTgt.hasSingleDefinedMethod)
+            elidedAssert(!declTgt.hasSingleDefinedMethod)
 
             vmReachableMethods.addIncompleteCallSite(callPC)
             vmReachableMethods.addVMReachableMethod(declTgt)

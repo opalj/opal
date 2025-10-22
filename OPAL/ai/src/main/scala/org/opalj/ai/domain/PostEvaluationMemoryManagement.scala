@@ -4,6 +4,7 @@ package ai
 package domain
 
 import org.opalj.br.instructions.Instruction
+import org.opalj.util.elidedAssert
 
 /**
  * Provides the possibility to further update the memory layout (registers and operands)
@@ -28,12 +29,12 @@ trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
         newValueAfterEvaluation: DomainValue,
         newValueAfterException:  DomainValue
     ): Unit = {
-        assert(this.oldValue eq null, "another update is already registered")
+        elidedAssert(this.oldValue eq null, "another update is already registered")
 
-        assert(oldValue ne null)
-        assert((newValueAfterEvaluation ne null) || (newValueAfterException ne null))
-        assert(oldValue ne newValueAfterEvaluation, "useless self update")
-        assert(oldValue ne newValueAfterException, "useless self update")
+        elidedAssert(oldValue ne null)
+        elidedAssert((newValueAfterEvaluation ne null) || (newValueAfterException ne null))
+        elidedAssert(oldValue ne newValueAfterEvaluation, "useless self update")
+        elidedAssert(oldValue ne newValueAfterException, "useless self update")
 
         this.oldValue = oldValue
         this.newValueAfterEvaluation = newValueAfterEvaluation

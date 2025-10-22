@@ -23,6 +23,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
+import org.opalj.util.elidedAssert
 
 /**
  * This is used in [[TypePropagationAnalysis]] and logs all individual steps of the type propagation
@@ -134,7 +135,7 @@ object TypePropagationTrace {
     // turned on.
     def isEnabled: Boolean = {
         try {
-            assert(false)
+            elidedAssert(false)
             false
         } catch {
             case _: AssertionError => true

@@ -31,6 +31,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * An abstract escape analysis for a [[org.opalj.tac.common.DefinitionSiteLike]] or a
@@ -84,7 +85,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): ProperPropertyComputationResult = {
-        assert(state.tacai.isDefined)
+        elidedAssert(state.tacai.isDefined)
         // for every use-site, check its escape state
         for (use <- state.uses) {
             checkStmtForEscape(state.tacai.get.stmts(use))

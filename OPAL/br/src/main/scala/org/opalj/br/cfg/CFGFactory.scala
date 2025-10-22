@@ -26,6 +26,7 @@ import org.opalj.br.instructions.RET
 import org.opalj.br.instructions.TABLESWITCH
 import org.opalj.br.instructions.UnconditionalBranchInstruction
 import org.opalj.collection.immutable.IntArraySet
+import org.opalj.util.elidedAssert
 
 /**
  * A factory for computing control flow graphs for methods.
@@ -181,7 +182,7 @@ object CFGFactory {
                     sourceBB.addSuccessor(newTargetBB)
                     (sourceBB, newTargetBB)
                 } else {
-                    assert(
+                    elidedAssert(
                         targetBB.startPC == targetBBStartPC,
                         s"targetBB's startPC ${targetBB.startPC} does not equal $pc"
                     )
@@ -318,7 +319,7 @@ object CFGFactory {
                     runningBB = null
 
                 case _ /* INSTRUCTIONS THAT EITHER FALL THROUGH OR THROW A (JVM-BASED) EXCEPTION*/ =>
-                    assert(instruction.nextInstructions(pc, regularSuccessorsOnly = true).size == 1)
+                    elidedAssert(instruction.nextInstructions(pc, regularSuccessorsOnly = true).size == 1)
 
                     val currentBB = useRunningBB()
 

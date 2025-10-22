@@ -3,6 +3,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.util.elidedAssert
+
 /**
  * Common superclass of all instructions which are in their final form.
  *
@@ -142,7 +144,7 @@ object Instruction {
      * @see [[Instruction.isIsomorphic]] for further details.
      */
     def areIsomorphic(aPC: Int, bPC: Int)(implicit code: Code): Boolean = {
-        assert(aPC != bPC)
+        elidedAssert(aPC != bPC)
 
         code.instructions(aPC).isIsomorphic(aPC, bPC)
     }

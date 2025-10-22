@@ -23,6 +23,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NEW
+import org.opalj.util.elidedAssert
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -95,8 +96,8 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
         method:            Method,
         pcs:               List[Int /*PC*/ ]
     ): Option[InfiniteRecursion] = boundary {
-        assert(maxRecursionDepth > 1)
-        assert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
+        elidedAssert(maxRecursionDepth > 1)
+        elidedAssert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
 
         val body = method.body.get
         val parametersCount =

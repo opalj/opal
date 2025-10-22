@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package mutable
 
-import java.io.Serializable
+import org.opalj.util.elidedAssert
 
 /**
  * A bit set with a given upper bound for the largest value that can be stored in the set.
@@ -178,7 +178,7 @@ private[mutable] final class FixedSizeBitSetN private[mutable] (
     private val set: Array[Long]
 ) extends FixedSizeBitSet { thisSet =>
 
-    assert(set.length > 2)
+    elidedAssert(set.length > 2)
 
     override def isEmpty: Boolean = {
         val set = this.set

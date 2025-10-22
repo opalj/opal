@@ -51,6 +51,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.util.elidedAssert
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -210,7 +211,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             case pcAndInstr @ PCAndInstruction(_, `supercall`) => pcAndInstr
         }
 
-        assert(pcsOfSuperCalls.nonEmpty)
+        elidedAssert(pcsOfSuperCalls.nonEmpty)
 
         // there can be only one super call, so there must be an explicit call
         if (pcsOfSuperCalls.size > 1) {

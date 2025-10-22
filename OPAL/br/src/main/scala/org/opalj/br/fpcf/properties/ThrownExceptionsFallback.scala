@@ -51,6 +51,7 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.si.Project
+import org.opalj.util.elidedAssert
 
 /**
  * A very straight forward flow-insensitive analysis which can successfully analyze methods
@@ -244,7 +245,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
         }
         val areAllExceptionsCollected = code.forall(collectAllExceptions(_, _))
         if (!areAllExceptionsCollected) {
-            assert(result ne null)
+            elidedAssert(result ne null)
             return result;
         }
         if (fieldAccessMayThrowNullPointerException ||

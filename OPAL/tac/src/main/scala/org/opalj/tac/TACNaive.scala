@@ -16,6 +16,7 @@ import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.mutable.FixedSizeBitSet
 import org.opalj.tac.JSR
+import org.opalj.util.elidedAssert
 
 /**
  * Converts the bytecode of a method into a three address representation using a very naive
@@ -910,7 +911,7 @@ object TACNaive {
                     newEndIndex += 1
                 }
             }
-            assert(newStartIndex < newEndIndex, s"old: $oldEH => [$newStartIndex,$newEndIndex]")
+            elidedAssert(newStartIndex < newEndIndex, s"old: $oldEH => [$newStartIndex,$newEndIndex]")
             (newStartIndex, newEndIndex)
         }
 
@@ -941,7 +942,7 @@ object TACNaive {
                     endPC = newEndIndex,
                     handlerPC = newIndexes(old.handlerPC)
                 )
-                assert(
+                elidedAssert(
                     newEH.startPC <= newEH.endPC,
                     s"startPC=${old.startPC} => ${newEH.startPC};endPC=${old.endPC} => ${newEH.endPC}"
                 )

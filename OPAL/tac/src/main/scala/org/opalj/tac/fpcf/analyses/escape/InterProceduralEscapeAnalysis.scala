@@ -43,6 +43,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 class InterProceduralEscapeAnalysisContext(
@@ -186,7 +187,7 @@ object EagerInterProceduralEscapeAnalysis
 
         val methods = declaredMethods.declaredMethods
         val callersProperties = ps(methods.to(Iterable), Callers)
-        assert(callersProperties.forall(_.isFinal))
+        elidedAssert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map {
             v => v.e -> v.ub

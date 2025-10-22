@@ -8,6 +8,8 @@ import scala.annotation.switch
 import java.lang.Integer as JInt
 import java.lang.Long as JLong
 
+import org.opalj.util.elidedAssert
+
 /**
  * An effectively immutable trie set of long values where the elements are sorted based on the
  * insertion order.
@@ -324,7 +326,7 @@ private[immutable] object LongLinkedTrieSetNShared {
 
     def apply(sharedBits: Long, length: Int, n: LongLinkedTrieSetNode): LongLinkedTrieSetNode = {
 
-        assert(length >= 1)
+        elidedAssert(length >= 1)
 
         length match {
             case 1 =>

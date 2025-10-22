@@ -26,6 +26,7 @@ import org.opalj.collection.immutable.IdentityPair
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.UIDSet2
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsReferenceValue
@@ -127,7 +128,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * values are definitively not reference equal unless they are type incompatible.
      */
     override def refAreEqual(pc: Int, v1: DomainValue, v2: DomainValue): Answer = {
-        assert(v1.isInstanceOf[TheReferenceValue] && v2.isInstanceOf[TheReferenceValue])
+        elidedAssert(v1.isInstanceOf[TheReferenceValue] && v2.isInstanceOf[TheReferenceValue])
         if (v1 eq v2)
             return Yes;
 
@@ -325,7 +326,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             @tailrec def refine(value: AReferenceValue): AReferenceValue = {
                 val refinedValue = refinements.get(value)
                 if (refinedValue != null) {
-                    assert(refinedValue ne value)
+                    elidedAssert(refinedValue ne value)
                     refine(refinedValue)
                 } else {
                     value
@@ -367,7 +368,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             operands: Operands,
             locals:   Locals
         ): (Operands, Locals) = {
-            assert(oldValue ne newValue)
+            elidedAssert(oldValue ne newValue)
 
             val refinements = new Refinements()
             refinements.put(oldValue, newValue)
@@ -430,8 +431,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             operands: Operands,
             locals:   Locals
         ): (Operands, Locals) = {
-            assert(this.isNull.isUnknown)
-            assert( /*parameter*/ isNull.isYesOrNo)
+            elidedAssert(this.isNull.isUnknown)
+            elidedAssert( /*parameter*/ isNull.isYesOrNo)
 
             val refinedValue = doRefineIsNull(isNull)
             propagateRefinement(this, refinedValue, operands, locals)
@@ -455,7 +456,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         def doRefineUpperTypeBound(
             supertypes: UIDSet[? <: ReferenceType]
         ): DomainSingleOriginReferenceValue = {
-            assert(supertypes.nonEmpty)
+            elidedAssert(supertypes.nonEmpty)
 
             if (supertypes.isSingletonSet) {
                 doRefineUpperTypeBound(supertypes.head)
@@ -529,7 +530,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             other:  DomainValue
         ): Update[DomainValue] = {
 
-            assert(this ne other)
+            elidedAssert(this ne other)
 
             other match {
                 case DomainSingleOriginReferenceValueTag(that) =>
@@ -566,8 +567,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             origin: ValueOrigin = this.origin,
             isNull: Answer      = Yes
         ): DomainNullValue = {
-            assert(refId == domain.nullRefId, "null value with unexpected reference id")
-            assert(isNull.isYes, "a Null value's isNull property must be Yes")
+            elidedAssert(refId == domain.nullRefId, "null value with unexpected reference id")
+            elidedAssert(isNull.isYes, "a Null value's isNull property must be Yes")
 
             NullValue(origin)
         }
@@ -694,8 +695,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         with NonNullSingleOriginSReferenceValue[ArrayType] {
         this: DomainArrayValue =>
 
-        assert(this.isNull.isNoOrUnknown)
-        assert(this.isPrecise || !classHierarchy.isKnownToBeFinal(theUpperTypeBound))
+        elidedAssert(this.isNull.isNoOrUnknown)
+        elidedAssert(this.isPrecise || !classHierarchy.isKnownToBeFinal(theUpperTypeBound))
 
         override def updateRefId(
             refId:  RefId,
@@ -792,9 +793,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         with ObjectValue {
         this: DomainObjectValue =>
 
-        assert(this.isNull.isNoOrUnknown)
-        assert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || this.isPrecise)
-        assert(
+        elidedAssert(this.isNull.isNoOrUnknown)
+        elidedAssert(!classHierarchy.isKnownToBeFinal(theUpperTypeBound) || this.isPrecise)
+        elidedAssert(
             !this.isPrecise ||
                 !classHierarchy.isKnown(theUpperTypeBound) ||
                 classHierarchy.isInterface(theUpperTypeBound).isNo,
@@ -814,8 +815,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
             val thisUTB = this.theUpperTypeBound
 
-            assert(thisUTB ne supertype)
-            assert(
+            elidedAssert(thisUTB ne supertype)
+            elidedAssert(
                 !this.isPrecise || !domain.isSubtypeOf(supertype, thisUTB),
                 s"this type is precise ${thisUTB.toJava}; " +
                     s"refinement goal: ${supertype.toJava} " +
@@ -970,7 +971,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                  * models the upper type bound "Serializable & Cloneable"; otherwise
                  * the refinement is illegal
                  */
-                assert(this.upperTypeBound == ClassType.SerializableAndCloneable)
+                elidedAssert(this.upperTypeBound == ClassType.SerializableAndCloneable)
                 ArrayValue(origin, this.isNull, isPrecise = false, supertype.asArrayType, refId)
             }
         }
@@ -1075,12 +1076,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 nextRefId()
             )
 
-        assert(values.size > 1, "a MultipleReferenceValue must have multiple values")
-        assert(
+        elidedAssert(values.size > 1, "a MultipleReferenceValue must have multiple values")
+        elidedAssert(
             isNull.isNoOrUnknown || values.forall(_.isNull.isYesOrUnknown),
             s"inconsistent null property(isNull == $isNull): ${values.mkString(",")}"
         )
-        assert(
+        elidedAssert(
             (isNull.isYes && isPrecise) || {
                 val nonNullValues = values.filter(_.isNull.isNoOrUnknown)
                 (nonNullValues.isEmpty && isPrecise) || (
@@ -1091,13 +1092,13 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             },
             s"unexpected precision (precise == $isPrecise): $this"
         )
-        assert(
+        elidedAssert(
             !upperTypeBound.isSingletonSet || (
                 !classHierarchy.isKnownToBeFinal(upperTypeBound.head) || isPrecise
             ),
             s"isPrecise has to be true if the upper type bound belongs to final type $upperTypeBound"
         )
-        assert(
+        elidedAssert(
             (isNull.isYes && upperTypeBound.isEmpty) || (
                 isNull.isNoOrUnknown &&
                 upperTypeBound.nonEmpty && (
@@ -1112,7 +1113,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 s"== ${domain.upperTypeBound(values)} which is a strict subtype of " +
                 s"the given bound $upperTypeBound"
         )
-        assert(
+        elidedAssert(
             upperTypeBound.size < 2 || upperTypeBound.forall(_.isClassType),
             s"invalid upper type bound: $upperTypeBound for: ${values.mkString("[", ";", "]")}"
         )
@@ -1140,7 +1141,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         def addValue(newValue: DomainSingleOriginReferenceValue): DomainMultipleReferenceValues = {
 
-            assert(!values.exists(_.origin == newValue.origin))
+            elidedAssert(!values.exists(_.origin == newValue.origin))
 
             val thisUTB = this.upperTypeBound
             val newValueUTB = newValue.upperTypeBound
@@ -1167,12 +1168,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             joinedValue: DomainSingleOriginReferenceValue
         ): DomainMultipleReferenceValues = {
 
-            assert(oldValue ne joinValue)
-            assert(oldValue ne joinedValue)
-            assert(oldValue.origin == joinValue.origin)
-            assert(oldValue.origin == joinedValue.origin)
+            elidedAssert(oldValue ne joinValue)
+            elidedAssert(oldValue ne joinedValue)
+            elidedAssert(oldValue.origin == joinValue.origin)
+            elidedAssert(oldValue.origin == joinedValue.origin)
 
-            assert(values.exists(_ eq oldValue))
+            elidedAssert(values.exists(_ eq oldValue))
 
             val newValues = this.values - oldValue + joinedValue
             val newRefId = if (oldValue.refId == joinedValue.refId) this.refId else nextRefId()
@@ -1304,7 +1305,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         val refinedSingleOriginValue =
                             refinedValue.asInstanceOf[DomainSingleOriginReferenceValue]
 
-                        assert(refinedSingleOriginValue.origin == value.origin)
+                        elidedAssert(refinedSingleOriginValue.origin == value.origin)
 
                         refinedValues += refinedSingleOriginValue
                     }
@@ -1432,8 +1433,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             locals:   Locals
         ): (Operands, Locals) = {
 
-            assert(this.isNull.isUnknown)
-            assert(isNull.isYesOrNo)
+            elidedAssert(this.isNull.isUnknown)
+            elidedAssert(isNull.isYesOrNo)
 
             // Recall that this value's property – as a whole – can be undefined also
             // each individual value's property is well defined (Yes, No).
@@ -1628,7 +1629,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override protected def doJoin(joinPC: Int, other: DomainValue): Update[DomainValue] = {
-            assert(this ne other)
+            elidedAssert(this ne other)
 
             other match {
 
@@ -1736,8 +1737,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return justThrows(VMNullPointerException(pc));
 
-            assert(upperTypeBound.isSingletonSet, s"$upperTypeBound is not an array type")
-            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is not an array type")
+            elidedAssert(upperTypeBound.isSingletonSet, s"$upperTypeBound is not an array type")
+            elidedAssert(upperTypeBound.head.isArrayType, s"$upperTypeBound is not an array type")
 
             if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
@@ -1757,8 +1758,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return justThrows(VMNullPointerException(pc));
 
-            assert(upperTypeBound.isSingletonSet)
-            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound is not an array type")
+            elidedAssert(upperTypeBound.isSingletonSet)
+            elidedAssert(upperTypeBound.head.isArrayType, s"$upperTypeBound is not an array type")
 
             if (values.exists(_.isInstanceOf[ObjectValue])) {
                 var thrownExceptions: List[ExceptionValue] = Nil
@@ -1781,8 +1782,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (isNull.isYes)
                 return throws(VMNullPointerException(pc)); // <====== early return
 
-            assert(upperTypeBound.isSingletonSet)
-            assert(upperTypeBound.head.isArrayType, s"$upperTypeBound (values=$values)")
+            elidedAssert(upperTypeBound.isSingletonSet)
+            elidedAssert(upperTypeBound.head.isArrayType, s"$upperTypeBound (values=$values)")
 
             if (values.exists(_.isInstanceOf[ObjectValue])) {
                 if (isNull.isUnknown && throwNullPointerExceptionOnArrayAccess)

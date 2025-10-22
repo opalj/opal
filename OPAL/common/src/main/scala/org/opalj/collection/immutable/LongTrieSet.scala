@@ -450,7 +450,7 @@ private[immutable] final class LongTrieSetN(
     final val root: LongTrieSetNode
 ) extends LongTrieSet {
 
-    // assert(size >= 4)
+    // elidedAssert(size >= 4)
 
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false

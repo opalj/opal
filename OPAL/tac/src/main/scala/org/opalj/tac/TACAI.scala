@@ -35,6 +35,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.JSR
+import org.opalj.util.elidedAssert
 
 /**
  * Factory to convert the bytecode of a method into a three address representation using the
@@ -358,7 +359,7 @@ object TACAI {
             ): Unit = {
                 val usedBy = domain.usedBy(pc)
                 if (usedBy ne null) {
-                    // assert(usedBy.forall(_ >= 0)) // internal consistency only
+                    // elidedAssert(usedBy.forall(_ >= 0)) // internal consistency only
                     val localVal = DVar(aiResult.domain)(pc, v, usedBy)
                     addStmt(Assignment(pc, localVal, expr))
                 } else if (expr.isSideEffectFree) {
@@ -519,7 +520,7 @@ object TACAI {
                         addNOPAndKillOperandBasedUsages(2)
                     } else {
                         // This "if" is just a goto...
-                        assert(targetPC != nextPC)
+                        elidedAssert(targetPC != nextPC)
                         killOperandBasedUsages(pc, 2)
                         addStmt(Goto(pc, targetPC))
                     }
@@ -551,7 +552,7 @@ object TACAI {
                         addNOPAndKillOperandBasedUsages(1)
                     } else {
                         // This "if" is just a goto...
-                        assert(targetPC != nextPC)
+                        elidedAssert(targetPC != nextPC)
                         killOperandBasedUsages(pc, 1)
                         addStmt(Goto(pc, targetPC))
                     }

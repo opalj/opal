@@ -3,6 +3,7 @@ package org.opalj
 package fpcf
 
 import org.opalj.collection.ForeachRefIterator
+import org.opalj.util.elidedAssert
 
 /**
  * Encapsulates the (intermediate) result of the computation of a property.
@@ -397,7 +398,7 @@ case class InterimPartialResult[SE >: Null <: Property](
     c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
 
-    assert(dependees.nonEmpty)
+    elidedAssert(dependees.nonEmpty)
 
     override private[fpcf] def isInterimPartialResult: Boolean = true
     override private[fpcf] def asInterimPartialResult: InterimPartialResult[SE] = this

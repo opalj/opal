@@ -17,6 +17,7 @@ import com.typesafe.config.Config
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
+import org.opalj.util.elidedAssert
 
 /**
  * Yet another parallel property store.
@@ -217,7 +218,7 @@ class PKECPropertyStore(
                 case epkState =>
                     pc(epkState.eOptP.asInstanceOf[EOptionP[E, P]])
             }
-        assert(newInterimEP.isRefinable)
+        elidedAssert(newInterimEP.isRefinable)
         val newEPKState = EPKState(newInterimEP, null, null)
         propertiesOfKind.put(e, newEPKState)
     }
@@ -849,7 +850,7 @@ case class EPKState(
             } else {
                 updateComputation(theEOptP) match {
                     case Some(interimEP) =>
-                        if (ps.debug) assert(eOptP != interimEP)
+                        if (ps.debug) elidedAssert(eOptP != interimEP)
                         dependers.synchronized {
                             eOptP = interimEP
                             notifyAndClearDependers(theEOptP, dependers)

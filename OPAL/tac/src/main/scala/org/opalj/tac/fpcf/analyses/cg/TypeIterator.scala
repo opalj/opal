@@ -72,6 +72,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBu
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringConstPointsToSet
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsSArrayValue
@@ -1197,7 +1198,7 @@ class CFA_k_l_TypeIterator(project: SomeProject, val k: Int, val l: Int)
     extends AbstractAllocationSitesPointsToTypeIterator(project)
     with CallStringContextProvider {
 
-    assert(k > 0 && l > 0 && k >= l - 1)
+    elidedAssert(k > 0 && l > 0 && k >= l - 1)
 
     override def typesProperty(
         field:    DeclaredField,

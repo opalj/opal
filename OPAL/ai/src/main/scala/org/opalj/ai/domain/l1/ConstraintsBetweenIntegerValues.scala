@@ -11,6 +11,7 @@ import org.opalj.br.LiveVariables
 import org.opalj.br.instructions.Instruction
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.constraints.NumericConstraints
+import org.opalj.util.elidedAssert
 
 /**
  * Domain that traces the relationship between integer values; currently, the domain only
@@ -64,7 +65,7 @@ trait ConstraintsBetweenIntegerValues
         c:     Constraint
     ): ConstraintsStore = {
 
-        assert(v1 ne v2)
+        elidedAssert(v1 ne v2)
 
         var m = store.get(v1)
         if (m == null) {

@@ -23,6 +23,7 @@ import org.opalj.collection.binarySearch
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.insertedAt
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -84,10 +85,10 @@ final class ClassFile private (
 ) extends ConcreteSourceElement {
 
     methods.foreach { m =>
-        assert(m.declaringClassFile == null); m.declaringClassFile = this
+        elidedAssert(m.declaringClassFile == null); m.declaringClassFile = this
     }
     fields.foreach { f =>
-        assert(f.declaringClassFile == null); f.declaringClassFile = this
+        elidedAssert(f.declaringClassFile == null); f.declaringClassFile = this
     }
 
     /**
@@ -249,8 +250,8 @@ final class ClassFile private (
      * @note This method is primarily intended to be used to perform load-time transformations!
      */
     def _UNSAFE_replaceMethod(oldMethod: Method, newMethod: MethodTemplate): this.type = {
-        assert(oldMethod.name == newMethod.name)
-        assert(oldMethod.descriptor == newMethod.descriptor)
+        elidedAssert(oldMethod.name == newMethod.name)
+        elidedAssert(oldMethod.descriptor == newMethod.descriptor)
 
         val index = binarySearch[Method, JVMMethod](this.methods, oldMethod)
         val newPreparedMethod: Method = newMethod.prepareClassFileAttachement()
@@ -277,7 +278,7 @@ final class ClassFile private (
     def _UNSAFE_addMethod(methodTemplate: MethodTemplate): ClassFile = {
         val newMethod = methodTemplate.prepareClassFileAttachement()
 
-        assert(this.findMethod(newMethod.name, newMethod.descriptor).isEmpty)
+        elidedAssert(this.findMethod(newMethod.name, newMethod.descriptor).isEmpty)
 
         val index = binarySearch[Method, JVMMethod](this.methods, newMethod)
         if (index >= 0)
@@ -842,7 +843,7 @@ final class ClassFile private (
         name:        String,
         descriptor:  MethodDescriptor
     ): Result[Method] = {
-        assert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
+        elidedAssert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
 
         findMethod(name, descriptor).filter(m => !m.isStatic) match {
 

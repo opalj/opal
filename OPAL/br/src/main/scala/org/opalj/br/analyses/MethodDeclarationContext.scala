@@ -7,6 +7,7 @@ import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.VisibilityModifier
+import org.opalj.util.elidedAssert
 
 /**
  * Encapsulates the information about a '''non-abstract''', '''non-static''' method which is
@@ -25,8 +26,8 @@ import org.opalj.bi.VisibilityModifier
  */
 final class MethodDeclarationContext(val method: Method) extends Ordered[MethodDeclarationContext] {
 
-    assert(!method.isStatic)
-    assert(!method.isInitializer)
+    elidedAssert(!method.isStatic)
+    elidedAssert(!method.isInitializer)
 
     def declaringClassType: ClassType = method.declaringClassFile.thisType
     def packageName: String = declaringClassType.packageName
@@ -74,7 +75,7 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
     }
 
     def compareWithPublicMethod(thatMethod: Method): Int = {
-        assert(thatMethod.isPublic, s"${thatMethod.toJava} is not public")
+        elidedAssert(thatMethod.isPublic, s"${thatMethod.toJava} is not public")
         this.method.compare(thatMethod)
     }
 

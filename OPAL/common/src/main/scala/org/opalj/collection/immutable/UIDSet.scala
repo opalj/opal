@@ -904,7 +904,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
     }
 
     private def remove(eId: Int, shiftedEId: Int): UIDSetNodeLike[T] = {
-        // assert( size > 3) // i.e., after removal we still have a tree
+        // elidedAssert( size > 3) // i.e., after removal we still have a tree
         val value = this.value
         if (value.id == eId) {
             dropHead
