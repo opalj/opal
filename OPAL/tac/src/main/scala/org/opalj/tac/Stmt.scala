@@ -91,6 +91,7 @@ sealed abstract class Stmt[+V] extends ASTNode[V] {
     def isMonitorExit: Boolean = false
     def isThrow: Boolean = false
     def isArrayStore: Boolean = false
+    def isFieldWriteAccessStmt: Boolean = false
     def isPutStatic: Boolean = false
     def isPutField: Boolean = false
     def isMethodCall: Boolean = false
@@ -656,6 +657,7 @@ sealed abstract class FieldWriteAccessStmt[+V] extends Stmt[V] {
     def declaredFieldType: FieldType
     def value: Expr[V]
 
+    override final def isFieldWriteAccessStmt: Boolean = true
     override final def asFieldWriteAccessStmt: this.type = this
 
     /**

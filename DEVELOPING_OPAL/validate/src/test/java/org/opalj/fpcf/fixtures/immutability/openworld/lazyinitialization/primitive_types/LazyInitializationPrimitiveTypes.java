@@ -17,10 +17,10 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.L2FieldAssignabilityAnalys
 class Simple {
 
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
-    @MutableField(value = "The field is unsafely lazily initialized", analyses = { FieldImmutabilityAnalysis.class})
+    @MutableField(value = "The field is unsafely lazily initialized", analyses = { FieldImmutabilityAnalysis.class })
     @LazilyInitializedField(value = "Simple lazy initialization with primitive type", analyses = {})
-    @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
-            analyses = {L2FieldAssignabilityAnalysis.class})
+    @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -35,8 +35,8 @@ class Local {
 
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with local", analyses = {})
-    @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
-            analyses = {L2FieldAssignabilityAnalysis.class})
+    @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -67,8 +67,8 @@ class LocalReversed {
 
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with local (reversed)", analyses = {})
-    @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
-            analyses = {L2FieldAssignabilityAnalysis.class})
+    @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -84,8 +84,8 @@ class SimpleReversed {
 
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Simple lazy initialization (reversed)", analyses = {})
-    @UnsafelyLazilyInitializedField(value = "The analysis cannot reconizes determinism",
-            analyses = {L2FieldAssignabilityAnalysis.class})
+    @UnsafelyLazilyInitializedField(value = "The analysis cannot recognize determinism",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -123,7 +123,7 @@ class DeterministicCall {
     @LazilyInitializedField(value = "Lazy initialization with call to deterministic method", analyses = {})
     @MutableField("field is unsafely lazily initialized and has primitive value")
     @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
-            analyses = {L2FieldAssignabilityAnalysis.class})
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -161,7 +161,7 @@ class DeterministicCallOnFinalField {
     @TransitivelyImmutableField(value = "Field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with call to deterministic method ", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
-            analyses = {L2FieldAssignabilityAnalysis.class})
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int x;
 
     @NonAssignableField(value = "Declared final field")
@@ -173,8 +173,7 @@ class DeterministicCallOnFinalField {
 
     private final class Inner {
 
-        @NonAssignableField("field is final")
-        final int val;
+        @NonAssignableField("field is final") final int val;
 
         public Inner(int v) {
             val = v;
@@ -246,7 +245,7 @@ class DoubleLocalAssignment {
     @LazilyInitializedField(value = "Lazy initialization with a local that is updated twice with deterministic value",
             analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
-            analyses = {L2FieldAssignabilityAnalysis.class})
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -263,7 +262,7 @@ class DoubleAssignment {
 
     @UnsafelyLazilyInitializedField(value = "Field can be observed partially updated in single thread ", analyses = {})
     @AssignableField(value = "The analysis does not recognize multiple but inconsequential writes",
-            analyses = {L2FieldAssignabilityAnalysis.class})
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {

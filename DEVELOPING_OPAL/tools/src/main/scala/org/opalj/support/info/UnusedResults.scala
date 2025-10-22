@@ -40,7 +40,6 @@ import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
-import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
@@ -83,7 +82,7 @@ object UnusedResults extends ProjectsAnalysisApplication {
             LazyInterProceduralEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
-            LazyL1FieldAssignabilityAnalysis,
+            // TODO find LazyL1FieldAssignabilityAnalysis,
             LazyClassImmutabilityAnalysis,
             LazyTypeImmutabilityAnalysis,
             EagerL2PurityAnalysis
