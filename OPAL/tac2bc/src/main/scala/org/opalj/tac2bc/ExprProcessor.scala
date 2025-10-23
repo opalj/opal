@@ -154,7 +154,10 @@ object ExprProcessor {
         // Note that [[UnaryArithmeticOperators.Negate]] is the only UnaryArithmeticOperator used
         assert(prefixExpr.op eq UnaryArithmeticOperators.Negate)
         // Process the operand (the expression being negated)
-        tacContext.emitStmt(prefixExpr.operand.asVar.definedBy.head)
+        if (prefixExpr.operand.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(prefixExpr.operand.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(prefixExpr.operand.asVar.definedBy.head)
     }
 
     def processCompare(
@@ -195,8 +198,7 @@ object ExprProcessor {
 
         // Process each parameter
         for (param <- invokedynamicFunctionCall.params.reverse) {
-            //TODO braucht man hier?
-            if(param.asVar.definedBy.size > 1) {
+            if(param.asVar.definedBy.size > 1 || param.asVar.definedBy.head < 0) {
                 ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
             } else {
                 tacContext.emitStmt(param.asVar.definedBy.head)
@@ -306,7 +308,11 @@ object ExprProcessor {
         // 1. Process each parameter without receiver
         for (param <- call.params.reverse) {
             val definedByIdx = param.asVar.definedBy.head
-            tacContext.emitStmt(definedByIdx)
+
+            if(param.asVar.definedBy.head < 0)
+                ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
+            else
+                tacContext.emitStmt(definedByIdx)
         }
 
         // 2. With receiver
@@ -464,12 +470,20 @@ object ExprProcessor {
 
         binaryExpr.right match {
             case const: Const => ExprProcessor.loadConstant(const, code)
-            case uvar: UVar[_] => tacContext.emitStmt(uvar.definedBy.head)
+            case uvar: UVar[_] =>
+                if (uvar.definedBy.head < 0)
+                    ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
+                else
+                    tacContext.emitStmt(uvar.definedBy.head, delayStmtVisit = true)
         }
 
         binaryExpr.left match {
             case const: Const => ExprProcessor.loadConstant(const, code)
-            case uvar: UVar[_] => tacContext.emitStmt(uvar.definedBy.head)
+            case uvar: UVar[_] =>
+                if (uvar.definedBy.head < 0)
+                    ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
+                else
+                    tacContext.emitStmt(uvar.definedBy.head)
         }
     }
     def processPrimitiveTypeCastExpr(

@@ -302,7 +302,6 @@ object StmtProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext)
         code += {
             expr.cTpe match {
                 case ComputationalTypeInt       => IRETURN
@@ -313,6 +312,7 @@ object StmtProcessor {
                 case _                          => throw new UnsupportedOperationException("Unsupported computational type:" + expr.cTpe)
             }
         }
+        tacContext.emitStmt(expr.asVar.definedBy.head)
     }
 
     def processArrayStore(
@@ -461,8 +461,9 @@ object StmtProcessor {
         code:              mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:        Tac2BcContext
     ): Unit = {
-        ExprProcessor.processExpression(value, tacToLVIndex, code, tacContext)
+        //ExprProcessor.processExpression(value, tacToLVIndex, code, tacContext)
         code += PUTSTATIC(declaringClass, name, declaredFieldType)
+        tacContext.emitStmt(value.asVar.definedBy.head)
     }
 
     def processPutField(
@@ -548,10 +549,17 @@ object StmtProcessor {
         // process the right expr
         right match {
             case const: Const => ExprProcessor.loadConstant(const, code)
-            case uvar: UVar[_] => tacContext.emitStmt(uvar.definedBy.head, delayStmtVisit = true)
+            case uvar: UVar[_] =>
+                if (uvar.definedBy.head < 0)
+                    ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
+                else
+                    tacContext.emitStmt(uvar.definedBy.head, delayStmtVisit = true)
         }
 
         // process the left expr
-        tacContext.emitStmt(left.asVar.definedBy.head)
+        if (left.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(left.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(left.asVar.definedBy.head)
     }
 }
