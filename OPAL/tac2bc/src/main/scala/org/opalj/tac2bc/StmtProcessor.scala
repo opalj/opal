@@ -371,12 +371,8 @@ object StmtProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        ExprProcessor.processExpression(value, tacToLVIndex, code, tacContext)
         code += CHECKCAST(cmpTpe)
-        value match {
-            case variable: Var[V] => ExprProcessor.storeVariable(variable, tacToLVIndex, code)
-            case _                => throw new UnsupportedOperationException(s"Error with CheckCast. Expected a Var but got: $value")
-        }
+        tacContext.emitStmt(value.asVar.definedBy.head)
     }
 
     def processRet(returnAddresses: PCs, code: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
@@ -461,9 +457,11 @@ object StmtProcessor {
         code:              mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:        Tac2BcContext
     ): Unit = {
-        //ExprProcessor.processExpression(value, tacToLVIndex, code, tacContext)
         code += PUTSTATIC(declaringClass, name, declaredFieldType)
-        tacContext.emitStmt(value.asVar.definedBy.head)
+        if (value.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(value.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(value.asVar.definedBy.head)
     }
 
     def processPutField(
