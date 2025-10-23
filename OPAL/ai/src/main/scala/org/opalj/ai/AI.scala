@@ -25,6 +25,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.util.elidedAssert
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
@@ -237,11 +238,11 @@ abstract class AI[D <: Domain](
         val locals = someLocals.map { l =>
             val maxLocals = method.body.get.maxLocals
 
-            assert(
+            elidedAssert(
                 l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
                 "the number of initial locals is less than the number of parameters"
             )
-            assert(
+            elidedAssert(
                 l.size <= maxLocals,
                 s"the number of initial locals ${l.size} is larger than max locals $maxLocals"
             )
@@ -515,12 +516,12 @@ abstract class AI[D <: Domain](
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
 
-        assert(
+        elidedAssert(
             (theSubroutinesOperandsArray eq null) && (theSubroutinesLocalsArray eq null) ||
                 (theSubroutinesOperandsArray ne null) && (theSubroutinesLocalsArray ne null),
             "inconsistent subroutine information"
         )
-        assert(
+        elidedAssert(
             (theSubroutinesOperandsArray eq null) ||
                 theSubroutinesOperandsArray.zipWithIndex.forall { opsPC =>
                     val (ops, pc) = opsPC
@@ -926,7 +927,7 @@ abstract class AI[D <: Domain](
                     false
 
                 } else if (!forceJoin && !cfJoins.contains(targetPC)) {
-                    assert(abruptSubroutineTerminationCount == 0)
+                    elidedAssert(abruptSubroutineTerminationCount == 0)
 
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
@@ -1072,7 +1073,7 @@ abstract class AI[D <: Domain](
                     true
                 }
 
-            assert(
+            elidedAssert(
                 worklist.exists(_ == targetPC) == isTargetScheduled.isYesOrUnknown ||
                     worklist.forall(_ != targetPC) == isTargetScheduled.isNoOrUnknown,
                 s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled " +
@@ -1095,7 +1096,7 @@ abstract class AI[D <: Domain](
                     tracer
                 )
 
-            assert(
+            elidedAssert(
                 abruptSubroutineTerminationCount == 0 ||
                     !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
                 "an exception handler that handles the abrupt termination of a subroutine " +
@@ -1219,7 +1220,7 @@ abstract class AI[D <: Domain](
                             if (pc >= 0) {
                                 val currentOperands = operandsArray(pc)
                                 val currentLocals = localsArray(pc)
-                                assert(currentOperands ne null)
+                                elidedAssert(currentOperands ne null)
 
                                 val mergedOperands = subroutinesOperandsArray(pc)
                                 if (mergedOperands eq null) {
@@ -3306,7 +3307,7 @@ abstract class AI[D <: Domain](
                                         )
                                     // The following assert may catch bugs in the
                                     // implementation of domains!
-                                    assert(
+                                    elidedAssert(
                                         {
                                             val castedValue = newOperands.head
                                             theDomain.isValueASubtypeOf(castedValue, supertype).isYes

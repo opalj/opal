@@ -4,6 +4,7 @@ package collection
 package immutable
 
 import org.opalj.util.PerformanceEvaluation
+import org.opalj.util.elidedAssert
 
 object Long2ListEval extends App {
 
@@ -41,7 +42,7 @@ object Long2ListEval extends App {
                 l.iterator.sum
             } { t => println(s"iterator sum took ${t.toSeconds}") }
 
-        assert(sumForeach == sumIterator)
+        elidedAssert(sumForeach == sumIterator)
         println(s"summarized value: ${sumIterator}")
     }
 

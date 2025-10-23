@@ -7,6 +7,7 @@ package properties
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.util.elidedAssert
 
 sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = MethodComplexity
@@ -54,7 +55,7 @@ case class MethodComplexity(
 ) extends Property
     with MethodComplexityPropertyMetaInformation {
 
-    assert(value >= 0)
+    elidedAssert(value >= 0)
 
     final def key = MethodComplexity.key
 

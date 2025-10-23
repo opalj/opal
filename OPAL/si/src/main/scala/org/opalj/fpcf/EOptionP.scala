@@ -2,6 +2,8 @@
 package org.opalj
 package fpcf
 
+import org.opalj.util.elidedAssert
+
 /**
  * An entity associated with the current extension of a property or `None` if no (preliminary)
  * property is already computed.
@@ -538,8 +540,8 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
     val ub: P
 ) extends InterimEP[E, P] {
 
-    assert(lb != null)
-    assert(ub != null)
+    elidedAssert(lb != null)
+    elidedAssert(ub != null)
 
     if (PropertyStore.Debug && lb /*or ub*/ .isOrderedProperty) {
         val ubAsOP = ub.asOrderedProperty
@@ -578,7 +580,7 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
 object InterimELUBP {
 
     def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimELUBP[E, P] = {
-        assert(lb ne ub)
+        elidedAssert(lb ne ub)
         new InterimELUBP(e, lb, ub)
     }
 
@@ -599,7 +601,7 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
     val ub: P
 ) extends InterimEP[E, P] {
 
-    assert(ub != null)
+    elidedAssert(ub != null)
 
     override lazy val pk: PropertyKey[P] = ub.key.asInstanceOf[PropertyKey[P]]
 
@@ -715,7 +717,7 @@ final class InterimELBP[+E <: Entity, +P <: Property](
     val lb: P
 ) extends InterimEP[E, P] {
 
-    assert(lb != null)
+    elidedAssert(lb != null)
 
     override lazy val pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
 

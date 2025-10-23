@@ -49,7 +49,6 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimLUBP
 import org.opalj.fpcf.InterimResult
@@ -67,6 +66,7 @@ import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 class ReturnValueFreshnessState(val context: Context) {
     private var returnValueDependees: Map[Context, EOptionP[Context, ReturnValueFreshness]] = Map.empty
@@ -102,17 +102,17 @@ class ReturnValueFreshnessState(val context: Context) {
     def hasTacaiDependee: Boolean = tacaiDependee.isDefined
 
     def addMethodDependee(epOrEpk: EOptionP[Context, ReturnValueFreshness]): Unit = {
-        assert(!returnValueDependees.contains(epOrEpk.e))
+        elidedAssert(!returnValueDependees.contains(epOrEpk.e))
         returnValueDependees += epOrEpk.e -> epOrEpk
     }
 
     def addFieldDependee(epOrEpk: EOptionP[Field, FieldLocality]): Unit = {
-        assert(!fieldDependees.contains(epOrEpk.e))
+        elidedAssert(!fieldDependees.contains(epOrEpk.e))
         fieldDependees += epOrEpk.e -> epOrEpk
     }
 
     def addDefSiteDependee(epOrEpk: EOptionP[(Context, DefinitionSite), EscapeProperty]): Unit = {
-        assert(!defSiteDependees.contains(epOrEpk.e))
+        elidedAssert(!defSiteDependees.contains(epOrEpk.e))
         defSiteDependees += epOrEpk.e -> epOrEpk
     }
 

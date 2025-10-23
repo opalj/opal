@@ -13,6 +13,7 @@ import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.br.MethodDescriptor.DefaultConstructorDescriptor
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 /**
  * Provides helper methods to facilitate the generation of classes.
@@ -1013,7 +1014,7 @@ object ClassFileFactory {
         invocationInstruction: Opcode
     ): Code = {
 
-        assert(!receiverIsInterface || invocationInstruction != INVOKEVIRTUAL.opcode)
+        elidedAssert(!receiverIsInterface || invocationInstruction != INVOKEVIRTUAL.opcode)
 
         // If we have a constructor, we have to fix the method descriptor. Usually, the instruction
         // doesn't have a return type. For the proxy method, it is important to return the instance

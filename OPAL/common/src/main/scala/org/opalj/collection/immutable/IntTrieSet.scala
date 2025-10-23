@@ -3,6 +3,8 @@ package org.opalj
 package collection
 package immutable
 
+import org.opalj.util.elidedAssert
+
 /**
  * An unordered set of integer values backed by a trie set. The branching is done using
  * the least significant bit and values are only stored in leaf nodes. This ensure that
@@ -659,8 +661,8 @@ private[immutable] final class IntTrieSetN private[immutable] (
     var size:                     Int
 ) extends IntTrieSetNN { intSet =>
 
-    assert(left.size + right.size == size)
-    assert(size > 0) // <= can be "one" at construction time
+    elidedAssert(left.size + right.size == size)
+    elidedAssert(size > 0) // <= can be "one" at construction time
 
     override def hasMultipleElements: Boolean = size > 1
     override def exists(p: Int => Boolean): Boolean = left.exists(p) || right.exists(p)
@@ -761,7 +763,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
      * a cannonical representation.
      */
     override private[immutable] def constringe(): IntTrieSet = {
-        assert(size <= 2)
+        elidedAssert(size <= 2)
         if (left.isEmpty)
             right.constringe()
         else if (right.isEmpty)
@@ -855,7 +857,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
             }
         } else {
             // ...leftSize <= right.size
-            assert(right.nonEmpty)
+            elidedAssert(right.nonEmpty)
             if (right.isSingletonSet) {
                 // left.size \in {0,1}
                 IntRefPair(right.head, left.constringe())
@@ -917,7 +919,7 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
     private[immutable] var right: IntTrieSet // can't be empty, left is already empty
 ) extends IntTrieSetNN { intSet =>
 
-    assert(size > 0) // <= can be "one" at construction time
+    elidedAssert(size > 0) // <= can be "one" at construction time
 
     override def hasMultipleElements: Boolean = right.hasMultipleElements
     override def size: Int = right.size
@@ -983,7 +985,7 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
      * a cannonical representation.
      */
     override private[immutable] def constringe(): IntTrieSet = {
-        assert(size <= 2)
+        elidedAssert(size <= 2)
         right.constringe()
     }
 
@@ -1047,7 +1049,7 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
     private[immutable] var left: IntTrieSet // cannot be empty; right is empty
 ) extends IntTrieSetNN { intSet =>
 
-    assert(size > 0) // <= can be "one" at construction time
+    elidedAssert(size > 0) // <= can be "one" at construction time
 
     override def size: Int = left.size
     override def hasMultipleElements: Boolean = left.hasMultipleElements
@@ -1113,7 +1115,7 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
      * a cannonical representation.
      */
     override private[immutable] def constringe(): IntTrieSet = {
-        assert(size <= 2)
+        elidedAssert(size <= 2)
         left.constringe()
     }
 
@@ -1203,7 +1205,7 @@ object IntTrieSet {
 
     /** Constructs a new IntTrie from the two distinct(!) values. */
     def from(i1: Int, i2: Int): IntTrieSet = {
-        assert(i1 != i2)
+        elidedAssert(i1 != i2)
         // we have to ensure the same ordering as used when the values are
         // stored in the trie
         if ((Integer.lowestOneBit(i1 ^ i2) & i1) == 0) {

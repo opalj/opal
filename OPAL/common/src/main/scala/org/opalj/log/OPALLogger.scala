@@ -2,6 +2,8 @@
 package org.opalj
 package log
 
+import org.opalj.util.elidedAssert
+
 /**
  * Facilitates the logging of messages that are relevant for the end user.
  *
@@ -11,7 +13,6 @@ package log
  * @note   The OPALLogger framework is not intended to be used by developers to help
  *         debug analysis; it is intended to be used to inform (end)-users about the
  *         analysis progress.
- *
  * @author Michael Eichberg
  */
 trait OPALLogger {
@@ -71,8 +72,8 @@ object OPALLogger extends OPALLogger {
 
     def updateLogger(ctx: LogContext, logger: OPALLogger): Unit = this.synchronized {
         val id = ctx.id
-        assert(id != -1, "context is not yet registered")
-        assert(id != -2, "context is already unregistered")
+        elidedAssert(id != -1, "context is not yet registered")
+        elidedAssert(id != -2, "context is already unregistered")
         loggers(id) = logger
     }
 

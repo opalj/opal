@@ -27,6 +27,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * Manages the state of each method analyzed by [[TypePropagationAnalysis]].
@@ -89,7 +90,7 @@ final class TypePropagationState[ContextType <: Context](
     def isSeenCallee(pc: PC, callee: DeclaredMethod): Boolean = _seenCallees.contains((pc, callee))
 
     def addSeenCallee(pc: PC, callee: DeclaredMethod): Unit = {
-        assert(!isSeenCallee(pc, callee))
+        elidedAssert(!isSeenCallee(pc, callee))
         _seenCallees.add((pc, callee))
     }
 
@@ -161,7 +162,7 @@ final class TypePropagationState[ContextType <: Context](
     )(
         implicit classHierarchy: ClassHierarchy
     ): Boolean = {
-        assert(typeFilters.nonEmpty)
+        elidedAssert(typeFilters.nonEmpty)
         val alreadyExists = _forwardPropagationEntities.contains(typeSetEntity)
         if (!alreadyExists) {
             val compactedFilters = rootTypes(typeFilters)
@@ -207,7 +208,7 @@ final class TypePropagationState[ContextType <: Context](
     )(
         implicit classHierarchy: ClassHierarchy
     ): Boolean = {
-        assert(typeFilters.nonEmpty)
+        elidedAssert(typeFilters.nonEmpty)
         val alreadyExists = _backwardPropagationFilters.containsKey(typeSetEntity)
         if (!alreadyExists) {
             val compactedFilters = rootTypes(typeFilters)

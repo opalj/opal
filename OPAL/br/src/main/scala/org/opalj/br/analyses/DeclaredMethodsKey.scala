@@ -14,6 +14,7 @@ import org.opalj.br.ClassType.VarHandle
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
 import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
+import org.opalj.util.elidedAssert
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -102,7 +103,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 }
             )
 
-            assert(
+            elidedAssert(
                 (computedDM ne null) || {
                     computedDM = computeDeclaredMethod(0)
                     oldDm match {

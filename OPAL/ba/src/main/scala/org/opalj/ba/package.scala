@@ -58,6 +58,7 @@ import org.opalj.collection.immutable.UShortPair
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 /**
  * Implementation of an eDSL for creating Java bytecode. The eDSL is designed to facilitate
@@ -80,7 +81,7 @@ package object ba { ba =>
         implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
-            scala.Predef.assert(false)
+            elidedAssert(false)
             // when we reach this point assertions are off...
             info(FrameworkName, s"Production Build")
         } catch {

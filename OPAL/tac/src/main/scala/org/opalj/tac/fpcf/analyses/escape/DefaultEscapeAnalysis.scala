@@ -8,6 +8,7 @@ package escape
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.util.elidedAssert
 
 /**
  * A safe default implementation of the [[AbstractEscapeAnalysis]] that uses fallback values.
@@ -66,7 +67,7 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
     override protected def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        assert(call.name == "<init>")
+        elidedAssert(call.name == "<init>")
         if (state.usesDefSite(call.receiver))
             state.meetMostRestrictive(AtMost(NoEscape))
     }
@@ -81,7 +82,7 @@ trait DefaultEscapeAnalysis extends AbstractEscapeAnalysis {
     override protected def handleNonVirtualAndNonConstructorCall(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        assert(call.name != "<init>")
+        elidedAssert(call.name != "<init>")
         if (state.usesDefSite(call.receiver) || state.anyParameterUsesDefSite(call.params))
             state.meetMostRestrictive(AtMost(EscapeInCallee))
     }

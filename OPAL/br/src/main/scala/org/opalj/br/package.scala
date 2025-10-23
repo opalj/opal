@@ -17,6 +17,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.elidedAssert
 
 /**
  * In this representation of Java bytecode references to a Java class file's constant
@@ -40,7 +41,7 @@ package object br {
     {
         implicit val logContext: LogContext = GlobalLogContext
         try {
-            assert(false) // <= test whether assertions are turned on or off...
+            elidedAssert(false) // <= test whether assertions are turned on or off...
             info(FrameworkName, "Production Build")
         } catch {
             case _: AssertionError => info(FrameworkName, "Development Build with Assertions")

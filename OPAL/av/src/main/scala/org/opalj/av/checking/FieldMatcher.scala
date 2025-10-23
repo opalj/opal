@@ -10,6 +10,7 @@ import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.VirtualSourceElement
 import org.opalj.br.analyses.SomeProject
+import org.opalj.util.elidedAssert
 
 /**
  * Matches fields based on their name, type, annotations and declaring class.
@@ -64,7 +65,7 @@ object FieldMatcher {
         matchPrefix:          Boolean              = false
     ): FieldMatcher = {
 
-        assert(theName.isDefined || !matchPrefix)
+        elidedAssert(theName.isDefined || !matchPrefix)
 
         val nameMatcher: Option[NamePredicate] =
             theName match {

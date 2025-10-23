@@ -13,6 +13,7 @@ import org.opalj.br.PDUVar
 import org.opalj.br.PDVar
 import org.opalj.br.PUVar
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -120,7 +121,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
     private[tac] var useSites: IntTrieSet
 ) extends DUVar[Value] {
 
-    assert(origin >= 0)
+    elidedAssert(origin >= 0)
 
     def copy[V >: Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ ](
         origin:   ValueOrigin = this.origin,
@@ -157,7 +158,7 @@ class DVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
         pcToIndex:                    Array[Int],
         isIndexOfCaughtExceptionStmt: Int => Boolean
     ): Unit = {
-        assert(
+        elidedAssert(
             origin >= 0,
             s"DVars are not intended to be used to model parameters/exceptions (origin=$origin)"
         )
@@ -213,9 +214,9 @@ object DVar {
         useSites: IntTrieSet
     ): DVar[d.DomainValue] = {
 
-        assert(useSites != null, s"no uses (null) for $origin: $value")
-        assert(value != null)
-        assert(
+        elidedAssert(useSites != null, s"no uses (null) for $origin: $value")
+        elidedAssert(value != null)
+        elidedAssert(
             value == d.TheIllegalValue || value.computationalType != ComputationalTypeReturnAddress,
             s"value has unexpected computational type: $value"
         )

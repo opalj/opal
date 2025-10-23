@@ -5,6 +5,7 @@ package cfg
 import scala.collection.mutable
 
 import org.opalj.graphs.Node
+import org.opalj.util.elidedAssert
 
 /**
  * The common super trait of all nodes belonging to a method's control flow graph.
@@ -136,7 +137,7 @@ trait CFGNode extends Node {
      *        graph containing subroutines.
      */
     private[cfg] def subroutineFrontier(code: Code, bbs: Array[BasicBlock]): List[BasicBlock] = {
-        assert(this.isStartOfSubroutine)
+        elidedAssert(this.isStartOfSubroutine)
 
         var frontier: List[BasicBlock] = Nil
 

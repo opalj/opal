@@ -4,6 +4,7 @@ package org.opalj
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.elidedAssert
 
 /**
  * The fixpoint computations framework (`fpcf`) is a general framework to perform fixpoint
@@ -47,7 +48,7 @@ package object fpcf {
         // Log the information whether a production build or a development build is used.
         implicit val logContext: LogContext = GlobalLogContext
         try {
-            assert(false)
+            elidedAssert(false)
             // when we reach this point assertions are turned off
             info(FrameworkName, "Production Build")
         } catch {

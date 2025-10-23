@@ -69,6 +69,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.util.elidedAssert
 
 /**
  * Analysis of thrown exceptions; computes the [[org.opalj.br.fpcf.properties.ThrownExceptions]]
@@ -305,7 +306,7 @@ class L1ThrownExceptionsAnalysis(
         val areAllExceptionsCollected = code.forall(collectAllExceptions(_, _))
 
         if (!areAllExceptionsCollected) {
-            assert(
+            elidedAssert(
                 result ne null,
                 "all exceptions are expected to be collected but the set is null"
             )

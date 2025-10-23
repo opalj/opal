@@ -7,6 +7,7 @@ package l1
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br.*
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsLongValue
 
 /**
@@ -272,7 +273,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     ): LongValueOrArithmeticException = {
 
         val hasResults = results.nonEmpty
-        assert(exception || hasResults)
+        elidedAssert(exception || hasResults)
 
         if (hasResults) {
             if (results.size <= maxCardinalityOfLongSets) {

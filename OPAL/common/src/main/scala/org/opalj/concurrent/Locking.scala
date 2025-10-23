@@ -7,6 +7,8 @@ import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
 
+import org.opalj.util.elidedAssert
+
 /**
  * A basic facility to model shared and exclusive access to some functionality/data structure.
  *
@@ -78,7 +80,7 @@ object Locking {
                 }
             }
 
-        assert(allLocked || (error ne null))
+        elidedAssert(allLocked || (error ne null))
 
         try {
             if (allLocked) {

@@ -15,6 +15,7 @@ import org.opalj.br.instructions.LoadInt
 import org.opalj.br.instructions.LoadMethodHandle
 import org.opalj.br.instructions.LoadMethodType
 import org.opalj.br.instructions.LoadString
+import org.opalj.util.elidedAssert
 
 /**
  * This class can be used to (re)build a [[org.opalj.br.ClassFile]]'s constant pool.
@@ -413,7 +414,7 @@ object ConstantsBuffer {
         constantsBuffer.nextIndex = nextIndexAfterLDCRelatedEntries
         bootstrapMethods.foreach(_.arguments.foreach(CPEntryForBootstrapArgument))
 
-        assert(
+        elidedAssert(
             buffer.size == constantsBuffer.nextIndex,
             "constant pool contains holes:\n\t" +
                 ldcs.mkString("LDCs={", ", ", "}\n\t") +

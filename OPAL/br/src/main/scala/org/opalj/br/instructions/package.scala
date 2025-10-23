@@ -2,6 +2,8 @@
 package org.opalj
 package br
 
+import org.opalj.util.elidedAssert
+
 /**
  * Common instruction sequences.
  *
@@ -241,7 +243,7 @@ package object instructions {
 
             def unboxValue(wrapperType: Type): Array[Instruction] = {
                 val wid = wrapperType.id
-                assert(wid >= ClassType.Boolean.id && wid <= ClassType.Double.id)
+                elidedAssert(wid >= ClassType.Boolean.id && wid <= ClassType.Double.id)
 
                 unboxInstructions(wid)
             }

@@ -92,7 +92,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
             // In this case, it may happen that the returned value (Object in the above case)
             // suddenly becomes "less precise" than the declared return type.
             //
-            // assert(
+            // elidedAssert(
             //    returnedReferenceValue.isNull.isYes ||
             //         classHierarchy.isASubtypeOf(
             //             returnedReferenceValue.upperTypeBound,

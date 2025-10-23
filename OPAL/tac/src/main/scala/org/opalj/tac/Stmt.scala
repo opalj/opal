@@ -8,6 +8,7 @@ import org.opalj.br.*
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -148,7 +149,7 @@ case class If[+V](
     }
 
     override final def isSideEffectFree: Boolean = {
-        assert(left.isValueExpression && right.isValueExpression)
+        elidedAssert(left.isValueExpression && right.isValueExpression)
         true
     }
 
@@ -310,7 +311,7 @@ case class Switch[+V](
     ): Unit = {
         npairs = npairs.map { x =>
             val newIndex = pcToIndex(x._2)
-            // assert(newIndex >= 0)
+            // elidedAssert(newIndex >= 0)
             x.copy(_2 = newIndex)
         }
         defaultTarget = pcToIndex(defaultTarget)
@@ -324,7 +325,7 @@ case class Switch[+V](
     }
 
     override final def isSideEffectFree: Boolean = {
-        assert(index.isValueExpression)
+        elidedAssert(index.isValueExpression)
         true
     }
 
@@ -1051,7 +1052,7 @@ case class ExprStmt[+V](pc: Int, expr: Expr[V]) extends AssignmentLikeStmt[V] {
     }
 
     override final def isSideEffectFree: Boolean = {
-        assert(
+        elidedAssert(
             !expr.isSideEffectFree,
             "useless ExprStmt - the referenced expression is side-effect free"
         )

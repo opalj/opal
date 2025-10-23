@@ -7,6 +7,8 @@ import java.util.Arrays as JArrays
 import scala.collection.mutable.Builder
 import scala.compiletime.uninitialized
 
+import org.opalj.util.elidedAssert
+
 /**
  * A sorted set of integer values backed by an ordered array to store the values; this
  * guarantees log2(n) lookup.
@@ -136,7 +138,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
  */
 private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
 
-    assert(i1 < i2)
+    elidedAssert(i1 < i2)
 
     override def apply(index: Int): Int = {
         index match {
@@ -222,8 +224,8 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
  */
 private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
 
-    assert(i1 < i2, s"i1 < i2: $i1 >= $i2")
-    assert(i2 < i3, s"i2 < i3: $i2 >= $i3")
+    elidedAssert(i1 < i2, s"i1 < i2: $i1 >= $i2")
+    elidedAssert(i2 < i3, s"i2 < i3: $i2 >= $i3")
 
     override def apply(index: Int): Int = {
         index match {
@@ -339,7 +341,7 @@ case class IntArraySetN private[immutable] (
     private[immutable] val is: Array[Int]
 ) extends IntArraySet {
 
-    assert(is.length > 3)
+    elidedAssert(is.length > 3)
 
     override def apply(index: Int): Int = is(index)
     override def size: Int = is.length

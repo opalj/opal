@@ -77,6 +77,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.ASObjectValue
 
 import net.ceedubs.ficus.Ficus.*
@@ -391,7 +392,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         val stmt = state.tac.stmts(defSite)
-        assert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
+        elidedAssert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
 
         val rhs = stmt.asAssignment.expr
         if (rhs.isConst)
@@ -865,7 +866,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var s = 0
         while (s < stmtCount) {
             if (!checkPurityOfStmt(state.tac.stmts(s))) { // Early return for impure statements
-                assert(state.ubPurity.isInstanceOf[ClassifiedImpure])
+                elidedAssert(state.ubPurity.isInstanceOf[ClassifiedImpure])
                 return Result(state.context, state.ubPurity);
             }
             s += 1
@@ -873,7 +874,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         val callees = propertyStore(state.context.method, Callees.key)
         if (!checkPurityOfCallees(callees)) {
-            assert(state.ubPurity.isInstanceOf[ClassifiedImpure])
+            elidedAssert(state.ubPurity.isInstanceOf[ClassifiedImpure])
             return Result(state.context, state.ubPurity)
         }
 

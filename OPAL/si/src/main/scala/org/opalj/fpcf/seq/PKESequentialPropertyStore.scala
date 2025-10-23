@@ -16,6 +16,7 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug as trace
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.elidedAssert
 
 /**
  * A reasonably optimized, complete, but non-concurrent implementation of the property store.
@@ -181,7 +182,7 @@ final class PKESequentialPropertyStore protected (
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = {
         require(lb ne null)
         require(ub ne null)
-        assert(lb.key == ub.key)
+        elidedAssert(lb.key == ub.key)
         for { case ELUBP(e, `lb`, `ub`) <- ps(lb.id).valuesIterator } yield { e }
     }
 
@@ -652,7 +653,7 @@ final class PKESequentialPropertyStore protected (
                 } else {
                     // There was an update and we already scheduled the computation... hence,
                     // we have no live dependees any more.
-                    assert(newDependees == null || newDependees.isEmpty)
+                    elidedAssert(newDependees == null || newDependees.isEmpty)
                 }
 
             case InterimResult.id =>
@@ -665,8 +666,8 @@ final class PKESequentialPropertyStore protected (
                 val (newEPS, newDependees, newC) =
                     processDependeesOfInterimResult(eps, dependees, c)
 
-                assert(newEPS.e == eps.e)
-                assert(newEPS.pk == eps.pk)
+                elidedAssert(newEPS.e == eps.e)
+                elidedAssert(newEPS.pk == eps.pk)
 
                 // 2. update the value and trigger dependers/clear old dependees;
                 update(newEPS, newDependees)

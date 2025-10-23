@@ -2,6 +2,8 @@
 package org.opalj
 package br
 
+import org.opalj.util.elidedAssert
+
 /**
  * The optional enclosing method attribute of a class.
  *
@@ -9,7 +11,6 @@ package br
  *            The name is optional, but if defined, the descriptor also has to be defined.
  * @param     descriptor The method descriptor of the enclosing method.
  *            The descriptor is optional, but if defined, the name also has to be defined.
- *
  * @author Michael Eichberg
  */
 case class EnclosingMethod(
@@ -18,7 +19,7 @@ case class EnclosingMethod(
     descriptor: Option[MethodDescriptor]
 ) extends Attribute {
 
-    assert(name.isDefined == descriptor.isDefined)
+    elidedAssert(name.isDefined == descriptor.isDefined)
 
     override def kindId: Int = EnclosingMethod.KindId
 
