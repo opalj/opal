@@ -205,12 +205,12 @@ object InterpretMethodsAnalysis {
                     methodsCount.get + " methods (of " + project.methodsCount + ") in " +
                     project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
                     ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
-                    ")" + collectedExceptions.size + " exceptions occured.",
+                    ")" + collectedExceptions.size + " exceptions occurred.",
                 Some(file)
             )
         } else {
             (
-                "No exceptions occured during the interpretation of " +
+                "No exceptions occurred during the interpretation of " +
                     methodsCount.get + " methods (of " + project.methodsCount + ") in " +
                     project.classFilesCount + " classes\nreal time: " + getTime(Symbol("OVERALL")).toSeconds + "\n" +
                     "ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +

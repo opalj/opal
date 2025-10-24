@@ -137,7 +137,7 @@ object TestSupport {
 
     /**
      * @note     Using this method in combination with Scalatest, where the test cases are generated
-     *           inside the loop, may lead to the situation that the project's are not gc'ed before
+     *           inside the loop, may lead to the situation that the projects are not gc'ed before
      *           the entire test has completed!
      */
     def foreachBIProject(

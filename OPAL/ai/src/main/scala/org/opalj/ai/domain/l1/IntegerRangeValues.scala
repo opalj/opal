@@ -100,7 +100,7 @@ trait IntegerRangeValues
      * This setting is only used when true ranges are merged; in case of a join of two
      * concrete values we will always create an [[IntegerRangeLike]] value. If the cardinality
      * is exceeded, we will also first create ranges based on the boundaries determined
-     * by the defaul data types (byte,short,char).
+     * by the default data types (byte,short,char).
      *
      * This setting can be adapted at runtime.
      */
@@ -139,7 +139,7 @@ trait IntegerRangeValues
 
     /**
      * Represents a range of integer values. The range's bounds are inclusive.
-     * Unless a range has only one value it is impossible to tell whether or not
+     * Unless a range has only one value, it is impossible to tell whether or not
      * a value that is in the range will potentially occur at runtime.
      */
     abstract class IntegerRangeLike extends IntegerLikeValue {
@@ -550,7 +550,7 @@ trait IntegerRangeValues
                                 value1
                             else {
                                 // to identify overflows we simply do the "add" on long values
-                                // and check afterwards
+                                // and check afterward
                                 val lb: Long = lb1.toLong + lb2.toLong
                                 val ub: Long = ub1.toLong + ub2.toLong
                                 if (lb < Int.MinValue || ub > Int.MaxValue)
@@ -602,7 +602,7 @@ trait IntegerRangeValues
                 left match {
                     case IntegerRangeLike(llb, lub) =>
                         // to identify overflows we simply do the "add" on long values
-                        // and check afterwards
+                        // and check afterward
                         val lb = llb.toLong - rub.toLong
                         val ub = lub.toLong - rlb.toLong
                         if (lb < Int.MinValue || ub > Int.MaxValue)
@@ -673,7 +673,7 @@ trait IntegerRangeValues
 
             case (IntegerRangeLike(lb1, ub1), IntegerRangeLike(lb2, ub2)) =>
                 // to identify overflows we simply do the "mul" on long values
-                // and check afterwards
+                // and check afterward
                 val lb1l = lb1.toLong
                 val ub1l = ub1.toLong
                 val lb2l = lb2.toLong
@@ -1059,12 +1059,12 @@ trait IntegerRangeValues
                     // The min value is calculated by setting subBits to zero,
                     // since min neg value contains the most trailing zeros.
                     // The first right shift preserves the leading bits, since
-                    // the do not change.
+                    // they do not change.
                     val lb = (v1lb >> subBits) << subBits
 
                     // The max value is calculated by setting subBits to one,
                     // since this change can result into the max number. The
-                    // or operation leading preserves the leading bits, since
+                    // OR operation leading preserves the leading bits, since
                     // those bits do not change.
                     val ub = v1ub | ((1 << subBits) - 1)
 

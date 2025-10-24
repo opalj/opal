@@ -14,7 +14,7 @@ import net.ceedubs.ficus.Ficus.*
  *
  * This ''key'' reflectively instantiates the analysis that determines whether a package is closed
  * or not. The respective analysis has to extend the abstract [[ClosedPackages]] class.
- * To configure which analysis is used use the key
+ * To configure which analysis is used, use the key
  * `org.opalj.br.analyses.cg.ClosedPackagesKey.analysis` to specify the name of the class which
  * implements the analysis.
  *

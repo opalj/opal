@@ -259,10 +259,10 @@ package object da {
     }
 
     def abbreviateType(definingType: String, memberType: String): Node = {
-        val classAttrtibute = "type " + (if (definingType.indexOf('[') == -1) "object" else "array")
+        val classAttribute = "type " + (if (definingType.indexOf('[') == -1) "object" else "array")
 
         val abbreviatedMemberType = org.opalj.bytecode.abbreviateType(definingType, memberType, '.')
-        <span class={classAttrtibute} data-type={memberType}> {abbreviatedMemberType} </span>
+        <span class={classAttribute} data-type={memberType}> {abbreviatedMemberType} </span>
     }
 
     def byteArrayToNode(info: Array[Byte]): Node = {

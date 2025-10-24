@@ -31,7 +31,7 @@ class StringConstantsInformationKeyTest extends AnyFlatSpec with Matchers {
     behavior of "StringConstantsInformationKey"
 
     it should "collect all Strings in the strings project" in {
-        // expected is a lower bound.. more are in the project!
+        // expected is a lower bound. more are in the project!
         val expected = Set("List(", "1,2,3", ")", "yes", "no", "0123456789")
         val found = stringsProject.get(StringConstantsInformationKey).keys.toSet
         assert(expected.forall { found.contains })

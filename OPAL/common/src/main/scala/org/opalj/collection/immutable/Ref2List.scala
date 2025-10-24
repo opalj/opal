@@ -100,7 +100,7 @@ private[immutable] case object Ref2ListEnd extends Ref2List[Nothing] {
 }
 
 /**
- * An container for a list element.
+ * A container for a list element.
  *
  * @author Michael Eichberg
  */

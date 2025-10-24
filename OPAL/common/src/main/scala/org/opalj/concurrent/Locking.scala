@@ -21,13 +21,13 @@ trait Locking {
 
     /**
      * Acquires the write lock associated with this instance and then executes the function `f`.
-     * Afterwards, the lock is released.
+     * Afterward, the lock is released.
      */
     @inline protected final def withWriteLock[B](f: => B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
      * Acquires the read lock associated with this instance and then executes the function `f`.
-     * Afterwards, the lock is released.
+     * Afterward, the lock is released.
      */
     @inline protected final def withReadLock[B](f: => B): B = Locking.withReadLock(rwLock)(f)
 }
@@ -39,7 +39,7 @@ object Locking {
 
     /**
      * Acquires the write lock associated with this instance and then executes the function `f`.
-     * Afterwards, the lock is released.
+     * Afterward, the lock is released.
      */
     @inline final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: => B): B = {
         val lock = rwLock.writeLock()
@@ -55,7 +55,7 @@ object Locking {
 
     /**
      * Acquires all given locks in the given order and then executes the given function `f`.
-     * Afterwards all locks are released in reverse order.
+     * Afterward, all locks are released in reverse order.
      */
     @inline final def withWriteLocks[T](
         rwLocks: IterableOnce[ReentrantReadWriteLock]

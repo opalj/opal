@@ -29,7 +29,7 @@ import org.opalj.br.instructions.INVOKEDYNAMIC
 
 /**
  * This feature query corresponds to the Java8Invokedynamics.md test cases from the JCG call
- * graph test suite as well as some infrastructure incompatabile tests pertaining to JVM-hosted
+ * graph test suite as well as some infrastructure incompatible tests pertaining to JVM-hosted
  * languages that also use invokedynamics or Java 10 invokedynamics that are used to concatenate
  * Strings.
  *

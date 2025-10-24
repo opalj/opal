@@ -87,7 +87,7 @@ case object EmptyIntList extends IntList {
 }
 
 /**
- * An container for a list element.
+ * A container for a list element.
  *
  * @author Michael Eichberg
  */

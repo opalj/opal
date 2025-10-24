@@ -75,7 +75,7 @@ package object tac {
 
     /**
      * Identifies the implicit `this` reference in the 3-address code representation.
-     * -1 always identifies the origin of the self reference(`this`) if the the method is
+     * -1 always identifies the origin of the self reference(`this`) if the method is
      * an instance method; if the method is not an instance method the origin -1 is not used.
      */
     final val OriginOfThis /*: ValueOrigin*/ = -1

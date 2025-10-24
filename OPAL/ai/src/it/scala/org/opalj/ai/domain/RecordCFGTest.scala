@@ -201,7 +201,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                     s"[${root.getClass.getSimpleName}: ${root.getMessage}; location: $location] "
             }
 
-            val failuresHeader = s"${failures.size} exceptions occured in: \n"
+            val failuresHeader = s"${failures.size} exceptions occurred in: \n"
             val failuresInfo = failureMessages.mkString(failuresHeader, "\n", "\n")
             fail(failuresInfo)
         }

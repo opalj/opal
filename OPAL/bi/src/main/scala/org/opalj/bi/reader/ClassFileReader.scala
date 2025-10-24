@@ -449,7 +449,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 }(
                     // we can't use the OPALExecutionContext here, because the number of
                     // threads is bounded and (depending on the nesting level, we may need
-                    // more threads..)
+                    // more threads...)
                     using ExecutionContext.global
                 )
 
@@ -607,7 +607,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      *  - If the file object specifies a directory object, all ".class" files
      *    in the directory and in all subdirectories are loaded as well as all
      *    class files stored in ".jar" files in one of the directories. This class loads
-     *    all class files in parallel. However, this does not effect analyses working on the
+     *    all class files in parallel. However, this does not affect analyses working on the
      *    resulting `List`.
      */
     def ClassFiles(

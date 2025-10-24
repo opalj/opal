@@ -46,7 +46,7 @@ object FieldLocality extends ProjectsAnalysisApplication {
     ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (ps, _) = analysisConfig.setupPropertyStore(project)
-        analysisConfig.setupCallGaph(project)
+        analysisConfig.setupCallGraph(project)
 
         time {
             project.get(FPCFAnalysesManagerKey).runAll(

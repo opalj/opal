@@ -26,7 +26,7 @@ import org.opalj.log.OPALLogger
  * class is thread-safe.
  *
  * However, if multiple dependency extractors are executed concurrently and
- * share the same [[DependencyProcessor]] or the same `DepencencyExtractor`
+ * share the same [[DependencyProcessor]] or the same `DependencyExtractor`
  * is used by multiple threads concurrently, the [[DependencyProcessor]] has to be
  * thread-safe.
  *

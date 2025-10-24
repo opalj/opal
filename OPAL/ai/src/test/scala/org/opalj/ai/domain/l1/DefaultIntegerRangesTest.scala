@@ -101,7 +101,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue()))
             }
 
-            it("the rejoin of two ranges which exceed the max. card. should result in the same rane") {
+            it("the rejoin of two ranges which exceed the max. card. should result in the same range") {
                 val v1 = IntegerRange(lb = 0, ub = Char.MaxValue)
                 val v2 = IntegerRange(lb = 0, ub = Char.MaxValue)
                 v1.join(-1, v2) should be(MetaInformationUpdate(IntegerRange(lb = 0, ub = Char.MaxValue)))
@@ -1577,7 +1577,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 }
             }
 
-            it("(the dividend is a value 2^x and the divisor is a multiplikativ of 2^x) [32,32] % [16,16] => [0,15]") {
+            it("(the dividend is a value 2^x and the divisor is a multiplicative of 2^x) [32,32] % [16,16] => [0,15]") {
                 val v1 = IntegerRange(0, Int.MaxValue)
                 val v2 = IntegerRange(16, 16)
 
@@ -3310,7 +3310,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         }
 
-        describe("handling of complex dependent casts and moduluo operations") {
+        describe("handling of complex dependent casts and modulo operations") {
 
             it("the analysis should be correct in the presence of type casts (\"randomModulo\")") {
                 val domain = new DefaultIntegerRangesTestDomain(128)

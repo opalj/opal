@@ -49,7 +49,7 @@ object UnnecessarySynchronizationAnalysis extends ProjectsAnalysisApplication {
     ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (propertyStore, _) = analysisConfig.setupPropertyStore(project)
-        analysisConfig.setupCallGaph(project)
+        analysisConfig.setupCallGraph(project)
 
         time {
             project.get(FPCFAnalysesManagerKey).runAll(

@@ -41,7 +41,7 @@ import org.opalj.util.AnyToAnyThis
  *          code array is not completely filled (it contains `null` values) the
  *          preferred way to iterate over all instructions is to use for-comprehensions
  *          and pattern matching or to use one of the predefined methods [[foreach]],
- *          [[collect]], [[collectPair]], [[collectWithIndex]], etc..
+ *          [[collect]], [[collectPair]], [[collectWithIndex]], etc.
  *          The `instructions` array must not be mutated!
  *
  * @author Michael Eichberg
@@ -401,7 +401,7 @@ final class Code private (
      *
      * Note, that in case of completely broken code, set 2 may contain other
      * instructions than `return` and `athrow` instructions.
-     * If the code contains jsr/ret instructions, the full blown CFG is computed.
+     * If the code contains jsr/ret instructions, the full-blown CFG is computed.
      */
     def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, PCs) = {
         implicit val code: Code = this
@@ -449,7 +449,7 @@ final class Code private (
                     } else {
                         // This handles cases where we have totally broken code; e.g.,
                         // compile-time dead code at the end of the method where the
-                        // very last instruction is not even a ret/jsr/goto/return/atrow
+                        // very last instruction is not even a ret/jsr/goto/return/athrow
                         // instruction (e.g., a NOP instruction as in case of jPython
                         // related classes.)
                         exitPCs +!= pc
@@ -704,7 +704,7 @@ final class Code private (
     /**
      * Returns a view of all handlers (exception and finally handlers) for the
      * instruction with the given program counter (`pc`) that may catch an exception; as soon
-     * as a finally handler is found no further handlers will be returned!
+     * as a finally-handler is found no further handlers will be returned!
      *
      * In case of multiple exception handlers that are identical (in particular
      * in case of the finally handlers) only the first one is returned as that
@@ -743,7 +743,7 @@ final class Code private (
 
     /**
      * Returns a view of all potential exception handlers (if any) for the
-     * instruction with the given program counter (`pc`). `Finally` handlers
+     * instruction with the given program counter (`pc`). `Finally`-handlers
      * (`catchType == None`) are not returned but will stop the evaluation (as all further
      * exception handlers have no further meaning w.r.t. the runtime)!
      * In case of identical caught exceptions only the
@@ -780,7 +780,7 @@ final class Code private (
                     val isSubtype = isASubtypeOf(exception, catchType)
                     if (isSubtype.isYes) {
                         ehs += eh
-                        /* we found a definitiv matching handler*/
+                        /* we found a definitively matching handler*/
                         false
                     } else if (isSubtype.isUnknown) {
                         if (!handledExceptions.contains(catchType)) {
@@ -795,7 +795,7 @@ final class Code private (
                     }
                 } else {
                     ehs += eh
-                    /* we are done; we found a finally handler... */
+                    /* we are done; we found a finally-handler... */
                     false
                 }
             } else {
@@ -1003,7 +1003,7 @@ final class Code private (
     /**
      * Computes the set of PCs for which a stack map frame is required. Calling this method
      * (i.e., the generation of stack map tables in general) is only defined for Java > 5 code;
-     * i.e., cocde which does not use JSR/RET; therefore the behavior for Java 5 or earlier code
+     * i.e., code which does not use JSR/RET; therefore the behavior for Java 5 or earlier code
      * is deliberately undefined.
      *
      * @param classHierarchy The computation of the stack map table generally requires the
@@ -1369,7 +1369,7 @@ final class Code private (
      *
      * @param  pc           The program counter of an instruction that strictly dominates all
      *                      succeeding instructions up until the next instruction (as determined
-     *                      by [[#cfJoins]] where two or more paths join. If the pc belongs to an instruction
+     *                      by [[#cfJoins]]) where two or more paths join. If the pc belongs to an instruction
      *                      where multiple paths join, `false` will be returned.
      *
      * @param  anInvocation When the analysis finds a method call, it calls this method

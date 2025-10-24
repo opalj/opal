@@ -101,7 +101,7 @@ object StructuralAnalysis {
                 val newRegion = Region(regionType, subNodes.flatMap(_.nodeIds), entry)
 
                 // Compact
-                // Note that adding the new region to the graph and superGraph is done anyways since we add edges later
+                // Note that adding the new region to the graph and superGraph is done anyway since we add edges later
                 val maxPost = post.indexOf(subNodes.maxBy(post.indexOf))
                 post(maxPost) = newRegion
                 // Removing old regions from the graph is done later

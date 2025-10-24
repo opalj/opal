@@ -41,8 +41,8 @@ object CFGFactory {
     /**
      * Constructs the control flow graph for a given method.
      *
-     * The constructed [[CFG]] basically consists of the code's basic blocks. Additionally,
-     * two artifical exit nodes are added.
+     * The constructed [[CFG]] basically consists of the code's basic blocks. Additionally,
+     * two artificial exit nodes are added.
      * One artificial exit node is added to facilitate the navigation to all normal
      * return instructions. A second artificial node is added that enables the navigation
      * to all instructions that led to an abnormal return. Exception handlers are
@@ -345,7 +345,7 @@ object CFGFactory {
                                 }
                             }
                             if (!isHandled) {
-                                // also connect with exit unless we found a finally handler
+                                // also connect with exit unless we found a finally-handler
                                 currentBB.addSuccessor(abnormalReturnNode)
                                 abnormalReturnNode.addPredecessor(currentBB)
                             }

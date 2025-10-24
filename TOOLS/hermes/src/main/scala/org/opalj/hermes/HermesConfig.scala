@@ -50,7 +50,7 @@ trait HermesConfig {
             case t: Throwable =>
                 err.println(s"Failed while reading: $configFile; ${t.getMessage}")
                 System.exit(3)
-                // ... if System.exit does not terminate the app; this will at least kill the
+                // ... if System.exit does not terminate the app; this will at least kill
                 // the current call.
                 throw t;
         }

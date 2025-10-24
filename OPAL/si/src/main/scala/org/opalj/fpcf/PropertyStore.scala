@@ -74,12 +74,12 @@ import org.opalj.log.OPALLogger.info
  *    the first partial result has to set the property to the default (typically "most precise")
  *    value.'''
  *
- *  - '''Monoton''' a function which computes a property has to be monotonic.
+ *  - '''Monotone''' a function which computes a property has to be monotonic.
  *
  * ===Cyclic Dependencies===
  * In general, it may happen that some analyses are mutually dependent and therefore no
  * final value is directly computed. In this case the current extension (the most precise result)
- * of the properties are committed as the final values when the phase end. If the analyses only
+ * of the properties are committed as the final values when the phase ends. If the analyses only
  * computed a lower bound that one will be used.
  *
  * ==Thread Safety==
@@ -141,7 +141,7 @@ abstract class PropertyStore {
      * Attaches or returns some information associated with the property store using a key object.
      *
      * This method is thread-safe. However, the client which adds information to the store
-     * has to ensure that the overall process of adding/querying/removing is well defined and
+     * has to ensure that the overall process of adding/querying/removing is well-defined and
      * the ordered is ensured.
      */
     final def getOrCreateInformation[T <: AnyRef](key: AnyRef, f: => T): T = {
@@ -152,7 +152,7 @@ abstract class PropertyStore {
      * Returns the information stored in the store, if any.
      *
      * This method is thread-safe. However, the client which adds information to the store
-     * has to ensure that the overall process of adding/querying/removing is well defined and
+     * has to ensure that the overall process of adding/querying/removing is well-defined and
      * the ordered is ensured.
      */
     final def getInformation[T <: AnyRef](key: AnyRef): Option[T] = {
@@ -163,7 +163,7 @@ abstract class PropertyStore {
      * Returns the information stored in the store and removes the key, if any.
      *
      * This method is thread-safe. However, the client which adds information to the store
-     * has to ensure that the overall process of adding/querying/removing is well defined and
+     * has to ensure that the overall process of adding/querying/removing is well-defined and
      * the ordered is ensured.
      */
     final def getAndClearInformation[T <: AnyRef](key: AnyRef): Option[T] = {
@@ -197,7 +197,7 @@ abstract class PropertyStore {
 
     /**
      * If set to `true` no new computations will be scheduled and running computations will
-     * be terminated. Afterwards, the store can be queried, but no new computations can
+     * be terminated. Afterward, the store can be queried, but no new computations can
      * be started.
      */
     @volatile var doTerminate: Boolean = false
@@ -324,7 +324,7 @@ abstract class PropertyStore {
 
     /**
      * `true` if entities with a specific property kind (EP) may have dependers with suppressed
-     * notifications. (I.e., suppressInteriumUpdates("depender")("EP") is `true`.)
+     * notifications. (I.e., suppressInterimUpdates("depender")("EP") is `true`.)
      */
     protected final val hasSuppressedDependers: Array[Boolean] = {
         Array.fill(SupportedPropertyKinds) { false }
@@ -588,9 +588,9 @@ abstract class PropertyStore {
         // Step 1
         // Copy all property kinds that were computed in the previous phase that are no
         // longer computed to the "propertyKindsComputedInEarlierPhase" array.
-        // Afterwards, initialize the "propertyKindsComputedInThisPhase" with the given
+        // Afterward, initialize the "propertyKindsComputedInThisPhase" with the given
         // information.
-        // Note that "lazy" property computations may be executed accross several phases,
+        // Note that "lazy" property computations may be executed across several phases,
         // however, all "intermediate" values found at the end of a phase can still be executed.
         this.propertyKindsComputedInThisPhase.iterator.zipWithIndex foreach { previousPhaseComputedPK =>
             val (isComputed, pkId) = previousPhaseComputedPK
@@ -640,7 +640,7 @@ abstract class PropertyStore {
 
         // Step 5
         // Call `newPhaseInitialized` to enable subclasses to perform custom initialization steps
-        // when a phase was setup.
+        // when a phase was set up.
         newPhaseInitialized(
             propertyKindsComputedInThisPhase,
             propertyKindsComputedInLaterPhase,
@@ -839,7 +839,7 @@ abstract class PropertyStore {
      * guaranteed to be executed sequentially per E/PK pair). The primary use case is to
      * kick-start the computation of some e/pk as soon as an entity "becomes relevant".
      *
-     * In general, it also possible to have a standard analysis that just queries the properties
+     * In general, it is also possible to have a standard analysis that just queries the properties
      * of the respective entities and which maintains the list of dependees. However, if the
      * list of dependees becomes larger and (at least initially) encompasses a significant fraction
      * or even all entities of a specific kind, the overhead that is generated in the framework

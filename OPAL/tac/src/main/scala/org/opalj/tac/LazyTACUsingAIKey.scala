@@ -73,7 +73,7 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
             case Some(taCode) => taCode
             case None =>
                 val brCode = m.body.get
-                // Basically, we use double checked locking; we really don't want to
+                // Basically, we use double-checked locking; we really don't want to
                 // transform the code more than once!
                 brCode.synchronized {
                     taCodes.get(m) match {

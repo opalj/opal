@@ -23,7 +23,7 @@ public class AList {
     public void add(
             @AtMostEscapeViaParameter(value = "the parameter escapes via the array",
                     analyses = InterProceduralEscapeAnalysis.class)
-            @AtMostNoEscape(value = "SimpleEscapeAnalyis does not track formal parameters",
+            @AtMostNoEscape(value = "SimpleEscapeAnalysis does not track formal parameters",
                     analyses = SimpleEscapeAnalysis.class)
                     Object o
     ) {

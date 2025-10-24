@@ -88,7 +88,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
                     }
                 }
 
-            // Test if it make sense to continue the abstract interpretation or if the
+            // Test if it makes sense to continue the abstract interpretation or if the
             // return value information is already not more precise than the "return type".
             theReturnedValue match {
                 case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`))

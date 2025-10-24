@@ -77,7 +77,7 @@ trait DefaultTypeLevelReferenceValues
                     // the elementValue is "null"
                     assert(elementValue.isNull.isYes)
                     // e.g., it is possible to store null in the n-1 dimensions of
-                    // a n-dimensional array of primitive values
+                    // an n-dimensional array of primitive values
                     if (theUpperTypeBound.componentType.isReferenceType)
                         Yes
                     else

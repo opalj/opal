@@ -102,8 +102,8 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
                     } else if (newLB == thisLB && newUB == thisUB) {
                         // This is NOT a "NoUpdate" since we have two values that may
                         // have the same range, but which can still be two different
-                        // runtime values (they were not created at the same time!
-                        // The "CorrelationalDomain" will make sure that this udpate is
+                        // runtime values (they were not created at the same time!)
+                        // The "CorrelationalDomain" will make sure that this update is
                         // handled.
                         MetaInformationUpdate(IntegerRange(newLB, newUB))
                     } else if (thisLB == thisUB && otherLB == otherUB) {
@@ -111,7 +111,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
                         // create a "true" range.
                         StructuralUpdate(IntegerRange(newLB, newUB))
                     } else if (abs(newLB.toLong - newUB.toLong) > maxCardinalityOfIntegerRanges) {
-                        // let's just use one of the default ranges..
+                        // let's just use one of the default ranges
                         var adjustedNewLB: Int =
                             if (newLB < Short.MinValue) {
                                 Int.MinValue

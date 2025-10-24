@@ -86,7 +86,7 @@ object ObserverPatternUsage extends ProjectsAnalysisApplication {
         }
 
         val allObserverTypes = allObserverInterfaces ++
-            // we also want to include classes such as WindowAdapater which are
+            // we also want to include classes such as WindowAdapter which are
             // pure implementations of an observer interface
             (allObservers filter { observerType =>
                 if (project.classFile(observerType).isDefined) { // check that the project is complete

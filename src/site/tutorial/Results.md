@@ -64,7 +64,7 @@ IncrementalResult(Result(classFile, immutability), classHierarchy.allSubclassTyp
 ## PartialResult
 
 [`PartialResult`](/library/api/SNAPSHOT/org/opalj/fpcf/IncrementalResult.html) allows several analyses to collaboratively compute a single property (see the tutorial on [Collaborative Analyses](CollaborativeAnalyses.html)).
-A `PartialResult` is different from the other result types in that it does not take a property value, but, in addition to analyzed entity, the kind of property (identified by the [`PropertyKey`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyKey.html)) and a function that is applied to whatever value that entity/property kind pair currently has:
+A `PartialResult` is different from the other result types in that it does not take a property value, but, in addition to the analyzed entity, the kind of property (identified by the [`PropertyKey`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyKey.html)) and a function that is applied to whatever value that entity/property kind pair currently has:
 ```scala
 PartialResult[DeclaredMethod, Callers](method, Callers.key, {
     case InterimUBP(ub: Callers) =>

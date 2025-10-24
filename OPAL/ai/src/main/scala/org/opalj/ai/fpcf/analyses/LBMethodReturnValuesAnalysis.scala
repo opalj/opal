@@ -140,7 +140,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
                 ai,
                 method,
                 // We need a new instance, because the set may grow when compared to the
-                // last run; actually it may even shrink, but this is will likely only happen in
+                // last run; actually it may even shrink, but this will likely only happen in
                 // very rare cases and is not a problem.
                 dependees.clone()
             )
@@ -183,7 +183,7 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
-        // To ensure that subsequent analyses are able to pick-up the results of this
+        // To ensure that subsequent analyses are able to pick up the results of this
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelInvokeInstructions.
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(i =>

@@ -121,7 +121,7 @@ object InstructionCountBoundedAI {
             OPALLogger.warn(
                 "analysis configuration",
                 "evaluation (up to: " + upperBound.toInt +
-                    " instructions) may take execessively long" +
+                    " instructions) may take excessively long" +
                     "; instructions size=" + code.instructions.length +
                     "; exception handlers=" + code.exceptionHandlers.size +
                     "; maxEvaluationFactor=" + maxEvaluationFactor

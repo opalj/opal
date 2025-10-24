@@ -11,7 +11,7 @@ import org.opalj.control.fillIntArray
 
 /**
  * Defines a method to parse an array of bytes (containing Java bytecode instructions) and
- * to return an array of [[org.opalj.br.instructions.Instruction]]`s.
+ * to return an array of [[org.opalj.br.instructions.Instruction]]s.
  *
  * The target array has the same size as the source array to make sure that branch offsets
  * etc. point to the correct instruction.

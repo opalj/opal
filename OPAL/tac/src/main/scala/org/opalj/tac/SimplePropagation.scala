@@ -85,7 +85,7 @@ object SimplePropagation extends TACOptimization[Param, IdBasedVar, NaiveTACode[
 
                             case ReturnValue(nextPC, `trgtVar`) =>
                                 wasTransformed = true
-                                code(index) = Nop(pc) // it is impossible that we have another use..
+                                code(index) = Nop(pc) // it is impossible that we have another use...
                                 code(index + 1) = ReturnValue(nextPC, c)
 
                             case _ => // nothing to do

@@ -16,7 +16,7 @@ import scala.collection.immutable.ArraySeq
  *     values stored in the map; i.e., two different key objects have to have different
  *     hashcode values.
  *  1. The range of hashcode values returned by the keys has to be known and should be reasonably
- *     consecutive because an array will be preallocated to hold all values.
+ *     consecutive because an array will be pre-allocated to hold all values.
  *     (it can nevertheless start with an arbitrary int)
  *  1. The number of eventually stored key/values should be > 1/4 of the range of key values to
  *     amortize the costs of the underlying data-structures.

@@ -874,7 +874,7 @@ class ClassHierarchy private (
     /**
      * Returns the list of all super types in initialization order.
      * I.e., it will return the top level super class first - i.e., `java.lang.Object`
-     * and then all sub class types.
+     * and then all subclass types.
      *
      * If the given type is `java.lang.Object`, the empty list is returned.
      *
@@ -950,7 +950,7 @@ class ClassHierarchy private (
             // information!
             // This happens ONLY in case of broken projects where
             // the sub-supertype information is totally broken;
-            // e.g., a sub type `extends C` but C is an interface.
+            // e.g., a subtype `extends C` but C is an interface.
             supertypeInformation = interpolateSupertypeInformation(classType)
             supertypeInformationMap(cid) = supertypeInformation
         }
@@ -981,7 +981,7 @@ class ClassHierarchy private (
         if (supertypeInformation == null) {
             // The following is thread-safe, because we will always compute the same information!
             // This happens ONLY in case of broken projects where the sub-supertype information is
-            // totally broken; e.g., a sub type `extends C` but C is an interface.
+            // totally broken; e.g., a subtype `extends C` but C is an interface.
             supertypeInformation = interpolateSupertypeInformation(classType)
             supertypeInformationMap(cid) = supertypeInformation
         }
@@ -1270,7 +1270,7 @@ class ClassHierarchy private (
             if (supertype.isClassType)
                 isSubtypeOf(subtype.asClassType, supertype.asClassType)
             else
-                // the supertype is an array type..
+                // the supertype is an array type...
                 false
         } else {
             // the subtype is an array type
@@ -1748,7 +1748,7 @@ class ClassHierarchy private (
      * Determines whether the given [[ClassSignature]] of `subtype` implements or extends
      * the given `supertype`.
      * In case that the `subtype` does implement or extend the `supertype`, an `Option` of
-     * [[ClassTypeSignature]] is returned. Otherwise None will be returned.
+     * [[ClassTypeSignature]] is returned. Otherwise, None will be returned.
      *
      * @example
      *  subtype: [[ClassSignature]] from class A where A extends List<String>
@@ -1801,7 +1801,7 @@ class ClassHierarchy private (
      * of the class or interface type encoded in the [[ClassTypeSignature]] of the
      * `supertype`.
      *
-     * @note This method relies – in case of a comparison of non generic types – on
+     * @note This method relies – in case of a comparison of non-generic types – on
      *       `isSubtypeOf(org.opalj.br.ClassType,org.opalj.br.ClassType)` of `Project` which
      *        performs an upwards search only. E.g., given the following
      *      type hierarchy:
@@ -1836,7 +1836,7 @@ class ClassHierarchy private (
      *      subtype: List<String> // List<E>
      *      supertype: List<String> // List<E>
      *
-     *      If the ContainerType of the `subtype` is equal to the ContainerType of the `supertype` and non of the
+     *      If the ContainerType of the `subtype` is equal to the ContainerType of the `supertype` and none of the
      *      [[TypeArgument]]s has a [[VarianceIndicator]], then exists a subtype relation if and only if all of the
      *      [[TypeArgument]]s are equal.
      * @example ========= 2 =========
@@ -1846,7 +1846,7 @@ class ClassHierarchy private (
      *
      * Is the `subtype` a [[ConcreteType]] without [[org.opalj.br.FormalTypeParameter]]s and the `supertype` is a [[GenericType]] then
      * we first have to check whether the `subtype` is a subtype of the given `supertype`. If not, then the `subtype` is not an actual
-     * subtype of the given `supertype`. Otherwise we have to find the definition of the `supertype` in the type definition
+     * subtype of the given `supertype`. Otherwise, we have to find the definition of the `supertype` in the type definition
      * or the type definition of a super class or a super interface (interface definition of SomeInterface<String>).
      * Once found the `supertype`, we can compare all [[TypeArgument]]s of the supertype definition of the `subtype`
      * and the given `supertype`. (We are comparing String and String in this example)
@@ -1861,11 +1861,11 @@ class ClassHierarchy private (
      * our example the subtype Foo has two [[FormalTypeParameter]] (T,E) and the supertype Bar has only one
      * [[FormalTypeParameter]] (E). Since both of them specify E in the [[ClassSignature]] of Foo, they share E as
      * [[FormalTypeParameter]]. So it is necessary to check whether the actual bound [[TypeArgument]] at the
-     * position of E is equal. At first we have to locate the shared parameter in the [[ClassSignature]], so it is possible
-     * to find the correct [[TypeArgument]]s. The above example shows that the shared parameter E is in the second position
-     * of the [[FormalTypeParameter]]s of Foo and at the first position of the [[FormalTypeParameter]]s of Bar. Second and last
-     * we know can compare the according [[TypeArgument]]s. All other parameters can be ignored because they are no important
-     * to decide the subtype relation.
+     * position of E is equal. At first, we have to locate the shared parameter in the [[ClassSignature]], so it is
+     * possible to find the correct [[TypeArgument]]s. The above example shows that the shared parameter E is in the
+     * second position of the [[FormalTypeParameter]]s of Foo and at the first position of the [[FormalTypeParameter]]s
+     * of Bar. Second and last we know can compare the according [[TypeArgument]]s. All other parameters can be ignored
+     * because they are not important to decide the subtype relation.
      */
     def isASubtypeOf(
         subtype:   ClassTypeSignature,
@@ -2247,7 +2247,7 @@ class ClassHierarchy private (
      * @return (I) Returns (if reflexive is `true`) `upperTypeBoundA` if it is a supertype
      *      of at least one type of `upperTypeBoundB`.
      *      (II) Returns `upperTypeBoundB` if `upperTypeBoundA` is
-     *      a subtype of all types of `upperTypeBoundB`. Otherwise a new upper type
+     *      a subtype of all types of `upperTypeBoundB`. Otherwise, a new upper type
      *      bound is calculated and returned.
      */
     def joinClassTypes(
@@ -2522,7 +2522,7 @@ class ClassHierarchy private (
                    thatUpperTypeBound.elementType.isBaseType
         ) {
             // => the number of dimensions is the same, but the elementType isn't
-            //    (if the element type would be the same, both object reference would
+            //    (if the element-type would be the same, both object reference would
             //    refer to the same object and this would have been handled the very
             //    first test)
             // Scenario:
@@ -2717,7 +2717,7 @@ object ClassHierarchy {
      * Creates a `ClassHierarchy` that captures the type hierarchy related to
      * the exceptions thrown by specific Java bytecode instructions as well as
      * fundamental types such as Cloneable and Serializable and also those types
-     * related to reflection..
+     * related to reflection.
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
@@ -2788,7 +2788,7 @@ object ClassHierarchy {
      * Creates the class hierarchy by analyzing the given class files, the predefined
      * type declarations, and the specified predefined class hierarchies.
      *
-     * By default the class hierarchy related to the exceptions thrown by bytecode
+     * By default, the class hierarchy related to the exceptions thrown by bytecode
      * instructions are predefined as well as the class hierarchy related to the main
      * classes of the JDK.
      * See the file `ClassHierarchyJVMExceptions.ths`, `ClassHierarchyJLS.ths` and
@@ -3241,7 +3241,7 @@ object ClassHierarchy {
                         val supertypeId = supertype.id
                         supertypes(supertypeId) match {
                             case null =>
-                                // It may happen that we we will never have complete information about a
+                                // It may happen that we will never have complete information about a
                                 // superinterface type, because we have an incomplete project OR
                                 // that the class hierarchy is totally broken in the sense that
                                 // the super interface types are actually class types.

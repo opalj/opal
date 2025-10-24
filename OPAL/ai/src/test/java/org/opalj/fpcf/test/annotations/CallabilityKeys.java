@@ -17,7 +17,7 @@ package org.opalj.fpcf.test.annotations;
 public enum CallabilityKeys {
 	
 	/**
-	 * This has to be used if a method can't be inherit by any immediate non-abstract 
+	 * This has to be used if a method can't be inherited by any immediate non-abstract
 	 * subclass and due to this is overridden in every concrete subclass.
 	 */
 	NotClientCallable,

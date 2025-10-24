@@ -19,7 +19,7 @@ A marker interface is an empty interface. For example, `java.io.Serializable` or
 ## functional interfaces  
 *(Also called: single abstract method (SAM) interfaces)*
 
-> [Java 8 Lang. Spec.] A functional interface is an interface that has just one abstract method (aside from the methods of Object), and thus represents a single function contract. This "single" method may take the form of multiple abstract methods with override- equivalent signatures inherited from superinterfaces; in this case, the inherited methods logically represent a single method.
+> [Java 8 Lang. Spec.] A functional interface is an interface that has just one abstract method (aside from the methods of Object), and thus represents a single function contract. This "single" method may take the form of multiple abstract methods with override-equivalent signatures inherited from superinterfaces; in this case, the inherited methods logically represent a single method.
 
 Such interfaces are particularly used in combination with lambda expressions.
 

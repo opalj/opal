@@ -63,7 +63,7 @@ case class DocumentationComment(
 
     /**
      * Merges another comment into this comment.
-     * The datatype flag will not be merged. Reason for this is that datatypes are only used to describe entries, which cannot be merged anyways.
+     * The datatype flag will not be merged. Reason for this is that datatypes are only used to describe entries, which cannot be merged anyway.
      * @param comment accepts the comment that should be merged into this comment.
      * @return returns a merged DocumentationComment.
      */

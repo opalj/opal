@@ -76,7 +76,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                     }
                 }
                 if pcs.nonEmpty
-                result <- inifiniteRecursions(maxRecursionDepth, project, method, pcs)
+                result <- infiniteRecursions(maxRecursionDepth, project, method, pcs)
             } yield { result }
 
         (project, BasicReport(result.map(_.toString).mkString("\n")))
@@ -89,7 +89,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
      * `maxRecursionDepth` determines after how many non-recursive calls the analysis
      * is aborted.
      */
-    def inifiniteRecursions(
+    def infiniteRecursions(
         maxRecursionDepth: Int,
         project:           SomeProject,
         method:            Method,
@@ -116,7 +116,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                 if operandsArray(pc) ne null
                 nextCallOperands: domain.Operands = operandsArray(pc).take(parametersCount)
             } {
-                // IntegerRangeValues and ReferenceValues have useable equals semantics
+                // IntegerRangeValues and ReferenceValues have usable equals semantics
                 if (!callOperandsList.contains(nextCallOperands))
                     callOperandsList = nextCallOperands :: callOperandsList
             }

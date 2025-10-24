@@ -3,15 +3,13 @@ package org.opalj
 package collection
 package mutable
 
-import java.io.Serializable
-
 /**
  * A bit set with a given upper bound for the largest value that can be stored in the set.
  * The upper bound is only used to create an optimal underlying representation. It has no
  * impact on equals and/or hashcode computations. I.e., two sets with two different upper bounds
  * which contain the same values, are equal and have the same hashcode.
  *
- * Conceptually, the an array of long values is used to store the values.
+ * Conceptually, an array of long values is used to store the values.
  *
  * @note If values are added to the set that are larger than the specified size the behavior is
  *       undefined!
@@ -24,7 +22,7 @@ sealed abstract class FixedSizeBitSet extends BitSet with Serializable {
 
     /**
      * Adds the given value to the set if the value is not in the set and returns true;
-     * otherwise returns false. That is, the value is definitively in the set afterwards.
+     * otherwise returns false. That is, the value is definitively in the set afterward.
      */
     def add(i: Int): Boolean
 

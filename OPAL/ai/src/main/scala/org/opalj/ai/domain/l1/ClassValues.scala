@@ -38,7 +38,7 @@ import org.opalj.value.TheClassValue
  * class MyDomain
  *  extends DefaultTypeLevelInvokeInstructions
  *  with ClassValues
- *  with <DOES ANAYLZE INVOKE CALLS>
+ *  with <DOES ANALYZE INVOKE CALLS>
  * }}}
  *
  * @author Michael Eichberg (fixes for multi-parameter Class.forName(...) calls)

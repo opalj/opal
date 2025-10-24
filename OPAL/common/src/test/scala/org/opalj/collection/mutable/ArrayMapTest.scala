@@ -169,7 +169,7 @@ class ArrayMapTest extends AnyFlatSpec with Matchers {
         map.valuesIterator.map(_.intValue()).sum should be(0)
     }
 
-    it should ("have a useable map implementation") in {
+    it should ("have a usable map implementation") in {
         val map = ArrayMap.empty[Integer]
         map(0) = 0
         map(2) = 2

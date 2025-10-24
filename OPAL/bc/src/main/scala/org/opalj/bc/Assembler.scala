@@ -450,7 +450,7 @@ object Assembler {
                     val ovi = as[ObjectVariableInfo](vti)
                     writeByte(tag)
                     writeShort(ovi.cpool_index)
-                case VerificationTypeInfo.ITEM_Unitialized =>
+                case VerificationTypeInfo.ITEM_Uninitialized =>
                     val uvi = as[UninitializedVariableInfo](vti)
                     writeByte(tag)
                     writeShort(uvi.offset)

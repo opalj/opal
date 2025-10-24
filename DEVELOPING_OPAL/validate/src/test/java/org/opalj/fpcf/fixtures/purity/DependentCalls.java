@@ -155,7 +155,7 @@ final class DependentCalls { // This class is immutable
 
     // --------------------------------------------------------------------------------------------
     // The following methods are pure, but only if we know the pureness of the target method
-    // which we don't know if do not analyze the JDK!
+    // which we don't know if we do not analyze the JDK!
     //
 
     @CompileTimePure(value = "calls compile-time pure Math.abs",
@@ -214,7 +214,7 @@ final class DependentCalls { // This class is immutable
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Pure"))
     @Impure(value = "Math.abs not recognized as pure",
             eps = @EP(cf = Math.class, method = "abs(I)I", pk = "Purity", p = "Impure"))
-    static int cpureCallsAbsCalleeCalleeCalleCallee(int i) {
+    static int cpureCallsAbsCalleeCalleeCalleeCallee(int i) {
         return cpureCallsAbsCalleeCalleeCallee(1299);
     }
 
@@ -280,7 +280,7 @@ final class DependentCalls { // This class is immutable
 
     // --------------------------------------------------------------------------------------------
     // Two methods which are mutually dependent, but one depends on another pure method (where
-    // the latter is also part of a mutual recursive dependency.
+    // the latter is also part of a mutual recursive dependency).
     //
 
     @CompileTimePure("methods in all cycles are compile-time pure")
@@ -371,7 +371,7 @@ final class DependentCalls { // This class is immutable
     //
     @Impure("calls native function System.nanoTime()")
     public static int impureAtLast(int i) {
-        int v = cpureCallsAbsCalleeCalleeCalleCallee(i);
+        int v = cpureCallsAbsCalleeCalleeCalleeCallee(i);
         int u = impureRecursiveCallWithDependency1(impureRecursiveCallWithDependency2(v));
         int z = pureRecursiveCallWithDependency2(pureRecursiveCallWithDependency1(u));
         int l = pureClosedSCC2(pureClosedSCC1(pureClosedSCC0(z)));

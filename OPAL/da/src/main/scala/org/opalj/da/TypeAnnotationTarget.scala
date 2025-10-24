@@ -241,7 +241,7 @@ trait TATLocalvar extends TypeAnnotationTarget {
     def description: String
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(local variable occurences:{
+        <span class="type_annotation_target"><i>{description}[0x{tag.toHexString}]</i>(local variable occurrences:{
             localvarTable.map(_.toXHTML)
         })</span>
     }

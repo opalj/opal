@@ -220,7 +220,7 @@ object LazyInterProceduralEscapeAnalysis
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
-     * will call `ProperytStore.scheduleLazyComputation`.
+     * will call `PropertyStore.scheduleLazyComputation`.
      */
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)

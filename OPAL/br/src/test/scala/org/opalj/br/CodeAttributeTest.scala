@@ -124,7 +124,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
         instructions should be(
             Seq(
                 PCAndInstruction(0, ALOAD_0),
-                PCAndInstruction(1, GETFIELD(immutbleListClass, "e", ClassType.Object)),
+                PCAndInstruction(1, GETFIELD(immutableListClass, "e", ClassType.Object)),
                 PCAndInstruction(4, ARETURN)
             )
         )
@@ -150,7 +150,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
     behavior of "the \"Code\" attribute's firstLineNumber method"
 
-    it should "be able to correctly extract the line number for the first instruction of aconstructor" in {
+    it should "be able to correctly extract the line number for the first instruction of a äconstructor" in {
         codeOfConstructor.firstLineNumber should be(Some(18))
     }
     it should "be able to correctly extract the line number for the first instruction" in {
@@ -239,7 +239,7 @@ private object CodeAttributeTest {
             .find(_.name == "nestedCatch").get.body.get
 
     val boundedBufferClass = ClassType("code/BoundedBuffer")
-    val immutbleListClass = ClassType("code/ImmutableList")
+    val immutableListClass = ClassType("code/ImmutableList")
     val quickSortClass = ClassType("code/Quicksort")
 
     //
@@ -277,7 +277,7 @@ private object CodeAttributeTest {
     // The code of the "put" method is excepted to have the following bytecode:
     // Method descriptor #13 (I)V
     // Stack: 3, Locals: 2
-    //  public void put(int item) throws java.lang.InterruptedException;
+    //  public void put(int item) throws java.lang.InterruptedException {
     //     0  aload_0 [this]
     //     1  getfield code.BoundedBuffer.numberInBuffer : int [18]
     //     4  aload_0 [this]
@@ -324,7 +324,7 @@ private object CodeAttributeTest {
     //        [pc: 15, same]
     // }
 
-    val codeOfGet = project.classFile(immutbleListClass).get.methods.find(_.name == "get").get.body.get
+    val codeOfGet = project.classFile(immutableListClass).get.methods.find(_.name == "get").get.body.get
     // The code of get is as follows:
     // Method descriptor #30 ()Ljava/lang/Object;
     // Signature: ()TT;

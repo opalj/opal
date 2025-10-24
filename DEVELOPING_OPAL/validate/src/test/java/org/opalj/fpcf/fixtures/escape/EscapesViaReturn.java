@@ -29,7 +29,7 @@ public class EscapesViaReturn {
                 @AtMostEscapeViaReturn(
                         value = "intra-procedural analyses don't track the call but the domain does",
                         analyses = SimpleEscapeAnalysis.class)
-                @AtMostEscapeInCallee(value = "the domain does not recognize the identity", performInvokationsDomain = false)
+                @AtMostEscapeInCallee(value = "the domain does not recognize the identity", performInvocationsDomain = false)
                         Object();
         Object x = identity(o);
         return x;
@@ -39,7 +39,7 @@ public class EscapesViaReturn {
         Object o = new
                 @EscapeViaStaticField(
                         value = "the object is passed to an identity function and escapes")
-                @AtMostEscapeInCallee(value = "the domain does not recognize the identity", performInvokationsDomain = false)
+                @AtMostEscapeInCallee(value = "the domain does not recognize the identity", performInvocationsDomain = false)
                         Object();
         Object x = identity(o);
         if (x != null) {
@@ -47,7 +47,7 @@ public class EscapesViaReturn {
         }
     }
 
-    public void noEscapeAfterCallToIdentiy() {
+    public void noEscapeAfterCallToIdentity() {
         Object o = new
                 @EscapeInCallee(
                         value = "the object is passed to an identity function and not returned",
@@ -73,8 +73,8 @@ public class EscapesViaReturn {
 
     public Object escapeAfterCallToSometimesIdentity(boolean b) {
         Object o = new
-                @AtMostEscapeInCallee(value = "the object is passed to an identity like function", performInvokationsDomain = false)
-                @AtMostEscapeViaReturn(value = "the object is passed to an identity like function", performInvokationsDomain = true)
+                @AtMostEscapeInCallee(value = "the object is passed to an identity like function", performInvocationsDomain = false)
+                @AtMostEscapeViaReturn(value = "the object is passed to an identity like function", performInvocationsDomain = true)
                         Object();
         return sometimesIdentity(b, o);
     }

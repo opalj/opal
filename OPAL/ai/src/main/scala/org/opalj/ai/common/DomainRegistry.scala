@@ -13,7 +13,7 @@ import org.opalj.br.analyses.SomeProject
  * body.
  *
  * The registry was developed to support tools for enabling the automatic selection of a domain
- * that satisfies a given set of requirements; it also support debugging purposes that let
+ * that satisfies a given set of requirements; it also supports debugging purposes that let
  * the user/developer choose between different domains. After choosing a domain,
  * an abstract interpretation can be performed.
  *
@@ -130,7 +130,7 @@ object DomainRegistry {
                 // we already have a less precise domain...
                 c
             } else {
-                // This one is less precise than all other, is one the other acutally
+                // This one is less precise than all other, is one of the other actually
                 // more precise than N
                 c.filter(c => !allLessPreciseDomains(c).contains(n)) + n
             }

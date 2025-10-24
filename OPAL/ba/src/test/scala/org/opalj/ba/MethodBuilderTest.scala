@@ -68,8 +68,8 @@ class MethodBuilderTest extends AnyFlatSpec {
     val brClassFile = J8ClassFile(() => new java.io.ByteArrayInputStream(rawClassFile)).head
 
     val testMethod = brClassFile.methods.find { m =>
-        val expectedMethodDescritor = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/String;")
-        m.name == "testMethod" && m.descriptor == expectedMethodDescritor
+        val expectedMethodDescriptor = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/String;")
+        m.name == "testMethod" && m.descriptor == expectedMethodDescriptor
     }
 
     it should "have the correct signature: (Ljava/lang/String;)Ljava/lang/String;" in {

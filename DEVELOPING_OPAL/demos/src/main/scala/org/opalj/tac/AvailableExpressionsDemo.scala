@@ -2,7 +2,7 @@
 package org.opalj
 package tac
 
-/** Just a very simple class to demonstrate the available expressions analysis. */
+/** Just a very simple class to demonstrate the available-expressions analysis. */
 class AvailableExpressionsDemo {
 
     def simple(a: Int, b: Int): Unit = {

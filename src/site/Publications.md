@@ -1,6 +1,6 @@
 # Publications
 
-This page lists publications around OPAL, both [core contributions](#core-papers) to the framework as well as [further research](#research-using-opal) that uses OPAL.
+This page lists publications around OPAL, both [core contributions](#core-papers) to the framework and [further research](#research-using-opal) that uses OPAL.
 There are also links to [related presentations](#related-presentations) below.
 
 ## Citing OPAL

@@ -241,7 +241,7 @@ final class PKESequentialPropertyStore protected (
                                     // Add this transformer as a depender to the transformer's
                                     // source; this works, because notifications about intermediate
                                     // values are suppressed.
-                                    // This will happen only once, because afterwards an EPK
+                                    // This will happen only once, because afterward, an EPK
                                     // will be stored in the properties data structure and
                                     // then returned.
                                     val c: OnUpdateContinuation = (eps) => {
@@ -651,7 +651,7 @@ final class PKESequentialPropertyStore protected (
                     dependees(AnalysisKeyId).put(sourceE, newDependees)
                 } else {
                     // There was an update and we already scheduled the computation... hence,
-                    // we have no live dependees any more.
+                    // we have no live dependees anymore.
                     assert(newDependees == null || newDependees.isEmpty)
                 }
 
@@ -725,7 +725,7 @@ final class PKESequentialPropertyStore protected (
 
             // We have reached quiescence....
 
-            // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
+            // 1. Let's search for all EPKs (not EPS) and use the fallback for them.
             //    (Recall that we return fallback properties eagerly if no analysis is
             //     scheduled or will be scheduled, However, it is still possible that we will
             //     not have computed a property for a specific entity, if the underlying

@@ -94,7 +94,7 @@ case object Int2ListEnd extends Int2List {
 }
 
 /**
- * An container for a list element.
+ * A container for a list element.
  *
  * @author Michael Eichberg
  */

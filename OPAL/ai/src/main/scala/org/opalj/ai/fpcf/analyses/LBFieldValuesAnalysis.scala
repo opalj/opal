@@ -65,7 +65,7 @@ import org.opalj.log.OPALLogger
  *
  * @note
  * ADDITIONALLY, WE HAVE TO IGNORE THOSE FIELDS WHICH SEEMS TO BE ALWAYS NULL BECAUSE  THESE
- * FIELDS ARE OFTEN INITIALZED - AT RUNTIME - BY SOME CODE OUTSIDE THE SCOPE OF "PURE" JAVA BASED
+ * FIELDS ARE OFTEN INITIALIZED - AT RUNTIME - BY SOME CODE OUTSIDE THE SCOPE OF "PURE" JAVA BASED
  * ANALYSES.
  *
  * E.G., WE IGNORE THE FOLLOWING FIELDS FROM JAVA 8:
@@ -87,7 +87,7 @@ import org.opalj.log.OPALLogger
  *  - [OK] javax.swing.JList.AccessibleJList.AccessibleJListChild{ component:null }
  *  - [OK] com.sun.corba.se.impl.io.IIOPInputStream{ abortIOException:null }
  *  - [OK] com.sun.corba.se.impl.orb.ORBImpl{ codeBaseIOR:null }
- *  - [OK - ACCIDENTIALLY CREATED?] com.sun.org.apache.xpath.internal.jaxp.XPathImpl{ d:null }
+ *  - [OK - ACCIDENTALLY CREATED?] com.sun.org.apache.xpath.internal.jaxp.XPathImpl{ d:null }
  *  - [OK - LEGACY CODE?] javax.swing.JPopupMenu{ margin:null }
  *  - [OK - LEGACY CODE?] sun.audio.AudioDevice{ mixer:null }
  *  - [OK - RESERVED FOR FUTURE USAGE] com.sun.corba.se.impl.corba.ServerRequestImpl{ _ctx:null }
@@ -201,7 +201,7 @@ class LBFieldValuesAnalysis private[analyses] (
 
         /**
          * Sets the method that is currently analyzed. This method '''must not be called'''
-         * during the abstract interpretation of a method. It is must be called
+         * during the abstract interpretation of a method. It must be called
          * before this domain is used for the first time and immediately before the
          * interpretation of the next method (code block) starts.
          */
@@ -345,7 +345,7 @@ class LBFieldValuesAnalysis private[analyses] (
                                     // e.g.
                                     // {{{
                                     //  val o = Foo.m() // initially returns "some object"
-                                    //  o.toString // no precisely resolvables
+                                    //  o.toString // no precisely resolvable
                                     //  // if now, m() is known to return only String objects
                                     //  // o.toString becomes resolvable!
                                     // }}}
@@ -446,7 +446,7 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
     )
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
-        // To ensure that subsequent analyses are able to pick-up the results of this
+        // To ensure that subsequent analyses are able to pick up the results of this
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelFieldAccessInstructions.
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(i =>

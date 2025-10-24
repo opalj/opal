@@ -148,6 +148,6 @@ object MethodCompletionInstruction {
 
 object NoMethodCompletionInstruction {
 
-    def unappy(i: Instruction): Boolean = !MethodCompletionInstruction.unapply(i)
+    def unapply(i: Instruction): Boolean = !MethodCompletionInstruction.unapply(i)
 
 }

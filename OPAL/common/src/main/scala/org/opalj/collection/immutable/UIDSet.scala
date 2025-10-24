@@ -1006,7 +1006,6 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
 
 }
 
-// we wan't to be able to adapt the case class...
 final class UIDSetInnerNode[T <: UID] private[immutable] (
     protected var theSize:          Int,
     protected[immutable] var value: T,

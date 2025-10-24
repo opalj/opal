@@ -110,9 +110,9 @@ class ClassValuesTest extends AnyFlatSpec with Matchers {
         c1.join(-1, c2) should be(c2.join(-1, c1))
     }
 
-    it should ("be able to trace static class values of primitves") in {
+    it should ("be able to trace static class values of primitives") in {
         val domain = new RecordingDomain
-        val method = classFile.methods.find(m => m.name == "staticPrimitveClassValue").get
+        val method = classFile.methods.find(m => m.name == "staticPrimitiveClassValue").get
         BaseAI(method, domain)
         domain.returnedValue.map(_.asInstanceOf[domain.DomainClassValue].value) should be(Some(IntegerType))
     }

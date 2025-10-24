@@ -13,7 +13,7 @@ import scala.collection.immutable
  *      have meaningful `equals` and `hashCode` methods. (Depending on the purpose
  *      of the abstract interpretation, reference equality may be sufficient.)
  *
- * @note This domain is only effective if the calculation of joins is fast. Otherwise
+ * @note This domain is only effective if the calculation of joins is fast. Otherwise,
  *      it can significantly hamper overall performance!
  *
  * @author Michael Eichberg

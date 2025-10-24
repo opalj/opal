@@ -119,7 +119,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
         val constant_pool_count = in.readUnsignedShort
 
         /*
-         * The format of each constant_pool table entry is indicated by its ﬁrst
+         * The format of each constant_pool table entry is indicated by its first
          * “tag” byte.
          *
          * The constant_pool table is indexed from 1 to constant_pool_count−1.

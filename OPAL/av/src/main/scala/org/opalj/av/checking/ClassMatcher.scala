@@ -54,7 +54,7 @@ case class DefaultClassMatcher(
     namePredicate:            NamePredicate        = RegexNamePredicate(""".*""".r),
     annotationsPredicate:     AnnotationsPredicate = AnyAnnotations,
     matchSubclasses:          Boolean              = false,
-    matchImplementingclasses: Boolean              = false,
+    matchImplementingClasses: Boolean              = false,
     matchMethods:             Boolean              = true,
     matchFields:              Boolean              = true
 ) extends ClassMatcher {
@@ -87,7 +87,7 @@ case class DefaultClassMatcher(
         val classFileName = classFile.thisType.fqn
         (namePredicate(classFileName) ||
             (matchSubclasses && isSubClass(classFile, project)) ||
-            (matchImplementingclasses && implementsInterface(classFile, project))) &&
+            (matchImplementingClasses && implementsInterface(classFile, project))) &&
             (doesAnnotationMatch(classFile)) &&
             accessFlagsMatcher.unapply(classFile.accessFlags)
     }

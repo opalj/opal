@@ -20,7 +20,7 @@ OPAL comes with a large number of code [snippets](https://bitbucket.org/snippets
 
 ## Sub Projects
 
-OPAL consists of multiple sub projects and tools which are described in the following.
+OPAL consists of multiple subprojects and tools which are described in the following.
 
 ### Framework
 Combines all of OPAL's subproject for ease of use.
@@ -34,7 +34,7 @@ an implementation of Tarjan's algorithm for finding strongly connected component
     libraryDependencies += "de.opal-project" % "common_2.13" % "6.0.0"
 
 ### Static Analysis Framework
-The static analysis framework is a generally useful framework for developing static analyses. The framework has wide ranging support for very different types of static analyses and automatically parallels their execution. The framework only depends on `Common` and can be flexibly combined with other static analyses frameworks (e.g., BCEL, SOOT, Wala, ASM,... ) 
+The static analysis framework is a generally useful framework for developing static analyses. The framework has wide-ranging support for very different types of static analyses and automatically parallels their execution. The framework only depends on `Common` and can be flexibly combined with other static analyses frameworks (e.g., BCEL, SOOT, Wala, ASM,... ) 
 
     libraryDependencies += "de.opal-project" % "static-analysis-infrastructure_2.13" % "6.0.0"
 
@@ -58,7 +58,7 @@ The abstract interpretation framework is a highly-customizable framework for the
     libraryDependencies += "de.opal-project" % "abstract-interpretation-framework_2.13" % "6.0.0"
 
 ### Three-Address Code
-The three-address-code toolkit provides a more human readable representation of the bytecode that includes additional information derived by the abstract interpretation framework.
+The three-address-code toolkit provides a more human-readable representation of the bytecode that includes additional information derived by the abstract interpretation framework.
 
     libraryDependencies += "de.opal-project" % "three-address-code_2.13" % "6.0.0"
 
@@ -68,7 +68,7 @@ The architecture validation framework facilitates the development of tools for s
     libraryDependencies += "de.opal-project" % "architecture-validation_2.13" % "6.0.0"
 
 ### APK
-Provides support for the analyis of APKs, with automatic conversion from dalvik to java byte code.
+Provides support for the analysis of APKs, with automatic conversion from dalvik to java byte code.
 
     libraryDependencies += "de.opal-project" % "apk_2.13" % "6.0.0"
 

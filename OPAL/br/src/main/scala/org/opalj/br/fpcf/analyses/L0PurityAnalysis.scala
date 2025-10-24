@@ -216,7 +216,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
                 case ARETURN.opcode |
                     IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
                     RETURN.opcode =>
-                // if we have a monitor instruction the method is impure anyway..
+                // if we have a monitor instruction the method is impure anyway...
                 // hence, we can ignore the monitor related implicit exception
 
                 // Reference comparisons may have different results for structurally equal values
@@ -232,7 +232,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
                         // the calling context is now an explicit part of the method's result.
                         return Result(context, ImpureByAnalysis);
                     }
-                // else ok..
+                // else ok...
 
             }
             currentPC = body.pcOfNextInstruction(currentPC)
@@ -243,7 +243,7 @@ class L0PurityAnalysis private[analyses] (final val project: SomeProject) extend
         if (dependees.isEmpty)
             return Result(context, Pure);
 
-        // This function computes the “purity for a method based on the properties of its dependees:
+        // This function computes the purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
             // Let's filter the entity.

@@ -96,7 +96,7 @@ import net.ceedubs.ficus.Ficus.*
  * @note This analysis derives all purity level.
  *       A configurable [[org.opalj.tac.fpcf.analyses.purity.DomainSpecificRater]] is used to
  *       identify calls, expressions and exceptions that are `LBDPure` instead of `LBImpure` or any
- *       `SideEffectFree` purity level. Compared to `L1PurityAnaylsis` it identifies objects/arrays
+ *       `SideEffectFree` purity level. Compared to `L1PurityAnalysis` it identifies objects/arrays
  *       returned from pure callees that can be considered local. Synchronized methods are treated
  *       as `ExternallyPure`.
  * @author Dominik Helm
@@ -107,7 +107,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * Holds the state of this analysis.
      * @param lbPurity The current minimum purity level for the method
      * @param ubPurity The current maximum purity level for the method that will be assigned by
-     *                  checkPurityOfX methods to aggregrate the purity
+     *                  checkPurityOfX methods to aggregate the purity
      * @param method The currently analyzed method
      * @param context The corresponding Context we report results for
      * @param declClass The declaring class of the currently analyzed method
@@ -169,7 +169,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         }
 
-        def addFieldAssingabilityDependee(
+        def addFieldAssignabilityDependee(
             f:     Field,
             eop:   EOptionP[Field, FieldAssignability],
             owner: Option[Expr[V]]
@@ -324,7 +324,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (!expr.isVar) {
             // The expression could refer to further expressions in a non-flat representation.
             // In that case it could be, e.g., a GetStatic. In that case the reference is not
-            // locally created and/or initialized. To avoid special handling, we just fallback to
+            // locally created and/or initialized. To avoid special handling, we just fall back to
             // false here as the analysis is intended to be used on flat representations anyway.
             atMost(otherwise)
             return false;
@@ -544,7 +544,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     /**
      * Examines the influence of the purity property of a method on the examined method's purity.
      *
-     * @note Adds dependendees when necessary.
+     * @note Adds dependees when necessary.
      */
     def checkMethodPurity(
         ep:     EOptionP[Context, Purity],
@@ -600,7 +600,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
-        state.addFieldAssingabilityDependee(ep.e, ep, objRef)
+        state.addFieldAssignabilityDependee(ep.e, ep, objRef)
     }
 
     /**

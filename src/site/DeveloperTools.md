@@ -2,7 +2,7 @@
 OPAL comes with a large number of tools to analyze and visualize various aspects related to *Java Bytecode* projects. These tools can be used as is or can be embedded into other tools. Some of the tools require Graphviz to visualize graphs which depict control- and data-flow information.
 
 ## Running Tools which are part of the OPAL Suite
-To use the tools, start `sbt`, change to the `project OPAL-DeveloperTools` project and call `run`. Afterwards, you'll see the list of tools which can be run.
+To use the tools, start `sbt`, change to the `project OPAL-DeveloperTools` project and call `run`. Afterward, you'll see the list of tools which can be run.
 
 ## Java Bytecode Disassembler / Java Class File Finder
 OPAL has a built-in Java Bytecode Disassembler which is also made available as a [standalone tool](/artifacts/OPALDisassembler.jar) and also as plugins for the [ATOM](https://atom.io/) text editor and the [IntelliJ IDEA](https://www.jetbrains.com/idea/) and [VisualStudioCode](https://code.visualstudio.com/) IDEs.
@@ -71,8 +71,8 @@ The [Java Bytecode Workbench](https://marketplace.visualstudio.com/items?itemNam
 
 If you are a developer of static analyses and suffered from the pain of having to support Invokedynamic (Java 7+) - in other words, Java lambda expressions and method references - then this is the tool for you! OPAL's project serializer rewrites Invokedynamic calls using plain-old standard Java bytecode instructions to facilitate the writing of static analyses! ___You no longer have to worry about Invokedynamics created by Java compilers.___
 
-Currently, we can rewrite Invokedynamics created by standard Java compilers and we are adding support to completely support Scala. Basically, OPAL replaces the Invokedynamic calls using Java's LambdaMetaFactory by a standard Invokestatic call which will create an instance of a newly created class (similar to what LambdaMetaFactory does). The object will encapsulate the relevant state used by the Lambda and implement the Lambda's functional interface. Later on, when the Lambda is evaluated the generated class will forward the call to the implementation method of the Lambda. The tool is currently in a beta version, but we already successfully rewrote JUnit 5 and were able to execute its entire test suite afterwards (originally over 3000 Invokedynamics).
+Currently, we can rewrite Invokedynamics created by standard Java compilers and we are adding support to completely support Scala. Basically, OPAL replaces the Invokedynamic calls using Java's LambdaMetaFactory by a standard Invokestatic call which will create an instance of a newly created class (similar to what LambdaMetaFactory does). The object will encapsulate the relevant state used by the Lambda and implement the Lambda's functional interface. Later on, when the Lambda is evaluated the generated class will forward the call to the implementation method of the Lambda. The tool is currently in a beta version, but we already successfully rewrote JUnit 5 and were able to execute its entire test suite afterward (originally over 3000 Invokedynamics).
 
 OPAL's project serializer can be downloaded [here](/artifacts/OPALInvokedynamicRectifier.jar).
 
-If you want to see it in action, just use OPAL's Invokedynamic rectifier to rewrite your project and study the code afterwards using our Bytecode Disassembler (see below).
+If you want to see it in action, just use OPAL's Invokedynamic rectifier to rewrite your project and study the code afterward using our Bytecode Disassembler (see below).

@@ -184,7 +184,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
      * Joiner, since in effect, it joins together the sets of members of its parents.
      *
      * An empty class which implements one or more interfaces is also a Joiner.
-     * ''Here, empty means that the we can have constructors and (optionally) a serialVersionUID
+     * ''Here, empty means that we can have constructors and (optionally) a serialVersionUID
      * field.''
      */
     def isJoiner(cl: ClassFile): Boolean = {

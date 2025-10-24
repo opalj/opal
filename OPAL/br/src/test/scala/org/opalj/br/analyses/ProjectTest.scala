@@ -205,7 +205,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         val pik = new TestProjectInformationKey
         project.get(pik)
-        // the other tests may also attach information..
+        // the other tests may also attach information...
         project.availableProjectInformation.length should be >= 1
         project.availableProjectInformation should contain(pik.theResult)
     }
@@ -225,10 +225,10 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     it should "be able to compute project information that has requirements" in {
         val pik = new TestProjectInformationWithDependenciesKey
         project.get(pik) should be(pik.theResult)
-        // the other tests may also attach information..
+        // the other tests may also attach information...
         project.availableProjectInformation.length should be >= 3
-        project.availableProjectInformation should contain(pik.depdencies.head.theResult)
-        project.availableProjectInformation should contain(pik.depdencies.tail.head.theResult)
+        project.availableProjectInformation should contain(pik.dependencies.head.theResult)
+        project.availableProjectInformation should contain(pik.dependencies.tail.head.theResult)
     }
 
     behavior of "a Project's projectPackages methods"
@@ -751,11 +751,11 @@ private class TestProjectInformationWithDependenciesKey extends ProjectInformati
 
     val theResult = new Object()
 
-    val depdencies = List(new TestProjectInformationKey, new TestProjectInformationKey)
+    val dependencies = List(new TestProjectInformationKey, new TestProjectInformationKey)
 
     override def compute(project: SomeProject): Object = theResult
 
-    override def requirements(project: SomeProject): Seq[ProjectInformationKey[? <: AnyRef, ? <: AnyRef]] = depdencies
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[? <: AnyRef, ? <: AnyRef]] = dependencies
 
 }
 

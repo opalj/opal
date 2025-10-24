@@ -46,9 +46,9 @@ trait IssueRepresentations extends ReportableAnalysisResult {
      *
      * Line and column information is optional.
      *
-     * If the real filename is not available use the fully qualified name of the class
+     * If the real filename is not available, use the fully qualified name of the class
      * in binary notation (i.e., using "/" to separate the package qualifiers)
-     * with the suffice ".class" appended.
+     * with the suffix ".class" appended.
      *
      * Note that the space after the location information is required.
      *

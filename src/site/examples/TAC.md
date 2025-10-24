@@ -1,5 +1,5 @@
 # 3-Address Code / Quadruples Code / Static Single Assignment Form
-OPAL enables you to transform Java bytecode into a 3-address code (TAC) which is also sometimes called "Quadruples Code". The standard representation provided by OPAL is always in SSA form and is created after performing a low-level, highly configurable data-flow analysis; based on the configured low-level analysis, the amount of additional information about the program's values may differ greatly. In the simplest case, only basic type information is provided. In more advanced cases, constant computations are perfomed, constants are propagated, must-alias information is provided, dead paths due to programming errors/context-dependent impossible paths are automatically pruned, and so on. In all cases the 3-address code (in the following called **TAC**) immediately provides complete def-use information and the control-flow graph is also reified.
+OPAL enables you to transform Java bytecode into a 3-address code (TAC) which is also sometimes called "Quadruples Code". The standard representation provided by OPAL is always in SSA form and is created after performing a low-level, highly configurable data-flow analysis; based on the configured low-level analysis, the amount of additional information about the program's values may differ greatly. In the simplest case, only basic type information is provided. In more advanced cases, constant computations are performed, constants are propagated, must-alias information is provided, dead paths due to programming errors/context-dependent impossible paths are automatically pruned, and so on. In all cases the 3-address code (in the following called **TAC**) immediately provides complete def-use information and the control-flow graph is also reified.
 
 ## Using the 3-Address Code (TAC)
 
@@ -124,9 +124,9 @@ In this case the initial three-address code will be:
         7:/*pc=21:*/ goto 5
     }
 
-In the above example, the `static` method `endless` defines, e.g., a [parameter](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by the first statement with index 0 (`useSites`); the parameter it not used any further - `useSites` for `param1` only contains one value. Def/use information is always directly available at a local-variable initialization ([`DVar`](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.DVar)) or usage site ([`UVar`](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.UVar)).
+In the above example, the `static` method `endless` defines, e.g., a [parameter](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by the first statement with index 0 (`useSites`); the parameter is not used any further - `useSites` for `param1` only contains one value. Def/use information is always directly available at a local-variable initialization ([`DVar`](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.DVar)) or usage site ([`UVar`](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.UVar)).
 
-Parameters of methods always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5` independent of the method being static or not. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarily.
+Parameters of methods always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5` independent of the method being static or not. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarly.
 
 Furthermore, given that the def-use information is explicitly reified, the information that the receiver object of the `println` [call](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.MethodCall) (statement 6) is either `lv1` or `lv3`, i.e., `System.out` or `System.err`, is directly available.
 
@@ -177,7 +177,7 @@ Given the method's three-address code, we can now get the definition sites and t
 
         val returnStmts = code.cfg.normalReturnNode.predecessors.iterator.map(bb => code.stmts(bb.asBasicBlock.endPC))
 
-2) Use simple pattern matching to get the defintion sites and the value information.
+2) Use simple pattern matching to get the definition sites and the value information.
 
         for { tac.ReturnValue(pc,tac.UVar(v,defSites)) <- returnStmts} {
             println(defSites.mkString(", ") + " => "+ v.asDomainReferenceValue)

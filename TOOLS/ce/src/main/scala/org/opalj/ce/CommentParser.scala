@@ -114,7 +114,7 @@ object CommentParser {
             val entries = mutable.Map[String, ConfigNode]()
             var nextComment = parseComments()
             var currentKey = ""
-            var currentvalue: ConfigNode = null
+            var currentValue: ConfigNode = null
 
             // Using a breakable while loop to interrupt as soon as the object ends
             breakable {
@@ -131,7 +131,7 @@ object CommentParser {
 
                         // 1. Separating Key and value
                         // In JSON, Keys and values are separated with ':'. HOCON allows substituting ':' with '=' and
-                        // also allows ommitting these symbols when using a '{' or '[' to open an object/list afterward
+                        // also allows omitting these symbols when using a '{' or '[' to open an object/list afterward
                         // Finding first instance of these symbols
                         // TerminatingIndex is the index of the symbol that terminates the key.
                         val terminatingIndex = line.indexWhere(objectKeyTerminatingChars.contains)
@@ -143,13 +143,13 @@ object CommentParser {
                         // Evaluating the type of value
                         if (line.startsWith("{")) {
                             // Case: Value is an object
-                            currentvalue = parseObject(nextComment)
+                            currentValue = parseObject(nextComment)
                         } else if (line.startsWith("[")) {
                             // Case: Value is a list
-                            currentvalue = parseList(nextComment)
+                            currentValue = parseList(nextComment)
                         } else {
                             // Case: Value is an entry
-                            currentvalue = parseEntry(nextComment)
+                            currentValue = parseEntry(nextComment)
                         }
 
                         // Json Keys are split using a ",". This is not necessary, but tolerated in HOCON syntax
@@ -157,15 +157,15 @@ object CommentParser {
 
                         // If there is a comment directly behind the comma, add it to comments too.
                         getSingleLineComment.foreach { comment =>
-                            currentvalue.comment =
-                                currentvalue.comment.mergeComment(DocumentationComment.fromString(Seq(comment)))
+                            currentValue.comment =
+                                currentValue.comment.mergeComment(DocumentationComment.fromString(Seq(comment)))
                         }
 
                         // Reset next comment
                         nextComment = ListBuffer[String]()
 
                         // Adding the new Key, Value pair to the Map
-                        entries += ((currentKey, currentvalue))
+                        entries += ((currentKey, currentValue))
                     }
 
                     // Proceed with the next line if the current one was fully parsed
@@ -186,7 +186,7 @@ object CommentParser {
 
         /**
          * Method responsible to parse Entry-Type Nodes.
-         * @param currentComment assings previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object).
+         * @param currentComment assigns previously parsed comment to this Node. This is necessary as most comments appear before the opening bracket of an object (Which identifies it as an object).
          * @return returns the fully parsed entry.
          */
         private def parseEntry(currentComment: ListBuffer[String]): ConfigEntry = {

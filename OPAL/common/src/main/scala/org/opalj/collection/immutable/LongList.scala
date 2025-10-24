@@ -81,7 +81,7 @@ case object LongList0 extends LongList {
 }
 
 /**
- * An container for a list element.
+ * A container for a list element.
  *
  * @author Michael Eichberg
  */

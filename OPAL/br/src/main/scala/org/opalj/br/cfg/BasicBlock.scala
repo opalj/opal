@@ -91,7 +91,7 @@ final class BasicBlock(
      * pcs - of a basic block.
      *
      * @param     f The function that will be called.
-     * @param     code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
+     * @param     code The [[org.opalj.br.Code]] object to which this `BasicBlock` implicitly
      *             belongs.
      */
     def foreach[U](f: Int => U)(implicit code: Code): Unit = {

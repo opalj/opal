@@ -53,7 +53,7 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
                     instruction = pcAndInstruction.value
                     pc = pcAndInstruction.pc
                     classNameParameterIndex = instruction.parametersCount - 1
-                    operands = aiResult.operandsArray(pc) // if i is dead... opeands is null
+                    operands = aiResult.operandsArray(pc) // if i is dead... operands is null
                     if operands ne null
                     classNameParameter = operands(classNameParameterIndex)
                 } {
@@ -64,7 +64,7 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
                             val classNames = classNameParameters.collect {
                                 case aiResult.domain.StringValue(className) => className
                             }
-                            // check if we have a concrete string in all cases..
+                            // check if we have a concrete string in all cases...
                             val locations = if (classNames.size == classNameParameters.size) {
                                 trivialLocations
                             } else {

@@ -9,7 +9,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state the (transitivley) thrown exceptions.
+ * Annotation to state the (transitively) thrown exceptions.
  *
  * @author Andreas Muttscheller
  * @author Michael Eichberg

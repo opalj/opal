@@ -123,7 +123,7 @@ object UnusedLocalVariables {
             import code.collectInstructions
             val allConstantsValues = collectInstructions { case LoadConstantInstruction(v) => v }
             val constantValuesOnlyUsedOnces = allConstantsValues.groupBy(v => v).collect {
-                case (k, occurences) if occurences.tail.isEmpty => k
+                case (k, occurrences) if occurrences.tail.isEmpty => k
             }
             constantValuesOnlyUsedOnces.toSet
         }

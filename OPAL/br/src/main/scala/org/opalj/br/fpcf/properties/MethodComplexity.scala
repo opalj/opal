@@ -36,7 +36,7 @@ sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInforma
  *
  * In general, the control flow graph is analyzed to compute an upper bound for the number
  * of evaluated instructions; as far as (easily) possible, loops are conceptually unrolled. If
- * the uppper bound could not be determined, the method is rated as being maximally complex.
+ * the upper bound could not be determined, the method is rated as being maximally complex.
  *
  * The complexity of called methods is generally not taken into account. However, invoke
  * instructions generally have a higher complexity than all other instructions to account for the
@@ -45,7 +45,7 @@ sealed trait MethodComplexityPropertyMetaInformation extends PropertyMetaInforma
  * If an upper bound of a method's complexity cannot be estimated, the method will have
  * `Int.MaxValue` complexity.
  *
- * @param value The estimated complexity of a specific method ([0...`Int.MaxMavlue`])
+ * @param value The estimated complexity of a specific method ([0...`Int.MaxValue`])
  *
  * @author Michael Eichberg
  */

@@ -79,8 +79,7 @@ package object issues {
     def fileToLocationIdentifier(file: File): String = file.getAbsolutePath
 
     /**
-     * Given a `LocalVariable` object and its current value a human readable `String`
-     * is created.
+     * Given a `LocalVariable` object and its current value, a human-readable String is created.
      */
     def localVariableToString(localVariable: LocalVariable, value: AnyRef): String = {
         if ((localVariable.fieldType eq BooleanType) &&

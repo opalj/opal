@@ -15,7 +15,7 @@ import org.opalj.tac.fpcf.analyses.alias.AliasAnalysisContext
 import org.opalj.tac.fpcf.analyses.alias.TacBasedAliasAnalysisState
 
 /**
- * Encapsulates the current state of an points-to based alias analysis.
+ * Encapsulates the current state of a points-to based alias analysis.
  *
  * It additionally contains the following information:
  *

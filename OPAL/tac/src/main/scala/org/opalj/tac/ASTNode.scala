@@ -30,13 +30,13 @@ trait ASTNode[+V] {
      *
      * @note '''Deeply nested expressions are not supported'''; i.e. an expression's sub-expressions
      *       have to be [[Var]] or [[Const]] expressions. Generally, a statements expressions have to
-     *       to simple expressions too - except of the [[Assignment]] statement; in the latter case
+     *       be simple expressions too - except of the [[Assignment]] statement; in the latter case
      *       the right-expression can have references to simple expressions. Hence, in case of
-     *       [[Assignment]] statements the side-effect freenes is determined by the referenced
+     *       [[Assignment]] statements the side-effect freeness is determined by the referenced
      *       expression; in all other cases the side-effect freeness is determined directly by
      *       the statement/expression.
      *
-     * @return `true` if the expression is ''GUARENTEED'' to have no side effect other than
+     * @return `true` if the expression is ''GUARANTEED'' to have no side effect other than
      *        wasting some CPU cycles if it is not executed.
      */
     def isSideEffectFree: Boolean

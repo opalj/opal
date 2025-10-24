@@ -46,7 +46,7 @@ class SimpleEscapeAnalysisContext(
 
 /**
  * A simple escape analysis that can handle [[org.opalj.tac.common.DefinitionSiteLike]]s and
- * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this parameter of a constructor). All other
+ * [[org.opalj.br.analyses.VirtualFormalParameter]]s (the this-parameter of a constructor). All other
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s are marked as
  * [[org.opalj.br.fpcf.properties.AtMost]]([[org.opalj.br.fpcf.properties.NoEscape]]).
  *

@@ -36,14 +36,14 @@ package object graphs {
      * </pre>
      *
      * @note Though the function is optimized to handle very large graphs, encoding sparse
-     *       graphs using adjacency matrixes is not recommended.
+     *       graphs using adjacency matrices is not recommended.
      *
      * @param  maxNodeId The id of the last node. The first node has to have the id 0. I.e.,
      *                   in case of a graph with just two nodes, the maxNodeId is 1.
      * @param  successors The successor nodes of the node with the given id; the function has to
      *                    be defined for every node in the range [0..maxNodeId].
      * @return an adjacency matrix describing the given graph encoded using CSV. The returned
-     *         byte array an be directly saved and represents a valid CSV file.
+     *         byte array can be directly saved and represents a valid CSV file.
      */
     def toAdjacencyMatrix(maxNodeId: Int, successors: Int => Set[Int]): Array[Byte] = {
         val columns = (maxNodeId + 1) * 2
@@ -124,7 +124,7 @@ package object graphs {
      * vis-js.com library which is a translated version of graphviz to JavaScript.
      *
      * The first call, which will initialize the JavaScript engine, will take some time.
-     * Afterwards, the tranformation is much faster.
+     * Afterward, the transformation is much faster.
      */
     final lazy val dotToSVG: String => String = {
         import javax.script.Invocable
@@ -138,7 +138,7 @@ package object graphs {
 
         OPALLogger.info(
             "setup",
-            "initialzing JavaScript engine for rendering dot graphics"
+            "initializing JavaScript engine for rendering dot graphics"
         )(using GlobalLogContext)
         val engineManager = new ScriptEngineManager()
         val engine: ScriptEngine = engineManager.getEngineByName("nashorn")
@@ -678,7 +678,7 @@ package object graphs {
                         nOnStack(n) = true
                         remainingSuccessors = es(n)
                     } else {
-                        // we have visisted a successor node "w" and now continue with "n"
+                        // we have visited a successor node "w" and now continue with "n"
                         val w = ws.pop()
                         nLowLink(n) = Math.min(nLowLink(n), nLowLink(w))
                     }
@@ -689,7 +689,7 @@ package object graphs {
                         if (nIndex(w) == UndefinedIndex) {
                             // We basically simulate the recursive call by storing the current
                             // evaluation state for n: the current edge "n->w" and the "remaining
-                            // successors"; and the push the succesor node "w"
+                            // successors"; and the push the successor node "w"
                             ws.push(w)
                             ws.push(n)
                             wsSuccessors.push(remainingSuccessors)

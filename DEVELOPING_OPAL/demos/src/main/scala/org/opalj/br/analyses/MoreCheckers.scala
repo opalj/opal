@@ -67,9 +67,9 @@ object MoreCheckers {
         }
 
         println(Console.BOLD + "WARMUP PHASE" + Console.RESET)
-        // for Scalatest - we use 8 warumup runs
+        // for Scalatest - we use 8 warmup runs
         // for Bugs.zip - we use 50 warmup runs
-        // for CLASSES.jar - we use 2 warumup runs
+        // for CLASSES.jar - we use 2 warmup runs
         for (i <- 1 to 2) {
             println("\n\n\n\n\n\n\n" + i + "=======================================================================" + i);
             // time(t => println("Performing all analyses took: "+nsToSecs(t))) {
@@ -270,7 +270,7 @@ object MoreCheckers {
 
         // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
 
-        // The following solution reports all pairs of seriablizable classes and their non-seriablizable
+        // The following solution reports all pairs of serializable classes and their non-seriablizable
         // superclasses that do not define a default constructor.
         //        val classesWithoutDefaultConstructor = time(t => println("SE_NO_SUITABLE_CONSTRUCTOR: "+nsToSecs(t))) {
         //            for (

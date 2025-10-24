@@ -6,7 +6,7 @@ import org.opalj.br.*
 import org.opalj.value.ValueInformation
 
 /**
- * Id based variables are named based on the position of the corresponding stack/register value.
+ * ID based variables are named based on the position of the corresponding stack/register value.
  *
  * @author Roberts Kolosovs
  * @author Michael Eichberg

@@ -54,7 +54,7 @@ object INVOKEDYNAMIC extends InstructionMetaInformation {
  * to the fact that not all information is yet available because it is not
  * yet loaded. In case of `invokedynamic` instructions it is necessary
  * to read a class file's attributes which are read in at the very end. This requires
- * to resolve INVOKEDYNAMIC instructions in a two step process.
+ * to resolve INVOKEDYNAMIC instructions in a two-step process.
  *
  * @author Michael Eichberg
  */

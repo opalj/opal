@@ -347,7 +347,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val resultCatchesAndThrows = findCatchesAndThrows(taCode)
 
         /**
-         * Determines whether all caught exceptions are thrown afterwards
+         * Determines whether all caught exceptions are thrown afterward
          */
         def noInterferingExceptions(): Boolean =
             resultCatchesAndThrows._1.forall {
@@ -777,7 +777,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
     /**
      * Checks if an expression is a field read of the currently analyzed field.
-     * For instance fields, the read must be on the `this` reference.
+     * For instance fields, the read must be on the this-reference.
      */
     def isReadOfCurrentField(
         expr:    Expr[V],

@@ -31,7 +31,7 @@ trait ArrayValues extends l1.ReferenceValues {
     // IMPROVE Add support to track the size of arrays independent of a concrete instance
 
     /**
-     * Represents some (multi-dimensional) array where the (initialized) dimensions have
+     * Represents some (multidimensional) array where the (initialized) dimensions have
      * the given size.
      */
     // NOTE THAT WE CANNOT STORE SIZE INFORMATION FOR AlL DIMENSIONS BEYOND THE FIRST ONE;

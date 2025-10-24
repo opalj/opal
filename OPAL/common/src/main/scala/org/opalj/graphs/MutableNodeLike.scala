@@ -21,9 +21,8 @@ import scala.collection.immutable
  *         I.e., the `hashCode` of two object instances that are added to the same graph is
  *         different whenever `equals` is `false`'''.
  * @param  identifierToString A function that converts "an" identifier to a string. By
- *         default the given object's `toString` method is called. It is possible
- *         that a graph has two nodes with the same textual representation representation
- *         but a different identity.
+ *         default, the given object's `toString` method is called. It is possible that
+ *         a graph has two nodes with the same textual representation but a different identity.
  * @author Michael Eichberg
  */
 class MutableNodeLike[I, N <: Node](

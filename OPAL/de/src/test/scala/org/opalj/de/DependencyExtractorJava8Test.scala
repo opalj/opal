@@ -40,13 +40,13 @@ class DependencyExtractorJava8Test extends AnyFunSuite {
                 case Some(x) =>
                     dependencies = dependencies.updated(key, x - 1)
                 case None =>
-                    val remainigDependencies =
+                    val remainingDependencies =
                         dependencies.toList.sorted.mkString(
                             s"Remaining dependencies (${dependencies.size}):\n\t",
                             "\n\t",
                             "\n"
                         )
-                    fail("the dependency " + key + " was not extracted.\n" + remainigDependencies)
+                    fail("the dependency " + key + " was not extracted.\n" + remainingDependencies)
             }
         }
 
@@ -2226,7 +2226,7 @@ class DependencyExtractorJava8Test extends AnyFunSuite {
 
         //                // EMPTY
         //            } catch (Exception e) {
-        //                // EMTPY
+        //                // EMPTY
         assertDependency(
             "dependencies.AnnotationTypeTestClass.tryWithResource(java.lang.String)",
             "java.lang.Exception",

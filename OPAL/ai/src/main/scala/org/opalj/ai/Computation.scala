@@ -19,7 +19,7 @@ package ai
  * or threw an exception ([[throwsException]]). Only if `returnsNormally` returns
  * `true` the methods `result` and `hasResult` are defined.
  *
- * @tparam V The result of the computation. Typically a `DomainValue`;
+ * @tparam V The result of the computation. Typically, a `DomainValue`;
  *      if the computation is executed for its side
  *      effect (e.g., as in case of a `monitorenter` or `monitorexit` instruction)
  *      the type of `V` maybe `Nothing`.

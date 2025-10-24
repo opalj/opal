@@ -91,7 +91,7 @@ trait ConsoleTracer extends AITracer { tracer =>
         }
     }
 
-    override def instructionEvalution(
+    override def instructionEvaluation(
         domain: Domain
     )(
         pc:          Int,

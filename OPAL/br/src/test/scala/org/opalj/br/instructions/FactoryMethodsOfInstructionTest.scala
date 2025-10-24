@@ -19,7 +19,7 @@ class FactoryMethodsOfInstructionTest extends AnyFlatSpec {
 
     val declaringClass = "my/invoke/Class"
 
-    val methodName = "myMythod"
+    val methodName = "myMethod"
     val methodDescriptor = "()V"
 
     val fieldName = "myField"

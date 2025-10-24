@@ -91,7 +91,7 @@ package object util {
                     s"garbage collection run $run (pending finalization: $pendingCount)"
                 )(using logContext.get)
             }
-            // In general it is **not possible to guarantee** that the garbage collector is really
+            // In general, it is **not possible to guarantee** that the garbage collector is really
             // run, but we still do our best.
             memoryMXBean.gc()
             if (memoryMXBean.getObjectPendingFinalizationCount > 0) {

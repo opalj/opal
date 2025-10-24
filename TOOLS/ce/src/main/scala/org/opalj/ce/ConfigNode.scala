@@ -59,7 +59,7 @@ trait ConfigNode {
     }
 
     /**
-     * Returns an HMTL-escaped text for the brief description.
+     * Returns an HTML-escaped text for the brief description.
      */
     protected def getBrief(exporter: HTMLExporter)(implicit project: SomeProject): String = {
         if (comment.brief.nonEmpty || comment.description.nonEmpty)
@@ -83,7 +83,7 @@ trait ConfigNode {
     )(implicit project: SomeProject): Unit
 
     /**
-     * Checks if the configNode (and its potential child objects are empty.
+     * Checks if the configNode (and its potential child objects) are empty.
      * @return Returns true, if the ConfigNode, its comment and its childObjects are all empty. Returns false otherwise.
      */
     def isEmpty: Boolean

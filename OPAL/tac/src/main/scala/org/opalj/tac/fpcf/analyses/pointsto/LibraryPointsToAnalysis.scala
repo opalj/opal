@@ -59,7 +59,7 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
 
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
-        // pre-initialized. Note: This set only contains ArrayTypes whose element type is an
+        // pre-initialized. Note: This set only contains ArrayTypes whose element-type is an
         // ClassType. Arrays of primitive types can be ignored.
         val seenArrayTypes = UIDSet.newBuilder[ArrayType]
 
@@ -119,7 +119,7 @@ abstract class LibraryPointsToAnalysis(final val project: SomeProject)
         @inline def fieldIsRelevant(f: Field): Boolean = {
             // Only fields which are ArrayType or ClassType are relevant.
             f.fieldType.isReferenceType &&
-            // If the field is an ArrayType, then the array's element type must be a ClassType.
+            // If the field is an ArrayType, then the array's element-type must be a ClassType.
             // In other words: We don't care about arrays of primitive types (e.g. int[]) which
             // do not have to be pre-initialized.
             (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isClassType)

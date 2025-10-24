@@ -6,7 +6,6 @@ import scala.annotation.switch
 
 import scala.collection.Seq
 import scala.collection.immutable.ArraySeq
-import scala.math.Ordered
 
 /**
  * A method descriptor represents the parameters that the method takes and
@@ -434,8 +433,8 @@ object SingleArgumentMethodDescriptor {
 object TheArgument {
 
     /**
-     * Returns `Some(FieldType)` of the first paramter type if the given method
-     * descriptor just defines a single paramter.
+     * Returns `Some(FieldType)` of the first parameter type if the given method
+     * descriptor just defines a single parameter.
      *
      * @author Michael Eichberg
      */

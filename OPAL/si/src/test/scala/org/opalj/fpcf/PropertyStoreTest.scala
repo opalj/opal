@@ -1629,8 +1629,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     FinalEP(nodeA, ReachableNodes(nodeEntities.toSet))
                 )
 
-                // now let's check if we have the correct notification of the
-                // of the lazily dependent computations
+                // now let's check if we have the correct notification of the lazily dependent computations
                 val expected = ReachableNodesCount(11)
                 ps(nodeA, ReachableNodesCount.Key) should be(FinalEP(nodeA, expected))
                 ps(nodeB, ReachableNodesCount.Key) should be(FinalEP(nodeB, expected))
@@ -1664,8 +1663,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     FinalEP(nodeA, ReachableNodes(nodeEntities.toSet))
                 )
 
-                // now let's check if we have the correct notification of the
-                // of the lazily dependent computations
+                // now let's check if we have the correct notification of the lazily dependent computations
                 val expected = ReachableNodesCount(11)
                 ps(nodeA, ReachableNodesCount.Key) should be(FinalEP(nodeA, expected))
                 ps(nodeB, ReachableNodesCount.Key) should be(FinalEP(nodeB, expected))
@@ -1796,7 +1794,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 ps.setupPhase(Set(Purity.Key), Set.empty)
                 def purityAnalysis(node: Node): PropertyComputationResult = {
                     def c(successorNode: SomeEOptionP): ProperPropertyComputationResult = {
-                        // HERE - For this test case only, we can simple get to the previous
+                        // HERE - For this test case only, we can simply get to the previous
                         // node from the one that was updated.
                         (successorNode: @unchecked) match {
                             case epk: EPK[_, _] =>

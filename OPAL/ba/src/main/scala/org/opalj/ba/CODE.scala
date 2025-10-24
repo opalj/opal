@@ -189,7 +189,7 @@ object CODE {
         // never throw an exception.
         def markMetaInformationAsLive(index: Int): Unit = {
             var currentIndex = index
-            // the code element "0" is already marked as live..
+            // the code element "0" is already marked as live.
             while (currentIndex > 0) {
                 if (isLive(currentIndex) || markedAsLive.contains(currentIndex)) {
                     return; // nothing to do
@@ -308,7 +308,7 @@ object CODE {
          * TRY(END) pseudo instructions; updates isLiveCount if necessary.
          */
         def propagateLiveInformation(): Unit = {
-            // Step 2.2 We now have to test for still required TRY-Block and LINENUMBER markers..
+            // Step 2.2 We now have to test for still required TRY-Block and LINENUMBER markers.
             //          (Basically, we just set them to "isLive".)
             //          A TRY/TRYEND marker is to be live if we have one or more live instructions
             //          between two corresponding markers.
@@ -490,7 +490,7 @@ object CODE {
 
                 case LabelElement(label) =>
                     if (label.isPCLabel) {
-                        // let's store the mapping to make it possible to remap the other attributes..
+                        // let's store the mapping to make it possible to remap the other attributes
                         pcMapping += (label.pc, nextPC)
                     }
                     labels += (label -> nextPC)

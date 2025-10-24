@@ -13,7 +13,7 @@ package br
 trait StructureIdentifier {
 
     /**
-     * Returns a compact, human readable representation of this structure element.
+     * Returns a compact, human-readable representation of this structure element.
      * This representation is not guaranteed to return a unique representation.
      * However, it should be precise enough to enable developers (with some
      * additional context information) to precisely identify the structure element.

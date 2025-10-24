@@ -109,7 +109,7 @@ def analyzeClassImmutability(classFile: ClassFile): ProperPropertyComputationRes
 }
 ```
 We need to keep track of the information we already have about the immutability of our class, and as we are implementing an optimistic analysis, we initially assume it might be transitively immutable.  
-Additionally, we will need to keep track of some dependencies. Dependecies are of type [`EOptionP`](/library/api/SNAPSHOT/org/opalj/fpcf/EOptionP.html), i.e., a pair of some entity with, optionally, some property that entity has.
+Additionally, we will need to keep track of some dependencies. Dependencies are of type [`EOptionP`](/library/api/SNAPSHOT/org/opalj/fpcf/EOptionP.html), i.e., a pair of some entity with, optionally, some property that entity has.
 We store them in a map with the entity as the key in order to be able to access them easily.
 
 Now it is time to gather the information we need.  
@@ -165,7 +165,7 @@ Checking whether the superclass is `java.lang.Object` not only allows us to skip
 Next, from the type, we try to retrieve the actual classfile from the analyzed project.  
 It may be the case that the classfile for the superclass is not part of the analyzed project and thus, we get no result here.  
 In that case, we soundly assume that it is mutable and can thus end our analysis here early, returning that our classfile represents a mutable class.  
-Otherwise, we ask the [`PropertyStore`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyStore.html) for the superclass' class immutabilty, using the key we defined in our lattice.  
+Otherwise, we ask the [`PropertyStore`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyStore.html) for the superclass' class immutability, using the key we defined in our lattice.  
 The property store is the central data structure that keeps track of all properties that have been computed for any entity so far.  
 We didn't have to define it, because `FPCFAnalysis` provides it for us.  
 Finally, we use our previously defined `checkSuperclass` function to process the value that we got from the property store.
@@ -203,7 +203,7 @@ We could of course have defined a function to incorporate a `FieldImmutability` 
 
 In order to get the immutability properties of the class' instance fields, we filter the classfile's fields for those that aren't static, then we use a second form of the property store's `apply` method to query several properties at once and finally pass each of the results to `checkField`.
 
-Now we have queried all information that we need, but as you have seen, the property store may return `EOptionP` values that have no upper bound yet for the property we're interested in, or values that aren't be final yet.  
+Now we have queried all information that we need, but as you have seen, the property store may return `EOptionP` values that have no upper bound yet for the property we're interested in, or values that aren't final yet.  
 The fixed-point computation will provide these values later on in an asynchronous fashion.  
 In order to be able to process them once they are available, we define another function, called the continuation:
 ```scala
@@ -337,7 +337,7 @@ As before, we finally have to return the analysis.
 
 ## Running the Analysis
 
-Finally it is time to try our analysis.  
+Finally, it is time to try our analysis.  
 To do so easily, we extend [ProjectAnalysisApplication](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectAnalysisApplication.html) which provides us with an implicit `main` method that parses parameters for us, most importantly the "-cp=<some path>" parameter that lets users specify the path to a project that they want to analyze.
 ```scala
 object ClassImmutabilityRunner extends ProjectAnalysisApplication { 
@@ -376,7 +376,7 @@ override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterru
 The [`PropertyStore`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyStore.html) provides several methods to inspect the results.  
 Here we use `finalEntities` to get all entities that have the given final property, then we count those.
 
-Finally, the `doAnalyze` method requires us to return a [`BasicReport`](/library/api/SNAPSHOT/org/opalj/br/analyses/BasicReport.html), which is a simple way to return some string that will ultimate be printed to the console:
+Finally, the `doAnalyze` method requires us to return a [`BasicReport`](/library/api/SNAPSHOT/org/opalj/br/analyses/BasicReport.html), which is a simple way to return some string that will ultimately be printed to the console:
 ```scala
 override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
     [...]

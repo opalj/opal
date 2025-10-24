@@ -15,7 +15,7 @@ import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 import org.opalj.da.ClassFile
 
 /**
- * Groups test case features that perform a pre Java 8 polymorhpic method call.
+ * Groups test case features that perform a pre Java 8 polymorphic method call.
  *
  * @note The features represent the __PolymorphicCalls__ test cases from the Call Graph Test Project (JCG).
  *

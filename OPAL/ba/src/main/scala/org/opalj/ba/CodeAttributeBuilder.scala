@@ -222,7 +222,7 @@ object CodeAttributeBuilder {
     // because some instructions will never throw an exception and the respective variable is
     // guaranteed to be initialized to a new appropriate value along the way. Unfortunately,
     // the information may be required by the JVM to compute the stack map table.
-    // I.e., when we have a finally handler the JVM assumes that EVERY instruction may throw
+    // I.e., when we have a finally-handler the JVM assumes that EVERY instruction may throw
     // an exception and therefore the register information associated with the handler
     // has to be compatible with all handlers... (see `AI.IdentifyDeadVariables` for further
     // details!)
@@ -271,7 +271,7 @@ object CodeAttributeBuilder {
                         case dv =>
                             val operandSize = dv.computationalType.operandSize
                             if (operandSize == 2 && locals(index + 1) != null) {
-                                // This situation may arises in cases where we use a local variable
+                                // This situation may arise in cases where we use a local variable
                                 // with index x for a long value and later on use x + 1 for some
                                 // new value
                                 index += 1

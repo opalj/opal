@@ -323,7 +323,7 @@ class IDEAnalysis[Fact <: IDEFact, Value <: IDEValue, Statement, Callable <: Ent
          * for the path.
          */
         def getSummaryFunction(path: Path): SummaryFunction = {
-            summaryFunctions.getOrElse(path, allTopEdgeFunction) // else part handels IDE lines 3 - 4
+            summaryFunctions.getOrElse(path, allTopEdgeFunction) // else part handles IDE lines 3 - 4
         }
 
         /**

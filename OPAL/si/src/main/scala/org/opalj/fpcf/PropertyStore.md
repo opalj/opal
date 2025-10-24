@@ -6,7 +6,7 @@ Properties computed for entities always have an underlying (semi-)lattice which 
 In case that we have entities for which no analyses are scheduled, it is possible to let the store automatically fill in default values (fallback values). Fallbacks are configurable.
 
 ## Programming Model
-A computation of a property must never stop and wait for the result of a dependee, instead it must collect all dependees which have a refineable property of relevance and give this information to the store when it stores (a next) intermediate result.
+A computation of a property must never stop and wait for the result of a dependee, instead it must collect all dependees which have a refinable property of relevance and give this information to the store when it stores (a next) intermediate result.
 
 ## Scheduling property computations
 It is possible to schedule the computation of the properties for an arbitrary set of entities.
@@ -18,7 +18,7 @@ Lazy property computations are regular analyses, however, they are only schedule
 In some cases it is possible to write a very, very fast analysis (at most performing a few hundred bytecode operations) that can compute some property efficiently, without requiring significant resources upfront. 
 
 ## Dependencies are managed automatically
-I.e., the analysis only states to which other entities/property kinds it has dependencies and is informed about the changes automatically. The call back function (continuation function) is guaranteed to never be executed concurrently (additionally, the store gives the guarantee that the analysis will see the last value of a entity/property kind it is depending on eventually). After processing the dependencies, the analysis states their new dependencies. The new set of dependencies can be completely different.
+I.e., the analysis only states to which other entities/property kinds it has dependencies and is informed about the changes automatically. The call back function (continuation function) is guaranteed to never be executed concurrently (additionally, the store gives the guarantee that the analysis will see the last value of an entity/property kind it depends on eventually). After processing the dependencies, the analysis states their new dependencies. The new set of dependencies can be completely different.
 
 The property store has the guarantee that it will get a new computation result whenever it passes an updated property to a downstream analysis.
 
@@ -28,4 +28,4 @@ The property store has the guarantee that it will get a new computation result w
 
 ## Debugging support
 To facilitate the debugging of analyses, several options, which depend on the concrete property store implementation, are available.  
-For example, the `PKEParallelPropertyStore` has an explicit `debugging` mode and also offeres the possibility to record all relevant events such as updates of values.
+For example, the `PKEParallelPropertyStore` has an explicit `debugging` mode and also offers the possibility to record all relevant events such as updates of values.

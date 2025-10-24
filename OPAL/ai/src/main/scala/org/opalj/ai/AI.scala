@@ -93,7 +93,7 @@ import org.opalj.log.Warn
  *         (STILL IN DESIGN!!!!)
  *         ===Idea===
  *         Given an instruction i which may result in a fork of the control-flow (e.g.,
- *         a conditional branch or an invoke instruction that may throw a catched exception).
+ *         a conditional branch or an invoke instruction that may throw a caught exception).
  *         If the (first) evaluation of i definitively rules out several possible paths and - on
  *         all paths that are taken - some values are dead, but live on some of the other paths,
  *         then the respectively current values will never be propagated to the remaining paths,
@@ -104,7 +104,7 @@ import org.opalj.log.Warn
  *         for{/* it can statically be determined that this path is taken at least once!*/} {
  *             s = "something else"
  *         }
- *         doIt(s); // here, "s" is guaranteed not to reference the orignal value "null"!
+ *         doIt(s); // here, "s" is guaranteed not to reference the original value "null"!
  *         }}}
  *         ===Implementation===
  *         When we have a fork, check if all paths...
@@ -1060,7 +1060,7 @@ abstract class AI[D <: Domain](
                                     // scheduled in the context of the calling parent
                                     // routine, but it may be scheduled in a different
                                     // context!)
-                                    // isTargetScheduled = No if we don't have subroutines..
+                                    // isTargetScheduled = No if we don't have subroutines
                                     if (tracer.isDefined) {
                                         tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                                     }
@@ -1135,7 +1135,7 @@ abstract class AI[D <: Domain](
             // - by the JSR / RET instructions
             // - by the "gotoTarget" method
             val pc: Int = {
-                // Check if we we have a return from the evaluation of a subroutine.
+                // Check if we have a return from the evaluation of a subroutine.
                 // I.e., all paths in a subroutine are explored and we know all
                 // exit points; we will now schedule the jump to the return
                 // address and reset the subroutine's computation context
@@ -1309,7 +1309,7 @@ abstract class AI[D <: Domain](
                 val locals = localsArray(pc)
 
                 if (tracer.isDefined) {
-                    tracer.get.instructionEvalution(theDomain)(pc, instruction, operands, locals)
+                    tracer.get.instructionEvaluation(theDomain)(pc, instruction, operands, locals)
                 }
 
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
@@ -1795,7 +1795,7 @@ abstract class AI[D <: Domain](
                         // find the exception handler that matches the given exception
                         val branchTarget = eh.handlerPC
                         val catchTypeOption = eh.catchType
-                        if (catchTypeOption.isEmpty) { // this is a finally handler
+                        if (catchTypeOption.isEmpty) { // this is a finally-handler
                             gotoExceptionHandler(pc, branchTarget, None)
                             true
                         } else {
@@ -1850,7 +1850,7 @@ abstract class AI[D <: Domain](
                                                     "aborting exception processing"
                                             )
                                             OPALLogger.logOnce(warning)
-                                            true // effectively aborts the handling..
+                                            true // effectively aborts the handling...
                                         }
                                 }
                             }
@@ -2118,7 +2118,7 @@ abstract class AI[D <: Domain](
                     //      recursively call a subroutine if that subroutine is already
                     //      present in the subroutine call chain. (Subroutines can be
                     //      nested when using try-finally constructs from within a
-                    //      finally clause.)
+                    //      finally-clause.)
                     //      HOWEVER, if a subroutine is terminated by a thrown exception
                     //      it may be the case that we call the same subroutine again
                     //      even though it appears as if the subroutine was not finished.
@@ -2472,7 +2472,7 @@ abstract class AI[D <: Domain](
                         }
 
                     //
-                    // STATEMENTS THAT CAN CAUSE EXCEPTIONELL TRANSFER OF CONTROL FLOW
+                    // STATEMENTS THAT CAN CAUSE EXCEPTIONAL TRANSFER OF CONTROL FLOW
                     //
 
                     case 191 /*athrow*/ =>
@@ -2489,7 +2489,7 @@ abstract class AI[D <: Domain](
                             testForNullnessOfExceptionValue = true,
                             // athrow throws AT MOST  one implicit exception and the case of
                             // potentially overlapping implicit and explicit exceptions
-                            // related to NullPointerException is handled by "testForNull..=true"
+                            // related to NullPointerException is handled by "testForNull...=true"
                             forceJoin = false
                         )
 
@@ -3392,7 +3392,7 @@ abstract class AI[D <: Domain](
 private object AI {
 
     /**
-     * The list of program counters (`List(0)`) that is used when we analysis a method
+     * The list of program counters (`List(0)`) that is used when we analyze a method
      * right from the beginning.
      */
     final val initialWorkList: List[Int /*PC*/ ] = List(0)

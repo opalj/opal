@@ -96,7 +96,7 @@ public class DynamicMethodFlows {
     }
 
     private static class C1 extends C {
-        // Since this method is reachable, the type set contains the this pointer.
+        // Since this method is reachable, the type set contains the this-pointer.
         @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$C1") // "this"
         public void foo() {
 

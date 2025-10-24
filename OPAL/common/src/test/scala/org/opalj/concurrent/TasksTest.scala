@@ -100,9 +100,9 @@ class TasksTest extends AnyFunSpec with Matchers {
                 processedValues.incrementAndGet()
             }
             tasks.submit(1)
-            Thread.sleep(250) // ttask 1 is probably already long finished...
+            Thread.sleep(250) // task 1 is probably already long finished...
             tasks.submit(2)
-            tasks.join() // task 2 is probably still running..
+            tasks.join() // task 2 is probably still running...
             processedValues.get() should be(2)
         }
 

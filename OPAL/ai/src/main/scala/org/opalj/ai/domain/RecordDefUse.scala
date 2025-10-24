@@ -509,7 +509,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                             newDefOps
 
                         case INVOKEDYNAMIC.opcode | INVOKESTATIC.opcode =>
-                            // ... we have no receiver, hence, we can't have a VM
+                            // ... we have no receiver, hence, we can't have a
                             // VM NullPointerException and therefore the exception
                             // is not raised by the INVOKEDYNAMIC instruction
                             ValueOrigins(ValueOriginForMethodExternalException(currentPC))
@@ -530,8 +530,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
      * the stack and that – optionally – a new value is pushed onto the stack (and
      * associated with a new variable).
      *
-     * The usage is independent of the question whether the usage resulted in an
-     * exceptional control flow.
+     * The usage is independent of whether the usage resulted in an exceptional control flow.
      */
     protected def stackOperation(
         currentPC:                Int,
@@ -954,10 +953,10 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                     // exceptional control flow) - that does not mean that the cast was useless.
                     // At this point in time we simply don't have the necessary information to
                     // decide whether the cast is truly useless.
-                    // E.g,.
+                    // E.g.,
                     //      AbstractList abstractL = ...;
                     //      List l = (java.util.List) abstractL; // USELESS
-                    //      ArrayList al = (java.util.ArrayList) l; // MAY OR MAY NO SUCCEED
+                    //      ArrayList al = (java.util.ArrayList) l; // MAY OR MAY NOT SUCCEED
                     val currentDefOps = defOps(currentPC)
                     val op = currentDefOps.head
                     updateUsageInformation(op, currentPC)
@@ -1001,7 +1000,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
 
             // TODO FIXME XXX Handle throws which terminate subroutines...
 
-            // We generally first have to clean-up the state of a currently executed
+            // We generally first have to clean up the state of a currently executed
             // subroutine, before we start the evaluation of the next subroutine,
             // unless, we have a nested subroutine call - in that case, we have to
             // do the nested subroutine call first!
@@ -1137,7 +1136,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                 else
                     scheduleNextSubroutine()
             } else {
-                // we don't have subroutines at all..
+                // we don't have subroutines at all...
                 false
             }
         }
@@ -1407,7 +1406,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
 
         def instructionToString(vo: ValueOrigin): String = {
             if (ai.isImplicitOrExternalException(vo))
-                s"<exception thrown by\\linstruction: ${ai.underlyingPC(vo)}>"
+                s"<exception thrown by\\instruction: ${ai.underlyingPC(vo)}>"
             else if (vo < 0)
                 s"<parameter: ${-vo - 1}>"
             else

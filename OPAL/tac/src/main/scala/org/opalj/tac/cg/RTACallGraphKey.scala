@@ -24,8 +24,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPoin
  *      [[org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis]].
  *
  *      Note, that initial instantiated types ([[org.opalj.br.analyses.cg.InitialInstantiatedTypesKey]])
- *      and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured before
- *      hand.
+ *      and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured beforehand.
  *      Furthermore, you can configure the analysis mode (Library or Application) in the configuration
  *      of these keys.
  *

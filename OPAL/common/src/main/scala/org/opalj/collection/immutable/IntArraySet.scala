@@ -132,7 +132,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
 }
 
 /**
- * Represents an orderd set of two values where i1 has to be smaller than i2.
+ * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
 private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
 
@@ -218,7 +218,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
 }
 
 /**
- * Represents an orderd set of three int values: i1 < i2 < i3.
+ * Represents an ordered set of three int values: i1 < i2 < i3.
  */
 private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
 

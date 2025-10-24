@@ -104,7 +104,7 @@ public class StaticMethodFlows {
     // Note: All array tests use different types for isolation, since values written to ArrayTypes
     // are available globally, across test boundaries.
 
-    // In this test, two different types are written to an array. The array is accessed in
+    // In this test, two different types are written to an array. The array is accessed
     // in arrayTest_sink, which should make both types available in this method.
     @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A;")
     public static void arrayTest() {

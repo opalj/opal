@@ -35,7 +35,7 @@ trait LogContext {
 
     /**
      * The unique id associated with this log context. Each log context gets a unique id
-     * when it is registered with the OPALLogger. This id will not change afterwards.
+     * when it is registered with the OPALLogger. This id will not change afterward.
      */
     final def logContextId: Int = id
 

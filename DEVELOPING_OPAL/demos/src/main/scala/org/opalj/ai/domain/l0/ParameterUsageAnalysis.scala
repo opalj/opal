@@ -90,11 +90,11 @@ object ParameterUsageAnalysis extends ProjectsAnalysisApplication {
 
         } { t => analysisTime = t.toSeconds }
 
-        val occurences = returnedParameters.size
+        val occurrences = returnedParameters.size
         val report = BasicReport(
             returnedParameters.mkString("Directly returned parameters:\n", "\n", "\n\n") +
                 unusedParameters.mkString("Unused parameters:\n", "\n", "\n\n") +
-                s"\nThe analysis took $analysisTime and found $occurences direct returns"
+                s"\nThe analysis took $analysisTime and found $occurrences direct returns"
         )
         (project, report)
     }

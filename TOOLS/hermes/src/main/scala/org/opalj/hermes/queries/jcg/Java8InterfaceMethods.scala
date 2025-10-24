@@ -33,7 +33,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
         Seq( /* IDM = interface default method */
             "J8DIM1", /* 0 --- call on interface which must be resolved to an IDM */
             "J8DIM2", /* 1 --- call on interface (with IDM) that must not be resolved to it */
-            "J8DIM3", /* 2 --- call on class which transitively calls an method that potentially could target an IDM */
+            "J8DIM3", /* 2 --- call on class which transitively calls a method that potentially could target an IDM */
             "J8DIM4", /* 3 --- call on class type which must be resolved to an IDM */
             "J8DIM5", /* 4 --- call that's dispatched to IDM where the class inherits from multiple interfaces with that idm (sig. wise) */
             "J8SIM1", /* 5 --- call to static interface method */

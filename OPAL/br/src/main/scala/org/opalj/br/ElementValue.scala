@@ -4,7 +4,7 @@ package br
 
 /**
  * An element value represents an annotation's value or an
- * annonation's default value; depending on the context in
+ * annotation's default value; depending on the context in
  * which it is used.
  *
  * @author Michael Eichberg

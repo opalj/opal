@@ -58,7 +58,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
      * Compares the given values for reference equality. Returns `Yes` if both values
      * point to the '''same instance''' and returns `No` if both objects are known not to
      * point to the same instance. The latter is, e.g., trivially the case when both
-     * values have a different concrete type. Otherwise `Unknown` is returned.
+     * values have a different concrete type. Otherwise, `Unknown` is returned.
      *
      * If both values are representing the `null` value the [[org.opalj.Answer]] is `Yes`.
      *
@@ -72,7 +72,7 @@ trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
      * Compares the given values for reference inequality. Returns `No` if both values
      * point to the '''same instance''' and returns `Yes` if both objects are known not to
      * point to the same instance. The latter is, e.g., trivially the case when both
-     * values have a different concrete type. Otherwise `Unknown` is returned.
+     * values have a different concrete type. Otherwise, `Unknown` is returned.
      *
      * If both values are representing the `null` value the [[org.opalj.Answer]] is `Yes`.
      *

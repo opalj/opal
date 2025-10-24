@@ -64,7 +64,7 @@ class PerformInvocationsWithRecursionDetectionTest extends AnyFlatSpec with Matc
         val domain = new InvocationDomain(project, method)
         BaseAI(method, domain)
 
-        domain.returnedNormally should be(true) // because we work at the type level at some point..
+        domain.returnedNormally should be(true) // because we work at the type level at some point...
     }
 
     it should ("be able to analyze a static method that uses recursion to calculate the factorial of a small concrete number") in {
@@ -164,7 +164,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
                     method:      Method,
                     operandsSet: List[Array[domain.DomainValue]]
                 ): Unit = {
-                    // super.frequentEvalution(definingClass, method, operandsSet)
+                    // super.frequentEvaluation(definingClass, method, operandsSet)
                     warningIssued = true
                 }
 

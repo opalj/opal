@@ -43,7 +43,7 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.getObjectReflectively
 
 /**
- * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results
+ * Simple test to ensure that the FPCF analyses do not cause exceptions and that their results
  * remain stable.
  *
  * @author Dominik Helm

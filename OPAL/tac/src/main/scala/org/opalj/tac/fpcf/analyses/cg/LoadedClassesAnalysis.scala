@@ -53,7 +53,7 @@ class LoadedClassesAnalysis(
      * In case there are definitively some callers, we remove the potential existing dependency
      * and handle the method as being newly reachable (i.e. analyse the field accesses of the method
      * and update its declaring class type as reachable)
-     * Here we add ne classes as being loaded.
+     * Here we add new classes as being loaded.
      */
     def handleCaller(
         declaredMethod: DeclaredMethod

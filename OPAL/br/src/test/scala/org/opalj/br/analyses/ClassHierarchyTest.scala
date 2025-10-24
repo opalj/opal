@@ -52,8 +52,8 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     val ArithmeticException = ClassType.ArithmeticException
     val Cloneable = ClassType.Cloneable
     val Serializable = ClassType.Serializable
-    val SeriablizableArray = ArrayType(Serializable)
-    val SeriablizableArrayOfArray = ArrayType(SeriablizableArray)
+    val SerializableArray = ArrayType(Serializable)
+    val SerializableArrayOfArray = ArrayType(SerializableArray)
     val AnUnknownType = ClassType("myTest/AnUnknownType")
     val AnUnknownTypeArray = ArrayType(AnUnknownType)
     val CloneableArray = ArrayType(Cloneable)
@@ -189,7 +189,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     val nestedInnerCovariantContainer = CTS("SimpleGeneric", List(elementType(covariantContainer)))
 
     /** SimpleGeneric<? extends SimpleGeneric<Base>> */
-    val nestedOutterCovariantContainer = CTS("SimpleGeneric", List(upperBoundType(baseContainer)))
+    val nestedOuterCovariantContainer = CTS("SimpleGeneric", List(upperBoundType(baseContainer)))
 
     /** SimpleGeneric<? super SimpleGeneric<Base>> */
     val nestedContravariantContainer =
@@ -234,21 +234,21 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_4", Nil))
     )
 
-    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_5<Base> // Suffix1_5<T> where T is not the FormalTypeParamter of the prefix of Suffix1_5. */
+    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_5<Base> // Suffix1_5<T> where T is not the FormalTypeParameter of the prefix of Suffix1_5. */
     val genericWithSuffix_Suffix1_5 = CTS(
         "GenericWithSuffix",
         List(elementType(baseCTS)),
         List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_5", List(elementType(baseCTS))))
     )
 
-    /** GenericWithSuffix<AlternativeBase>.Suffix1_1<AlternativeBase>.Suffix1_5<Base> // Suffix1_5<T> where T is not the FormalTypeParamter of the prefix of Suffix1_5. */
+    /** GenericWithSuffix<AlternativeBase>.Suffix1_1<AlternativeBase>.Suffix1_5<Base> // Suffix1_5<T> where T is not the FormalTypeParameter of the prefix of Suffix1_5. */
     val genericWithSuffix_altBase_Suffix1_5 = CTS(
         "GenericWithSuffix",
         List(elementType(altBaseCTS)),
         List(SimpleCTS("Suffix1_1", List(elementType(altBaseCTS))), SimpleCTS("Suffix1_5", List(elementType(baseCTS))))
     )
 
-    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_5<AlternativeBase> // Suffix1_5<T> where T is not the FormalTypeParamter of the prefix of Suffix1_5. */
+    /** GenericWithSuffix<Base>.Suffix1_1<Base>.Suffix1_5<AlternativeBase> // Suffix1_5<T> where T is not the FormalTypeParameter of the prefix of Suffix1_5. */
     val genericWithSuffix_Suffix1_5_altBase = CTS(
         "GenericWithSuffix",
         List(elementType(baseCTS)),
@@ -262,7 +262,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         List(SimpleCTS("Suffix1_1", List(elementType(baseCTS))), SimpleCTS("Suffix1_6", Nil))
     )
 
-    /** GenericWithSuffix<AlterantiveBase>.Suffix1_1<AlterantiveBase>.Suffix1_6 // Suffix1_6 extends Suffix1_5<Base> */
+    /** GenericWithSuffix<AlternativeBase>.Suffix1_1<AlterantiveBase>.Suffix1_6 // Suffix1_6 extends Suffix1_5<Base> */
     val genericWithSuffix_altBase_Suffix1_6 = CTS(
         "GenericWithSuffix",
         List(elementType(altBaseCTS)),
@@ -533,27 +533,27 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     it should "correctly reflect the basic type hierarchy related to Arrays" in {
         preInitCH.isASubtypeOf(ObjectArray, Object) should be(Yes)
         preInitCH.isSubtypeOf(ObjectArray, Object) should be(true)
-        preInitCH.isASubtypeOf(SeriablizableArray, ObjectArray) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArray, ObjectArray) should be(true)
+        preInitCH.isASubtypeOf(SerializableArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(SerializableArray, ObjectArray) should be(true)
         preInitCH.isASubtypeOf(CloneableArray, ObjectArray) should be(Yes)
         preInitCH.isSubtypeOf(CloneableArray, ObjectArray) should be(true)
         preInitCH.isASubtypeOf(ObjectArray, ObjectArray) should be(Yes)
         preInitCH.isSubtypeOf(ObjectArray, ObjectArray) should be(true)
-        preInitCH.isASubtypeOf(SeriablizableArray, SeriablizableArray) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArray, SeriablizableArray) should be(true)
+        preInitCH.isASubtypeOf(SerializableArray, SerializableArray) should be(Yes)
+        preInitCH.isSubtypeOf(SerializableArray, SerializableArray) should be(true)
         preInitCH.isASubtypeOf(AnUnknownTypeArray, AnUnknownTypeArray) should be(Yes)
         preInitCH.isSubtypeOf(AnUnknownTypeArray, AnUnknownTypeArray) should be(true)
 
         preInitCH.isASubtypeOf(Object, ObjectArray) should be(No)
         preInitCH.isSubtypeOf(Object, ObjectArray) should be(false)
-        preInitCH.isASubtypeOf(CloneableArray, SeriablizableArray) should be(No)
-        preInitCH.isSubtypeOf(CloneableArray, SeriablizableArray) should be(false)
+        preInitCH.isASubtypeOf(CloneableArray, SerializableArray) should be(No)
+        preInitCH.isSubtypeOf(CloneableArray, SerializableArray) should be(false)
 
-        preInitCH.isASubtypeOf(AnUnknownTypeArray, SeriablizableArray) should be(Unknown)
-        preInitCH.isSubtypeOf(AnUnknownTypeArray, SeriablizableArray) should be(false)
+        preInitCH.isASubtypeOf(AnUnknownTypeArray, SerializableArray) should be(Unknown)
+        preInitCH.isSubtypeOf(AnUnknownTypeArray, SerializableArray) should be(false)
 
-        preInitCH.isASubtypeOf(SeriablizableArray, AnUnknownTypeArray) should be(No)
-        preInitCH.isSubtypeOf(SeriablizableArray, AnUnknownTypeArray) should be(false)
+        preInitCH.isASubtypeOf(SerializableArray, AnUnknownTypeArray) should be(No)
+        preInitCH.isSubtypeOf(SerializableArray, AnUnknownTypeArray) should be(false)
     }
 
     it should "correctly reflect the type hierarchy related to Arrays of primitives" in {
@@ -573,25 +573,25 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
         preInitCH.isASubtypeOf(arrayOfIntArray, ObjectArray) should be(Yes)
         preInitCH.isSubtypeOf(arrayOfIntArray, ObjectArray) should be(true)
-        preInitCH.isASubtypeOf(arrayOfIntArray, SeriablizableArray) should be(Yes)
-        preInitCH.isSubtypeOf(arrayOfIntArray, SeriablizableArray) should be(true)
+        preInitCH.isASubtypeOf(arrayOfIntArray, SerializableArray) should be(Yes)
+        preInitCH.isSubtypeOf(arrayOfIntArray, SerializableArray) should be(true)
     }
 
     it should "correctly reflect the type hierarchy related to Arrays of Arrays" in {
-        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, Object) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, Object) should be(true)
-        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, SeriablizableArrayOfArray) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArrayOfArray) should be(true)
+        preInitCH.isASubtypeOf(SerializableArrayOfArray, Object) should be(Yes)
+        preInitCH.isSubtypeOf(SerializableArrayOfArray, Object) should be(true)
+        preInitCH.isASubtypeOf(SerializableArrayOfArray, SerializableArrayOfArray) should be(Yes)
+        preInitCH.isSubtypeOf(SerializableArrayOfArray, SerializableArrayOfArray) should be(true)
 
-        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, SeriablizableArray) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, SeriablizableArray) should be(true)
-        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, ObjectArray) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, ObjectArray) should be(true)
-        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(Yes)
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, CloneableArray) should be(true)
+        preInitCH.isASubtypeOf(SerializableArrayOfArray, SerializableArray) should be(Yes)
+        preInitCH.isSubtypeOf(SerializableArrayOfArray, SerializableArray) should be(true)
+        preInitCH.isASubtypeOf(SerializableArrayOfArray, ObjectArray) should be(Yes)
+        preInitCH.isSubtypeOf(SerializableArrayOfArray, ObjectArray) should be(true)
+        preInitCH.isASubtypeOf(SerializableArrayOfArray, CloneableArray) should be(Yes)
+        preInitCH.isSubtypeOf(SerializableArrayOfArray, CloneableArray) should be(true)
 
-        preInitCH.isASubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(No)
-        preInitCH.isSubtypeOf(SeriablizableArrayOfArray, AnUnknownTypeArray) should be(false)
+        preInitCH.isASubtypeOf(SerializableArrayOfArray, AnUnknownTypeArray) should be(No)
+        preInitCH.isSubtypeOf(SerializableArrayOfArray, AnUnknownTypeArray) should be(false)
     }
 
     behavior of "the ClassHierarchy's directSubtypesOf(UpperTypeBound) method"
@@ -772,7 +772,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
         isASubtypeOf(nestedExtBase, nestedInnerCovariantContainer) should be(Yes)
         isASubtypeOf(nestedBase, nestedContravariantContainer) should be(Yes)
         isASubtypeOf(nestedBase, contravariantWithContainer) should be(Yes)
-        isASubtypeOf(nestedBase, nestedOutterCovariantContainer) should be(Yes)
+        isASubtypeOf(nestedBase, nestedOuterCovariantContainer) should be(Yes)
     }
 
     it should "return NO if nested type arguments of the subtype and the supertype doesn't match" in {
@@ -896,7 +896,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     behavior of "the ClassHierarchy's method to traverse the class hierarchy"
 
-    it should "correctly find all suptypes of an interface" in {
+    it should "correctly find all subtypes of an interface" in {
         import clusteringProject.classHierarchy
 
         val window = ClassType("pattern/decorator/example1/Window")
@@ -932,7 +932,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
             true
         )
 
-    it should "correctly iterate over all suptypes of Object, even without the JDK included" in {
+    it should "correctly iterate over all subtypes of Object, even without the JDK included" in {
         var foundSomeEnumerationClass = false
         jvmFeaturesProject.classHierarchy.foreachSubtypeCF(ClassType.Object, false) { subTypeCF =>
             val subType = subTypeCF.thisType

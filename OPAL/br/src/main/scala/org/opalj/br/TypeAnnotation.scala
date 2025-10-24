@@ -32,7 +32,7 @@ sealed abstract class TypeAnnotationTargetInFieldDeclaration extends TypeAnnotat
     override final def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
-sealed abstract class TypeAnnotationTargetInMetodDeclaration extends TypeAnnotationTarget {
+sealed abstract class TypeAnnotationTargetInMethodDeclaration extends TypeAnnotationTarget {
     override final def remapPCs(codeSize: Int, f: PC => PC): Some[TypeAnnotationTarget] = Some(this)
 }
 
@@ -54,7 +54,7 @@ sealed abstract class TypeAnnotationPathElement {
      * A value in the range [0..3] which identifies the `path kind` as specified by the JVM
      * specification.
      *
-     * @note This enables efficient identificaion – e.g., in a switch – of the type path kind.
+     * @note This enables efficient identification – e.g., in a switch – of the type path kind.
      */
     def kindId: Int
 }
@@ -99,7 +99,7 @@ case class TAOfParameterDeclarationOfClassOrInterface(
 
 case class TAOfParameterDeclarationOfMethodOrConstructor(
     type_parameter_index: Int
-) extends TypeAnnotationTargetInMetodDeclaration {
+) extends TypeAnnotationTargetInMethodDeclaration {
     def typeId: Int = 0x01
 }
 
@@ -117,7 +117,7 @@ case class TAOfTypeBoundOfParameterDeclarationOfClassOrInterface(
 case class TAOfTypeBoundOfParameterDeclarationOfMethodOrConstructor(
     type_parameter_index: Int,
     bound_index:          Int
-) extends TypeAnnotationTargetInMetodDeclaration {
+) extends TypeAnnotationTargetInMethodDeclaration {
     def typeId: Int = 0x12
 }
 
@@ -125,21 +125,21 @@ case object TAOfFieldDeclaration extends TypeAnnotationTargetInFieldDeclaration 
     def typeId: Int = 0x13
 }
 
-case object TAOfReturnType extends TypeAnnotationTargetInMetodDeclaration {
+case object TAOfReturnType extends TypeAnnotationTargetInMethodDeclaration {
     def typeId: Int = 0x14
 }
 
-case object TAOfReceiverType extends TypeAnnotationTargetInMetodDeclaration {
+case object TAOfReceiverType extends TypeAnnotationTargetInMethodDeclaration {
     def typeId: Int = 0x15
 }
 
 case class TAOfFormalParameter(
     formal_parameter_index: Int
-) extends TypeAnnotationTargetInMetodDeclaration {
+) extends TypeAnnotationTargetInMethodDeclaration {
     def typeId: Int = 0x16
 }
 
-case class TAOfThrows(throws_type_index: Int) extends TypeAnnotationTargetInMetodDeclaration {
+case class TAOfThrows(throws_type_index: Int) extends TypeAnnotationTargetInMethodDeclaration {
     def typeId: Int = 0x17
 }
 

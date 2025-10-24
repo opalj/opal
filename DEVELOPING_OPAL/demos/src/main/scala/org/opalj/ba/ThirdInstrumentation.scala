@@ -53,8 +53,8 @@ object ThirdInstrumentation extends App {
 
     val TheType = ClassType("org/opalj/ba/SimpleInstrumentationDemo")
 
-    // Let's load the class ( we need the RT Jar to compute appropriate supertypes for
-    // local variables and stack values during instrumentation.
+    // Let's load the class (we need JavaBase to compute appropriate supertypes for
+    // local variables and stack values during instrumentation).
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
     val p = Project(f.getParentFile, org.opalj.bytecode.JavaBase)
     implicit val classHierarchy: ClassHierarchy = p.classHierarchy // STRICTLY REQUIRED WHEN A StackMapTable NEEDS TO BE COMPUTED!
@@ -113,10 +113,10 @@ object ThirdInstrumentation extends App {
                 // whenever a method is called, we output its signature
                 lCode.insert(
                     // Note, we generally don't want to use Before, here!
-                    // If we would use "Before" and would have a method like:
+                    // If we used "Before" and would have a method like:
                     // do {
                     // } while(...)
-                    // It could happen that the output would be printed each time the loop
+                    // , it could happen that the output would be printed each time the loop
                     // is evaluated.
                     0,
                     InsertionPosition.At,
@@ -164,7 +164,7 @@ object ThirdInstrumentation extends App {
                         Seq(
                             DUP, // duplicate the value
                             GETSTATIC(SystemType, "out", PrintStreamType), // receiver
-                            SWAP, // the int value is on top now..
+                            SWAP, // the int value is on top now...
                             IFGT(gtTarget),
                             // value is less than 0
                             LoadString("negative"), // top is the parameter, receiver is 2nd top most
@@ -230,7 +230,7 @@ object ThirdInstrumentation extends App {
             if (!ite.getCause.isInstanceOf[RuntimeException]) {
                 Console.err.println("Big Bug!")
             } else {
-                Console.out.println("Dead code successfully removedt!")
+                Console.out.println("Dead code successfully removed!")
             }
     }
 }

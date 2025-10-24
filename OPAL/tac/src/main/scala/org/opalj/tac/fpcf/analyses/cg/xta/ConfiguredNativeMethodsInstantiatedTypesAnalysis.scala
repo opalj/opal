@@ -114,7 +114,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
         val returnType = declaredMethod.descriptor.returnType.asReferenceType
 
-        // If we have an array return type, we want the ArrayType and its element type to be considered
+        // If we have an array return type, we want the ArrayType and its element-type to be considered
         val types =
             if (returnType.isArrayType && returnType.asArrayType.elementType.isClassType)
                 Array(returnType, returnType.asArrayType.elementType.asClassType)

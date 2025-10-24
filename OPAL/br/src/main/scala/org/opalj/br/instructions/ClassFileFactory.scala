@@ -124,7 +124,7 @@ object ClassFileFactory {
      *
      * - `methodDescriptor`'s return type is [[VoidType]] (so no returning is necessary)
      * - `receiverMethodDescriptor`'s return type is assignable to `methodDescriptor`'s
-     *      (e.g., a "smaller" numerical type, (un)boxable, a subtype, etc)
+     *      (e.g., a "smaller" numerical type, (un)boxable, a subtype, etc.)
      * - `receiverMethodDescriptor` returns `Object`: in this case, we assume that `Object`
      *   stands for "generic return type" and expect the receiver method to return an
      *   object of a type compatible to the forwarder method's return type
@@ -181,7 +181,7 @@ object ClassFileFactory {
      * @param invocationInstruction the opcode of the invocation instruction
      *          (`INVOKESPECIAL.opcode`,`INVOKEVIRTUAL.opcode`,
      *          `INVOKESTATIC.opcode`,`INVOKEINTERFACE.opcode`)
-     *          used to call call the method on the receiver.
+     *          used to call the method on the receiver.
      */
     def Proxy(
         caller:                  ClassType,
@@ -997,7 +997,7 @@ object ClassFileFactory {
     /**
      * Creates the bytecode instructions for the proxy method.
      *
-     * These instructions will setup the stack with the variables required to call the
+     * These instructions will set up the stack with the variables required to call the
      * `receiverMethod`, perform the appropriate invocation instruction (one of
      * INVOKESTATIC, INVOKEVIRTUAL, or INVOKESPECIAL), and return from the proxy method.
      *
@@ -1249,7 +1249,7 @@ object ClassFileFactory {
                 if (forwarderParametersCount > receiverParametersCount) {
                     /* This is the case of an implicit receiver becoming explicit in the
                      * forwarder, hence we get one instruction for loading the first
-                     * parameter. Subsequently we need to ignore that parameter, though.
+                     * parameter. Subsequently, we need to ignore that parameter, though.
                      */
                     numberOfInstructions += 1
                     lvIndex += forwarderParameters(0).computationalType.operandSize

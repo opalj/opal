@@ -37,7 +37,7 @@ class LoadConstantInstructionTest extends AnyFunSpec with Matchers {
             ) foreach { i => LoadConstantInstruction(i) should be(BIPUSH(i)) }
         }
 
-        it("short values that are larger/smaller than byte values shoud use sipush") {
+        it("short values that are larger/smaller than byte values should use sipush") {
             Seq(
                 Short.MinValue.toInt,
                 Byte.MinValue.toInt - 1,

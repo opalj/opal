@@ -526,7 +526,7 @@ lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
 
 /* ***************************************************************************
  *
- * TASKS, etc
+ * TASKS, etc.
  *
  */
 // To run the task: compile:generateSite

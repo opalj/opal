@@ -94,7 +94,7 @@ class PrimitiveTypes {
         return a + nonFinalStaticField;
     }
 
-    // Side-effect free Methods depending on final fields
+    // side-effect-free Methods depending on final fields
 
     @DomainSpecificSideEffectFree(
             "Value accessed from array is non-deterministic, potential index out of bounds exception" )
@@ -127,7 +127,7 @@ class PrimitiveTypes {
     // Some methods have a known purity level even if they can not be analyzed
     // (defined in ai/reference.conf)
 
-    @SideEffectFree("Invokes known to be side-effect free native method")
+    @SideEffectFree("Invokes known to be side-effect-free native method")
     @Impure(value = "Analysis does not support preloaded purity values",
             analyses = L0PurityAnalysis.class)
     public long getCurrentTime(){

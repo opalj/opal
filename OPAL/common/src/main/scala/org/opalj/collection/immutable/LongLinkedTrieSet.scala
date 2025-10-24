@@ -559,7 +559,7 @@ private[immutable] final class LongLinkedTrieSetN2(
         val lLSB = ((lValue >> level) & 1L) // lsb == bit at index `level`
 
         if (_0.isN || _1.isN) {
-            // We can't get rid of this N2 node... a successor node is an inner node and we
+            // We can't get rid of this N2 node... a successor node is an inner node, and we
             // do not want to perform "large" changes to the overall trie.
             return {
                 if (lLSB == 0) {

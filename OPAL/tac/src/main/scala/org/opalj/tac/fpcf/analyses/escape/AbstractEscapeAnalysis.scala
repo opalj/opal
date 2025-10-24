@@ -76,7 +76,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Analyzes each TAC statement of the given method. This methods assumes that there is at least
+     * Analyzes each TAC statement of the given method. This method assumes that there is at least
      * an intermediate result for the TAC present.
      */
     protected def analyzeTAC()(
@@ -415,7 +415,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Extracts information from the given entity and should call [[doDetermineEscape]] afterwards.
+     * Extracts information from the given entity and should call [[doDetermineEscape]] afterward.
      * For some entities a result might be returned immediately.
      */
     def determineEscape(e: Entity): ProperPropertyComputationResult =

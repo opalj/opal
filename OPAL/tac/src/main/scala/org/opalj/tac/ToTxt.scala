@@ -214,7 +214,7 @@ object ToTxt {
     }
 
     /**
-     * Converts the statements to some human readable text.
+     * Converts the statements to some human-readable text.
      *
      * @param includePC If `true` the original program counter is also shown in the output.
      */

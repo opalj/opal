@@ -731,7 +731,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     def ArrayValue(pc: Int, arrayType: ArrayType): DomainArrayValue
 
     /**
-     * Factory method to create a `DomainValue` that represents ''either an class-/interface
+     * Factory method to create a `DomainValue` that represents ''either a class-/interface
      * value that has the given type or the value `null`''. However, the
      * information whether the value is `null` or not is not available. Furthermore, the
      * type may also just be an upper bound and it is not known if the value is
@@ -750,7 +750,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
     def ObjectValue(pc: Int, classType: ClassType): DomainObjectValue
 
     /**
-     * Factory method to create a `DomainValue` that represents ''either an class-/interface
+     * Factory method to create a `DomainValue` that represents ''either a class-/interface
      * value that has the given types as an upper bound or the value `null`''. However, the
      * information whether the value is `null` or not is not available. Furthermore, the
      * type may also just be an upper bound and it is not known if the value is
@@ -803,7 +803,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Type: '''Precise'''
      *  - Null: '''No'''
      *  - Size: '''Count'''
-     *  - Content: ''Symbol("Empty")''' (i.e., default values w.r.t. to the array's component type)
+     *  - Content: '''Symbol("Empty")''' (i.e., default values w.r.t. to the array's component type)
      */
     def NewArray(pc: Int, count: DomainValue, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)
@@ -823,7 +823,7 @@ trait TypeLevelReferenceValues extends GeneralizedArrayHandling with AsJavaObjec
      *  - Type: '''Precise'''
      *  - Null: '''No'''
      *  - Size: '''Depending on the values in `counts`'''
-     *  - Content: ''Symbol("Empty")''' (i.e., default values w.r.t. to the array's component type)
+     *  - Content: '''Symbol("Empty")''' (i.e., default values w.r.t. to the array's component type)
      */
     def NewArray(pc: Int, counts: Operands, arrayType: ArrayType): DomainArrayValue = {
         ArrayValue(pc, arrayType)

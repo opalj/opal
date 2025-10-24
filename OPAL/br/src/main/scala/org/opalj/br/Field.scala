@@ -56,9 +56,9 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      */
     def attributes: Attributes
 
-    // This method is only to be called by ..br.ClassFile to associate this method
+    // This method is only to be called by br.ClassFile to associate this method
     // with the respective class file.
-    private[br] def prepareClassFileAttachement(): Field = {
+    private[br] def prepareClassFileAttachment(): Field = {
         new Field(
             null /*will be set by class file*/,
             accessFlags,

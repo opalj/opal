@@ -123,7 +123,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         }
 
         // Make sure to get the correct instruction, Integer::compareUnsigned has 3
-        // MethodInvokations in the proxy class, 2x intValue for getting the value of the int and
+        // MethodInvocations in the proxy class, 2x intValue for getting the value of the int and
         // compareUnsigned for the actual comparison. This method must return the last one, which
         // is compareUnsigned
         val invocationInstruction = invocationInstructions

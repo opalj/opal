@@ -46,7 +46,7 @@ object MapsEval extends App {
     @nowarn("msg=deprecated")
     val anyRefMap = scala.collection.mutable.AnyRefMap.empty[T, Object]
     val trieMap = scala.collection.concurrent.TrieMap.empty[T, Object]
-    // immmutable maps...
+    // immutable maps...
     var hashMap = scala.collection.immutable.HashMap.empty[T, Object]
     var treeMap = scala.collection.immutable.TreeMap.empty[T, Object]
 
@@ -66,7 +66,7 @@ object MapsEval extends App {
 
     time {
         ls.foreach { s =>
-            anyRefMap += (s -> theObject) // <= faster then adding it using pairs...
+            anyRefMap += (s -> theObject) // <= faster than adding it using pairs...
             // anyRefMap += ((s, theObject()))
         }: @nowarn("msg=deprecated")
     } { t => println("mutable AnyRefMap.add: " + t.toSeconds) }

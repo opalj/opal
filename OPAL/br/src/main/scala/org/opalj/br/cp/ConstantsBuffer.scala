@@ -358,7 +358,7 @@ object ConstantsBuffer {
 
         /*
         The basic idea is to first add the referenced constant pool entries (which always use two
-        byte references) and afterwards create the LDC related constant pool entries.
+        byte references) and afterward create the LDC related constant pool entries.
         For the first phase the pool's nextIndex is set to the first index that is required by the
         referenced entries. After that, nextIndex is set to 1 and all LDC related entries
         are created.

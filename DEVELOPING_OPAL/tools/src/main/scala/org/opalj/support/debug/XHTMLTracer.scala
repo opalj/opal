@@ -298,7 +298,7 @@ trait XHTMLTracer extends AITracer {
         /*ignored for now*/
     }
 
-    override def instructionEvalution(
+    override def instructionEvaluation(
         domain: Domain
     )(
         pc:          Int,

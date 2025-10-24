@@ -9,7 +9,7 @@ package instructions
  * @author Michael Eichberg
  */
 case class INVOKEVIRTUAL(
-    declaringClass:   ReferenceType, // an class or array type to be precise
+    declaringClass:   ReferenceType, // a class or array type to be precise
     name:             String,
     methodDescriptor: MethodDescriptor
 ) extends VirtualMethodInvocationInstruction {

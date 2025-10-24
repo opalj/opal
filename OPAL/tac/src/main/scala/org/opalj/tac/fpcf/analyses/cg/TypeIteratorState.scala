@@ -29,7 +29,7 @@ trait TypeIteratorState extends AnalysisState {
     // dependers (the use sites) and their dependees (the respective definition sites).
     // For each dependee (def-site) we store the corresponding EOptionP, such that we can
     // efficiently perform updates here.
-    // If we get an update for a dependee, we have to update all points-to sets for the
+    // If we get an update for a dependee, we have to update all points-to sets for
     // its dependers (_dependeeToDependers(dependee).
     private val _dependeeToDependers: mutable.Map[EPK[Entity, Property], mutable.Set[Entity]] = {
         mutable.Map.empty

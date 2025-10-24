@@ -500,7 +500,7 @@ object Immutability extends ProjectsAnalysisApplication {
                |
                | results folder: ${analysisConfig.get(OutputDirArg)}
                |
-               | CofigurationName: ${analysisConfig(ConfigurationNameArg)}
+               | ConfigurationName: ${analysisConfig(ConfigurationNameArg)}
                |
                | AI domain: ${analysisConfig(DomainArg)}
                |

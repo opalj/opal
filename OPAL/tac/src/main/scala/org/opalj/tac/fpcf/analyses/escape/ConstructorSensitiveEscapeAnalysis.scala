@@ -29,7 +29,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
 
 /**
- * Special handling for constructor calls, as the receiver of an constructor is always an
+ * Special handling for constructor calls, as the receiver of a constructor is always an
  * allocation site.
  * The constructor of Object does not escape the self reference by definition. For other
  * constructors, the inter-procedural chain will be processed until it reaches the Object
@@ -56,7 +56,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         assert(call.name == "<init>", "method is not a constructor")
         assert(state.usesDefSite(call.receiver), "call receiver does not use def-site")
 
-        // the object constructor will not escape the this local
+        // the object constructor will not escape the this-local
         if (call.declaringClass eq ClassType.Object)
             return;
 
@@ -70,7 +70,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         )
         constructor match {
             case Success(callee) =>
-                // check if the this local escapes in the callee
+                // check if the this-local escapes in the callee
 
                 val fp = context.virtualFormalParameters(context.declaredMethods(callee))(0)
                 val fpEntity = (
