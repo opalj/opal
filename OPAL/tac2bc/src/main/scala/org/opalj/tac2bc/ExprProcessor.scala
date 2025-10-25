@@ -130,8 +130,8 @@ object ExprProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        ExprProcessor.processExpression(instanceOf.value, tacToLVIndex, code, tacContext)
         code += INSTANCEOF(instanceOf.cmpTpe)
+        tacContext.emitStmt(instanceOf.value.asVar.definedBy.head)
     }
 
     def processPrefixExpr(
@@ -253,7 +253,10 @@ object ExprProcessor {
         // Load the index onto the stack
         tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit)
         // Load the array reference onto the stack
-        tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit)
+        if (arrayLoadExpr.arrayRef.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(arrayLoadExpr.arrayRef.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit)
     }
 
     // Helper function to infer the element type from the array reference expression
@@ -273,7 +276,10 @@ object ExprProcessor {
     ): Unit = {
         code += ARRAYLENGTH
         // Process the receiver object
-        tacContext.emitStmt(arrayLength.arrayRef.asVar.definedBy.head, delayStmtVisit)
+        if (arrayLength.arrayRef.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(arrayLength.arrayRef.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(arrayLength.arrayRef.asVar.definedBy.head, delayStmtVisit)
     }
 
     def processNewExpr(
@@ -404,10 +410,13 @@ object ExprProcessor {
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext
     ): Unit = {
-        // Load the object reference onto the stack
-        processExpression(getField.objRef, tacToLVIndex, code, tacContext)
         // Generate the GETFIELD instruction
         code += GETFIELD(getField.declaringClass, getField.name, getField.declaredFieldType)
+        // Load the object reference onto the stack
+        if (getField.objRef.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(getField.objRef.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(getField.objRef.asVar.definedBy.head)
     }
 
     def processGetStatic(
@@ -524,6 +533,10 @@ object ExprProcessor {
         }
 
         // Process the operand expression and add its instructions to the buffer
-        tacContext.emitStmt(primitiveTypecastExpr.operand.asVar.definedBy.head)
+        if (primitiveTypecastExpr.operand.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(primitiveTypecastExpr.operand.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(primitiveTypecastExpr.operand.asVar.definedBy.head)
+
     }
 }

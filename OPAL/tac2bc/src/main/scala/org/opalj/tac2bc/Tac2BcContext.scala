@@ -179,7 +179,7 @@ class Tac2BcContext(
      * Adjusts the use count of the array reference used by an ArrayLoad.
      */
     def increaseUseSitesForArrRef(arrLoadVar: Var[V], arrRefDefIdx: Int): Unit = {
-        if (!useSitesLeft.contains(arrRefDefIdx)) {
+        if (!useSitesLeft.contains(arrRefDefIdx) && arrRefDefIdx > 0) {
             val arrRefUseSites = getUseSites(arrRefDefIdx)
             val arrLoadVarUseSites = arrLoadVar.asVar.usedBy.size
             val newUseSites = arrLoadVarUseSites + arrRefUseSites

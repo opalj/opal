@@ -312,7 +312,10 @@ object StmtProcessor {
                 case _                          => throw new UnsupportedOperationException("Unsupported computational type:" + expr.cTpe)
             }
         }
-        tacContext.emitStmt(expr.asVar.definedBy.head)
+        if (expr.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(expr.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(expr.asVar.definedBy.head)
     }
 
     def processArrayStore(
@@ -474,11 +477,19 @@ object StmtProcessor {
         code:              mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:        Tac2BcContext
     ): Unit = {
-        // Load the object reference onto the stack
-        ExprProcessor.processExpression(objRef, tacToLVIndex, code, tacContext)
-        // Load the value to be stored onto the stack
-        ExprProcessor.processExpression(value, tacToLVIndex, code, tacContext)
         code += PUTFIELD(declaringClass, name, declaredFieldType)
+        // Load the value to be stored onto the stack
+        if (value.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(value.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(value.asVar.definedBy.head)
+
+        // Load the object reference onto the stack
+        if (objRef.asVar.definedBy.head < 0)
+            ExprProcessor.loadVariable(objRef.asVar, tacToLVIndex, code)
+        else
+            tacContext.emitStmt(objRef.asVar.definedBy.head)
+
     }
 
     def processMonitorEnter(
