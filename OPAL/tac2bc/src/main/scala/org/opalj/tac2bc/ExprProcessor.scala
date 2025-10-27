@@ -198,12 +198,7 @@ object ExprProcessor {
 
         // Process each parameter
         for (param <- invokedynamicFunctionCall.params.reverse) {
-            if(param.asVar.definedBy.size > 1) {
-                tacContext.emitVarDef(param.asVar)
-                //ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
-            } else {
-                tacContext.emitStmt(param.asVar.definedBy.head)
-            }
+            tacContext.emitStmt(param.asVar.definedBy.head)
         }
     }
 
@@ -252,11 +247,7 @@ object ExprProcessor {
         }
 
         // Load the index onto the stack
-        if(arrayLoadExpr.index.asVar.definedBy.size > 1) {
-            tacContext.emitVarDef(arrayLoadExpr.index.asVar)
-        } else {
-            tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit)
-        }
+        tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit)
         // Load the array reference onto the stack
         tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit)
     }
@@ -477,24 +468,12 @@ object ExprProcessor {
 
         binaryExpr.right match {
             case const: Const => ExprProcessor.loadConstant(const, code)
-            case uvar: UVar[_] =>
-                if(uvar.definedBy.size > 1) {
-                    //ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
-                    tacContext.emitVarDef(uvar)
-                } else {
-                    tacContext.emitStmt(uvar.definedBy.head, nestedStmt = true)
-                }
+            case uvar: UVar[_] => tacContext.emitStmt(uvar.definedBy.toList.reverse.last, nestedStmt = true)
         }
 
         binaryExpr.left match {
             case const: Const => ExprProcessor.loadConstant(const, code)
-            case uvar: UVar[_] =>
-                if(uvar.definedBy.size > 1) {
-                    //ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
-                    tacContext.emitVarDef(uvar)
-                } else {
-                    tacContext.emitStmt(uvar.definedBy.head, nestedStmt = true)
-                }
+            case uvar: UVar[_] => tacContext.emitStmt(uvar.definedBy.toList.reverse.last, nestedStmt = true)
         }
     }
 

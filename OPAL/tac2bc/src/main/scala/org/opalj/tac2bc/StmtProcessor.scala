@@ -228,10 +228,6 @@ object StmtProcessor {
             // Each ArrayLoad consumes the array reference as many times
             // as the load result is used, so we need to adjust the array reference use count.
             if (expr.isArrayLoad) {
-                tacContext.countUseSitesForArrRef(
-                    targetVar,
-                    expr.asArrayLoad.arrayRef.asVar.definedBy.head
-                )
                 if (targetVar.asVar.usedBy.size > 1) {
                     ExprProcessor.storeVariable(targetVar.asVar, tacToLVIndex, code)
                 }
@@ -560,12 +556,7 @@ object StmtProcessor {
         // process the left expr
         left match {
             case const: Const => ExprProcessor.loadConstant(const, code)
-            case uvar: UVar[_] =>
-                if(uvar.definedBy.size > 1) {
-                    tacContext.emitVarDef(uvar)
-                } else {
-                    tacContext.emitStmt(uvar.definedBy.head)
-                }
+            case uvar: UVar[_] => tacContext.emitStmt(uvar.definedBy.head)
         }
     }
 }

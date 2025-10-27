@@ -37,8 +37,18 @@ class Tac2BcContext(
         val stmt = tacStmts(defIdx)._1
         if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
 
-        val stmtIndex = tacStmts(defIdx)._2
-        StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this, stmtIndex, delayStmtVisit, nestedStmt)
+        // Determine where this variable is used
+        val usedIdx = variable match {
+            case dvar: DVar[ValueInformation] => dvar.usedBy.head
+            case uvar: UVar[ValueInformation] => uvar.definedBy.head
+        }
+
+        if (getDefSize(usedIdx, defIdx) > 1 || getUseSites(defIdx) > 1) {
+            emitVarDef(variable)
+        } else {
+            val stmtIndex = tacStmts(defIdx)._2
+            StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this, stmtIndex, delayStmtVisit, nestedStmt)
+        }
     }
 
     def emitVarUse(variable: Var[V]): Unit = {
@@ -65,17 +75,9 @@ class Tac2BcContext(
 
     /**
      * Handles variables with multiple definition sites.
-     * Decrements remaining use counters for each def-site and loads the variable onto the stack.
      */
     def emitVarDef(variable: Var[V]): Unit = {
         if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
-        val defSites = getIndicesFromVariable(variable)
-
-        defSites.iterator.foreach { defIdx =>
-            val current = usesLeft.getOrElse(defIdx, 0)
-            usesLeft.update(defIdx, current - 1)
-        }
-
         ExprProcessor.loadVariable(variable, tacToLVIndex, code)
     }
 
@@ -91,36 +93,24 @@ class Tac2BcContext(
     }
 
     /**
-     * Handles variables with multiple uses:
-     * loads the value from a local onto the stack or stores it in a local.
+     * Emits store of variables in locals with multiple uses.
      */
     private def emitMultUse(variable: Var[V], defIdx: Int): Unit = {
-        usesLeft(defIdx) -= 1
-
-        if(usesLeft(defIdx) == 0) {
-            ExprProcessor.storeVariable(variable, tacToLVIndex, code)
-            if (variable.cTpe.isCategory2) code += DUP2 else code += DUP
-            emitDef(defIdx)
-        } else {
-            ExprProcessor.loadVariable(variable, tacToLVIndex, code)
-        }
+        ExprProcessor.storeVariable(variable, tacToLVIndex, code)
+        if (variable.cTpe.isCategory2) code += DUP2 else code += DUP
+        emitDef(defIdx)
     }
 
     /**
-     * Handles variables with multiple definition sites:
-     * loads the value from a local onto the stack or stores it in a local.
+     * Emits store of variables in locals with multiple definition sites.
      */
     private def emitMultDef(variable: Var[V], defSites: IntTrieSet): Unit = {
-        if(usesLeft(defSites.head) == 0) {
-            ExprProcessor.storeVariable(variable, tacToLVIndex, code)
+        ExprProcessor.storeVariable(variable, tacToLVIndex, code)
 
-            defSites.iterator.foreach { defIdx =>
-                emitDef(defIdx)
-                val stmt = tacStmts(defIdx)._1
-                visitedStmt += stmt
-            }
-        } else {
-            ExprProcessor.loadVariable(variable, tacToLVIndex, code)
+        defSites.iterator.foreach { defIdx =>
+            emitDef(defIdx)
+            val stmt = tacStmts(defIdx)._1
+            visitedStmt += stmt
         }
     }
 
@@ -179,16 +169,16 @@ class Tac2BcContext(
                 //muss für ein DVar auch gemacht werden
                 findUVarInExpr(expr, defIdx)
                     .map(_.asVar.definedBy.size)
-                    .getOrElse(throw new NoSuchElementException("No UVar in given expression."))
+                    .getOrElse(0)
             case If(_, leftExpr, _, rightExpr, _) =>
                 if(leftExpr.asVar.definedBy.contains(defIdx))
                     findUVarInExpr(leftExpr, defIdx)
                         .map(_.asVar.definedBy.size)
-                        .getOrElse(throw new NoSuchElementException("No UVar in given expression."))
+                        .getOrElse(0)
                 else
                     findUVarInExpr(rightExpr, defIdx)
                         .map(_.asVar.definedBy.size)
-                        .getOrElse(throw new NoSuchElementException("No UVar in given expression."))
+                        .getOrElse(0)
             case _ => 0
         }
     }
