@@ -221,7 +221,7 @@ object StmtProcessor {
         delayStmtVisit: Boolean = false,
         nestedStmt:     Boolean = false
     ): Unit = {
-        if (expr.isConst || expr.isNewArray) {
+        if (expr.isConst || expr.isNewArray || expr.isNew) {
             tacContext.emitVarUse(targetVar)
         } else {
             // Special handling for ArrayLoad:
@@ -342,11 +342,11 @@ object StmtProcessor {
         }
 
         // Load the value to be stored onto the stack
-        tacContext.emitStmt(value.asVar.definedBy.head)
+        tacContext.emitStmt(value.asVar.definedBy.head, delayStmtVisit = true)
         // Load the index onto the stack
-        tacContext.emitStmt(index.asVar.definedBy.head)
+        tacContext.emitStmt(index.asVar.definedBy.head, delayStmtVisit = true)
         // Load the arrayRef onto the stack
-        tacContext.emitStmt(arrayRef.asVar.definedBy.head)
+        tacContext.emitStmt(arrayRef.asVar.definedBy.head, delayStmtVisit = true)
     }
 
     def processNop(code: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {

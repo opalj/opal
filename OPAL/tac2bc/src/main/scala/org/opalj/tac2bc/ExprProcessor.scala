@@ -247,9 +247,9 @@ object ExprProcessor {
         }
 
         // Load the index onto the stack
-        tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit)
+        tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit = true)
         // Load the array reference onto the stack
-        tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit)
+        tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit = true)
     }
 
     // Helper function to infer the element type from the array reference expression
@@ -311,7 +311,7 @@ object ExprProcessor {
         call.receiverOption.foreach { receiver =>
             val definedByIdx = receiver.asVar.definedBy.head
 
-            if(call.isInstanceOf[NonVirtualMethodCall[V]])
+            if(receiver.asVar.definedBy.head < 0)
                 ExprProcessor.loadVariable(receiver.asVar, tacToLVIndex, code)
             else
                 tacContext.emitStmt(definedByIdx)

@@ -4,7 +4,7 @@ import org.opalj.ba.CodeElement
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.{DUP, DUP2, RewriteLabel}
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{Assignment, Const, DVar, Expr, If, NewArray, Stmt, UVar, V, Var}
+import org.opalj.tac.{Assignment, Const, DVar, Expr, If, New, NewArray, Stmt, UVar, V, Var}
 import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
@@ -109,8 +109,6 @@ class Tac2BcContext(
 
         defSites.iterator.foreach { defIdx =>
             emitDef(defIdx)
-            val stmt = tacStmts(defIdx)._1
-            visitedStmt += stmt
         }
     }
 
@@ -125,6 +123,7 @@ class Tac2BcContext(
                 expr match {
                     case const: Const => ExprProcessor.loadConstant(const, code)
                     case newArray: NewArray[V] => ExprProcessor.processNewArray(newArray, tacToLVIndex, code, this)
+                    case newExpr: New => ExprProcessor.processNewExpr(newExpr.tpe, code)
                     case _ =>
                 }
             case _ =>
