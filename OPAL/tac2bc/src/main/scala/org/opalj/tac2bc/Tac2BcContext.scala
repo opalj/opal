@@ -225,25 +225,4 @@ class Tac2BcContext(
         }
         found
     }
-
-    /**
-     * Adjusts the use count of the array reference used by an ArrayLoad.
-     */
-    def countUseSitesForArrRef(arrLoadVar: Var[V], arrRefDefIdx: Int): Unit = {
-        if (!usesLeft.contains(arrRefDefIdx)) {
-            val arrRefUseSites = getUseSites(arrRefDefIdx)
-            val arrLoadVarUseSize = arrLoadVar.asVar.usedBy.size
-            var newUseSites = arrLoadVarUseSize + arrRefUseSites
-            usesLeft.getOrElseUpdate(arrRefDefIdx, newUseSites - 1)
-
-            // wenn useSites aber schon benutzt wurden?
-            val arrLoadVarUseSites = arrLoadVar.asVar.usedBy
-            arrLoadVarUseSites.foreach{ useIdx =>
-                if (usesLeft.contains(useIdx)) {
-                    newUseSites = arrRefUseSites + usesLeft(useIdx)
-                    usesLeft.update(arrRefDefIdx, newUseSites - 1)
-                }
-            }
-        }
-    }
 }

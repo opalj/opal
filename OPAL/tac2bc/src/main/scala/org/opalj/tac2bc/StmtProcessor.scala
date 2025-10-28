@@ -570,7 +570,7 @@ object StmtProcessor {
         }
 
         // process the left expr
-        right match {
+        left match {
             case const: Const => ExprProcessor.loadConstant(const, code)
             case uvar: UVar[_] =>
                 if (uvar.definedBy.head < 0)
