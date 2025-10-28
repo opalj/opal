@@ -3,7 +3,8 @@ package org.opalj.tac2bc
 import org.opalj.ba.CodeElement
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.{DUP, DUP2, RewriteLabel}
-import org.opalj.tac.{Assignment, Const, DVar, Expr, NewArray, Stmt, UVar, V, Var, New}
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.tac.{Assignment, Const, DVar, Expr, If, New, NewArray, Stmt, UVar, V, Var}
 import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
@@ -20,79 +21,100 @@ class Tac2BcContext(
 )(implicit project: SomeProject) {
 
     /** Remaining uses of a variable after its definition. */
-    private val useSitesLeft = mutable.Map[Int, Int]()
+    private val usesLeft = mutable.Map[Int, Int]()
 
     /** Maps each variable to its definition index in TAC. */
-    private val savedDefSites = mutable.Map[Var[V], Int]()
+    private val savedDefSites = mutable.Map[Var[V], IntTrieSet]()
 
     val visitedStmt: ArrayBuffer[Stmt[V]] = ArrayBuffer[Stmt[V]]()
 
     val delayedVisitStmt: ArrayBuffer[Stmt[V]] = ArrayBuffer[Stmt[V]]()
 
     def emitStmt(defIdx: Int,
-                 delayStmtVisit: Boolean = false): Unit = {
+                 delayStmtVisit: Boolean = false,
+                 nestedStmt: Boolean = false): Unit = {
         val variable = getVarFromId(defIdx)
         val stmt = tacStmts(defIdx)._1
-        if (!savedDefSites.contains(variable)) {
-            savedDefSites(variable) = defIdx
-            useSitesLeft.getOrElseUpdate(defIdx, getUseSites(defIdx))
+        if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
+
+        // Determine where this variable is used
+        val usedIdx = variable match {
+            case dvar: DVar[ValueInformation] => dvar.usedBy.head
+            case uvar: UVar[ValueInformation] => uvar.definedBy.head
         }
 
-        val stmtIndex = tacStmts(defIdx)._2
-        StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this, stmtIndex, delayStmtVisit)
+        if (getDefSize(usedIdx, defIdx) > 1 || getUseSites(defIdx) > 1) {
+            emitVarDef(variable)
+        } else {
+            val stmtIndex = tacStmts(defIdx)._2
+            StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this, stmtIndex, delayStmtVisit, nestedStmt)
+        }
     }
 
     def emitVarUse(variable: Var[V]): Unit = {
-        // Determine the definition index for this variable (and cache it if not known yet).
-        val defIdx = savedDefSites.get(variable) match {
-            case Some(idx) => idx
-            case None =>
-                val idx = variable match {
-                    case dvar: DVar[ValueInformation] => dvar.originatedAt
-                    case uvar: UVar[ValueInformation] => uvar.definedBy.head
-                }
-                savedDefSites(variable) = idx
-                idx
-        }
+        if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
+        val defSites = getIndicesFromVariable(variable)
+        val defIdx = defSites.head
 
         // Determine the First use-site index (where this variable is used)
         val usedIdx = variable match {
             case dvar: DVar[ValueInformation] => dvar.usedBy.head
+            case uvar: UVar[ValueInformation] => uvar.definedBy.head
         }
 
         // If the current expression has multiple def-sites,
         // store the variable in a local to preserve its value.
-        if(getDefSites(usedIdx) > 1) {
-            ExprProcessor.storeVariable(variable, tacToLVIndex, code)
-        }
-
-        if(getUseSites(defIdx) > 1) {
-            emitMultDef(variable, defIdx)
-        }
-        else {
+        if(getDefSize(usedIdx, defIdx) > 1) {
+            emitMultDef(variable, defSites)
+        } else if (getUseSites(defIdx) > 1) {
+            emitMultUse(variable, defIdx)
+        } else {
             emitDef(defIdx)
         }
     }
 
     /**
-     * Handles variables with multiple uses:
-     * loads the value from a local onto the stack or stores it in a local.
+     * Handles variables with multiple definition sites.
      */
-    private def emitMultDef(variable: Var[V], defIdx: Int): Unit = {
-        useSitesLeft(defIdx) -= 1
+    def emitVarDef(variable: Var[V]): Unit = {
+        if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
+        ExprProcessor.loadVariable(variable, tacToLVIndex, code)
+    }
 
-        if(useSitesLeft(defIdx) == 0) {
-            ExprProcessor.storeVariable(variable, tacToLVIndex, code)
-            if (variable.cTpe.isCategory2) code += DUP2 else code += DUP
+    /**
+     * Maintains essential tracking information for a variable.
+     * Registers its definition sites in `savedDefSites` and initializes remaining use counts in `usesLeft`.
+     */
+    private def saveVariableInfo(variable: Var[V]): Unit = {
+        val defSites = getIndicesFromVariable(variable)
+        savedDefSites.getOrElseUpdate(variable, defSites)
+
+        defSites.iterator.foreach(defIdx => usesLeft.getOrElseUpdate(defIdx, getUseSites(defIdx)))
+    }
+
+    /**
+     * Emits store of variables in locals with multiple uses.
+     */
+    private def emitMultUse(variable: Var[V], defIdx: Int): Unit = {
+        ExprProcessor.storeVariable(variable, tacToLVIndex, code)
+        if (variable.cTpe.isCategory2) code += DUP2 else code += DUP
+        emitDef(defIdx)
+    }
+
+    /**
+     * Emits store of variables in locals with multiple definition sites.
+     */
+    private def emitMultDef(variable: Var[V], defSites: IntTrieSet): Unit = {
+        ExprProcessor.storeVariable(variable, tacToLVIndex, code)
+
+        defSites.iterator.foreach { defIdx =>
             emitDef(defIdx)
-        } else {
-            ExprProcessor.loadVariable(variable, tacToLVIndex, code)
         }
     }
 
     /**
      * Emits bytecode for the definition of a variable at the given index.
-     * Loads an end node to the stack.
+     * Loads a constant onto the stack.
      */
     private def emitDef(defIdx: Int): Unit = {
         val stmt = tacStmts(defIdx)._1
@@ -100,11 +122,30 @@ class Tac2BcContext(
             case Assignment(_, _, expr) =>
                 expr match {
                     case const: Const => ExprProcessor.loadConstant(const, code)
-                    case newExpr: New => ExprProcessor.processNewExpr(newExpr.tpe, code)
                     case newArray: NewArray[V] => ExprProcessor.processNewArray(newArray, tacToLVIndex, code, this)
+                    case newExpr: New => ExprProcessor.processNewExpr(newExpr.tpe, code)
+                    case _ =>
                 }
             case _ =>
         }
+    }
+
+    /**
+     * Returns all definition indices associated with the given variable.
+     */
+    private def getIndicesFromVariable(variable: Var[V]): IntTrieSet = {
+        savedDefSites.getOrElseUpdate(
+            variable, {
+                variable match {
+                    case dvar: DVar[ValueInformation] =>
+                        IntTrieSet(dvar.originatedAt)
+
+                    case uvar: UVar[ValueInformation] => uvar.definedBy
+                    case _ =>
+                        IntTrieSet.empty
+                }
+            }
+        )
     }
 
     /**
@@ -121,12 +162,22 @@ class Tac2BcContext(
      * Returns the number of def-sites for the variable used inside the expression
      * of the statement at the given definition index.
      */
-    private def getDefSites(defIdx: Int): Int = {
-        tacStmts(defIdx)._1 match {
+    private def getDefSize(useIdx: Int, defIdx: Int): Int = {
+        tacStmts(useIdx)._1 match {
             case Assignment(_, _, expr) =>
-                findUVarInExpr(expr)
+                //muss für ein DVar auch gemacht werden
+                findUVarInExpr(expr, defIdx)
                     .map(_.asVar.definedBy.size)
-                    .getOrElse(throw new NoSuchElementException("No UVar in given expression."))
+                    .getOrElse(0)
+            case If(_, leftExpr, _, rightExpr, _) =>
+                if(leftExpr.asVar.definedBy.contains(defIdx))
+                    findUVarInExpr(leftExpr, defIdx)
+                        .map(_.asVar.definedBy.size)
+                        .getOrElse(0)
+                else
+                    findUVarInExpr(rightExpr, defIdx)
+                        .map(_.asVar.definedBy.size)
+                        .getOrElse(0)
             case _ => 0
         }
     }
@@ -154,18 +205,18 @@ class Tac2BcContext(
     /**
      * Returns the given expression and returns the first UVar found, if any.
      */
-    private def findUVarInExpr(expr: Expr[V]): Option[UVar[_]] = {
+    private def findUVarInExpr(expr: Expr[V], defIdx: Int): Option[UVar[_]] = {
         // First, check the root expression itself.
         var found: Option[UVar[_]] = expr match {
-            case u: UVar[_] => Some(u)
-            case _          => None
+            case u: UVar[_] if u.definedBy.contains(defIdx) => return Some(u)
+            case _ => None
         }
 
         // Run through all subexpressions.
         // It will stop traversal when the predicate returns false.
         expr.forallSubExpressions { sub =>
             sub match {
-                case u: UVar[_] =>
+                case u: UVar[_] if u.definedBy.contains(defIdx) =>
                     found = Some(u)
                     false
                 case _ =>
@@ -178,12 +229,21 @@ class Tac2BcContext(
     /**
      * Adjusts the use count of the array reference used by an ArrayLoad.
      */
-    def increaseUseSitesForArrRef(arrLoadVar: Var[V], arrRefDefIdx: Int): Unit = {
-        if (!useSitesLeft.contains(arrRefDefIdx) && arrRefDefIdx > 0) {
+    def countUseSitesForArrRef(arrLoadVar: Var[V], arrRefDefIdx: Int): Unit = {
+        if (!usesLeft.contains(arrRefDefIdx)) {
             val arrRefUseSites = getUseSites(arrRefDefIdx)
-            val arrLoadVarUseSites = arrLoadVar.asVar.usedBy.size
-            val newUseSites = arrLoadVarUseSites + arrRefUseSites
-            useSitesLeft.getOrElseUpdate(arrRefDefIdx, newUseSites - 1)
+            val arrLoadVarUseSize = arrLoadVar.asVar.usedBy.size
+            var newUseSites = arrLoadVarUseSize + arrRefUseSites
+            usesLeft.getOrElseUpdate(arrRefDefIdx, newUseSites - 1)
+
+            // wenn useSites aber schon benutzt wurden?
+            val arrLoadVarUseSites = arrLoadVar.asVar.usedBy
+            arrLoadVarUseSites.foreach{ useIdx =>
+                if (usesLeft.contains(useIdx)) {
+                    newUseSites = arrRefUseSites + usesLeft(useIdx)
+                    usesLeft.update(arrRefDefIdx, newUseSites - 1)
+                }
+            }
         }
     }
 }

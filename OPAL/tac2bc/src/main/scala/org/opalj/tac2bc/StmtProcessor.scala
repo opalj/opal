@@ -87,19 +87,23 @@ object StmtProcessor {
      * @param tacToLVIndex map that holds information for Local Variable Indices
      * @param labels array that maps tac indices to RewriteLabels as targets for control flow instructions
      * @param code list where bytecode instructions should be added
+     * @param tacContext is responsible for translating TAC to bytecode in reverse order.
+     * @param delayStmtVisit if true, delays emitting the label and marking the statement as visited until later.
+     * @param nestedStmt indicates nested expression and preventing unnecessary variable stores during translation.
      */
     def processStmt(
-        stmt:         Stmt[V],
-        tacToLVIndex: Map[Int, Int],
-        labels:       Array[RewriteLabel],
-        code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext,
-        stmtIndex:    Int,
-        delayStmtVisit: Boolean = false
-        )(implicit project: SomeProject): Unit = {
+        stmt:           Stmt[V],
+        tacToLVIndex:   Map[Int, Int],
+        labels:         Array[RewriteLabel],
+        code:           mutable.ListBuffer[CodeElement[Nothing]],
+        tacContext:     Tac2BcContext,
+        stmtIndex:      Int,
+        delayStmtVisit: Boolean = false,
+        nestedStmt:     Boolean = false
+    )(implicit project: SomeProject): Unit = {
         stmt match {
             case Assignment(_, targetVar, expr) =>
-                processAssignment(targetVar, expr, tacToLVIndex, code, tacContext, delayStmtVisit)
+                processAssignment(targetVar, expr, tacToLVIndex, code, tacContext, delayStmtVisit, nestedStmt)
             case ArrayStore(_, arrayRef, index, value) =>
                 processArrayStore(arrayRef, index, value, tacToLVIndex, code, tacContext)
             case CaughtException(_, exceptionType, throwingStmts) =>
@@ -225,12 +229,12 @@ object StmtProcessor {
             // Special handling for ArrayLoad:
             // Each ArrayLoad consumes the array reference as many times
             // as the load result is used, so we need to adjust the array reference use count.
-            if (expr.isArrayLoad)
-                tacContext.increaseUseSitesForArrRef(
-                    targetVar,
-                    expr.asArrayLoad.arrayRef.asVar.definedBy.head
-                )
-            ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext)
+            if (expr.isArrayLoad) {
+                if (targetVar.asVar.usedBy.size > 1) {
+                    ExprProcessor.storeVariable(targetVar.asVar, tacToLVIndex, code)
+                }
+            }
+            ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext, delayStmtVisit, nestedStmt)
         }
     }
 
@@ -343,11 +347,11 @@ object StmtProcessor {
         }
 
         // Load the value to be stored onto the stack
-        tacContext.emitStmt(value.asVar.definedBy.head)
+        tacContext.emitStmt(value.asVar.definedBy.head, delayStmtVisit = true)
         // Load the index onto the stack
-        tacContext.emitStmt(index.asVar.definedBy.head)
+        tacContext.emitStmt(index.asVar.definedBy.head, delayStmtVisit = true)
         // Load the arrayRef onto the stack
-        tacContext.emitStmt(arrayRef.asVar.definedBy.head)
+        tacContext.emitStmt(arrayRef.asVar.definedBy.head, delayStmtVisit = true)
     }
 
     def processNop(code: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
@@ -566,9 +570,13 @@ object StmtProcessor {
         }
 
         // process the left expr
-        if (left.asVar.definedBy.head < 0)
-            ExprProcessor.loadVariable(left.asVar, tacToLVIndex, code)
-        else
-            tacContext.emitStmt(left.asVar.definedBy.head)
+        right match {
+            case const: Const => ExprProcessor.loadConstant(const, code)
+            case uvar: UVar[_] =>
+                if (uvar.definedBy.head < 0)
+                    ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
+                else
+                    tacContext.emitStmt(uvar.definedBy.head)
+        }
     }
 }

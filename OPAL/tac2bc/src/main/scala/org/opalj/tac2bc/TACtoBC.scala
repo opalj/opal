@@ -171,7 +171,12 @@ object TACtoBC {
                 StmtProcessor.visitDelayedStmt(stmt, code, labels, currentIdx, tacContext)
             }
             if(!tacContext.isStmtVisited(stmt)) {
-                StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, tacContext, currentIdx)
+                if(tacContext.isStmtVisitDelayed(stmt)) {
+                    StmtProcessor.visitDelayedStmt(stmt, code, labels, currentIdx, tacContext)
+                }
+                if(!tacContext.isStmtVisited(stmt)) {
+                    StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, tacContext, currentIdx)
+                }
             }
         }
         code.toIndexedSeq.reverse

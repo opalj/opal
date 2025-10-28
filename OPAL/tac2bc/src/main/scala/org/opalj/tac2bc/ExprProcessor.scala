@@ -84,18 +84,22 @@ object ExprProcessor {
      * @param expr the Expression to be converted into InstructionElements
      * @param tacToLVIndex map that holds information for Local Variable Indices
      * @param code list where bytecode instructions should be added
+     * @param tacContext is responsible for translating TAC to bytecode in reverse order.
+     * @param delayStmtVisit if true, delays emitting the label and marking the statement as visited until later.
+     * @param nestedStmt indicates nested expression and preventing unnecessary variable stores during translation.
      */
     def processExpression(
         expr:         Expr[V],
         tacToLVIndex: Map[Int, Int],
         code:         mutable.ListBuffer[CodeElement[Nothing]],
         tacContext:   Tac2BcContext,
-        delayStmtVisit: Boolean = false
-        ): Unit = {
+        delayStmtVisit: Boolean = false,
+        nestedStmt:     Boolean = false
+    ): Unit = {
         expr match {
             case getField: GetField[V]     => processGetField(getField, tacToLVIndex, code, tacContext)
             case getStatic: GetStatic      => processGetStatic(getStatic, code)
-            case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code, tacContext)
+            case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code, tacContext, nestedStmt)
             case callExpr: Call[V @unchecked] =>
                 val call @ Call(declaringClass, isInterface, name, descriptor) = callExpr
                 processCall(
@@ -198,7 +202,7 @@ object ExprProcessor {
 
         // Process each parameter
         for (param <- invokedynamicFunctionCall.params.reverse) {
-            if(param.asVar.definedBy.size > 1 || param.asVar.definedBy.head < 0) {
+            if(param.asVar.definedBy.head < 0) {
                 ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
             } else {
                 tacContext.emitStmt(param.asVar.definedBy.head)
@@ -251,12 +255,12 @@ object ExprProcessor {
         }
 
         // Load the index onto the stack
-        tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit)
+        tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit = true)
         // Load the array reference onto the stack
         if (arrayLoadExpr.arrayRef.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(arrayLoadExpr.arrayRef.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit)
+            tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit = true)
     }
 
     // Helper function to infer the element type from the array reference expression
@@ -430,8 +434,14 @@ object ExprProcessor {
         binaryExpr:   BinaryExpr[V],
         tacToLVIndex: Map[Int, Int],
         code:         mutable.ListBuffer[CodeElement[Nothing]],
-        tacContext:   Tac2BcContext
+        tacContext:   Tac2BcContext,
+        nestedStmt:   Boolean = false
     ): Unit = {
+        // Used as an indicator for loop-related patterns (e.g., variables reused across iterations)
+        if(binaryExpr.left.asVar.definedBy.size > 1) {
+            if(!nestedStmt) ExprProcessor.storeVariable(binaryExpr.left.asVar, tacToLVIndex, code)
+        }
+
         code += {
             (binaryExpr.cTpe, binaryExpr.op) match {
                 // Double
@@ -483,7 +493,7 @@ object ExprProcessor {
                 if (uvar.definedBy.head < 0)
                     ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
                 else
-                    tacContext.emitStmt(uvar.definedBy.head, delayStmtVisit = true)
+                    tacContext.emitStmt(uvar.definedBy.head, delayStmtVisit = true, nestedStmt = true)
         }
 
         binaryExpr.left match {
@@ -492,9 +502,10 @@ object ExprProcessor {
                 if (uvar.definedBy.head < 0)
                     ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
                 else
-                    tacContext.emitStmt(uvar.definedBy.head)
+                    tacContext.emitStmt(uvar.definedBy.head, nestedStmt = true)
         }
     }
+
     def processPrimitiveTypeCastExpr(
         primitiveTypecastExpr: PrimitiveTypecastExpr[V],
         tacToLVIndex:          Map[Int, Int],
