@@ -225,7 +225,8 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
             // ... we identify easy instances of field reads (interaction with potentially disruptive reads
             // is checked separately; note that this inference relies on a flat TAC) OR ...
             stmt.isAssignment && stmt.asAssignment.expr.isGetField ||
-            // ... we easily identify the use site to initialize an object OR ... TODO check that this is sound
+            // ... we easily identify the use site to initialize an object (fine as initializer reads outside the
+            // current method are forbidden) OR ...
             stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
             // ... the statement is irrelevant, since there is no instance where the write did not take effect yet
             !pathExists(stmt.pc, writePC, tac)
