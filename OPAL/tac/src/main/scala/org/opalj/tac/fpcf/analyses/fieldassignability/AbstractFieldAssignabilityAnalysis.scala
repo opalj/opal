@@ -71,12 +71,6 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         var tacDependees: Map[DefinedMethod, EOptionP[Method, TACAI]] = Map.empty
 
-        def forEachAccessInMethod(accesses: Map[Context, Set[(PC, AccessReceiver)]], definedMethod: DefinedMethod)(
-            f: (Context, Set[(PC, AccessReceiver)]) => Unit
-        ): Unit = {
-            accesses.iterator.filter(_._1.method eq definedMethod).foreach(kv => f(kv._1, kv._2))
-        }
-
         def hasDependees: Boolean = {
             fieldWriteAccessDependee.exists(_.isRefinable) ||
             fieldReadAccessDependee.exists(_.isRefinable) ||
@@ -179,18 +173,33 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             case TACAI.key =>
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val method = declaredMethods(newEP.e)
+                if (state.tacDependees(method).hasUBP)
+                    throw IllegalStateException("True updates to the TAC (UB -> new UB) are not supported yet!")
                 state.tacDependees += method -> newEP
                 val tac = newEP.ub.tac.get
-                // Renew field assignability analysis for all field accesses
-                state.forEachAccessInMethod(state.initializerWrites, method) { (context, accesses) => // TODO do for each access type
-                    accesses.foreach { case (pc, receiver) =>
-                        val receiverVar = receiver.map(uVarForDefSites(_, tac.pcToIndex))
-                        if (state.fieldAssignability != Assignable)
-                            state.fieldAssignability = state.fieldAssignability.meet {
-                                analyzeInitializerWrite(context, tac, pc, receiverVar)
+
+                def refreshAssignability(
+                    accesses:    Map[Context, Set[(PC, AccessReceiver)]],
+                    analyzeFunc: (Context, TACode[TACMethodParameter, V], PC, Option[V]) => FieldAssignability
+                ): Unit = {
+                    if (state.fieldAssignability != Assignable) {
+                        accesses.iterator.filter(_._1.method eq method).foreach { case (context, accessesInContext) =>
+                            accessesInContext.foreach { case (pc, receiver) =>
+                                val receiverVar = receiver.map(uVarForDefSites(_, tac.pcToIndex))
+                                if (state.fieldAssignability != Assignable)
+                                    state.fieldAssignability = state.fieldAssignability.meet {
+                                        analyzeFunc(context, tac, pc, receiverVar)
+                                    }
                             }
+                        }
                     }
                 }
+
+                refreshAssignability(state.initializerReads, analyzeInitializerRead)
+                refreshAssignability(state.nonInitializerReads, analyzeNonInitializerRead)
+                refreshAssignability(state.initializerWrites, analyzeInitializerWrite)
+                refreshAssignability(state.nonInitializerWrites, analyzeNonInitializerWrite)
+
                 createResult()
         }
     }
