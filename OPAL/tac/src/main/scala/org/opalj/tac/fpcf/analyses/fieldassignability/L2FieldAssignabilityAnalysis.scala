@@ -100,7 +100,7 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
         writePC:  PC,
         receiver: Option[V]
     )(implicit state: State): FieldAssignability = {
-        val assignability = completeLazyInitPatternForInitializerRead()
+        val assignability = completeLazyInitPatternForInitializerWrite()
         if (assignability == Assignable)
             return Assignable;
 
