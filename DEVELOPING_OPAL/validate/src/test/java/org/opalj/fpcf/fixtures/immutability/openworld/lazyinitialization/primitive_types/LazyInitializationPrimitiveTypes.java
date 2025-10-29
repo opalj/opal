@@ -295,7 +295,9 @@ class VisibleInitialization {
 
 class CaughtExceptionInInitialization {
 
-    //TODO @LazilyInitializedField("Despite the possible exception the field is always seen with one value")
+    @LazilyInitializedField(value = "The field is always seen with one value", analyses = {})
+    @AssignableField(value = "The possible exception prevents the analysis",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init(int i) {
@@ -309,5 +311,19 @@ class CaughtExceptionInInitialization {
         } catch (Exception e) {
             return 0;
         }
+    }
+}
+
+class PreInitializedDefaultValueField {
+
+    @UnsafelyLazilyInitializedField(value = "The field is always seen with one value")
+    private Object lazyInitField = null;
+
+    public Object getLazyInitField() {
+        if (this.lazyInitField == null) {
+            this.lazyInitField = new Object();
+        }
+
+        return this.lazyInitField;
     }
 }
