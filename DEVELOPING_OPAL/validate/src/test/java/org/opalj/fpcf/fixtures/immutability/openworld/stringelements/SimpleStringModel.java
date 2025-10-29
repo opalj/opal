@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.openworld.stringelements;
 
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
@@ -17,25 +18,27 @@ public final class SimpleStringModel {
 
     @TransitivelyImmutableField(value = "The array values are not mutated after the assignment ", analyses = {})
     @NonTransitivelyImmutableField(value = "The analysis can not recognize transitive immutable arrays",
-            analyses = { FieldImmutabilityAnalysis.class})
-    @NonAssignableField("The field is final")
+            analyses = { FieldImmutabilityAnalysis.class })
+    @NonAssignableField(value = "The field is final", analyses = {})
+    @AssignableField(value = "The field is written read and written in two different initializers",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private final char value[];
 
-    public char[] getValue(){
+    public char[] getValue() {
         return value.clone();
     }
 
     @TransitivelyImmutableField(value = "Lazy initialized field with primitive type", analyses = {})
     @LazilyInitializedField(value = "Field is lazily initialized", analyses = {})
     @UnsafelyLazilyInitializedField(value = "The analysis cannot recognize determinism",
-            analyses = {L2FieldAssignabilityAnalysis.class})
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private int hash; // Default value 0
 
     public SimpleStringModel(SimpleStringModel original) {
         this.value = original.value;
     }
 
-    public SimpleStringModel(char[] value){
+    public SimpleStringModel(char[] value) {
         this.value = value.clone();
     }
 
