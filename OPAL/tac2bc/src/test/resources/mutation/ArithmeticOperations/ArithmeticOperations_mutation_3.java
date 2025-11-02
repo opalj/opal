@@ -17,4 +17,4 @@ public class ArithmeticOperations_mutation_3 {
     private static int calculateQuotient(int a, int b) {
         return a / b;
     }
-}h
+}

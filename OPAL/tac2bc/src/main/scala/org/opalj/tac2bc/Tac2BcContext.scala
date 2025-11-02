@@ -2,9 +2,10 @@ package org.opalj.tac2bc
 
 import org.opalj.ba.CodeElement
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.instructions.{DUP, DUP2, RewriteLabel}
+import org.opalj.br.instructions.RewriteLabel
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.{Assignment, Const, DVar, Expr, If, New, NewArray, Stmt, UVar, V, Var}
+import org.opalj.tac.{ArrayLoad, Assignment, BinaryExpr, Call, Const, DVar, Expr, ExprStmt, GetStatic, If, New, NewArray, Stmt, Switch, UVar, V, Var}
+import org.opalj.tac2bc.ExprProcessor.{processArrayLoad, processBinaryExpr, processCall}
 import org.opalj.value.ValueInformation
 
 import scala.collection.mutable
@@ -30,47 +31,66 @@ class Tac2BcContext(
 
     val delayedVisitStmt: ArrayBuffer[Stmt[V]] = ArrayBuffer[Stmt[V]]()
 
+    /** Variables that have been saved to local variables. */
+    val loadedStmt: ArrayBuffer[Var[V]] = ArrayBuffer[Var[V]]()
+
+    /** Statements that have been marked as end nodes. */
+    val endNodes: ArrayBuffer[Stmt[V]] = ArrayBuffer[Stmt[V]]()
+
+    /**
+     * Central dispatcher for emitting or loading a statement’s value during backward code generation.
+     *
+     * @param defIdx           The TAC statement index defining the variable to process.
+     * @param delayStmtVisit   If true, label emission for this statement is delayed until after all its child expressions have been processed.
+     * @param nestedStmt       If true, store/load instructions inside this statement are suppressed because it is nested within another.
+     * @param parentIdx        The index of the parent statement, used to detect end nodes.
+     */
     def emitStmt(defIdx: Int,
                  delayStmtVisit: Boolean = false,
-                 nestedStmt: Boolean = false): Unit = {
+                 nestedStmt: Boolean = false,
+                 parentIdx: Int = -1): Unit = {
         val variable = getVarFromId(defIdx)
         val stmt = tacStmts(defIdx)._1
+        val stmtIndex = tacStmts(defIdx)._2
         if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
+        val childIdx = findChildIndex(variable)
 
-        // Determine where this variable is used
-        val usedIdx = variable match {
-            case dvar: DVar[ValueInformation] => dvar.usedBy.head
-            case uvar: UVar[ValueInformation] => uvar.definedBy.head
+        // Mark this statement as an end node when it represents the final use and the variable is already in locals
+        if (childIdx == parentIdx && loadedStmt.contains(variable)) {
+            endNodes += stmt
         }
 
-        if (getDefSize(usedIdx, defIdx) > 1 || getUseSites(defIdx) > 1) {
+        // If this def has multiple defs or uses, load from locals; otherwise, process it normally
+        if (getDefSize(childIdx, defIdx) > 1 || getUseSites(defIdx) > 1) {
             emitVarDef(variable)
         } else {
-            val stmtIndex = tacStmts(defIdx)._2
             StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this, stmtIndex, delayStmtVisit, nestedStmt)
         }
     }
 
-    def emitVarUse(variable: Var[V]): Unit = {
+    /**
+     * Handles the use of end nodes during backward bytecode generation.
+     *
+     * @param variable         The variable whose use is being processed.
+     * @param delayStmtVisit   If true, label emission for this statement is delayed until after all its child expressions have been processed.
+     * @param nestedStmt       If true, store/load instructions inside this statement are suppressed because it is nested within another.
+     */
+    def emitVarUse(variable: Var[V],
+                   delayStmtVisit: Boolean = false,
+                   nestedStmt: Boolean): Unit = {
         if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
         val defSites = getIndicesFromVariable(variable)
         val defIdx = defSites.head
 
-        // Determine the First use-site index (where this variable is used)
-        val usedIdx = variable match {
-            case dvar: DVar[ValueInformation] => dvar.usedBy.head
-            case uvar: UVar[ValueInformation] => uvar.definedBy.head
+        val childIdx = findChildIndex(variable)
+
+        // If the current expression has multiple def- and use-sites, store the variable in a local
+        if (getDefSize(childIdx, defIdx) > 1 || getUseSites(defIdx) > 1) {
+            ExprProcessor.storeVariable(variable, tacToLVIndex, code)
         }
 
-        // If the current expression has multiple def-sites,
-        // store the variable in a local to preserve its value.
-        if(getDefSize(usedIdx, defIdx) > 1) {
-            emitMultDef(variable, defSites)
-        } else if (getUseSites(defIdx) > 1) {
-            emitMultUse(variable, defIdx)
-        } else {
-            emitDef(defIdx)
-        }
+        // Otherwise emit its defining bytecode sequence
+        emitDef(defIdx, delayStmtVisit, nestedStmt)
     }
 
     /**
@@ -79,6 +99,7 @@ class Tac2BcContext(
     def emitVarDef(variable: Var[V]): Unit = {
         if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
         ExprProcessor.loadVariable(variable, tacToLVIndex, code)
+        loadedStmt += variable
     }
 
     /**
@@ -92,23 +113,10 @@ class Tac2BcContext(
         defSites.iterator.foreach(defIdx => usesLeft.getOrElseUpdate(defIdx, getUseSites(defIdx)))
     }
 
-    /**
-     * Emits store of variables in locals with multiple uses.
-     */
-    private def emitMultUse(variable: Var[V], defIdx: Int): Unit = {
-        ExprProcessor.storeVariable(variable, tacToLVIndex, code)
-        if (variable.cTpe.isCategory2) code += DUP2 else code += DUP
-        emitDef(defIdx)
-    }
-
-    /**
-     * Emits store of variables in locals with multiple definition sites.
-     */
-    private def emitMultDef(variable: Var[V], defSites: IntTrieSet): Unit = {
-        ExprProcessor.storeVariable(variable, tacToLVIndex, code)
-
-        defSites.iterator.foreach { defIdx =>
-            emitDef(defIdx)
+    private def findChildIndex(variable: Var[V]): Int = {
+        variable match {
+            case dvar: DVar[ValueInformation] => dvar.usedBy.iterator.min
+            case uvar: UVar[ValueInformation] => uvar.definedBy.toList.iterator.min
         }
     }
 
@@ -116,14 +124,31 @@ class Tac2BcContext(
      * Emits bytecode for the definition of a variable at the given index.
      * Loads a constant onto the stack.
      */
-    private def emitDef(defIdx: Int): Unit = {
+    private def emitDef(defIdx: Int, delayStmtVisit: Boolean, nestedStmt: Boolean): Unit = {
         val stmt = tacStmts(defIdx)._1
+        val stmtIndex = tacStmts(defIdx)._2
         stmt match {
             case Assignment(_, _, expr) =>
                 expr match {
                     case const: Const => ExprProcessor.loadConstant(const, code)
                     case newArray: NewArray[V] => ExprProcessor.processNewArray(newArray, tacToLVIndex, code, this)
                     case newExpr: New => ExprProcessor.processNewExpr(newExpr.tpe, code)
+                    case getStatic: GetStatic => ExprProcessor.processGetStatic(getStatic, code)
+                    case callExpr: Call[V @unchecked] =>
+                        val call @ Call(declaringClass, isInterface, name, descriptor) = callExpr
+                        processCall(
+                            call,
+                            declaringClass,
+                            isInterface,
+                            name,
+                            descriptor,
+                            tacToLVIndex,
+                            code,
+                            this,
+                            stmtIndex
+                        )
+                    case arrayLoadExpr: ArrayLoad[V] => processArrayLoad(arrayLoadExpr, tacToLVIndex, code, this, delayStmtVisit, stmtIndex)
+                    case binaryExpr: BinaryExpr[V] => processBinaryExpr(binaryExpr, tacToLVIndex, code, this, nestedStmt, stmtIndex)
                     case _ =>
                 }
             case _ =>
@@ -178,6 +203,10 @@ class Tac2BcContext(
                     findUVarInExpr(rightExpr, defIdx)
                         .map(_.asVar.definedBy.size)
                         .getOrElse(0)
+            case Switch(_, _, index, _) =>
+                findUVarInExpr(index, defIdx)
+                    .map(_.asVar.definedBy.size)
+                    .getOrElse(0)
             case _ => 0
         }
     }
@@ -185,9 +214,10 @@ class Tac2BcContext(
     /**
      * Returns the variable corresponding to the given definition index.
      */
-    private def getVarFromId(defIdx: Int): Var[V] = {
+    def getVarFromId(defIdx: Int): Var[V] = {
         tacStmts(defIdx)._1 match {
             case Assignment(_, dvar: DVar[ValueInformation], _) => dvar.asVar
+            case ExprStmt(_, _) => null
             case _ => throw new NoSuchElementException("There are no variables in Statements.")
         }
     }
@@ -224,5 +254,18 @@ class Tac2BcContext(
             }
         }
         found
+    }
+
+    def isStmtLoaded(stmtIndex: Int): Boolean = {
+        loadedStmt.exists {
+            case dvar: DVar[ValueInformation] => dvar.originatedAt == stmtIndex
+            case uvar: UVar[ValueInformation] => uvar.definedBy.head == stmtIndex
+            case _ => false
+        }
+    }
+
+    def isStmtMarkedAsEndNode(stmtIdx: Int): Boolean = {
+        val stmt = tacStmts(stmtIdx)._1
+        endNodes.contains(stmt)
     }
 }
