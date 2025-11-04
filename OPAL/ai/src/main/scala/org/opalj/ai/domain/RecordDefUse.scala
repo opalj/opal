@@ -27,6 +27,7 @@ import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.Locals as Registers
 import org.opalj.control.foreachNonNullValue
 import org.opalj.graphs.DefaultMutableNode
+import org.opalj.util.elidedAssert
 
 /**
  * Collects the definition/use information based on the abstract interpretation time cfg.
@@ -275,11 +276,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                 joinedDefOps:  mutable.Builder[ValueOrigins, List[ValueOrigins]] = List.newBuilder[ValueOrigins]
             ): List[ValueOrigins] = {
                 if (lDefOps.isEmpty) {
-                    // assert(rDefOps.isEmpty)
+                    // elidedAssert(rDefOps.isEmpty)
                     return if (oldIsSuperset) oldDefOps else joinedDefOps.result();
                 }
                 /*
-                assert(
+                elidedAssert(
                     rDefOps.nonEmpty,
                     s"unexpected (pc:$currentPC -> pc:$successorPC): $lDefOps vs. $rDefOps;"+
                      s" original: $oldDefOps"
@@ -300,12 +301,12 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                     // IMPROVE Consider using ++! (or !==!)
                     val joinedHead = newHead ++ oldHead
                     /*
-                    assert(newHead.subsetOf(joinedHead))
-                    assert(
+                    elidedAssert(newHead.subsetOf(joinedHead))
+                    elidedAssert(
                         oldHead.subsetOf(joinedHead),
                         s"$newHead ++ $oldHead is $joinedHead"
                     )
-                    assert(
+                    elidedAssert(
                         joinedHead.size > oldHead.size,
                         s"$newHead ++ $oldHead is $joinedHead"
                     )
@@ -324,7 +325,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
             if (newDefOps ne oldDefOps) {
                 val joinedDefOps = joinDefOps(oldDefOps, newDefOps, oldDefOps)
                 if (joinedDefOps ne oldDefOps) {
-                    // assert(
+                    // elidedAssert(
                     //     joinedDefOps != oldDefOps,
                     //     s"$joinedDefOps is unexpectedly equal to $newDefOps join $oldDefOps"
                     // )
@@ -332,7 +333,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                     // joinedDefOps.foreach{vo =>
                     //    require(vo != null, s"$newDefOps join $oldDefOps == null")
                     // }
-                    // assert(joinedDefOps.forall(e => e.iterator.size == e.size))
+                    // elidedAssert(joinedDefOps.forall(e => e.iterator.size == e.size))
                     defOps(successorPC) = joinedDefOps
                 }
             }
@@ -390,7 +391,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                                 newUsage = true
                                 // IMPROVE Consider using ++!
                                 val joinedDefLocals = n ++ o
-                                // assert(
+                                // elidedAssert(
                                 //      joinedDefLocals.size > o.size,
                                 //      s"$n ++  $o is $joinedDefLocals"
                                 // )
@@ -399,7 +400,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                         }
                     )
                 if (joinedDefLocals ne oldDefLocals) {
-                    // assert(
+                    // elidedAssert(
                     //      joinedDefLocals != oldDefLocals,
                     //      s"$joinedDefLocals should not be equal to "+
                     //          s"$newDefLocals join $oldDefLocals"
@@ -412,8 +413,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
 
             forceScheduling
         } else {
-            assert(!newDefOps.contains(null), "null value origin found")
-            // assert(newDefOps.forall(e => e.iterator.size == e.size))
+            elidedAssert(!newDefOps.contains(null), "null value origin found")
+            // elidedAssert(newDefOps.forall(e => e.iterator.size == e.size))
             defOps(successorPC) = newDefOps
             defLocals(successorPC) = newDefLocals
             true // <=> always schedule the execution of the next instruction
@@ -1005,8 +1006,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
             // unless, we have a nested subroutine call - in that case, we have to
             // do the nested subroutine call first!
 
-            assert(currentSubroutineLevel == currentSubroutinePCs.size)
-            assert(currentSubroutineLevel == subroutineIDs.size)
+            elidedAssert(currentSubroutineLevel == currentSubroutinePCs.size)
+            elidedAssert(currentSubroutineLevel == subroutineIDs.size)
             if (jsrPCs.top.nonEmpty &&
                 // We have to check if we have a nested JSR call;
                 // if the current subroutine level (root = 0) is smaller than the
@@ -1055,13 +1056,13 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
                 val lastSubroutinePCs = currentSubroutinePCs.pop()
                 currentSubroutineLevel -= 1
                 subroutineIDs = subroutineIDs.tail
-                assert(jsrPCs.head.isEmpty)
+                elidedAssert(jsrPCs.head.isEmpty)
                 val oldSubroutineJsrPCs = jsrPCs.pop() // drop empty IntTrieSet
-                assert(oldSubroutineJsrPCs.isEmpty)
+                elidedAssert(oldSubroutineJsrPCs.isEmpty)
                 val oldSubroutineNextPCs = nextPCs.pop() // drop empty IntTrieSet
-                assert(oldSubroutineNextPCs.isEmpty)
+                elidedAssert(oldSubroutineNextPCs.isEmpty)
                 val oldSubroutineNextJoinPCs = nextJoinPCs.pop() // drop empty IntTrieSet
-                assert(oldSubroutineNextJoinPCs.isEmpty)
+                elidedAssert(oldSubroutineNextJoinPCs.isEmpty)
 
                 // println(s"END OF A SUBROUTINE: $retPC ... $thisSubroutineRetTargetPCs: "+lastSubroutinePCs.mkString(", "))
 
@@ -1265,8 +1266,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain & TheCode =>
             }
         }
 
-        assert(nextPCs.tail.isEmpty)
-        assert(nextJoinPCs.tail.isEmpty)
+        elidedAssert(nextPCs.tail.isEmpty)
+        elidedAssert(nextJoinPCs.tail.isEmpty)
 
         // Integrate the accumulated subroutine information (if available)
         if (subroutinePCs.nonEmpty) {

@@ -8,6 +8,7 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsIllegalValue
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsReturnAddressValue
@@ -248,7 +249,7 @@ trait ValuesDomain { domain =>
          *          [[doJoin]].
          */
         def join(pc: Int, that: DomainValue): Update[DomainValue] = {
-            assert(that ne this, "join is only defined for objects that are different")
+            elidedAssert(that ne this, "join is only defined for objects that are different")
 
             if ((that eq TheIllegalValue) || (this.computationalType ne that.computationalType))
                 MetaInformationUpdateIllegalValue
@@ -312,7 +313,7 @@ trait ValuesDomain { domain =>
          * @see `abstractsOver`
          */
         def isMorePreciseThan(other: DomainValue): Boolean = {
-            assert(this.computationalType eq other.computationalType)
+            elidedAssert(this.computationalType eq other.computationalType)
 
             if (this eq other)
                 return false;

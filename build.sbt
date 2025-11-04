@@ -199,7 +199,17 @@ lazy val `Common` = (project in file("OPAL/common"))
     .settings(
         name := "Common",
         Compile / doc / scalacOptions := Opts.doc.title("OPAL-Common"),
-        libraryDependencies ++= Dependencies.common(scalaVersion.value)
+        libraryDependencies ++= Dependencies.common(scalaVersion.value),
+        // This tasks flips all `false` flags in the ReleaseFlags file to `true` when compiling production
+        // (non-SNAPSHOT) builds in order to elide assertions. A separate task later resets the file for development.
+        Compile / sourceGenerators += Def.task {
+            if (!(ThisBuild / version).value.endsWith("-SNAPSHOT")) {
+                val file = (Compile / sourceDirectory).value / "scala" / "org" / "opalj" / "ReleaseFlags.scala"
+                IO.write(file, releaseFlags.replace("= false", "= true"))
+                streams.value.log.info("Disabling assertions")
+                Seq(file)
+            } else Seq.empty
+        }.taskValue
     )
     .configs(IntegrationTest)
 
@@ -529,6 +539,7 @@ lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
  * TASKS, etc.
  *
  */
+
 // To run the task: compile:generateSite
 val generateSite = Compile / taskKey[File]("creates the OPAL website")
 
@@ -550,6 +561,20 @@ compile := {
     (Compile / generateSite).value
     r
 }
+
+// This task resets the ReleaseFlags file that was rewritten in the `Common` subproject above when compiling production
+// (non-SNAPSHOT) builds to elide assertions. This restores standard development behavior, i.e., enabled assertions.
+val releaseFlagsFile = file("OPAL/common/src/main/scala/org/opalj/ReleaseFlags.scala")
+val releaseFlags = IO.read(releaseFlagsFile)
+lazy val reenableAssertions = taskKey[Unit]("Re-enables assertions")
+
+reenableAssertions := {
+    if (!(ThisBuild / version).value.endsWith("-SNAPSHOT")) {
+        IO.write(releaseFlagsFile, releaseFlags)
+        streams.value.log.info("Enabling assertions")
+    }
+}
+reenableAssertions := (reenableAssertions triggeredBy (Common / Compile / compile)).value
 
 //
 //

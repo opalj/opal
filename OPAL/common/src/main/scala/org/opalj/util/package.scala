@@ -12,6 +12,7 @@ import scala.util.Using
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
 
+import org.opalj.ReleaseFlags.elideAssertions
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -136,6 +137,22 @@ package object util {
                 error(category, "Reflected object is invalid", cce)
                 None
         }
+    }
+
+    /**
+     * Assertion that is elided in production builds, controlled by [[ReleaseFlags.elideAssertions]] which is
+     * automatically rewritten for non-SNAPSHOT builds.
+     */
+    inline def elidedAssert(inline assertion: => Boolean): Unit = {
+        inline if (!elideAssertions) assert(assertion)
+    }
+
+    /**
+     * Assertion that is elided in production builds, controlled by [[ReleaseFlags.elideAssertions]] which is
+     * automatically rewritten for non-SNAPSHOT builds.
+     */
+    inline def elidedAssert(inline assertion: => Boolean, inline message: String): Unit = {
+        inline if (!elideAssertions) assert(assertion, message)
     }
 
 }

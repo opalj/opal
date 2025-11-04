@@ -27,6 +27,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
+import org.opalj.util.elidedAssert
 
 /**
  * Special handling for constructor calls, as the receiver of a constructor is always an
@@ -53,8 +54,8 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): Unit = {
-        assert(call.name == "<init>", "method is not a constructor")
-        assert(state.usesDefSite(call.receiver), "call receiver does not use def-site")
+        elidedAssert(call.name == "<init>", "method is not a constructor")
+        elidedAssert(state.usesDefSite(call.receiver), "call receiver does not use def-site")
 
         // the object constructor will not escape the this-local
         if (call.declaringClass eq ClassType.Object)

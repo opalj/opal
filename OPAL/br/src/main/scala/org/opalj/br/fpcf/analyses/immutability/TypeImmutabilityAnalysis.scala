@@ -39,6 +39,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.util.elidedAssert
 
 /**
  * Determines the immutability of a specific type by checking if all subtypes of a specific
@@ -204,7 +205,7 @@ class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnaly
                                 }
                             }
                             if (joinedImmutability == maxImmutability) {
-                                assert(maxImmutability == NonTransitivelyImmutableType)
+                                elidedAssert(maxImmutability == NonTransitivelyImmutableType)
                                 Result(t, maxImmutability)
                             } else {
                                 InterimResult(

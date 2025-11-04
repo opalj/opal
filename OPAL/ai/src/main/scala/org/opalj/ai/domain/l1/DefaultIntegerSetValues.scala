@@ -11,6 +11,7 @@ import java.lang.Math.min
 import scala.collection.immutable.SortedSet
 
 import org.opalj.br.CTIntType
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsIntegerValue
 
 /**
@@ -50,7 +51,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     class IntegerSet(val values: SortedSet[Int]) extends super.IntegerSetLike {
 
-        assert(values.nonEmpty)
+        elidedAssert(values.nonEmpty)
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {

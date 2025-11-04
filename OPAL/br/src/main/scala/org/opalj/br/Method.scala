@@ -21,6 +21,7 @@ import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
+import org.opalj.util.elidedAssert
 
 /**
  * Represents a single method.
@@ -99,7 +100,7 @@ sealed abstract class JVMMethod
         attributes:  Attributes       = this.attributes
     ): MethodTemplate = {
         // ensure invariant that the code attribute is explicitly extracted...
-        assert(attributes.forall { a => a.kindId != Code.KindId })
+        elidedAssert(attributes.forall { a => a.kindId != Code.KindId })
 
         val n = if (this.name eq name) name else name.intern()
 

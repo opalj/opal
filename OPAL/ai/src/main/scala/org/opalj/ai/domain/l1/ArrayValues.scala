@@ -7,6 +7,7 @@ package l1
 import scala.reflect.ClassTag
 
 import org.opalj.br.ArrayType
+import org.opalj.util.elidedAssert
 
 /**
  * Enables the tracking of the length of arrays in the most common cases.
@@ -43,7 +44,7 @@ trait ArrayValues extends l1.ReferenceValues {
          */
         def theLength: Int
 
-        assert(length.get >= 0, "impossible length")
+        elidedAssert(length.get >= 0, "impossible length")
 
         override final def length: Option[Int] = Some(theLength)
 

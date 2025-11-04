@@ -8,6 +8,7 @@ import scala.Int.MaxValue as MaxInt
 import scala.Int.MinValue as MinInt
 
 import org.opalj.br.CTIntType
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsIntegerValue
 
 /**
@@ -464,7 +465,7 @@ trait IntegerRangeValues
             case _                          => (Int.MinValue, Int.MaxValue)
         }
         // establish new bounds // e.g. l=(0,0) & r=(-10,0)
-        assert(lb1 < ub2, s"the value $left cannot be less than $right")
+        elidedAssert(lb1 < ub2, s"the value $left cannot be less than $right")
 
         val newUB1 = Math.min(ub1, ub2 - 1)
         val newMemoryLayout @ (operands1, locals1) =

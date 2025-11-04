@@ -15,6 +15,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContextQuery
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.elidedAssert
 
 /**
  * The set of all [[org.opalj.br.DeclaredMethod]]s (potentially used by the property store).
@@ -119,7 +120,7 @@ class DeclaredMethods(
         }
 
         method = dmSet.get(context)
-        assert(method ne null)
+        elidedAssert(method ne null)
         method
     }
 

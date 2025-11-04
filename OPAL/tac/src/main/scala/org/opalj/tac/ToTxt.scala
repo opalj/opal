@@ -14,6 +14,7 @@ import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.cfgNodeOrdering
+import org.opalj.util.elidedAssert
 
 /**
  * Converts a list of three-address instructions into a text-based representation for comprehension
@@ -257,7 +258,7 @@ object ToTxt {
             def catchTypeToString(t: Option[Type]): String = t.map(_.toJava).getOrElse("<FINALLY>")
 
             val bb = cfg.bb(index)
-            assert(
+            elidedAssert(
                 bb ne null,
                 s"index: $index; max: $max; catchNodes:${cfg.catchNodes.mkString("{", ", ", "}")}"
             )

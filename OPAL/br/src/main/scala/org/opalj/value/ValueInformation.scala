@@ -35,6 +35,7 @@ import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.VoidType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
+import org.opalj.util.elidedAssert
 
 /**
  * Encapsulates the available type information about a `DomainValue`.
@@ -657,7 +658,7 @@ trait IsMObjectValue extends IsBaseReferenceValue {
 
     override final def isArrayValue: Answer = No
 
-    assert(upperTypeBound.size > 1)
+    elidedAssert(upperTypeBound.size > 1)
 
     override final def verificationTypeInfo: VerificationTypeInfo = {
         ObjectVariableInfo(leastUpperType.get)
@@ -987,7 +988,7 @@ object TypeOfReferenceValue {
 
 trait IsMultipleReferenceValue extends IsReferenceValue {
 
-    assert(baseValues.nonEmpty)
+    elidedAssert(baseValues.nonEmpty)
 
     override def allValues: Iterable[IsReferenceValue] = this.baseValues
 
@@ -1062,8 +1063,8 @@ case class AMultipleReferenceValue(
     leastUpperType: Option[ReferenceType] // None in case of "null"
 ) extends IsMultipleReferenceValue {
 
-    assert((isNull.isYes && leastUpperType.isEmpty) || (isNull.isNoOrUnknown && leastUpperType.isDefined))
-    assert(baseValues.forall(_.getClass.getPackage.getName == ("org.opalj.value")))
+    elidedAssert((isNull.isYes && leastUpperType.isEmpty) || (isNull.isNoOrUnknown && leastUpperType.isDefined))
+    elidedAssert(baseValues.forall(_.getClass.getPackage.getName == ("org.opalj.value")))
 
     override final def isArrayValue: Answer = {
         leastUpperType match {

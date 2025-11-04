@@ -8,6 +8,7 @@ import java.lang.Math.abs
 
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.CTIntType
+import org.opalj.util.elidedAssert
 
 /**
  * This domain implements the tracking of integer values at the level of ranges.
@@ -68,7 +69,7 @@ trait DefaultIntegerRangeValues extends DefaultSpecialDomainValuesBinding with I
      */
     class IntegerRange(val lowerBound: Int, val upperBound: Int) extends super.IntegerRangeLike {
 
-        assert(
+        elidedAssert(
             lowerBound <= upperBound,
             s"the lower bound $lowerBound is larger than the upper bound $upperBound"
         )

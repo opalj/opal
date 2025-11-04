@@ -30,6 +30,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogMessage
+import org.opalj.util.elidedAssert
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -488,7 +489,7 @@ trait InvokedynamicRewriting
 
                     if (nextInsert < recipe.length) {
                         if (nextInsert == nextParam) {
-                            assert(recipe.charAt(nextInsert) == '\u0001')
+                            elidedAssert(recipe.charAt(nextInsert) == '\u0001')
                             val paramType = descriptor.parameterType(paramIndex)
                             appendParam(paramType, lvIndex)
                             val opSize = paramType.computationalType.operandSize
@@ -497,7 +498,7 @@ trait InvokedynamicRewriting
                             paramIndex += 1
                             nextParam = recipe.indexOf('\u0001', nextParam + 1)
                         } else {
-                            assert(recipe.charAt(nextInsert) == '\u0002')
+                            elidedAssert(recipe.charAt(nextInsert) == '\u0002')
                             val constant = constants(constantIndex)
                             val constantStack = appendConstant(constant)
                             maxStack = Math.max(maxStack, constantStack + 1)
@@ -1145,7 +1146,7 @@ trait InvokedynamicRewriting
                 m.name == targetMethodName && m.descriptor == targetMethodDescriptor
             }
 
-            assert(targetMethod.isDefined)
+            elidedAssert(targetMethod.isDefined)
             val m = targetMethod.get
 
             if (m.isPrivate) {

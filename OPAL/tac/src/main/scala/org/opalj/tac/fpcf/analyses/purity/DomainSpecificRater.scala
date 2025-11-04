@@ -12,6 +12,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DPure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -135,7 +136,7 @@ trait SystemOutErrRater extends DomainSpecificRater {
             if (defSite < 0) false
             else {
                 val stmt = code(defSite)
-                assert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
+                elidedAssert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
                 if (stmt.asAssignment.expr.astID != GetStatic.ASTID) false
                 else {
                     val GetStatic(_, declaringClass, name, _) = stmt.asAssignment.expr: @unchecked

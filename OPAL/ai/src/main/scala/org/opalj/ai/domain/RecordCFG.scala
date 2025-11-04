@@ -28,6 +28,7 @@ import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.DominanceFrontiers
 import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.PostDominatorTree
+import org.opalj.util.elidedAssert
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
@@ -326,8 +327,8 @@ trait RecordCFG
     ): Unit = {
         super.abstractInterpretationEnded(aiResult)
 
-        assert(exceptionHandlerSuccessors.forall(s => (s eq null) || s.nonEmpty))
-        assert(regularSuccessors.forall(s => (s eq null) || s.nonEmpty))
+        elidedAssert(exceptionHandlerSuccessors.forall(s => (s eq null) || s.nonEmpty))
+        elidedAssert(regularSuccessors.forall(s => (s eq null) || s.nonEmpty))
     }
 
     // ==================================== BASIC QUERIES ==========================================

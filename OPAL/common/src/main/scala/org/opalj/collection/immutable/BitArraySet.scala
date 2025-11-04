@@ -5,6 +5,8 @@ package immutable
 
 import java.lang.Integer.toUnsignedLong
 
+import org.opalj.util.elidedAssert
+
 /**
  * An immutable bit set for storing positive int values.
  *
@@ -57,7 +59,7 @@ private[immutable] object BitArraySet0 extends BitArraySet { thisSet =>
 
 private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet { thisSet =>
 
-    assert(set != 0L)
+    elidedAssert(set != 0L)
 
     override def isEmpty: Boolean = false
 
@@ -154,7 +156,7 @@ private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet {
 
 private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet { thisSet =>
 
-    assert(set != 0L)
+    elidedAssert(set != 0L)
 
     override def isEmpty: Boolean = false
 

@@ -33,6 +33,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * For a reachable methods (see [[Callers]]) this class computes the
@@ -131,7 +132,7 @@ class LoadedClassesAnalysis(
         declaredMethod: DeclaredMethod,
         tacaiEP:        EPS[Method, TACAI]
     ): PropertyComputationResult = {
-        assert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
+        elidedAssert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
 
         // the method has callers. we have to analyze it
         val newLoadedClasses =

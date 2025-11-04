@@ -7,6 +7,7 @@ package l1
 import java.lang.StringBuilder as JStringBuilder
 
 import org.opalj.br.ClassType
+import org.opalj.util.elidedAssert
 
 /**
  * Enables the tracing of `StringBuilders`.
@@ -49,8 +50,8 @@ trait StringBuilderValues extends StringValues {
     ) extends SObjectValue {
         this: DomainStringValue =>
 
-        assert(builder != null)
-        assert((builderType eq ClassType.StringBuffer) || (builderType eq ClassType.StringBuilder))
+        elidedAssert(builder != null)
+        elidedAssert((builderType eq ClassType.StringBuffer) || (builderType eq ClassType.StringBuilder))
 
         override final def isNull: No.type = No
         override final def isPrecise: Boolean = true

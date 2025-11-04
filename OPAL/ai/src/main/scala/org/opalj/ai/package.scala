@@ -16,6 +16,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.AnyToAnyThis
+import org.opalj.util.elidedAssert
 
 /**
  * Implementation of an abstract interpretation (AI) framework.
@@ -49,7 +50,7 @@ package object ai {
         implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
-            assert(false) // <= tests whether assertions are on or off...
+            elidedAssert(false) // <= tests whether assertions are on or off...
             info(FrameworkName, "Production Build")
         } catch {
             case _: AssertionError => info(FrameworkName, "Development Build with Assertions")
@@ -183,12 +184,12 @@ package object ai {
      */
     final val SUBROUTINE = -900000009
 
-    assert(SUBROUTINE_START <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE_END <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE_RETURN_TO_TARGET <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_START <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_END <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_RETURN_TO_TARGET <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE <= SpecialValuesOriginOffset)
 
     /**
      * Identifies the ''upper bound for those origin values that encode origin
@@ -239,13 +240,13 @@ package object ai {
      */
     final def ValueOriginForImmediateVMException(pc: PC): ValueOrigin = {
         val origin = ImmediateVMExceptionsOriginOffset - pc
-        assert(
+        elidedAssert(
             origin <= ImmediateVMExceptionsOriginOffset,
             s"[pc:$pc] " +
                 s"origin($origin) > " +
                 s"ImmediateVMExceptionsOriginOffset($ImmediateVMExceptionsOriginOffset)"
         )
-        assert(origin > MethodExternalExceptionsOriginOffset)
+        elidedAssert(origin > MethodExternalExceptionsOriginOffset)
         origin
     }
 
@@ -256,7 +257,7 @@ package object ai {
      * @see [[ValueOriginForImmediateVMException]] for further information.
      */
     final def pcOfImmediateVMException(valueOrigin: ValueOrigin): PC = {
-        assert(valueOrigin <= ImmediateVMExceptionsOriginOffset)
+        elidedAssert(valueOrigin <= ImmediateVMExceptionsOriginOffset)
         -valueOrigin + ImmediateVMExceptionsOriginOffset
     }
 
@@ -288,13 +289,13 @@ package object ai {
      */
     final def ValueOriginForMethodExternalException(pc: Int): Int = {
         val origin = MethodExternalExceptionsOriginOffset - pc
-        assert(
+        elidedAssert(
             origin <= MethodExternalExceptionsOriginOffset,
             s"[pc:$pc] " +
                 s"origin($origin) > " +
                 s"MethodExternalExceptionsOriginOffset($MethodExternalExceptionsOriginOffset)"
         )
-        assert(SpecialValuesOriginOffset < origin)
+        elidedAssert(SpecialValuesOriginOffset < origin)
         origin
     }
 
@@ -305,7 +306,7 @@ package object ai {
      * @see [[MethodExternalExceptionsOriginOffset]] for further information.
      */
     final def pcOfMethodExternalException(valueOrigin: Int): Int = {
-        assert(valueOrigin <= MethodExternalExceptionsOriginOffset)
+        elidedAssert(valueOrigin <= MethodExternalExceptionsOriginOffset)
         -valueOrigin + MethodExternalExceptionsOriginOffset
     }
 
@@ -367,7 +368,7 @@ package object ai {
         descriptor:     MethodDescriptor,
         parameterIndex: Int
     ): Int /*ValueOrigin*/ = {
-        assert(descriptor.parametersCount > 0)
+        elidedAssert(descriptor.parametersCount > 0)
 
         var origin = if (isStatic) -1 else -2 // this handles the case parameterIndex == 0
         val parameterTypes = descriptor.parameterTypes
@@ -535,7 +536,7 @@ package object ai {
         targetDomain: ValuesDomain & ValuesFactory
     ): Locals[targetDomain.DomainValue] = {
 
-        assert(
+        elidedAssert(
             operands.size == calledMethod.actualArgumentsCount,
             (if (calledMethod.isStatic) "static " else "/*virtual*/ ") +
                 s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) " +

@@ -10,6 +10,7 @@ import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.util.elidedAssert
 
 /**
  * Enables the tracking of various properties related to arrays.
@@ -328,7 +329,7 @@ trait ConcreteArrayValues
         if (!reifyArray(pc, size, arrayType))
             return InitializedArrayValue(pc, arrayType, size);
 
-        assert(
+        elidedAssert(
             size <= ConcreteArrayValues.MaxPossibleArraySize,
             s"tracking arrays with $size elements is not supported by this domain"
         )

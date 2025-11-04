@@ -29,6 +29,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.elidedAssert
 
 /**
  * Enables project wide lookups of methods and fields as required to determine the target(s) of an
@@ -199,9 +200,9 @@ trait ProjectLike extends ClassFileRepository { project =>
      * }}}
      */
     def overriddenBy(m: Method): SomeSet[Method] = {
-        assert(!m.isPrivate, s"private methods $m cannot be overridden")
-        assert(!m.isStatic, s"static methods $m cannot be overridden")
-        assert(!m.isInitializer, s"initializers $m cannot be overridden")
+        elidedAssert(!m.isPrivate, s"private methods $m cannot be overridden")
+        elidedAssert(!m.isStatic, s"static methods $m cannot be overridden")
+        elidedAssert(!m.isInitializer, s"initializers $m cannot be overridden")
 
         overridingMethods.getOrElse(m, Set.empty)
     }
@@ -510,7 +511,7 @@ trait ProjectLike extends ClassFileRepository { project =>
         }
 
         project.classFile(declaringClassType) flatMap { classFile =>
-            assert(classFile.isInterfaceDeclaration)
+            elidedAssert(classFile.isInterfaceDeclaration)
             classFile.findMethod(name, descriptor) orElse {
                 lookupInObject() orElse {
                     classHierarchy.superinterfaceTypes(declaringClassType) flatMap { superT =>

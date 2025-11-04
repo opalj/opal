@@ -4,6 +4,8 @@ package da
 
 import scala.xml.Node
 
+import org.opalj.util.elidedAssert
+
 /**
  * Encapsulates basic type information.
  *
@@ -67,7 +69,7 @@ case object DoubleTypeInfo extends PrimitiveTypeInfo("double")
 
 case class ClassTypeInfo(asJava: String) extends FieldTypeInfo {
 
-    assert(asJava.indexOf('/') == -1)
+    elidedAssert(asJava.indexOf('/') == -1)
 
     def asJVMType: String = asJava.replace('.', '/')
 
@@ -84,7 +86,7 @@ case class ArrayTypeInfo(
     elementTypeIsBaseType: Boolean
 ) extends FieldTypeInfo {
 
-    assert(dimensions > 0)
+    elidedAssert(dimensions > 0)
 
     def asJava: String = elementTypeAsJava + ("[]" * dimensions)
 

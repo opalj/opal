@@ -215,7 +215,7 @@ private[immutable] final class LongTrieSetWithListN(
     final val list: Long2List
 ) extends LongTrieSetWithList {
 
-    // assert(size >= 4)
+    // elidedAssert(size >= 4)
 
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false

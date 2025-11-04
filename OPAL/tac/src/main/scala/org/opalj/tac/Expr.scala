@@ -25,6 +25,7 @@ import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.analyses.ProjectLike
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -610,7 +611,7 @@ case class ArrayLength[+V](pc: PC, arrayRef: Expr[V]) extends ArrayExpr[V] {
     override final def astID: Int = ArrayLength.ASTID
     override final def cTpe: ComputationalType = ComputationalTypeInt
 
-    override final def isSideEffectFree: Boolean = { assert(arrayRef.isVar); false /* potential NPE */ }
+    override final def isSideEffectFree: Boolean = { elidedAssert(arrayRef.isVar); false /* potential NPE */ }
 
     override final def subExprCount: Int = 1
     override final def subExpr(index: Int): Expr[V] = arrayRef
@@ -681,7 +682,7 @@ case class GetField[+V](
     }
 
     final def isSideEffectFree: Boolean = {
-        assert(objRef.isValueExpression)
+        elidedAssert(objRef.isValueExpression)
         // IMPROVE if the access is non-null, it is side-effect free
         false
     }

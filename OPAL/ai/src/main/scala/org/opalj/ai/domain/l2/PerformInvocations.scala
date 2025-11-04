@@ -12,6 +12,7 @@ import org.opalj.br.VoidType
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.util.elidedAssert
 
 /**
  * Mix in this trait if methods that are called by `invokeXYZ` instructions should
@@ -140,7 +141,7 @@ trait PerformInvocations extends MethodCallsHandling {
         fallback: () => MethodCallResult
     ): MethodCallResult = {
 
-        assert(
+        elidedAssert(
             method.body.isDefined,
             s"${project.source(method.classFile.thisType)} - the method: " +
                 s"${method.toJava} does not have a body (is the project self-consistent?)"

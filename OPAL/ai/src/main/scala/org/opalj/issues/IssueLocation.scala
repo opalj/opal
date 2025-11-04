@@ -2,7 +2,6 @@
 package org.opalj
 package issues
 
-import java.lang.Comparable
 import play.api.libs.json.JsNull
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
@@ -24,6 +23,7 @@ import org.opalj.br.classAccessFlagsToString
 import org.opalj.br.classAccessFlagsToXHTML
 import org.opalj.br.methodToXHTML
 import org.opalj.br.typeToXHTML
+import org.opalj.util.elidedAssert
 
 /**
  * The location of an issue.
@@ -218,7 +218,7 @@ class InstructionLocation(
     details:     Seq[IssueDetails] = List.empty
 ) extends MethodLocation(description, theProject, method, details) with PCLineComprehension {
 
-    assert(method.body.isDefined)
+    elidedAssert(method.body.isDefined)
 
     def code: Code = method.body.get
 

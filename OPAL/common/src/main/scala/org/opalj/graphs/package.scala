@@ -6,6 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.collection.IntIterator
 import org.opalj.collection.mutable.IntArrayStack
+import org.opalj.util.elidedAssert
 
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
@@ -246,7 +247,7 @@ package object graphs {
                     if (path.nonEmpty) {
                         val nDFSNum = dfsNum(n)
                         val cSCCDFSNum = dfsNum(path.last)
-                        assert(cSCCDFSNum != ProcessedNodeNum)
+                        elidedAssert(cSCCDFSNum != ProcessedNodeNum)
 
                         if (nDFSNum != cSCCDFSNum) {
                             // This is the trivial case... obviously the end of the path is a
@@ -313,7 +314,7 @@ package object graphs {
                     }
                 }
             }
-            assert(path.isEmpty)
+            elidedAssert(path.isEmpty)
         }
 
         ns.foreach(n => if (!hasDFSNum(n)) dfs(n))
@@ -362,7 +363,7 @@ package object graphs {
     ): List[Iterable[N]] = {
         /* The following is not a strict requirement, more an expectation (however, (c)sccs
      * not reachable from a node in ns will not be detected!
-        assert(
+        elidedAssert(
             { val allNodes = ns.toSet; allNodes.forall { n => es(n).forall(allNodes.contains) } },
             "the graph references nodes which are not in the set of all nodes"
         )
@@ -403,7 +404,7 @@ package object graphs {
 
             // HELPER METHODS
             def addToPath(n: N): Int = {
-                assert(!hasDFSNum(n))
+                elidedAssert(!hasDFSNum(n))
                 val dfsNum = nextDFSNum
                 setDFSNum(n, dfsNum)
                 path += n
@@ -448,7 +449,7 @@ package object graphs {
 
                             case someCSCCId =>
                                 /*nothing to do*/
-                                assert(
+                                elidedAssert(
                                     // nDFSNum == 0 ???
                                     nDFSNum == initialDFSNum || someCSCCId == cSCCId(path.last),
                                     s"nDFSNum=$nDFSNum; nCSCCId=$nCSCCId; "+

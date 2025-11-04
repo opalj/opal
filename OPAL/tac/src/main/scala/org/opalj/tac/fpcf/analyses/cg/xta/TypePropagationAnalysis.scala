@@ -44,6 +44,7 @@ import org.opalj.fpcf.SomePartialResult
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * This analysis handles the type propagation of XTA, MTA, FTA and CTA call graph
@@ -136,21 +137,21 @@ final class TypePropagationAnalysis private[analyses] (
 
         case EUBP(e: DeclaredMethod, _: Callees) =>
             if (debug) {
-                assert(e == state.callContext.method)
+                elidedAssert(e == state.callContext.method)
                 _trace.traceCalleesUpdate(e)
             }
             handleUpdateOfCallees(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])(using state)
 
         case EUBP(e: Method, _: MethodFieldReadAccessInformation) =>
             if (debug) {
-                assert(e == state.callContext.method.definedMethod)
+                elidedAssert(e == state.callContext.method.definedMethod)
                 _trace.traceReadAccessUpdate(e)
             }
             handleUpdateOfReadAccesses(eps.asInstanceOf[EPS[Method, MethodFieldReadAccessInformation]])(using state)
 
         case EUBP(e: Method, _: MethodFieldWriteAccessInformation) =>
             if (debug) {
-                assert(e == state.callContext.method.definedMethod)
+                elidedAssert(e == state.callContext.method.definedMethod)
                 _trace.traceWriteAccessUpdate(e)
             }
             handleUpdateOfWriteAccesses(eps.asInstanceOf[EPS[Method, MethodFieldWriteAccessInformation]])(using state)
@@ -278,11 +279,11 @@ final class TypePropagationAnalysis private[analyses] (
         } {
             // Some sanity checks ...
             // Methods with multiple defined methods should never appear as callees.
-            assert(!callee.hasMultipleDefinedMethods)
+            elidedAssert(!callee.hasMultipleDefinedMethods)
             // Instances of DefinedMethod we see should only be those where the method is defined in the class file of
             // the declaring class type (i.e., it is not a DefinedMethod instance of some inherited method).  However,
             // in inconsistent bytecode scenarios, the call graph may resolve to a non-implemented abstract method.
-            assert(!callee.hasSingleDefinedMethod ||
+            elidedAssert(!callee.hasSingleDefinedMethod ||
                 (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType) ||
                 callee.asDefinedMethod.definedMethod.isAbstract)
 

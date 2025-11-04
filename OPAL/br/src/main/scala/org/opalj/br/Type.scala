@@ -15,6 +15,7 @@ import scala.math.Ordered
 import org.opalj.collection.UIDValue
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet2
+import org.opalj.util.elidedAssert
 
 /**
  * Represents a JVM type.
@@ -518,12 +519,12 @@ sealed abstract class NumericType protected () extends BaseType {
      *
      * @example
      * {{{
-     * assert(IntegerType.isWiderThan(IntegerType) == false)
-     * assert(IntegerType.isWiderThan(LongType) == false)
-     * assert(IntegerType.isWiderThan(ByteType) == true)
-     * assert(LongType.isWiderThan(FloatType) == false)
-     * assert(ByteType.isWiderThan(CharType) == false)
-     * assert(LongType.isWiderThan(ShortType) == true)
+     * elidedAssert(IntegerType.isWiderThan(IntegerType) == false)
+     * elidedAssert(IntegerType.isWiderThan(LongType) == false)
+     * elidedAssert(IntegerType.isWiderThan(ByteType) == true)
+     * elidedAssert(LongType.isWiderThan(FloatType) == false)
+     * elidedAssert(ByteType.isWiderThan(CharType) == false)
+     * elidedAssert(LongType.isWiderThan(ShortType) == true)
      * }}}
      */
     def isWiderThan(targetType: NumericType): Boolean
@@ -974,7 +975,7 @@ final class ClassType private ( // DO NOT MAKE THIS A CASE CLASS!
     final val fqn: String
 ) extends ReferenceType {
 
-    assert(fqn.indexOf('.') == -1, s"invalid class type name: $fqn")
+    elidedAssert(fqn.indexOf('.') == -1, s"invalid class type name: $fqn")
 
     final val packageName: String = ClassType.packageName(fqn).intern()
 
@@ -1151,7 +1152,7 @@ object ClassType {
      *         comparison is explicitly supported.
      */
     def apply(fqn: String): ClassType = {
-        assert(!fqn.endsWith(";")) // Catch errors where we accidentally use a JVMTypeName instead
+        elidedAssert(!fqn.endsWith(";")) // Catch errors where we accidentally use a JVMTypeName instead
 
         val readLock = cacheRWLock.readLock()
         readLock.lock()
@@ -1672,7 +1673,7 @@ object ArrayType {
      * dimension.
      */
     @tailrec def apply(dimension: Int, componentType: FieldType): ArrayType = {
-        assert(dimension >= 1, s"dimension=$dimension, componentType=$componentType")
+        elidedAssert(dimension >= 1, s"dimension=$dimension, componentType=$componentType")
 
         val at = apply(componentType)
         if (dimension > 1)

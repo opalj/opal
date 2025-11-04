@@ -5,6 +5,7 @@ package ai
 import org.opalj.br.Code
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 /**
  * An abstract interpreter that interrupts itself after the evaluation of
@@ -44,7 +45,7 @@ class InstructionCountBoundedAI[D <: Domain](
         )
     }
 
-    assert(maxEvaluationCount > 0)
+    elidedAssert(maxEvaluationCount > 0)
 
     private val evaluationCount = new java.util.concurrent.atomic.AtomicInteger(0)
 

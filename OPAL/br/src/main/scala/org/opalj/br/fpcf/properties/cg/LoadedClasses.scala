@@ -14,6 +14,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
     final type Self = LoadedClasses
@@ -30,7 +31,7 @@ sealed class LoadedClasses private[properties] (
     final val classes:        UIDSet[ClassType]
 ) extends OrderedProperty with LoadedClassesMetaInformation {
 
-    assert(orderedClasses == null || orderedClasses.size == classes.size)
+    elidedAssert(orderedClasses == null || orderedClasses.size == classes.size)
 
     override def checkIsEqualOrBetterThan(e: Entity, other: LoadedClasses): Unit = {
         if (other.classes != null && !classes.subsetOf(other.classes)) {

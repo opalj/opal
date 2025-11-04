@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigFactory
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 /**
  * OPAL is a Scala-based framework for the static analysis, manipulation and creation of
@@ -74,7 +75,7 @@ package object opalj {
         implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
-            assert(false)
+            elidedAssert(false)
             // when we reach this point assertions are turned off
             info("OPAL Common", "Production Build")
         } catch {

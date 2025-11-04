@@ -19,5 +19,3 @@
 //-Yexplicit-nulls
 //-language:noAutoTupling
 //-language:strictEquality
-
-// (Should be turned-off during development; i.e., assertions are enabled at development time) -Xdisable-assertions

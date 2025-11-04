@@ -23,6 +23,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.graphs.Node
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -163,7 +164,7 @@ package object tac {
 
             if (lastPC < oldStartPC) {
                 // the EH is totally dead... i.e., all code in the try block is dead
-                assert(
+                elidedAssert(
                     (oldEH.startPC until oldEH.endPC) forall { tryPC =>
                         aiResult.domain.exceptionHandlerSuccessorsOf(tryPC).isEmpty
                     },
@@ -179,7 +180,7 @@ package object tac {
 
         }
 
-        assert(
+        elidedAssert(
             newEndIndex >= newStartIndex, // both equal => EH is dead!
             s"the end of the try block $newEndIndex is before the start $newStartIndex"
         )

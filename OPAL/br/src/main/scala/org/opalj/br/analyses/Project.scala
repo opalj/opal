@@ -293,8 +293,8 @@ class Project[Source] private (
         // for which we have not enough information
         def noSAMInterface(interfaceType: ClassType): Unit = {
             // println("non-functional interface: "+interfaceType.toJava)
-            // assert(!irrelevantInterfaces.contains(interfaceType))
-            // assert(!functionalInterfaces.contains(interfaceType))
+            // elidedAssert(!irrelevantInterfaces.contains(interfaceType))
+            // elidedAssert(!functionalInterfaces.contains(interfaceType))
 
             otherInterfaces += interfaceType
             classHierarchy.foreachSubinterfaceType(interfaceType) { i =>

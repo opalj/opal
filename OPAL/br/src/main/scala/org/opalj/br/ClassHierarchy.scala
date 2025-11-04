@@ -38,6 +38,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.util.elidedAssert
 
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
 
@@ -2222,8 +2223,8 @@ class ClassHierarchy private (
         reflexive:        Boolean
     ): UIDSet[ClassType] = {
 
-        assert(upperTypeBoundsA.nonEmpty)
-        assert(upperTypeBoundsB.nonEmpty)
+        elidedAssert(upperTypeBoundsA.nonEmpty)
+        elidedAssert(upperTypeBoundsB.nonEmpty)
 
         upperTypeBoundsA.compare(upperTypeBoundsB) match {
             case StrictSubset     => upperTypeBoundsA
@@ -2374,7 +2375,7 @@ class ClassHierarchy private (
         reflexive:       Boolean
     ): UIDSet[ClassType] = {
 
-        assert(
+        elidedAssert(
             reflexive || (
                 (upperTypeBoundA ne ClassType.Object) && (upperTypeBoundB ne ClassType.Object)
             )
@@ -2917,7 +2918,7 @@ object ClassHierarchy {
                     ensureHasSet(subclassTypesMap, aSuperinterfaceTypeId)
                 } else {
                     addToSet(subclassTypesMap, aSuperinterfaceTypeId, classType)
-                    // assert(subclassTypesMap(aSuperinterfaceTypeId).contains(classType))
+                    // elidedAssert(subclassTypesMap(aSuperinterfaceTypeId).contains(classType))
                     ensureHasSet(subinterfaceTypesMap, aSuperinterfaceTypeId)
                 }
             }
@@ -2992,13 +2993,13 @@ object ClassHierarchy {
         // _____________________________________________________________________________________
         //
 
-        assert(knownTypesMap.length == isInterfaceTypeMap.length)
-        assert(knownTypesMap.length == isKnownToBeFinalMap.length)
-        assert(knownTypesMap.length == superclassTypeMap.length)
-        assert(knownTypesMap.length == superinterfaceTypesMap.length)
-        assert(knownTypesMap.length == subclassTypesMap.length)
-        assert(knownTypesMap.length == subinterfaceTypesMap.length)
-        assert(
+        elidedAssert(knownTypesMap.length == isInterfaceTypeMap.length)
+        elidedAssert(knownTypesMap.length == isKnownToBeFinalMap.length)
+        elidedAssert(knownTypesMap.length == superclassTypeMap.length)
+        elidedAssert(knownTypesMap.length == superinterfaceTypesMap.length)
+        elidedAssert(knownTypesMap.length == subclassTypesMap.length)
+        elidedAssert(knownTypesMap.length == subinterfaceTypesMap.length)
+        elidedAssert(
             knownTypesMap.indices forall { i =>
                 (knownTypesMap(i) ne null) ||
                 ((subclassTypesMap(i) eq null) && (subinterfaceTypesMap(i) eq null))

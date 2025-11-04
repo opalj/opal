@@ -8,6 +8,7 @@ import scala.xml.Text
 import scala.xml.Unparsed
 
 import org.opalj.control.repeat
+import org.opalj.util.elidedAssert
 
 /**
  * @author Wael Alkhatib
@@ -17,7 +18,7 @@ import org.opalj.control.repeat
  */
 case class Code(instructions: Array[Byte]) {
 
-    assert(instructions.length > 0)
+    elidedAssert(instructions.length > 0)
 
     import Code.id
 
