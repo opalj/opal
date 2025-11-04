@@ -3,6 +3,7 @@ package org.opalj
 package hermes
 
 import java.io.File
+import scala.compiletime.uninitialized
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -24,7 +25,7 @@ trait HermesConfig {
 
     private var isInitialized: Boolean = false
 
-    private var config: Config = _
+    private var config: Config = uninitialized
 
     /**
      * The global configuration file.

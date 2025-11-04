@@ -10,6 +10,7 @@ import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.SortedSet
+import scala.compiletime.uninitialized
 import scala.math.Ordered
 
 import org.opalj.collection.UIDValue
@@ -1115,7 +1116,7 @@ object ClassType {
     private val cacheRWLock = new ReentrantReadWriteLock();
     private val cache = new WeakHashMap[String, WeakReference[ClassType]]()
 
-    @volatile private var classTypeCreationListener: ClassType => Unit = _
+    @volatile private var classTypeCreationListener: ClassType => Unit = uninitialized
 
     /**
      * Sets the listener and immediately calls it (multiple times) to inform the listener

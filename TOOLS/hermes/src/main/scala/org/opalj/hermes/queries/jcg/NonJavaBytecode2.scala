@@ -32,7 +32,7 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
         } {
             val methodMap = mutable.Map.empty[String, Int]

@@ -6,6 +6,7 @@ package immutable
 import scala.annotation.tailrec
 
 import java.lang.Long.hashCode as lHashCode
+import scala.compiletime.uninitialized
 
 sealed abstract class LongTrieSet extends LongSet { intSet =>
 
@@ -459,7 +460,7 @@ private[immutable] final class LongTrieSetN(
     override def foreach[U](f:   Long => U): Unit = root.foreach(f)
 
     override def iterator: LongIterator = new LongIterator {
-        private var leafNode: LongTrieSetLeaf = _
+        private var leafNode: LongTrieSetLeaf = uninitialized
         private var index = 0
         private val nodes =
             new scala.collection.mutable.Stack(initialSize = Math.min(16, LongTrieSetN.this.size / 2)) += root

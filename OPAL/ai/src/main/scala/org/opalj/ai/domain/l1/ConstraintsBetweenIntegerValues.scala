@@ -5,6 +5,7 @@ package domain
 package l1
 
 import java.util.IdentityHashMap as IDMap
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.LiveVariables
@@ -36,7 +37,7 @@ trait ConstraintsBetweenIntegerValues
     //
 
     // We store the constraints that are in effect for each instruction
-    private var constraints: Array[ConstraintsStore] = _
+    private var constraints: Array[ConstraintsStore] = uninitialized
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],

@@ -148,7 +148,7 @@ case class TypeBasedPointsToSet private[properties] (
         TypeBasedPointsToSet(newOrderedTypes, newTypes)
     }
 
-    override def getNewestElement(): ReferenceType = orderedTypes.head
+    override def getNewestElement: ReferenceType = orderedTypes.head
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {

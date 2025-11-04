@@ -2,6 +2,8 @@
 package org.opalj
 package br
 
+import scala.compiletime.uninitialized
+
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
@@ -14,7 +16,7 @@ final class DynamicConstant(
     val descriptor:       FieldType,
     private val bsmIndex: Int
 ) extends ConstantValue[Any] {
-    private var bsm: BootstrapMethod = _
+    private var bsm: BootstrapMethod = uninitialized
 
     def fillInBootstrapMethod(bootstrapMethods: BootstrapMethods): Unit = {
         if (bsm eq null) bsm = bootstrapMethods(bsmIndex)

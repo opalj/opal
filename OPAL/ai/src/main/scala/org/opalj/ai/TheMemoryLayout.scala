@@ -2,6 +2,8 @@
 package org.opalj
 package ai
 
+import scala.compiletime.uninitialized
+
 import org.opalj.br.PC
 
 /**
@@ -19,14 +21,14 @@ import org.opalj.br.PC
  */
 trait TheMemoryLayout { domain: ValuesDomain =>
 
-    private var theOperandsArray: OperandsArray = _
+    private var theOperandsArray: OperandsArray = uninitialized
 
-    private var theLocalsArray: LocalsArray = _
+    private var theLocalsArray: LocalsArray = uninitialized
 
-    private var theMemoryLayoutBeforeSubroutineCall: List[(PC, OperandsArray, LocalsArray)] = _
+    private var theMemoryLayoutBeforeSubroutineCall: List[(PC, OperandsArray, LocalsArray)] = uninitialized
 
-    private var theSubroutinesOperandsArray: OperandsArray = _
-    private var theSubroutinesLocalsArray: LocalsArray = _
+    private var theSubroutinesOperandsArray: OperandsArray = uninitialized
+    private var theSubroutinesLocalsArray: LocalsArray = uninitialized
 
     private[ai] def setMemoryLayout(
         theOperandsArray:                    this.OperandsArray,

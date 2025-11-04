@@ -6,6 +6,7 @@ package l1
 
 import java.io.File
 import java.net.URL
+import scala.compiletime.uninitialized
 
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
@@ -68,7 +69,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
         private val originalReturnType: ReferenceType =
             method.descriptor.returnType.asReferenceType
 
-        private var theReturnedValue: DomainValue = _
+        private var theReturnedValue: DomainValue = uninitialized
 
         // e.g., a method that always throws an exception...
         def returnedValue: Option[DomainValue] = Option(theReturnedValue)

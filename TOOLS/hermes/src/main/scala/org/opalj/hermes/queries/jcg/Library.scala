@@ -55,7 +55,7 @@ class Library(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             fieldTypes = classFile.fields.filter(f => f.isNotFinal && !f.isPrivate).collect {
                 case f: Field if f.fieldType.id >= 0 => f.fieldType.id

@@ -2,6 +2,8 @@
 package org.opalj
 package ai
 
+import scala.compiletime.uninitialized
+
 import org.opalj.br.LiveVariables
 import org.opalj.br.instructions.Instruction
 import org.opalj.collection.immutable.IntTrieSet
@@ -19,9 +21,9 @@ import org.opalj.collection.immutable.IntTrieSet
  */
 trait TheCodeStructure { domain: ValuesDomain =>
 
-    private var theInstructions: Array[Instruction] = _
+    private var theInstructions: Array[Instruction] = uninitialized
 
-    private var theCFJoins: IntTrieSet = _
+    private var theCFJoins: IntTrieSet = uninitialized
 
     def instructions: Array[Instruction] = theInstructions
 

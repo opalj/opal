@@ -3,6 +3,7 @@ package org.opalj
 package support
 package debug
 
+import scala.compiletime.uninitialized
 import scala.xml.Node
 
 import org.opalj.ai.AIResult
@@ -250,7 +251,7 @@ trait XHTMLTracer extends AITracer {
         </html>
     }
 
-    private var code: Code = _
+    private var code: Code = uninitialized
 
     override def initialLocals(domain: Domain)(locals: domain.Locals): Unit = { /*EMPTY*/ }
 

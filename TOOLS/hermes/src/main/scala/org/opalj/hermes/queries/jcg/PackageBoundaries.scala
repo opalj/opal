@@ -41,7 +41,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
             callerPackage = callerType.packageName

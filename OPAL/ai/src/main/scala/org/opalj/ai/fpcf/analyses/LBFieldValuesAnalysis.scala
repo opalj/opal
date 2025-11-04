@@ -5,6 +5,7 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
@@ -175,7 +176,7 @@ class LBFieldValuesAnalysis private[analyses] (
         final val thisClassType: ClassType = classFile.thisType
 
         // Map of fieldNames (that are potentially relevant) and the (refined) value information
-        var fieldInformation: Map[Field, Option[DomainValue]] = _
+        var fieldInformation: Map[Field, Option[DomainValue]] = uninitialized
 
         // Map between the method and the ones called by the method which could successfully
         // be resolved.
@@ -197,7 +198,7 @@ class LBFieldValuesAnalysis private[analyses] (
         def hasCandidateFields: Boolean = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys
 
-        private var currentCode: Code = _
+        private var currentCode: Code = uninitialized
 
         /**
          * Sets the method that is currently analyzed. This method '''must not be called'''

@@ -2,10 +2,12 @@
 package org.opalj
 package hermes
 
+import scala.compiletime.uninitialized
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
 
-import pureconfig._
+import pureconfig.*
 
 /**
  * Container for feature queries.
@@ -20,7 +22,7 @@ case class Query(query: String, private var activate: Boolean = true) derives Co
 
     def isEnabled: Boolean = activate
 
-    private var reifiedQuery: Option[FeatureQuery] = _
+    private var reifiedQuery: Option[FeatureQuery] = uninitialized
 
     def reify(implicit hermes: HermesConfig): Option[FeatureQuery] = this.synchronized {
         if (reifiedQuery ne null) {

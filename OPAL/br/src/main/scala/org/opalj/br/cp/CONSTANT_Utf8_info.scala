@@ -3,6 +3,8 @@ package org.opalj
 package br
 package cp
 
+import scala.compiletime.uninitialized
+
 import org.opalj.bi.AttributeParent
 import org.opalj.bi.AttributesParent
 import org.opalj.bi.ConstantPoolTags
@@ -21,13 +23,13 @@ case class CONSTANT_Utf8_info(value: String) extends Constant_Pool_Entry {
 
     override def asString = value
 
-    private var methodDescriptor: MethodDescriptor = _ // to cache the result
+    private var methodDescriptor: MethodDescriptor = uninitialized // to cache the result
     override def asMethodDescriptor = {
         if (methodDescriptor eq null) { methodDescriptor = MethodDescriptor(value) };
         methodDescriptor
     }
 
-    private var fieldType: FieldType = _ // to cache the result
+    private var fieldType: FieldType = uninitialized // to cache the result
     override def asFieldType = {
         if (fieldType eq null) { fieldType = FieldType(value) };
         fieldType

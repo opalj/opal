@@ -6,6 +6,7 @@ package seq
 import java.util.ArrayDeque
 import java.util.PriorityQueue
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 
 trait TasksManager {
 
@@ -141,7 +142,7 @@ private class ExtendedQualifiedTask(
 
 trait PropertyStoreDependentTasksManager extends TasksManager {
 
-    protected var ps: PKESequentialPropertyStore = _
+    protected var ps: PKESequentialPropertyStore = uninitialized
 
     private[seq] def setSeqPropertyStore(ps: PKESequentialPropertyStore): Unit = {
         if (this.ps != null)

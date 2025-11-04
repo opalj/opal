@@ -3,6 +3,8 @@ package org.opalj
 package br
 package cp
 
+import scala.compiletime.uninitialized
+
 import org.opalj.bi.ConstantPoolTags
 
 /**
@@ -22,7 +24,7 @@ case class CONSTANT_Fieldref_info(
     // should be parallelized) as it is just an optimization and the object reference
     // is of no importance; an equals check will return true. Hence, w.r.t. the
     // previous definition this code is thread-safe.
-    private var fieldref: (ClassType, String, FieldType) = _ // to cache the result
+    private var fieldref: (ClassType, String, FieldType) = uninitialized // to cache the result
     override def asFieldref(cp: Constant_Pool): (ClassType, String, FieldType) = {
         var fieldref = this.fieldref
         if (fieldref eq null) {

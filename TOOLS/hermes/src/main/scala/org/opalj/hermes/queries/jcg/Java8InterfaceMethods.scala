@@ -50,7 +50,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
             case method @ MethodWithBody(body) <- classFile.methods

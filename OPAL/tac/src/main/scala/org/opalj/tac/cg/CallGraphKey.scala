@@ -4,6 +4,7 @@ package tac
 package cg
 
 import scala.collection.mutable.ArrayBuffer
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 import org.opalj.ai.domain.RecordCFG
@@ -44,7 +45,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     private val CallBySignatureConfigKey = "org.opalj.br.analyses.cg.callBySignatureResolution"
 
-    private var typeIterator: TypeIterator = _
+    private var typeIterator: TypeIterator = uninitialized
 
     /**
      * Lists the call graph specific schedulers that must be run to compute the respective call

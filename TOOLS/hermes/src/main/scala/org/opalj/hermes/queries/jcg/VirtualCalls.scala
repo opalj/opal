@@ -41,7 +41,7 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
             case method @ MethodWithBody(body) <- classFile.methods
