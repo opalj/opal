@@ -11,8 +11,7 @@ import org.opalj.br.analyses.SomeProject
 
 /**
  * The class subclassExtractor is a wrapper class around the bytecode representation project.
- * It will fetch all subclasses from the opal project and prepares the bytecode hierarchies for querying.
- * @param files accepts an array of files of the jar archives that should be included in the ClassHierarchies
+ * It will fetch all subclasses from the project and prepares the bytecode hierarchies for querying.
  */
 class SubclassExtractor(project: SomeProject) {
     val classHierarchy: ClassHierarchy = project.classHierarchy

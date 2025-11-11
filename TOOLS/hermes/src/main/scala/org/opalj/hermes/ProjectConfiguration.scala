@@ -64,7 +64,7 @@ case class ProjectConfiguration(
     def instantiate: ProjectInstantiation = {
 
         // let's try to garbage collect previous projects
-        new Thread(() => { System.gc() }).start()
+        new Thread(() => System.gc()).start()
 
         info(
             "project setup",

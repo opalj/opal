@@ -115,9 +115,9 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      *   }
      * }
      * }}}
-     * In that case – assuming we do not perform context sensitive analyses –
+     * In that case – assuming we do not perform context-sensitive analyses –
      * if the lower bound for `f` for the set of thrown exceptions is determined
-     * to be `Set(IllegalArgumentException,UnkownError)`, then the catch of the
+     * to be `Set(IllegalArgumentException,UnknownError)`, then the catch of the
      * `NumberFormatException` can be ruled out and a final result for `m` can be
      * computed.
      *
@@ -141,7 +141,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * provided that this `EOptionP` is guaranteed to be at most as old as `oldEOptionP`.
      * That is, this EPS is considered to be newer if the properties are different.
      *
-     * @note The caller has to ensure that this EOptionP and and the given EOptionP are
+     * @note The caller has to ensure that this EOptionP and the given EOptionP are
      *       comparable. That is, they define properties of the same kind associated with
      *       the same entity and same bounds.
      */

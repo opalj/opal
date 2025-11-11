@@ -73,7 +73,7 @@ case class TypeBasedPointsToSet private[properties] (
         var newOrderedTypes = orderedTypes
         var typesUnion = types
 
-        other.orderedTypes.take(other.numElements - seenElements).map { t =>
+        other.orderedTypes.take(other.numElements - seenElements).foreach { t =>
             if (!types.contains(t)) {
                 newOrderedTypes ::= t
                 typesUnion += t
@@ -113,7 +113,7 @@ case class TypeBasedPointsToSet private[properties] (
         var newOrderedTypes = orderedTypes
         var typesUnion = types
 
-        other.orderedTypes.take(other.numElements - seenElements).map { t =>
+        other.orderedTypes.take(other.numElements - seenElements).foreach { t =>
             if (typeFilter(t) && !types.contains(t)) {
                 newOrderedTypes ::= t
                 typesUnion += t
@@ -148,7 +148,7 @@ case class TypeBasedPointsToSet private[properties] (
         TypeBasedPointsToSet(newOrderedTypes, newTypes)
     }
 
-    override def getNewestElement(): ReferenceType = orderedTypes.head
+    override def getNewestElement: ReferenceType = orderedTypes.head
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {

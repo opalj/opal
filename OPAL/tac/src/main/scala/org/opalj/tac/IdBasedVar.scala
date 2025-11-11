@@ -6,7 +6,7 @@ import org.opalj.br.*
 import org.opalj.value.ValueInformation
 
 /**
- * Id based variables are named based on the position of the corresponding stack/register value.
+ * ID based variables are named based on the position of the corresponding stack/register value.
  *
  * @author Roberts Kolosovs
  * @author Michael Eichberg
@@ -34,7 +34,7 @@ sealed trait IdBasedVar extends Var[IdBasedVar] {
      *
      * This operation is not supported for local variables!
      */
-    def updated(cTpe: ComputationalType): SimpleVar = { new SimpleVar(id, cTpe) }
+    def updated(cTpe: ComputationalType): SimpleVar = { SimpleVar(id, cTpe) }
 
     def toCanonicalForm(implicit ev: IdBasedVar <:< DUVar[ValueInformation]): Nothing = {
         throw new IncompatibleClassChangeError(

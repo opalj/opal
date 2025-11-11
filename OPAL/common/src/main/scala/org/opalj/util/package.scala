@@ -86,16 +86,16 @@ package object util {
         var run = 0
         while {
             if (logContext.isDefined) {
-                val pendingCount = memoryMXBean.getObjectPendingFinalizationCount()
+                val pendingCount = memoryMXBean.getObjectPendingFinalizationCount
                 OPALLogger.info(
                     "performance",
                     s"garbage collection run $run (pending finalization: $pendingCount)"
                 )(using logContext.get)
             }
-            // In general it is **not possible to guarantee** that the garbage collector is really
+            // In general, it is **not possible to guarantee** that the garbage collector is really
             // run, but we still do our best.
             memoryMXBean.gc()
-            if (memoryMXBean.getObjectPendingFinalizationCount() > 0) {
+            if (memoryMXBean.getObjectPendingFinalizationCount > 0) {
                 // It may be the case that some finalizers (of just gc'ed object) are still running
                 // and -- therefore -- some further objects are freed after the gc run.
                 Thread.sleep(50)
@@ -103,7 +103,7 @@ package object util {
             }
             run += 1
 
-            memoryMXBean.getObjectPendingFinalizationCount() > 0 && ns2ms(
+            memoryMXBean.getObjectPendingFinalizationCount > 0 && ns2ms(
                 System.nanoTime() - startTime
             ) < maxGCTime.timeSpan
         } do ()

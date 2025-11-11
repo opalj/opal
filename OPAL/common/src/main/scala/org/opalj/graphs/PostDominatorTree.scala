@@ -16,7 +16,7 @@ import org.opalj.collection.immutable.IntTrieSet
  *         start node.
  * @param  hasVirtualStartNode `true` if an artificial end node (w.r.t. the underlying CFG) was
  *         created, because the underlying CFG had multiple exits.
- * @param  additionalExitNodes Nodes in the original, underyling CFG that are treated as additional
+ * @param  additionalExitNodes Nodes in the original, underlying CFG that are treated as additional
  *         exit nodes; e.g., to handle infinite loops.
  * @param  foreachSuccessorOf The original successor information.
  */
@@ -44,7 +44,7 @@ object PostDominatorTree {
 
     /**
      * Computes the post dominator tree for the given control flow graph. (The reverse
-     * control flow graph will computed on demand by this method.)
+     * control flow graph will be computed on demand by this method.)
      * If necessary, an artificial start node will be created to ensure that we have a unique
      * start node for the post dominator tree; if created the node will have the
      * `id = (maxNodeId+1)`; additionally, all edges are automatically reversed.

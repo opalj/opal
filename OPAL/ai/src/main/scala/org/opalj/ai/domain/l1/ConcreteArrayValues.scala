@@ -49,7 +49,7 @@ trait ConcreteArrayValues
      * The default value is 16.
      *
      * This setting can dynamically be adapted at runtime and will be considered
-     * for each new array that is created afterwards.
+     * for each new array that is created afterward.
      */
     def maxTrackedArraySize: Int = 16
 
@@ -80,7 +80,7 @@ trait ConcreteArrayValues
      * of reflectively called methods, it might be interesting to track arrays
      * that contain string values.
      *
-     * By default only arrays of known immutable values up to a size of [[maxTrackedArraySize]]
+     * By default, only arrays of known immutable values up to a size of [[maxTrackedArraySize]]
      * are reified.
      *
      * @note    Tracking the content of arrays generally has a significant performance
@@ -119,7 +119,7 @@ trait ConcreteArrayValues
      * The tracking of the content of an array is only possible as long as the
      * array is not merged with another array created at a different point in time.
      * From that point on, it is no longer possible to track the content of the arrays
-     * that are merged as well as the "merged array" it self since operations on the
+     * that are merged as well as the "merged array" itself since operations on the
      * "merged array" are not reflected in the original arrays.
      */
     // NOTE THAT WE DO NOT SUPPORT THE CASE WHERE THE ARRAY STORES CONCRETE MUTABLE VALUES!
@@ -178,7 +178,7 @@ trait ConcreteArrayValues
                 // In both of the following cases, the array remains untouched:
                 // - if an ArrayIndexOutOfBoundsException is thrown then the index
                 //   is invalid
-                // - if an ArrayStoreException may be thrown, we are totally lost..
+                // - if an ArrayStoreException may be thrown, we are totally lost...
                 //
                 // However, if some exception may be thrown, then we certainly
                 // do not have enough information about the value/the index and
@@ -297,7 +297,7 @@ trait ConcreteArrayValues
                             that.canEqual(this) &&
                             this.origin == that.origin &&
                             (this.theUpperTypeBound eq that.theUpperTypeBound) &&
-                            this.values == that.values
+                            (this.values sameElements that.values)
                         )
 
                 case _ => false
@@ -312,7 +312,7 @@ trait ConcreteArrayValues
 
         override def toString: String = {
             val valuesAsString = values.mkString("«", ", ", "»")
-            s"${theUpperTypeBound.toJava}[@$origin;length=${values.size};refId=$refId,$valuesAsString]"
+            s"${theUpperTypeBound.toJava}[@$origin;length=${values.length};refId=$refId,$valuesAsString]"
         }
     }
 
@@ -336,7 +336,7 @@ trait ConcreteArrayValues
 
         if (size >= 256) {
             val message = s"tracking very large arrays (${arrayType.toJava}) " +
-                "usually incurrs significant overhead without increasing " +
+                "usually incurs significant overhead without increasing " +
                 "the precision of the analysis"
             OPALLogger.logOnce(Warn("analysis configuration", message))
         }

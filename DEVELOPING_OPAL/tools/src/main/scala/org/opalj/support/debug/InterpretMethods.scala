@@ -200,7 +200,7 @@ object InterpretMethods extends MethodAnalysisApplication {
                             aiState + ife.cause.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
                                 "<div style='margin-left:5em'>" + causeToString(ife, true) + "</div>"
                         case e: Throwable =>
-                            val message = e.getMessage()
+                            val message = e.getMessage
                             if (message != null)
                                 aiState + "<br>Underlying cause: " + util.XHTML.htmlify(message)
                             else

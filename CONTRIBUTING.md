@@ -29,7 +29,7 @@ Do not use Scala's feature to import multiple classes/objects from the same pack
 (This behavior can be configured in *IntelliJ*)
 
 ## Do Not Use Wildcard Imports
-Do not used wildcard imports, e.g., `import scala.collection._`, unless you import a huge (> 48) number of classes for the same package. Such imports are very brittle and can lead to strange behavior.
+Do not use wildcard imports, e.g., `import scala.collection._`, unless you import a huge (> 48) number of classes for the same package. Such imports are very brittle and can lead to strange behavior.
 
 (This behavior can be configured in *IntelliJ*)
 

@@ -64,7 +64,7 @@ import org.opalj.util.elidedAssert
  * ===Assertions===
  * OPAL makes heavy use of Scala's '''Assertion Facility''' to facilitate writing correct
  * code. Hence, for production builds (after thorough testing(!)) it is
- * highly recommend to build OPAL again using `-Xdisable-assertions`.
+ * highly recommend to build OPAL again with assertions elided.
  *
  * @author Michael Eichberg
  */

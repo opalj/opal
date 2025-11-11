@@ -54,7 +54,7 @@ case object EmptyIntArraySet extends IntArraySet {
     override def flatMap(f:        Int => IntArraySet): IntArraySet = this
     override def -(i:              Int): this.type = this
     override def subsetOf(other:   IntArraySet): Boolean = true
-    override def +(i:              Int): IntArraySet1 = new IntArraySet1(i)
+    override def +(i:              Int): IntArraySet1 = IntArraySet1(i)
     override def iterator: IntIterator = IntIterator.empty
     override def reverseIntIterator: IntIterator = IntIterator.empty
     override def contains(value: Int): Boolean = false
@@ -90,7 +90,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
         val i = this.i
         val newI = f(i)
         if (newI != i)
-            new IntArraySet1(newI)
+            IntArraySet1(newI)
         else
             this
     }
@@ -99,7 +99,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
         if (mappedI == i)
             this
         else
-            new IntArraySet1(mappedI)
+            IntArraySet1(mappedI)
     }
     override def flatMap(f: Int => IntArraySet): IntArraySet = f(i)
     override def -(i:       Int): IntArraySet = if (this.i != i) this else EmptyIntArraySet
@@ -108,9 +108,9 @@ case class IntArraySet1(i: Int) extends IntArraySet {
         if (thisI == i)
             this
         else if (thisI < i)
-            new IntArraySet2(thisI, i)
+            IntArraySet2(thisI, i)
         else
-            new IntArraySet2(i, thisI)
+            IntArraySet2(i, thisI)
     }
     override def iterator: IntIterator = IntIterator(i)
     override def reverseIntIterator: IntIterator = IntIterator(i)
@@ -134,7 +134,7 @@ case class IntArraySet1(i: Int) extends IntArraySet {
 }
 
 /**
- * Represents an orderd set of two values where i1 has to be smaller than i2.
+ * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
 private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet {
 
@@ -165,9 +165,9 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
     override def withFilter(p: Int => Boolean): IntArraySet = {
         if (p(i1)) {
             if (p(i2)) this
-            else new IntArraySet1(i1)
+            else IntArraySet1(i1)
         } else {
-            if (p(i2)) new IntArraySet1(i2)
+            if (p(i2)) IntArraySet1(i2)
             else
                 EmptyIntArraySet
         }
@@ -187,19 +187,19 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
     }
     override def flatMap(f: Int => IntArraySet): IntArraySet = f(i1) ++ f(i2)
     override def -(i: Int): IntArraySet = {
-        if (i == i1) new IntArraySet1(i2)
-        else if (i == i2) new IntArraySet1(i1)
+        if (i == i1) IntArraySet1(i2)
+        else if (i == i2) IntArraySet1(i1)
         else this
     }
     override def +(i: Int): IntArraySet = {
         if (i <= i1) {
             if (i == i1) this
-            else new IntArraySet3(i, i1, i2)
+            else IntArraySet3(i, i1, i2)
         } else if (i <= i2) {
             if (i == i2) this
-            else new IntArraySet3(i1, i, i2)
+            else IntArraySet3(i1, i, i2)
         } else {
-            new IntArraySet3(i1, i2, i)
+            IntArraySet3(i1, i2, i)
         }
     }
     override def contains(value: Int): Boolean = value == i1 || value == i2
@@ -220,7 +220,7 @@ private[immutable] case class IntArraySet2(i1: Int, i2: Int) extends IntArraySet
 }
 
 /**
- * Represents an orderd set of three int values: i1 < i2 < i3.
+ * Represents an ordered set of three int values: i1 < i2 < i3.
  */
 private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends IntArraySet {
 
@@ -257,22 +257,22 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
                 if (p(i3))
                     this
                 else
-                    new IntArraySet2(i1, i2)
+                    IntArraySet2(i1, i2)
             } else {
                 if (p(i3))
-                    new IntArraySet2(i1, i3)
+                    IntArraySet2(i1, i3)
                 else
-                    new IntArraySet1(i1)
+                    IntArraySet1(i1)
             }
         } else {
             if (p(i2)) {
                 if (p(i3))
-                    new IntArraySet2(i2, i3)
+                    IntArraySet2(i2, i3)
                 else
-                    new IntArraySet1(i2)
+                    IntArraySet1(i2)
             } else {
                 if (p(i3))
-                    new IntArraySet1(i3)
+                    IntArraySet1(i3)
                 else
                     IntArraySet.empty
             }
@@ -296,28 +296,28 @@ private[immutable] case class IntArraySet3(i1: Int, i2: Int, i3: Int) extends In
     override def flatMap(f: Int => IntArraySet): IntArraySet = f(i1) ++ f(i2) ++ f(i3)
 
     override def -(i: Int): IntArraySet = {
-        if (i1 == i) new IntArraySet2(i2, i3)
-        else if (i2 == i) new IntArraySet2(i1, i3)
-        else if (i3 == i) new IntArraySet2(i1, i2)
+        if (i1 == i) IntArraySet2(i2, i3)
+        else if (i2 == i) IntArraySet2(i1, i3)
+        else if (i3 == i) IntArraySet2(i1, i2)
         else this
     }
     override def +(i: Int): IntArraySet = {
         if (i < i2) {
             if (i < i1)
-                new IntArraySetN(Array[Int](i, i1, i2, i3))
+                IntArraySetN(Array[Int](i, i1, i2, i3))
             else if (i == i1)
                 this
             else
-                new IntArraySetN(Array[Int](i1, i, i2, i3))
+                IntArraySetN(Array[Int](i1, i, i2, i3))
         } else if (i < i3) {
             if (i == i2)
                 this
             else
-                new IntArraySetN(Array[Int](i1, i2, i, i3))
+                IntArraySetN(Array[Int](i1, i2, i, i3))
         } else if (i == i3)
             this
         else
-            new IntArraySetN(Array[Int](i1, i2, i3, i))
+            IntArraySetN(Array[Int](i1, i2, i3, i))
     }
     override def contains(value: Int): Boolean = value == i1 || value == i2 || value == i3
     override def exists(p:       Int => Boolean): Boolean = p(i1) || p(i2) || p(i3)
@@ -421,17 +421,17 @@ case class IntArraySetN private[immutable] (
         if (index >= 0) {
             if (is.length == 4) {
                 index match {
-                    case 0 => new IntArraySet3(is(1), is(2), is(3))
-                    case 1 => new IntArraySet3(is(0), is(2), is(3))
-                    case 2 => new IntArraySet3(is(0), is(1), is(3))
-                    case 3 => new IntArraySet3(is(0), is(1), is(2))
+                    case 0 => IntArraySet3(is(1), is(2), is(3))
+                    case 1 => IntArraySet3(is(0), is(2), is(3))
+                    case 2 => IntArraySet3(is(0), is(1), is(3))
+                    case 3 => IntArraySet3(is(0), is(1), is(2))
                 }
             } else {
                 // the element is found
                 val targetIs = new Array[Int](is.length - 1)
                 System.arraycopy(is, 0, targetIs, 0, index)
                 System.arraycopy(is, index + 1, targetIs, index, is.length - 1 - index)
-                new IntArraySetN(targetIs)
+                IntArraySetN(targetIs)
             }
         } else {
             this
@@ -448,7 +448,7 @@ case class IntArraySetN private[immutable] (
             targetIs(insertionPoint) = i
             val count = is.length - insertionPoint
             System.arraycopy(is, insertionPoint, targetIs, insertionPoint + 1, count)
-            new IntArraySetN(targetIs)
+            IntArraySetN(targetIs)
         } else {
             this
         }
@@ -537,14 +537,14 @@ private[immutable] class FilteredIntArraySet(
                         }
                         targetIsIndex match {
                             case 0 => EmptyIntArraySet
-                            case 1 => new IntArraySet1(targetIs(0))
-                            case 2 => new IntArraySet2(targetIs(0), targetIs(1))
-                            case 3 => new IntArraySet3(targetIs(0), targetIs(1), targetIs(2))
+                            case 1 => IntArraySet1(targetIs(0))
+                            case 2 => IntArraySet2(targetIs(0), targetIs(1))
+                            case 3 => IntArraySet3(targetIs(0), targetIs(1), targetIs(2))
                             case _ =>
                                 if (targetIsIndex == max) // no value was filtered...
                                     origS
                                 else {
-                                    new IntArraySetN(JArrays.copyOf(targetIs, targetIsIndex))
+                                    IntArraySetN(JArrays.copyOf(targetIs, targetIsIndex))
                                 }
 
                         }
@@ -660,16 +660,16 @@ class IntArraySetBuilder private[immutable] (
     override def result(): IntArraySet = {
         size match {
             case 0 => EmptyIntArraySet
-            case 1 => new IntArraySet1(is(0))
-            case 2 => new IntArraySet2(is(0), is(1))
-            case 3 => new IntArraySet3(is(0), is(1), is(2))
+            case 1 => IntArraySet1(is(0))
+            case 2 => IntArraySet2(is(0), is(1))
+            case 3 => IntArraySet3(is(0), is(1), is(2))
             case _ =>
                 if (size == is.length)
-                    new IntArraySetN(is)
+                    IntArraySetN(is)
                 else {
                     val targetIs = new Array[Int](size)
                     System.arraycopy(is, 0, targetIs, 0, size)
-                    new IntArraySetN(targetIs)
+                    IntArraySetN(targetIs)
                 }
 
         }
@@ -705,11 +705,11 @@ object IntArraySet {
 
     def empty: IntArraySet = EmptyIntArraySet
 
-    def apply(i: Int): IntArraySet = new IntArraySet1(i)
+    def apply(i: Int): IntArraySet = IntArraySet1(i)
 
     def apply(i1: Int, i2: Int): IntArraySet = {
-        if (i1 < i2) new IntArraySet2(i1, i2)
-        else if (i1 == i2) new IntArraySet1(i1)
+        if (i1 < i2) IntArraySet2(i1, i2)
+        else if (i1 == i2) IntArraySet1(i1)
         else IntArraySet2(i2, i1)
     }
 
@@ -717,7 +717,7 @@ object IntArraySet {
         if (i1 == i2)
             return IntArraySet(i2, i3);
         if (i1 == i3 || i2 == i3)
-            return if (i1 < i2) new IntArraySet2(i1, i2) else new IntArraySet2(i2, i1);
+            return if (i1 < i2) IntArraySet2(i1, i2) else IntArraySet2(i2, i1);
 
         // ... all three values are different
         var v0 = 0
@@ -730,10 +730,10 @@ object IntArraySet {
             v1 = i1
         }
         if (i3 < v1) {
-            if (i3 < v0) new IntArraySet3(i3, v0, v1)
-            else new IntArraySet3(v0, i3, v1)
+            if (i3 < v0) IntArraySet3(i3, v0, v1)
+            else IntArraySet3(v0, i3, v1)
         } else {
-            new IntArraySet3(v0, v1, i3)
+            IntArraySet3(v0, v1, i3)
         }
     }
 
@@ -744,20 +744,20 @@ object IntArraySet {
     def _UNSAFE_fromSorted(data: Array[Int]): IntArraySet = {
         data.length match {
             case 0 => EmptyIntArraySet
-            case 1 => new IntArraySet1(data(0))
-            case 2 => new IntArraySet2(data(0), data(1))
-            case 3 => new IntArraySet3(data(0), data(1), data(2))
-            case _ => new IntArraySetN(data)
+            case 1 => IntArraySet1(data(0))
+            case 2 => IntArraySet2(data(0), data(1))
+            case 3 => IntArraySet3(data(0), data(1), data(2))
+            case _ => IntArraySetN(data)
         }
     }
 
     def _UNSAFE_from(data: Array[Int]): IntArraySet = {
         data.length match {
             case 0 => EmptyIntArraySet
-            case 1 => new IntArraySet1(data(0))
+            case 1 => IntArraySet1(data(0))
             case 2 => IntArraySet(data(0), data(1))
             case 3 => IntArraySet(data(0), data(1), data(2))
-            case _ => { JArrays.parallelSort(data); new IntArraySetN(data) }
+            case _ => JArrays.parallelSort(data); new IntArraySetN(data)
         }
     }
 

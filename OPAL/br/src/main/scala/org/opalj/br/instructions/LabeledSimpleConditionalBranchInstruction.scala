@@ -4,7 +4,7 @@ package br
 package instructions
 
 /**
- * An conditional branch instruction where the jump target is identified using a `Symbol`.
+ * A conditional branch instruction where the jump target is identified using a `Symbol`.
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg

@@ -28,7 +28,7 @@ The _Key Handling_ group represents whether some of the following classes/interf
 - `KeyPairGenerator`
 - `KeyAgreement`
 
-> Note: Subclasses are not considered. However, querying theses types already gives a first intuition about
+> Note: Subclasses are not considered. However, querying these types already gives a first intuition about
 > the usage of cryptographic keys. Especially the factories are often used.
 
 ## Key Store

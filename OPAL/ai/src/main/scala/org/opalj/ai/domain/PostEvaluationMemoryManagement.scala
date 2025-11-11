@@ -3,6 +3,8 @@ package org.opalj
 package ai
 package domain
 
+import scala.compiletime.uninitialized
+
 import org.opalj.br.instructions.Instruction
 import org.opalj.util.elidedAssert
 
@@ -20,9 +22,9 @@ import org.opalj.util.elidedAssert
  */
 trait PostEvaluationMemoryManagement extends CoreDomainFunctionality {
 
-    private var oldValue: DomainValue = null
-    private var newValueAfterEvaluation: DomainValue = null
-    private var newValueAfterException: DomainValue = null
+    private var oldValue: DomainValue = uninitialized
+    private var newValueAfterEvaluation: DomainValue = uninitialized
+    private var newValueAfterException: DomainValue = uninitialized
 
     protected def updateAfterExecution(
         oldValue:                DomainValue,

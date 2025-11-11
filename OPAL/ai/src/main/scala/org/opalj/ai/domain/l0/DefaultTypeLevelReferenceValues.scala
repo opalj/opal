@@ -39,7 +39,7 @@ trait DefaultTypeLevelReferenceValues
     type DomainObjectValue <: AnObjectValue & AReferenceValue // <= SObject.. and MObject...
     type DomainArrayValue <: AnArrayValue & AReferenceValue
 
-    protected class ANullValue() extends super.NullValueLike { this: DomainNullValue =>
+    protected class ANullValue extends super.NullValueLike { this: DomainNullValue =>
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
@@ -78,7 +78,7 @@ trait DefaultTypeLevelReferenceValues
                     // the elementValue is "null"
                     elidedAssert(elementValue.isNull.isYes)
                     // e.g., it is possible to store null in the n-1 dimensions of
-                    // a n-dimensional array of primitive values
+                    // an n-dimensional array of primitive values
                     if (theUpperTypeBound.componentType.isReferenceType)
                         Yes
                     else

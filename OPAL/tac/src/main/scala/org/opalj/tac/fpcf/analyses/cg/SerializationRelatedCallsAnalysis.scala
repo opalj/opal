@@ -430,7 +430,7 @@ class OISReadObjectAnalysis private[analyses] (
 /**
  * Handles the effect of serialization to the call graph.
  * As an example models the invocation of constructors when `readObject` is called, if there is a
- * cast afterwards.
+ * cast afterward.
  *
  * @author Florian Kuebler
  * @author Dominik Helm

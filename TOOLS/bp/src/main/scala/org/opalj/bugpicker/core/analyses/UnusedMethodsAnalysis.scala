@@ -25,8 +25,8 @@ import org.opalj.issues.Relevance
 object UnusedMethodsAnalysis {
 
     /**
-     * Checks if the given method is used/is potentially useable. If the method is not used
-     * and is also not potentially useable by future clients, then an issue is created
+     * Checks if the given method is used/is potentially usable. If the method is not used
+     * and is also not potentially usable by future clients, then an issue is created
      * and returned.
      *
      * If any of the following conditions is true, the method is considered as being called.

@@ -269,7 +269,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
 
     override def hashCode: Int = elements.hashCode()
 
-    override def getNewestElement(): AllocationSite = elements.head
+    override def getNewestElement: AllocationSite = elements.head
 }
 
 object NoAllocationSites extends AllocationSitePointsToSet {
@@ -314,7 +314,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         elidedAssert(n == 0)
     }
 
-    override def getNewestElement(): AllocationSite = throw new NoSuchElementException
+    override def getNewestElement: AllocationSite = throw new NoSuchElementException
 }
 
 case class AllocationSitePointsToSet1(
@@ -474,5 +474,5 @@ case class AllocationSitePointsToSet1(
 
     override def hashCode: Int = (allocationSite ^ (allocationSite >> 32)).toInt
 
-    override def getNewestElement(): AllocationSite = allocationSite
+    override def getNewestElement: AllocationSite = allocationSite
 }

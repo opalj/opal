@@ -209,7 +209,7 @@ class PointsToAnalysisState[
         else calleesProperty.ub
     }
 
-    def hasCalleesDepenedee: Boolean = {
+    def hasCalleesDependee: Boolean = {
         _calleesDependee.nonEmpty && _calleesDependee.get.isRefinable
     }
 
@@ -278,12 +278,12 @@ class PointsToAnalysisState[
     def writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation] = _writeAccessesDependee.get
 
     override def hasOpenDependencies: Boolean = {
-        hasCalleesDepenedee || super.hasOpenDependencies
+        hasCalleesDependee || super.hasOpenDependencies
     }
 
     override def dependees: Set[SomeEOptionP] = {
         val otherDependees = super.dependees
-        if (hasCalleesDepenedee)
+        if (hasCalleesDependee)
             otherDependees + _calleesDependee.get
         else
             otherDependees

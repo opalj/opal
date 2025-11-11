@@ -7,7 +7,7 @@ import org.opalj.util.elidedAssert
 
 /**
  * An unordered set of integer values backed by a trie set. The branching is done using
- * the least significant bit and values are only stored in leaf nodes. This ensure that
+ * the least significant bit and values are only stored in leaf nodes. This ensures that
  * we have a stable iteration order.
  *
  * @author Michael Eichberg
@@ -310,7 +310,7 @@ object IntTrieSet1 {
     // The preallocation of the IntTrieSet1 data structures costs ~2Mb memory;
     // however, we use it as the backbone Infrastructure for storing CFGs and
     // def-use information; in both cases, we generally require HUGE numbers
-    // of such sets in the preconfigured ranges and therefore we avoid allocating
+    // of such sets in the preconfigured ranges, and therefore we avoid allocating
     // several hundred million instances (in case of a thorough analysis of the
     // JDK) and corresponding memory.
     val Cache1LowerBound = -100000 - (48 * 1024) // inclusive
@@ -760,7 +760,7 @@ private[immutable] final class IntTrieSetN private[immutable] (
 
     /**
      * Ensures that subtrees which contain less than 3 elements are represented using
-     * a cannonical representation.
+     * a canonical representation.
      */
     override private[immutable] def constringe(): IntTrieSet = {
         elidedAssert(size <= 2)
@@ -982,7 +982,7 @@ private[immutable] final class IntTrieSetNJustRight private[immutable] (
 
     /**
      * Ensures that subtrees which contain less than 3 elements are represented using
-     * a cannonical representation.
+     * a canonical representation.
      */
     override private[immutable] def constringe(): IntTrieSet = {
         elidedAssert(size <= 2)
@@ -1112,7 +1112,7 @@ private[immutable] final class IntTrieSetNJustLeft private[immutable] (
 
     /**
      * Ensures that subtrees which contain less than 3 elements are represented using
-     * a cannonical representation.
+     * a canonical representation.
      */
     override private[immutable] def constringe(): IntTrieSet = {
         elidedAssert(size <= 2)

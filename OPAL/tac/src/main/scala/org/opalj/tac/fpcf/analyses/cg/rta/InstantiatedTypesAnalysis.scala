@@ -111,30 +111,30 @@ class InstantiatedTypesAnalysis private[analyses] (
     ): PropertyComputationResult = boundary {
         callersUB.forNewCallerContexts(seenCallers, callersEOptP.e) {
             (_, callerContext, _, isDirect) =>
-                // unknown or VM level calls always have to be treated as instantiations
+                // Unknown or VM level calls always have to be treated as instantiations
                 if (!callerContext.hasContext) {
                     break(partialResult(instantiatedTypes + declaredType));
                 }
 
-                // indirect calls, e.g. via reflection, are to be treated as instantiations as well
+                // Indirect calls, e.g. via reflection, are to be treated as instantiations as well
                 if (!isDirect) {
                     break(partialResult(instantiatedTypes + declaredType));
                 }
 
                 val caller = callerContext.method
 
-                // a constructor is called by a non-constructor method, there will be an initialization.
+                // A constructor is called by a non-constructor method, there will be an initialization.
                 if (caller.name != "<init>") {
                     break(partialResult(instantiatedTypes + declaredType));
                 }
 
-                // if the caller is not available, we have to assume that it was no super call
+                // If the caller is not available, we have to assume that it was no super call
                 if (!caller.hasSingleDefinedMethod) {
                     break(partialResult(instantiatedTypes + declaredType));
                 }
 
-                // the constructor is called from another constructor. it is only an new instantiated
-                // type if it was no super call. Thus the caller must be a direct subtype
+                // The constructor is called from another constructor. It is only a newly instantiated
+                // type if it was no super call. Thus, the caller must be a direct subtype.
                 project.classFile(caller.declaringClassType).foreach { cf =>
                     cf.superclassType.foreach { supertype =>
                         if (supertype != declaredType)
@@ -144,8 +144,8 @@ class InstantiatedTypesAnalysis private[analyses] (
 
                 val body = caller.definedMethod.body.get
 
-                // there must either be a new of the `declaredType` or it is a super call.
-                // check if there is an explicit NEW that instantiates the type
+                // There must either be a NEW of the `declaredType` or it is a super call.
+                // Check if there is an explicit NEW that instantiates the type
                 val newInstr = NEW(declaredType)
                 val hasNew = body.exists(pcInst => pcInst.instruction == newInstr)
                 if (hasNew)

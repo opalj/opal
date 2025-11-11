@@ -119,7 +119,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
         configInstantiatedTypes foreach { configuredType =>
             val considerSubtypes = configuredType.endsWith("+")
             val typeName = if (considerSubtypes) {
-                configuredType.substring(0, configuredType.size - 1)
+                configuredType.substring(0, configuredType.length - 1)
             } else {
                 configuredType
             }

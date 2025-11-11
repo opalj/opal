@@ -20,12 +20,12 @@ import org.opalj.util.elidedAssert
 
 /**
  * Converts the bytecode of a method into a three address representation using a very naive
- * approach where each each operand stack value is stored in a local variable based on the
- * position of the value on the stack and where each local variable is stored in a local variable
- * named based on the register's index (In general, you should use the three-address code create
+ * approach where each operand stack value is stored in a local variable based on the position
+ * of the value on the stack and where each local variable is stored in a local variable named
+ * based on the register's index (In general, you should use the three-address code create
  * using [[TACAI]]).
  *
- * The converted method has an isomorophic CFG when compared to the original method,
+ * The converted method has an isomorphic CFG when compared to the original method,
  * but may contain more instructions due to the way how the stack manipulation instructions are
  * transformed. In general - unless JSR/RET instructions are found - no CFG is created and used.
  * This approach relies on the invariant that the stack has to have the same layout on all paths.
@@ -43,7 +43,7 @@ object TACNaive {
      * Converts the plain bytecode of a method into a quadruples based three address
      * representation. Compared to the previous method, no data- and control-flow information is
      * used and a very general transformation mechanism is used to do the transformation.
-     * Therefore the representation is very verbose. However, both leverage the same
+     * Therefore, the representation is very verbose. However, both leverage the same
      * AST nodes.
      *
      * @param  method A method with a body. I.e., a non-native, non-abstract method.
@@ -666,7 +666,7 @@ object TACNaive {
                             case cfgNode        =>
                                 // in these cases something went terribly wrong...
                                 val message = "the cfg has an unexpected shape: " + cfgNode
-                                throw new AnalysisException(message)
+                                throw AnalysisException(message)
                         }
                         successors += successor
                         schedule(successor, stack)

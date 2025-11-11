@@ -86,7 +86,7 @@ object InterpretationFailedException {
                     s"\n)"
             }
 
-            override final def getMessage(): String = toString
+            override final def getMessage: String = toString
         }
     }
 }

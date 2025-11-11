@@ -254,7 +254,7 @@ final class ClassFile private (
         elidedAssert(oldMethod.descriptor == newMethod.descriptor)
 
         val index = binarySearch[Method, JVMMethod](this.methods, oldMethod)
-        val newPreparedMethod: Method = newMethod.prepareClassFileAttachement()
+        val newPreparedMethod: Method = newMethod.prepareClassFileAttachment()
         newPreparedMethod.declaringClassFile = this
         val methods = this.methods.unsafeArray.asInstanceOf[Array[AnyRef]]
         methods(index) = newPreparedMethod
@@ -276,7 +276,7 @@ final class ClassFile private (
      * @note This method is primarily intended to be used to perform load-time transformations!
      */
     def _UNSAFE_addMethod(methodTemplate: MethodTemplate): ClassFile = {
-        val newMethod = methodTemplate.prepareClassFileAttachement()
+        val newMethod = methodTemplate.prepareClassFileAttachment()
 
         elidedAssert(this.findMethod(newMethod.name, newMethod.descriptor).isEmpty)
 
@@ -540,7 +540,7 @@ final class ClassFile private (
                     }
 
                     // let's filter those classes that are known innerclasses of this type's
-                    // (indirect) outertype (they cannot be innerclasses of this class..)
+                    // (indirect) outertype (they cannot be innerclasses of this class...)
                     var nestedClassesOfOuterClass = outerClass.nestedClasses(using classFileRepository)
                     while (nestedClassesOfOuterClass.nonEmpty &&
                            !nestedClassesOfOuterClass.contains(thisType) &&
@@ -830,7 +830,7 @@ final class ClassFile private (
 
     /**
      * Returns the method which directly overrides a method with the given properties. The result
-     * is `Success(<Method>)`` if we can find a method; `Empty` if no method can be found and
+     * is `Success(<Method>)` if we can find a method; `Empty` if no method can be found and
      * `Failure` if a method is found which supposedly overrides the specified method,
      * but which is less visible.
      *
@@ -896,7 +896,7 @@ final class ClassFile private (
     }
 
     override def toString: String = {
-        val superIntefaces =
+        val superInterfaces =
             if (interfaceTypes.nonEmpty)
                 interfaceTypes.iterator.map[String](_.toJava).mkString("\t\twith ", " with ", "\n")
             else
@@ -906,7 +906,7 @@ final class ClassFile private (
             AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
             thisType.toJava + "\n" +
             superclassType.map("\textends " + _.toJava + "\n").getOrElse("") +
-            superIntefaces +
+            superInterfaces +
             annotationsToJava(runtimeVisibleAnnotations, "\t@{ ", " }\n") +
             annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n") +
             "\t[version=" + majorVersion + "." + minorVersion + "]\n)"
@@ -954,8 +954,8 @@ object ClassFile {
             thisType,
             superclassType,
             interfaceTypes,
-            fields.sorted[JVMField].map[Field](f => f.prepareClassFileAttachement()),
-            methods.sorted[JVMMethod].map[Method](f => f.prepareClassFileAttachement()),
+            fields.sorted[JVMField].map[Field](f => f.prepareClassFileAttachment()),
+            methods.sorted[JVMMethod].map[Method](f => f.prepareClassFileAttachment()),
             attributes
         )
     }

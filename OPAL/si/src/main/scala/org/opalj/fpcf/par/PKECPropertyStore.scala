@@ -575,7 +575,7 @@ class PKECPropertyStore(
                 while ({ curInitialTask = initialTasks.poll(); curInitialTask != null }) {
                     curInitialTask.apply()
                 }
-                // Subtract the processed tasks just once to avoid synchronization overhad for
+                // Subtract the processed tasks just once to avoid synchronization overhead for
                 // decrementing every time we process a task
                 activeTasks.addAndGet(-initialTaskSize)
 
@@ -777,7 +777,7 @@ case class EPKState(
     var eOptP:     SomeEOptionP,
     var c:         OnUpdateContinuation,
     var dependees: Set[SomeEOptionP],
-    // Use Java's HashSet here, this is internal implementiton only and they are *way* faster
+    // Use Java's HashSet here, this is internal implementation only and they are *way* faster
     dependers:           java.util.HashSet[EPKState] = new java.util.HashSet(),
     suppressedDependers: java.util.HashSet[EPKState] = new java.util.HashSet()
 ) {

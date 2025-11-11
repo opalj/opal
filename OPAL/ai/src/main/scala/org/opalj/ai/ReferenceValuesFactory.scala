@@ -16,7 +16,7 @@ import org.opalj.br.Type
 trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
 
     /**
-     * Factory method to create a `DomainValue` that represents value `null` and
+     * Factory method to create a `DomainValue` that represents value `null`
      * and that was created (explicitly or implicitly) by the instruction
      * with the specified program counter.
      *
@@ -113,7 +113,7 @@ trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
     def NewObject(origin: ValueOrigin, classType: ClassType): DomainReferenceValue
 
     /**
-     * Creates a new `DomainValue` that represents ''the `this` value of a constructor before the
+     * Creates a new `DomainValue` that represents ''the this-value of a constructor before the
      * super constructor is called''. Hence, the value origin is necessarily always -1.
      *
      * OPAL calls this method when it creates the initial locals for constructors.

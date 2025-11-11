@@ -4,7 +4,7 @@ package ai
 package domain
 
 /**
- * A configuration that forces the abstract interpretor to never create an exception
+ * A configuration that forces the abstract interpreter to never create an exception
  * if it is not possible to deduce that the specific exception is guaranteed to be thrown.
  *
  * ==Usage==

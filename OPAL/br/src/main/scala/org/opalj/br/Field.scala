@@ -3,7 +3,6 @@ package org.opalj
 package br
 
 import scala.collection.immutable.ArraySeq
-import scala.math.Ordered
 
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_TRANSIENT
@@ -57,9 +56,9 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      */
     def attributes: Attributes
 
-    // This method is only to be called by ..br.ClassFile to associate this method
+    // This method is only to be called by br.ClassFile to associate this method
     // with the respective class file.
-    private[br] def prepareClassFileAttachement(): Field = {
+    private[br] def prepareClassFileAttachment(): Field = {
         new Field(
             null /*will be set by class file*/,
             accessFlags,
@@ -150,7 +149,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     //
     //
 
-    override def toString(): String = {
+    override def toString: String = {
         import AccessFlagsContexts.FIELD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, FIELD).mkString(" ")
         val jDescriptor = fieldType.toJava + " " + name
@@ -162,7 +161,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
             }
 
         if (attributes.nonEmpty) {
-            field + attributes.map(_.getClass().getSimpleName()).mkString("«", ", ", "»")
+            field + attributes.map(_.getClass.getSimpleName()).mkString("«", ", ", "»")
         } else {
             field
         }
@@ -206,8 +205,8 @@ final class Field private[br] (
         s"${declaringClassFile.thisType.toJava}{ ${signatureToJava(true)} $message }"
     }
 
-    override def toString(): String = {
-        super.toString() + " // in " + declaringClassFile.thisType.toJava
+    override def toString: String = {
+        super.toString + " // in " + declaringClassFile.thisType.toJava
     }
 }
 

@@ -244,9 +244,9 @@ class ClassHierarchy private (
             }
         }
 
-        val rootTypes = this.rootTypes.toSet
+        val rootTypes = this.rootTypes
         val typeInfos =
-            (0 until knownTypesMap.length) filter { i => knownTypesMap(i) ne null } map { i =>
+            knownTypesMap.indices filter { i => knownTypesMap(i) ne null } map { i =>
                 val t = knownTypesMap(i)
                 TypeInfo(
                     t,
@@ -875,7 +875,7 @@ class ClassHierarchy private (
     /**
      * Returns the list of all super types in initialization order.
      * I.e., it will return the top level super class first - i.e., `java.lang.Object`
-     * and then all sub class types.
+     * and then all subclass types.
      *
      * If the given type is `java.lang.Object`, the empty list is returned.
      *
@@ -951,7 +951,7 @@ class ClassHierarchy private (
             // information!
             // This happens ONLY in case of broken projects where
             // the sub-supertype information is totally broken;
-            // e.g., a sub type `extends C` but C is an interface.
+            // e.g., a subtype `extends C` but C is an interface.
             supertypeInformation = interpolateSupertypeInformation(classType)
             supertypeInformationMap(cid) = supertypeInformation
         }
@@ -982,7 +982,7 @@ class ClassHierarchy private (
         if (supertypeInformation == null) {
             // The following is thread-safe, because we will always compute the same information!
             // This happens ONLY in case of broken projects where the sub-supertype information is
-            // totally broken; e.g., a sub type `extends C` but C is an interface.
+            // totally broken; e.g., a subtype `extends C` but C is an interface.
             supertypeInformation = interpolateSupertypeInformation(classType)
             supertypeInformationMap(cid) = supertypeInformation
         }
@@ -1271,7 +1271,7 @@ class ClassHierarchy private (
             if (supertype.isClassType)
                 isSubtypeOf(subtype.asClassType, supertype.asClassType)
             else
-                // the supertype is an array type..
+                // the supertype is an array type...
                 false
         } else {
             // the subtype is an array type
@@ -1569,7 +1569,7 @@ class ClassHierarchy private (
                         val isSubtypeOf = this.isASubtypeOf(subtype, supertype)
                         isSubtypeOf match {
                             case Yes     => true
-                            case Unknown => { subtypingRelationUnknown = true; false /* continue */ }
+                            case Unknown => subtypingRelationUnknown = true; false /* continue */
                             case No      => false
                         }
                     }
@@ -1611,7 +1611,7 @@ class ClassHierarchy private (
             subtypes exists { (subtype: ReferenceType) =>
                 this.isASubtypeOf(subtype, supertype) match {
                     case Yes     => true
-                    case Unknown => { subtypeRelationUnknown = true; false /* continue search */ }
+                    case Unknown => subtypeRelationUnknown = true; false /* continue search */
                     case No      => false
                 }
             }
@@ -1749,7 +1749,7 @@ class ClassHierarchy private (
      * Determines whether the given [[ClassSignature]] of `subtype` implements or extends
      * the given `supertype`.
      * In case that the `subtype` does implement or extend the `supertype`, an `Option` of
-     * [[ClassTypeSignature]] is returned. Otherwise None will be returned.
+     * [[ClassTypeSignature]] is returned. Otherwise, None will be returned.
      *
      * @example
      *  subtype: [[ClassSignature]] from class A where A extends List<String>
@@ -1802,7 +1802,7 @@ class ClassHierarchy private (
      * of the class or interface type encoded in the [[ClassTypeSignature]] of the
      * `supertype`.
      *
-     * @note This method relies – in case of a comparison of non generic types – on
+     * @note This method relies – in case of a comparison of non-generic types – on
      *       `isSubtypeOf(org.opalj.br.ClassType,org.opalj.br.ClassType)` of `Project` which
      *        performs an upwards search only. E.g., given the following
      *      type hierarchy:
@@ -1837,7 +1837,7 @@ class ClassHierarchy private (
      *      subtype: List<String> // List<E>
      *      supertype: List<String> // List<E>
      *
-     *      If the ContainerType of the `subtype` is equal to the ContainerType of the `supertype` and non of the
+     *      If the ContainerType of the `subtype` is equal to the ContainerType of the `supertype` and none of the
      *      [[TypeArgument]]s has a [[VarianceIndicator]], then exists a subtype relation if and only if all of the
      *      [[TypeArgument]]s are equal.
      * @example ========= 2 =========
@@ -1847,7 +1847,7 @@ class ClassHierarchy private (
      *
      * Is the `subtype` a [[ConcreteType]] without [[org.opalj.br.FormalTypeParameter]]s and the `supertype` is a [[GenericType]] then
      * we first have to check whether the `subtype` is a subtype of the given `supertype`. If not, then the `subtype` is not an actual
-     * subtype of the given `supertype`. Otherwise we have to find the definition of the `supertype` in the type definition
+     * subtype of the given `supertype`. Otherwise, we have to find the definition of the `supertype` in the type definition
      * or the type definition of a super class or a super interface (interface definition of SomeInterface<String>).
      * Once found the `supertype`, we can compare all [[TypeArgument]]s of the supertype definition of the `subtype`
      * and the given `supertype`. (We are comparing String and String in this example)
@@ -1862,11 +1862,11 @@ class ClassHierarchy private (
      * our example the subtype Foo has two [[FormalTypeParameter]] (T,E) and the supertype Bar has only one
      * [[FormalTypeParameter]] (E). Since both of them specify E in the [[ClassSignature]] of Foo, they share E as
      * [[FormalTypeParameter]]. So it is necessary to check whether the actual bound [[TypeArgument]] at the
-     * position of E is equal. At first we have to locate the shared parameter in the [[ClassSignature]], so it is possible
-     * to find the correct [[TypeArgument]]s. The above example shows that the shared parameter E is in the second position
-     * of the [[FormalTypeParameter]]s of Foo and at the first position of the [[FormalTypeParameter]]s of Bar. Second and last
-     * we know can compare the according [[TypeArgument]]s. All other parameters can be ignored because they are no important
-     * to decide the subtype relation.
+     * position of E is equal. At first, we have to locate the shared parameter in the [[ClassSignature]], so it is
+     * possible to find the correct [[TypeArgument]]s. The above example shows that the shared parameter E is in the
+     * second position of the [[FormalTypeParameter]]s of Foo and at the first position of the [[FormalTypeParameter]]s
+     * of Bar. Second and last we know can compare the according [[TypeArgument]]s. All other parameters can be ignored
+     * because they are not important to decide the subtype relation.
      */
     def isASubtypeOf(
         subtype:   ClassTypeSignature,
@@ -1903,12 +1903,11 @@ class ClassHierarchy private (
                 case (
                         GenericTypeWithClassSuffix(_, elements, suffix),
                         GenericTypeWithClassSuffix(_, superElements, superSuffix)
-                    ) => {
+                    ) =>
                     compareTypeArguments(elements, superElements) match {
                         case Yes    => compareTypeArgumentsOfClassSuffixes(suffix, superSuffix)
                         case answer => answer
                     }
-                }
 
                 case _ => No
             }
@@ -2012,7 +2011,7 @@ class ClassHierarchy private (
                                         }
                                         if (ss.get.classTypeSignatureSuffix.last.typeArguments.collectFirst {
                                                 case x @ ProperTypeArgument(_, TypeVariableSignature(_)) => x
-                                            }.size > 0
+                                            }.isDefined
                                         )
                                             compareTypeArgumentsOfClassSuffixes(
                                                 List(subtype.simpleClassTypeSignature),
@@ -2092,7 +2091,7 @@ class ClassHierarchy private (
      * into a dot representation [[http://www.graphviz.org Graphviz]]). This
      * graph can be a multi-graph if the class hierarchy contains holes.
      */
-    def toGraph(): Node = new Node {
+    def toGraph: Node = new Node {
 
         private val nodes: mutable.Map[ClassType, Node] = {
             val nodes = mutable.HashMap.empty[ClassType, Node]
@@ -2249,7 +2248,7 @@ class ClassHierarchy private (
      * @return (I) Returns (if reflexive is `true`) `upperTypeBoundA` if it is a supertype
      *      of at least one type of `upperTypeBoundB`.
      *      (II) Returns `upperTypeBoundB` if `upperTypeBoundA` is
-     *      a subtype of all types of `upperTypeBoundB`. Otherwise a new upper type
+     *      a subtype of all types of `upperTypeBoundB`. Otherwise, a new upper type
      *      bound is calculated and returned.
      */
     def joinClassTypes(
@@ -2281,7 +2280,7 @@ class ClassHierarchy private (
             // deliberately contains types which are guaranteed to be in a super-/subtype
             // relation, but which are not part of the analyzed code base. Nevertheless,
             // we are performing a join and therefore, drop the information...
-            return new UIDSet1(upperTypeBoundA);
+            return UIDSet1(upperTypeBoundA);
         }
 
         if (isUnknown(upperTypeBoundA)) {
@@ -2306,10 +2305,10 @@ class ClassHierarchy private (
         upperTypeBoundB match {
             case UIDSet1(utbB: ArrayType) =>
                 if (utbB eq upperTypeBoundA)
-                    return upperTypeBoundB;
+                    upperTypeBoundB
                 else
                     joinArrayTypes(upperTypeBoundA, utbB) match {
-                        case Left(newUTB)  => new UIDSet1(newUTB)
+                        case Left(newUTB)  => UIDSet1(newUTB)
                         case Right(newUTB) => newUTB
                     }
             case UIDSet1(utbB: ClassType) =>
@@ -2384,21 +2383,21 @@ class ClassHierarchy private (
 
         if (upperTypeBoundA eq upperTypeBoundB) {
             if (reflexive)
-                return new UIDSet1(upperTypeBoundA);
+                return UIDSet1(upperTypeBoundA);
             else
                 return directSupertypes(upperTypeBoundA /*or ...B*/ );
         }
 
         if (isSubtypeOf(upperTypeBoundB, upperTypeBoundA)) {
             if (reflexive)
-                return new UIDSet1(upperTypeBoundA);
+                return UIDSet1(upperTypeBoundA);
             else
                 return directSupertypes(upperTypeBoundA);
         }
 
         if (isSubtypeOf(upperTypeBoundA, upperTypeBoundB)) {
             if (reflexive)
-                return new UIDSet1(upperTypeBoundB);
+                return UIDSet1(upperTypeBoundB);
             else
                 return directSupertypes(upperTypeBoundB);
         }
@@ -2439,11 +2438,11 @@ class ClassHierarchy private (
                 if (isCloneable)
                     SerializableAndCloneable
                 else
-                    new UIDSet1(Serializable)
+                    UIDSet1(Serializable)
             } else if (isCloneable) {
-                new UIDSet1(Cloneable)
+                UIDSet1(Cloneable)
             } else {
-                new UIDSet1(Object)
+                UIDSet1(Object)
             }
         }
     }
@@ -2463,7 +2462,7 @@ class ClassHierarchy private (
             (thatUpperTypeBound eq Serializable) ||
             (thatUpperTypeBound eq Cloneable)
         )
-            new UIDSet1(thatUpperTypeBound)
+            UIDSet1(thatUpperTypeBound)
         else {
             var newUpperTypeBound: UIDSet[ClassType] = UIDSet.empty
             if (isSubtypeOf(thatUpperTypeBound, Serializable))
@@ -2471,7 +2470,7 @@ class ClassHierarchy private (
             if (isSubtypeOf(thatUpperTypeBound, Cloneable))
                 newUpperTypeBound += Cloneable
             if (newUpperTypeBound.isEmpty)
-                new UIDSet1(Object)
+                UIDSet1(Object)
             else
                 newUpperTypeBound
         }
@@ -2524,7 +2523,7 @@ class ClassHierarchy private (
                    thatUpperTypeBound.elementType.isBaseType
         ) {
             // => the number of dimensions is the same, but the elementType isn't
-            //    (if the element type would be the same, both object reference would
+            //    (if the element-type would be the same, both object reference would
             //    refer to the same object and this would have been handled the very
             //    first test)
             // Scenario:
@@ -2609,7 +2608,7 @@ class ClassHierarchy private (
                             utbA.head.asInstanceOf[ArrayType]
                         )
                     joinedArrayType match {
-                        case Left(arrayType)       => new UIDSet1(arrayType)
+                        case Left(arrayType)       => UIDSet1(arrayType)
                         case Right(upperTypeBound) => upperTypeBound
                     }
                 } else {
@@ -2713,13 +2712,13 @@ object ClassHierarchy {
 
     private implicit val classHierarchyEC: ExecutionContext = OPALUnboundedExecutionContext
 
-    final val JustObject: UIDSet[ClassType] = new UIDSet1(ClassType.Object)
+    final val JustObject: UIDSet[ClassType] = UIDSet1(ClassType.Object)
 
     /**
      * Creates a `ClassHierarchy` that captures the type hierarchy related to
      * the exceptions thrown by specific Java bytecode instructions as well as
      * fundamental types such as Cloneable and Serializable and also those types
-     * related to reflection..
+     * related to reflection.
      *
      * This class hierarchy is primarily useful for testing purposes.
      */
@@ -2752,7 +2751,7 @@ object ClassHierarchy {
             val typeRegExp =
                 """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
             processSource(new BufferedSource(in)) { source =>
-                source.getLines().map(_.trim).filterNot { l => l.startsWith("#") || l.length == 0 }.map { l =>
+                source.getLines().map(_.trim).filterNot { l => l.startsWith("#") || l.isEmpty }.map { l =>
                     val typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) = l: @unchecked
                     TypeDeclaration(
                         ClassType(theType),
@@ -2790,7 +2789,7 @@ object ClassHierarchy {
      * Creates the class hierarchy by analyzing the given class files, the predefined
      * type declarations, and the specified predefined class hierarchies.
      *
-     * By default the class hierarchy related to the exceptions thrown by bytecode
+     * By default, the class hierarchy related to the exceptions thrown by bytecode
      * instructions are predefined as well as the class hierarchy related to the main
      * classes of the JDK.
      * See the file `ClassHierarchyJVMExceptions.ths`, `ClassHierarchyJLS.ths` and
@@ -2857,7 +2856,7 @@ object ClassHierarchy {
                 val classTypes = data(index)
                 data(index) = {
                     if (classTypes eq null)
-                        new UIDSet1(t)
+                        UIDSet1(t)
                     else
                         classTypes + t
                 }
@@ -3243,7 +3242,7 @@ object ClassHierarchy {
                         val supertypeId = supertype.id
                         supertypes(supertypeId) match {
                             case null =>
-                                // It may happen that we we will never have complete information about a
+                                // It may happen that we will never have complete information about a
                                 // superinterface type, because we have an incomplete project OR
                                 // that the class hierarchy is totally broken in the sense that
                                 // the super interface types are actually class types.

@@ -3,7 +3,7 @@ package org.opalj
 package hermes
 
 /**
- * @param  featureID The id of the feature that is reued.
+ * @param  featureID The id of the feature that is reused.
  * @param  featureQueryA The id of some feature query that derives features with
  *         the given name.
  * @param  featureQueryB The id of another feature query that derives features with

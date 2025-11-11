@@ -19,14 +19,14 @@ public class SubClassA extends BaseClass implements AnInterface {
     }
 
     @CompileTimePure("Only returns result of exception-free computation on immutable parameter")
-    @Pure(value = "Only returns result of cexception-free omputation on immutable parameter",
+    @Pure(value = "Only returns result of exception-free computation on immutable parameter",
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public final int abstractMethod(int i) {
         return i + 2;
     }
 
     @CompileTimePure("Only returns result of exception-free computation on immutable parameter")
-    @Pure(value = "Only returns result of cexception-free omputation on immutable parameter",
+    @Pure(value = "Only returns result of exception-free computation on immutable parameter",
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public int nonAbstractMethod(int i) {
         if (i > 0)

@@ -31,7 +31,7 @@ import org.opalj.value.ValueInformation
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
  * the child expressions are just [[Var]]s or [[Const]]s.
- * However, when the code is going to be transformed to human readable code (e.g., Java oder
+ * However, when the code is going to be transformed to human-readable code (e.g., Java oder
  * Scala), then it is possible to build up complex/nested expressions '''after''' all
  * transformations and static analyses have been performed.
  *
@@ -1072,7 +1072,7 @@ trait Var[+V] extends ValueExpr[V] { this: V =>
     override final def astID: Int = Var.ASTID
 
     /**
-     * A ''human readable'' name of the local variable.
+     * A ''human-readable'' name of the local variable.
      */
     def name: String
 }

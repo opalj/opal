@@ -87,7 +87,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
 
         private val onlyMethodHandleArg = new PlainArg[Boolean] {
             override val name: String = "onlyMethodHandle"
-            override val description: String = "Only identify MethdoHandle reflection API calls"
+            override val description: String = "Only identify MethdodHandle reflection API calls"
             override val defaultValue: Option[Boolean] = Some(false)
         }
 
@@ -149,7 +149,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
             "javax.crypto.SecretKeyFactory#getInstance"
         )
 
-        private def getRelevantMethods(): Set[String] = {
+        private def getRelevantMethods: Set[String] = {
             var result = Set.empty[String]
 
             if (!(apply(onlyCryptoArg) || apply(onlyMethodHandleArg)))
@@ -162,7 +162,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
             result
         }
 
-        val relevantMethodNames = getRelevantMethods()
+        val relevantMethodNames = getRelevantMethods
     }
 
     protected type ConfigType = APICallsConfig

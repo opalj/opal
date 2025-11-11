@@ -156,10 +156,12 @@ abstract private[immutable] class Long2List1_4 extends Long2List {
             def hasNext: Boolean = list != null
             def next(): Long = {
                 index match {
-                    case 0 => { index += 1; list.v1 }
-                    case 1 => { index += 1; list.v2 }
-                    case 2 => { index += 1; list.v3 }
-                    case 3 => { index = 0; val v = list.v4; list = list.rest; v }
+                    case 0 => index += 1; list.v1
+                    case 1 => index += 1; list.v2
+                    case 2 => index += 1; list.v3
+                    case 3 =>
+                        index = 0;
+                        val v = list.v4; list = list.rest; v
                 }
             }
         }

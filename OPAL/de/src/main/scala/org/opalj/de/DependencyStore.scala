@@ -38,7 +38,7 @@ object DependencyStore {
         val dc = time {
             val dc = new DependencyCollectingDependencyProcessor(Some(classFiles.size * 10))
             val de = createDependencyExtractor(dc)
-            classFiles.par.foreach { de.process(_) }
+            classFiles.par.foreach { de.process }
             dc
         } { ns => OPALLogger.info("progress", "collecting dependencies took " + ns.toSeconds) }
 

@@ -113,7 +113,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("create IntTrieSet from List (i.e., with duplicates)") = forAll { (l: List[Int]) =>
         val its = l.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
-        val lWithoutDuplicates = l.toSet.toList
+        val lWithoutDuplicates = l.distinct
         (its.size == lWithoutDuplicates.size) :| "matching size" &&
             its.iterator.toList.sorted == lWithoutDuplicates.sorted
     }

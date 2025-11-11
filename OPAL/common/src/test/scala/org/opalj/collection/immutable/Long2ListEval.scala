@@ -43,7 +43,7 @@ object Long2ListEval extends App {
             } { t => println(s"iterator sum took ${t.toSeconds}") }
 
         elidedAssert(sumForeach == sumIterator)
-        println(s"summarized value: ${sumIterator}")
+        println(s"summarized value: $sumIterator")
     }
 
 }

@@ -254,7 +254,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *        I.e., even if the left and right sets contain the same values and are
      *       `equal` (`==`) it is necessary to return the left set.
      *
-     * @note   No facts will derived for stmts that are not reachable from an
+     * @note   No facts will be derived for stmts that are not reachable from an
      *         exit node; e.g., due to an infinite loop.
      *         That is, the returned array may contain `null` values and in an
      *         extreme case will only contain null values!
@@ -596,7 +596,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *         ''This situation cannot be handled using pcToIndex.''
      *         This information is used to ensure that if a basic block, which currently just
      *         encompasses a single instruction, will encompass the new and the old instruction
-     *         afterwards.
+     *         afterward.
      *         The returned value will be used as the `endIndex.`
      *         `endIndex = singletonBBsExpander(pcToIndex(pc of singleton bb))`
      *         Hence, the function is given the mapped index has to return that value if the index

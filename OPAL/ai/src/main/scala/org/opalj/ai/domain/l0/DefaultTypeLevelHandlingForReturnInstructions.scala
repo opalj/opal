@@ -6,7 +6,7 @@ package l0
 
 /**
  * Provides default implementations for a `Domain`'s return methods that always throw
- * an `IllegalMonitorStateExceptoin`.
+ * an `IllegalMonitorStateException`.
  *
  * You can mix in this trait if you are not interested in a method's return values or if
  * you need some default implementations.

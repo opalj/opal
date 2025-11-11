@@ -215,7 +215,7 @@ object ToTxt {
     }
 
     /**
-     * Converts the statements to some human readable text.
+     * Converts the statements to some human-readable text.
      *
      * @param includePC If `true` the original program counter is also shown in the output.
      */
@@ -237,7 +237,7 @@ object ToTxt {
                 params.parameters.zipWithIndex foreach { paramWithIndex =>
                     val (param, index) = paramWithIndex
                     if (param ne null) {
-                        val paramTxt = indention + "   param" + index.toHexString + ": " + param.toString()
+                        val paramTxt = indention + "   param" + index.toHexString + ": " + param.toString
                         javaLikeCode += (param match {
                             case v: DVar[?] =>
                                 v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")

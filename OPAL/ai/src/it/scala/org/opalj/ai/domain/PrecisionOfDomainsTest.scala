@@ -174,7 +174,7 @@ class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
                     ): Unit = {
                         failed.set(true)
                         val bodyMessage =
-                            "\" /*Instructions " + method.body.get.instructions.size + "*/\n" +
+                            "\" /*Instructions " + method.body.get.instructions.length + "*/\n" +
                                 s"\tthe less precise domain ($lpDomain) did not abstract " +
                                 s"over the state of the more precise domain ($mpDomain)\n" +
                                 "\t" + Console.BOLD + m + Console.RESET + "\n"

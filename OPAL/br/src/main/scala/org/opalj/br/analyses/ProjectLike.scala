@@ -195,7 +195,7 @@ trait ProjectLike extends ClassFileRepository { project =>
      * class Z extends X implements Y {
      *  // Z inherits m() from X; hence, X.m() (in this context) "overrides" Y.m(), but is not
      *  // returned by this function. To also identify X.m() you have to combine the results
-     *  // of overridenBy and instanceMethods(!).
+     *  // of overriddenBy and instanceMethods(!).
      * }
      * }}}
      */
@@ -234,7 +234,7 @@ trait ProjectLike extends ClassFileRepository { project =>
      * to have the given `classType`, would lead to the direct invocation of the given `method`.
      * The given method can be an inherited method, but it will never return `Yes` if
      * the given method is overridden by `classType` or a supertype of it which is a
-     * sub type of the declaring type of `method`.
+     * subtype of the declaring type of `method`.
      *
      * @note    The computation is based on the computed set of [[instanceMethods]] and generally
      *          requires at most O(n log n) steps where n is the number of callable instance
@@ -327,7 +327,7 @@ trait ProjectLike extends ClassFileRepository { project =>
                     !isSignaturePolymorphic(receiverType, descriptor)
                 ) {
                     // At least in Java 15 the signature polymorphic methods are not overloaded and
-                    // it actually doesn't make sense to do so. Therefore we decided to only
+                    // it actually doesn't make sense to do so. Therefore, we decided to only
                     // make this lookup if strictly required.
                     lookupSignaturePolymorphicMethod(SignaturePolymorphicMethodObject) match {
                         case Empty if VarHandleSubtypes.contains(receiverType) =>
@@ -614,7 +614,7 @@ trait ProjectLike extends ClassFileRepository { project =>
                     }
                 }
 
-                // [FROM THE SPECIFICATION]]
+                // [FROM THE SPECIFICATION]
                 // A method is signature polymorphic if all of the following conditions hold :
                 // - It is declared in the java.lang.invoke.MethodHandle class.
                 // - It has a single formal parameter of type Object[].
@@ -729,7 +729,7 @@ trait ProjectLike extends ClassFileRepository { project =>
     ): Result[Method] = {
         // Recall that the invokestatic instruction:
         // "... gives the name and descriptor of the method as well as a symbolic reference to
-        // the class or interface in which the method is to be found.
+        // the class or interface in which the method is to be found."
         // However, in case of interfaces no lookup in superclasses is done!
         if (isInterface) {
             classFile(declaringClassType) match {
@@ -776,7 +776,7 @@ trait ProjectLike extends ClassFileRepository { project =>
      * @return  One of the following three values:
      *           - [[org.opalj.Success]] `(method)` if the method was found;
      *           - `Failure` if the project is inconsistent; i.e., the target class file is found,
-     *             but the method cannot be found. `Failure` is returned on a best effort basis.
+     *             but the method cannot be found. `Failure` is returned on a best-effort basis.
      *           - `Empty`.
      */
     def specialCall(
@@ -990,7 +990,7 @@ trait ProjectLike extends ClassFileRepository { project =>
                         methods ++=
                             overriddenBy(mdc.method).iterator.filter { m => m.classFile.thisType.isSubtypeOf(subtype) }
 
-                    // for interfaces we have to continue, because we may have inherited a
+                    // for interfaces, we have to continue, because we may have inherited
                     // a concrete method from a class type which is not in the set of
                     // overriddenBy methods
                     subtypeCF.isInterfaceDeclaration
@@ -1073,7 +1073,7 @@ trait ProjectLike extends ClassFileRepository { project =>
                         && !mdcOption.get.method.isPrivate
                     ) {
                         methods ++= overriddenBy(mdcOption.get.method)
-                        false // we don't have to look into furthersubtypes
+                        false // we don't have to look into further subtypes
                     } else {
                         true
                     }
@@ -1130,7 +1130,7 @@ trait ProjectLike extends ClassFileRepository { project =>
                     } else {
                         methods ++= overriddenBy(mdc.method)
                     }
-                    false // we don't have to look into furthersubtypes
+                    false // we don't have to look into further subtypes
                 case _ /*None*/ =>
                     true
             }
@@ -1219,7 +1219,7 @@ object ProjectLike {
      * and descriptor
      *
      * @note    This method requires that the class hierarchy is already computed.
-     *          It does not required `instanceMethods`.
+     *          It does not require `instanceMethods`.
      * @param   superinterfaceTypes A set of interfaces which potentially declare a method
      *          with the given name and descriptor.
      */

@@ -9,16 +9,15 @@ import org.opalj.util.getObjectReflectively
 import net.ceedubs.ficus.Ficus.*
 
 /**
- * The ''key'' object to get a traversable of entry points. Entry points are particularly relevant
+ * The ''key'' object to get an Iterable of entry points. Entry points are particularly relevant
  * to construct call graphs.
  * See [[InitialEntryPointsKey]] for further details.
  *
  * This ''key'' reflectively instantiates the analysis that determines the program's entry points.
  * The respective analysis has to extend the trait [[InitialEntryPointsKey]] class.
  *
- * To configure which analysis is used use the key
- * `org.opalj.br.analyses.cg.InitialEntryPointKey.analysis` to specify the name of the class which
- * implements the analysis.
+ * To configure which analysis is used, use the key `org.opalj.br.analyses.cg.InitialEntryPointKey.analysis`
+ * to specify the name of the class which implements the analysis.
  *
  * @example
  *      {{{
@@ -41,7 +40,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Iterable[DeclaredMeth
 
     /**
      * The [[InitialEntryPointsKey]] depends on three other keys and queries information about closed
-     * packages, must answer the question whether a method can be overridden by unknown code, and
+     * packages, must answer whether a method can be overridden by unknown code, and
      * performs checks whether types are extensible or not. Additionally, required keys from the configured
      * EntryPointFinder are added.
      *

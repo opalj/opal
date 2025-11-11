@@ -62,13 +62,13 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
             DominanceFrontiers(dominatorTree, isValidNode)
         } catch {
             case t: Throwable =>
-                writeAndOpen(dominatorTree.toDot(), "FailedComputingDominaceFrontierFor", ".dt.gv")
+                writeAndOpen(dominatorTree.toDot(), "FailedComputingDominanceFrontierFor", ".dt.gv")
                 throw t
         }
     }
 
     "a graph with a single node" should "result in no dominance frontiers" in {
-        val graph = Graph.empty[Int].addVertice(0)
+        val graph = Graph.empty[Int].addVertex(0)
         val df = setUpDominanceFrontiers(0, graph, 0)
 
         df.df(0) should be(EmptyIntArraySet)
@@ -114,7 +114,7 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
     }
 
     "a graph modeling a simple if" should
-        "result in a dominance frontier grpah which correctly represents the if-block" in {
+        "result in a dominance frontier graph which correctly represents the if-block" in {
             val graph = Graph.empty[Int].addEdge(0 -> 1).addEdge(1 -> 2).addEdge(2 -> 3).addEdge(1 -> 3)
 
             val df = setUpDominanceFrontiers(0, graph, 3)

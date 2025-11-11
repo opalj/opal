@@ -103,7 +103,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(typecheckResultAST(ClassType.Object))
             javaLikeCode.shouldEqual(typecheckResultJLC(ClassType.Object.toJava))
         }
@@ -116,7 +116,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             val listTpe = ReferenceType.apply("java/util/List")
             statements.shouldEqual(typecheckResultAST(listTpe))
             javaLikeCode.shouldEqual(typecheckResultJLC(listTpe.toJava))
@@ -128,7 +128,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             val listType = ReferenceType("java/util/List")
             statements.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
@@ -154,7 +154,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeDouble, FloatType))
             javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (float) op_0"))
         }
@@ -165,7 +165,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeDouble, IntegerType))
             javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (int) op_0"))
         }
@@ -176,7 +176,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeDouble, LongType))
             javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (long) op_0"))
         }
@@ -187,7 +187,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeFloat, DoubleType))
             javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (double) op_0"))
         }
@@ -198,7 +198,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeFloat, LongType))
             javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (long) op_0"))
         }
@@ -209,7 +209,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeFloat, IntegerType))
             javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (int) op_0"))
         }
@@ -220,7 +220,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeLong, DoubleType))
             javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (double) op_0"))
         }
@@ -231,7 +231,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeLong, FloatType))
             javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (float) op_0"))
         }
@@ -242,7 +242,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeLong, IntegerType))
             javaLikeCode.shouldEqual(longResultJLC("3: op_0 = (int) op_0"))
         }
@@ -253,7 +253,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, DoubleType))
             javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (double) op_0"))
         }
@@ -264,7 +264,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, LongType))
             javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (long) op_0"))
         }
@@ -275,7 +275,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, FloatType))
             javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (float) op_0"))
         }
@@ -286,7 +286,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, CharType))
             javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (char) op_0"))
         }
@@ -297,7 +297,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, ByteType))
             javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (byte) op_0"))
         }
@@ -308,7 +308,7 @@ class TACNaiveCastTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(castResultAST(ComputationalTypeInt, ShortType))
             javaLikeCode.shouldEqual(shortResultJLC("3: op_0 = (short) op_0"))
         }

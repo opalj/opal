@@ -12,9 +12,9 @@ import org.opalj.util.elidedAssert
 import pureconfig.*
 
 /**
- * In the configuration system it is possible to define escape information for the this local in the
- * constructors of a specific class. This analysis sets the [[org.opalj.br.analyses.VirtualFormalParameter]] of the this local
- * to the defined value.
+ * In the configuration system it is possible to define escape information for the this-local in the
+ * constructors of a specific class. This analysis sets the [[org.opalj.br.analyses.VirtualFormalParameter]] of the
+ * this-local to the defined value.
  *
  * @author Florian Kuebler
  */
@@ -52,7 +52,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
 
         val propertyOption = predefinedConstructors.get(call.declaringClass.asClassType)
 
-        // the object constructor will not escape the this local
+        // the object constructor will not escape the this-local
         if (propertyOption.nonEmpty) {
             state.meetMostRestrictive(propertyOption.get)
         } else {

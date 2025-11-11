@@ -38,11 +38,10 @@ case class FieldMatcher(
 
     def extension(implicit project: SomeProject): immutable.Set[VirtualSourceElement] = {
         val allMatchedFields = project.allClassFiles collect {
-            case classFile if doesClassFileMatch(classFile) => {
+            case classFile if doesClassFileMatch(classFile) =>
                 classFile.fields collect {
                     case field if doesFieldMatch(field) => field.asVirtualField(classFile)
                 }
-            }
         }
         allMatchedFields.flatten.toSet
     }

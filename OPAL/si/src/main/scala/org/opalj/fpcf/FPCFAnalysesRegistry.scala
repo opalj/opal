@@ -46,7 +46,8 @@ object FPCFAnalysesRegistry {
      * @param analysisDescription A short description of the analysis and the properties that the
      *                            analysis computes; in particular w.r.t. a specific set of entities.
      * @param analysisFactory     The factory.
-     * @param lazyFactory         Register the analysis factory as lazy analysis factory.
+     * @param factoryType         Type to register the analysis factory as (eager, lazy, triggered)
+     * @param default             Whether this is the default analysis to be scheduled if the property is required
      */
     def register(
         analysisID:          String,

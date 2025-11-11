@@ -62,7 +62,7 @@ class StringValuesTest extends AnyFlatSpec with Matchers {
     }
 
     it should ("result in some object value if both values have the same origin but different values") in {
-        // we are now referring to all "Strings"..
+        // we are now referring to all "Strings"...
         val joinResult = s1t0.join(1, s1Alt)
         joinResult.value should not(be theSameInstanceAs s1t0)
         joinResult.value should not(be theSameInstanceAs s1Alt)

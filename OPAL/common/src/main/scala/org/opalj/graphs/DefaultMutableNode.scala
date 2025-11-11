@@ -33,14 +33,14 @@ class DefaultMutableNode[I](
             identifier,
             identifierToString,
             theVisualProperties =
-                fillcolor.map(c => DefaultMutableMode.BaseVirtualPropertiers + ("fillcolor" -> c))
-                    .getOrElse(DefaultMutableMode.BaseVirtualPropertiers)
+                fillcolor.map(c => DefaultMutableMode.BaseVirtualProperties + ("fillcolor" -> c))
+                    .getOrElse(DefaultMutableMode.BaseVirtualProperties)
         )
 
 }
 
 object DefaultMutableMode {
 
-    val BaseVirtualPropertiers = immutable.Map("style" -> "filled", "fillcolor" -> "white")
+    val BaseVirtualProperties = immutable.Map("style" -> "filled", "fillcolor" -> "white")
 
 }

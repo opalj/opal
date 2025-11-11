@@ -115,7 +115,7 @@ package object concurrent {
         "OPAL",
         s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks " +
             "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; " +
-            "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)"
+            "the number should be between 1 and 2 times the number of (hyperthreaded) cores)"
     )
 
     //

@@ -19,7 +19,7 @@ import org.opalj.util.PerformanceEvaluation.time
 class DominatorTreeTest extends AnyFlatSpec with Matchers {
 
     "a graph with just one node" should "result in a dominator tree with a single node" in {
-        val g = Graph.empty[Int].addVertice(0)
+        val g = Graph.empty[Int].addVertex(0)
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
             (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }
@@ -44,7 +44,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
     }
 
     "a graph with one custom node" should "result in a dominator tree with a single node" in {
-        val g = Graph.empty[Int].addVertice(7)
+        val g = Graph.empty[Int].addVertex(7)
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
             (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }

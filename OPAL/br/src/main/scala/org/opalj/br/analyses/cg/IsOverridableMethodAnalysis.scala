@@ -44,7 +44,7 @@ private[analyses] class IsOverridableMethodAnalysis(
         val worklist = mutable.Queue.empty[ClassType]
 
         def addDirectSubclasses(ct: ClassType): Unit = {
-            classHierarchy.directSubclassesOf(ct).foreach(worklist.enqueue(_))
+            classHierarchy.directSubclassesOf(ct).foreach(worklist.enqueue)
         }
 
         while (worklist.nonEmpty) {

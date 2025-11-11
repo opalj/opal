@@ -22,7 +22,7 @@ import org.opalj.fpcf.PropertyMetaInformation
  *  - [[org.opalj.br.Field]] for fields (either static of instance)
  *  - [[org.opalj.br.DeclaredMethod]] for the points-to set of the return values.
  *  - [[org.opalj.br.analyses.VirtualFormalParameter]] for the parameters of a method.
- *  - [[org.opalj.br.ClassType]] for the element type of an array.
+ *  - [[org.opalj.br.ClassType]] for the element-type of an array.
  *
  * @author Florian Kuebler
  */

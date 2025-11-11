@@ -39,7 +39,7 @@ A static initializer should be triggered when a *static interface method* is inv
 shows an interface ```si.Interface``` which declares a static method (```callback```) which is called in the
 ```si.Demo```'s main method. The invocation of ```callback``` causes the JVM to call ```si.Interface```'s
  static initializer (```<clinit>```). 
- >Please not that this is not directly annotatable and we thus use a static initialized field that
+ >Please note that this is not directly annotatable and we thus use a static initialized field that
  is also initialized within the static initializer and triggers a method invocation that can be tested. 
 ```java
 // si/Interface.java
@@ -139,7 +139,7 @@ interface Interface {
 ##SI5
 [//]: # (MAIN: si.Main)
 The instantiation of a class should trigger its static initializer. The class ```si.Demo``` has an
-explictly defined static initializer. When a new instance of the ```si.Demo``` class is created in
+explicitly defined static initializer. When a new instance of the ```si.Demo``` class is created in
 ```si.Main```'s main method, the static initializer of ```si.Demo``` must be executed. 
 ```java
 // si/Main.java

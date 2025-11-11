@@ -82,7 +82,7 @@ object ThrownExceptions extends ProjectsAnalysisApplication {
                 ps.waitOnPhaseCompletion()
                 ps
             } else /* if no analysis level is specified or L1 */ {
-                analysisConfig.setupCallGaph(project)
+                analysisConfig.setupCallGraph(project)
                 project.get(FPCFAnalysesManagerKey).runAll(
                     EagerL1ThrownExceptionsAnalysis
                 )

@@ -31,7 +31,7 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
             /*3*/ "unused public fields",
             /*4*/ "package visible fields\nonly used by defining type",
             /*5*/ "protected fields\nonly used by defining type",
-            /*6*/ "public fields\nonly used by defininig type "
+            /*6*/ "public fields\nonly used by defining type "
         )
     }
 

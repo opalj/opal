@@ -153,7 +153,7 @@ trait AbstractEscapeAnalysisState {
 }
 
 /**
- * Stores the parameters to which the analyses depends on, and whose functions return value is used
+ * Stores the parameters to which the analysis depends on, and whose functions return value is used
  * any further.
  */
 trait ReturnValueUseSites {

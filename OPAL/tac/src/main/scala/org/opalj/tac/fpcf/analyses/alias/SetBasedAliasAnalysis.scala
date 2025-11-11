@@ -43,9 +43,9 @@ trait SetBasedAliasAnalysis extends AbstractAliasAnalysis {
 
     /**
      * Checks if the current analysis state allows for a [[MustAlias]] relation between the two elements. It assumes
-     * the the given element is the only intersection between the two points-to sets.
+     * the given element is the only intersection between the two points-to sets.
      *
-     * This method always returns false and should be overriden if more precise must alias checks can be performed.
+     * This method always returns false and should be overridden if more precise must alias checks can be performed.
      *
      * @param intersectingElement The only between the two points-to sets.
      * @return `true` if the two elements can be a [[MustAlias]], `false` otherwise.

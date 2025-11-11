@@ -286,7 +286,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
          * (`this.isValueASubtypeOf(supertype)`)
          * returned `Unknown` and we are now on the branch where the value has to be of
          * the respective type. '''Hence, this method only handles the case where
-         * supertype is more strict than this type's upper type bound.'''
+         * supertype is stricter than this type's upper type bound.'''
          *
          * @return The updated operand stack and register values.
          */
@@ -491,7 +491,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         StructuralUpdate(mrv)
 
                     } else {
-                        // This value has the the same origin as a value found in
+                        // This value has the same origin as a value found in
                         // MultipleReferenceValues.
                         val key = IdentityPair(this, that)
                         val joinResult = joinedValues.computeIfAbsent(key, _ => this.join(pc, that))
@@ -628,7 +628,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        protected def doPeformJoinWithNonNullValueWithSameOrigin(
+        protected def doPerformJoinWithNonNullValueWithSameOrigin(
             that:     DomainSingleOriginReferenceValue,
             newRefId: RefId
         ): DomainSingleOriginReferenceValue
@@ -645,18 +645,18 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     else if (that.abstractsOver(this))
                         StructuralUpdate(that)
                     else
-                        StructuralUpdate(doPeformJoinWithNonNullValueWithSameOrigin(that, this.refId))
+                        StructuralUpdate(doPerformJoinWithNonNullValueWithSameOrigin(that, this.refId))
                 };
 
             // The reference ids are different...
             if (this == that)
-                return RefIdUpdate(that);
-            if (this.abstractsOver(that))
-                return RefIdUpdate(this.updateRefId(that.refId));
+                RefIdUpdate(that)
+            else if (this.abstractsOver(that))
+                RefIdUpdate(this.updateRefId(that.refId))
             else if (that.abstractsOver(this))
-                return StructuralUpdate(that); // StructuralUpdate(that.updateRefId());
+                StructuralUpdate(that); // StructuralUpdate(that.updateRefId())
             else
-                return StructuralUpdate(doPeformJoinWithNonNullValueWithSameOrigin(that, that.refId));
+                StructuralUpdate(doPerformJoinWithNonNullValueWithSameOrigin(that, that.refId))
         }
 
         def toString(upperTypeBound: String): String = {
@@ -674,7 +674,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
 
         def theUpperTypeBound: T
 
-        override def doPeformJoinWithNonNullValueWithSameOrigin(
+        override def doPerformJoinWithNonNullValueWithSameOrigin(
             that:     DomainSingleOriginReferenceValue,
             newRefId: RefId
         ): DomainSingleOriginReferenceValue = {
@@ -800,7 +800,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 !classHierarchy.isKnown(theUpperTypeBound) ||
                 classHierarchy.isInterface(theUpperTypeBound).isNo,
             s"the type ${theUpperTypeBound.toJava} defines an interface and, " +
-                "hence, cannnot be the concrete(precise) type of an object instance " +
+                "hence, cannot be the concrete(precise) type of an object instance " +
                 "(if this assertion fails, the project configuration may be bogus))"
         )
 
@@ -926,10 +926,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         value: DomainObjectValue =>
 
         /**
-         * If we have an incomplete type hierarchy it may happen that we ceate an
+         * If we have an incomplete type hierarchy it may happen that we create an
          * MObjectValue where the types of the bound are in a sub-/supertype relation to ensure
          * that after a checkcast a corresponding test will return Yes and not Unknown.
-         * In that case – and if one of the types is final – we can nevertheless determine that we
+         * In that case – and if one of the types is final – we can nevertheless determine that we
          * know the precise type of the value.
          */
         override def isPrecise: Boolean = {
@@ -952,7 +952,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     if (domain.isSubtypeOf(supertype, anUTB))
                         newUTB += theSupertype
                     else {
-                        // supertype is either a supertype of anUTB or the
+                        // supertype is either a supertype of anUTB or
                         // the relationship is unknown; in both cases
                         // we have to keep "anUTB"; however, we also have
                         // to add supertype if the relation is unknown.
@@ -976,7 +976,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        def doPeformJoinWithNonNullValueWithSameOrigin(
+        def doPerformJoinWithNonNullValueWithSameOrigin(
             that:     DomainSingleOriginReferenceValue,
             newRefId: RefId
         ): DomainSingleOriginReferenceValue = {
@@ -1323,7 +1323,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 // we now have to impose the conditions of this "MultipleReferenceValue"
                 // on the refinedValue
                 if (thisIsNull.isYesOrNo && refinedValue.isNull.isUnknown)
-                    refinedValue = refinedValue.doRefineIsNull(isNull).asInstanceOf[DomainSingleOriginReferenceValue]
+                    refinedValue = refinedValue.doRefineIsNull(isNull)
                 if (thisIsNull.isNoOrUnknown /*if the value is null then there is nothing (more) to do*/ &&
                     !refinedValue.isPrecise /*if the value isPrecise then there is nothing (more) to do*/ &&
                     thisUpperTypeBound != refinedValue.upperTypeBound &&
@@ -1331,7 +1331,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 ) {
                     if (thisUpperTypeBound.isSingletonSet)
                         refinedValue =
-                            refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.head).asInstanceOf[DomainSingleOriginReferenceValue]
+                            refinedValue.doRefineUpperTypeBound(thisUpperTypeBound.head)
                     else
                         refinedValue =
                             ObjectValue(
@@ -1353,9 +1353,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     else
                         domain.isNull(refinedValues)
 
-                // The upper type bound can be independent from the least common
+                // The upper type bound can be independent of the least common
                 // upper type of a all values if, e.g., the value as a whole
-                // was casted to a specific value.
+                // was cast to a specific value.
                 val newUTB =
                     if (newIsNull.isYes)
                         UIDSet.empty[ReferenceType]
@@ -1437,7 +1437,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             elidedAssert(isNull.isYesOrNo)
 
             // Recall that this value's property – as a whole – can be undefined also
-            // each individual value's property is well defined (Yes, No).
+            // each individual value's property is well-defined (Yes, No).
             // Furthermore, the parameter isNull is either Yes or No and we are
             // going to filter those values that do not satisfy the constraint.
 
@@ -1497,7 +1497,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     value.isNull.isYes || {
                         value.isValueASubtypeOf(supertype) match {
                             case Yes | Unknown => true
-                            case No            => { filteredValuesOrigins -= value.id; false }
+                            case No            => filteredValuesOrigins -= value.id; false
                         }
                     }
                 }
@@ -1516,7 +1516,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 // We have to support (2) the case where we cast an array of reference values of
                 // type X to an array of reference values of type Y (which may succeed if at least
                 // one type is an interface type or if both types are in an effective
-                // inheritance relation! For example,
+                // inheritance relation!) For example,
                 // {{{
                 // scala> val ss = new Array[java.util.ArrayList[AnyRef]](1)
                 // ss: Array[java.util.ArrayList[AnyRef]] = Array(null)
@@ -1655,7 +1655,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                                 } else {
                                     val joinResult =
                                         joinedValues.computeIfAbsent(
-                                            new IdentityPair(thisValue, otherValue),
+                                            IdentityPair(thisValue, otherValue),
                                             _ => thisValue.join(joinPC, otherValue)
                                         )
 

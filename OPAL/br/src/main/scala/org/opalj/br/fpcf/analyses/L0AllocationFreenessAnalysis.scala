@@ -73,7 +73,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
         val method = definedMethod.definedMethod
         val declaringClassType = method.classFile.thisType
 
-        // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
+        // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if (declaringClassType ne definedMethod.declaringClassType)
             return baseMethodAllocationFreeness(definedMethod.asDefinedMethod);
@@ -182,8 +182,8 @@ class L0AllocationFreenessAnalysis private[analyses] (
 
                 case ARETURN.opcode | IRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
                     LRETURN.opcode | RETURN.opcode =>
-                // if we have a monitor instruction the method has allocations anyway..
-                // hence, we can ignore the monitor related implicit exception
+                // if we have a monitor instruction the method has allocations anyway...
+                // hence, we can ignore the monitor-related implicit exception
 
                 case _ =>
                     // All other instructions (IFs, Load/Stores, Arith., etc.) allocate no objects
@@ -199,7 +199,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
         if (dependees.isEmpty)
             return Result(definedMethod, AllocationFreeMethod);
 
-        // This function computes the “allocation freeness for a method based on the allocation
+        // This function computes the allocation freeness for a method based on the allocation
         // freeness of its callees
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
             // Let's filter the entity.

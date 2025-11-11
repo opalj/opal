@@ -96,7 +96,7 @@ object CallGraph extends ProjectsAnalysisApplication {
     ): (Project[URL], BasicReport) = {
         val (project, projectTime) = analysisConfig.setupProject()
         implicit val (ps: PropertyStore, propertyStoreTime: Seconds) = analysisConfig.setupPropertyStore(project)
-        val (cg, callGraphTime) = analysisConfig.setupCallGaph(project)
+        val (cg, callGraphTime) = analysisConfig.setupCallGraph(project)
 
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm =>

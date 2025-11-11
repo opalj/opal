@@ -338,7 +338,7 @@ trait RecordCFG
     /**
      * Returns all PCs that may lead to the (ab)normal termination of the method. I.e.,
      * those instructions (in particular method call instructions, but potentially also
-     * array access instructions and (I]L)DIV|MOD instructions etc.) that may throw
+     * array access instructions and (I/L)DIV|MOD instructions etc.) that may throw
      * some unhandled exceptions will also be returned; even if the instruction may
      * also have regular and also exception handlers!
      */
@@ -376,7 +376,7 @@ trait RecordCFG
      * The `pc` has to identify a valid instruction.
      */
     private final def unsafeWasExecuted(pc: PC): Boolean = {
-        // The following "comparatively expensive" test cannot be replace by a simple
+        // The following "comparatively expensive" test cannot be replaced by a simple
         // operandsArray(pc) eq null test as long as we support containing subroutines.
         // In the latter case, a subroutine's (sub) operands array will contain null
         // values directly after the analysis has finished (when the computeBBCFG is
@@ -469,7 +469,7 @@ trait RecordCFG
 
     /**
      * Tests if the instruction with the given `pc` has a successor instruction with
-     * a `pc'` that satisfies the given predicate `p`.
+     * a `pc` that satisfies the given predicate `p`.
      */
     def hasSuccessor(
         pc:                    Int,
@@ -605,7 +605,7 @@ trait RecordCFG
                     setFieldValue(new SRef(newValue))
                     newValue
                 } else {
-                    f // initialized by a side-effect of evaluating the if condition
+                    f // initialized by a side effect of evaluating the if condition
                 }
             }
         } else {
@@ -619,7 +619,7 @@ trait RecordCFG
                         setFieldValue(new SRef(newValue))
                         newValue
                     } else {
-                        f // initialized by a side-effect of evaluating the if condition
+                        f // initialized by a side effect of evaluating the if condition
                     }
                 }
             } else {

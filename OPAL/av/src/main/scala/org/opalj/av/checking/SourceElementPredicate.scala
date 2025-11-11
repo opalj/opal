@@ -30,7 +30,7 @@ trait SourceElementPredicate[-S <: ConcreteSourceElement] extends (S => Boolean)
     ): SourceElementPredicate[X] = and(right)
 
     /**
-     * Returns a human readable representation of this predicate that is well suited
+     * Returns a human-readable representation of this predicate that is well suited
      * for presenting it in messages related to architectural deviations.
      *
      * It should not end with a white space and should not use multiple lines.
@@ -62,7 +62,7 @@ case class Attributes(
 
     def apply(sourceElement: ConcreteSourceElement): Boolean = {
         //    sourceElement.attributes.size == this.attributes.size &&
-        this.attributes.forall(a => sourceElement.attributes.exists(_ == a))
+        this.attributes.forall(a => sourceElement.attributes.contains(a))
     }
 
     def toDescription: String = {

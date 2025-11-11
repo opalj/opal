@@ -21,7 +21,7 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.LoadString
 
 /**
- * The analysis demonstrates how to find values passed to Chipher.getInstance:
+ * The analysis demonstrates how to find values passed to Cipher.getInstance:
  * {{{
  * static Chipher getInstance(String transformation)
  * static Cipher  getInstance(String transformation, Provider provider)
@@ -66,7 +66,7 @@ object CipherGetInstanceStrings extends ProjectsAnalysisApplication {
                     case invoke @ INVOKEINTERFACE(ClassType.JavaSecurityKey, "getAlgorithm", JustReturnsString) =>
                         report.add(m.toJava(s"return value of ($pc): ${invoke.toString}"))
 
-                    case get @ GETFIELD(_, _, _) => println("uknown value: " + get)
+                    case get @ GETFIELD(_, _, _) => println("known value: " + get)
                     case i                       => println("unsupported instruction: " + i)
                 }
             }

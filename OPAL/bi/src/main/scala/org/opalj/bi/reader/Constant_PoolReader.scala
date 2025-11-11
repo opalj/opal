@@ -119,7 +119,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
         val constant_pool_count = in.readUnsignedShort
 
         /*
-         * The format of each constant_pool table entry is indicated by its ﬁrst
+         * The format of each constant_pool table entry is indicated by its first
          * “tag” byte.
          *
          * The constant_pool table is indexed from 1 to constant_pool_count−1.
@@ -209,7 +209,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     val header = s"wrong constant pool tag: $tag (entry: $i/$constant_pool_count); "
                     val message = constant_pool_entries.iterator.zipWithIndex.slice(1, i).map(_.swap)
                         .mkString(header + "previous entries:\n\t", "\n\t", "\n")
-                    throw new BytecodeProcessingFailedException(message)
+                    throw BytecodeProcessingFailedException(message)
             }
         }
         constant_pool_entries

@@ -3,6 +3,8 @@ package org.opalj
 package br
 package cp
 
+import scala.compiletime.uninitialized
+
 /**
  * Constant pool entry that represents method refs.
  *
@@ -20,7 +22,7 @@ trait AsMethodref extends Constant_Pool_Entry {
     def isInterfaceMethodRef: Boolean
 
     // to cache the result
-    @volatile private var methodref: (ReferenceType, Boolean, String, MethodDescriptor) = null
+    @volatile private var methodref: (ReferenceType, Boolean, String, MethodDescriptor) = uninitialized
     override def asMethodref(
         cp: Constant_Pool
     ): (ReferenceType, Boolean /* isInterface*/, String, MethodDescriptor) = {

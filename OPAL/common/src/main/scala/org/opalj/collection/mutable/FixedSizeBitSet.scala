@@ -11,7 +11,7 @@ import org.opalj.util.elidedAssert
  * impact on equals and/or hashcode computations. I.e., two sets with two different upper bounds
  * which contain the same values, are equal and have the same hashcode.
  *
- * Conceptually, the an array of long values is used to store the values.
+ * Conceptually, an array of long values is used to store the values.
  *
  * @note If values are added to the set that are larger than the specified size the behavior is
  *       undefined!
@@ -24,7 +24,7 @@ sealed abstract class FixedSizeBitSet extends BitSet with Serializable {
 
     /**
      * Adds the given value to the set if the value is not in the set and returns true;
-     * otherwise returns false. That is, the value is definitively in the set afterwards.
+     * otherwise returns false. That is, the value is definitively in the set afterward.
      */
     def add(i: Int): Boolean
 
@@ -169,7 +169,7 @@ private[mutable] final class FixedSizeBitSet128 extends FixedSizeBitSet { thisSe
         val set1Hash = (set1 ^ (set1 >>> 32)).toInt
         if (set1Hash != 0) result = 31 + set1Hash
         val set2Hash = (set2 ^ (set2 >>> 32)).toInt
-        if (set2Hash != 0) 31 * result + set2Hash
+        if (set2Hash != 0) result = 31 * result + set2Hash
         result
     }
 }

@@ -29,7 +29,7 @@ case class ConfigObject(var entries: mutable.Map[String, ConfigNode], var commen
         pageHTML: StringBuilder
     )(implicit project: SomeProject): Unit = {
         def entryToHTML(key: String, entry: ConfigNode): Unit = {
-            entry.toHTML(exporter, key, pageHTML)
+            entry.createHTML(exporter, key, pageHTML)
             pageHTML ++= "\n"
         }
 

@@ -39,7 +39,7 @@ trait CGBasedCommandLineConfig extends AIBasedCommandLineConfig with PropertySto
 
     cgArgs.foreach { arg => argGroups += arg -> cgArgGroup }
 
-    def setupCallGaph(project: Project): (CallGraph, Seconds) = {
+    def setupCallGraph(project: Project): (CallGraph, Seconds) = {
         var callGraphTime = Seconds.None
         val callGraphKeyOpt = apply(CallGraphArg)
         if (callGraphKeyOpt.isEmpty) {

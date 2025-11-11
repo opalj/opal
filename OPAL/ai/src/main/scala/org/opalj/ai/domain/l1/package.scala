@@ -28,7 +28,7 @@ package object l1 {
         domain:           l1.ReferenceValues
     )(
         operandsArray: domain.OperandsArray
-    ): Seq[Int /*PC*/ ] = { // IMPROVE Ues Int based datastructure
+    ): Seq[Int /*PC*/ ] = { // IMPROVE Ues Int based data structure
 
         val instructions = code.instructions
 

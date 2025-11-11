@@ -19,7 +19,7 @@ class Simple {
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @MutableField(value = "The field is unsafely lazily initialized", analyses = { FieldImmutabilityAnalysis.class})
     @LazilyInitializedField(value = "Simple lazy initialization with primitive type", analyses = {})
-    @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
+    @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
     private int x;
 
@@ -35,7 +35,7 @@ class Local {
 
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with local", analyses = {})
-    @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
+    @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
     private int x;
 
@@ -67,7 +67,7 @@ class LocalReversed {
 
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Lazy initialization with local (reversed)", analyses = {})
-    @UnsafelyLazilyInitializedField(value = "The analysis does not reconize determinism",
+    @UnsafelyLazilyInitializedField(value = "The analysis does not recognize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
     private int x;
 
@@ -84,7 +84,7 @@ class SimpleReversed {
 
     @TransitivelyImmutableField(value = "field is lazily initialized and has primitive value", analyses = {})
     @LazilyInitializedField(value = "Simple lazy initialization (reversed)", analyses = {})
-    @UnsafelyLazilyInitializedField(value = "The analysis cannot reconizes determinism",
+    @UnsafelyLazilyInitializedField(value = "The analysis cannot recognize determinism",
             analyses = {L2FieldAssignabilityAnalysis.class})
     private int x;
 

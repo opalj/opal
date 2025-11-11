@@ -124,7 +124,7 @@ trait LongValuesDomain extends LongValuesFactory { domain =>
      *
      * @param pc The pc of the "shift left" instruction.
      * @param value1 A long value (guaranteed by the JVM's semantics).
-     * @param value2 A int value (guaranteed by the JVM's semantics) that determines
+     * @param value2 An int value (guaranteed by the JVM's semantics) that determines
      *      the number of bits to shift.
      */
     def lshl(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue
@@ -144,7 +144,7 @@ trait LongValuesDomain extends LongValuesFactory { domain =>
      *
      * @param pc The pc of the "unsigned shift right" instruction.
      * @param value1 A long value (guaranteed by the JVM's semantics).
-     * @param value2 A int value (guaranteed by the JVM's semantics) that determines
+     * @param value2 An int value (guaranteed by the JVM's semantics) that determines
      *      the number of bits to shift.
      */
     def lushr(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue

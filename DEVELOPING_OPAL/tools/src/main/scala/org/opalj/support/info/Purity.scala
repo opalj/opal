@@ -399,7 +399,7 @@ object Purity extends ProjectsAnalysisApplication {
                 ps.toString(false) +
                     "\ncompile-time pure:                     " + compileTimePure.size +
                     "\nAt least pure:                         " + pure.size +
-                    "\nAt least domain-specficic pure:        " + dPure.size +
+                    "\nAt least domain-specific pure:        " + dPure.size +
                     "\nAt least side-effect free:             " + sideEffectFree.size +
                     "\nAt least d-s side effect free:         " + dSideEffectFree.size +
                     "\nAt least externally pure:              " + externallyPure.size +

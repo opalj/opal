@@ -67,9 +67,9 @@ object MoreCheckers {
         }
 
         println(Console.BOLD + "WARMUP PHASE" + Console.RESET)
-        // for Scalatest - we use 8 warumup runs
+        // for Scalatest - we use 8 warmup runs
         // for Bugs.zip - we use 50 warmup runs
-        // for CLASSES.jar - we use 2 warumup runs
+        // for CLASSES.jar - we use 2 warmup runs
         for (i <- 1 to 2) {
             println("\n\n\n\n\n\n\n" + i + "=======================================================================" + i);
             // time(t => println("Performing all analyses took: "+nsToSecs(t))) {
@@ -127,7 +127,7 @@ object MoreCheckers {
                 field <- classFile.fields if field.isProtected
             } yield (classFile, field)
         } { t => collect("CI_CONFUSED_INHERITANCE", t /*nsToSecs(t)*/ ) }
-        println(", " /*"\tViolations: "*/ + protectedFields.size)
+        println(", " /*"\tViolations: "*/ + protectedFields.length)
 
         // FINDBUGS: CN: Class implements Cloneable but does not define or use clone method (CN_IDIOM)
         val cloneableNoClone = time {
@@ -174,7 +174,7 @@ object MoreCheckers {
                 if classHierarchy.isASubtypeOf(classFile.thisType, ClassType.Cloneable).isYesOrUnknown
             } yield (classFile.thisType.fqn, method.name)
         }(t => collect("CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ + cloneButNotCloneable.size)
+        println(", " /*"\tViolations: "*/ /*+cloneButNotCloneable.mkString(", ")*/ + cloneButNotCloneable.length)
 
         // FINDBUGS: Co: Abstract class defines covariant compareTo() method (CO_ABSTRACT_SELF)
         // FINDBUGS: Co: Covariant compareTo() method defined (CO_SELF_NO_OBJECT)
@@ -201,7 +201,7 @@ object MoreCheckers {
             for { // we don't care about gc calls in java.lang and also about gc calls that happen inside of methods related to garbage collection (heuristic)
                 classFile <- classFiles if !classFile.thisType.fqn.startsWith("java/lang");
                 method <- classFile.methods
-                if method.body.isDefined && !"(^gc)|(gc$)".r.findFirstIn(method.name).isDefined;
+                if method.body.isDefined && "(^gc)|(gc$)".r.findFirstIn(method.name).isEmpty;
                 instruction <- method.body.get.instructions
             } {
                 instruction match {
@@ -255,7 +255,7 @@ object MoreCheckers {
                 ) <- classFile.methods if method.isAbstract
             } yield (classFile, method);
         }(t => collect("EQ_ABSTRACT_SELF", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ + abstractCovariantEquals.size)
+        println(", " /*"\tViolations: "*/ + abstractCovariantEquals.length)
 
         // FINDBUGS: FI: Finalizer should be protected, not public (FI_PUBLIC_SHOULD_BE_PROTECTED)
         val classesWithPublicFinalizeMethods = time {
@@ -270,7 +270,7 @@ object MoreCheckers {
 
         // FINDBUGS: Se: Class is Serializable but its superclass doesn't define a void constructor (SE_NO_SUITABLE_CONSTRUCTOR)
 
-        // The following solution reports all pairs of seriablizable classes and their non-seriablizable
+        // The following solution reports all pairs of serializable classes and their non-seriablizable
         // superclasses that do not define a default constructor.
         //        val classesWithoutDefaultConstructor = time(t => println("SE_NO_SUITABLE_CONSTRUCTOR: "+nsToSecs(t))) {
         //            for (
@@ -292,7 +292,7 @@ object MoreCheckers {
                 if getClassFile.isDefinedAt(superclass) // the class file of some supertypes (defined in libraries, which we do not analyze) may not be available
                 superClassFile = getClassFile(superclass)
                 if !superClassFile.isInterfaceDeclaration
-                if !superClassFile.constructors.exists(_.descriptor.parameterTypes.length == 0)
+                if !superClassFile.constructors.exists(_.descriptor.parameterTypes.isEmpty)
             } yield superclass // there can be at most one method
         }(t => collect("SE_NO_SUITABLE_CONSTRUCTOR", t /*nsToSecs(t)*/ ))
         println(", " /*"\tViolations: "*/ + classesWithoutDefaultConstructor.size);
@@ -313,7 +313,7 @@ object MoreCheckers {
                         case _                                    =>
                     }
                 }
-                if (privateFields.size > 0)
+                if (privateFields.nonEmpty)
                     unusedFields = (classFile, privateFields) :: unusedFields
             }
         }(t => collect("UUF_UNUSED_FIELD", t /*nsToSecs(t)*/ ))
@@ -354,9 +354,9 @@ object MoreCheckers {
                 classFile <- classFiles if classFile.isClassDeclaration
                 case method @ MethodWithBody(body) <- classFile.methods
                 exceptionHandler <- body.exceptionHandlers
-                if exceptionHandler.catchType == Some(IllegalMonitorStateExceptionType)
+                if exceptionHandler.catchType.contains(IllegalMonitorStateExceptionType)
             } yield (classFile, method)
         }(t => collect("IMSE_DONT_CATCH_IMSE", t /*nsToSecs(t)*/ ))
-        println(", " /*"\tViolations: "*/ + catchesIllegalMonitorStateException.size)
+        println(", " /*"\tViolations: "*/ + catchesIllegalMonitorStateException.length)
     }
 }

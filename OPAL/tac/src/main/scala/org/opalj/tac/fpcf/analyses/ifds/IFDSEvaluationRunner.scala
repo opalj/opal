@@ -59,7 +59,7 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
     ): Unit = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (ps, _) = analysisConfig.setupPropertyStore(project)
-        analysisConfig.setupCallGaph(project)
+        analysisConfig.setupCallGraph(project)
 
         var analysisTime: Milliseconds = Milliseconds.None
         println("Start: " + new java.util.Date)

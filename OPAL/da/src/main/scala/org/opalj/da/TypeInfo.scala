@@ -16,7 +16,7 @@ sealed abstract class TypeInfo {
     def asJava: String
 
     /**
-     * `true` if the underlying type (in case of an array the element type) is a base type/
+     * `true` if the underlying type (in case of an array the element-type) is a base type/
      * primitive type; `false` in all other cases except if the "type" is void. In that case
      * an exception is thrown.
      */

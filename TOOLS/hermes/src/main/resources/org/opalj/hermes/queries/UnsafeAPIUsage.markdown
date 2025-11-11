@@ -82,7 +82,7 @@ Extracts calls of methods which use `sun.misc.Unsafe`. Closely related methods a
 ## Throw
   The throwException method is contained in the *Throw*
       group, and allows one to throw checked exceptions without
-      declaring them in the throws clause.
+      declaring them in the throws-clause.
 
 ## Volatile Get & Put
   The *Volatile Get and Volatile Put* groups allow

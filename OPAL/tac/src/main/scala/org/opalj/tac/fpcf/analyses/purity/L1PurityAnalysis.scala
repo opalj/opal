@@ -99,7 +99,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param tac The method's three address code
      * @param lbPurity The current minimum purity level for the method
      * @param ubPurity The current maximum purity level for the method that will be assigned by
-     *                  checkPurityOfX methods to aggregrate the purity
+     *                  checkPurityOfX methods to aggregate the purity
      */
     class State(
         var dependees: Set[EOptionP[Entity, Property]],
@@ -173,7 +173,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             // The expression could refer to further expressions in a non-flat representation.
             // In that case it could be, e.g., a GetStatic. In that case the reference is
             // not locally created and/or initialized. To avoid special handling, we just
-            // fallback to false here as the analysis is intended to be used on flat
+            // fall back to false here as the analysis is intended to be used on flat
             // representations anyway.
             atMost(otherwise)
             false
@@ -183,7 +183,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     /**
      * Examines the influence of the purity property of a method on the examined method's purity.
      *
-     * @note Adds dependendies when necessary.
+     * @note Adds dependees when necessary.
      */
     def checkMethodPurity(
         ep:     EOptionP[Context, Purity],

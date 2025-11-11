@@ -206,5 +206,5 @@ object HelloWorldClass extends App {
         attributes = ArraySeq(SourceFile_attribute(32, 33))
     )
 
-    println("Created class file: " + Files.write(Paths.get("Test.class"), Assembler(cf)).toAbsolutePath())
+    println("Created class file: " + Files.write(Paths.get("Test.class"), Assembler(cf)).toAbsolutePath)
 }

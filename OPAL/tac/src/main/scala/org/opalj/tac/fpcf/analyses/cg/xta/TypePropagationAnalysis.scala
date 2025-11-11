@@ -525,11 +525,11 @@ final class TypePropagationAnalysis private[analyses] (
 
         val filteredTypes = newTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, nt) =>
             val fitr = filters.iterator
-            var canditateMatches = false
-            while (!canditateMatches && fitr.hasNext) {
+            var candidateMatches = false
+            while (!candidateMatches && fitr.hasNext) {
                 val tf = fitr.next()
                 if (candidateMatchesTypeFilter(nt, tf)) {
-                    canditateMatches = true
+                    candidateMatches = true
                     builder += nt
                 }
             }

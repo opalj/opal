@@ -19,7 +19,7 @@ class ConstantsPool(
     private def validateIndex(index: Int, requiresUByteIndex: Boolean): Int = {
         if (requiresUByteIndex && index > UByte.MaxValue) {
             val message = s"the constant pool index $index is larger than ${UByte.MaxValue}"
-            throw new ConstantPoolException(message)
+            throw ConstantPoolException(message)
         }
         index
     }
@@ -131,7 +131,7 @@ class ConstantsPool(
     ): Int = {
         val indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
         if (indexOfBootstrapMethod == -1) {
-            throw new ConstantPoolException(s"the bootstrap method $bootstrapMethod is unknown")
+            throw ConstantPoolException(s"the bootstrap method $bootstrapMethod is unknown")
         }
         val cpNameAndTypeIndex = CPENameAndType(name, descriptor)
         constantPool(CONSTANT_InvokeDynamic_info(indexOfBootstrapMethod, cpNameAndTypeIndex))
@@ -154,7 +154,7 @@ class ConstantsPool(
     ): Int = {
         val indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
         if (indexOfBootstrapMethod == -1) {
-            throw new ConstantPoolException(s"the bootstrap method $bootstrapMethod is unknown")
+            throw ConstantPoolException(s"the bootstrap method $bootstrapMethod is unknown")
         }
         val cpNameAndTypeIndex = CPENameAndType(name, descriptor)
         validateIndex(

@@ -50,7 +50,7 @@ trait ValuesDomain { domain =>
 
     /**
      * Creates a domain value from the given value information that represents a
-     * properly domain value.
+     * proper domain value.
      * A representation of a proper value is created even if the value information is provided
      * for an '''uninitialized''' value.
      *
@@ -97,7 +97,7 @@ trait ValuesDomain { domain =>
      *
      * ==Use Of Value/Dependencies On Value==
      * '''In general, subclasses and users of a `Domain` should not have/declare
-     * a direct dependency on `Value`'''. Instead they should use `DomainValue` as otherwise
+     * a direct dependency on `Value`'''. Instead, they should use `DomainValue` as otherwise
      * extensibility of a `Domain` may be hampered or even be impossible. The only
      * exceptions are, of course, classes that directly inherit from this class.
      *
@@ -213,7 +213,7 @@ trait ValuesDomain { domain =>
          *
          * Conceptually, the join of an object with itself has to return the object
          * itself. Note, that this is a conceptual requirement as such a call
-         * (`this.doJoin(..,this)`) will not be performed by the abstract interpretation
+         * (`this.doJoin(...,this)`) will not be performed by the abstract interpretation
          * framework; this case is handled by the [[join]] method.
          * However, if the join object is also used by the implementation of the domain
          * itself, it may be necessary to explicitly handle self-joins.
@@ -308,7 +308,7 @@ trait ValuesDomain { domain =>
          *
          * @param   other Another `DomainValue` with the same computational type as this value.
          *          (The `IllegalValue` has no computational type and, hence, a comparison with
-         *          an IllegalValue is not well defined.)
+         *          an IllegalValue is not well-defined.)
          *
          * @see `abstractsOver`
          */
@@ -469,7 +469,7 @@ trait ValuesDomain { domain =>
     type LocalsArray = org.opalj.ai.TheLocalsArray[Locals] // the package name is required by unidoc
 
     /**
-     * Represents a value that has no well defined state/type. Such values are either
+     * Represents a value that has no well-defined state/type. Such values are either
      * the result of a join of two incompatible values or if the variable was identified
      * as being dead. `IllegalValue`'s are only found in registers (in the locals).
      *

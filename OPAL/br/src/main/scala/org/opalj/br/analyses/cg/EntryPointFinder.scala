@@ -10,7 +10,7 @@ import org.opalj.log.OPALLogger
 import net.ceedubs.ficus.Ficus.*
 
 /**
- * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
+ * The EntryPointFinder trait is a common trait for all analyses that can derive a program's entry
  * points. The concrete entry point finder that is used to determines a programs entry points directly
  * impacts the computation of a programs call graph.
  *
@@ -243,7 +243,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  *  }}}
  *
  * Please note that the first entry point, by adding the "+" to the declaring class' name, considers
- * all "add" methods from all subtypes independently from the respective method's descriptor. In
+ * all "add" methods from all subtypes independently of the respective method's descriptor. In
  * contrast, the second entry does specify a descriptor and does not consider List's subtypes (by
  * not suffixing a plus to the declaringClass) which implies that only the remove method with this
  * descriptor is considered as entry point.
@@ -296,7 +296,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
             val considerSubtypes = configuredType.endsWith("+")
             val typeName = if (considerSubtypes) {
-                configuredType.substring(0, configuredType.size - 1)
+                configuredType.substring(0, configuredType.length - 1)
             } else {
                 configuredType
             }
@@ -309,7 +309,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                     case _: IllegalArgumentException =>
                         OPALLogger.warn(
                             "project configuration",
-                            s"illegal method descriptor: $typeName { $name or ${md}}"
+                            s"illegal method descriptor: $typeName { $name or $md}"
                         )
                         None
                 }

@@ -3,6 +3,7 @@ package org.opalj
 package hermes
 
 import java.io.File
+import scala.compiletime.uninitialized
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -24,7 +25,7 @@ trait HermesConfig {
 
     private var isInitialized: Boolean = false
 
-    private var config: Config = null
+    private var config: Config = uninitialized
 
     /**
      * The global configuration file.
@@ -37,7 +38,7 @@ trait HermesConfig {
      */
     def initialize(configFile: File): Unit = {
         import Console.err
-        if (!configFile.exists || !configFile.canRead()) {
+        if (!configFile.exists || !configFile.canRead) {
             err.println(s"The config file cannot be found or read: $configFile")
             err.println("The current folder is: " + System.getProperty("user.dir"))
             System.exit(2)
@@ -48,9 +49,9 @@ trait HermesConfig {
             setConfig(config)
         } catch {
             case t: Throwable =>
-                err.println(s"Failed while reading: $configFile; ${t.getMessage()}")
+                err.println(s"Failed while reading: $configFile; ${t.getMessage}")
                 System.exit(3)
-                // ... if System.exit does not terminate the app; this will at least kill the
+                // ... if System.exit does not terminate the app; this will at least kill
                 // the current call.
                 throw t;
         }

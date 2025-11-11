@@ -202,7 +202,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         case _ =>
                             PointsToSetLike.noFilter
                     }
-                    if (state.hasCalleesDepenedee) {
+                    if (state.hasCalleesDependee) {
                         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, filter)
                         state.addDependee(defSiteObject, state.calleesDependee, filter)
                     }
@@ -334,7 +334,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             var continue = !isEmptyArray
             while (remainingCounts.nonEmpty && allocatedType.isArrayType && continue) {
                 val theType = allocatedType.asArrayType
-                val arrayEntity = ArrayEntity(arrayReferencePTS.getNewestElement())
+                val arrayEntity = ArrayEntity(arrayReferencePTS.getNewestElement)
 
                 if (countIsZero(remainingCounts))
                     continue = false
@@ -358,7 +358,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    // maps the points-to set of actual parameters (including *this*) the the formal parameters
+    // maps the points-to set of actual parameters (including *this*) the formal parameters
     private def handleCall(
         call: Call[DUVar[ValueInformation]],
         pc:   Int
@@ -384,7 +384,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 filter
             )
         }
-        if (state.hasCalleesDepenedee) {
+        if (state.hasCalleesDependee) {
             state.addDependee(callExceptions, state.calleesDependee, filter)
             state.includeSharedPointsToSet(
                 callExceptions,
@@ -403,7 +403,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         val fps = formalParameters(target.method)
 
         if (fps != null) {
-            // handle receiver for non static methods
+            // handle receiver for non-static methods
             if (receiverOpt.isDefined) {
                 val isNonVirtualCall = call match {
                     case _: NonVirtualFunctionCall[V] | _: NonVirtualMethodCall[V] => true
@@ -445,7 +445,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         // TODO That rather is a responsibility of the reflection analysis though
         if (indirectParams.isEmpty || descriptor.parametersCount == indirectParams.size) {
             if (fps != null) {
-                // handle receiver for non static methods
+                // handle receiver for non-static methods
                 val receiverOpt = callees.indirectCallReceiver(state.callContext, pc, target)
                 if (receiverOpt.isDefined && !targetMethod.definedMethod.isStatic) {
                     val receiverDefSites = valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
@@ -522,7 +522,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (target.definedField.isStatic) {
                 handleGetStatic(target, pc)
             } else if (receiverOpt.isDefined) {
-                // handle receiver for non static fields if available
+                // handle receiver for non-static fields if available
                 handleGetField(
                     Some(target),
                     pc,
@@ -554,7 +554,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (target.definedField.isStatic) {
                 handlePutStatic(target, rhsDefSites)
             } else if (receiverOpt.isDefined) {
-                // handle receiver for non static fields if available
+                // handle receiver for non-static fields if available
                 handlePutField(
                     Some(target),
                     valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex),
@@ -569,7 +569,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     ): ArrayBuffer[ProperPropertyComputationResult] = {
         val results = super.createResults
 
-        if (state.hasCalleesDepenedee) {
+        if (state.hasCalleesDependee) {
             val calleesDependee = state.calleesDependee
             results += InterimPartialResult(
                 Set(calleesDependee),

@@ -58,7 +58,7 @@ class CallGraphAnalysis private[cg] (
 
     private val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
     private lazy val getCBSTargets = project.get(CallBySignatureKey)
-    private val resovleCallBySignature =
+    private val resolveCallBySignature =
         project.config.getBoolean("org.opalj.br.analyses.cg.callBySignatureResolution")
 
     def c(state: TACAIBasedCGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -141,7 +141,7 @@ class CallGraphAnalysis private[cg] (
         val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
 
         val cbsTargets: Set[ReferenceType] =
-            if (!isPrecise && resovleCallBySignature && call.isInterface &&
+            if (!isPrecise && resolveCallBySignature && call.isInterface &&
                 call.declaringClass.isClassType
             ) {
                 val cf = project.classFile(call.declaringClass.asClassType)
@@ -375,7 +375,7 @@ class CallGraphAnalysis private[cg] (
     }
 
     /**
-     * Computes the calles of the given `method` including the known effect of the `call` and
+     * Computes the callees of the given `method` including the known effect of the `call` and
      * the call sites associated ith this call (in order to process updates of instantiated types).
      * There can be multiple "call sites", in case the three-address code has computed multiple
      * type bounds for the receiver.

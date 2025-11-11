@@ -57,7 +57,7 @@ object TACAI {
 
     /**
      * Returns a map which maps an ai-based value origin for a parameter to the tac value origin;
-     * to lookup the tac based origin, the ai-based origin aiVO has to be negated and 1 has to
+     * to look up the tac based origin, the ai-based origin aiVO has to be negated and 1 has to
      * be subtracted.
      *
      * @return An implicit map (keys are aiVOKey = `-aiVo-1`) from `aiVO` to `tacVo`.
@@ -185,8 +185,8 @@ object TACAI {
         // has to be used in the corresponding tables etc.
         // For (2) we have to adapt the use-site if we have a self-use; the latter
         // happens if we have an instruction which immediately processes a caught exception. In
-        // that case the use information associated with the def-site, which initializes the
-        // the variable which stores the exception (`CaughtException`, would otherwise "use" itself.
+        // that case, the use-information associated with the def-site, which initializes the
+        // variable which stores the exception (`CaughtException`), would otherwise "use" itself.
         val pcToIndex = new Array[Int](codeSize + 1 /* +1 if the try includes the last inst. */ )
 
         val simpleRemapping = !descriptor.hasComputationalTypeCategory2ValueInInit
@@ -893,7 +893,7 @@ object TACAI {
                 //      H A N D L I N G   S W I T C H    S T A T E M E N T S
                 //
                 // It may be the case that some or all except of one branch are actually
-                // dead – in particular in obfuscated code - in this cases, we have to
+                // dead – in particular in obfuscated code – in this case, we have to
                 // rewrite the switch statement. Given that at least one branch has to
                 // be live, we can use that branches jump target as the jump target of the
                 // goto instruction; in this case it doesn't matter whether it is a default
@@ -973,7 +973,7 @@ object TACAI {
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
-                    paramDVars(0) = new TACMethodParameter(-1, usedBy)
+                    paramDVars(0) = TACMethodParameter(-1, usedBy)
                     defOrigin = -2
                 }
                 var pIndex = 1
@@ -985,7 +985,7 @@ object TACAI {
                     } else {
                         usedBy = usedBy.map(pcToIndex)
                     }
-                    paramDVars(pIndex) = new TACMethodParameter(-pIndex - 1, usedBy)
+                    paramDVars(pIndex) = TACMethodParameter(-pIndex - 1, usedBy)
                     defOrigin -= parameterTypes(pIndex - 1).operandSize
                     pIndex += 1
                 }
@@ -1037,13 +1037,13 @@ object TACAI {
                     val TACMethodParameter(origin, useSites) = tacParams.parameter(defSite)
                     // Note that the "use sites" of the parameters are already remapped.
                     val newUseSites = useSites - pcToIndex(useSite)
-                    tacParams.parameters(-defSite - 1) = new TACMethodParameter(origin, newUseSites)
+                    tacParams.parameters(-defSite - 1) = TACMethodParameter(origin, newUseSites)
                 } else {
                     /* IMPROVE Support tracking def->use information for exceptions (currently we only have use->def.)
                     val useSiteIndex = pcToIndex(useSite)
                     val defSitePC = ai.pcOfVMLevelValue(defSite)
                     // we have an obsolete exception usage; see
-                    //      ai.MethodsWithexceptoins.nestedTryFinally()
+                    //      ai.MethodsWithExceptions.nestedTryFinally()
                     // for an example which has dead code that leads to an obsolete exception usage
                      */
                     ;
@@ -1113,13 +1113,13 @@ object TACAI {
         // (2) Perform constant propagation when a use-site has only a _single_ def-site:
         //     val x = 304
         //     if({a,b} != x) goto t
-        //          =>  afterwards check if the def site has more use sites and – if not –
+        //          =>  afterward, check if the def site has more use sites and – if not –
         //              replace it by nops
         //
         //
         // (3) Identify _really_ useless nops and remove them. (Note that some nops may be
         //     required to ensure that the path information is available. E.g.,
-        //     java.lang.String.<init>(byte[],int,int,int) (java 1.8.0_181)
+        //     java.lang.String.<init>(byte[],int,int,int) (java 1.8.0_181))
 
         // Non-Optimizations
         // =================

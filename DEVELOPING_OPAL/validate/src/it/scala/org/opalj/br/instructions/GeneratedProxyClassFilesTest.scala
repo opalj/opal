@@ -112,7 +112,7 @@ class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
 
                     // there is no dead-code
                     var nextPc = 0
-                    while (nextPc < instructions.size) {
+                    while (nextPc < instructions.length) {
                         result.operandsArray(nextPc) should not be (null)
                         nextPc = instructions(nextPc).indexOfNextInstruction(nextPc, false)
                     }

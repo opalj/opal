@@ -159,6 +159,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val assignedValueObjectVar = stmts(assignedValueObject.definedBy.head).asAssignment.targetVar.asVar
 
         val fieldWriteInMethodIndex = taCode.pcToIndex(writesInMethod.head._2)
+
         if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index =>
                 val stmt = stmts(index)
 
@@ -346,7 +347,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val resultCatchesAndThrows = findCatchesAndThrows(taCode)
 
         /**
-         * Determines whether all caught exceptions are thrown afterwards
+         * Determines whether all caught exceptions are thrown afterward
          */
         def noInterferingExceptions(): Boolean =
             resultCatchesAndThrows._1.forall {
@@ -776,7 +777,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
     /**
      * Checks if an expression is a field read of the currently analyzed field.
-     * For instance fields, the read must be on the `this` reference.
+     * For instance fields, the read must be on the this-reference.
      */
     def isReadOfCurrentField(
         expr:    Expr[V],

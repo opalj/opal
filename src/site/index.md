@@ -1,6 +1,6 @@
 # OPAL
 
-OPAL is a next-generation, highly configurable and scalable static analysis platform that supports developers in systematically chosing the best tradeoffs between precision, soundness and performance of static analyses.
+OPAL is a next-generation, highly configurable and scalable static analysis platform that supports developers in systematically choosing the best tradeoffs between precision, soundness and performance of static analyses.
 It does so by hosting a wide and extensible collection of modular analyses modules that can be automatically composed in a case-by-case manner to collaboratively reason about a particular software at hand.
 OPAL manages the execution of analysis modules and adjusts it as needed for scalability.<center><iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/-V25yQDXPqg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></center>
 

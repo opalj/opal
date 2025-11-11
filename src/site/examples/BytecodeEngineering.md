@@ -91,7 +91,7 @@ Jump targets are specified using labels directly before the instruction which is
         )
     )
 
-> Making the control-flow graph explicit is possible using the CFGFactory to create the CFG and to then to transform it to an SVG.
+> Making the control-flow graph explicit is possible using the CFGFactory to create the CFG and then transforming it to an SVG.
 >
 >     val (br,_) = cb.toBR
 >     val cfg = org.opalj.br.cfg.CFGFactory(br.methods.tail.head.body.get)
@@ -190,7 +190,7 @@ The DSL interacts seamlessly with the bytecode representation and all attibutes 
 Instead of creating a `ClassFile` using the eDSL it is also possible to directly create the bytecode using the default representation. Every `br.ClassFile` can be converted to a `daClassFile` using `org.opalj.ba.toDA(<br.ClassFile>)` and can then be serialized as shown above.
 
 
-## Creating Class Files Using the Bare Bones Representation
+## Creating Class Files Using the Bare-bones Representation
 
 ### Basics
 
@@ -252,4 +252,4 @@ Defining an interface with a (Java 8) default method which calls another static 
     println("Created class file: "+Files.write(assembledMyIntfPath, assembledMyIntf).toAbsolutePath)
 
 ### Summary
-Using this representation is primarily useful for performing simple method and field filterings of existing class files, or for performing simple operations at the method instructions level. Complex transformations or even the creation of new class files requires explicit management/extension of the constant pool and writing the bare bone instructions array. In such cases, using OPAL's default representation – as described next – is highly recommend.
+Using this representation is primarily useful for performing simple method and field filterings of existing class files, or for performing simple operations at the method instructions level. Complex transformations or even the creation of new class files requires explicit management/extension of the constant pool and writing the bare-bones instructions array. In such cases, using OPAL's default representation – as described next – is highly recommend.

@@ -83,7 +83,7 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
         for (prop <- allPurities) {
             assert(
                 prop.usesDomainSpecificActions != doesntUseDomainSpecificActions.contains(prop),
-                s"$prop.usesDomainSpecicifActions was ${prop.usesDomainSpecificActions}"
+                s"$prop.usesDomainSpecificActions was ${prop.usesDomainSpecificActions}"
             )
         }
     }

@@ -43,7 +43,7 @@ The definitions and implementations of the tasks (compile, package, discovery) r
 
 and reside within `org.opalj.javacompilation.FixtureCompileSpec.scala`.
 
-In the following, we discuss how to setup the plugin to find all java fixtures and how to compile them automatically using the discovery task and fixture-specific configuration files. For doing it all manually, the user may set the `javaFixtureTaskDefs` setting to a sequence of `org.opalj.javacompilation.JavaFixtureCompilationTask` task descriptions. The intricacies of this approach are not discussed here; it is straightforward though to instantiate custom compilation tasks with the configuration semantics that are also used with the automated discovery. See `org.opalj.javacompilation.FixtureCompileSpec.scala` for inline documentation of the `JavaFixtureCompilationTask` class.
+In the following, we discuss how to set up the plugin to find all java fixtures and how to compile them automatically using the discovery task and fixture-specific configuration files. For doing it all manually, the user may set the `javaFixtureTaskDefs` setting to a sequence of `org.opalj.javacompilation.JavaFixtureCompilationTask` task descriptions. The intricacies of this approach are not discussed here; it is straightforward though to instantiate custom compilation tasks with the configuration semantics that are also used with the automated discovery. See `org.opalj.javacompilation.FixtureCompileSpec.scala` for inline documentation of the `JavaFixtureCompilationTask` class.
 
 The version of the Eclipse JDT compiler is set statically in the plugin's `build.sbt` file.
 
@@ -86,7 +86,7 @@ The compiler.config file is optional. In short, its content are distinct lines f
  - _comments_ -- any line starting with a `#`
  - _requires_ specification -- the line `requires=lib1` makes the support library `lib1` from
    the above exemplaric directory structure available on the classpath
- - _command line parameters_ -- any line starting with a dash, e. g. `-1.8 -g -parameters -genericsignature`.
+ - _command line parameters_ -- any line starting with a dash, e.g. `-1.8 -g -parameters -genericsignature`.
    For a reference of the Eclipse JDT compiler command line options, please refer to `jdtcompiler.txt`.
 
 A more complete specification on the format of fixture-specific .config files (that include command-line arguments and "require" specifications of support libraries) can be found in the file `OPAL/bi/src/test/fixtures-java/Readme.md`.
@@ -102,7 +102,7 @@ the fixture projects are taken to be located under `src/main/...`, while with th
 fixture projects directory is by default located under `src/test`. We will go one step further and change the name of
 that projects directory as an example.
 
-First, every project that wants to use the plugin has to do so explicitely:
+First, every project that wants to use the plugin has to do so explicitly:
 
 ```
 lazy val proj = Project(

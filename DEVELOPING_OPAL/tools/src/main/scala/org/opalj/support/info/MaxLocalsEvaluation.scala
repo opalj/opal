@@ -35,7 +35,7 @@ object MaxLocalsEvaluation extends ProjectsAnalysisApplication {
     ): (Project[URL], BasicReport) = {
         import scala.collection.immutable.TreeMap // <= Sorted...
         var methodParametersDistribution: Map[Int, Int] = TreeMap.empty
-        var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty
+        var maxLocalsDistribution: Map[Int, Int] = TreeMap.empty
 
         val (project, _) = analysisConfig.setupProject(cp)
 
@@ -50,8 +50,8 @@ object MaxLocalsEvaluation extends ProjectsAnalysisApplication {
             methodParametersDistribution =
                 methodParametersDistribution.updated(parametersCount, methodParametersFrequency)
 
-            val newMaxLocalsCount = maxLocalsDistrbution.getOrElse(body.maxLocals, 0) + 1
-            maxLocalsDistrbution = maxLocalsDistrbution.updated(body.maxLocals, newMaxLocalsCount)
+            val newMaxLocalsCount = maxLocalsDistribution.getOrElse(body.maxLocals, 0) + 1
+            maxLocalsDistribution = maxLocalsDistribution.updated(body.maxLocals, newMaxLocalsCount)
         }
 
         (
@@ -62,7 +62,7 @@ object MaxLocalsEvaluation extends ProjectsAnalysisApplication {
                 methodParametersDistribution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n") + "\n\n" +
                 "MaxLocals Distribution:\n" +
                 "#Locals\t\tFrequency:\n" +
-                maxLocalsDistrbution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n"))
+                maxLocalsDistribution.map(kv => { val (k, v) = kv; s"$k\t\t$v" }).mkString("\n"))
         )
     }
 }

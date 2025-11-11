@@ -202,7 +202,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
-    it should "be able to analyze a method that substracts two int values" in {
+    it should "be able to analyze a method that subtracts two int values" in {
         val domain = new RecordingDomain
         import domain.*
         val method = classFile.methods.find(_.name == "iSub").get
@@ -310,7 +310,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
         domain.returnedValue should be(Some(ALongValue))
     }
-    it should "be able to analyze a method that substracts two long values" in {
+    it should "be able to analyze a method that subtracts two long values" in {
         val domain = new RecordingDomain
         import domain.*
         val method = classFile.methods.find(_.name == "lSub").get
@@ -380,7 +380,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
-    it should "be able to analyze a method that substracts two double values" in {
+    it should "be able to analyze a method that subtracts two double values" in {
         val domain = new RecordingDomain
         import domain.*
         val method = classFile.methods.find(_.name == "dSub").get
@@ -430,7 +430,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
-    it should "be able to analyze a method that substracts two float values" in {
+    it should "be able to analyze a method that subtracts two float values" in {
         val domain = new RecordingDomain
         import domain.*
         val method = classFile.methods.find(_.name == "fSub").get
@@ -590,7 +590,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     //
     // UNARY EXPRESSIONS
-    it should "be able to analyze a method that returns a negativ float value" in {
+    it should "be able to analyze a method that returns a negative float value" in {
         val domain = new RecordingDomain
         import domain.*
         val method = classFile.methods.find(_.name == "fNeg").get
@@ -600,7 +600,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
-    it should "be able to analyze a method that returns a negativ double value" in {
+    it should "be able to analyze a method that returns a negative double value" in {
         val domain = new RecordingDomain
         import domain.*
         val method = classFile.methods.find(_.name == "dNeg").get
@@ -610,7 +610,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
-    it should "be able to analyze a method that returns a negativ long value" in {
+    it should "be able to analyze a method that returns a negative long value" in {
         val domain = new RecordingDomain
         import domain.*
         val method = classFile.methods.find(_.name == "lNeg").get
@@ -620,7 +620,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         domain.returnedValue should be(Some(ALongValue))
     }
 
-    it should "be able to analyze a method that returns a negativ int value" in {
+    it should "be able to analyze a method that returns a negative int value" in {
         val domain = new RecordingDomain
         import domain.*
         val method = classFile.methods.find(_.name == "iNeg").get

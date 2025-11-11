@@ -132,7 +132,7 @@ object SubtypeInformation {
                 override final def iterator: Iterator[ClassType] = classTypes.iterator
                 override final def contains(t: ClassType): Boolean = {
                     val tid = t.id
-                    // the first three checks are just guard checks..
+                    // the first three checks are just guard checks...
                     tid != ClassType.ObjectId &&
                         tid < isKnownType.length && isKnownType(tid) && !isInterfaceType(tid) &&
                         classTypes.containsId(tid)

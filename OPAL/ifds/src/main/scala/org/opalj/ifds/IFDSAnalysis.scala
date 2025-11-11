@@ -192,7 +192,7 @@ case class PathEdges[Fact <: AbstractIFDSFact, S, C <: AnyRef](
  * The state of the analysis. For each method and source fact, there is a separate state.
  *
  * @param source The callable and input fact for which the callable is analyzed.
- * @param subsumes The subsuming function, return whether a new fact is subsume by the existing ones
+ * @param subsumes The subsuming function, return whether a new fact is subsumed by the existing ones
  */
 protected class IFDSState[Fact <: AbstractIFDSFact, C <: AnyRef, S, WorklistItem](
     val source: (C, IFDSFact[Fact, C, S]),

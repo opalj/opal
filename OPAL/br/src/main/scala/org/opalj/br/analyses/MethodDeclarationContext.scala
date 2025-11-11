@@ -138,8 +138,8 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
 
     /**
      * Returns true if a method with the same signature as this method that is defined in
-     * the given package directly overrides this encapsultated method. This property
-     * always holds if this method has public or protected visiblity. If this method
+     * the given package directly overrides this encapsulated method. This property
+     * always holds if this method has public or protected visibility. If this method
      * has package visibility, the other (implicit) method has to be defined in
      * this method's package.
      */

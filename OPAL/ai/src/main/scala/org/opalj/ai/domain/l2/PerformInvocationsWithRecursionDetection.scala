@@ -4,6 +4,8 @@ package ai
 package domain
 package l2
 
+import scala.compiletime.uninitialized
+
 import org.opalj.br.Method
 
 /**
@@ -27,7 +29,7 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations with T
 
     // The childCalledMethodsStore is valid for one invocation only and is set by
     // doInvoke...
-    private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = null
+    private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = uninitialized
 
     override protected def doInvoke(
         pc:       Int,

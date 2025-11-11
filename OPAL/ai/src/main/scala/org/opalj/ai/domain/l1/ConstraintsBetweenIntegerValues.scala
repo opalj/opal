@@ -5,6 +5,7 @@ package domain
 package l1
 
 import java.util.IdentityHashMap as IDMap
+import scala.compiletime.uninitialized
 import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.LiveVariables
@@ -21,7 +22,7 @@ import org.opalj.util.elidedAssert
  */
 trait ConstraintsBetweenIntegerValues
     extends CoreDomainFunctionality
-    with IntegerRangeValues // IMRPOVE Define a common trait that specifies that the values support aliasing analyses
+    with IntegerRangeValues // IMPROVE Define a common trait that specifies that the values support aliasing analyses
     with TheCodeStructure {
     domain: CorrelationalDomainSupport & Configuration & ExceptionsFactory =>
 
@@ -36,7 +37,7 @@ trait ConstraintsBetweenIntegerValues
     //
 
     // We store the constraints that are in effect for each instruction
-    private var constraints: Array[ConstraintsStore] = null
+    private var constraints: Array[ConstraintsStore] = uninitialized
 
     abstract override def setCodeStructure(
         theInstructions: Array[Instruction],
@@ -440,7 +441,7 @@ trait ConstraintsBetweenIntegerValues
     //        (value1, value2) match {
     //            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) =>
     //                // to identify overflows we simply do the "add" on long values
-    //                // and check afterwards
+    //                // and check afterward
     //                val lb = lb1.toLong + lb2.toLong
     //                val ub = ub1.toLong + ub2.toLong
     //                if (lb < Int.MinValue || ub > Int.MaxValue)

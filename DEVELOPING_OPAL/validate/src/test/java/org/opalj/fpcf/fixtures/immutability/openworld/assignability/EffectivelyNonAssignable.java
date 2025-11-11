@@ -1,19 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.openworld.assignability;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.opalj.fpcf.fixtures.immutability.openworld.general.ClassWithMutableFields;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 
+import java.util.*;
+
 /**
- * This class encompasses different cases of effectively non assignable fields.
+ * This class encompasses different cases of effectively non-assignable fields.
  */
 public class EffectivelyNonAssignable {
 
@@ -67,7 +63,7 @@ public class EffectivelyNonAssignable {
 
     @TransitivelyImmutableField("The field is effectively non assignable and has a primitive type")
     @EffectivelyNonAssignableField("The field is not written after initialization")
-    private Long simpleLong = 5l;
+    private Long simpleLong = 5L;
 
     @TransitivelyImmutableField("The concrete assigned object is known to be deep immutable")
     @EffectivelyNonAssignableField("The field is not written after initialization")

@@ -34,7 +34,7 @@ object VerificationTypeInfo {
     final val ITEM_Null = 5
     final val ITEM_UninitializedThis = 6
     final val ITEM_Object = 7
-    final val ITEM_Unitialized = 8
+    final val ITEM_Uninitialized = 8
 }
 
 case object TopVariableInfo extends VerificationTypeInfo {
@@ -121,11 +121,11 @@ case class ObjectVariableInfo(cpool_index: Int) extends VerificationTypeInfo {
     }
 }
 
-case class UninitializedVariableInfo(val offset: Int) extends VerificationTypeInfo {
+case class UninitializedVariableInfo(offset: Int) extends VerificationTypeInfo {
 
     override final def attribute_length: Int = 1 + 2
 
-    def tag: Int = VerificationTypeInfo.ITEM_Unitialized
+    def tag: Int = VerificationTypeInfo.ITEM_Uninitialized
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
         <span class="verification_type">&lt;Uninitialized({offset})&gt;</span>

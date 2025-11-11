@@ -3,6 +3,7 @@ package org.opalj
 package fpcf
 
 import java.net.URL
+import scala.compiletime.uninitialized
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
@@ -54,7 +55,7 @@ class CallGraphTests extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/callgraph/")
     }
 
-    var cgKey: CallGraphKey = null
+    var cgKey: CallGraphKey = uninitialized
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(ContextProviderKey) {

@@ -10,6 +10,7 @@ import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.SortedSet
+import scala.compiletime.uninitialized
 import scala.math.Ordered
 
 import org.opalj.collection.UIDValue
@@ -510,10 +511,10 @@ sealed abstract class NumericType protected () extends BaseType {
      * superset of the range of values captured by values of type `targetType`. Here,
      * strict superset means that – except of rounding issues – the value is conceptually
      * representable by `this` type. For example, a conversion from a `long` value to a
-     * `double` value may loose some precision related to the least significant bits,
+     * `double` value may lose some precision related to the least significant bits,
      * but the value is still representable.
      *
-     * In general, the result of `isWiderThan` is comparable to the result of determing
+     * In general, the result of `isWiderThan` is comparable to the result of determining
      * if a conversion of a value of this type to the given type is an explicit/implicit
      * widening conversion.
      *
@@ -999,7 +1000,7 @@ final class ClassType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = s"L$fqn;"
 
-    override def toJavaClass: java.lang.Class[?] = classOf[Type].getClassLoader().loadClass(toJava)
+    override def toJavaClass: java.lang.Class[?] = classOf[Type].getClassLoader.loadClass(toJava)
 
     def unboxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
         ClassType.unboxValue(this)
@@ -1103,7 +1104,7 @@ object ClassType {
             // Refill the cache using the classTypes array
             classTypes.foreach { ct => cache.put(ct.fqn, new WeakReference[ClassType](ct)) }
 
-            // Reset ID counter to highest id in the cache
+            // Reset ID counter to the highest id in the cache
             nextId.set(highestPredefinedTypeId + 1)
         } finally {
             writeLock.unlock()
@@ -1115,7 +1116,7 @@ object ClassType {
     private val cacheRWLock = new ReentrantReadWriteLock();
     private val cache = new WeakHashMap[String, WeakReference[ClassType]]()
 
-    @volatile private var classTypeCreationListener: ClassType => Unit = null
+    @volatile private var classTypeCreationListener: ClassType => Unit = uninitialized
 
     /**
      * Sets the listener and immediately calls it (multiple times) to inform the listener
@@ -1231,7 +1232,7 @@ object ClassType {
 
     // THE FOLLOWING CLASS TYPES ARE PREDEFINED BECAUSE OF
     // THEIR PERVASIVE USAGE AND THEIR EXPLICIT MENTIONING IN THE
-    // THE JVM SPEC. OR THEIR IMPORTANCE FOR THE RUNTIME ENVIRONMENT
+    // JVM SPEC. OR THEIR IMPORTANCE FOR THE RUNTIME ENVIRONMENT
     final val Object = ClassType("java/lang/Object")
     final val ObjectId = 0
     require(Object.id == ObjectId)
@@ -1484,7 +1485,7 @@ object ClassType {
  * type. If, starting from any array type, one considers its component type, and then
  * (if that is also an array type) the component type of that type, and so on, eventually
  * one must reach a component type that is not an array type; this is called the '''element
- * type of the array type'''. The element type of an array type is necessarily either a
+ * type of the array type'''. The element-type of an array type is necessarily either a
  * primitive type, or a class type, or an interface type.
  *
  * @author Michael Eichberg
@@ -1501,7 +1502,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def mostPreciseClassType: ClassType = ClassType.Object
 
     /**
-     * Returns this array type's element type. E.g., the element type of an
+     * Returns this array type's element-type. E.g., the element-type of an
      * array of arrays of arrays of `int` is `int`.
      */
     def elementType: FieldType = {
@@ -1691,7 +1692,7 @@ object ArrayType {
 }
 
 /**
- * Facilitates matching against an array's element type.
+ * Facilitates matching against an array's element-type.
  *
  * @author Michael Eichberg
  */

@@ -156,7 +156,7 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
             }
 
         // force the computation of the alias property because we are using a lazy scheduler to avoid unnecessary computations
-        // (a eager scheduler would cause a quadratic blowup of the number of possible alias pairs)
+        // (an eager scheduler would cause a quadratic blowup of the number of possible alias pairs)
         properties.foreach {
             case (e, _, _) => as.propertyStore.force(e, Alias.key)
         }
@@ -169,10 +169,10 @@ class AliasTests(final val callGraphKey: CallGraphKey) extends PropertiesTest {
     /**
      * Resolves the first element of an alias relation.
      *
-     * If the annotation is a alias line annotation and describes the relation between two lines or a line and null,
+     * If the annotation is an alias line annotation and describes the relation between two lines or a line and null,
      * the first element is resolved using the first line number.
      *
-     * Otherwise the first element is the annotated entity.
+     * Otherwise, the first element is the annotated entity.
      *
      * @param e The annotated entity.
      * @param a The annotation that describes the alias relation.

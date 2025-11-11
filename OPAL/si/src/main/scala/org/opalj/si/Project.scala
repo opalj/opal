@@ -153,7 +153,7 @@ trait Project {
             }
         } else {
             // We have to synchronize w.r.t. "this" object on write accesses
-            // to make sure that we do not loose a concurrent update or
+            // to make sure that we do not lose a concurrent update or
             // derive an information more than once.
             this.synchronized {
                 val projectInformation = this.projectInformation

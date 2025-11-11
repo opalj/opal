@@ -26,7 +26,7 @@ trait LocalVariableTable_attributeBinding
         descriptor_index: Constant_Pool_Index,
         index:            Int
     ): LocalVariable = {
-        new LocalVariable(
+        LocalVariable(
             start_pc,
             length,
             cp(name_index).asString,

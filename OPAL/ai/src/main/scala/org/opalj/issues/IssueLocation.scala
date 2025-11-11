@@ -192,7 +192,7 @@ class MethodLocation(
                 }
             </span>
         if (firstLineOfMethod.isDefined) {
-            val firstLine = firstLineOfMethod.get.toString
+            val firstLine = firstLineOfMethod.get
             methodNode %= new UnprefixedAttribute("data-line", firstLine, scala.xml.Null)
         }
 
