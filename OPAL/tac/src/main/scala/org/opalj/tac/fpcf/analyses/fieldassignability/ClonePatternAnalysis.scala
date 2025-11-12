@@ -51,9 +51,9 @@ trait ClonePatternAnalysis private[fieldassignability]
     override def completePatternWithInitializerRead()(implicit state: AnalysisState): Option[FieldAssignability] = None
 
     override def completePatternWithNonInitializerRead(
-        context: Context,
+        context:  Context,
         tac:      TACode[TACMethodParameter, V],
-        readPC:  Int,
+        readPC:   Int,
         receiver: Option[V]
     )(implicit state: AnalysisState): Option[FieldAssignability] = {
         val pathFromReadToSomeWriteExists = state.nonInitializerWrites(context).exists {
