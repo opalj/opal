@@ -35,6 +35,7 @@ import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.VoidType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
+import org.opalj.util.elidedAssert
 
 /**
  * Encapsulates the available type information about a `DomainValue`.
@@ -77,7 +78,7 @@ trait ValueInformation {
      * Returns `Yes` if the value is _not null_ and the least upper type bound is an `ArrayType`;
      * the value is `Unknown` if the least upper type bound is `ArrayType` but the value may be null;
      * in all other cases `No` is returned; in particular if the value is known to be null. `No`
-     * is also returned if the value's type is `Object` or `Seriablizable` or `Cloneable`.
+     * is also returned if the value's type is `Object` or `Serializable` or `Cloneable`.
      */
     def isArrayValue: Answer
 
@@ -246,7 +247,7 @@ case object AReturnAddressValue extends IsReturnAddressValue
 trait ConstantValueInformationProvider[T] {
 
     /**
-     * The constant value that this variable takes - if it take a single constant value!
+     * The constant value that this variable takes - if it takes a single constant value!
      * I.e., if the variable may take multiple different values at runtime `constantValue` will
      * return `None`.
      */
@@ -657,7 +658,7 @@ trait IsMObjectValue extends IsBaseReferenceValue {
 
     override final def isArrayValue: Answer = No
 
-    assert(upperTypeBound.size > 1)
+    elidedAssert(upperTypeBound.size > 1)
 
     override final def verificationTypeInfo: VerificationTypeInfo = {
         ObjectVariableInfo(leastUpperType.get)
@@ -740,7 +741,7 @@ trait IsSReferenceValue[T <: ReferenceType] extends IsBaseReferenceValue {
 
     override final def leastUpperType: Option[ReferenceType] = Some(theUpperTypeBound)
 
-    override final def upperTypeBound: UIDSet[T] = new UIDSet1(theUpperTypeBound)
+    override final def upperTypeBound: UIDSet[T] = UIDSet1(theUpperTypeBound)
 
 }
 
@@ -987,7 +988,7 @@ object TypeOfReferenceValue {
 
 trait IsMultipleReferenceValue extends IsReferenceValue {
 
-    assert(baseValues.nonEmpty)
+    elidedAssert(baseValues.nonEmpty)
 
     override def allValues: Iterable[IsReferenceValue] = this.baseValues
 
@@ -1006,7 +1007,7 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
     ): Answer = boundary {
         // Recall that the client has to make an "isNull" check before calling
         // isValueASubtypeOf. Hence, at least one of the possible reference values
-        // has to be non null and this value's upper type bound has to be non-empty.
+        // has to be non-null and this value's upper type bound has to be non-empty.
 
         // It may be the case that the subtype relation of each individual value –
         // when compared with supertype – is Unknown, but that the type of the
@@ -1035,7 +1036,7 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
         var uniqueBaseValues = Set.empty[IsReferenceValue]
         uniqueBaseValues = baseValues.foldLeft(uniqueBaseValues)(_ + _.toCanonicalForm)
         // ...toSet is required because we potentially drop domain specific information
-        // and afterwards the values are identical.
+        // and afterward the values are identical.
         if (uniqueBaseValues.size == 1 &&
             uniqueBaseValues.head.isNull == this.isNull &&
             uniqueBaseValues.head.isPrecise == this.isPrecise &&
@@ -1062,8 +1063,8 @@ case class AMultipleReferenceValue(
     leastUpperType: Option[ReferenceType] // None in case of "null"
 ) extends IsMultipleReferenceValue {
 
-    assert((isNull.isYes && leastUpperType.isEmpty) || (isNull.isNoOrUnknown && leastUpperType.isDefined))
-    assert(baseValues.forall(_.getClass.getPackage.getName == ("org.opalj.value")))
+    elidedAssert((isNull.isYes && leastUpperType.isEmpty) || (isNull.isNoOrUnknown && leastUpperType.isDefined))
+    elidedAssert(baseValues.forall(_.getClass.getPackage.getName == ("org.opalj.value")))
 
     override final def isArrayValue: Answer = {
         leastUpperType match {
@@ -1085,7 +1086,7 @@ case class AMultipleReferenceValue(
  * Defines an extractor method for instances of `IsReferenceValue` objects.
  *
  * @note To ensure that the generic type can be matched, it may be necessary to first cast
- *       a ''generic'' `org.opalj.ai.ValuesDomain.DomainValue` to a
+ *       a ''generic'' `org.opalj.ai.ValuesDomain.DomainValue` to an
  *       `org.opalj.ai.ValuesDomain.DomainReferenceValue`.
  *       {{{
  *           val d : Domain = ...

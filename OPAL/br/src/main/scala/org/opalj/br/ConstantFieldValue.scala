@@ -147,7 +147,7 @@ final case class ConstantString(
 
     override def toUTF8: String = value
 
-    override def valueToString: String = value.toString
+    override def valueToString: String = value
 
     override def toJava: String = s""""$valueToString""""
 

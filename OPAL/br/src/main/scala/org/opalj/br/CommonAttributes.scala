@@ -53,7 +53,7 @@ trait CommonAttributes {
         }
         // Recall that some attributes may be defined multiple times and therefore an easy
         // approach to get a stable sorting is not available.
-        // (We have not seen any case of multiple occurences of an attribute in practice so far.)
+        // (We have not seen any case of multiple occurrences of an attribute in practice so far.)
         thisAttributes.find { a => !otherAttributes.exists(o => a.similar(o, config)) } map { missingAttribute =>
             val message = "missing attribute: " + missingAttribute
             break(Some((message, thisAttributes, otherAttributes)));

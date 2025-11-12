@@ -26,7 +26,7 @@ case class DocumentationComment(
      * Converts the Comment object into HTML syntax.
      * @param pageHTML The method will add the export to this StringBuilder.
      */
-    def toHTML(pageHTML: StringBuilder): Unit = {
+    def createHTML(pageHTML: StringBuilder): Unit = {
         if (!isEmpty) {
             if (description.mkString("").trim.nonEmpty) {
                 pageHTML ++= "<p><b> Description: </b> <br>\n"
@@ -63,7 +63,7 @@ case class DocumentationComment(
 
     /**
      * Merges another comment into this comment.
-     * The datatype flag will not be merged. Reason for this is that datatypes are only used to describe entries, which cannot be merged anyways.
+     * The datatype flag will not be merged. Reason for this is that datatypes are only used to describe entries, which cannot be merged anyway.
      * @param comment accepts the comment that should be merged into this comment.
      * @return returns a merged DocumentationComment.
      */

@@ -190,7 +190,7 @@ abstract class JavaBackwardTaintProblem(project: SomeProject)
 
     /**
      * Adds a FlowFact, if `createFlowFactAtCall` creates one.
-     * Removes taints according to `sanitizeParamters`.
+     * Removes taints according to `sanitizeParameters`.
      */
     override def callToReturnFlow(
         call:         JavaStatement,

@@ -90,7 +90,7 @@ import org.opalj.util.PerformanceEvaluation.time
  *         context after the project is no longer referenced (garbage collected) is not
  *         possible.
  *
- * @param classFilesCount The number of classes (including inner and annoymous classes as
+ * @param classFilesCount The number of classes (including inner and anonymous classes as
  *         well as interfaces, annotations, etc.) defined in libraries and in
  *         the analyzed project.
  *
@@ -279,7 +279,7 @@ class Project[Source] private (
         // in case of partial type hierarchies it may happen that all known
         // supertypes are processed, but no all...
 
-        // the set of interfaces that are not functional interfaces themselve, but
+        // the set of interfaces that are not functional interfaces themselves, but
         // which can be extended.
         var irrelevantInterfaces = UIDSet.empty[ClassType]
         val functionalInterfaces = mutable.HashMap.empty[ClassType, MethodSignature]
@@ -293,8 +293,8 @@ class Project[Source] private (
         // for which we have not enough information
         def noSAMInterface(interfaceType: ClassType): Unit = {
             // println("non-functional interface: "+interfaceType.toJava)
-            // assert(!irrelevantInterfaces.contains(interfaceType))
-            // assert(!functionalInterfaces.contains(interfaceType))
+            // elidedAssert(!irrelevantInterfaces.contains(interfaceType))
+            // elidedAssert(!functionalInterfaces.contains(interfaceType))
 
             otherInterfaces += interfaceType
             classHierarchy.foreachSubinterfaceType(interfaceType) { i =>
@@ -314,7 +314,7 @@ class Project[Source] private (
                 if (!otherInterfaces.contains(subIType)) {
 
                     // only add those types for which we have already derived information for all
-                    // superinterface types and which are not already classified..
+                    // superinterface types and which are not already classified
                     if (classHierarchy.superinterfaceTypes(subIType) match {
                             case Some(superinterfaceTypes) =>
                                 superinterfaceTypes.forall { superSubIType =>
@@ -572,7 +572,7 @@ class Project[Source] private (
 
     /**
      * Iterates over all methods in parallel; actually, the methods belonging to a specific class
-     * are analyzed sequentially..
+     * are analyzed sequentially...
      */
     def parForeachMethod[T](
         isInterrupted: () => Boolean = defaultIsInterrupted
@@ -621,7 +621,7 @@ class Project[Source] private (
                     // java is not a root package of "javax"...
                     val (_, lastPackage) = rootPackages.last
                     if (nextPackage.startsWith(lastPackage) &&
-                        nextPackage.charAt(lastPackage.size) == '/'
+                        nextPackage.charAt(lastPackage.length) == '/'
                     )
                         rootPackages + ((nextPackage, lastPackage))
                     else
@@ -639,7 +639,7 @@ class Project[Source] private (
 
     /**
      * Distributes all classes which define methods with bodies across a given number of
-     * groups. Afterwards these groups can, e.g., be processed in parallel.
+     * groups. Afterward, these groups can, e.g., be processed in parallel.
      */
     def groupedClassFilesWithMethodsWithBody(groupsCount: Int): Array[Buffer[ClassFile]] = {
         var nextGroupId = 0
@@ -674,7 +674,7 @@ class Project[Source] private (
     /**
      * Returns `true` if the given class file belongs to the library part of the project.
      * This is only the case if the class file was explicitly identified as being
-     * part of the library. By default all class files are considered to belong to the
+     * part of the library. By default, all class files are considered to belong to the
      * code base that will be analyzed.
      */
     def isLibraryType(classFile: ClassFile): Boolean = isLibraryType(classFile.thisType)
@@ -784,7 +784,7 @@ class Project[Source] private (
      *
      * @note This method is intended to be used by Java projects that want to interact with OPAL.
      */
-    def toJavaMap(): java.util.HashMap[ClassType, ClassFile] = {
+    def toJavaMap: java.util.HashMap[ClassType, ClassFile] = {
         val map = new java.util.HashMap[ClassType, ClassFile]
         for (classFile <- allClassFiles) map.put(classFile.thisType, classFile)
         map
@@ -1673,7 +1673,7 @@ object Project {
      *      [Thread Safety] The underlying data structure has to support concurrent access.
      *
      * @param libraryClassFilesAreInterfacesOnly If `true` then only the non-private interface of
-     *         of the classes belonging to the library was loaded. I.e., this setting just reflects
+     *         the classes belonging to the library was loaded. I.e., this setting just reflects
      *         the way how the class files were loaded; it does not change the classes!
      *
      * @param virtualClassFiles A list of virtual class files that have no direct
@@ -1842,7 +1842,7 @@ object Project {
                         logContext,
                         InconsistentProjectException(
                             s"${projectType.toJava} is defined by multiple class files:\n\t" +
-                                sources.get(projectType).getOrElse("<VIRTUAL>") + " and\n\t" +
+                                sources.getOrElse(projectType, "<VIRTUAL>") + " and\n\t" +
                                 source.map(_.toString).getOrElse("<VIRTUAL>") +
                                 "\n\tkeeping the first one."
                         )

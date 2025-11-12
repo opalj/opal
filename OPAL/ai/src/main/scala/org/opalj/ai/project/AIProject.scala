@@ -70,7 +70,7 @@ trait AIProject[Source, D <: Domain & OptionalReport] {
      *
      * @note This method is intended to be overridden by subtraits that need to get
      *      hold on the specified analysis parameters. In this case (in the subtrait)
-     *      it is recommended to first analyze the parameters and afterwards to call
+     *      it is recommended to first analyze the parameters and afterward to call
      *      this method using `super.analyze(...)`.
      */
     def analyze(project: Project[Source], parameters: Seq[String]): ReportableAnalysisResult = {

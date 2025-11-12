@@ -17,4 +17,4 @@ Methods in this category allow instrumentation support classes to be defined in 
 
 ## Retrieve Classes Information
 
-Methods in this categroy allow to retrieve information about currently loaded and instantiated classes.
+Methods in this category allow to retrieve information about currently loaded and instantiated classes.

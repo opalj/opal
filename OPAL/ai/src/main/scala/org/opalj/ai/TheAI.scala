@@ -2,6 +2,8 @@
 package org.opalj
 package ai
 
+import scala.compiletime.uninitialized
+
 /**
  * Makes the instance of the abstract interpreter that performs the
  * abstract interpretation available to the domain.
@@ -17,7 +19,7 @@ package ai
  */
 trait TheAI[D <: Domain] {
 
-    private var theAI: AI[D] = null
+    private var theAI: AI[D] = uninitialized
 
     private[ai] def setAI(ai: AI[D]): Unit = {
         this.theAI = ai

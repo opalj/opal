@@ -35,7 +35,7 @@ trait ConsoleEvaluationTracer extends AITracer {
 
     def reset(): Unit = { indent = 0 }
 
-    override def instructionEvalution(
+    override def instructionEvaluation(
         domain: Domain
     )(
         pc:          Int,

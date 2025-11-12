@@ -68,7 +68,7 @@ class DependentlyImmutableClassMatcher
                         getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values.map(x =>
                             x.asStringValue.value
                         )
-                    annotationParameters.toSet.equals(latticeParameters.toSet)
+                    annotationParameters.toSet.equals(latticeParameters)
                 case p => p == property
             }
         ) {

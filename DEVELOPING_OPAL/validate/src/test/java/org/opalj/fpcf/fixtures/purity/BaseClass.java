@@ -11,7 +11,7 @@ import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
  */
 public abstract class BaseClass {
 
-    // This method has pure (SubClassA) and side-effect free (SubClassB) implementations
+    // This method has pure (SubClassA) and side-effect-free (SubClassB) implementations
     public abstract int abstractMethod(int i);
 
     // This (pure) method has an impure override in SubClassB

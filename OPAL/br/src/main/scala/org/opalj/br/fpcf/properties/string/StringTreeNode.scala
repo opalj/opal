@@ -9,6 +9,8 @@ import scala.util.Try
 import scala.util.hashing.MurmurHash3
 import scala.util.matching.Regex
 
+import org.opalj.util.elidedAssert
+
 /**
  * A single node that can be nested to create string trees that represent a set of possible string values. Its canonical
  * reduction is a regex of all possible strings.
@@ -90,7 +92,7 @@ sealed trait StringTreeNode {
      * @return The modified string tree if something could be replaced or the same instance otherwise.
      */
     final def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
-        assert(parameters.nonEmpty)
+        elidedAssert(parameters.nonEmpty)
         if (parameterIndices.isEmpty || parameters.keySet.intersect(parameterIndices).isEmpty)
             this
         else

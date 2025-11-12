@@ -105,8 +105,8 @@ Add a comment to this line
 +                    { typeSigToXHTML(prop.fieldTypeSignature) }
 +                </span>
 +            case _ =>
-+                // this is a complete list of TypeArugments at the time of writing
-+                throw new IllegalArgumentException("unknown TypeArugment")
++                // this is a complete list of TypeArguments at the time of writing
++                throw new IllegalArgumentException("unknown TypeArgument")
 +        }
 +    }
  */

@@ -58,6 +58,7 @@ import org.opalj.collection.immutable.UShortPair
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 /**
  * Implementation of an eDSL for creating Java bytecode. The eDSL is designed to facilitate
@@ -80,7 +81,7 @@ package object ba { ba =>
         implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
-            scala.Predef.assert(false)
+            elidedAssert(false)
             // when we reach this point assertions are off...
             info(FrameworkName, s"Production Build")
         } catch {
@@ -169,15 +170,15 @@ package object ba { ba =>
     def createBoostrapMethodTableAttribute(constantsPool: ConstantsPool): da.Attribute = {
         import constantsPool.*
         val bootstrap_methods = bootstrapMethods map { bootstrapMethod =>
-            new da.BootstrapMethod(
+            da.BootstrapMethod(
                 CPEMethodHandle(bootstrapMethod.handle, false),
                 bootstrapMethod.arguments.map[da.BootstrapArgument] { argument =>
-                    new da.BootstrapArgument(CPEntryForBootstrapArgument(argument))
+                    da.BootstrapArgument(CPEntryForBootstrapArgument(argument))
                 }
             )
         }
         val attributeNameIndex = constantsPool.CPEUtf8(bi.BootstrapMethodsAttribute.Name)
-        new da.BootstrapMethods_attribute(attributeNameIndex, bootstrap_methods)
+        da.BootstrapMethods_attribute(attributeNameIndex, bootstrap_methods)
     }
 
     /**
@@ -510,7 +511,7 @@ package object ba { ba =>
             }
         }
 
-        instructions.flush
+        instructions.flush()
 
         da.Code_attribute(
             attribute_name_index = constantsBuffer.CPEUtf8(bi.CodeAttribute.Name),

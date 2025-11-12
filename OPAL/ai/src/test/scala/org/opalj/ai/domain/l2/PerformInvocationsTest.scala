@@ -150,7 +150,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
 
         domain.allReturnedValues.size should be(2)
         if (!domain.allReturnedValues.forall {
-                e => domain.intValueOption(e._2).map(_ == 1).getOrElse(false)
+                e => domain.intValueOption(e._2).contains(1)
             }
         ) fail("unexpected result: " + domain.allReturnedValues)
     }

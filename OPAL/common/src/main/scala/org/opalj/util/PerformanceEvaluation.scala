@@ -133,12 +133,12 @@ object GlobalPerformanceEvaluation extends PerformanceEvaluation
 object PerformanceEvaluation {
 
     /**
-     * Measures the amount of memory that is used as a side-effect
+     * Measures the amount of memory that is used as a side effect
      * of executing the given function `f`. I.e., the amount of memory is measured that is
      * used before and after executing `f`; i.e., the permanent data structures that are created
      * by `f` are measured.
      *
-     * @note    If large data structures are used by `f` that are not used anymore afterwards
+     * @note    If large data structures are used by `f` that are not used anymore afterward
      *          then it may happen that the used amount of memory is negative.
      */
     def memory[T](
@@ -231,7 +231,7 @@ object PerformanceEvaluation {
      *
      * @note    If epsilon is too small we can get an endless loop as the termination
      *          condition is never met. However, in practice often a value such as "1 or 2"
-     *          is still useable.
+     *          is still usable.
      *
      * @note    This method can generally only be used to measure the time of some process
      *          that does not require user interaction or disk/network access. In the latter
@@ -248,7 +248,7 @@ object PerformanceEvaluation {
      *          the last run is only considered if it is at most `consideredRunsEpsilon%`
      *          slower than the average. Hence, it is even possible that the average may rise
      *          during the evaluation of `f`.
-     * @param   f The side-effect free function that will be measured.
+     * @param   f The side-effect-free function that will be measured.
      * @param   r A function that is called back whenever `f` was successfully evaluated.
      *          The signature is:
      *          {{{

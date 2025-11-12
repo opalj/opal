@@ -8,6 +8,8 @@ import scala.annotation.switch
 import java.lang.Integer as JInt
 import java.lang.Long as JLong
 
+import org.opalj.util.elidedAssert
+
 /**
  * An effectively immutable trie set of long values where the elements are sorted based on the
  * insertion order.
@@ -29,13 +31,13 @@ object LongLinkedTrieSet {
 
     def empty: LongLinkedTrieSet = LongLinkedTrieSet0
 
-    def apply(v: Long): LongLinkedTrieSet = new LongLinkedTrieSet1(v)
+    def apply(v: Long): LongLinkedTrieSet = LongLinkedTrieSet1(v)
 
     def apply(head: Long, last: Long): LongLinkedTrieSet = {
         if (head == last)
-            new LongLinkedTrieSet1(head)
+            LongLinkedTrieSet1(head)
         else
-            new LongLinkedTrieSet2(head, last)
+            LongLinkedTrieSet2(head, last)
     }
 
 }
@@ -72,7 +74,7 @@ final case class LongLinkedTrieSet1(v1: Long) extends LongLinkedTrieSet {
     override final def iterator: LongIterator = LongIterator(v1)
 
     override final def +(v: Long): LongLinkedTrieSet = {
-        if (v != v1) new LongLinkedTrieSet2(v, v1) else this
+        if (v != v1) LongLinkedTrieSet2(v, v1) else this
     }
 }
 
@@ -100,7 +102,7 @@ private[immutable] final case class LongLinkedTrieSet2(
     override final def iterator: LongIterator = LongIterator(v1, v2)
 
     override final def +(v: Long): LongLinkedTrieSet = {
-        if (v != v1 && v != v2) new LongLinkedTrieSet3(v, v1, v2) else this
+        if (v != v1 && v != v2) LongLinkedTrieSet3(v, v1, v2) else this
     }
 }
 
@@ -324,7 +326,7 @@ private[immutable] object LongLinkedTrieSetNShared {
 
     def apply(sharedBits: Long, length: Int, n: LongLinkedTrieSetNode): LongLinkedTrieSetNode = {
 
-        assert(length >= 1)
+        elidedAssert(length >= 1)
 
         length match {
             case 1 =>
@@ -559,7 +561,7 @@ private[immutable] final class LongLinkedTrieSetN2(
         val lLSB = ((lValue >> level) & 1L) // lsb == bit at index `level`
 
         if (_0.isN || _1.isN) {
-            // We can't get rid of this N2 node... a successor node is an inner node and we
+            // We can't get rid of this N2 node... a successor node is an inner node, and we
             // do not want to perform "large" changes to the overall trie.
             return {
                 if (lLSB == 0) {

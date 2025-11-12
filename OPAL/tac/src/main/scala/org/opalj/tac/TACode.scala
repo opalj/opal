@@ -18,7 +18,7 @@ import org.opalj.value.ValueInformation
  *
  * OPAL offers multiple 3-address code like representations. One that is a one-to-one conversion
  * of the bytecode and which does not provide higher-level information.
- * Additionally, the (Base)TACAI represtation is offered that is targeted towards static analyses.
+ * Additionally, the (Base)TACAI representation is offered that is targeted towards static analyses.
  * The base TACAI representation does not preserve all information which would be required to
  * regenerate the original code, but which greatly facilitates static analysis by making the
  * end-to-end def-use chains directly available.
@@ -179,7 +179,7 @@ final class AITACode[P <: AnyRef, VI <: ValueInformation](
 
     import AITACode.AITACodeCFG
 
-    /** Detaches the 3-address code from the underlying abstract interpreation result. */
+    /** Detaches the 3-address code from the underlying abstract interpretation result. */
     def detach(): AITACode[P, ValueInformation] = {
         new AITACode[P, ValueInformation](
             params,

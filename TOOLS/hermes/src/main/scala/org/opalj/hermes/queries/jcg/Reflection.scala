@@ -94,7 +94,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
@@ -156,13 +156,13 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                                 case "newInstance"      => locations(5 /* Class.newInstance */ ) += l
                                 case "getDeclaredField" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        getFieldUsedForInvokation(index, stmt.asAssignment)
+                                        getFieldUsedForInvocation(index, stmt.asAssignment)
                                     ) {
                                         handleParameterSources(call, l)
                                     }
                                 case "getField" =>
                                     if (stmt.astID == Assignment.ASTID &&
-                                        getFieldUsedForInvokation(index, stmt.asAssignment)
+                                        getFieldUsedForInvocation(index, stmt.asAssignment)
                                     ) {
                                         locations(7 /* getField */ ) += l
                                         handleParameterSources(call, l)
@@ -398,7 +398,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
     }
 
-    def getFieldUsedForInvokation[S](
+    def getFieldUsedForInvocation[S](
         pc:   Int,
         stmt: Assignment[V]
     )(

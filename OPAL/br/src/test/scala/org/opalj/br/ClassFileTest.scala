@@ -39,7 +39,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
     }
 
     test("test that all constructors are returned") {
-        assert(immutableList.constructors.size.toInt == 2)
+        assert(immutableList.constructors.size == 2)
     }
 
     test("test that it can find all other methods") {
@@ -165,7 +165,8 @@ class ClassFileTest extends AnyFunSuite with Matchers {
                 case b: Break[?]  => throw b
                 case t: Throwable =>
                     failures =
-                        s"cannot calculate inner classes for ${classFile.fqn}: ${t.getClass().getSimpleName()} - ${t.getMessage()}" ::
+                        s"cannot calculate inner classes for ${classFile.fqn}: ${t.getClass.getSimpleName} - ${t
+                                .getMessage}" ::
                             failures
                     None
             }

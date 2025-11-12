@@ -25,12 +25,13 @@ import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.analyses.ProjectLike
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
  * the child expressions are just [[Var]]s or [[Const]]s.
- * However, when the code is going to be transformed to human readable code (e.g., Java oder
+ * However, when the code is going to be transformed to human-readable code (e.g., Java oder
  * Scala), then it is possible to build up complex/nested expressions '''after''' all
  * transformations and static analyses have been performed.
  *
@@ -610,7 +611,7 @@ case class ArrayLength[+V](pc: PC, arrayRef: Expr[V]) extends ArrayExpr[V] {
     override final def astID: Int = ArrayLength.ASTID
     override final def cTpe: ComputationalType = ComputationalTypeInt
 
-    override final def isSideEffectFree: Boolean = { assert(arrayRef.isVar); false /* potential NPE */ }
+    override final def isSideEffectFree: Boolean = { elidedAssert(arrayRef.isVar); false /* potential NPE */ }
 
     override final def subExprCount: Int = 1
     override final def subExpr(index: Int): Expr[V] = arrayRef
@@ -681,7 +682,7 @@ case class GetField[+V](
     }
 
     final def isSideEffectFree: Boolean = {
-        assert(objRef.isValueExpression)
+        elidedAssert(objRef.isValueExpression)
         // IMPROVE if the access is non-null, it is side-effect free
         false
     }
@@ -1071,7 +1072,7 @@ trait Var[+V] extends ValueExpr[V] { this: V =>
     override final def astID: Int = Var.ASTID
 
     /**
-     * A ''human readable'' name of the local variable.
+     * A ''human-readable'' name of the local variable.
      */
     def name: String
 }

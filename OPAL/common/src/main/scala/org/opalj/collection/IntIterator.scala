@@ -10,7 +10,7 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 
 /**
- * Iterator over a collection of primitive int valuea; basically overrides all inherited methods
+ * Iterator over a collection of primitive int values; basically overrides all inherited methods
  * to avoid (un)boxing.
  *
  * @note   No guarantee is given what will happen if `next` is called after `hasNext` returns or

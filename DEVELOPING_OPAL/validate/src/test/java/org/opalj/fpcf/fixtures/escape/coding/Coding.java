@@ -38,7 +38,7 @@ public class Coding implements CodingMethod{
 
     }
 
-    public static int parseMetaCoding(byte[] bytes, int pos, @NoEscape(value = "", analyses = InterProceduralEscapeAnalysis.class) Coding dflt, CodingMethod res[]) {
+    public static int parseMetaCoding(byte[] bytes, int pos, @NoEscape(value = "", analyses = InterProceduralEscapeAnalysis.class) Coding dflt, CodingMethod[] res) {
         int op = bytes[pos++] & 0xFF;
         if (_meta_canon_min <= op && op <= _meta_canon_max) {
             Coding c = BandStructure.codingForIndex(op);

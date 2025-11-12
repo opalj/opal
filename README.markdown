@@ -35,7 +35,7 @@ OPAL consists of several projects:
 
 * **Architecture Validation** (OPAL/av): A small framework to check a project's implemented architecture against a specified one.
 
-* **Framework** (OPAL/framework): Basically just aggregates all sub-projects to make it possible to easily get a consistent snapshot of all sub-projects. In general, it is recommended to declare a dependency on this project when you want to use OPAL.
+* **Framework** (OPAL/framework): Basically just aggregates all subprojects to make it possible to easily get a consistent snapshot of all subprojects. In general, it is recommended to declare a dependency on this project when you want to use OPAL.
 
 * **Demos** (OPAL/demos): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos`). After that you can `run` several small demo analyses.
 

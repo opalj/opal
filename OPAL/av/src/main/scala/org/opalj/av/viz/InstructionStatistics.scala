@@ -66,7 +66,7 @@ object InstructionStatistics extends ProjectsAnalysisApplication {
                         processPackage(
                             childPN,
                             (
-                                if (rootFQPN.length() == 0)
+                                if (rootFQPN.isEmpty)
                                     childPN
                                 else
                                     childPN.substring(rootFQPN.length() + 1)
@@ -95,7 +95,7 @@ object InstructionStatistics extends ProjectsAnalysisApplication {
                 fqpn <- instructionsPerFQPN.keys
                 if fqpn.length > rootFQPN.length()
                 if fqpn.startsWith(rootFQPN)
-                if fqpn.charAt(rootFQPN.length()) == '/' // javax is not a subpackage of java..
+                if fqpn.charAt(rootFQPN.length()) == '/' // javax is not a subpackage of java
             } {
                 val pnsToRemove = HashSet.empty[String]
                 var pnNeedToBeAdded = true

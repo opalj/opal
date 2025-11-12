@@ -23,6 +23,7 @@ import org.opalj.br.cfg.CFG
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.graphs.Node
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -75,7 +76,7 @@ package object tac {
 
     /**
      * Identifies the implicit `this` reference in the 3-address code representation.
-     * -1 always identifies the origin of the self reference(`this`) if the the method is
+     * -1 always identifies the origin of the self reference(`this`) if the method is
      * an instance method; if the method is not an instance method the origin -1 is not used.
      */
     final val OriginOfThis /*: ValueOrigin*/ = -1
@@ -163,7 +164,7 @@ package object tac {
 
             if (lastPC < oldStartPC) {
                 // the EH is totally dead... i.e., all code in the try block is dead
-                assert(
+                elidedAssert(
                     (oldEH.startPC until oldEH.endPC) forall { tryPC =>
                         aiResult.domain.exceptionHandlerSuccessorsOf(tryPC).isEmpty
                     },
@@ -179,7 +180,7 @@ package object tac {
 
         }
 
-        assert(
+        elidedAssert(
             newEndIndex >= newStartIndex, // both equal => EH is dead!
             s"the end of the try block $newEndIndex is before the start $newStartIndex"
         )

@@ -36,6 +36,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * Encapsulates the state of the analysis, analyzing a certain method using the
@@ -100,7 +101,7 @@ class PointsToAnalysisState[
     }
 
     def setAllocationSitePointsToSet(ds: Entity, pointsToSet: PointsToSet): Unit = {
-        assert(!_allocationSitePointsToSets.contains(ds))
+        elidedAssert(!_allocationSitePointsToSets.contains(ds))
         _allocationSitePointsToSets(ds) = pointsToSet
     }
 
@@ -144,7 +145,7 @@ class PointsToAnalysisState[
     }
 
     final def hasDependees(depender: Entity): Boolean = {
-        assert(!_dependerToDependees.contains(depender) || _dependerToDependees(depender).nonEmpty)
+        elidedAssert(!_dependerToDependees.contains(depender) || _dependerToDependees(depender).nonEmpty)
         _dependerToDependees.contains(depender)
     }
 
@@ -155,13 +156,13 @@ class PointsToAnalysisState[
     ): Unit = {
         val dependeeEPK = dependee.toEPK
 
-        assert(
+        elidedAssert(
             !_dependerToDependees.contains(depender) ||
             !_dependerToDependees(depender).exists(other =>
                 other._1.e == dependee.e && other._1.pk.id == dependee.pk.id
             )
         )
-        assert(!_dependees.contains(dependeeEPK) || _dependees(dependeeEPK) == dependee)
+        elidedAssert(!_dependees.contains(dependeeEPK) || _dependees(dependeeEPK) == dependee)
         if (_dependerToDependees.contains(depender)) {
             _dependerToDependees(depender) += ((dependee, typeFilter))
         } else {
@@ -188,7 +189,7 @@ class PointsToAnalysisState[
 
     // IMPROVE: make it efficient
     final def dependeesOf(depender: Entity): Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)] = {
-        assert(_dependerToDependees.contains(depender))
+        elidedAssert(_dependerToDependees.contains(depender))
         _dependerToDependees(depender).iterator.map(dependee => (dependee._1.toEPK, dependee)).toMap
     }
 
@@ -208,7 +209,7 @@ class PointsToAnalysisState[
         else calleesProperty.ub
     }
 
-    def hasCalleesDepenedee: Boolean = {
+    def hasCalleesDependee: Boolean = {
         _calleesDependee.nonEmpty && _calleesDependee.get.isRefinable
     }
 
@@ -277,12 +278,12 @@ class PointsToAnalysisState[
     def writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation] = _writeAccessesDependee.get
 
     override def hasOpenDependencies: Boolean = {
-        hasCalleesDepenedee || super.hasOpenDependencies
+        hasCalleesDependee || super.hasOpenDependencies
     }
 
     override def dependees: Set[SomeEOptionP] = {
         val otherDependees = super.dependees
-        if (hasCalleesDepenedee)
+        if (hasCalleesDependee)
             otherDependees + _calleesDependee.get
         else
             otherDependees

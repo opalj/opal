@@ -1,5 +1,5 @@
 # Overview
-Hermes is a small, extensible project that helps to assess the quality of a given corpus of applications. It extracts a wide range of properties from the given projects to make it possible to asses which language features and API features are used by the respective project(s). This information can then be used to design small, efficient test fixtures/corpuses.
+Hermes is a small, extensible project that helps to assess the quality of a given corpus of applications. It extracts a wide range of properties from the given projects to make it possible to assess which language features and API features are used by the respective project(s). This information can then be used to design small, efficient test fixtures/corpora.
 
 
 ## Categories of Queries

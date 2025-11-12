@@ -10,8 +10,6 @@ package problem
 
 import scala.annotation.unused
 
-import scala.collection.immutable.Set
-
 import org.opalj.BinaryArithmeticOperators
 import org.opalj.br.Method
 import org.opalj.fpcf.PropertyStore
@@ -394,7 +392,7 @@ class LinearConstantPropagationProblem
             throw new IllegalArgumentException(s"Combination ($leftExpr, $rightExpr) should not occur here!")
         }
 
-        /* Try to resolve an constant or variable expression to a constant value */
+        /* Try to resolve a constant or variable expression to a constant value */
         val getValueForExpr: Expr[JavaStatement.V] => Option[Int] = expr => {
             expr.astID match {
                 case Var.ASTID =>

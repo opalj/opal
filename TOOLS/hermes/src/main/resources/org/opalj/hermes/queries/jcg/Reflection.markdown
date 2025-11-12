@@ -8,7 +8,7 @@ data-flow nor control-flow analyses are required.
 ##TR1
 [//]: # (MAIN: tr.Demo)
 Tests the reflective call resolution when an object of type ```java.lang.Class``` is used to find a
-declared method (```Class.getDeclaredMethod```) of this class. Afterwards, the found method is invoked.
+declared method (```Class.getDeclaredMethod```) of this class. Afterward, the found method is invoked.
 Since the target method ```Demo.target``` is static and has no arguments, neither a receiver nor a
 method argument is passed over the ```invoke``` method. 
 ```java
@@ -34,7 +34,7 @@ class Demo {
 ##TR2
 [//]: # (MAIN: tr.Demo)
 Tests the reflective call resolution when an object of type ```java.lang.Class``` is used to find a
-declared method (```Class.getDeclaredMethod```) of this class. Afterwards, the found method is invoked.
+declared method (```Class.getDeclaredMethod```) of this class. Afterward, the found method is invoked.
 Since the target method ```Demo.target``` is an instance method, the receiver (```this```) is passed
 ```invoke``` such that the method can be called on the actual receiver.
 ```java
@@ -64,7 +64,7 @@ class Demo {
 ##TR3
 [//]: # (MAIN: tr.Demo)
 Tests the reflective call resolution when an object of type ```java.lang.Class``` is used to find a
-method (```Class.getMethod```) of this class. Afterwards, the found method is invoked.
+method (```Class.getMethod```) of this class. Afterward, the found method is invoked.
 Since the target method ```Demo.target``` is an instance method, the receiver (```this```) is passed
 ```invoke``` such that the method can be called on the actual receiver.
 ```java
@@ -92,7 +92,7 @@ public class Demo {
 ##TR4
 [//]: # (MAIN: tr.Demo)
 Tests the reflective call resolution when an object of type ```java.lang.Class``` is used to find a
-declared method (```Class.getDeclaredMethod```) of this class. Afterwards, the found method is invoked.
+declared method (```Class.getDeclaredMethod```) of this class. Afterward, the found method is invoked.
 Since the target method ```Demo.target``` is static and has one parameter, a ```null``` receiver as
 well as a ```String``` matching the method's parameters are passed over the ```invoke``` method. 
 ```java
@@ -171,7 +171,7 @@ reflection API. In ```tr.Demo```'s main method a new ```tr.Demo``` object is cre
 of type ```tr.CallTarget``` is assigned to its field. This field is then retrieved via the reflection
 using ```java.lang.Class.getDeclaredField(<fieldName>)``` and the field's name, namely ```"field"```.
 ```java.lang.reflect.Field.get``` is then used to get the object stored within the field of the Demo
-instance that has been created previously. Afterwards, the returned instance is used to call
+instance that has been created previously. Afterward, the returned instance is used to call
 the ```target``` method.
 ```java
 // tr/Demo.java
@@ -217,7 +217,7 @@ reflection API. In ```tr.Demo```'s main method a new ```tr.Demo``` object is cre
 of type ```tr.CallTarget``` is assigned to its field. This field is then retrieved via the reflection
 using ```java.lang.Class.getField(<fieldName>)``` and the field's name, namely ```"field"```.
 ```java.lang.reflect.Field.get``` is then used to get the object stored within the field of the Demo
-instance that has been created previously. Afterwards, the returned instance is used to call
+instance that has been created previously. Afterward, the returned instance is used to call
 the ```target``` method.
 
 ```java
@@ -522,7 +522,7 @@ class TargetClass {
 [//]: # (MAIN: csr.Demo)
 This test cases concerns the reflection API as well as a class' static initializer. Within the main
 method of ```csr.Demo``` a static method is called reads the value from a static field which is
-first written write before the method call to ```Demo.callForName``` and then passed to ```Class.forName```.
+first written before the method call to ```Demo.callForName``` and then passed to ```Class.forName```.
 ```Class.forName``` then tries to retrieve an object of ```java.lang.Class``` which is parameterized
 over ```csr.CallTarget```. In this test it is impossible to get any information about the retrieved
 typed and, therefore, all possible types must be considered for a sound method resolution.
@@ -565,7 +565,7 @@ class CallTarget {
 This test cases concerns the reflection API as well as a class' static initializer. Within the main
 method the methods ```java.lang.System.getProperties``` and ```java.lang.System.setProperties``` are
 used to add a ```className``` property with the value ```csr.TargetClass``` to the global system
-properties and thus make it globally available throughout the program. Afterwards,
+properties and thus make it globally available throughout the program. Afterward,
 ```csr.Demo.callForName``` is called that then uses ```java.lang.System.getProperty("className")```
 to access the stored string which is passed to the ```Class.forName``` call. Modelling system
 properties would help to resolve this case soundly and better precision.
@@ -614,7 +614,7 @@ exceptions to test whether valid path might be ignored which leads to unsoundnes
 ##CFNE1
 [//]: # (MAIN: cfne.Demo)
 This test case targets a common try catch pattern when classes are loaded. An existing class is loaded
-over ```Class.forName(...)```, instantiated and then casted to another class. Unfortunately, the class
+over ```Class.forName(...)```, instantiated and then cast to another class. Unfortunately, the class
 that is instantiated is __incompatible__ with the cast such that the operation results in a
 ```ClassCastException```.
 ```java

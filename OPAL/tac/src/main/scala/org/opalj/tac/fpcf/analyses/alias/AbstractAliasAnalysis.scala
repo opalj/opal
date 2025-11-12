@@ -99,7 +99,7 @@ trait AbstractAliasAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Creates a intermediate result for the given upper and lower bounds of the alias properties.
+     * Creates an intermediate result for the given upper and lower bounds of the alias properties.
      */
     protected def interimResult(lb: Alias, ub: Alias)(implicit
         context: AnalysisContext,

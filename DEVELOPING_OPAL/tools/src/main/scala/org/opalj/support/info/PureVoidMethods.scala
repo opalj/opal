@@ -28,7 +28,7 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalys
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 
 /**
- * Identifies pure/side-effect free methods with a void return type.
+ * Identifies pure/side-effect-free methods with a void return type.
  *
  * @author Dominik Helm
  */
@@ -50,7 +50,7 @@ object PureVoidMethods extends ProjectsAnalysisApplication {
     ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (ps, _) = analysisConfig.setupPropertyStore(project)
-        analysisConfig.setupCallGaph(project)
+        analysisConfig.setupCallGraph(project)
 
         project.get(FPCFAnalysesManagerKey).runAll(
             EagerFieldAccessInformationAnalysis,

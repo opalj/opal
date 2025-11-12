@@ -199,7 +199,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         }
 
         //
-        // PREPARE THE GENERATION OF THE REPORT OF THE OCCURED EXCEPTIONS
+        // PREPARE THE GENERATION OF THE REPORT OF THE OCCURRED EXCEPTIONS
         //
         if (exceptions.nonEmpty) {
             OPALLogger.error(

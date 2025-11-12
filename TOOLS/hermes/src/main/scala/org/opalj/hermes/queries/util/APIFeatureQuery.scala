@@ -109,7 +109,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
 
         for {
             cf <- project.allProjectClassFiles
-            if !isInterrupted()
+            if !isInterrupted
             source <- project.source(cf)
             case m @ MethodWithBody(code) <- cf.methods
             pcAndInvocation <- code.collect({ case mii: MethodInvocationInstruction => mii }: PartialFunction[

@@ -12,6 +12,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.Warn
+import org.opalj.util.elidedAssert
 
 /**
  * Implementation of a library for parsing Java bytecode and creating arbitrary
@@ -33,7 +34,7 @@ package object bi {
         // Log the information whether a production build or a development build is used.
         implicit val logContext: LogContext = GlobalLogContext
         try {
-            assert(false)
+            elidedAssert(false)
             info("OPAL Bytecode Infrastructure", "Production Build")
         } catch {
             case _: AssertionError =>

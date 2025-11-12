@@ -26,7 +26,7 @@ trait CalledMethodsStore { rootStore =>
 
     /**
      * The domain that is used as the target domain for the adaptation of
-     * the operand values to make them comparable. '''The domain object is not used
+     * the operand values to make them comparable. The domain object is not used
      * at construction time which enables the creation of the store along with/ as
      * part of the creation of "its" domain.
      */

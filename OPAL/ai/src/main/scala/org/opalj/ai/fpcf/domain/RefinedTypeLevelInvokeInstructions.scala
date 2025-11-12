@@ -220,7 +220,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
     // -----------------------------------------------------------------------------------
 
     /**
-     * Returns `true` for those methods for which we try to lookup the target method.
+     * Returns `true` for those methods for which we try to look up the target method.
      * This filter is collaboratively implemented (stackable trait).
      *
      * @note Domains reusing this template domain have to be able to cope with ALL methods; this
@@ -296,7 +296,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
     /**
      * Those `invokestatic` calls for which we have no concrete method (e.g.,
      * the respective class file was never loaded or the method is native) or
-     * if have a recursive invocation are delegated to the super class.
+     * if we have a recursive invocation are delegated to the super class.
      */
     abstract override def invokestatic(
         pc:            PC,

@@ -17,6 +17,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.common.DefinitionSiteLike
+import org.opalj.util.elidedAssert
 
 /**
  * Stores the state associated with a specific [[AbstractEscapeAnalysisContext]] computed by an
@@ -49,7 +50,7 @@ trait AbstractEscapeAnalysisState {
      * given one.
      */
     @inline private[escape] final def meetMostRestrictive(prop: EscapeProperty): Unit = {
-        assert {
+        elidedAssert {
             _mostRestrictiveProperty.meet(prop).lessOrEqualRestrictive(_mostRestrictiveProperty)
         }
         _mostRestrictiveProperty = _mostRestrictiveProperty.meet(prop)
@@ -59,7 +60,7 @@ trait AbstractEscapeAnalysisState {
      * Adds an entity property pair (or epk) into the set of dependees.
      */
     @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
-        assert(!_dependees.contains(eOptionP.e))
+        elidedAssert(!_dependees.contains(eOptionP.e))
         _dependees += eOptionP.e -> eOptionP
         _dependeesSet += eOptionP
     }
@@ -71,7 +72,7 @@ trait AbstractEscapeAnalysisState {
     @inline private[escape] final def removeDependency(
         ep: EOptionP[Entity, Property]
     ): Unit = {
-        assert(_dependees.contains(ep.e))
+        elidedAssert(_dependees.contains(ep.e))
         val oldEOptionP = _dependees(ep.e)
         _dependees -= ep.e
         _dependeesSet -= oldEOptionP
@@ -137,7 +138,7 @@ trait AbstractEscapeAnalysisState {
      * the expression is expected to be a [[org.opalj.tac.Var]].
      */
     @inline private[escape] final def usesDefSite(expr: Expr[V]): Boolean = {
-        assert(expr.isVar)
+        elidedAssert(expr.isVar)
         expr.asVar.definedBy.contains(_defSite)
     }
 
@@ -146,13 +147,13 @@ trait AbstractEscapeAnalysisState {
      * current entity's def-site return true.
      */
     @inline private[escape] final def anyParameterUsesDefSite(params: Seq[Expr[V]]): Boolean = {
-        assert(params.forall(_.isVar))
+        elidedAssert(params.forall(_.isVar))
         params.exists { case UVar(_, defSites) => defSites.contains(_defSite) }
     }
 }
 
 /**
- * Stores the parameters to which the analyses depends on, and whose functions return value is used
+ * Stores the parameters to which the analysis depends on, and whose functions return value is used
  * any further.
  */
 trait ReturnValueUseSites {

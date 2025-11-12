@@ -14,6 +14,7 @@ import org.opalj.br.cfg.CatchNode
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.cfg.cfgNodeOrdering
+import org.opalj.util.elidedAssert
 
 /**
  * Converts a list of three-address instructions into a text-based representation for comprehension
@@ -214,7 +215,7 @@ object ToTxt {
     }
 
     /**
-     * Converts the statements to some human readable text.
+     * Converts the statements to some human-readable text.
      *
      * @param includePC If `true` the original program counter is also shown in the output.
      */
@@ -236,7 +237,7 @@ object ToTxt {
                 params.parameters.zipWithIndex foreach { paramWithIndex =>
                     val (param, index) = paramWithIndex
                     if (param ne null) {
-                        val paramTxt = indention + "   param" + index.toHexString + ": " + param.toString()
+                        val paramTxt = indention + "   param" + index.toHexString + ": " + param.toString
                         javaLikeCode += (param match {
                             case v: DVar[?] =>
                                 v.useSites.mkString(s"$paramTxt // use sites={", ", ", "}")
@@ -257,7 +258,7 @@ object ToTxt {
             def catchTypeToString(t: Option[Type]): String = t.map(_.toJava).getOrElse("<FINALLY>")
 
             val bb = cfg.bb(index)
-            assert(
+            elidedAssert(
                 bb ne null,
                 s"index: $index; max: $max; catchNodes:${cfg.catchNodes.mkString("{", ", ", "}")}"
             )

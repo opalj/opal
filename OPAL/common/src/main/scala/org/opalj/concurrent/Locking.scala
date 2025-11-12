@@ -7,6 +7,8 @@ import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
 
+import org.opalj.util.elidedAssert
+
 /**
  * A basic facility to model shared and exclusive access to some functionality/data structure.
  *
@@ -21,13 +23,13 @@ trait Locking {
 
     /**
      * Acquires the write lock associated with this instance and then executes the function `f`.
-     * Afterwards, the lock is released.
+     * Afterward, the lock is released.
      */
     @inline protected final def withWriteLock[B](f: => B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
      * Acquires the read lock associated with this instance and then executes the function `f`.
-     * Afterwards, the lock is released.
+     * Afterward, the lock is released.
      */
     @inline protected final def withReadLock[B](f: => B): B = Locking.withReadLock(rwLock)(f)
 }
@@ -39,7 +41,7 @@ object Locking {
 
     /**
      * Acquires the write lock associated with this instance and then executes the function `f`.
-     * Afterwards, the lock is released.
+     * Afterward, the lock is released.
      */
     @inline final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: => B): B = {
         val lock = rwLock.writeLock()
@@ -55,7 +57,7 @@ object Locking {
 
     /**
      * Acquires all given locks in the given order and then executes the given function `f`.
-     * Afterwards all locks are released in reverse order.
+     * Afterward, all locks are released in reverse order.
      */
     @inline final def withWriteLocks[T](
         rwLocks: IterableOnce[ReentrantReadWriteLock]
@@ -68,7 +70,7 @@ object Locking {
             rwLocks.iterator.forall { rwLock =>
                 try {
                     val l = rwLock.writeLock
-                    l.lock
+                    l.lock()
                     acquiredRWLocks ::= l
                     true
                 } catch {
@@ -78,7 +80,7 @@ object Locking {
                 }
             }
 
-        assert(allLocked || (error ne null))
+        elidedAssert(allLocked || (error ne null))
 
         try {
             if (allLocked) {

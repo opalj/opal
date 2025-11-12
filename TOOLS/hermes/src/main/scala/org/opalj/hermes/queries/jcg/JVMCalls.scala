@@ -54,7 +54,7 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             method <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)

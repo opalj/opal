@@ -146,7 +146,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                 val arrayRef = oldOperands.head
                 establishNullProperty(arrayRef)
 
-            case MONITORENTER.opcode /* not necessary: | MONITOREXIT.opcode (every monitorexit is preceeded by a monitorenter) */ =>
+            case MONITORENTER.opcode /* not necessary: | MONITOREXIT.opcode (every monitorexit is preceded by a monitorenter) */ =>
                 val monitor = oldOperands.head
                 establishNullProperty(monitor)
 

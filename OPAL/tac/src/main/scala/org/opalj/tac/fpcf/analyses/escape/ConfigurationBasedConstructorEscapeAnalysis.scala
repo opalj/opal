@@ -7,13 +7,14 @@ package escape
 
 import org.opalj.br.ClassType
 import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.util.elidedAssert
 
-import pureconfig._
+import pureconfig.*
 
 /**
- * In the configuration system it is possible to define escape information for the this local in the
- * constructors of a specific class. This analysis sets the [[org.opalj.br.analyses.VirtualFormalParameter]] of the this local
- * to the defined value.
+ * In the configuration system it is possible to define escape information for the this-local in the
+ * constructors of a specific class. This analysis sets the [[org.opalj.br.analyses.VirtualFormalParameter]] of the
+ * this-local to the defined value.
  *
  * @author Florian Kuebler
  */
@@ -45,13 +46,13 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
     abstract override protected def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
-        assert(call.name == "<init>")
-        assert(state.usesDefSite(call.receiver))
-        assert(call.declaringClass.isClassType)
+        elidedAssert(call.name == "<init>")
+        elidedAssert(state.usesDefSite(call.receiver))
+        elidedAssert(call.declaringClass.isClassType)
 
         val propertyOption = predefinedConstructors.get(call.declaringClass.asClassType)
 
-        // the object constructor will not escape the this local
+        // the object constructor will not escape the this-local
         if (propertyOption.nonEmpty) {
             state.meetMostRestrictive(propertyOption.get)
         } else {

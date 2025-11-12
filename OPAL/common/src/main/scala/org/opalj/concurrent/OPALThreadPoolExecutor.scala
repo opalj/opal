@@ -57,7 +57,7 @@ class OPALBoundedThreadPoolExecutor(
                 case ce: CancellationException =>
                     e = ce
                 case ee: ExecutionException =>
-                    e = ee.getCause()
+                    e = ee.getCause
                 case ie: InterruptedException =>
                     e = ie
                     Thread.currentThread().interrupt(); // ignore/reset

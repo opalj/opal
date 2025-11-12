@@ -19,7 +19,7 @@ class ConsoleOPALLogger(val ansiColored: Boolean, val minLogLevel: Int) extends 
 
         val stream = if (messageLevel.value >= Error.value) Console.err else Console.out
         val theMessage = message.toConsoleOutput(ansiColored)
-        if (theMessage.size > 0 && theMessage.charAt(0) == '\r')
+        if (theMessage.nonEmpty && theMessage.charAt(0) == '\r')
             stream.print(theMessage)
         else
             stream.println(theMessage)

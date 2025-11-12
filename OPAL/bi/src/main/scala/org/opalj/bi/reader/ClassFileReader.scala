@@ -421,7 +421,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     // and
     // https://github.com/delphi-hub/delphi-crawler/blob/develop/src/main/scala/de/upb/cs/swt/delphi/crawler/tools/ClassStreamReader.scala
     def ClassFiles(in: => JarInputStream): List[(ClassFile, String)] = process(in) { in =>
-        var je: JarEntry = in.getNextJarEntry()
+        var je: JarEntry = in.getNextJarEntry
 
         var futures: List[Future[List[(ClassFile, String)]]] = Nil
 
@@ -449,12 +449,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 }(
                     // we can't use the OPALExecutionContext here, because the number of
                     // threads is bounded and (depending on the nesting level, we may need
-                    // more threads..)
+                    // more threads...)
                     using ExecutionContext.global
                 )
 
             }
-            je = in.getNextJarEntry()
+            je = in.getNextJarEntry
         }
 
         futures.flatMap(f => Await.result(f, Duration.Inf))
@@ -582,7 +582,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         try {
             process(new ZipFile(file)) { zf => ClassFiles(zf, exceptionHandler) }
         } catch {
-            case e: Exception => { exceptionHandler(file, e); Nil }
+            case e: Exception => exceptionHandler(file, e); Nil
         }
     }
 
@@ -595,7 +595,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
             ) { in => ClassFile(in).map(classFile => (classFile, file.toURI.toURL)) }
         } catch {
-            case e: Exception => { exceptionHandler(file, e); Nil }
+            case e: Exception => exceptionHandler(file, e); Nil
         }
     }
 
@@ -607,7 +607,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      *  - If the file object specifies a directory object, all ".class" files
      *    in the directory and in all subdirectories are loaded as well as all
      *    class files stored in ".jar" files in one of the directories. This class loads
-     *    all class files in parallel. However, this does not effect analyses working on the
+     *    all class files in parallel. However, this does not affect analyses working on the
      *    resulting `List`.
      */
     def ClassFiles(
@@ -691,13 +691,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                             traversePath(subPath)
                         }
                     } catch {
-                        case e: Exception => {
+                        case e: Exception =>
                             error(
                                 "class file reader",
                                 "failed processing Java 9+ Runtime Image (jrt:/)",
                                 e
                             )
-                        }
                     }
                 } else if (p.getFileName.toString.endsWith(".class")) {
                     val cf = ClassFile(() => Files.newInputStream(p))

@@ -1,5 +1,5 @@
 // We have centralized the configuration of all plug-ins here, to make this file easily
-// useable by the dockerfile to configure the docker image used for building OPAL.
+// usable by the dockerfile to configure the docker image used for building OPAL.
 
 resolvers += Resolver.url("scoverage-bintray", url("https://dl.bintray.com/sksamuel/sbt-plugins/"))(
     Resolver.ivyStylePatterns

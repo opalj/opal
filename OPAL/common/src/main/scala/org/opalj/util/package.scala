@@ -12,6 +12,7 @@ import scala.util.Using
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
 
+import org.opalj.ReleaseFlags.elideAssertions
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -85,16 +86,16 @@ package object util {
         var run = 0
         while {
             if (logContext.isDefined) {
-                val pendingCount = memoryMXBean.getObjectPendingFinalizationCount()
+                val pendingCount = memoryMXBean.getObjectPendingFinalizationCount
                 OPALLogger.info(
                     "performance",
                     s"garbage collection run $run (pending finalization: $pendingCount)"
                 )(using logContext.get)
             }
-            // In general it is **not possible to guarantee** that the garbage collector is really
+            // In general, it is **not possible to guarantee** that the garbage collector is really
             // run, but we still do our best.
             memoryMXBean.gc()
-            if (memoryMXBean.getObjectPendingFinalizationCount() > 0) {
+            if (memoryMXBean.getObjectPendingFinalizationCount > 0) {
                 // It may be the case that some finalizers (of just gc'ed object) are still running
                 // and -- therefore -- some further objects are freed after the gc run.
                 Thread.sleep(50)
@@ -102,7 +103,7 @@ package object util {
             }
             run += 1
 
-            memoryMXBean.getObjectPendingFinalizationCount() > 0 && ns2ms(
+            memoryMXBean.getObjectPendingFinalizationCount > 0 && ns2ms(
                 System.nanoTime() - startTime
             ) < maxGCTime.timeSpan
         } do ()
@@ -136,6 +137,22 @@ package object util {
                 error(category, "Reflected object is invalid", cce)
                 None
         }
+    }
+
+    /**
+     * Assertion that is elided in production builds, controlled by [[ReleaseFlags.elideAssertions]] which is
+     * automatically rewritten for non-SNAPSHOT builds.
+     */
+    inline def elidedAssert(inline assertion: => Boolean): Unit = {
+        inline if (!elideAssertions) assert(assertion)
+    }
+
+    /**
+     * Assertion that is elided in production builds, controlled by [[ReleaseFlags.elideAssertions]] which is
+     * automatically rewritten for non-SNAPSHOT builds.
+     */
+    inline def elidedAssert(inline assertion: => Boolean, inline message: String): Unit = {
+        inline if (!elideAssertions) assert(assertion, message)
     }
 
 }

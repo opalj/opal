@@ -13,6 +13,7 @@ import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.br.MethodDescriptor.DefaultConstructorDescriptor
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 /**
  * Provides helper methods to facilitate the generation of classes.
@@ -124,7 +125,7 @@ object ClassFileFactory {
      *
      * - `methodDescriptor`'s return type is [[VoidType]] (so no returning is necessary)
      * - `receiverMethodDescriptor`'s return type is assignable to `methodDescriptor`'s
-     *      (e.g., a "smaller" numerical type, (un)boxable, a subtype, etc)
+     *      (e.g., a "smaller" numerical type, (un)boxable, a subtype, etc.)
      * - `receiverMethodDescriptor` returns `Object`: in this case, we assume that `Object`
      *   stands for "generic return type" and expect the receiver method to return an
      *   object of a type compatible to the forwarder method's return type
@@ -181,7 +182,7 @@ object ClassFileFactory {
      * @param invocationInstruction the opcode of the invocation instruction
      *          (`INVOKESPECIAL.opcode`,`INVOKEVIRTUAL.opcode`,
      *          `INVOKESTATIC.opcode`,`INVOKEINTERFACE.opcode`)
-     *          used to call call the method on the receiver.
+     *          used to call the method on the receiver.
      */
     def Proxy(
         caller:                  ClassType,
@@ -776,7 +777,7 @@ object ClassFileFactory {
                 numberOfInstructionsForParameterLoading +
                 3 + // INVOKESPECIAL
                 1 // ARETURN
-        val maxLocals = fieldTypes.iterator.map(_.computationalType.operandSize.toInt).sum
+        val maxLocals = fieldTypes.iterator.map(_.computationalType.operandSize).sum
         val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
         val instructions = new Array[Instruction](numberOfInstructions)
         var currentPC: Int = 0
@@ -997,7 +998,7 @@ object ClassFileFactory {
     /**
      * Creates the bytecode instructions for the proxy method.
      *
-     * These instructions will setup the stack with the variables required to call the
+     * These instructions will set up the stack with the variables required to call the
      * `receiverMethod`, perform the appropriate invocation instruction (one of
      * INVOKESTATIC, INVOKEVIRTUAL, or INVOKESPECIAL), and return from the proxy method.
      *
@@ -1013,7 +1014,7 @@ object ClassFileFactory {
         invocationInstruction: Opcode
     ): Code = {
 
-        assert(!receiverIsInterface || invocationInstruction != INVOKEVIRTUAL.opcode)
+        elidedAssert(!receiverIsInterface || invocationInstruction != INVOKEVIRTUAL.opcode)
 
         // If we have a constructor, we have to fix the method descriptor. Usually, the instruction
         // doesn't have a return type. For the proxy method, it is important to return the instance
@@ -1249,7 +1250,7 @@ object ClassFileFactory {
                 if (forwarderParametersCount > receiverParametersCount) {
                     /* This is the case of an implicit receiver becoming explicit in the
                      * forwarder, hence we get one instruction for loading the first
-                     * parameter. Subsequently we need to ignore that parameter, though.
+                     * parameter. Subsequently, we need to ignore that parameter, though.
                      */
                     numberOfInstructions += 1
                     lvIndex += forwarderParameters(0).computationalType.operandSize
@@ -1437,7 +1438,7 @@ object ClassFileFactory {
             numberOfInstructions += loadInstructions + conversionInstructions
 
             parameterIndex += 1
-            lvIndex += parameter.computationalType.operandSize.toInt
+            lvIndex += parameter.computationalType.operandSize
         }
         numberOfInstructions += 3 // invoke target method
         numberOfInstructions += 1 // return

@@ -108,7 +108,7 @@ case class ProcessingResultEvent(eventId: Int, r: PropertyComputationResult) ext
 }
 
 case class DeferredProcessingResultEvent(eventId: Int, r: PropertyComputationResult) extends StoreEvent {
-    override def toTxt: String = s"$eventId: DeferedProcessingResult($r)"
+    override def toTxt: String = s"$eventId: DeferredProcessingResult($r)"
 }
 
 case class FirstExceptionEvent(

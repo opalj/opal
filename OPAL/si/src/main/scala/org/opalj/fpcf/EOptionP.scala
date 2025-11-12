@@ -2,6 +2,8 @@
 package org.opalj
 package fpcf
 
+import org.opalj.util.elidedAssert
+
 /**
  * An entity associated with the current extension of a property or `None` if no (preliminary)
  * property is already computed.
@@ -113,9 +115,9 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      *   }
      * }
      * }}}
-     * In that case – assuming we do not perform context sensitive analyses –
+     * In that case – assuming we do not perform context-sensitive analyses –
      * if the lower bound for `f` for the set of thrown exceptions is determined
-     * to be `Set(IllegalArgumentException,UnkownError)`, then the catch of the
+     * to be `Set(IllegalArgumentException,UnknownError)`, then the catch of the
      * `NumberFormatException` can be ruled out and a final result for `m` can be
      * computed.
      *
@@ -139,7 +141,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
      * provided that this `EOptionP` is guaranteed to be at most as old as `oldEOptionP`.
      * That is, this EPS is considered to be newer if the properties are different.
      *
-     * @note The caller has to ensure that this EOptionP and and the given EOptionP are
+     * @note The caller has to ensure that this EOptionP and the given EOptionP are
      *       comparable. That is, they define properties of the same kind associated with
      *       the same entity and same bounds.
      */
@@ -538,8 +540,8 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
     val ub: P
 ) extends InterimEP[E, P] {
 
-    assert(lb != null)
-    assert(ub != null)
+    elidedAssert(lb != null)
+    elidedAssert(ub != null)
 
     if (PropertyStore.Debug && lb /*or ub*/ .isOrderedProperty) {
         val ubAsOP = ub.asOrderedProperty
@@ -578,7 +580,7 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
 object InterimELUBP {
 
     def apply[E <: Entity, P <: Property](e: E, lb: P, ub: P): InterimELUBP[E, P] = {
-        assert(lb ne ub)
+        elidedAssert(lb ne ub)
         new InterimELUBP(e, lb, ub)
     }
 
@@ -599,7 +601,7 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
     val ub: P
 ) extends InterimEP[E, P] {
 
-    assert(ub != null)
+    elidedAssert(ub != null)
 
     override lazy val pk: PropertyKey[P] = ub.key.asInstanceOf[PropertyKey[P]]
 
@@ -715,7 +717,7 @@ final class InterimELBP[+E <: Entity, +P <: Property](
     val lb: P
 ) extends InterimEP[E, P] {
 
-    assert(lb != null)
+    elidedAssert(lb != null)
 
     override lazy val pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
 

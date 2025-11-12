@@ -123,7 +123,7 @@ trait JoinStabilization extends CoreDomainFunctionality {
         left:  DomainValue,
         right: DomainValue
     ): Update[DomainValue] = {
-        val key = new IdentityPair(left, right)
+        val key = IdentityPair(left, right)
         val joinedValue = joinedValues.get(key)
         if (joinedValue != null) {
             joinedValue

@@ -36,7 +36,7 @@ trait AITracer {
      *
      * If the tracer changes the `operandsArray` and/or `localsArray`, it is
      * the responsibility of the tracer to ensure that the data structures are still
-     * valid afterwards.
+     * valid afterward.
      */
     def continuingInterpretation(
         code:   Code,
@@ -59,7 +59,7 @@ trait AITracer {
      * @param operands The operand stack before the execution of the instruction.
      * @param locals The registers before the execution of the instruction.
      */
-    def instructionEvalution(
+    def instructionEvaluation(
         domain: Domain
     )(
         pc:          Int,
@@ -96,7 +96,7 @@ trait AITracer {
     ): Unit
 
     /**
-     * Called by the interpret when a local variable with the given index (`lvIndex`)
+     * Called by the interpreter when a local variable with the given index (`lvIndex`)
      * was set to a new value and, therefore, the reference stored in the local variable
      * previously was useless/dead.
      */
@@ -118,7 +118,7 @@ trait AITracer {
      * instruction was already scheduled for evaluation, but is now moved to the first
      * position in the list of all instructions to be executed (related to the specific
      * subroutine). '''A rescheduled event is also issued if the instruction was the
-     * the first in the list of instructions executed next.'''
+     * first in the list of instructions executed next.'''
      * However, further instructions may be appended to the list before the
      * next `instructionEvaluation` takes place.
      *
@@ -163,7 +163,7 @@ trait AITracer {
     def jumpToSubroutine(domain: Domain)(pc: Int, target: Int, nestingLevel: Int): Unit
 
     /**
-     * Called when a `RET` instruction is encountered. (That does not necessary imply
+     * Called when a `RET` instruction is encountered. (That does not necessarily imply
      * that the evaluation of the subroutine as such has finished. It is possible
      * that other paths still need to be pursued.)
      */

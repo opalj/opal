@@ -116,7 +116,7 @@ trait AbstractPointsToBasedAliasAnalysis extends TacBasedAliasAnalysis with Abst
 
     /**
      * Retrieves the points-to set of the given non-static field.
-     * If the points-to set of one of the defSites of the fieldReference is refineable, it is added as a field dependency.
+     * If the points-to set of one of the defSites of the fieldReference is refinable, it is added as a field dependency.
      */
     private def getPointsToOfField(field: AliasField, fieldContext: Context, tac: Tac)(
         implicit

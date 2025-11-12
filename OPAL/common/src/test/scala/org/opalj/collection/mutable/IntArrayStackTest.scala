@@ -149,7 +149,7 @@ class IntArrayStackTest extends AnyFlatSpec with Matchers {
     it should ("should contain the correct values even if the initial stack size was too small") in {
         val Max = 50000
         val stack1 = new IntArrayStack(2)
-        Range(start = 0, end = Max).foreach { stack1.push(_) }
+        Range(start = 0, end = Max).foreach { stack1.push }
         stack1.size should be(Max)
 
         { // test iteration

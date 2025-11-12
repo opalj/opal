@@ -8,6 +8,8 @@ import scala.reflect.ClassTag
 import java.util.Arrays
 import scala.collection.AbstractIterator
 
+import org.opalj.util.elidedAssert
+
 /**
  * Conceptually, a map where the (implicit) keys are positive `Int` values and the values are
  * non-`null`; `null` values are not permitted!
@@ -87,7 +89,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
      */
     @throws[IndexOutOfBoundsException]("if the key is negative")
     final def update(key: Int, value: T): Unit = {
-        assert(value ne null, "ArrayMap only supports non-null values")
+        elidedAssert(value ne null, "ArrayMap only supports non-null values")
         val data = this.data
         val max = data.length
         if (key < max) {
@@ -153,7 +155,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
                     if (data(i) ne null)
                         return i;
                 }
-                return max;
+                max
             }
 
             private var i = getNextIndex(-1)

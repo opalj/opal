@@ -3,6 +3,7 @@ package org.opalj
 package support
 package debug
 
+import scala.compiletime.uninitialized
 import scala.xml.Node
 
 import org.opalj.ai.AIResult
@@ -70,7 +71,7 @@ trait XHTMLTracer extends AITracer {
                     "new …" + classType.simpleName;
                 case CHECKCAST(referenceType) =>
                     "checkcast " + referenceType.toJava;
-                case LoadString(s) if s.size < 5 =>
+                case LoadString(s) if s.length < 5 =>
                     "Load \"" + s + "\"";
                 case LoadString(s) =>
                     "Load \"" + s.substring(0, 4) + "…\""
@@ -250,7 +251,7 @@ trait XHTMLTracer extends AITracer {
         </html>
     }
 
-    private var code: Code = null
+    private var code: Code = uninitialized
 
     override def initialLocals(domain: Domain)(locals: domain.Locals): Unit = { /*EMPTY*/ }
 
@@ -298,7 +299,7 @@ trait XHTMLTracer extends AITracer {
         /*ignored for now*/
     }
 
-    override def instructionEvalution(
+    override def instructionEvaluation(
         domain: Domain
     )(
         pc:          Int,
@@ -394,7 +395,7 @@ trait XHTMLTracer extends AITracer {
     ): Unit = { /*EMPTY*/ }
 
     def result(result: AIResult): Unit = {
-        writeAndOpen(dumpXHTML((new java.util.Date).toString()), "AITrace", ".html")
+        writeAndOpen(dumpXHTML((new java.util.Date).toString), "AITrace", ".html")
     }
 
 }

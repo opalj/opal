@@ -52,7 +52,7 @@ class LabeledCode(
     /**
      * Inserts the given sequence of instructions before, at or after the instruction - identified
      * by a [[org.opalj.br.instructions.PCLabel]] - with the given pc.
-     * CODE objects created by `Code.toLabeldCode` generally creates
+     * CODE objects created by `Code.toLabeledCode` generally creates
      * [[org.opalj.br.instructions.PCLabel]].
      *
      * Here, '''before''' means that those instruction which currently jump to the instruction with
@@ -111,7 +111,6 @@ class LabeledCode(
      *
      *         '''After''':
      *         EH | L | I | CE | EH | L+1 // i.e., the insertion position depends on L+1(!)
-     *         )
      *
      *         Hence, `At` and `After` can be used interchangeably except when an
      *         instruction should be added at the very beginning or after the end.
@@ -253,7 +252,7 @@ object LabeledCode {
         val labeledInstructions = new ArrayBuffer[CodeElement[AnyRef]](estimatedSize)
 
         // Transform the current code to use labels; this approach handles cases such as
-        // switches which now require more/less bytes very elegantly.
+        // switches which now require more/fewer bytes very elegantly.
         code.iterate { (pc, i) =>
             // IMPROVE [L1] use while loop
             code.exceptionHandlers.iterator.zipWithIndex.foreach { ehIndex =>

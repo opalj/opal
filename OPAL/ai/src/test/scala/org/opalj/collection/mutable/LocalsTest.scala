@@ -44,7 +44,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to return the value stored (upated(index,value)) at an index") in {
+    it should ("be able to return the value stored (updated(index,value)) at an index") in {
         for {
             i <- 1 to 100
             v = Locals[Integer](i)
@@ -54,7 +54,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to return the values stored (upated(index,value1,value2)) at an index") in {
+    it should ("be able to return the values stored (updated(index,value1,value2)) at an index") in {
         for {
             i <- 2 to 100
             v = Locals[Integer](i)
@@ -96,7 +96,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
                 v = v.updated(i, i)
             }
             val l1 = v.map(String.valueOf(_)).iterator.toList
-            val l2 = (0 until size).map(String.valueOf(_))
+            val l2 = (0 until size).map { String.valueOf }
             l1 should equal(l2)
         }
     }
@@ -232,7 +232,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         v.hashCode should not be (0)
     }
 
-    it should ("be compareable to a non-full Locals collections") in {
+    it should ("be comparable to a non-full Locals collections") in {
         val size = 25
         val v1 = Locals[Integer](size)
         val v2 = Locals[Integer](size)

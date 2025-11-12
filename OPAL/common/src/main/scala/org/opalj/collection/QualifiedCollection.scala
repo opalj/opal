@@ -30,7 +30,7 @@ sealed trait QualifiedCollection[+S] {
 
     /**
      * Returns `true` if the underlying collection is not guaranteed to contain all elements (w.r.t.
-     * some query/analysis/...
+     * some query/analysis/...)
      */
     final def isIncomplete: Boolean = !isComplete
 }

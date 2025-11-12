@@ -30,6 +30,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogMessage
+import org.opalj.util.elidedAssert
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -488,7 +489,7 @@ trait InvokedynamicRewriting
 
                     if (nextInsert < recipe.length) {
                         if (nextInsert == nextParam) {
-                            assert(recipe.charAt(nextInsert) == '\u0001')
+                            elidedAssert(recipe.charAt(nextInsert) == '\u0001')
                             val paramType = descriptor.parameterType(paramIndex)
                             appendParam(paramType, lvIndex)
                             val opSize = paramType.computationalType.operandSize
@@ -497,7 +498,7 @@ trait InvokedynamicRewriting
                             paramIndex += 1
                             nextParam = recipe.indexOf('\u0001', nextParam + 1)
                         } else {
-                            assert(recipe.charAt(nextInsert) == '\u0002')
+                            elidedAssert(recipe.charAt(nextInsert) == '\u0002')
                             val constant = constants(constantIndex)
                             val constantStack = appendConstant(constant)
                             maxStack = Math.max(maxStack, constantStack + 1)
@@ -623,7 +624,7 @@ trait InvokedynamicRewriting
      *
      * @param classFile The classfile to parse
      * @param instructions The instructions of the method we are currently parsing
-     * @param pc The program counter of the current instuction
+     * @param pc The program counter of the current instruction
      * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced
      */
@@ -709,7 +710,7 @@ trait InvokedynamicRewriting
      *
      * @param classFile The classfile to parse
      * @param instructions The instructions of the method we are currently parsing
-     * @param pc The program counter of the current instuction
+     * @param pc The program counter of the current instruction
      * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced
      */
@@ -895,7 +896,7 @@ trait InvokedynamicRewriting
             // (e.g., about bridges or markers)
             altMetafactoryArgs
         ) = bootstrapArguments match {
-            case Seq(smt: MethodDescriptor, tim: MethodCallMethodHandle, imt: MethodDescriptor, ama*) =>
+            case Seq(smt: MethodDescriptor, tim: MethodCallMethodHandle, imt: MethodDescriptor, ama @ _*) =>
                 (smt, tim, imt, ama)
             case _ =>
                 if (logUnknownInvokeDynamics) {
@@ -981,10 +982,10 @@ trait InvokedynamicRewriting
 
         *** INVOKEINTERFACE ***
         It is similar to INVOKEVIRTUAL, but the method definition is defined in an
-        interface. Therefore, the same rule like INVOKEVIRTUAL applies.
+        interface. Therefore, the same rule as for INVOKEVIRTUAL applies.
 
         *** INVOKESTATIC ***
-        Because we call a static method, we don't have an instance. Therefore we don't
+        Because we call a static method, we don't have an instance. Therefore, we don't
         need a receiver field.
 
         *** INVOKESPECIAL ***
@@ -993,9 +994,9 @@ trait InvokedynamicRewriting
           in called class -> no rewrite necessary
         - private method invocation: The private method must be in the same class as
           the callee -> no rewrite needed
-        - Invokation of methods using super keyword -> Not needed, because a synthetic
+        - Invocation of methods using super keyword -> Not needed, because a synthetic
           method in the callee class is created which handles the INVOKESPECIAL.
-          Therefore the receiverType is also the callee class.
+          Therefore, the receiverType is also the callee class.
 
           E.g.
               public static class Superclass {
@@ -1014,7 +1015,7 @@ trait InvokedynamicRewriting
           The class Subclass contains a synthetic method `access`, which has an
           INVOKESPECIAL instruction calling Superclass.someMethod. The generated
           Lambda Proxyclass calls Subclass.access, so the receiverType must be
-          Subclass insteaed of Superclass.
+          Subclass instead of Superclass.
 
           More information:
             http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
@@ -1027,7 +1028,7 @@ trait InvokedynamicRewriting
             } else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
                        invokedynamic.methodDescriptor.parameterTypes.head.isClassType
             ) {
-                // If we have an instance of a object and use a method reference,
+                // If we have an instance of an object and use a method reference,
                 // get the receiver type from the invokedynamic instruction.
                 // It is the first parameter of the functional interface parameter
                 // list.
@@ -1035,7 +1036,7 @@ trait InvokedynamicRewriting
             } else if (instantiatedMethodType.parameterTypes.nonEmpty &&
                        instantiatedMethodType.parameterTypes.head.isClassType
             ) {
-                // If we get a instance method reference like `LinkedHashSet::addAll`, get
+                // If we get an instance method reference like `LinkedHashSet::addAll`, get
                 // the receiver type from the functional interface. The first parameter is
                 // the instance where the method should be called.
                 instantiatedMethodType.parameterTypes.head.asClassType
@@ -1145,7 +1146,7 @@ trait InvokedynamicRewriting
                 m.name == targetMethodName && m.descriptor == targetMethodDescriptor
             }
 
-            assert(targetMethod.isDefined)
+            elidedAssert(targetMethod.isDefined)
             val m = targetMethod.get
 
             if (m.isPrivate) {
@@ -1288,7 +1289,7 @@ trait InvokedynamicRewriting
             argCount += markerCount
         }
 
-        // bridge methods come afterwards if FLAG_BRIDGES is set.
+        // bridge methods come afterward if FLAG_BRIDGES is set.
         if ((flags & LambdaMetafactory.FLAG_BRIDGES) > 0) {
             val ConstantInteger(bridgesCount) = altMetafactoryArgs(argCount): @unchecked
             argCount += 1

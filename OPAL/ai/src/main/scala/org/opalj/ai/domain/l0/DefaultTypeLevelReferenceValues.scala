@@ -12,6 +12,7 @@ import org.opalj.br.ClassType
 import org.opalj.br.ReferenceType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsPrimitiveValue
 import org.opalj.value.IsSArrayValue
@@ -38,7 +39,7 @@ trait DefaultTypeLevelReferenceValues
     type DomainObjectValue <: AnObjectValue & AReferenceValue // <= SObject.. and MObject...
     type DomainArrayValue <: AnArrayValue & AReferenceValue
 
-    protected class ANullValue() extends super.NullValueLike { this: DomainNullValue =>
+    protected class ANullValue extends super.NullValueLike { this: DomainNullValue =>
 
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
@@ -75,9 +76,9 @@ trait DefaultTypeLevelReferenceValues
 
                 case elementValue @ TypeOfReferenceValue(EmptyUpperTypeBound) =>
                     // the elementValue is "null"
-                    assert(elementValue.isNull.isYes)
+                    elidedAssert(elementValue.isNull.isYes)
                     // e.g., it is possible to store null in the n-1 dimensions of
-                    // a n-dimensional array of primitive values
+                    // an n-dimensional array of primitive values
                     if (theUpperTypeBound.componentType.isReferenceType)
                         Yes
                     else

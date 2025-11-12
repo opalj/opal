@@ -31,9 +31,9 @@ class Graph[@specialized(Int) N: ClassTag] private (
     def asIterable: N => Iterable[N] = (n: N) => { this(n) }
 
     /**
-     * Adds a new vertice.
+     * Adds a new vertex.
      */
-    def addVertice(n: N): this.type = {
+    def addVertex(n: N): this.type = {
         vertices += n
         this
     }
@@ -61,9 +61,9 @@ class Graph[@specialized(Int) N: ClassTag] private (
     }
 
     /**
-     * Removes the given vertice from this graph.
+     * Removes the given vertex from this graph.
      */
-    def removeVertice(v: N): this.type = {
+    def removeVertex(v: N): this.type = {
         vertices -= v
         val oldSuccessorsOpt = successors.get(v)
         oldSuccessorsOpt.foreach(_ foreach { s => predecessors(s) = predecessors(s) filter (_ != v) })
@@ -74,7 +74,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
         this
     }
 
-    def --=(vs: IterableOnce[N]): this.type = { vs.iterator.foreach { v => this.removeVertice(v) }; this }
+    def --=(vs: IterableOnce[N]): this.type = { vs.iterator.foreach { v => this.removeVertex(v) }; this }
 
     /**
      * All nodes which only have incoming dependencies/which have no successors.

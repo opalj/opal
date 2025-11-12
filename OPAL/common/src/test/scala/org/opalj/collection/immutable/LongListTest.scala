@@ -56,7 +56,7 @@ class LongListTest extends AnyFunSpec with Matchers {
                     } { t => info(s"iterator sum took ${t.toSeconds}") }
 
                 assert(sumForeach == sumIterator)
-                info(s"summarized value: ${sumIterator}")
+                info(s"summarized value: $sumIterator")
             }
 
         }

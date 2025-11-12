@@ -11,6 +11,7 @@ import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.TypeIterator
+import org.opalj.util.elidedAssert
 
 /**
  * The proxy class for all call-graph related properties.
@@ -22,8 +23,8 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  * @author Florian Kuebler
  */
 class CallGraph private[cg] ()(implicit ps: PropertyStore, typeIterator: TypeIterator) {
-    assert(ps.entities(_.pk == Callees.key).forall(ps(_, Callees.key).isFinal))
-    assert(ps.entities(_.pk == Callers.key).forall(ps(_, Callers.key).isFinal))
+    elidedAssert(ps.entities(_.pk == Callees.key).forall(ps(_, Callees.key).isFinal))
+    elidedAssert(ps.entities(_.pk == Callers.key).forall(ps(_, Callers.key).isFinal))
 
     def calleesOf(m: DeclaredMethod, pc: Int): Iterator[Context] = {
         val callees = ps(m, Callees.key).ub

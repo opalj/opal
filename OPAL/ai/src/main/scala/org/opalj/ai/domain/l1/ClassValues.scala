@@ -38,7 +38,7 @@ import org.opalj.value.TheClassValue
  * class MyDomain
  *  extends DefaultTypeLevelInvokeInstructions
  *  with ClassValues
- *  with <DOES ANAYLZE INVOKE CALLS>
+ *  with <DOES ANALYZE INVOKE CALLS>
  * }}}
  *
  * @author Michael Eichberg (fixes for multi-parameter Class.forName(...) calls)
@@ -123,7 +123,7 @@ trait ClassValues
     override def ClassValue(vo: ValueOrigin, value: Type): DomainObjectValue
 
     protected[l1] def simpleClassForNameCall(pc: Int, className: String): MethodCallResult = {
-        if (className.length() == 0)
+        if (className.isEmpty)
             return justThrows(ClassNotFoundException(pc));
 
         val classValue =
@@ -182,7 +182,7 @@ trait ClassValues
                         case `forName_String_Class`                     => simpleClassForNameCall(pc, value)
                         case `forName_String_boolean_ClassLoader_Class` => simpleClassForNameCall(pc, value)
                         case _                                          =>
-                            throw new DomainException(
+                            throw DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
@@ -196,7 +196,7 @@ trait ClassValues
                         case `forName_Module_String`       => simpleClassForNameCall(pc, value)
                         case `forName_Module_String_Class` => simpleClassForNameCall(pc, value)
                         case _                             =>
-                            throw new DomainException(
+                            throw DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }

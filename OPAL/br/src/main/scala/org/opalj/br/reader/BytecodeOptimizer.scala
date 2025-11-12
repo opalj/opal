@@ -47,20 +47,20 @@ import net.ceedubs.ficus.Ficus.*
  *
  * The following transformations are performed:
  *  - trivial gotos which jump to the immediately succeeding instruction are replaced by nops
- *    (the CFG may contain less basic blocks afterwards)
+ *    (the CFG may contain less basic blocks afterward)
  *  - goto chains are shortened (i.e., a goto jumping to another goto)
  *    (this primarily reduces the number of instructions that need to be evaluated at
  *    abstract interpretation time; it may - however - also reduce the number of basic blocks)
  *  - useless ifs where the jump target is the next instruction are replaced by nops
- *    (the CFG may contain less basic blocks afterwards)
+ *    (the CFG may contain less basic blocks afterward)
  *  - if -> goto instruction sequences are resolved
  *    (this primarily reduces the number of instructions that need to be evaluated at
  *    abstract interpretation time; it may - however - also reduce the number of basic blocks)
  *  - useless switches are replaced
- *    (the CFG may contain less basic blocks afterwards)
+ *    (the CFG may contain less basic blocks afterward)
  *
- * The target array has the same size as the source array to make sure that branch offsets/line-
- * numbers etc. point to the correct instruction. Furthermore, we try to avoid the introduction
+ * The target array has the same size as the source array to make sure that branch offsets/line-numbers
+ * etc. point to the correct instruction. Furthermore, we try to avoid the introduction
  * of dead code.
  *
  * @note All transformation always only reduce the number of basic blocks and never create new
@@ -315,7 +315,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         val jumpTargetPC = pc + defaultOffset
                         val jumpTargetInstruction = instructions(jumpTargetPC)
                         if (jumpTargetPC == nextPC) {
-                            // totally useless..
+                            // totally useless...
                             newNextPC = nextPC
                         } else {
                             // This switch is basically just a goto... we will add
@@ -413,7 +413,7 @@ trait BytecodeOptimizer extends MethodsBinding {
             // EXAMPLE:
             //
             // The sequence
-            // (SPECIAL, BUT FREQUENT, CASE.. the second GOTO just jumps over the next goto..):
+            // (SPECIAL, BUT FREQUENT, CASE... the second GOTO just jumps over the next goto...):
             //      pc=182: IF_ACMPNE(6), pc+3: GOTO(6), pc+6: GOTO(-170)
             // is rewritten to:
             //      pc=182: IF_ACMPNE(6 + (-170) ), pc+[3..9]: NOP

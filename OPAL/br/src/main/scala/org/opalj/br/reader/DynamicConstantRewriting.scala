@@ -180,7 +180,7 @@ trait DynamicConstantRewriting
                 info("rewriting dynamic constant", s"Java: $load => $head")
         } else if (instructionLength == 3) { // Replace ldc(2)_w with invocation
             val newMethodName =
-                newTargetMethodName(cp, methodNameIndex, methodDescriptorIndex, pc, "load_dynamic_contstant")
+                newTargetMethodName(cp, methodNameIndex, methodDescriptorIndex, pc, "load_dynamic_constant")
             val newMethod = Method(
                 ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask,
                 newMethodName,

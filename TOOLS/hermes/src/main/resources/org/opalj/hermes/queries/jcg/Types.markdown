@@ -4,7 +4,7 @@ no visible effect on the soundness they still must be supported by the framework
 ##TC1
 [//]: # (MAIN: simplecast.Demo)
 This case shows type narrowing due to previous cast. The method ```simplecast.Demo.castToTarget``` takes an
-object, casts it to ```simplecast.Target```, and then calls ```target``` on the casted object which
+object, casts it to ```simplecast.Target```, and then calls ```target``` on the cast object which
 rules out ```simplecast.Demo.target``` as receiver.
 ```java
 // simplecast/Demo.java
@@ -40,8 +40,8 @@ class Target {
 [//]: # (MAIN: castclassapi.Demo)
 Type narrowing due to previous cast using Java's class API. The method ```castclassapi.Demo.castToTarget```
 takes a class object that is parameterized over the type the cast should be performed to and an object
-that will be casted within the method. It then casts it via ```Class.cast``` to ```castclassapi.Target```
-and then calls ```toString``` on the casted object which rules out ```castclassapi.Demo.toString``` as receiver.
+that will be cast within the method. It then casts it via ```Class.cast``` to ```castclassapi.Target```
+and then calls ```toString``` on the cast object which rules out ```castclassapi.Demo.toString``` as receiver.
 ```java
 // castclassapi/Demo.java
 package castclassapi;
@@ -82,7 +82,7 @@ public class Target {
 
 ##TC3
 [//]: # (MAIN: classeq.Demo)
-Type narrowing due to a equality check of two ```java.lang.Class``` objects. Within the ```this```
+Type narrowing due to an equality check of two ```java.lang.Class``` objects. Within the ```this```
 branch of ```classeq.Demo.callIfInstanceOfTarget``` it is thus known that the passed object ```o```
 must be of type ```Target```. Hence, ```o.toString``` must only be resolved to ```Target.toString```.
 ```java
@@ -196,7 +196,7 @@ class Target {
 ##TC6
 [//]: # (MAIN: tc.Demo)
 Type narrowing due to Java's ```java.lang.Class.isAssignableFrom``` API call that checks whether a given
-object (i.e. ```o```) can be assign to variable of the type the class instance is parameterized over, i.e.,
+object (i.e. ```o```) can be assigned to variable of the type the class instance is parameterized over, i.e.,
 ```Target.class``` is a shorthand notation for ```java.lang.Class<Target>```. Within the ```this```
 branch of ```Demo.callIfInstanceOfTarget``` it is thus known that the passed object ```o``` must be
 a subtype of ```Target```. Hence, ```o.toString``` must only be resolved to ```Target.toString```.

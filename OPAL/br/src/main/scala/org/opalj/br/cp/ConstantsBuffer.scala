@@ -15,6 +15,7 @@ import org.opalj.br.instructions.LoadInt
 import org.opalj.br.instructions.LoadMethodHandle
 import org.opalj.br.instructions.LoadMethodType
 import org.opalj.br.instructions.LoadString
+import org.opalj.util.elidedAssert
 
 /**
  * This class can be used to (re)build a [[org.opalj.br.ClassFile]]'s constant pool.
@@ -48,7 +49,7 @@ class ConstantsBuffer private (
     private def validateIndex(index: Int, requiresUByteIndex: Boolean): Int = {
         if (requiresUByteIndex && index > UByte.MaxValue) {
             val message = s"the constant pool index $index is larger than  ${UByte.MaxValue}"
-            throw new ConstantPoolException(message)
+            throw ConstantPoolException(message)
         }
 
         validateUShortIndex(index)
@@ -58,7 +59,7 @@ class ConstantsBuffer private (
     private def validateUShortIndex(index: Int): Int = {
         if (index > UShort.MaxValue) {
             val message = s"the constant pool index $index is larger than ${UShort.MaxValue}"
-            throw new ConstantPoolException(message)
+            throw ConstantPoolException(message)
         }
         index
     }
@@ -358,7 +359,7 @@ object ConstantsBuffer {
 
         /*
         The basic idea is to first add the referenced constant pool entries (which always use two
-        byte references) and afterwards create the LDC related constant pool entries.
+        byte references) and afterward create the LDC related constant pool entries.
         For the first phase the pool's nextIndex is set to the first index that is required by the
         referenced entries. After that, nextIndex is set to 1 and all LDC related entries
         are created.
@@ -413,7 +414,7 @@ object ConstantsBuffer {
         constantsBuffer.nextIndex = nextIndexAfterLDCRelatedEntries
         bootstrapMethods.foreach(_.arguments.foreach(CPEntryForBootstrapArgument))
 
-        assert(
+        elidedAssert(
             buffer.size == constantsBuffer.nextIndex,
             "constant pool contains holes:\n\t" +
                 ldcs.mkString("LDCs={", ", ", "}\n\t") +

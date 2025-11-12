@@ -24,7 +24,7 @@ import scala.util.boundary.break
  *
  * ==Usage Scenario==
  * For example, the median of the number of registers that are used per method is 2
- * (JDK and OPAL) and more then 99,5% of all methods have less than 20 elements and
+ * (JDK and OPAL) and more than 99,5% of all methods have less than 20 elements and
  * in particular those elements related to the parameters do not change often.
  *
  * @author Michael Eichberg
@@ -108,7 +108,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * the return value will be `this` or `other`, otherwise a new locals data structure
      * is created.
      *
-     * @param other Another `Locals` data-structure that has the the same number of
+     * @param other Another `Locals` data-structure that has the same number of
      *      elements as this `Locals` data-structure.
      */
     /* ABSTRACT */
@@ -173,8 +173,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     /**
      * Counts the number of '''non-null''' values that do not match the given
-     * given predicate; the index of the first element that matches the predicate
-     * is returned.
+     * predicate; the index of the first element that matches the predicate is returned.
      *
      * If no value matches the value -1 is returned.
      */

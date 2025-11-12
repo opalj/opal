@@ -5,6 +5,7 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
@@ -65,7 +66,7 @@ import org.opalj.log.OPALLogger
  *
  * @note
  * ADDITIONALLY, WE HAVE TO IGNORE THOSE FIELDS WHICH SEEMS TO BE ALWAYS NULL BECAUSE  THESE
- * FIELDS ARE OFTEN INITIALZED - AT RUNTIME - BY SOME CODE OUTSIDE THE SCOPE OF "PURE" JAVA BASED
+ * FIELDS ARE OFTEN INITIALIZED - AT RUNTIME - BY SOME CODE OUTSIDE THE SCOPE OF "PURE" JAVA BASED
  * ANALYSES.
  *
  * E.G., WE IGNORE THE FOLLOWING FIELDS FROM JAVA 8:
@@ -87,7 +88,7 @@ import org.opalj.log.OPALLogger
  *  - [OK] javax.swing.JList.AccessibleJList.AccessibleJListChild{ component:null }
  *  - [OK] com.sun.corba.se.impl.io.IIOPInputStream{ abortIOException:null }
  *  - [OK] com.sun.corba.se.impl.orb.ORBImpl{ codeBaseIOR:null }
- *  - [OK - ACCIDENTIALLY CREATED?] com.sun.org.apache.xpath.internal.jaxp.XPathImpl{ d:null }
+ *  - [OK - ACCIDENTALLY CREATED?] com.sun.org.apache.xpath.internal.jaxp.XPathImpl{ d:null }
  *  - [OK - LEGACY CODE?] javax.swing.JPopupMenu{ margin:null }
  *  - [OK - LEGACY CODE?] sun.audio.AudioDevice{ mixer:null }
  *  - [OK - RESERVED FOR FUTURE USAGE] com.sun.corba.se.impl.corba.ServerRequestImpl{ _ctx:null }
@@ -175,7 +176,7 @@ class LBFieldValuesAnalysis private[analyses] (
         final val thisClassType: ClassType = classFile.thisType
 
         // Map of fieldNames (that are potentially relevant) and the (refined) value information
-        var fieldInformation: Map[Field, Option[DomainValue]] = null
+        var fieldInformation: Map[Field, Option[DomainValue]] = uninitialized
 
         // Map between the method and the ones called by the method which could successfully
         // be resolved.
@@ -197,11 +198,11 @@ class LBFieldValuesAnalysis private[analyses] (
         def hasCandidateFields: Boolean = fieldInformation.nonEmpty
         def candidateFields: Iterable[Field] = fieldInformation.keys
 
-        private var currentCode: Code = null
+        private var currentCode: Code = uninitialized
 
         /**
          * Sets the method that is currently analyzed. This method '''must not be called'''
-         * during the abstract interpretation of a method. It is must be called
+         * during the abstract interpretation of a method. It must be called
          * before this domain is used for the first time and immediately before the
          * interpretation of the next method (code block) starts.
          */
@@ -310,7 +311,6 @@ class LBFieldValuesAnalysis private[analyses] (
                     // relevant field, but obviously no writes were found...
                     val dv = domain.DefaultValue(-1, f.fieldType)
                     val fv = ValueBasedFieldValueInformation(dv)
-                    // println(f.toJava+"!!!!!!>>>>>> "+fv)
                     Result(FinalEP(f, fv))
 
                 case Some(Some(domain.DomainReferenceValueTag(dv))) =>
@@ -319,7 +319,6 @@ class LBFieldValuesAnalysis private[analyses] (
                          )
                     ) {
                         val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
-                        // println(f.toJava+"!!!!!!>>>>>> "+vi)
                         Result(FinalEP(f, vi))
                     } else {
                         // IMPROVE Consider using the CFG to determine if the read fields are relevant at all; currently the analysis is flow insensitive.
@@ -347,7 +346,7 @@ class LBFieldValuesAnalysis private[analyses] (
                                     // e.g.
                                     // {{{
                                     //  val o = Foo.m() // initially returns "some object"
-                                    //  o.toString // no precisely resolvables
+                                    //  o.toString // no precisely resolvable
                                     //  // if now, m() is known to return only String objects
                                     //  // o.toString becomes resolvable!
                                     // }}}
@@ -372,12 +371,11 @@ class LBFieldValuesAnalysis private[analyses] (
                                 // the field is no longer written...
                                 OPALLogger.error(
                                     "analysis state",
-                                    s"the field values analysis for ${f} failed miserably: "
+                                    s"the field values analysis for $f failed miserably: "
                                 )(using project.logContext)
                             }
                             val domain.DomainReferenceValueTag(dv) = dvOption.get: @unchecked
                             val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
-                            // println("======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
                             if (newDependees.isEmpty ||
                                 dv.isNull.isYes ||
                                 classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)
@@ -390,10 +388,8 @@ class LBFieldValuesAnalysis private[analyses] (
 
                         val vi = ValueBasedFieldValueInformation(dv.toCanonicalForm)
                         if (relevantDependees.isEmpty) {
-                            //   println(f.toJava+"!!!!!!>>>>>> "+vi)
                             Result(FinalEP(f, vi))
                         } else {
-                            //   println(f.toJava+"======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
                             InterimResult.forLB(f, vi, relevantDependees.toSet, c)
                         }
                     }
@@ -451,7 +447,7 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
     )
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
-        // To ensure that subsequent analyses are able to pick-up the results of this
+        // To ensure that subsequent analyses are able to pick up the results of this
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelFieldAccessInstructions.
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(i =>

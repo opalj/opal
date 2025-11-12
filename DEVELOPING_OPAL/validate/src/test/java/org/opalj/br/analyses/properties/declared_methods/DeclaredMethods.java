@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.TYPE;
 
 /**
- * Container for mutliple [[DeclaredMethod]] annotations.
+ * Container for multiple [[DeclaredMethod]] annotations.
  *
  * @author Dominik Helm
  */

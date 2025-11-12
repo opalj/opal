@@ -228,7 +228,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 // See
                 // https://stackoverflow.com/questions/6416408/static-circular-dependency-in-java
                 // for an in-depth discussion.
-                // (Howevever, if we would check for cycles, we could determine that it is pure,
+                // (However, if we would check for cycles, we could determine that it is pure,
                 // but this is not considered to be too useful...)
                 atMost(ImpureByAnalysis)
                 false
@@ -336,7 +336,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     /**
      * Examines the influence of the purity property of a method on the examined method's purity.
      *
-     * @note Adds dependendies when necessary.
+     * @note Adds dependendees when necessary.
      */
     def checkMethodPurity(
         ep:     EOptionP[Context, Purity],
@@ -413,7 +413,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
         if (!returnValue.isVar) {
             // The expression could refer to further expressions in a non-flat representation. To
-            // avoid special handling, we just fallback to SideEffectFreeWithoutAllocations here if
+            // avoid special handling, we just fall back to SideEffectFreeWithoutAllocations here if
             // the return value is not local as the analysis is intended to be used on flat
             // representations anyway.
             isLocal(returnValue, SideEffectFree)
@@ -471,7 +471,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                 handleUnknownTypeImmutability(ep, returnValue)
             true
         case _ =>
-            atMost(Pure) // Can not be compile time pure if mutable object is returned
+            atMost(Pure) // Can not be compile-time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)
                 isLocal(returnValue, SideEffectFree)
             false // Return early if we are already side-effect free

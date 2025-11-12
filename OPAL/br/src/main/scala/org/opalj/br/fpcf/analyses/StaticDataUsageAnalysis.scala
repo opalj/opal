@@ -79,7 +79,7 @@ class StaticDataUsageAnalysis private[analyses] (final val project: SomeProject)
         val method = definedMethod.definedMethod
         val declaringClassType = method.classFile.thisType
 
-        // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
+        // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if (declaringClassType ne definedMethod.declaringClassType)
             return baseMethodStaticDataUsage(definedMethod.asDefinedMethod);
@@ -170,7 +170,7 @@ class StaticDataUsageAnalysis private[analyses] (final val project: SomeProject)
         if (dependees.isEmpty)
             return Result(definedMethod, maxLevel);
 
-        // This function computes the “static data usage" for a method based on the usage of its
+        // This function computes the "static data usage" for a method based on the usage of its
         // callees and the compile-time constancy of its static field reads
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
             // Let's filter the entity.

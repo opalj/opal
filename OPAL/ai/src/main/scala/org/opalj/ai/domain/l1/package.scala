@@ -7,6 +7,7 @@ import org.opalj.ai.collectPCWithOperands
 import org.opalj.br.Code
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.NEW
+import org.opalj.util.elidedAssert
 
 /**
  * Commonly useful methods.
@@ -27,19 +28,19 @@ package object l1 {
         domain:           l1.ReferenceValues
     )(
         operandsArray: domain.OperandsArray
-    ): Seq[Int /*PC*/ ] = { // IMPROVE Ues Int based datastructure
+    ): Seq[Int /*PC*/ ] = { // IMPROVE Ues Int based data structure
 
         val instructions = code.instructions
 
-        assert(
+        elidedAssert(
             receiverOriginPC >= 0 && receiverOriginPC < instructions.length,
             s"the origin $receiverOriginPC is outside the scope of the method "
         )
-        assert(
+        elidedAssert(
             instructions(receiverOriginPC).opcode == NEW.opcode,
             s"${instructions(receiverOriginPC)} is not a NEW instruction"
         )
-        assert(
+        elidedAssert(
             operandsArray(receiverOriginPC) ne null,
             s"the (new) instruction with pc=$receiverOriginPC was never executed"
         )

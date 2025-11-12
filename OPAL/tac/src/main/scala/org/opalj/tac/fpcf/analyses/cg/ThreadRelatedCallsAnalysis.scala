@@ -35,6 +35,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsReferenceValue
 
 class ThreadStartAnalysisResults extends IndirectCalls with VMReachableMethodsBase
@@ -195,9 +196,9 @@ class ThreadStartAnalysis private[cg] (
      * A call to `Thread#start` eventually leads to calls to `Thread#exit` and
      * `ConcreteRunnable#run`. These methods will be returned by this method.
      * Note, that if the concrete type of the runnable object is unknown, the corresponding
-     * `run` methods might be missing. Thus the resulting call graph may be unsound.
+     * `run` methods might be missing. Thus, the resulting call graph may be unsound.
      *
-     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * Note: It takes the given `threadRelatedMethods`, add the relevant ones and returns the
      * updated set.
      */
     private def handleStart(
@@ -306,7 +307,7 @@ class ThreadStartAnalysis private[cg] (
     }
 
     /**
-     * Handles the case of a call to `run` of a thread object, that holds a instance of
+     * Handles the case of a call to `run` of a thread object, that holds an instance of
      * [[Runnable]] (passed as an argument to the constructor).
      */
     private def handleThreadInit(
@@ -389,7 +390,7 @@ class ThreadStartAnalysis private[cg] (
      * Otherwise, it will add the corresponding [[org.opalj.br.DeclaredMethod]] in case it is
      * virtual (i.e. its definition is not available).
      *
-     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * Note: It takes the given `threadRelatedMethods`, add the relevant ones and returns the
      * updated set.
      */
     private def addRunnableMethod(
@@ -448,7 +449,7 @@ class ThreadStartAnalysis private[cg] (
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
             )
 
-            assert(!declTgt.hasSingleDefinedMethod)
+            elidedAssert(!declTgt.hasSingleDefinedMethod)
 
             vmReachableMethods.addIncompleteCallSite(callPC)
             vmReachableMethods.addVMReachableMethod(declTgt)
@@ -461,7 +462,7 @@ class ThreadStartAnalysis private[cg] (
      * Otherwise, it will add the corresponding [[org.opalj.br.DeclaredMethod]] in case it is
      * virtual (i.e. its definition is not available).
      *
-     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * Note: It takes the given `threadRelatedMethods`, add the relevant ones and returns the
      * updated set.
      */
     private def addMethod(
@@ -572,7 +573,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
      * `uncaughtException` if the runtime type is precisely known.
      * Otherwise, we remain unsound.
      *
-     * Note: It takes the given `threadRelatedMethods`, add the relavant ones and returns the
+     * Note: It takes the given `threadRelatedMethods`, add the relevant ones and returns the
      * updated set.
      */
     private def handleUncaughtExceptionHandler(
@@ -616,7 +617,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
             )
 
-            assert(!declTgt.hasSingleDefinedMethod)
+            elidedAssert(!declTgt.hasSingleDefinedMethod)
 
             vmReachableMethods.addIncompleteCallSite(callPC)
             vmReachableMethods.addVMReachableMethod(declTgt)
@@ -662,12 +663,12 @@ class ThreadRelatedCallsAnalysis private[cg] (
         ))
 
         classHierarchy.foreachSubclass(ClassType.Thread, project) { cf =>
-            val setUncaughtExcpetionHandlerOpt =
+            val setUncaughtExceptionHandlerOpt =
                 cf.findMethod("setUncaughtExceptionHandler", setUncaughtExceptionHandlerDescriptor)
                     .map(declaredMethods.apply)
 
-            if (setUncaughtExcpetionHandlerOpt.isDefined)
-                setUncaughtExceptionHandlerMethods ::= setUncaughtExcpetionHandlerOpt.get
+            if (setUncaughtExceptionHandlerOpt.isDefined)
+                setUncaughtExceptionHandlerMethods ::= setUncaughtExceptionHandlerOpt.get
 
             val threadStartOpt = cf.findMethod("start", MethodDescriptor.NoArgsAndReturnVoid).map(declaredMethods.apply)
 

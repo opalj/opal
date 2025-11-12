@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigFactory
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 /**
  * OPAL is a Scala-based framework for the static analysis, manipulation and creation of
@@ -63,7 +64,7 @@ import org.opalj.log.OPALLogger
  * ===Assertions===
  * OPAL makes heavy use of Scala's '''Assertion Facility''' to facilitate writing correct
  * code. Hence, for production builds (after thorough testing(!)) it is
- * highly recommend to build OPAL again using `-Xdisable-assertions`.
+ * highly recommend to build OPAL again with assertions elided.
  *
  * @author Michael Eichberg
  */
@@ -74,7 +75,7 @@ package object opalj {
         implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
-            assert(false)
+            elidedAssert(false)
             // when we reach this point assertions are turned off
             info("OPAL Common", "Production Build")
         } catch {

@@ -20,7 +20,7 @@ import org.opalj.util.PerformanceEvaluation.time
 class PostDominatorTreeTest extends AnyFlatSpec with Matchers {
 
     "a graph with just one node" should "result in a post dominator tree with a single node" in {
-        val g = Graph.empty[Int].addVertice(0)
+        val g = Graph.empty[Int].addVertex(0)
         val foreachSuccessorOf: Int => ((Int => Unit) => Unit) = (n: Int) => {
             (f: (Int => Unit)) => g.successors.getOrElse(n, Nil).foreach(e => f(e))
         }

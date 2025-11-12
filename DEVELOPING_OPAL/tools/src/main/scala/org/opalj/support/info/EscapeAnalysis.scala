@@ -82,7 +82,7 @@ object EscapeAnalysis extends ProjectsAnalysisApplication {
             if (analysisConfig.analysis eq EagerSimpleEscapeAnalysis) {
                 manager.runAll(EagerSimpleEscapeAnalysis, LazyL0BaseAIAnalysis, TACAITransformer)
             } else {
-                analysisConfig.setupCallGaph(project)
+                analysisConfig.setupCallGraph(project)
                 manager.runAll(EagerInterProceduralEscapeAnalysis)
             }
         } { t => info("progress", s"escape analysis took ${t.toSeconds}")(using project.logContext) }

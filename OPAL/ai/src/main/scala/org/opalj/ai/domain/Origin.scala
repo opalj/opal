@@ -27,7 +27,7 @@ import org.opalj.collection.immutable.IntTrieSet1
  * as an example); the respective domains have to override [[providesOriginInformationFor]]
  *
  * @note A [[org.opalj.br.instructions.CHECKCAST]] must not modify `origin` information; i.e.,
- *       the origin of the value on the stack before and after the checkast (unless we have
+ *       the origin of the value on the stack before and after the checkcast (unless we have
  *       an exception) must be the same!
  * @author Michael Eichberg
  */
@@ -53,7 +53,7 @@ trait Origin { domain: ValuesDomain =>
      *      This trait only defines a general contract how to get access to a
      *      value's origin (I.e., the origin of the instruction which created the
      *      respective value.)
-     *      By default this method returns an empty `Iterable`.
+     *      By default, this method returns an empty `Iterable`.
      */
     def originsIterator(value: DomainValue): ValueOriginsIterator = {
         value match {

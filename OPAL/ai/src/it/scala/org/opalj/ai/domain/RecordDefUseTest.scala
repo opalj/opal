@@ -269,7 +269,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                     s"${exception.getClass.getSimpleName}:\n\t$details;\n\tlocation: $location]"
             }
 
-            val errorMessageHeader = s"${failures.size} exceptions occured ($baseMessage) in:\n"
+            val errorMessageHeader = s"${failures.size} exceptions occurred ($baseMessage) in:\n"
             fail(failureMessages.mkString(errorMessageHeader, "\n", "\n"))
         } else {
             info(baseMessage)

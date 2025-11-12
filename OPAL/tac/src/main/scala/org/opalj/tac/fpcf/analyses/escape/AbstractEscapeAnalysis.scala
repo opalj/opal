@@ -31,6 +31,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * An abstract escape analysis for a [[org.opalj.tac.common.DefinitionSiteLike]] or a
@@ -76,7 +77,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Analyzes each TAC statement of the given method. This methods assumes that there is at least
+     * Analyzes each TAC statement of the given method. This method assumes that there is at least
      * an intermediate result for the TAC present.
      */
     protected def analyzeTAC()(
@@ -84,7 +85,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         context: AnalysisContext,
         state:   AnalysisState
     ): ProperPropertyComputationResult = {
-        assert(state.tacai.isDefined)
+        elidedAssert(state.tacai.isDefined)
         // for every use-site, check its escape state
         for (use <- state.uses) {
             checkStmtForEscape(state.tacai.get.stmts(use))
@@ -415,7 +416,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Extracts information from the given entity and should call [[doDetermineEscape]] afterwards.
+     * Extracts information from the given entity and should call [[doDetermineEscape]] afterward.
      * For some entities a result might be returned immediately.
      */
     def determineEscape(e: Entity): ProperPropertyComputationResult =

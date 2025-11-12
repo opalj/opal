@@ -17,7 +17,7 @@ trait ConfigNode {
      * @param label required if the Object is part of another object (Writes the key of the K,V Map there instead). Overrides the label property of the Comment object. Supply an empty string if not needed.
      * @param pageHTML accepts a StringBuilder. The method adds the HTML String to this StringBuilder.
      */
-    def toHTML(
+    def createHTML(
         exporter: HTMLExporter,
         label:    String,
         pageHTML: StringBuilder
@@ -43,7 +43,7 @@ trait ConfigNode {
             // Write value into HTML code
             val splitContent = exporter.content.split("\\$content")
             pageHTML ++= splitContent(0)
-            comment.toHTML(pageHTML)
+            comment.createHTML(pageHTML)
             entriesToHTML(exporter, pageHTML)
             pageHTML ++= "\n"
             pageHTML ++= splitContent(1)
@@ -59,7 +59,7 @@ trait ConfigNode {
     }
 
     /**
-     * Returns an HMTL-escaped text for the brief description.
+     * Returns an HTML-escaped text for the brief description.
      */
     protected def getBrief(exporter: HTMLExporter)(implicit project: SomeProject): String = {
         if (comment.brief.nonEmpty || comment.description.nonEmpty)
@@ -83,7 +83,7 @@ trait ConfigNode {
     )(implicit project: SomeProject): Unit
 
     /**
-     * Checks if the configNode (and its potential child objects are empty.
+     * Checks if the configNode (and its potential child objects) are empty.
      * @return Returns true, if the ConfigNode, its comment and its childObjects are all empty. Returns false otherwise.
      */
     def isEmpty: Boolean

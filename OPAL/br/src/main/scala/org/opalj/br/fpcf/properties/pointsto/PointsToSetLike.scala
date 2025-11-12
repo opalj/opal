@@ -45,7 +45,7 @@ trait PointsToSetLike[ElementType, +PointsToSet, T <: PointsToSetLike[ElementTyp
 
     def filter(typeFilter: ReferenceType => Boolean): T
 
-    def getNewestElement(): ElementType
+    def getNewestElement: ElementType
 }
 
 object PointsToSetLike {

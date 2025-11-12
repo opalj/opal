@@ -86,12 +86,12 @@ class FieldLocalityAnalysis private[analyses] (
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
     implicit final val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
     private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
-    final val typeExtensiblity = project.get(TypeExtensibilityKey)
+    final val typeExtensibility = project.get(TypeExtensibilityKey)
     final val definitionSites = project.get(DefinitionSitesKey)
 
     /**
      * Checks if the field locality can be determined trivially.
-     * Otherwise it forwards to `FieldLocalityAnalysis.step2`.
+     * Otherwise, it forwards to `FieldLocalityAnalysis.step2`.
      */
     def step1(field: Field): ProperPropertyComputationResult = {
         val fieldType = field.fieldType
@@ -111,7 +111,7 @@ class FieldLocalityAnalysis private[analyses] (
         }
 
         // There may be methods in unknown subtypes that leak the field
-        if (field.isProtected && typeExtensiblity(thisType).isYesOrUnknown) {
+        if (field.isProtected && typeExtensibility(thisType).isYesOrUnknown) {
             return Result(field, NoLocalField);
         }
 
@@ -133,7 +133,7 @@ class FieldLocalityAnalysis private[analyses] (
      * In case it is not cloneable, there might be still a cloneable subtype.
      * In this case, the field is at most an [[ExtensibleLocalField]].
      *
-     * Afterwards it calls [[step3]].
+     * Afterward it calls [[step3]].
      */
     private def step2(field: Field): ProperPropertyComputationResult = {
 
@@ -164,8 +164,8 @@ class FieldLocalityAnalysis private[analyses] (
             // If there may be a Cloneable subtype, the field could be leaked through this subtype,
             // but if the client knows that the precise type of the reference is never cloneable,
             // it may treat the field as local (i.e. it is an
-            // [[org.opalj.fpcf.properties.ExtensibleLocalField]].
-            if (typeExtensiblity(thisType).isYesOrUnknown || existsCloneableSubtypeWithoutClone) {
+            // [[org.opalj.fpcf.properties.ExtensibleLocalField]]).
+            if (typeExtensibility(thisType).isYesOrUnknown || existsCloneableSubtypeWithoutClone) {
                 state.updateWithMeet(ExtensibleLocalField)
             }
         }

@@ -44,11 +44,11 @@ trait MethodCallsHandling extends MethodCallsDomain {
                     }
                 }
             case ExceptionsRaisedByCalledMethods.Known =>
-            // we basically know nothing..
+            // we basically know nothing...
         }
 
         // The list of exception values is in reverse order when compared to the handlers!
-        // This is by purpose to foster a faster overall evaluation. (I.e., we want
+        // This is by purpose to foster a faster overall evaluation. I.e., we want
         // to perform the abstract interpretation using more abstract values first (<=>
         // exceptions with types higher-up in the type hierarchy).
         exceptionValues

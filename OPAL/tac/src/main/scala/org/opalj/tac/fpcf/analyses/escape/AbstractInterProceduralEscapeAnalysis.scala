@@ -218,7 +218,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         implicit state: AnalysisState
     ): Unit = {
         /*
-         * Handling a escape state twice, does not affect the escape state
+         * Handling an escape state twice, does not affect the escape state
          */
         val escapeState = propertyStore(fp, EscapeProperty.key)
         if (state.containsDependency(escapeState)) {

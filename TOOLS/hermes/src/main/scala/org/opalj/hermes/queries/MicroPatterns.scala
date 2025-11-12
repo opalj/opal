@@ -85,7 +85,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
         val microPatternLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
         } {
             val location = ClassFileLocation(source, classFile)
 
@@ -184,7 +184,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
      * Joiner, since in effect, it joins together the sets of members of its parents.
      *
      * An empty class which implements one or more interfaces is also a Joiner.
-     * ''Here, empty means that the we can have constructors and (optionally) a serialVersionUID
+     * ''Here, empty means that we can have constructors and (optionally) a serialVersionUID
      * field.''
      */
     def isJoiner(cl: ClassFile): Boolean = {
@@ -240,16 +240,13 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
     }
 
     def isCobolLike(cl: ClassFile): Boolean = {
-        !cl.methods.exists { m => !isInitMethod(m) } && cl.methods.count { m =>
-            !isInitMethod(m) &&
-            m.isStatic
-        } == 1 &&
-        !cl.fields.exists { f => !f.isStatic } && cl.fields.exists(f => f.isStatic)
+        cl.methods.forall(m => isInitMethod(m)) && cl.methods.count(m => !isInitMethod(m) && m.isStatic) == 1 &&
+        cl.fields.nonEmpty && cl.fields.forall(f => f.isStatic)
     }
 
     def isStateless(cl: ClassFile): Boolean = {
         !cl.isInterfaceDeclaration && !cl.isAbstract &&
-        !cl.fields.exists { f => !(f.isFinal && f.isStatic) } &&
+        cl.fields.forall(f => f.isFinal && f.isStatic) &&
         cl.methods.count(m => !isInitMethod(m) && !isObjectMethod(m)) > 1
     }
 

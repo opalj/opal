@@ -75,7 +75,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     def createDomain() = new ReflectiveInvokerTestDomain
 
-    behavior of "the RefleciveInvoker trait"
+    behavior of "the ReflectiveInvoker trait"
 
     it should "be able to call a static method" in {
         val domain = createDomain()
@@ -93,7 +93,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         javaResult should be("A")
     }
 
-    it should "be able to call a static method with a primitve parameter" in {
+    it should "be able to call a static method with a primitive parameter" in {
         val domain = createDomain()
         import domain.*
 

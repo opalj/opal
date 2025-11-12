@@ -43,7 +43,7 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)

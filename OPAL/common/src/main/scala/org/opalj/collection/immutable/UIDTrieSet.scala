@@ -455,7 +455,7 @@ private[immutable] final class UIDTrieSetN[T <: UID](
     root:     UIDTrieSetNode[T]
 ) extends UIDTrieSet[T] {
 
-    // assert(size >= 4)
+    // elidedAssert(size >= 4)
 
     override def isEmpty: Boolean = false
     override def nonEmpty: Boolean = true

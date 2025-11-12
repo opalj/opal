@@ -6,6 +6,7 @@ package l1
 
 import java.io.File
 import java.net.URL
+import scala.compiletime.uninitialized
 
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.Domain
@@ -68,7 +69,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
         private val originalReturnType: ReferenceType =
             method.descriptor.returnType.asReferenceType
 
-        private var theReturnedValue: DomainValue = null
+        private var theReturnedValue: DomainValue = uninitialized
 
         // e.g., a method that always throws an exception...
         def returnedValue: Option[DomainValue] = Option(theReturnedValue)
@@ -88,7 +89,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
                     }
                 }
 
-            // Test if it make sense to continue the abstract interpretation or if the
+            // Test if it makes sense to continue the abstract interpretation or if the
             // return value information is already not more precise than the "return type".
             theReturnedValue match {
                 case rv @ TypeOfReferenceValue(UIDSet1(`originalReturnType`))
@@ -146,7 +147,7 @@ object MethodReturnValuesAnalysis extends ProjectsAnalysisApplication {
 
 case class RefinedReturnType(method: Method, refinedType: Option[Domain#DomainValue]) {
 
-    override def toString(): String = {
+    override def toString: String = {
         import Console.*
         "Refined the return type of " + BOLD + BLUE + method.toJava + " => " +
             GREEN + refinedType.getOrElse("\"NONE\" (the method does not return normally)") + RESET

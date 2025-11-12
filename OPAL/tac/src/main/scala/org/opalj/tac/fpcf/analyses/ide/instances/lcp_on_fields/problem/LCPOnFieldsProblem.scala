@@ -41,7 +41,7 @@ import org.opalj.tac.fpcf.analyses.ide.solver.JavaStatement.StmtAsCall
 import org.opalj.value.IsIntegerValue
 
 /**
- * Definition of linear constant propagation on fields problem. This implementation detects basic cases of linear
+ * Definition of linear-constant-propagation-on-fields problem. This implementation detects basic cases of linear
  * constant propagation involving fields. It detects direct field assignments but fails to detect assignments done in a
  * method where the value is passed as an argument (e.g. a classical setter). Similar, array read accesses can only be
  * resolved if the index is a constant literal. There also is just minimal support for static fields.
@@ -247,7 +247,7 @@ class LCPOnFieldsProblem(
                         }
 
                     case (_, f: AbstractEntityFact) =>
-                        /* Specialized facts only live for one step and are turned back into basic ones afterwards */
+                        /* Specialized facts only live for one step and are turned back into basic ones afterward */
                         Set(f.toObjectOrArrayFact)
 
                     /* Static fields are modeled such that statements that change their value can always originate from
@@ -284,7 +284,7 @@ class LCPOnFieldsProblem(
                         }
 
                     case (_, f: AbstractStaticFieldFact) =>
-                        /* Specialized facts only live for one step and are turned back into basic ones afterwards */
+                        /* Specialized facts only live for one step and are turned back into basic ones afterward */
                         Set(f.toStaticFieldFact)
 
                     case _ => Set(sourceFact)

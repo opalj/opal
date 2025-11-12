@@ -72,7 +72,7 @@ class TACAITest extends AnyFunSpec with Matchers {
                         val expectedInputStream = this.getClass.getResourceAsStream(expectedFileName)
                         if (expectedInputStream eq null)
                             fail(
-                                s"missing expected 3-adddress code representation: $expectedFileName;" +
+                                s"missing expected 3-address code representation: $expectedFileName;" +
                                     s"current representation:\n${actual.mkString("\n")}"
                             )
                         val expected = Source.fromInputStream(expectedInputStream)(using UTF8).getLines().toList

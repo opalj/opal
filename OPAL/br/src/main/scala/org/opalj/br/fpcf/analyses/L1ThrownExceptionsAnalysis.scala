@@ -69,6 +69,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.util.elidedAssert
 
 /**
  * Analysis of thrown exceptions; computes the [[org.opalj.br.fpcf.properties.ThrownExceptions]]
@@ -152,7 +153,7 @@ class L1ThrownExceptionsAnalysis(
                                 case eps @ UBP(te: ThrownExceptions) =>
                                     // Copy the concrete exception types to our initial
                                     // exceptions set. Upper type bounds are only used
-                                    // for `SomeExecption`, which are handled above, and
+                                    // for `SomeException`, which are handled above, and
                                     // don't have to be added to this set.
                                     initialExceptions ++= te.types.concreteTypes
                                     if (eps.isRefinable) {
@@ -206,7 +207,7 @@ class L1ThrownExceptionsAnalysis(
                     false
 
                 // let's determine if the register 0 is updated (i.e., if the register which
-                // stores the this reference in case of instance methods is updated)
+                // stores the this-reference in case of instance methods is updated)
                 case ISTORE_0.opcode | LSTORE_0.opcode |
                     DSTORE_0.opcode | FSTORE_0.opcode |
                     ASTORE_0.opcode =>
@@ -226,7 +227,7 @@ class L1ThrownExceptionsAnalysis(
                         isStaticMethod || // <= the receiver is some object
                             isLocalVariable0Updated || // <= we don't know the receiver object at all
                             cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
-                            instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
+                            instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null...
                     true
 
                 case PUTFIELD.opcode =>
@@ -242,7 +243,7 @@ class L1ThrownExceptionsAnalysis(
                                     code.pcOfPreviousInstruction(predecessorPC)
                                 val valueInstruction = instructions(predecessorPC)
 
-                                instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
+                                instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null...
                                     valueInstruction.isInstanceOf[StackManagementInstruction] ||
                                     // we have to ensure that our "this" reference is not used for something else... =>
                                     valueInstruction.numberOfPoppedOperands(NotRequired) > 0
@@ -305,7 +306,7 @@ class L1ThrownExceptionsAnalysis(
         val areAllExceptionsCollected = code.forall(collectAllExceptions(_, _))
 
         if (!areAllExceptionsCollected) {
-            assert(
+            elidedAssert(
                 result ne null,
                 "all exceptions are expected to be collected but the set is null"
             )

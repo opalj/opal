@@ -50,11 +50,11 @@ abstract class ClosedPackages extends (String => Boolean) {
 }
 
 /**
- * Treats all packages as being closed. This analysis is useable, e.g., for simple applications
+ * Treats all packages as being closed. This analysis is usable, e.g., for simple applications
  * which have no concept of plug-ins or a similar mechanism.
  * In this case every package is supposed to be closed since the entire code base
  * is available at analysis time.
- * Generally, not useable for libraries/frameworks/code which can be "freely" extended.
+ * Generally, not usable for libraries/frameworks/code which can be "freely" extended.
  *
  * To use this analysis set the config key:
  *  `org.opalj.br.analyses.cg.ClosedPackagesKey.analysis`

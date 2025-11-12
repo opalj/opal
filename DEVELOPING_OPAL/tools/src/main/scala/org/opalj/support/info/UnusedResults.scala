@@ -45,7 +45,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
 /**
- * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
+ * Identifies calls to pure/side-effect-free methods where the results are not used subsequently.
  *
  * @author Dominik Helm
  */
@@ -53,7 +53,7 @@ object UnusedResults extends ProjectsAnalysisApplication {
 
     protected class UnusedResultsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
         with CGBasedCommandLineConfig {
-        val description = "Finds invocations of pure/side-effect free methods where the result is not used"
+        val description = "Finds invocations of pure/side-effect-free methods where the result is not used"
     }
 
     protected type ConfigType = UnusedResultsConfig
@@ -69,7 +69,7 @@ object UnusedResults extends ProjectsAnalysisApplication {
     ): (Project[URL], BasicReport) = {
         implicit val (project: Project[URL], _) = analysisConfig.setupProject(cp)()
         implicit val (ps, _) = analysisConfig.setupPropertyStore(project)
-        analysisConfig.setupCallGaph(project)
+        analysisConfig.setupCallGraph(project)
 
         val issues = new ConcurrentLinkedQueue[String]
 

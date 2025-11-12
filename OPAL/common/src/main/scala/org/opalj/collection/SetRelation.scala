@@ -10,6 +10,9 @@ package collection
 sealed abstract class SetRelation
 
 object StrictSubset extends SetRelation
+
 object EqualSets extends SetRelation
+
 object StrictSuperset extends SetRelation
+
 object UncomparableSets extends SetRelation

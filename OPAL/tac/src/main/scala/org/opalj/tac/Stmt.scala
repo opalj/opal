@@ -8,6 +8,7 @@ import org.opalj.br.*
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.collection.immutable.IntIntPair
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -19,7 +20,7 @@ import org.opalj.value.ValueInformation
 sealed abstract class Stmt[+V] extends ASTNode[V] {
 
     /**
-     * The program counter of the original '''underyling bytecode instruction'''.
+     * The program counter of the original '''underlying bytecode instruction'''.
      *
      * This `pc` is independent of the (implicit) `index` of the statement
      * in the generated statements array! This pc is, e.g., useful for
@@ -149,7 +150,7 @@ case class If[+V](
     }
 
     override final def isSideEffectFree: Boolean = {
-        assert(left.isValueExpression && right.isValueExpression)
+        elidedAssert(left.isValueExpression && right.isValueExpression)
         true
     }
 
@@ -210,9 +211,9 @@ object Goto {
  * Return from subroutine; only to be used in combination with JSR instructions (Java 6 and earlier).
  *
  * @param returnAddresses The set of return addresses. Based on the return addresses it is
- *                        immediately possible to determine the original JSR instruction that led
- *                        to the execution of the subroutine. It is the JSR instruction directly
- *                        preceding the instruction to which this RET instruction jumps to.
+ *                        immediately possible to determine the original JSR-instruction that led
+ *                        to the execution of the subroutine. It is the JSR-instruction directly
+ *                        preceding the instruction to which this RET-instruction jumps to.
  *                        '''This information is only relevant in case of flow-sensitive
  *                        analyses.'''
  */
@@ -311,7 +312,7 @@ case class Switch[+V](
     ): Unit = {
         npairs = npairs.map { x =>
             val newIndex = pcToIndex(x._2)
-            // assert(newIndex >= 0)
+            // elidedAssert(newIndex >= 0)
             x.copy(_2 = newIndex)
         }
         defaultTarget = pcToIndex(defaultTarget)
@@ -325,7 +326,7 @@ case class Switch[+V](
     }
 
     override final def isSideEffectFree: Boolean = {
-        assert(index.isValueExpression)
+        elidedAssert(index.isValueExpression)
         true
     }
 
@@ -471,7 +472,7 @@ object Return {
 /**
  * Models a no-operation. In general, a NOP (no operation) can be pruned; however, in the TACAI
  * representation, if a NOP is the last statement of a basic block where the previous basic block
- * has multiple-successors then it may be the case that the NOP cannot be pruned, because it it
+ * has multiple-successors then it may be the case that the NOP cannot be pruned, because it
  * is required to keep the path alive. For example, given the following code:
  * {{{
  * public int m(int i, int j, boolean z){
@@ -487,7 +488,7 @@ object Return {
  *
  * In this case, the returned value is either i or j and therefore the UVar would directly encode
  * that information and therefore the assignments would be ignored. (The information cannot be
- * recovered! If needed a complete SSA representation would be required; TACAI only provides only
+ * recovered! If needed, a complete SSA representation would be required; TACAI only provides
  * an SSA-like representation!)
  */
 case class Nop(pc: Int) extends SimpleStmt {
@@ -766,7 +767,7 @@ object PutField {
 
 sealed abstract class MethodCall[+V] extends Stmt[V] with Call[V] {
 
-    override final def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no side-effect
+    override final def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no sideeffect
     override final def asMethodCall: this.type = this
     override final def isMethodCall: Boolean = true
     override final def isStaticCall: Boolean = isStaticMethodCall
@@ -1053,7 +1054,7 @@ case class ExprStmt[+V](pc: Int, expr: Expr[V]) extends AssignmentLikeStmt[V] {
     }
 
     override final def isSideEffectFree: Boolean = {
-        assert(
+        elidedAssert(
             !expr.isSideEffectFree,
             "useless ExprStmt - the referenced expression is side-effect free"
         )
@@ -1161,7 +1162,7 @@ case class CaughtException[+V](
      *  - If the exception is a parameter the parameter's origin (-1,... -n) is returned.
      *  - If the exception was raised due to a sideeffect of evaluating an expression, then the
      *    origin is smaller or equal to [[org.opalj.ai.ImmediateVMExceptionsOriginOffset]] and can be
-     *    tranformed to the index of the responsible instruction using
+     *    transformed to the index of the responsible instruction using
      *    [[org.opalj.ai#pcOfImmediateVMException]].
      */
     def origins: IntTrieSet = throwingStmts
@@ -1169,7 +1170,7 @@ case class CaughtException[+V](
     /**
      * Textual description of the sources of the caught exceptions. If the exception was
      * thrown by the JVM due to the evaluation of an expression (e.g., NullPointerException,
-     * DivisionByZero,..) then the string will be `exception@<INDEX>` where index identifies
+     * DivisionByZero, ...) then the string will be `exception@<INDEX>` where index identifies
      * the failing expression. In case an exception is caught that was thrown using `ATHROW`
      * the local variable/parameter which stores the local variable is returned.
      */
@@ -1230,7 +1231,7 @@ case class Checkcast[+V](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends 
         // IMPROVE identify (from the JVM verifiers point-of-view) truly useless checkcasts
         // A useless checkcast is one where the static intra-procedural type information which
         // is available in the bytecode is sufficient to determine that the type is a subtype
-        // of the tested type (i.e., only those check casts are truly usefull that would not
+        // of the tested type (i.e., only those check casts are truly usefully that would not
         // lead to a failing validation of the bytecode by the JVM!)
         false
     }

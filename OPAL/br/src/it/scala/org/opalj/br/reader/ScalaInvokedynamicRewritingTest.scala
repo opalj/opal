@@ -11,7 +11,7 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
 
 /**
  * This test loads all classes found in the Scala 2.12.4 libraries and verifies that all
- * suported [[INVOKEDYNAMIC]] instructions can be resolved.
+ * supported [[INVOKEDYNAMIC]] instructions can be resolved.
  *
  * @author Arne Lottmann
  * @author Andreas Amuttsch

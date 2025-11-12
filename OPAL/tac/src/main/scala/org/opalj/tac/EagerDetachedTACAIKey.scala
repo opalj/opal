@@ -33,7 +33,7 @@ object EagerDetachedTACAIKey extends TACAIKey[Method => Domain & RecordDefUse] {
     override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
-     * Returns an factory which computes and caches the 3-address code of a method when required.
+     * Returns a factory which computes and caches the 3-address code of a method when required.
      *
      * All methods belonging to a project are converted using the same `domainFactory`. Hence,
      * the `domainFactory` needs to be set (using `setProjectInformationKeyInitializationData`)

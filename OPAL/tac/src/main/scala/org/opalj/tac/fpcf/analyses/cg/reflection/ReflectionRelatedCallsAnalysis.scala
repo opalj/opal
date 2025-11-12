@@ -58,6 +58,7 @@ import org.opalj.tac.fpcf.analyses.cg.reflection.MatcherUtil.retrieveSuitableMat
 import org.opalj.tac.fpcf.analyses.cg.reflection.MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.ASObjectValue
 import org.opalj.value.ValueInformation
 
@@ -161,7 +162,7 @@ class ClassForNameAnalysis private[analyses] (
         def hasNewLoadedClasses: Boolean = _newLoadedClasses.nonEmpty
 
         def loadedClassesPartialResult: PartialResult[SomeProject, LoadedClasses] = {
-            assert(hasNewLoadedClasses)
+            elidedAssert(hasNewLoadedClasses)
             val newLoadedClasses = _newLoadedClasses
             PartialResult[SomeProject, LoadedClasses](
                 project,
@@ -1529,7 +1530,7 @@ object ReflectionRelatedCallsAnalysis {
 /**
  * Handles the effect of serialization to the call graph.
  * As an example models the invocation of constructors when `readObject` is called, if there is a
- * cast afterwards.
+ * cast afterward.
  *
  * @author Florian Kuebler
  * @author Dominik Helm

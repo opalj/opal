@@ -3,13 +3,14 @@ package org.opalj
 package br
 package cfg
 
+import org.opalj.util.elidedAssert
+
 /**
  * Represents a basic block of a method's control flow graph (CFG). The basic block
  * is identified by referring to the first and last instruction belonging to the
  * basic block.
  *
  * @param startPC The pc of the first instruction belonging to the `BasicBlock`.
- *
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
@@ -75,7 +76,7 @@ final class BasicBlock(
      * @param code The code to which this basic block belongs.
      */
     def index(pc: Int)(implicit code: Code): Int = {
-        assert(pc >= startPC && pc <= endPC)
+        elidedAssert(pc >= startPC && pc <= endPC)
 
         var index = 0
         var currentPC = startPC
@@ -91,7 +92,7 @@ final class BasicBlock(
      * pcs - of a basic block.
      *
      * @param     f The function that will be called.
-     * @param     code The [[org.opalj.br.Code]]` object to which this `BasicBlock` implicitly
+     * @param     code The [[org.opalj.br.Code]] object to which this `BasicBlock` implicitly
      *             belongs.
      */
     def foreach[U](f: Int => U)(implicit code: Code): Unit = {

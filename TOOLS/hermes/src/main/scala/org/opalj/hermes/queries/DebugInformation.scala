@@ -33,7 +33,7 @@ class DebugInformation(implicit hermes: HermesConfig) extends FeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
         } {
             if (classFile.sourceFile.isDefined) locations(0) += classFileLocation

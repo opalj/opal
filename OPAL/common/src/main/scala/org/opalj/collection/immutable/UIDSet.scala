@@ -241,7 +241,7 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     override def iterator: Iterator[T] = Iterator(value1, value2)
     override def head: T = value1
     override def last: T = value2
-    override def tail: UIDSet[T] = new UIDSet1(value2)
+    override def tail: UIDSet[T] = UIDSet1(value2)
     override def foldLeft[B](z: B)(op: (B, T) => B): B = op(op(z, value1), value2)
 
     override def find(p: T => Boolean): Option[T] = {
@@ -254,9 +254,9 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
             if (p(value2))
                 this
             else
-                new UIDSet1(value1)
+                UIDSet1(value1)
         } else if (p(value2)) {
-            new UIDSet1(value2)
+            UIDSet1(value2)
         } else {
             empty
         }
@@ -267,16 +267,16 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
             if (p(value2))
                 empty
             else
-                new UIDSet1(value2)
+                UIDSet1(value2)
         } else if (p(value2)) {
-            new UIDSet1(value1)
+            UIDSet1(value1)
         } else {
             this
         }
     }
 
     override def drop(n: Int): UIDSet[T] = {
-        if (n == 0) this else if (n == 1) new UIDSet1(value2) else empty
+        if (n == 0) this else if (n == 1) UIDSet1(value2) else empty
     }
 
     override def incl(e: T): UIDSet[T] = {
@@ -294,9 +294,9 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
     override def excl(e: T): UIDSet[T] = {
         val eId = e.id
         if (value1.id == eId)
-            new UIDSet1(value2)
+            UIDSet1(value2)
         else if (value2.id == eId)
-            new UIDSet1(value1)
+            UIDSet1(value1)
         else
             this
     }
@@ -398,7 +398,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
         n match {
             case 0 => this
             case 1 => new UIDSet2(value2, value3)
-            case 2 => new UIDSet1(value3)
+            case 2 => UIDSet1(value3)
             case _ => empty
         }
     }
@@ -574,7 +574,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
             case 1 => empty
             case 2 =>
                 val left = this.left
-                new UIDSet1(if (left ne null) left.value else right.value)
+                UIDSet1(if (left ne null) left.value else right.value)
             case 3 =>
                 val left = this.left
                 val right = this.right
@@ -607,12 +607,12 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
                 val value = this.value
                 val eId = e.id
                 if (value.id == eId)
-                    new UIDSet1(if (left ne null) left.head else right.head)
+                    UIDSet1(if (left ne null) left.head else right.head)
                 else {
                     val value1 = value
                     val value2Candidate = if (left ne null) left.head else right.head
                     if (value2Candidate.id == eId)
-                        new UIDSet1(value)
+                        UIDSet1(value)
                     else
                         new UIDSet2(value1, value2Candidate)
                 }
@@ -664,7 +664,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
             return empty;
 
         result.size match {
-            case 1 => new UIDSet1(result.head)
+            case 1 => UIDSet1(result.head)
             case 2 => new UIDSet2(result.head, result.last)
             case _ => result
         }
@@ -904,7 +904,7 @@ sealed abstract private[immutable] class UIDSetNodeLike[T <: UID] extends NonEmp
     }
 
     private def remove(eId: Int, shiftedEId: Int): UIDSetNodeLike[T] = {
-        // assert( size > 3) // i.e., after removal we still have a tree
+        // elidedAssert( size > 3) // i.e., after removal we still have a tree
         val value = this.value
         if (value.id == eId) {
             dropHead
@@ -1006,7 +1006,6 @@ final class UIDSetLeaf[T <: UID] private[immutable] (
 
 }
 
-// we wan't to be able to adapt the case class...
 final class UIDSetInnerNode[T <: UID] private[immutable] (
     protected var theSize:          Int,
     protected[immutable] var value: T,

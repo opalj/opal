@@ -39,7 +39,7 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  * evaluated.
  *
  * The intended way to create a specification is to create a new anonymous Specification
- * class that contains the specification of the architecture. Afterwards the specification
+ * class that contains the specification of the architecture. Afterward, the specification
  * object can be used to get the list of architectural violations.
  *
  * {{{
@@ -577,11 +577,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     case s: VirtualClass => project.classFile(s.classType.asClassType).get
                     case _               => throw SpecificationError(sourceElement.toJava + " is not a class")
                 }
-                if sourceClassFile.superclassType.exists(s =>
-                    !allLocalTargetSourceElements.exists(v =>
-                        v.classType.asClassType.equals(s)
-                    )
-                )
+                if sourceClassFile.superclassType.exists { s =>
+                    !allLocalTargetSourceElements.exists(v => v.classType.asClassType.equals(s))
+                }
             } yield {
                 PropertyViolation(
                     project,
@@ -665,7 +663,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             matchAny:             Boolean = false
         ): Unit = {
             architectureCheckers =
-                new LocalOutgoingAnnotatedWithConstraint(
+                LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
                     annotationPredicates,
                     property,
@@ -677,7 +675,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             methodPredicate: SourceElementPredicate[Method]
         ): Unit = {
             architectureCheckers =
-                new LocalOutgoingShouldImplementMethodConstraint(
+                LocalOutgoingShouldImplementMethodConstraint(
                     contextEnsembleSymbol,
                     methodPredicate
                 ) :: architectureCheckers
@@ -795,7 +793,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
             logInfo("   => Matched source elements: " + matchedSourceElements.size)
             logInfo("   => Other source elements: " + unmatchedSourceElements.size)
-        } { ns => logProgress("3. determing the extension of the ensembles took " + ns.toSeconds) }
+        } { ns => logProgress("3. determining the extension of the ensembles took " + ns.toSeconds) }
 
         // Check all rules
         //
@@ -875,7 +873,7 @@ object Specification {
 
     /**
      * Returns a list of paths contained inside the given classpath file.
-     * A classpath file should contain paths as text seperated by a path-separator character.
+     * A classpath file should contain paths as text separated by a path-separator character.
      * On UNIX systems, this character is <code>':'</code>; on Microsoft Windows systems it
      * is <code>';'</code>.
      *

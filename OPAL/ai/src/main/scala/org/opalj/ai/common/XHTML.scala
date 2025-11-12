@@ -63,7 +63,7 @@ object XHTML {
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
-                    val title = Some("Generated due to exception: " + e.getMessage())
+                    val title = Some("Generated due to exception: " + e.getMessage)
                     val code = method.body.get
                     val dump =
                         XHTML.dump(
@@ -75,7 +75,7 @@ object XHTML {
                         )(result.cfJoins, operandsArray, localsArray)
                     writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
-                    Console.err.println("[info] dump suppressed: " + e.getMessage())
+                    Console.err.println("[info] dump suppressed: " + e.getMessage)
                 }
                 throw e
         }

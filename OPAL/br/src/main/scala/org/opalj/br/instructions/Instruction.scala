@@ -3,6 +3,8 @@ package org.opalj
 package br
 package instructions
 
+import org.opalj.util.elidedAssert
+
 /**
  * Common superclass of all instructions which are in their final form.
  *
@@ -14,7 +16,7 @@ trait Instruction extends InstructionLike {
      * The index of the next instruction in the (sparse) code array.
      *
      * @note    This is primarily a convenience method that delegates to the method
-     *          `indexOfNextInstrution(PC,Boolean)`. However, given that this is also the
+     *          `indexOfNextInstruction(PC,Boolean)`. However, given that this is also the
      *          standard method called by clients, it is often meaningful to directly implement
      *          this. In particular since most instructions cannot be modified by wide.
      */
@@ -45,7 +47,7 @@ trait Instruction extends InstructionLike {
     /**
      * Checks for structural equality of two instructions.
      *
-     * @note   Implemted by using the underlying (compiler generated) equals methods.
+     * @note   Implemented by using the underlying (compiler generated) equals methods.
      */
     def similar(other: Instruction): Boolean = this == other
 
@@ -142,7 +144,7 @@ object Instruction {
      * @see [[Instruction.isIsomorphic]] for further details.
      */
     def areIsomorphic(aPC: Int, bPC: Int)(implicit code: Code): Boolean = {
-        assert(aPC != bPC)
+        elidedAssert(aPC != bPC)
 
         code.instructions(aPC).isIsomorphic(aPC, bPC)
     }

@@ -20,7 +20,7 @@ You can add your documentation in the lines before an element, or directly behin
 ```
 
 Also keep in mind that HOCON allows for multiple values within one line. 
-In this case, the comment will be associated with its closest neighbor that fullfills the criteria:
+In this case, the comment will be associated with its closest neighbor that fulfills the criteria:
 
 ```
     Object = {Key = "Value", AnotherKey = "SecondValue"} // This comment will be associated with Object, since its closing bracket is closest
@@ -81,7 +81,7 @@ You can pick a type that you want to indicate, which logical restraints are, but
 
 #### @constraint
 Use @constraint to define which values are allowed and which are not. 
-If there are multiple constraints, use a new line for each constraint using the flag "@constraint" at the beginnning of each line.
+If there are multiple constraints, use a new line for each constraint using the flag "@constraint" at the beginning of each line.
 
 There are currently two types implemented where you use a special style to list constraints:
 ##### Subclass type

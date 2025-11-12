@@ -50,10 +50,10 @@ object LongList {
 
     def empty: LongList = LongList0
 
-    def apply(v: Long): LongList = new LongListNode(v, LongList0)
+    def apply(v: Long): LongList = LongListNode(v, LongList0)
 
     def apply(head: Long, last: Long): LongList = {
-        new LongListNode(head, new LongListNode(last, LongList0))
+        LongListNode(head, LongListNode(last, LongList0))
     }
 
 }
@@ -74,14 +74,14 @@ case object LongList0 extends LongList {
     override def forFirstN[U](n: Int)(f: Long => U): Unit = {}
     override def iterator: LongIterator = LongIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
-    override def +:(v: Long): LongList = new LongListNode(v, this)
+    override def +:(v: Long): LongList = LongListNode(v, this)
 
     override def equals(that: LongList): Boolean = that eq this
     override def hashCode(): Int = 31
 }
 
 /**
- * An container for a list element.
+ * A container for a list element.
  *
  * @author Michael Eichberg
  */
@@ -129,7 +129,7 @@ final case class LongListNode(
         }
     }
 
-    override def +:(v: Long): LongList = new LongListNode(v, this)
+    override def +:(v: Long): LongList = LongListNode(v, this)
 
     override def equals(that: LongList): Boolean = {
         (that eq this) || {

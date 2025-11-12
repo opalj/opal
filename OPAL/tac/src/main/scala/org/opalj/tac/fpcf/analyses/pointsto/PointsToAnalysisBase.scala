@@ -332,7 +332,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
             state.addDependee(depender, p2s, typeFilter)
         }
 
-        pointsToUB(p2s.asInstanceOf[EOptionP[Entity, PointsToSet]])
+        pointsToUB(p2s)
     }
 
     @inline protected def updatedDependees(

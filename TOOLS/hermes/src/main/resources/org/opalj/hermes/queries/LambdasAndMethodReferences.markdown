@@ -247,7 +247,7 @@ Test cases in the presence of lambdas.
 
 ##Lambda1
 [//]: # (MAIN: lambda1/Class)
-Tests the invocation of a lambda with a integer boxing.
+Tests the invocation of a lambda with integer boxing.
 
 ```java
 // lambda1/Class.java

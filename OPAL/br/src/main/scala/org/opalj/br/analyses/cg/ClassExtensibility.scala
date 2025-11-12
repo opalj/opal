@@ -100,7 +100,7 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
                     Yes
                 else if (isClosedPackage(classType.packageName))
                     No
-                else // => non public class in an open package...
+                else // => non-public class in an open package...
                     Yes
             }
             r(classType.id) = isExtensible
@@ -156,7 +156,7 @@ class ConfiguredExtensibleClasses(val project: SomeProject) extends AbstractClas
  * `[[ClassExtensibilityKey.ConfigKeyPrefix]] + finalClasses`
  *
  * @example The following example configuration would consider `java/util/Math` and
- *          `com/exmaple/Type` as ''not extensible''.
+ *          `com/example/Type` as ''not extensible''.
  *          {{{
  *          org.opalj.br.analyses.cg.ClassExtensibilityKey.finalClasses =
  *              ["java/util/Math", "com/example/Type"]

@@ -4,7 +4,6 @@ package br
 
 import scala.collection.Map as SomeMap
 import scala.collection.immutable.ArraySeq
-import scala.math.Ordered
 
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_BRIDGE
@@ -22,6 +21,7 @@ import org.opalj.br.instructions.ALOAD_0
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
+import org.opalj.util.elidedAssert
 
 /**
  * Represents a single method.
@@ -76,9 +76,9 @@ sealed abstract class JVMMethod
      */
     def attributes: Attributes
 
-    // This method is only to be called by ..br.ClassFile to associate this method
+    // This method is only to be called by br.ClassFile to associate this method
     // with the respective class file.
-    private[br] def prepareClassFileAttachement(): Method = {
+    private[br] def prepareClassFileAttachment(): Method = {
         new Method(
             null /*will be set by class file*/,
             accessFlags,
@@ -100,7 +100,7 @@ sealed abstract class JVMMethod
         attributes:  Attributes       = this.attributes
     ): MethodTemplate = {
         // ensure invariant that the code attribute is explicitly extracted...
-        assert(attributes.forall { a => a.kindId != Code.KindId })
+        elidedAssert(attributes.forall { a => a.kindId != Code.KindId })
 
         val n = if (this.name eq name) name else name.intern()
 
@@ -201,7 +201,7 @@ sealed abstract class JVMMethod
         this.hasSignature(name, descriptor, false)
     }
 
-    def signature: MethodSignature = new MethodSignature(name, descriptor)
+    def signature: MethodSignature = MethodSignature(name, descriptor)
 
     def runtimeVisibleParameterAnnotations: ParameterAnnotations = {
         attributes.collectFirst { case RuntimeVisibleParameterAnnotationTable(as) => as } match {
@@ -475,7 +475,7 @@ final class Method private[br] (
     override def asMethod: this.type = this
 
     /**
-     * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
+     * @return whether this class is defined as strict. Starting from Java 17, this is true by default.
      *         Strict evaluation of float expressions was also required in Java 1.0 and 1.1.
      */
     override def isStrict: Boolean =
@@ -521,7 +521,7 @@ object Method {
      * Returns `true` if the method is object serialization related.
      * That is, if the declaring class is `Externalizable` then the methods `readObject` and
      * `writeObject` are unused.
-     * If the declaring class is '''only''' `Seralizable`, then the write and read
+     * If the declaring class is '''only''' `Serializable`, then the write and read
      * external methods are not serialization related unless a subclass exists that inherits
      * these two methods and implements the interface `Externalizable`.
      *
@@ -545,8 +545,8 @@ object Method {
         import MethodDescriptor.JustReturnsObject
         import MethodDescriptor.NoArgsAndReturnVoid
         import MethodDescriptor.ReadObjectDescriptor
-        import MethodDescriptor.WriteObjectDescriptor
         import MethodDescriptor.ReadObjectInputDescriptor
+        import MethodDescriptor.WriteObjectDescriptor
         import MethodDescriptor.WriteObjectOutputDescriptor
 
         val name = method.name

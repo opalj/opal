@@ -141,7 +141,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
             // The exception happens as part of the execution of the underlying method;
             // hence, we want to capture it and use it in the following!
             case _: NullPointerException      => Some(justThrows(NullPointerException(pc)))
-            case e: InvocationTargetException => Some(justThrows(toDomainValue(pc, e.getCause())))
+            case e: InvocationTargetException => Some(justThrows(toDomainValue(pc, e.getCause)))
         }
     }
 }

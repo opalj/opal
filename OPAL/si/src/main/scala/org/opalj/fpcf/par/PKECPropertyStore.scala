@@ -17,6 +17,7 @@ import com.typesafe.config.Config
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
+import org.opalj.util.elidedAssert
 
 /**
  * Yet another parallel property store.
@@ -217,7 +218,7 @@ class PKECPropertyStore(
                 case epkState =>
                     pc(epkState.eOptP.asInstanceOf[EOptionP[E, P]])
             }
-        assert(newInterimEP.isRefinable)
+        elidedAssert(newInterimEP.isRefinable)
         val newEPKState = EPKState(newInterimEP, null, null)
         propertiesOfKind.put(e, newEPKState)
     }
@@ -574,7 +575,7 @@ class PKECPropertyStore(
                 while ({ curInitialTask = initialTasks.poll(); curInitialTask != null }) {
                     curInitialTask.apply()
                 }
-                // Subtract the processed tasks just once to avoid synchronization overhad for
+                // Subtract the processed tasks just once to avoid synchronization overhead for
                 // decrementing every time we process a task
                 activeTasks.addAndGet(-initialTaskSize)
 
@@ -776,7 +777,7 @@ case class EPKState(
     var eOptP:     SomeEOptionP,
     var c:         OnUpdateContinuation,
     var dependees: Set[SomeEOptionP],
-    // Use Java's HashSet here, this is internal implementiton only and they are *way* faster
+    // Use Java's HashSet here, this is internal implementation only and they are *way* faster
     dependers:           java.util.HashSet[EPKState] = new java.util.HashSet(),
     suppressedDependers: java.util.HashSet[EPKState] = new java.util.HashSet()
 ) {
@@ -849,7 +850,7 @@ case class EPKState(
             } else {
                 updateComputation(theEOptP) match {
                     case Some(interimEP) =>
-                        if (ps.debug) assert(eOptP != interimEP)
+                        if (ps.debug) elidedAssert(eOptP != interimEP)
                         dependers.synchronized {
                             eOptP = interimEP
                             notifyAndClearDependers(theEOptP, dependers)

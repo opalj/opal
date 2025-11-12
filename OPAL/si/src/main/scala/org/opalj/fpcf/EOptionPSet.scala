@@ -6,7 +6,7 @@ import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
 /**
- * An semi-mutable set storing EPKs and interim properties.
+ * A semi-mutable set storing EPKs and interim properties.
  *
  * The set is semi-mutable in the sense that the concrete property values associated with
  * a specific entity can be updated, but as soon as dependencies to other E/PKs are added or removed
@@ -77,7 +77,7 @@ sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E
      */
     def updateAll()(implicit ps: PropertyStore): Unit
 
-    /** Creates new successor instance which can be manipulated independently from this instance. */
+    /** Creates new successor instance which can be manipulated independently of this instance. */
     override def clone(): EOptionPSet[E, P] = {
         // an implementation is required to shut up the compiler...
         throw new UnknownError("this method must be overridden by subclasses")

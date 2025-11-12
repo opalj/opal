@@ -100,7 +100,7 @@ private[immutable] case object Ref2ListEnd extends Ref2List[Nothing] {
 }
 
 /**
- * An container for a list element.
+ * A container for a list element.
  *
  * @author Michael Eichberg
  */
@@ -128,13 +128,11 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
     override def forFirstN[U](n: Int)(f: T => U): Unit = {
         n match {
             case 0 =>
-                return;
             case 1 =>
                 if (h != null)
                     f(h)
                 else
                     f(t)
-                return;
             case _ =>
                 // ... n >= 2
                 var i = n - 1 // <= -1 for the second element "t"...
@@ -171,9 +169,9 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
 
     override def +:[X >: T <: AnyRef](v: X): Ref2List[X] = {
         if (h != null)
-            new Ref2ListNode(null, v, this)
+            Ref2ListNode(null, v, this)
         else
-            new Ref2ListNode(v, t, this.rest)
+            Ref2ListNode(v, t, this.rest)
     }
 
     override def equals(that: Ref2List[AnyRef]): Boolean = {

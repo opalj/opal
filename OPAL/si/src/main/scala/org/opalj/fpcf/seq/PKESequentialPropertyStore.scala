@@ -16,6 +16,7 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug as trace
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.elidedAssert
 
 /**
  * A reasonably optimized, complete, but non-concurrent implementation of the property store.
@@ -181,7 +182,7 @@ final class PKESequentialPropertyStore protected (
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = {
         require(lb ne null)
         require(ub ne null)
-        assert(lb.key == ub.key)
+        elidedAssert(lb.key == ub.key)
         for { case ELUBP(e, `lb`, `ub`) <- ps(lb.id).valuesIterator } yield { e }
     }
 
@@ -241,7 +242,7 @@ final class PKESequentialPropertyStore protected (
                                     // Add this transformer as a depender to the transformer's
                                     // source; this works, because notifications about intermediate
                                     // values are suppressed.
-                                    // This will happen only once, because afterwards an EPK
+                                    // This will happen only once, because afterward, an EPK
                                     // will be stored in the properties data structure and
                                     // then returned.
                                     val c: OnUpdateContinuation = (eps) => {
@@ -322,7 +323,7 @@ final class PKESequentialPropertyStore protected (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasksManager.push(new PropertyComputationTask(this, e, pc))
+        tasksManager.push(PropertyComputationTask(this, e, pc))
     }
 
     override def doScheduleEagerComputationForEntity[E <: Entity](
@@ -331,7 +332,7 @@ final class PKESequentialPropertyStore protected (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasksManager.push(new PropertyComputationTask(this, e, pc))
+        tasksManager.push(PropertyComputationTask(this, e, pc))
     }
 
     private def removeDependerFromDependees(dependerEPK: SomeEPK): Unit = {
@@ -397,9 +398,9 @@ final class PKESequentialPropertyStore protected (
                     if (isFinal || !suppressInterimUpdates(dependerEPK.pk.id)(pkId)) {
                         val t: QualifiedTask =
                             if (isFinal) {
-                                new OnFinalUpdateComputationTask(this, eps.asFinal, c)
+                                OnFinalUpdateComputationTask(this, eps.asFinal, c)
                             } else {
-                                new OnUpdateComputationTask(this, eps.toEPK, c)
+                                OnUpdateComputationTask(this, eps.toEPK, c)
                             }
                         tasksManager.push(t, dependerEPK, eps, newDependees, currentDependers)
                         scheduledOnUpdateComputationsCounter += 1
@@ -651,8 +652,8 @@ final class PKESequentialPropertyStore protected (
                     dependees(AnalysisKeyId).put(sourceE, newDependees)
                 } else {
                     // There was an update and we already scheduled the computation... hence,
-                    // we have no live dependees any more.
-                    assert(newDependees == null || newDependees.isEmpty)
+                    // we have no live dependees anymore.
+                    elidedAssert(newDependees == null || newDependees.isEmpty)
                 }
 
             case InterimResult.id =>
@@ -665,8 +666,8 @@ final class PKESequentialPropertyStore protected (
                 val (newEPS, newDependees, newC) =
                     processDependeesOfInterimResult(eps, dependees, c)
 
-                assert(newEPS.e == eps.e)
-                assert(newEPS.pk == eps.pk)
+                elidedAssert(newEPS.e == eps.e)
+                elidedAssert(newEPS.pk == eps.pk)
 
                 // 2. update the value and trigger dependers/clear old dependees;
                 update(newEPS, newDependees)
@@ -725,7 +726,7 @@ final class PKESequentialPropertyStore protected (
 
             // We have reached quiescence....
 
-            // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
+            // 1. Let's search for all EPKs (not EPS) and use the fallback for them.
             //    (Recall that we return fallback properties eagerly if no analysis is
             //     scheduled or will be scheduled, However, it is still possible that we will
             //     not have computed a property for a specific entity, if the underlying
@@ -740,7 +741,7 @@ final class PKESequentialPropertyStore protected (
                             .filter { eOptionP =>
                                 eOptionP.isEPK &&
                                 // There is no suppression; i.e., we have no dependees
-                                dependees(pkId).get(eOptionP.e).isEmpty
+                                !dependees(pkId).contains(eOptionP.e)
                             }
                     continueComputation |= epkIterator.hasNext
                     epkIterator.foreach { eOptionP =>

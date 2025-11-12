@@ -24,7 +24,7 @@ trait MaxArrayLengthRefinement extends l0.TypeLevelReferenceValues {
                 case _                     => length
             }
         } else {
-            // if the array is null..
+            // if the array is null...
             length
         }
     }

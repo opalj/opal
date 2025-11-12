@@ -23,6 +23,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NEW
+import org.opalj.util.elidedAssert
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -76,7 +77,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                     }
                 }
                 if pcs.nonEmpty
-                result <- inifiniteRecursions(maxRecursionDepth, project, method, pcs)
+                result <- infiniteRecursions(maxRecursionDepth, project, method, pcs)
             } yield { result }
 
         (project, BasicReport(result.map(_.toString).mkString("\n")))
@@ -89,14 +90,14 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
      * `maxRecursionDepth` determines after how many non-recursive calls the analysis
      * is aborted.
      */
-    def inifiniteRecursions(
+    def infiniteRecursions(
         maxRecursionDepth: Int,
         project:           SomeProject,
         method:            Method,
         pcs:               List[Int /*PC*/ ]
     ): Option[InfiniteRecursion] = boundary {
-        assert(maxRecursionDepth > 1)
-        assert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
+        elidedAssert(maxRecursionDepth > 1)
+        elidedAssert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
 
         val body = method.body.get
         val parametersCount =
@@ -116,8 +117,8 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                 if operandsArray(pc) ne null
                 nextCallOperands: domain.Operands = operandsArray(pc).take(parametersCount)
             } {
-                // IntegerRangeValues and ReferenceValues have useable equals semantics
-                if (!callOperandsList.exists { _ == nextCallOperands })
+                // IntegerRangeValues and ReferenceValues have usable equals semantics
+                if (!callOperandsList.contains(nextCallOperands))
                     callOperandsList = nextCallOperands :: callOperandsList
             }
             callOperandsList

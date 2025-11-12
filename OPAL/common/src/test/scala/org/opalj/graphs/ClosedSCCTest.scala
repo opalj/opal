@@ -25,7 +25,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     }
 
     "a graph with just one node" should "not contain any cSCCs" in {
-        val g = Graph.empty[String].addVertice("a")
+        val g = Graph.empty[String].addVertex("a")
         closedSCCs(g) should be(List.empty)
     }
 
@@ -45,7 +45,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
     }
 
     "a graph with multiple nodes, but no edges" should "not contain any cSCCs" in {
-        val g = Graph.empty[String].addVertice("a").addVertice("b")
+        val g = Graph.empty[String].addVertex("a").addVertex("b")
         closedSCCs(g) should be(List.empty)
     }
 
@@ -65,7 +65,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "a graph with four nodes with two nodes with a self dependency" should
         "contain two cSCCs with the respective nodes" in {
-            val g = Graph.empty[String].addEdge("a", "a").addVertice("b").addEdge("c" -> "c").addVertice("d")
+            val g = Graph.empty[String].addEdge("a", "a").addVertex("b").addEdge("c" -> "c").addVertex("d")
             closedSCCs(g).map(_.toList.sorted).toSet should be(Set(List("a"), List("c")))
         }
 
@@ -369,7 +369,7 @@ class ClosedSCCTest extends AnyFlatSpec with Matchers {
         while {
             val g = {
                 val g =
-                    Graph.empty[String].addVertice("a").addVertice("b").addVertice("i").addVertice("n").addVertice("z")
+                    Graph.empty[String].addVertex("a").addVertex("b").addVertex("i").addVertex("n").addVertex("z")
                 // permutate the edges
                 var swaps = 10
                 while (swaps > 0) {

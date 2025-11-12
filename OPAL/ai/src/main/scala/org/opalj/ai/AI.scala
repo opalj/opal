@@ -25,6 +25,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.util.elidedAssert
 
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
@@ -93,7 +94,7 @@ import org.opalj.log.Warn
  *         (STILL IN DESIGN!!!!)
  *         ===Idea===
  *         Given an instruction i which may result in a fork of the control-flow (e.g.,
- *         a conditional branch or an invoke instruction that may throw a catched exception).
+ *         a conditional branch or an invoke instruction that may throw a caught exception).
  *         If the (first) evaluation of i definitively rules out several possible paths and - on
  *         all paths that are taken - some values are dead, but live on some of the other paths,
  *         then the respectively current values will never be propagated to the remaining paths,
@@ -104,7 +105,7 @@ import org.opalj.log.Warn
  *         for{/* it can statically be determined that this path is taken at least once!*/} {
  *             s = "something else"
  *         }
- *         doIt(s); // here, "s" is guaranteed not to reference the orignal value "null"!
+ *         doIt(s); // here, "s" is guaranteed not to reference the original value "null"!
  *         }}}
  *         ===Implementation===
  *         When we have a fork, check if all paths...
@@ -237,11 +238,11 @@ abstract class AI[D <: Domain](
         val locals = someLocals.map { l =>
             val maxLocals = method.body.get.maxLocals
 
-            assert(
+            elidedAssert(
                 l.size >= (method.parameterTypes.size + (if (method.isStatic) 0 else 1)),
                 "the number of initial locals is less than the number of parameters"
             )
-            assert(
+            elidedAssert(
                 l.size <= maxLocals,
                 s"the number of initial locals ${l.size} is larger than max locals $maxLocals"
             )
@@ -515,12 +516,12 @@ abstract class AI[D <: Domain](
         theSubroutinesLocalsArray:           theDomain.LocalsArray
     ): AIResult { val domain: theDomain.type } = {
 
-        assert(
+        elidedAssert(
             (theSubroutinesOperandsArray eq null) && (theSubroutinesLocalsArray eq null) ||
                 (theSubroutinesOperandsArray ne null) && (theSubroutinesLocalsArray ne null),
             "inconsistent subroutine information"
         )
-        assert(
+        elidedAssert(
             (theSubroutinesOperandsArray eq null) ||
                 theSubroutinesOperandsArray.zipWithIndex.forall { opsPC =>
                     val (ops, pc) = opsPC
@@ -926,7 +927,7 @@ abstract class AI[D <: Domain](
                     false
 
                 } else if (!forceJoin && !cfJoins.contains(targetPC)) {
-                    assert(abruptSubroutineTerminationCount == 0)
+                    elidedAssert(abruptSubroutineTerminationCount == 0)
 
                     // The instruction is not an instruction where multiple control-flow
                     // paths join; however, we may have a dangling computation.
@@ -1060,7 +1061,7 @@ abstract class AI[D <: Domain](
                                     // scheduled in the context of the calling parent
                                     // routine, but it may be scheduled in a different
                                     // context!)
-                                    // isTargetScheduled = No if we don't have subroutines..
+                                    // isTargetScheduled = No if we don't have subroutines
                                     if (tracer.isDefined) {
                                         tracer.get.noFlow(theDomain)(sourcePC, targetPC)
                                     }
@@ -1072,9 +1073,9 @@ abstract class AI[D <: Domain](
                     true
                 }
 
-            assert(
-                worklist.exists(_ == targetPC) == isTargetScheduled.isYesOrUnknown ||
-                    worklist.forall(_ != targetPC) == isTargetScheduled.isNoOrUnknown,
+            elidedAssert(
+                worklist.contains(targetPC) == isTargetScheduled.isYesOrUnknown ||
+                    !worklist.contains(targetPC) == isTargetScheduled.isNoOrUnknown,
                 s"worklist=$worklist; target=$targetPC; scheduled=$isTargetScheduled " +
                     s"(join=$wasJoinPerformed,exceptional=$isExceptionalControlFlow)"
             )
@@ -1095,7 +1096,7 @@ abstract class AI[D <: Domain](
                     tracer
                 )
 
-            assert(
+            elidedAssert(
                 abruptSubroutineTerminationCount == 0 ||
                     !containsInPrefix(worklist, targetPC, SUBROUTINE_START),
                 "an exception handler that handles the abrupt termination of a subroutine " +
@@ -1135,7 +1136,7 @@ abstract class AI[D <: Domain](
             // - by the JSR / RET instructions
             // - by the "gotoTarget" method
             val pc: Int = {
-                // Check if we we have a return from the evaluation of a subroutine.
+                // Check if we have a return from the evaluation of a subroutine.
                 // I.e., all paths in a subroutine are explored and we know all
                 // exit points; we will now schedule the jump to the return
                 // address and reset the subroutine's computation context
@@ -1219,7 +1220,7 @@ abstract class AI[D <: Domain](
                             if (pc >= 0) {
                                 val currentOperands = operandsArray(pc)
                                 val currentLocals = localsArray(pc)
-                                assert(currentOperands ne null)
+                                elidedAssert(currentOperands ne null)
 
                                 val mergedOperands = subroutinesOperandsArray(pc)
                                 if (mergedOperands eq null) {
@@ -1309,7 +1310,7 @@ abstract class AI[D <: Domain](
                 val locals = localsArray(pc)
 
                 if (tracer.isDefined) {
-                    tracer.get.instructionEvalution(theDomain)(pc, instruction, operands, locals)
+                    tracer.get.instructionEvaluation(theDomain)(pc, instruction, operands, locals)
                 }
 
                 @inline def pcOfNextInstruction = code.pcOfNextInstruction(pc)
@@ -1795,7 +1796,7 @@ abstract class AI[D <: Domain](
                         // find the exception handler that matches the given exception
                         val branchTarget = eh.handlerPC
                         val catchTypeOption = eh.catchType
-                        if (catchTypeOption.isEmpty) { // this is a finally handler
+                        if (catchTypeOption.isEmpty) { // this is a finally-handler
                             gotoExceptionHandler(pc, branchTarget, None)
                             true
                         } else {
@@ -1850,7 +1851,7 @@ abstract class AI[D <: Domain](
                                                     "aborting exception processing"
                                             )
                                             OPALLogger.logOnce(warning)
-                                            true // effectively aborts the handling..
+                                            true // effectively aborts the handling...
                                         }
                                 }
                             }
@@ -2118,7 +2119,7 @@ abstract class AI[D <: Domain](
                     //      recursively call a subroutine if that subroutine is already
                     //      present in the subroutine call chain. (Subroutines can be
                     //      nested when using try-finally constructs from within a
-                    //      finally clause.)
+                    //      finally-clause.)
                     //      HOWEVER, if a subroutine is terminated by a thrown exception
                     //      it may be the case that we call the same subroutine again
                     //      even though it appears as if the subroutine was not finished.
@@ -2472,7 +2473,7 @@ abstract class AI[D <: Domain](
                         }
 
                     //
-                    // STATEMENTS THAT CAN CAUSE EXCEPTIONELL TRANSFER OF CONTROL FLOW
+                    // STATEMENTS THAT CAN CAUSE EXCEPTIONAL TRANSFER OF CONTROL FLOW
                     //
 
                     case 191 /*athrow*/ =>
@@ -2489,7 +2490,7 @@ abstract class AI[D <: Domain](
                             testForNullnessOfExceptionValue = true,
                             // athrow throws AT MOST  one implicit exception and the case of
                             // potentially overlapping implicit and explicit exceptions
-                            // related to NullPointerException is handled by "testForNull..=true"
+                            // related to NullPointerException is handled by "testForNull...=true"
                             forceJoin = false
                         )
 
@@ -3306,7 +3307,7 @@ abstract class AI[D <: Domain](
                                         )
                                     // The following assert may catch bugs in the
                                     // implementation of domains!
-                                    assert(
+                                    elidedAssert(
                                         {
                                             val castedValue = newOperands.head
                                             theDomain.isValueASubtypeOf(castedValue, supertype).isYes
@@ -3392,7 +3393,7 @@ abstract class AI[D <: Domain](
 private object AI {
 
     /**
-     * The list of program counters (`List(0)`) that is used when we analysis a method
+     * The list of program counters (`List(0)`) that is used when we analyze a method
      * right from the beginning.
      */
     final val initialWorkList: List[Int /*PC*/ ] = List(0)

@@ -106,29 +106,26 @@ abstract class LongSetEval {
     }
 
     /*
-            it("when comparing with Set[Long]") {
-
-
-                var opalS = org.opalj.collection.immutable.LongTrieSet.empty
-                var scalaS = Set.empty[Long]
-                for { i <- 0 to 1000000 } {
-                    val v = rngGen.nextLong()
-                    opalS += v
-                    scalaS += v
-                }
-
-                var opalTotal = 0L
-                PerformanceEvaluation.time {
-                    for { v <- opalS } { opalTotal += v }
-                } { t => info(s"OPAL ${t.toSeconds} for foreach") }
-
-                var scalaTotal = 0L
-                PerformanceEvaluation.time {
-                    for { v <- scalaS } { scalaTotal += v }
-                } { t => info(s"Scala ${t.toSeconds} for foreach") }
-
-                assert(opalTotal == scalaTotal, s"$opalS vs. $scalaS")
+        it("when comparing with Set[Long]") {
+            var opalS = org.opalj.collection.immutable.LongTrieSet.empty
+            var scalaS = Set.empty[Long]
+            for { i <- 0 to 1000000 } {
+                val v = rngGen.nextLong()
+                opalS += v
+                scalaS += v
             }
+
+            var opalTotal = 0L
+            PerformanceEvaluation.time {
+                for { v <- opalS } { opalTotal += v }
+            } { t => info(s"OPAL ${t.toSeconds} for foreach") }
+
+            var scalaTotal = 0L
+            PerformanceEvaluation.time {
+                for { v <- scalaS } { scalaTotal += v }
+            } { t => info(s"Scala ${t.toSeconds} for foreach") }
+
+            assert(opalTotal == scalaTotal, s"$opalS vs. $scalaS")
         }
 
         it("for small sets (up to 8 elements) creation and contains check should finish in reasonable time (all values are positive)") {
