@@ -134,8 +134,7 @@ trait LazyInitializationAnalysis private[fieldassignability]
         None
     }
 
-    override def completePatternWithInitializerWrite()(implicit state: AnalysisState): Option[FieldAssignability] =
-        state.potentialLazyInit.map(_ => Assignable)
+    override def completePatternWithInitializerWrite()(implicit state: AnalysisState): Option[FieldAssignability] = None
 
     override def completePatternWithNonInitializerWrite(
         context:  Context,
@@ -150,10 +149,6 @@ trait LazyInitializationAnalysis private[fieldassignability]
             if (receiver.get.definedBy != SelfReferenceParameter)
                 return None;
         }
-
-        // A lazy initialization pattern does not allow initializing a field regularly
-        if (state.initializerWrites.nonEmpty)
-            return Some(Assignable);
 
         // Multiple lazy initialization patterns cannot be supported in a collaborative setting
         if (state.nonInitializerWrites.iterator.distinctBy(_._1.method).size > 1)
