@@ -26,15 +26,12 @@ import org.opalj.br.PC
 import org.opalj.br.PCs
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
-import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.CaughtException
@@ -55,6 +52,10 @@ import org.opalj.tac.TACode
 import org.opalj.tac.Throw
 import org.opalj.tac.VirtualFunctionCall
 
+trait LazyInitializationAnalysisState extends AbstractFieldAssignabilityAnalysisState {
+    var potentialLazyInit: Option[(Context, Int, Int, TACode[TACMethodParameter, V])] = None
+}
+
 /**
  * Determines whether a field write access corresponds to a lazy initialization of the field.
  *
@@ -67,17 +68,10 @@ import org.opalj.tac.VirtualFunctionCall
  * @author Maximilian Rüsch
  */
 trait LazyInitializationAnalysis private[fieldassignability]
-    extends AbstractFieldAssignabilityAnalysis
-    with FPCFAnalysis {
-
-    trait LazyInitializationAnalysisState extends AbstractFieldAssignabilityAnalysisState {
-        // context : index of guard statement : index of write statement : TAC
-        var potentialLazyInit: Option[(Context, Int, Int, TACode[TACMethodParameter, V])] = None
-    }
+    extends FieldAssignabilityAnalysisPart {
 
     override type AnalysisState <: LazyInitializationAnalysisState
 
-    val project: SomeProject
     val considerLazyInitialization: Boolean =
         project.config.getBoolean(
             "org.opalj.fpcf.analyses.L2FieldAssignabilityAnalysis.considerLazyInitialization"
@@ -97,66 +91,80 @@ trait LazyInitializationAnalysis private[fieldassignability]
         case _: ReferenceType                                                                          => Set(null)
     }
 
-    def completeLazyInitPatternForInitializerRead()(implicit state: AnalysisState): FieldAssignability = {
-        if (state.potentialLazyInit.isEmpty)
-            NonAssignable
-        else
-            Assignable
+    /**
+     * Determines whether the basic block of a given index dominates the basic block of the other index or is executed
+     * before the other index in the case of both indexes belonging to the same basic block.
+     */
+    private def dominates(
+        potentiallyDominatorIndex: Int,
+        potentiallyDominatedIndex: Int,
+        taCode:                    TACode[TACMethodParameter, V]
+    ): Boolean = {
+        val bbPotentiallyDominator = taCode.cfg.bb(potentiallyDominatorIndex)
+        val bbPotentiallyDominated = taCode.cfg.bb(potentiallyDominatedIndex)
+        taCode.cfg.dominatorTree
+            .strictlyDominates(bbPotentiallyDominator.nodeId, bbPotentiallyDominated.nodeId) ||
+            bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominatorIndex < potentiallyDominatedIndex
     }
 
-    def completeLazyInitPatternForNonInitializerRead(
+    override def completePatternWithInitializerRead()(implicit state: AnalysisState): Option[FieldAssignability] =
+        state.potentialLazyInit.map(_ => Assignable)
+
+    override def completePatternWithNonInitializerRead(
         context: Context,
         readPC:  Int
-    )(implicit state: AnalysisState): FieldAssignability = {
+    )(implicit state: AnalysisState): Option[FieldAssignability] = {
         // No lazy init pattern exists, or it was not discovered yet
         if (state.potentialLazyInit.isEmpty)
-            return NonAssignable;
+            return None;
 
         val (lazyInitContext, guardIndex, writeIndex, tac) = state.potentialLazyInit.get
         // We only support lazy initialization patterns fully contained within one method, but different contexts of the
         // same method are fine.
         if (context.method ne lazyInitContext.method)
-            return Assignable;
+            return Some(Assignable);
         if (context.id != lazyInitContext.id)
-            return NonAssignable;
+            return None;
 
         if (doFieldReadsEscape(Set(readPC), guardIndex, writeIndex, tac))
-            Assignable
-        else
-            NonAssignable
+            return Some(Assignable);
+
+        None
     }
 
-    def completeLazyInitPatternForInitializerWrite()(implicit state: AnalysisState): FieldAssignability = {
-        if (state.potentialLazyInit.isEmpty)
-            NonAssignable
-        else
-            Assignable
-    }
+    override def completePatternWithInitializerWrite()(implicit state: AnalysisState): Option[FieldAssignability] =
+        state.potentialLazyInit.map(_ => Assignable)
 
-    /**
-     * To be called when a non-initializer write on either a static field or a 'this' reference is discovered.
-     */
-    def completeLazyInitPatternForNonInitializerWrite(
-        context: Context,
-        tac:     TACode[TACMethodParameter, V],
-        writePC: PC
-    )(implicit state: AnalysisState): FieldAssignability = {
+    override def completePatternWithNonInitializerWrite(
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        writePC:  PC,
+        receiver: Option[V]
+    )(implicit state: AnalysisState): Option[FieldAssignability] = {
+        if (state.field.isNotStatic) {
+            if (receiver.isEmpty)
+                return Some(Assignable);
+
+            if (receiver.get.definedBy != SelfReferenceParameter)
+                return None;
+        }
+
         // A lazy initialization pattern does not allow initializing a field regularly
         if (state.initializerWrites.nonEmpty)
-            return Assignable;
+            return Some(Assignable);
 
         // Multiple lazy initialization patterns cannot be supported in a collaborative setting
         if (state.nonInitializerWrites.iterator.distinctBy(_._1.method).size > 1)
-            return Assignable;
+            return Some(Assignable);
 
         // We do not support multiple-write lazy initializations yet
         if (state.nonInitializerWrites(context).size > 1)
-            return Assignable;
+            return Some(Assignable);
 
         // A lazy init does not allow reads outside the lazy initialization method, effectively also preventing analysis
         // of patterns with multiple lazy-init functions.
         if (state.initializerReads.nonEmpty || state.nonInitializerReads.exists(_._1.method ne context.method))
-            return Assignable;
+            return Some(Assignable);
 
         val method = context.method.definedMethod
         val writeIndex = tac.pcToIndex(writePC)
@@ -165,31 +173,31 @@ trait LazyInitializationAnalysis private[fieldassignability]
 
         // We only support lazy initialization using direct field writes
         if (!tac.stmts(writeIndex).isFieldWriteAccessStmt)
-            return Assignable;
+            return Some(Assignable);
         val writeStmt = tac.stmts(writeIndex).asFieldWriteAccessStmt
 
         val resultCatchesAndThrows = findCatchesAndThrows(tac)
         val findGuardsResult = findGuards(writeIndex, tac)
         // no guard -> no lazy initialization
         if (findGuardsResult.isEmpty)
-            return Assignable;
+            return Some(Assignable);
 
         val (readIndex, guardIndex, defaultCaseIndex, elseCaseIndex) = findGuardsResult.head
 
         // The field has to be written when the guard is in the default-case branch
         if (!dominates(defaultCaseIndex, writeIndex, tac))
-            return Assignable;
+            return Some(Assignable);
 
         val elseBB = cfg.bb(elseCaseIndex)
 
         // prevents wrong control flow
         if (isTransitivePredecessor(elseBB, writeBB))
-            return Assignable;
+            return Some(Assignable);
 
         if (method.returnType == state.field.fieldType) {
             // prevents that another value than the field value is returned with the same type
             if (!isFieldValueReturned(writeStmt, writeIndex, readIndex, tac, findGuardsResult))
-                return Assignable;
+                return Some(Assignable);
             // prevents that the field is seen with another value
             if ( // potentially unsound with method.returnType == state.field.fieldType
                  // TODO comment it out and look at appearing cases
@@ -207,13 +215,13 @@ trait LazyInitializationAnalysis private[fieldassignability]
                          }
                  )
             )
-                return Assignable;
+                return Some(Assignable);
         }
 
         if (doFieldReadsEscape(state.nonInitializerReads(context).map(_._1), guardIndex, writeIndex, tac))
-            return Assignable;
+            return Some(Assignable);
 
-        state.potentialLazyInit = Some((context, guardIndex, writeIndex, tac))
+        state.potentialLazyInit = Some(context, guardIndex, writeIndex, tac)
 
         /**
          * Determines whether all caught exceptions are thrown afterwards
@@ -233,17 +241,17 @@ trait LazyInitializationAnalysis private[fieldassignability]
             noInterferingExceptions()
         ) {
             if (method.isSynchronized)
-                LazilyInitialized
+                Some(LazilyInitialized)
             else {
                 val (indexMonitorEnter, indexMonitorExit) = findMonitors(writeIndex, tac)
                 val monitorResultsDefined = indexMonitorEnter.isDefined && indexMonitorExit.isDefined
                 if (monitorResultsDefined && dominates(indexMonitorEnter.get, readIndex, tac))
-                    LazilyInitialized
+                    Some(LazilyInitialized)
                 else
-                    UnsafelyLazilyInitialized
+                    Some(UnsafelyLazilyInitialized)
             }
         } else
-            Assignable
+            Some(Assignable)
     }
 
     private def doFieldReadsEscape(

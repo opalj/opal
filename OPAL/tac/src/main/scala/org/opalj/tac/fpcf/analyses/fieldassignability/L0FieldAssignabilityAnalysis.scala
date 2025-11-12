@@ -29,6 +29,8 @@ class L0FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
     type AnalysisState = State
     override def createState(field: Field): AnalysisState = State(field)
 
+    override protected lazy val parts = Seq.empty[FieldAssignabilityAnalysisPart]
+
     override def analyzeInitializerRead(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],

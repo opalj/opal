@@ -30,7 +30,6 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
  */
 class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: SomeProject)
     extends AbstractFieldAssignabilityAnalysis
-    with LazyInitializationAnalysis
     with FPCFAnalysis {
 
     case class State(field: Field) extends AbstractFieldAssignabilityAnalysisState
@@ -38,14 +37,32 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
     type AnalysisState = State
     override def createState(field: Field): AnalysisState = State(field)
 
+    private class L2LazyInitializationPart(val project: SomeProject) extends LazyInitializationAnalysis {
+        override type AnalysisState = L2FieldAssignabilityAnalysis.this.AnalysisState
+    }
+    private class L2ClonePatternPart(val project: SomeProject) extends ClonePatternAnalysis {
+        override type AnalysisState = L2FieldAssignabilityAnalysis.this.AnalysisState
+        override val isSameInstance = L2FieldAssignabilityAnalysis.this.isSameInstance
+        override val isWrittenInstanceUseSiteSafe = L2FieldAssignabilityAnalysis.this
+            .isWrittenInstanceUseSiteSafe
+        override val pathExists = L2FieldAssignabilityAnalysis.this.pathExists
+    }
+
+    override protected lazy val parts: Seq[FieldAssignabilityAnalysisPart] = List(
+        new L2LazyInitializationPart(project),
+        new L2ClonePatternPart(project)
+    )
+
     override def analyzeInitializerRead(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         readPC:   PC,
         receiver: Option[V]
     )(implicit state: State): FieldAssignability = {
-        val assignability = completeLazyInitPatternForInitializerRead()
-        if (assignability == Assignable)
+        val assignability = determineAssignabilityFromParts(part =>
+            part.completePatternWithInitializerRead()(using state.asInstanceOf[part.AnalysisState])
+        )
+        if (assignability.contains(Assignable))
             return Assignable;
 
         // Initializer reads are incompatible with arbitrary writes in other methods
@@ -73,8 +90,10 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
         readPC:   PC,
         receiver: Option[V]
     )(implicit state: State): FieldAssignability = {
-        val assignability = completeLazyInitPatternForNonInitializerRead(context, readPC)
-        if (assignability == Assignable)
+        val assignability = determineAssignabilityFromParts(part =>
+            part.completePatternWithNonInitializerRead(context, readPC)(using state.asInstanceOf[part.AnalysisState])
+        )
+        if (assignability.contains(Assignable))
             return Assignable;
 
         // Completes the analysis of the clone pattern by recognizing unsafe read-write paths on the same field
@@ -100,8 +119,10 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
         writePC:  PC,
         receiver: Option[V]
     )(implicit state: State): FieldAssignability = {
-        val assignability = completeLazyInitPatternForInitializerWrite()
-        if (assignability == Assignable)
+        val assignability = determineAssignabilityFromParts(part =>
+            part.completePatternWithInitializerWrite()(using state.asInstanceOf[part.AnalysisState])
+        )
+        if (assignability.contains(Assignable))
             return Assignable;
 
         val method = context.method.definedMethod
@@ -115,7 +136,7 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
             if (receiver.isEmpty || receiver.get.definedBy != SelfReferenceParameter)
                 return Assignable;
 
-            if (!tac.params.thisParameter.useSites.forall(isWrittenInstanceUseSiteSafe(tac, writePC)))
+            if (!tac.params.thisParameter.useSites.forall(isWrittenInstanceUseSiteSafe(tac, writePC, _)))
                 return Assignable;
         }
 
@@ -145,38 +166,12 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
         writePC:  PC,
         receiver: Option[V]
     )(implicit state: State): FieldAssignability = {
-        if (state.field.isStatic || receiver.isDefined && receiver.get.definedBy == SelfReferenceParameter) {
-            completeLazyInitPatternForNonInitializerWrite(context, tac, writePC)
-        } else if (receiver.isDefined) {
-            // Check for a clone pattern: Must be on a fresh instance (i.e. cannot be "this" or a parameter) ...
-            if (receiver.get.definedBy.exists(_ <= OriginOfThis) || receiver.get.definedBy.size > 1)
-                return Assignable;
-            val defSite = receiver.get.definedBy.head
-            if (!tac.stmts(defSite).asAssignment.expr.isNew)
-                return Assignable;
-
-            // ... free of dangerous uses, ...
-            val useSites = tac.stmts(defSite).asAssignment.targetVar.usedBy
-            if (!useSites.forall(isWrittenInstanceUseSiteSafe(tac, writePC)))
-                return Assignable;
-
-            // ... and not contain read-write paths, whenever their receivers cannot be proven to be disjoint
-            val pathFromSomeReadToWriteExists = state.nonInitializerReads(context).exists {
-                case (readPC, readReceiver) =>
-                    val readReceiverVar = readReceiver.map(uVarForDefSites(_, tac.pcToIndex))
-                    if (readReceiverVar.isDefined && isSameInstance(tac, receiver.get, readReceiverVar.get).isNo) {
-                        false
-                    } else {
-                        pathExists(readPC, writePC, tac)
-                    }
-            }
-
-            if (pathFromSomeReadToWriteExists)
-                Assignable
-            else
-                NonAssignable
-        } else
-            Assignable
+        val assignability = determineAssignabilityFromParts(part =>
+            part.completePatternWithNonInitializerWrite(context, tac, writePC, receiver)(using
+                state.asInstanceOf[part.AnalysisState]
+            )
+        )
+        assignability.getOrElse(Assignable)
     }
 
     /**
@@ -214,7 +209,7 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
      * Determines whether a use site of a written instance is "safe", i.e. is recognizable as a pattern that does not
      * make the field assignable in combination with the given write itself.
      */
-    private def isWrittenInstanceUseSiteSafe(tac: TACode[TACMethodParameter, V], writePC: Int)(use: Int): Boolean = {
+    private def isWrittenInstanceUseSiteSafe(tac: TACode[TACMethodParameter, V], writePC: Int, use: Int): Boolean = {
         val stmt = tac.stmts(use)
 
         // We consider the access safe when ...

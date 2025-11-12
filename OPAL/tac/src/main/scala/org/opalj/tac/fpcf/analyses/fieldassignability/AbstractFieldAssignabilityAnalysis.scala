@@ -46,6 +46,34 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.properties.TACAI
 
+trait AbstractFieldAssignabilityAnalysisState {
+
+    val field: Field
+    var fieldAssignability: FieldAssignability = NonAssignable
+
+    var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
+    var initializerWrites: Map[Context, Set[(PC, AccessReceiver)]] = Map.empty.withDefaultValue(Set.empty)
+    var nonInitializerWrites: Map[Context, Set[(PC, AccessReceiver)]] = Map.empty.withDefaultValue(Set.empty)
+
+    var fieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
+    var initializerReads: Map[Context, Set[(PC, AccessReceiver)]] = Map.empty.withDefaultValue(Set.empty)
+    var nonInitializerReads: Map[Context, Set[(PC, AccessReceiver)]] = Map.empty.withDefaultValue(Set.empty)
+
+    var tacDependees: Map[DefinedMethod, EOptionP[Method, TACAI]] = Map.empty
+
+    def hasDependees: Boolean = {
+        fieldWriteAccessDependee.exists(_.isRefinable) ||
+        fieldReadAccessDependee.exists(_.isRefinable) ||
+        tacDependees.valuesIterator.exists(_.isRefinable)
+    }
+
+    def dependees: Set[SomeEOptionP] = {
+        tacDependees.valuesIterator.filter(_.isRefinable).toSet ++
+            fieldWriteAccessDependee.filter(_.isRefinable) ++
+            fieldReadAccessDependee.filter(_.isRefinable)
+    }
+}
+
 /**
  * TODO document
  *
@@ -56,32 +84,25 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
-    trait AbstractFieldAssignabilityAnalysisState {
+    protected lazy val parts: Seq[FieldAssignabilityAnalysisPart]
 
-        val field: Field
-        var fieldAssignability: FieldAssignability = NonAssignable
-
-        var fieldWriteAccessDependee: Option[EOptionP[DeclaredField, FieldWriteAccessInformation]] = None
-        var initializerWrites: Map[Context, Set[(PC, AccessReceiver)]] = Map.empty.withDefaultValue(Set.empty)
-        var nonInitializerWrites: Map[Context, Set[(PC, AccessReceiver)]] = Map.empty.withDefaultValue(Set.empty)
-
-        var fieldReadAccessDependee: Option[EOptionP[DeclaredField, FieldReadAccessInformation]] = None
-        var initializerReads: Map[Context, Set[(PC, AccessReceiver)]] = Map.empty.withDefaultValue(Set.empty)
-        var nonInitializerReads: Map[Context, Set[(PC, AccessReceiver)]] = Map.empty.withDefaultValue(Set.empty)
-
-        var tacDependees: Map[DefinedMethod, EOptionP[Method, TACAI]] = Map.empty
-
-        def hasDependees: Boolean = {
-            fieldWriteAccessDependee.exists(_.isRefinable) ||
-            fieldReadAccessDependee.exists(_.isRefinable) ||
-            tacDependees.valuesIterator.exists(_.isRefinable)
+    protected def determineAssignabilityFromParts(
+        partFunc: FieldAssignabilityAnalysisPart => Option[FieldAssignability]
+    ): Option[FieldAssignability] = {
+        var assignability: Option[FieldAssignability] = None
+        for {
+            part <- parts
+            if !assignability.contains(Assignable)
+            partAssignability = partFunc(part)
+            if partAssignability.isDefined
+        } {
+            if (assignability.isDefined)
+                assignability = Some(assignability.get.meet(partAssignability.get))
+            else
+                assignability = Some(partAssignability.get)
         }
 
-        def dependees: Set[SomeEOptionP] = {
-            tacDependees.valuesIterator.filter(_.isRefinable).toSet ++
-                fieldWriteAccessDependee.filter(_.isRefinable) ++
-                fieldReadAccessDependee.filter(_.isRefinable)
-        }
+        assignability
     }
 
     final val typeExtensibility = project.get(TypeExtensibilityKey)
@@ -317,22 +338,6 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         }
 
         createResult()
-    }
-
-    /**
-     * Determines whether the basic block of a given index dominates the basic block of the other index or is executed
-     * before the other index in the case of both indexes belonging to the same basic block.
-     */
-    protected def dominates(
-        potentiallyDominatorIndex: Int,
-        potentiallyDominatedIndex: Int,
-        taCode:                    TACode[TACMethodParameter, V]
-    ): Boolean = {
-        val bbPotentiallyDominator = taCode.cfg.bb(potentiallyDominatorIndex)
-        val bbPotentiallyDominated = taCode.cfg.bb(potentiallyDominatedIndex)
-        taCode.cfg.dominatorTree
-            .strictlyDominates(bbPotentiallyDominator.nodeId, bbPotentiallyDominated.nodeId) ||
-            bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominatorIndex < potentiallyDominatedIndex
     }
 
     /**
