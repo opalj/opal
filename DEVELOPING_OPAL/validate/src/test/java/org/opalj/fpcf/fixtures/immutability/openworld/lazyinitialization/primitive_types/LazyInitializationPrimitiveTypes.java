@@ -316,7 +316,9 @@ class CaughtExceptionInInitialization {
 
 class PreInitializedDefaultValueField {
 
-    @UnsafelyLazilyInitializedField(value = "The field is always seen with one value")
+    @UnsafelyLazilyInitializedField(value = "The field is always seen with one value", analyses = {})
+    @AssignableField(value = "The analysis cannot currently handle initial default value assignments",
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private Object lazyInitField = null;
 
     public Object getLazyInitField() {
