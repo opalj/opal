@@ -69,9 +69,14 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
         if (state.nonInitializerWrites.nonEmpty)
             return Assignable;
 
-        // Analyzing read-write paths interprocedurally is not supported yet
-        if (state.initializerWrites.exists(_._1.method ne context.method))
-            return Assignable;
+        // Analyzing read-write paths interprocedurally is not supported yet. For static fields, initializer writes are
+        // harmless (i.e. executed before) when the read is in a constructor, so the class is already initialized.
+        if (state.initializerWrites.exists(_._1.method ne context.method)) {
+            if (state.field.isNotStatic)
+                return Assignable;
+            else if (!context.method.definedMethod.isConstructor)
+                return Assignable;
+        }
 
         val pathFromReadToSomeWriteExists = state.initializerWrites(context).exists {
             case (writePC, _) =>
@@ -125,8 +130,18 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
                 return Assignable;
         }
 
-        // Analyzing read-write paths interprocedurally is not supported yet
-        if (state.initializerReads.exists(_._1.method ne context.method))
+        // Analyzing read-write paths interprocedurally is not supported yet. However, for static fields, all
+        // reads that take place in instance constructors are harmless.
+        if (state.field.isNotStatic && state.initializerReads.exists(_._1.method ne context.method))
+            return Assignable;
+        if (state.field.isStatic && state.initializerReads.exists {
+                case (readContext, _) =>
+                    (readContext.method ne context.method) && (
+                        !readContext.method.hasSingleDefinedMethod ||
+                        readContext.method.definedMethod.isStaticInitializer
+                    )
+            }
+        )
             return Assignable;
 
         val pathFromSomeReadToWriteExists = state.initializerReads(context).exists {
