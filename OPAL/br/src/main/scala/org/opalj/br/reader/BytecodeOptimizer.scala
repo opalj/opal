@@ -38,7 +38,7 @@ import org.opalj.br.instructions.WIDE
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.log.OPALLogger.info
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * Performs some very basic, in-place control-flow simplifications to make the code more regular.
@@ -47,20 +47,20 @@ import net.ceedubs.ficus.Ficus._
  *
  * The following transformations are performed:
  *  - trivial gotos which jump to the immediately succeeding instruction are replaced by nops
- *    (the CFG may contain less basic blocks afterwards)
+ *    (the CFG may contain less basic blocks afterward)
  *  - goto chains are shortened (i.e., a goto jumping to another goto)
  *    (this primarily reduces the number of instructions that need to be evaluated at
  *    abstract interpretation time; it may - however - also reduce the number of basic blocks)
  *  - useless ifs where the jump target is the next instruction are replaced by nops
- *    (the CFG may contain less basic blocks afterwards)
+ *    (the CFG may contain less basic blocks afterward)
  *  - if -> goto instruction sequences are resolved
  *    (this primarily reduces the number of instructions that need to be evaluated at
  *    abstract interpretation time; it may - however - also reduce the number of basic blocks)
  *  - useless switches are replaced
- *    (the CFG may contain less basic blocks afterwards)
+ *    (the CFG may contain less basic blocks afterward)
  *
- * The target array has the same size as the source array to make sure that branch offsets/line-
- * numbers etc. point to the correct instruction. Furthermore, we try to avoid the introduction
+ * The target array has the same size as the source array to make sure that branch offsets/line-numbers
+ * etc. point to the correct instruction. Furthermore, we try to avoid the introduction
  * of dead code.
  *
  * @note All transformation always only reduce the number of basic blocks and never create new
@@ -70,7 +70,7 @@ import net.ceedubs.ficus.Ficus._
  * @author Michael Eichberg
  */
 trait BytecodeOptimizer extends MethodsBinding {
-    this: ClassFileBinding with ConstantPoolBinding with AttributeBinding =>
+    this: ClassFileBinding & ConstantPoolBinding & AttributeBinding =>
 
     final val PerformControlFlowSimplifications: Boolean = {
         val key = BytecodeOptimizer.SimplifyControlFlowKey
@@ -250,7 +250,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     }
 
                 case GOTO.opcode =>
-                    val GOTO(branchoffset) = instruction
+                    val GOTO(branchoffset) = instruction: @unchecked
                     val jumpTargetPC = pc + branchoffset
                     if (jumpTargetPC == nextPC) {
                         // let's replace the original jump
@@ -274,7 +274,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                     }
 
                 case GOTO_W.opcode =>
-                    val GOTO_W(branchoffset) = instruction
+                    val GOTO_W(branchoffset) = instruction: @unchecked
                     val jumpTargetPC = pc + branchoffset
                     if (jumpTargetPC == nextPC) {
                         // let's replace the original jump
@@ -315,7 +315,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                         val jumpTargetPC = pc + defaultOffset
                         val jumpTargetInstruction = instructions(jumpTargetPC)
                         if (jumpTargetPC == nextPC) {
-                            // totally useless..
+                            // totally useless...
                             newNextPC = nextPC
                         } else {
                             // This switch is basically just a goto... we will add
@@ -371,7 +371,7 @@ trait BytecodeOptimizer extends MethodsBinding {
                 case JSR.opcode | JSR_W.opcode =>
                     // We do not need to handle the ret instructions... the target is clear
                     // right away... it is the instruction succeeding the jsr instruction.
-                    val JSRInstruction(branchoffset) = instruction
+                    val JSRInstruction(branchoffset) = instruction: @unchecked
 
                     // IMPROVE Consider using +!=
                     jumpTargetInstructions += pc + branchoffset
@@ -413,7 +413,7 @@ trait BytecodeOptimizer extends MethodsBinding {
             // EXAMPLE:
             //
             // The sequence
-            // (SPECIAL, BUT FREQUENT, CASE.. the second GOTO just jumps over the next goto..):
+            // (SPECIAL, BUT FREQUENT, CASE... the second GOTO just jumps over the next goto...):
             //      pc=182: IF_ACMPNE(6), pc+3: GOTO(6), pc+6: GOTO(-170)
             // is rewritten to:
             //      pc=182: IF_ACMPNE(6 + (-170) ), pc+[3..9]: NOP

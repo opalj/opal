@@ -100,9 +100,9 @@ class TasksTest extends AnyFunSpec with Matchers {
                 processedValues.incrementAndGet()
             }
             tasks.submit(1)
-            Thread.sleep(250) // ttask 1 is probably already long finished...
+            Thread.sleep(250) // task 1 is probably already long finished...
             tasks.submit(2)
-            tasks.join() // task 2 is probably still running..
+            tasks.join() // task 2 is probably still running...
             processedValues.get() should be(2)
         }
 
@@ -114,7 +114,7 @@ class TasksTest extends AnyFunSpec with Matchers {
                 val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) =>
                     processedValues.incrementAndGet()
                     if ((i % 1000) == 0) {
-                        for (t <- 1 until 10) {
+                        for (_ <- 1 until 10) {
                             subsequentlyScheduled.incrementAndGet()
                             tasks.submit(nextValue.incrementAndGet())
                         }
@@ -137,7 +137,7 @@ class TasksTest extends AnyFunSpec with Matchers {
             val nextValue = new AtomicInteger(100000)
             val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) =>
                 if (i % 1000 == 0) {
-                    for (i <- 1 until 10) {
+                    for (_ <- 1 until 10) {
                         subsequentlyScheduled.incrementAndGet()
                         tasks.submit(nextValue.incrementAndGet())
                     }
@@ -160,9 +160,9 @@ class TasksTest extends AnyFunSpec with Matchers {
             }
 
             info("subsequently scheduled: " + subsequentlyScheduled.get)
-            info("number of caught exceptions: " + exceptions.size)
+            info("number of caught exceptions: " + exceptions.length)
 
-            exceptions.size should be(aborted.get)
+            exceptions.length should be(aborted.get)
             processedValues.get() should be(100000 + subsequentlyScheduled.get - aborted.get)
         }
     }

@@ -105,8 +105,8 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
 
     override def description: String = bugPickerAnalysis.description
 
-    private[this] var cpFiles: Iterable[File] = null
-    private[this] var libcpFiles: Iterable[File] = null
+    private var cpFiles: Iterable[File] = null
+    private var libcpFiles: Iterable[File] = null
 
     override def setupProject(
         cpFiles:                 Iterable[File],
@@ -199,7 +199,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
         }
 
         //
-        // PREPARE THE GENERATION OF THE REPORT OF THE OCCURED EXCEPTIONS
+        // PREPARE THE GENERATION OF THE REPORT OF THE OCCURRED EXCEPTIONS
         //
         if (exceptions.nonEmpty) {
             OPALLogger.error(
@@ -262,7 +262,7 @@ object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
 
         var outputFormatGiven = false
 
-        import org.opalj.bugpicker.core.analyses.BugPickerAnalysis._
+        import org.opalj.bugpicker.core.analyses.BugPickerAnalysis.*
 
         val issues =
             parameters.filterNot(parameter =>

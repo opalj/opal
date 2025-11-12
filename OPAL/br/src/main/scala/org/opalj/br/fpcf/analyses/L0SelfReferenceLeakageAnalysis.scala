@@ -4,6 +4,9 @@ package br
 package fpcf
 package analyses
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DoesNotLeakSelfReference
@@ -20,13 +23,13 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.PUTFIELD
 import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.fpcf.ELBP
 import org.opalj.fpcf.ELUBP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.LBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
@@ -35,7 +38,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.log.OPALLogger.{debug => trace}
+import org.opalj.log.OPALLogger.debug as trace
 
 /**
  * A shallow analysis that computes the self reference leakage property.
@@ -55,7 +58,7 @@ class L0SelfReferenceLeakageAnalysis(
      * Hence, it only makes sense to call this method if all supertypes do not leak
      * their self reference.
      */
-    private[this] def determineSelfReferenceLeakageContinuation(
+    private def determineSelfReferenceLeakageContinuation(
         classFile: ClassFile
     ): ProperPropertyComputationResult = {
 
@@ -142,7 +145,7 @@ class L0SelfReferenceLeakageAnalysis(
         }
     }
 
-    def determineSelfReferenceLeakage(classFile: ClassFile): PropertyComputationResult = {
+    def determineSelfReferenceLeakage(classFile: ClassFile): PropertyComputationResult = boundary {
         val classType = classFile.thisType
         if (classType eq ClassType.Object) {
             if (debug) {
@@ -173,10 +176,10 @@ class L0SelfReferenceLeakageAnalysis(
             )
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
         propertyStore(superTypes, SelfReferenceLeakageKey) foreach {
-            case epk @ EPK(e, _)                   => dependees += ((e, epk))
-            case UBP(LeaksSelfReference)           => return Result(classType, LeaksSelfReference);
-            case ELBP(e, DoesNotLeakSelfReference) => // nothing to do ...
-            case eps @ EPS(e)                      => dependees += ((e, eps))
+            case epk @ EPK(e, _)               => dependees += ((e, epk))
+            case UBP(LeaksSelfReference)       => break(Result(classType, LeaksSelfReference));
+            case LBP(DoesNotLeakSelfReference) => // nothing to do ...
+            case eps @ EPS(e)                  => dependees += ((e, eps))
         }
 
         // First, let's wait for the results for the supertypes...
@@ -217,7 +220,6 @@ class L0SelfReferenceLeakageAnalysis(
                 c
             )
         }
-
     }
 }
 

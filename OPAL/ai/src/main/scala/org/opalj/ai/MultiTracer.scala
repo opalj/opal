@@ -38,7 +38,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         }
     }
 
-    override def instructionEvalution(
+    override def instructionEvaluation(
         domain: Domain
     )(
         pc:          Int,
@@ -46,7 +46,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
         operands:    domain.Operands,
         locals:      domain.Locals
     ): Unit = {
-        tracers foreach { tracer => tracer.instructionEvalution(domain)(pc, instruction, operands, locals) }
+        tracers foreach { tracer => tracer.instructionEvaluation(domain)(pc, instruction, operands, locals) }
     }
 
     override def flow(
@@ -187,7 +187,7 @@ class MultiTracer(val tracers: AITracer*) extends AITracer {
 
     override def domainMessage(
         domain:  Domain,
-        source:  Class[_],
+        source:  Class[?],
         typeID:  String,
         pc:      Option[Int /*PC*/ ],
         message: => String

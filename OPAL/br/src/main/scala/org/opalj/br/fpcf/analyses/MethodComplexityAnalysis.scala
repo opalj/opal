@@ -5,7 +5,7 @@ package fpcf
 package analyses
 
 import org.opalj.br.fpcf.properties.MethodComplexity
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 
 /**
@@ -305,7 +305,7 @@ class MethodComplexityAnalysis(val maxComplexity: Int = Int.MaxValue) {
                 case 0 /*nop*/    => /*complexity += 0*/
                 case 196 /*wide*/ => /*complexity += 0*/
                 case opcode       =>
-                    throw new BytecodeProcessingFailedException(s"unsupported opcode: $opcode")
+                    throw BytecodeProcessingFailedException(s"unsupported opcode: $opcode")
 
             }
             if (complexity < 0) {

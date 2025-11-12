@@ -17,6 +17,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
+import org.opalj.util.elidedAssert
 
 /**
  * A trait for analyses that model the result of the invocation of a specific
@@ -51,7 +52,7 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
         c(null)(callersEOptP)
     }
 
-    private[this] def c(
+    private def c(
         oldCallers: Callers
     )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
         (callersEOptP: @unchecked) match {
@@ -64,7 +65,7 @@ trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
                                 val caller = callerContext.method
 
                                 // the call graph is only computed for virtual and single defined methods
-                                assert(caller.isVirtualOrHasSingleDefinedMethod)
+                                elidedAssert(caller.isVirtualOrHasSingleDefinedMethod)
 
                                 // we can not analyze virtual methods, as we do not have their bytecode
                                 if (caller.hasSingleDefinedMethod) {

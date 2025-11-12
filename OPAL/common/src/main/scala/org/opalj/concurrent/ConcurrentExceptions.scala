@@ -3,7 +3,7 @@ package org.opalj
 package concurrent
 
 /**
- * An exception that is used to signal that some exceptions occured concurrently.
+ * An exception that is used to signal that some exceptions occurred concurrently.
  * Those exceptions are added to this exception by the underlying framework and can then be
  * queried using the standard methods.
  *

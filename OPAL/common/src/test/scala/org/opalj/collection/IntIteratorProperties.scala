@@ -2,7 +2,7 @@
 package org.opalj
 package collection
 
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen

@@ -19,7 +19,7 @@ trait LogMessage {
 
     /**
      * The category to which this method belongs. E.g., "project configuration" to
-     * signal that the message is related to the project configuration and it is – hence -
+     * signal that the message is related to the project configuration and it is –hence–
      * an issue that probably needs to be fixed by the developer. Another category
      * might be "internal (error)" to signal that an error occurred that might need
      * to be fixed by the developer of the respective analysis.
@@ -50,7 +50,7 @@ trait LogMessage {
         message.split('\n').map { ln =>
             var cr = ""
             var rawln = ln
-            if (ln.length > 0 && ln.charAt(0) == '\r') {
+            if (ln.nonEmpty && ln.charAt(0) == '\r') {
                 cr = "\r"
                 rawln = ln.substring(1)
             }

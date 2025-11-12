@@ -7,6 +7,8 @@ import scala.reflect.ClassTag
 
 import scala.collection.immutable.Vector
 import scala.collection.mutable
+import scala.util.boundary
+import scala.util.boundary.break
 
 /**
  * '''THIS DATASTRUCTURE IS ONLY INTENDED TO BE USED BY THE AI FRAMEWORK, DON'T USE IT OTHERWISE.'''
@@ -22,7 +24,7 @@ import scala.collection.mutable
  *
  * ==Usage Scenario==
  * For example, the median of the number of registers that are used per method is 2
- * (JDK and OPAL) and more then 99,5% of all methods have less than 20 elements and
+ * (JDK and OPAL) and more than 99,5% of all methods have less than 20 elements and
  * in particular those elements related to the parameters do not change often.
  *
  * @author Michael Eichberg
@@ -106,7 +108,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
      * the return value will be `this` or `other`, otherwise a new locals data structure
      * is created.
      *
-     * @param other Another `Locals` data-structure that has the the same number of
+     * @param other Another `Locals` data-structure that has the same number of
      *      elements as this `Locals` data-structure.
      */
     /* ABSTRACT */
@@ -122,7 +124,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
     def mapKV[X >: Null <: AnyRef: ClassTag](f: (Int, T) => X): Locals[X] = mapKV(0, f)
 
     /* ABSTRACT */
-    protected[this] def mapKV[X >: Null <: AnyRef: ClassTag](
+    protected def mapKV[X >: Null <: AnyRef: ClassTag](
         startIndex: Int,
         f:          (Int, T) => X
     ): Locals[X]
@@ -138,32 +140,32 @@ sealed trait Locals[T >: Null <: AnyRef] {
     /**
      * Returns `true` if all elements satisfy the given predicate, `false` otherwise.
      */
-    def forall[X >: T](f: X => Boolean): Boolean = {
-        foreach { e => if (!f(e)) return false; }
+    def forall[X >: T](f: X => Boolean): Boolean = boundary {
+        foreach { e => if (!f(e)) break(false); }
         true
     }
 
     /**
      * Returns `true` if an element satisfies the given predicate, `false` otherwise.
      */
-    def exists[X >: T](f: X => Boolean): Boolean = {
-        foreach { e => if (f(e)) return true; }
+    def exists[X >: T](f: X => Boolean): Boolean = boundary {
+        foreach { e => if (f(e)) break(true); }
         false
     }
 
     /**
      * Returns `true` if the given element is already in this list, `false` otherwise.
      */
-    def contains[X >: T](o: X): Boolean = {
-        foreach { e => if (e == o) return true; }
+    def contains[X >: T](o: X): Boolean = boundary {
+        foreach { e => if (e == o) break(true); }
         false
     }
 
     /**
      * Returns the first element that satisfies the given predicate.
      */
-    def find[X >: T](f: X => Boolean): Option[T] = {
-        foreach { e => if (f(e)) return Some(e); }
+    def find[X >: T](f: X => Boolean): Option[T] = boundary {
+        foreach { e => if (f(e)) break(Some(e)); }
         None
     }
 
@@ -171,8 +173,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
     /**
      * Counts the number of '''non-null''' values that do not match the given
-     * given predicate; the index of the first element that matches the predicate
-     * is returned.
+     * predicate; the index of the first element that matches the predicate is returned.
      *
      * If no value matches the value -1 is returned.
      */
@@ -306,7 +307,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
 
 }
 
-private[mutable] final object Locals0 extends Locals[Null] {
+private[mutable] object Locals0 extends Locals[Null] {
 
     override final val size = 0
 
@@ -386,7 +387,7 @@ sealed abstract private[mutable] class LocalsX[T >: Null <: AnyRef] extends Loca
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: LocalsX[_] if this.size == that.size =>
+            case that: LocalsX[?] if this.size == that.size =>
                 var i = this.size - 1
                 while (i >= 0) {
                     if (this(i) != that(i))
@@ -2033,7 +2034,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
             if (thisVs12_N eq thatVs12_N)
                 thisVs12_N
             else {
-                val newVs12_N = new Array(vs12_N.length)
+                val newVs12_N = new Array[T](vs12_N.length)
                 var useThisArray = true
                 var useThatArray = true
                 var i = vs12_N.length - 1
@@ -2104,7 +2105,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
 
 object Locals {
 
-    def empty[T >: Null <: AnyRef: ClassTag]: Locals[T] = Locals0.asInstanceOf[Locals[T]]
+    def empty[T >: Null <: AnyRef]: Locals[T] = Locals0.asInstanceOf[Locals[T]]
 
     def apply[T >: Null <: AnyRef: ClassTag](data: IndexedSeq[T]): Locals[T] = {
         (data.size: @scala.annotation.switch) match {

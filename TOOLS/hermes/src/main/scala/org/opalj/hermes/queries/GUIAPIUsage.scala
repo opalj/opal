@@ -39,7 +39,7 @@ class GUIAPIUsage(implicit hermes: HermesConfig) extends FeatureQuery {
         for {
             (classFile, source) <- rawClassFiles
             location = ClassFileLocation(Some(source), classFile.thisType.asJava)
-            CONSTANT_Utf8_info(_, entry) <- classFile.constant_pool
+            case CONSTANT_Utf8_info(_, entry) <- classFile.constant_pool
         } {
             if (entry.startsWith("javafx/")) {
                 // note: package "javafx" is empty,

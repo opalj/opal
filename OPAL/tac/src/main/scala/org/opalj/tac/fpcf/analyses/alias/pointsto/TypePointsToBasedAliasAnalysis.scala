@@ -34,9 +34,9 @@ class TypePointsToBasedAliasAnalysis(final val project: SomeProject)
     with TypeBasedAliasAnalysis
     with TacBasedAliasAnalysis {
 
-    override protected[this] type AnalysisState = TypePointsToBasedAliasAnalysisState
+    override protected type AnalysisState = TypePointsToBasedAliasAnalysisState
 
-    override protected[this] def handlePointsToSetElement(
+    override protected def handlePointsToSetElement(
         ase:            AliasSourceElement,
         pointsToEntity: Entity,
         element:        ReferenceType
@@ -50,7 +50,7 @@ class TypePointsToBasedAliasAnalysis(final val project: SomeProject)
     /**
      * Creates the state to use for the computation.
      */
-    override protected[this] def createState: AnalysisState = new TypePointsToBasedAliasAnalysisState
+    override protected def createState: AnalysisState = new TypePointsToBasedAliasAnalysisState
 }
 
 /**

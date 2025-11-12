@@ -4,8 +4,8 @@ package frb
 package analyses
 
 import bi.AccessFlagsMatcher
-import br._
-import br.analyses._
+import br.*
+import br.analyses.*
 
 /**
  * This analysis reports outer classes that have (non-`static`) inner `Serializable`

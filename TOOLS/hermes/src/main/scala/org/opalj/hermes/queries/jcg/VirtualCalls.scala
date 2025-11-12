@@ -15,7 +15,7 @@ import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 import org.opalj.da.ClassFile
 
 /**
- * Groups test case features that perform a pre Java 8 polymorhpic method call.
+ * Groups test case features that perform a pre Java 8 polymorphic method call.
  *
  * @note The features represent the __PolymorphicCalls__ test cases from the Call Graph Test Project (JCG).
  *
@@ -41,12 +41,12 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case iv: INVOKEVIRTUAL   => iv
                 case ii: INVOKEINTERFACE => ii
             }: PartialFunction[Instruction, VirtualMethodInvocationInstruction])
@@ -57,7 +57,7 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind.opcode match {
-                case INVOKEVIRTUAL.opcode => {
+                case INVOKEVIRTUAL.opcode =>
                     val targets =
                         project.virtualCall(callerType, invokeKind.asInstanceOf[INVOKEVIRTUAL])
                     targets.size match {
@@ -65,8 +65,7 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         case 1 => 0 /* single target cs */
                         case _ => 1 /* multiple target cs*/
                     }
-                }
-                case INVOKEINTERFACE.opcode => {
+                case INVOKEINTERFACE.opcode =>
                     val targets =
                         project.interfaceCall(callerType, invokeKind.asInstanceOf[INVOKEINTERFACE])
                     targets.size match {
@@ -74,7 +73,6 @@ class VirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         case 1 => 2 /* single target cs */
                         case _ => 3 /* multiple target cs*/
                     }
-                }
             }
 
             if (kindID >= 0) {

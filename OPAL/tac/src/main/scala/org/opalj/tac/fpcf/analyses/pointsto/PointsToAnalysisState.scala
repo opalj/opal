@@ -36,6 +36,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * Encapsulates the state of the analysis, analyzing a certain method using the
@@ -45,16 +46,16 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class PointsToAnalysisState[
     ElementType,
-    PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet],
+    PointsToSet <: PointsToSetLike[ElementType, ?, PointsToSet],
     ContextType <: Context
 ](
-    override val callContext:                  ContextType,
-    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+    override val callContext:   ContextType,
+    protected var _tacDependee: EOptionP[Method, TACAI]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
-    private[this] val getFields: ArrayBuffer[(Entity, Option[DeclaredField], ReferenceType => Boolean)] =
+    private val getFields: ArrayBuffer[(Entity, Option[DeclaredField], ReferenceType => Boolean)] =
         ArrayBuffer.empty
-    private[this] val putFields: ArrayBuffer[(IntTrieSet, Option[DeclaredField])] = ArrayBuffer.empty
+    private val putFields: ArrayBuffer[(IntTrieSet, Option[DeclaredField])] = ArrayBuffer.empty
 
     def addGetFieldEntity(fakeEntity: (Entity, Option[DeclaredField], ReferenceType => Boolean)): Unit = {
         getFields += fakeEntity
@@ -68,8 +69,8 @@ class PointsToAnalysisState[
 
     def putFieldsIterator: Iterator[(IntTrieSet, Option[DeclaredField])] = putFields.iterator
 
-    private[this] val arrayLoads: ArrayBuffer[(Entity, ArrayType, ReferenceType => Boolean)] = ArrayBuffer.empty
-    private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ArrayType)] = ArrayBuffer.empty
+    private val arrayLoads: ArrayBuffer[(Entity, ArrayType, ReferenceType => Boolean)] = ArrayBuffer.empty
+    private val arrayStores: ArrayBuffer[(IntTrieSet, ArrayType)] = ArrayBuffer.empty
 
     def addArrayLoadEntity(
         fakeEntity: (Entity, ArrayType, ReferenceType => Boolean)
@@ -87,7 +88,7 @@ class PointsToAnalysisState[
     def arrayStoresIterator: Iterator[(IntTrieSet, ArrayType)] =
         arrayStores.iterator
 
-    private[this] val _allocationSitePointsToSets: mutable.Map[Entity, PointsToSet] = {
+    private val _allocationSitePointsToSets: mutable.Map[Entity, PointsToSet] = {
         mutable.Map.empty
     }
 
@@ -100,11 +101,11 @@ class PointsToAnalysisState[
     }
 
     def setAllocationSitePointsToSet(ds: Entity, pointsToSet: PointsToSet): Unit = {
-        assert(!_allocationSitePointsToSets.contains(ds))
+        elidedAssert(!_allocationSitePointsToSets.contains(ds))
         _allocationSitePointsToSets(ds) = pointsToSet
     }
 
-    private[this] val _sharedPointsToSets: mutable.Map[Entity, PointsToSet] = {
+    private val _sharedPointsToSets: mutable.Map[Entity, PointsToSet] = {
         mutable.Map.empty
     }
 
@@ -134,17 +135,17 @@ class PointsToAnalysisState[
         _sharedPointsToSets.iterator
     }
 
-    private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
+    private val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
         mutable.Map.empty
     }
 
     // TODO: should include PointsTo and Callees dependencies
-    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[(SomeEOptionP, ReferenceType => Boolean)]] = {
+    private val _dependerToDependees: mutable.Map[Entity, mutable.Set[(SomeEOptionP, ReferenceType => Boolean)]] = {
         mutable.Map.empty
     }
 
     final def hasDependees(depender: Entity): Boolean = {
-        assert(!_dependerToDependees.contains(depender) || _dependerToDependees(depender).nonEmpty)
+        elidedAssert(!_dependerToDependees.contains(depender) || _dependerToDependees(depender).nonEmpty)
         _dependerToDependees.contains(depender)
     }
 
@@ -155,13 +156,13 @@ class PointsToAnalysisState[
     ): Unit = {
         val dependeeEPK = dependee.toEPK
 
-        assert(
+        elidedAssert(
             !_dependerToDependees.contains(depender) ||
             !_dependerToDependees(depender).exists(other =>
                 other._1.e == dependee.e && other._1.pk.id == dependee.pk.id
             )
         )
-        assert(!_dependees.contains(dependeeEPK) || _dependees(dependeeEPK) == dependee)
+        elidedAssert(!_dependees.contains(dependeeEPK) || _dependees(dependeeEPK) == dependee)
         if (_dependerToDependees.contains(depender)) {
             _dependerToDependees(depender) += ((dependee, typeFilter))
         } else {
@@ -188,11 +189,11 @@ class PointsToAnalysisState[
 
     // IMPROVE: make it efficient
     final def dependeesOf(depender: Entity): Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)] = {
-        assert(_dependerToDependees.contains(depender))
+        elidedAssert(_dependerToDependees.contains(depender))
         _dependerToDependees(depender).iterator.map(dependee => (dependee._1.toEPK, dependee)).toMap
     }
 
-    private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
+    private var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
     def callees(ps: PropertyStore): Callees = {
         val calleesProperty = if (_calleesDependee.isDefined) {
@@ -208,7 +209,7 @@ class PointsToAnalysisState[
         else calleesProperty.ub
     }
 
-    def hasCalleesDepenedee: Boolean = {
+    def hasCalleesDependee: Boolean = {
         _calleesDependee.nonEmpty && _calleesDependee.get.isRefinable
     }
 
@@ -218,7 +219,7 @@ class PointsToAnalysisState[
 
     def calleesDependee: EOptionP[DeclaredMethod, Callees] = _calleesDependee.get
 
-    private[this] def accesses[P <: MethodFieldAccessInformation[P]](
+    private def accesses[P <: MethodFieldAccessInformation[P]](
         ps:                 PropertyStore,
         dependee:           Option[EOptionP[Method, P]],
         setDependee:        EOptionP[Method, P] => Unit,
@@ -237,8 +238,8 @@ class PointsToAnalysisState[
         else accessesProperty.ub
     }
 
-    private[this] var _readAccessesDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] = None
-    private[this] var _writeAccessesDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] = None
+    private var _readAccessesDependee: Option[EOptionP[Method, MethodFieldReadAccessInformation]] = None
+    private var _writeAccessesDependee: Option[EOptionP[Method, MethodFieldWriteAccessInformation]] = None
 
     def readAccesses(ps: PropertyStore): MethodFieldReadAccessInformation = accesses(
         ps,
@@ -277,12 +278,12 @@ class PointsToAnalysisState[
     def writeAccessDependee: EOptionP[Method, MethodFieldWriteAccessInformation] = _writeAccessesDependee.get
 
     override def hasOpenDependencies: Boolean = {
-        hasCalleesDepenedee || super.hasOpenDependencies
+        hasCalleesDependee || super.hasOpenDependencies
     }
 
     override def dependees: Set[SomeEOptionP] = {
         val otherDependees = super.dependees
-        if (hasCalleesDepenedee)
+        if (hasCalleesDependee)
             otherDependees + _calleesDependee.get
         else
             otherDependees

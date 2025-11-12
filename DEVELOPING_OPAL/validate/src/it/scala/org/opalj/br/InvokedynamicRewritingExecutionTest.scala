@@ -57,20 +57,20 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
         fixtureClassLoader:        ClassLoader,
         testClassType:             ClassType,
         testMethodName:            String,
-        testMethodParameterTypes:  Array[Class[_]]         = Array.empty,
+        testMethodParameterTypes:  Array[Class[?]]         = Array.empty,
         testMethodParameters:      Array[AnyRef]           = Array.empty,
-        constructorParameterTypes: Option[Array[Class[_]]] = None,
+        constructorParameterTypes: Option[Array[Class[?]]] = None,
         constructorParameters:     Option[Array[AnyRef]]   = None
     ): Unit = {
 
         def getResult(cl: ClassLoader): AnyRef = {
             val clazz = cl.loadClass(testClassType.toJava)
             val instance = if (constructorParameterTypes.isDefined) {
-                val ctor = clazz.getConstructor(constructorParameterTypes.get: _*)
-                ctor.newInstance(constructorParameters.get: _*)
+                val ctor = clazz.getConstructor(constructorParameterTypes.get*)
+                ctor.newInstance(constructorParameters.get*)
             } else null
-            val method = clazz.getMethod(testMethodName, testMethodParameterTypes: _*)
-            method.invoke(instance, testMethodParameters: _*)
+            val method = clazz.getMethod(testMethodName, testMethodParameterTypes*)
+            method.invoke(instance, testMethodParameters*)
         }
 
         val testResult = getResult(testClassLoader)

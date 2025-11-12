@@ -51,7 +51,7 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
         for {
             (classFile, source) <- project.projectClassFilesWithSources
             if classFile.staticInitializer.isDefined
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
         } {
             val hasStaticField = classFile.fields.exists(_.isStatic)

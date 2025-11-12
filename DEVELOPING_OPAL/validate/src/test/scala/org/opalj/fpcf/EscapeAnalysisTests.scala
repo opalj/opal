@@ -29,7 +29,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     override def init(p: Project[URL]): Unit = {
-        val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+        val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[?]]
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => Set(performInvocationsDomain)
@@ -39,7 +39,7 @@ class EscapeAnalysisTests extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
-    private[this] def mapEntities(
+    private def mapEntities(
         p:  Project[URL],
         es: Iterable[(Entity, String => String, Iterable[AnnotationLike])]
     ): Iterable[(Entity, String => String, Iterable[AnnotationLike])] = {

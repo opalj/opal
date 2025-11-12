@@ -29,7 +29,7 @@ trait RecordReturnedValuesInfrastructure extends ai.ReturnInstructionsDomain {
      *
      * @return `true` if the information about the returned value was updated.
      */
-    protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean
+    protected def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean
 
     abstract override def areturn(
         pc:    Int,

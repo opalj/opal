@@ -19,8 +19,8 @@ import org.opalj.fpcf.SomeEOptionP
  */
 trait AliasAnalysisState {
 
-    private[this] var _dependees = Map.empty[Entity, EOptionP[Entity, Property]]
-    private[this] var _dependeesSet = Set.empty[SomeEOptionP]
+    private var _dependees = Map.empty[Entity, EOptionP[Entity, Property]]
+    private var _dependeesSet = Set.empty[SomeEOptionP]
 
     /**
      * Adds the given entity property pair to the set of dependees.

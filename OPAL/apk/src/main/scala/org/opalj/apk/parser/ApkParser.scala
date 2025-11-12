@@ -14,6 +14,8 @@ import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.sys.process.ProcessLogger
 import scala.sys.process.stringToProcess
+import scala.util.boundary
+import scala.util.boundary.break
 import scala.xml.Node
 import scala.xml.XML
 
@@ -146,7 +148,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
      * @return Option(directory containing all .bc files, Seq of every single .bc file) or
      *         None if APK contains no native code.
      */
-    def parseNativeCode: Option[(Path, Seq[Path])] = {
+    def parseNativeCode: Option[(Path, Seq[Path])] = boundary {
         OPALLogger.info(LogCategory, "native code parsing started")
 
         var llvmDir: Path = null
@@ -157,7 +159,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
             val archs = new File(apkLibPath).listFiles.filter(_.isDirectory).map(_.getName)
             if (!Files.isDirectory(Paths.get(apkLibPath)) || archs.isEmpty) {
                 // APK does not contain native code
-                return None
+                break(None);
             }
 
             val soFilesPerArch = archs.map(arch => {
@@ -220,7 +222,7 @@ class ApkParser(val apkPath: String)(implicit config: Config) {
         case None =>
     }
 
-    private[this] def unzipApk(): Unit = tmpDir match {
+    private def unzipApk(): Unit = tmpDir match {
         case Some(_) =>
         case None    =>
             val fileName = Paths.get(apkPath).getFileName
@@ -250,7 +252,7 @@ object ApkParser {
         projectConfig: Config,
         dexParser:     DexParser = DexParser.Enjarify
     ): Project[URL] = {
-        val apkParser = new ApkParser(apkPath)(BaseConfig)
+        val apkParser = new ApkParser(apkPath)(using BaseConfig)
 
         val jarDir = apkParser.parseDexCode(dexParser)._1
 

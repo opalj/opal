@@ -13,8 +13,6 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.EntryPointFinder
 
-import net.ceedubs.ficus.Ficus._
-
 /**
  * The AndroidEntryPointFinder considers specific methods of launcher Activity Classes as entry points.
  * An activity is a launcher activity if it contains an intent filter with action "android.intent.action.MAIN"
@@ -23,6 +21,8 @@ import net.ceedubs.ficus.Ficus._
  * @author Julius Naeumann
  */
 object AndroidEntryPointFinder extends EntryPointFinder {
+
+    import pureconfig.*
 
     val configKey = "org.opalj.fpcf.android.AndroidEntryPointFinder.entryPoints"
 
@@ -57,16 +57,14 @@ object AndroidEntryPointFinder extends EntryPointFinder {
         entryPoints.map(declaredMethods.apply)
     }
 
-    private def getConfiguredEntryPoints(project: SomeProject) = {
-        import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-        project.config.as[List[EntryPointContainer]](configKey)
-
+    private def getConfiguredEntryPoints(project: SomeProject): List[EntryPointContainer] = {
+        ConfigSource.fromConfig(project.config).at(configKey).loadOrThrow[List[EntryPointContainer]]
     }
 
-    /* Required by Ficus' `ArbitraryTypeReader`*/
+    /* Required by pureconfig */
     private case class EntryPointContainer(
         declaringClass: String,
         name:           String,
         descriptor:     String
-    )
+    ) derives ConfigReader
 }

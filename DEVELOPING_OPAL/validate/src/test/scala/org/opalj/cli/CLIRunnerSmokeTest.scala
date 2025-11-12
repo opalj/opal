@@ -2,6 +2,7 @@
 package org.opalj
 package cli
 
+import org.scalatest.concurrent.Signaler
 import org.scalatest.concurrent.ThreadSignaler
 import org.scalatest.concurrent.TimeLimits.failAfter
 import org.scalatest.funspec.AnyFunSpec
@@ -145,12 +146,13 @@ class CLIRunnerSmokeTest extends AnyFunSpec {
     )
 
     describe("executing a command line runner should not fail") {
+        implicit val signaler: Signaler = ThreadSignaler
         allManagedBITestJARs() foreach { biProject =>
             cliRunners foreach { runner =>
                 it(s"$runner for $biProject") {
                     failAfter(10.seconds) {
                         runner.main(Array("--cp", biProject.getAbsolutePath, "--noJDK"))
-                    }(ThreadSignaler)
+                    }
                 }
             }
         }

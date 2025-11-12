@@ -6,8 +6,8 @@ package cfg
 import scala.reflect.ClassTag
 
 import java.util.Arrays
-import scala.collection.{Set => SomeSet}
 import scala.collection.AbstractIterator
+import scala.collection.Set as SomeSet
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
@@ -20,6 +20,7 @@ import org.opalj.graphs.PostDominatorTree
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import org.opalj.util.elidedAssert
 
 /**
  * Represents the control flow graph of a method.
@@ -253,7 +254,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *        I.e., even if the left and right sets contain the same values and are
      *       `equal` (`==`) it is necessary to return the left set.
      *
-     * @note   No facts will derived for stmts that are not reachable from an
+     * @note   No facts will be derived for stmts that are not reachable from an
      *         exit node; e.g., due to an infinite loop.
      *         That is, the returned array may contain `null` values and in an
      *         extreme case will only contain null values!
@@ -380,7 +381,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     def allBBs: Iterator[BasicBlock] = {
         new AbstractIterator[BasicBlock] {
 
-            private[this] var currentBBPC = 0
+            private var currentBBPC = 0
 
             def hasNext: Boolean = currentBBPC < basicBlocks.length
 
@@ -595,7 +596,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *         ''This situation cannot be handled using pcToIndex.''
      *         This information is used to ensure that if a basic block, which currently just
      *         encompasses a single instruction, will encompass the new and the old instruction
-     *         afterwards.
+     *         afterward.
      *         The returned value will be used as the `endIndex.`
      *         `endIndex = singletonBBsExpander(pcToIndex(pc of singleton bb))`
      *         Hence, the function is given the mapped index has to return that value if the index
@@ -652,7 +653,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             Arrays.fill(newBasicBlocksArray, 0, endIndex + 1, lastNewBB)
         }
         var startPC = 0
-        do {
+        while {
             val oldBB = basicBlocks(startPC)
             val startIndex = pcToIndex(startPC)
             val endIndex = {
@@ -680,7 +681,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                        (tempBB eq null) || pcToIndex(tempBB.startPC) < 0
                    }
             ) {
-                assert(tempBB ne oldBB)
+                elidedAssert(tempBB ne oldBB)
                 // This (index < 0) handles the case where the initial CFG was created using
                 // a simple algorithm that actually resulted in a CFG with detached basic blocks;
                 // we now kill these basic blocks by jumping over them!
@@ -690,7 +691,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                 }
                 startPC += 1
             }
-        } while (startPC < bbsLength)
+
+            startPC < bbsLength
+        } do ()
 
         if (requiresNewStartBlock) {
             val firstBB = newBasicBlocks(0)
@@ -719,7 +722,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         bbMapping iterate { (oldBB, newBB) =>
             oldBB.successors foreach { oldSuccBB =>
                 val newSuccBB = bbMapping(oldSuccBB)
-                assert(newSuccBB ne null, s"no mapping for $oldSuccBB")
+                elidedAssert(newSuccBB ne null, s"no mapping for $oldSuccBB")
                 newBB.addSuccessor(newSuccBB)
                 // Instead of iterating over the predecessors, we just iterate over
                 // the successors; this way, we only include the nodes that are
@@ -730,7 +733,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         }
 
         val newCatchNodes = catchNodes.map(bbMapping(_).asInstanceOf[CatchNode])
-        assert(newCatchNodes.forall { _ ne null })
+        elidedAssert(newCatchNodes.forall { _ ne null })
 
         // let's see if we can merge the first two basic blocks
         if (requiresNewStartBlock && basicBlocks(0).predecessors.isEmpty) {
@@ -855,7 +858,7 @@ object CFG {
 
     final val ValidateKey = "org.opalj.br.cfg.CFG.Validate"
 
-    private[this] var validate: Boolean = {
+    private var validate: Boolean = {
         val initialValidate = BaseConfig.getBoolean(ValidateKey)
         updateValidate(initialValidate)
         initialValidate
@@ -880,7 +883,7 @@ object CFG {
 
     final val TraceDFSolver: Boolean = {
         val traceDFSolver = BaseConfig.getBoolean(TraceDFSolverKey)
-        info("OPAL", s"$TraceDFSolverKey: $traceDFSolver")(GlobalLogContext)
+        info("OPAL", s"$TraceDFSolverKey: $traceDFSolver")(using GlobalLogContext)
         traceDFSolver
     }
 }

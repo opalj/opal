@@ -80,7 +80,7 @@ object Purity extends ProjectsAnalysisApplication {
 
         val description = "Compute method purity information"
 
-        private val analysisLevelArg = new AnalysisLevelArg(PurityArg.description, PurityArg.levels: _*) {
+        private val analysisLevelArg = new AnalysisLevelArg(PurityArg.description, PurityArg.levels*) {
             override val defaultValue: Option[String] = Some("L2")
             override val withNone = false
         }
@@ -106,7 +106,7 @@ object Purity extends ProjectsAnalysisApplication {
 
         val supportingAnalyses: List[FPCFAnalysisScheduler] = {
             val eager = apply(EagerArg)
-            var support: List[org.opalj.fpcf.FPCFAnalysisScheduler[_]] = Nil
+            var support: List[org.opalj.fpcf.FPCFAnalysisScheduler[?]] = Nil
 
             if (analysis eq LazyL2PurityAnalysis) support = List(
                 LazyFieldImmutabilityAnalysis,
@@ -399,7 +399,7 @@ object Purity extends ProjectsAnalysisApplication {
                 ps.toString(false) +
                     "\ncompile-time pure:                     " + compileTimePure.size +
                     "\nAt least pure:                         " + pure.size +
-                    "\nAt least domain-specficic pure:        " + dPure.size +
+                    "\nAt least domain-specific pure:        " + dPure.size +
                     "\nAt least side-effect free:             " + sideEffectFree.size +
                     "\nAt least d-s side effect free:         " + dSideEffectFree.size +
                     "\nAt least externally pure:              " + externallyPure.size +

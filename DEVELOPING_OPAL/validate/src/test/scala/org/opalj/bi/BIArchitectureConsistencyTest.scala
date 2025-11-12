@@ -39,7 +39,7 @@ class BIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
                         classes("""org\.opalj\.bi\.reader\..+Test.*""".r)
                 }
 
-                Symbol("Bi") is_only_allowed_to (USE, empty)
+                Symbol("Bi").is_only_allowed_to(USE, empty)
 
                 // 'Reader is allowed to use everything
 

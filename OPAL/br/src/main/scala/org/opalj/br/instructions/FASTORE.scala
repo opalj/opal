@@ -14,6 +14,6 @@ case object FASTORE extends PrimitiveArrayStoreInstruction with PrimitiveArrayAc
 
     final val mnemonic = "fastore"
 
-    final val elementTypeComputationalType = ComputationalTypeFloat
+    final val elementTypeComputationalType: ComputationalTypeFloat.type = ComputationalTypeFloat
 
 }

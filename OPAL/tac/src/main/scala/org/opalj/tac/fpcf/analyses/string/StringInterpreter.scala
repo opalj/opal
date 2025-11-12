@@ -32,23 +32,23 @@ trait StringInterpreter {
      */
     def interpret(instr: T)(implicit state: InterpretationState): ProperPropertyComputationResult
 
-    protected[this] def failureTree(implicit highSoundness: Boolean): StringTreeNode =
+    protected def failureTree(implicit highSoundness: Boolean): StringTreeNode =
         StringInterpreter.failureTree
 
-    protected[this] def failure(v: PV)(implicit state: InterpretationState, highSoundness: Boolean): Result =
+    protected def failure(v: PV)(implicit state: InterpretationState, highSoundness: Boolean): Result =
         StringInterpreter.failure(v)
 
-    protected[this] def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit
+    protected def computeFinalResult(web: PDUWeb, sff: StringFlowFunction)(implicit
         state: InterpretationState
     ): Result =
         StringInterpreter.computeFinalResult(web, sff)
 
-    protected[this] def computeFinalResult(webs: Set[PDUWeb], sff: StringFlowFunction)(implicit
+    protected def computeFinalResult(webs: Set[PDUWeb], sff: StringFlowFunction)(implicit
         state: InterpretationState
     ): Result =
         StringInterpreter.computeFinalResult(webs, sff)
 
-    protected[this] def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
+    protected def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
         StringInterpreter.computeFinalResult(p)
 }
 
@@ -60,7 +60,7 @@ object StringInterpreter {
     }
 
     def failure(v: V)(implicit state: InterpretationState, highSoundness: Boolean): Result =
-        failure(v.toPersistentForm(state.tac.stmts))
+        failure(v.toPersistentForm(using state.tac.stmts))
 
     def failure(pv: PV)(implicit state: InterpretationState, highSoundness: Boolean): Result =
         computeFinalResult(StringFlowFunctionProperty.constForVariableAt(state.pc, pv, failureTree))
@@ -72,7 +72,7 @@ object StringInterpreter {
         computeFinalResult(StringFlowFunctionProperty(webs, sff))
 
     def computeFinalResult(p: StringFlowFunctionProperty)(implicit state: InterpretationState): Result =
-        Result(FinalEP(InterpretationHandler.getEntity(state), p))
+        Result(FinalEP(InterpretationHandler.getEntity, p))
 
     def invalidEntitiesForUnknownCall(call: Call[V], target: Option[PV] = None)(implicit
         state: InterpretationState
@@ -83,7 +83,7 @@ object StringInterpreter {
                 call.params(index)
         }
         val relevantReceiver = call.receiverOption.filter { _ => isStringBuilderBufferCall(call) }
-        (relevantParameters ++ relevantReceiver).map(_.asVar.toPersistentForm(state.tac.stmts)).toSet ++ target
+        (relevantParameters ++ relevantReceiver).map(_.asVar.toPersistentForm(using state.tac.stmts)).toSet ++ target
     }
 
     def uninterpretedCall(call: Call[V], target: Option[PV] = None)(implicit
@@ -94,7 +94,7 @@ object StringInterpreter {
         val webs = relevantEntities.map(PDUWeb(state.pc, _))
         val flow = StringFlowFunctionProperty.constForEntities(state.pc, relevantEntities, failureTree)
         val p = StringFlowFunctionProperty(webs, flow)
-        Result(FinalEP(InterpretationHandler.getEntity(state), p))
+        Result(FinalEP(InterpretationHandler.getEntity, p))
     }
 
     def isStringBuilderBufferCall(call: Call[V]): Boolean =
@@ -148,7 +148,7 @@ trait AssignmentBasedStringInterpreter extends AssignmentLikeBasedStringInterpre
     override final def interpretExpr(instr: T, expr: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        interpretExpr(instr.targetVar.toPersistentForm(state.tac.stmts), expr)
+        interpretExpr(instr.targetVar.toPersistentForm(using state.tac.stmts), expr)
     }
 
     def interpretExpr(target: PV, expr: E)(implicit state: InterpretationState): ProperPropertyComputationResult

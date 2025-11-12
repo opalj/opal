@@ -7,6 +7,8 @@ import scala.language.postfixOps
 
 import java.net.URL
 import java.util.Date
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.rogach.scallop.flagConverter
 
@@ -72,11 +74,11 @@ object InterpretMethods extends MethodAnalysisApplication {
         val classFile = m.classFile
         val domainClass = analysisConfig(DomainArg)
 
-        def createDomain[Source: reflect.ClassTag](project: SomeProject, method: Method): Domain = {
+        def createDomain(project: SomeProject, method: Method): Domain = boundary {
 
             scala.util.control.Exception.ignoring(classOf[NoSuchMethodException]) {
                 val constructor = domainClass.getConstructor(classOf[Object])
-                return constructor.newInstance(method.classFile);
+                break(constructor.newInstance(method.classFile));
             }
 
             val constructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
@@ -198,13 +200,11 @@ object InterpretMethods extends MethodAnalysisApplication {
                             aiState + ife.cause.getStackTrace.mkString("\n<ul><li>", "</li>\n<li>", "</li></ul>\n") +
                                 "<div style='margin-left:5em'>" + causeToString(ife, true) + "</div>"
                         case e: Throwable =>
-                            val message = e.getMessage()
+                            val message = e.getMessage
                             if (message != null)
                                 aiState + "<br>Underlying cause: " + util.XHTML.htmlify(message)
                             else
                                 aiState + "<br>Underlying cause: <NULL>"
-                        case _ =>
-                            aiState
                     }
 
                     if (nested && ife.domain.isInstanceOf[TheCode])
@@ -241,7 +241,7 @@ object InterpretMethods extends MethodAnalysisApplication {
 
         val xHTMLTracer: XHTMLTracer = new XHTMLTracer {}
 
-        override val tracer = Some(new MultiTracer(consoleTracer, xHTMLTracer))
+        override val tracer: Option[AITracer] = Some(new MultiTracer(consoleTracer, xHTMLTracer))
     }
 
     override def renderResult(result: String): String = result

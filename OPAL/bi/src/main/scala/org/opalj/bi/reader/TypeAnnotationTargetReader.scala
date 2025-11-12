@@ -74,8 +74,7 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
      * } table[table_length];
      * }}}
      */
-    type LocalvarTableEntry <: AnyRef
-    implicit val localvarTableEntryType: ClassTag[LocalvarTableEntry] // TODO: Replace in Scala 3 by `type LocalvarTableEntry : ClassTag`
+    type LocalvarTableEntry <: AnyRef: ClassTag
     type LocalvarTable = ArraySeq[LocalvarTableEntry]
     /**
      * Factory method to create a `LocalvarTableEntry`. To completely resolve

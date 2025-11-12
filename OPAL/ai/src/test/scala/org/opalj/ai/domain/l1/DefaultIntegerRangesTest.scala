@@ -30,7 +30,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
     describe("central properties of domains that use IntegerRange values") {
 
         val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-        import theDomain._
+        import theDomain.*
 
         it("the representation of the integer value 0 should be an IntegerRange(0,0) value") {
             IntegerConstant0 should be(IntegerRange(0, 0))
@@ -42,7 +42,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of join if we exceed the maximum configured cardinality") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(2L)
-            import theDomain._
+            import theDomain.*
             assert(theDomain.maxCardinalityOfIntegerRanges == 2L)
 
             it("(a join of [2,3] and [5,6] which exceeds the max. card.); i1 join i2 => \"StructuralUpdate(IntegerRange(0,127))\"") {
@@ -101,7 +101,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 v2.join(-1, v1) should be(StructuralUpdate(AnIntegerValue()))
             }
 
-            it("the rejoin of two ranges which exceed the max. card. should result in the same rane") {
+            it("the rejoin of two ranges which exceed the max. card. should result in the same range") {
                 val v1 = IntegerRange(lb = 0, ub = Char.MaxValue)
                 val v2 = IntegerRange(lb = 0, ub = Char.MaxValue)
                 v1.join(-1, v2) should be(MetaInformationUpdate(IntegerRange(lb = 0, ub = Char.MaxValue)))
@@ -120,7 +120,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of the join operation if we do not exceed the max. spread") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("(join with itself) val ir = IntegerRange(...); ir join ir => \"NoUpdate\"") {
                 val v = IntegerRange(0, 0)
@@ -171,7 +171,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of the \"summarize\" function") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("it should be able to handle overlapping values") {
                 val v1 = IntegerRange(-1, 3)
@@ -215,7 +215,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of imul") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("[0,3] * [0,2] => [lb*lb=0,ub*ub=6]") {
                 val v1 = IntegerRange(0, 3)
@@ -324,7 +324,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of ior") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("AnIntegerValue | [8,19] => AnIntegerRange") {
                 val v = AnIntegerValue()
@@ -716,7 +716,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of ineg") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("-[0,5] => [-5,0]") {
                 val v1 = IntegerRange(0, 5)
@@ -759,7 +759,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of ishr") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("[-100,-100] >> [4,4] => [-7, -7]") {
                 val v = IntegerRange(-100, -100)
@@ -1175,7 +1175,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of iadd") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("[0,3] + [0,2] => [0,5]") {
                 val v1 = IntegerRange(0, 3)
@@ -1262,7 +1262,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of isub") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("[0,3] - [0,2] => [-2,3]") {
                 val v1 = IntegerRange(0, 3)
@@ -1366,7 +1366,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of idiv") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("[1,3] / [2,2] => [0,1]") {
                 val v1 = IntegerRange(1, 3)
@@ -1455,7 +1455,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of irem") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("AnIntegerValue % AnIntegerValue => AnIntegerValue + Exception") {
                 val v1 = AnIntegerValue()
@@ -1577,7 +1577,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                 }
             }
 
-            it("(the dividend is a value 2^x and the divisor is a multiplikativ of 2^x) [32,32] % [16,16] => [0,15]") {
+            it("(the dividend is a value 2^x and the divisor is a multiplicative of 2^x) [32,32] % [16,16] => [0,15]") {
                 val v1 = IntegerRange(0, Int.MaxValue)
                 val v2 = IntegerRange(16, 16)
 
@@ -1612,7 +1612,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of iand") {
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("[3,3] & [255,255] => [0,0]") {
                 val v = IntegerRange(3, 3)
@@ -1729,7 +1729,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of iushr") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("""(two "point" ranges where both values are larger than zero) [7,7] >>> [2,2] => -1 >>> 2 === 1073741823""") {
                 val v = IntegerRange(7, 7)
@@ -2016,7 +2016,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of ixor") {
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("AnIntegerValue ^ [-10,-10] => AnIntegerValue") {
                 val v = AnIntegerValue()
@@ -2567,7 +2567,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of ishl") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("[10,22] << [12,31] => [-2147483648,2013265920]") {
                 val v = IntegerRange(10, 22)
@@ -3014,7 +3014,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of the i2b cast operator") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("(byte)AnIntegerValue => [-128,+127]") {
                 val v1 = AnIntegerValue()
@@ -3035,7 +3035,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
         describe("the behavior of the i2s cast operator") {
 
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             it("(short)AnIntegerValue => [-Short.MinValue,Short.MaxValue]") {
                 val v1 = AnIntegerValue()
@@ -3056,7 +3056,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         describe("the behavior of the relational operators") {
             val theDomain = new DefaultIntegerRangesTestDomain(-(Int.MinValue.toLong) + Int.MaxValue)
-            import theDomain._
+            import theDomain.*
 
             describe("the behavior of the greater or equal than (>=) operator") {
                 it("[3,3] >= [0,2] => Yes") {
@@ -3310,7 +3310,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
         }
 
-        describe("handling of complex dependent casts and moduluo operations") {
+        describe("handling of complex dependent casts and modulo operations") {
 
             it("the analysis should be correct in the presence of type casts (\"randomModulo\")") {
                 val domain = new DefaultIntegerRangesTestDomain(128)
@@ -3410,7 +3410,7 @@ class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
                     fail("expected one result; found: " + domain.allReturnedValues)
 
                 // we don't know the size of the array
-                domain.allReturnedValues.head._2 abstractsOver (
+                domain.allReturnedValues.head._2.abstractsOver(
                     domain.InitializedArrayValue(2, ArrayType(IntegerType), 10)
                 ) should be(true)
 

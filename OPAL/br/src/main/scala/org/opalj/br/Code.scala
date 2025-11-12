@@ -4,7 +4,6 @@ package br
 
 import scala.annotation.switch
 import scala.annotation.tailrec
-import scala.reflect.ClassTag
 
 import java.util.Arrays.fill
 import scala.collection.AbstractIterator
@@ -15,7 +14,7 @@ import scala.collection.mutable
 import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGFactory
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.BitArraySet
@@ -42,7 +41,7 @@ import org.opalj.util.AnyToAnyThis
  *          code array is not completely filled (it contains `null` values) the
  *          preferred way to iterate over all instructions is to use for-comprehensions
  *          and pattern matching or to use one of the predefined methods [[foreach]],
- *          [[collect]], [[collectPair]], [[collectWithIndex]], etc..
+ *          [[collect]], [[collectPair]], [[collectWithIndex]], etc.
  *          The `instructions` array must not be mutated!
  *
  * @author Michael Eichberg
@@ -112,13 +111,13 @@ final class Code private (
 
     override def iterator: Iterator[PCAndInstruction] = {
         new AbstractIterator[PCAndInstruction] {
-            private[this] var pc = 0
+            private var pc = 0
 
             def hasNext: Boolean = pc < instructions.length
 
             def next(): PCAndInstruction = {
                 val inst = PCAndInstruction(pc, instructions(pc))
-                pc = inst.instruction.indexOfNextInstruction(pc)(code)
+                pc = inst.instruction.indexOfNextInstruction(pc)(using code)
                 inst
             }
         }
@@ -135,7 +134,7 @@ final class Code private (
      * @see See the method [[foreach]] for an alternative.
      */
     def programCounters: IntIterator = new IntIterator {
-        private[this] var nextPC = 0 // there is always at least one instruction
+        private var nextPC = 0 // there is always at least one instruction
         def hasNext: Boolean = nextPC < instructions.length
         def next(): Int = { val pc = nextPC; nextPC = pcOfNextInstruction(nextPC); pc }
     }
@@ -207,23 +206,23 @@ final class Code private (
                         case RET.opcode =>
                         /*Nothing to do; handled by JSR*/
                         case JSR.opcode | JSR_W.opcode =>
-                            val UnconditionalBranchInstruction(branchoffset) = instruction
+                            val UnconditionalBranchInstruction(branchoffset) = instruction: @unchecked
                             nextSubroutines.enqueue(pc + branchoffset)
                             nextPCs.enqueue(pcOfNextInstruction(pc))
 
                         case GOTO.opcode | GOTO_W.opcode =>
-                            val UnconditionalBranchInstruction(branchoffset) = instruction
+                            val UnconditionalBranchInstruction(branchoffset) = instruction: @unchecked
                             nextPCs.enqueue(pc + branchoffset)
 
                         case /*IFs:*/ 165 | 166 | 198 | 199 |
                             159 | 160 | 161 | 162 | 163 | 164 |
                             153 | 154 | 155 | 156 | 157 | 158 =>
-                            val SimpleConditionalBranchInstruction(branchoffset) = instruction
+                            val SimpleConditionalBranchInstruction(branchoffset) = instruction: @unchecked
                             nextPCs.enqueue(pc + branchoffset)
                             nextPCs.enqueue(pcOfNextInstruction(pc))
 
                         case TABLESWITCH.opcode | LOOKUPSWITCH.opcode =>
-                            val SwitchInstruction(defaultOffset, jumpOffsets) = instruction
+                            val SwitchInstruction(defaultOffset, jumpOffsets) = instruction: @unchecked
                             nextPCs.enqueue(pc + defaultOffset)
                             jumpOffsets foreach { jumpOffset => nextPCs.enqueue(pc + jumpOffset) }
 
@@ -376,12 +375,12 @@ final class Code private (
                 // potential path joins are determined when we process JSRs
 
                 case JSR.opcode | JSR_W.opcode =>
-                    val UnconditionalBranchInstruction(branchoffset) = instruction
+                    val UnconditionalBranchInstruction(branchoffset) = instruction: @unchecked
                     runtimeSuccessor(pc + branchoffset)
                     runtimeSuccessor(nextPC)
 
                 case _ =>
-                    val nextPCs = instruction.nextInstructions(pc)(this, classHierarchy)
+                    val nextPCs = instruction.nextInstructions(pc)(using this, classHierarchy)
                     nextPCs.foreach(runtimeSuccessor)
             }
 
@@ -402,7 +401,7 @@ final class Code private (
      *
      * Note, that in case of completely broken code, set 2 may contain other
      * instructions than `return` and `athrow` instructions.
-     * If the code contains jsr/ret instructions, the full blown CFG is computed.
+     * If the code contains jsr/ret instructions, the full-blown CFG is computed.
      */
     def predecessorPCs(implicit classHierarchy: ClassHierarchy): (Array[PCs], PCs, PCs) = {
         implicit val code: Code = this
@@ -424,7 +423,7 @@ final class Code private (
                 isReached(successorPC) = true
         }
 
-        lazy val cfg = CFGFactory(code, classHierarchy) // fallback if we analyze pre Java 5 code...
+        lazy val cfg = CFGFactory(using code, classHierarchy) // fallback if we analyze pre Java 5 code...
         var pc = 0
         while (pc < instructionsLength) {
             val i = instructions(pc)
@@ -450,7 +449,7 @@ final class Code private (
                     } else {
                         // This handles cases where we have totally broken code; e.g.,
                         // compile-time dead code at the end of the method where the
-                        // very last instruction is not even a ret/jsr/goto/return/atrow
+                        // very last instruction is not even a ret/jsr/goto/return/athrow
                         // instruction (e.g., a NOP instruction as in case of jPython
                         // related classes.)
                         exitPCs +!= pc
@@ -469,7 +468,7 @@ final class Code private (
      * details.
      */
     def liveVariables(implicit classHierarchy: ClassHierarchy): LiveVariables = {
-        val (predecessorPCs, finalPCs, cfJoins) = this.predecessorPCs(classHierarchy)
+        val (predecessorPCs, finalPCs, cfJoins) = this.predecessorPCs
         liveVariables(predecessorPCs, finalPCs, cfJoins)
     }
 
@@ -493,7 +492,9 @@ final class Code private (
         val liveVariables = new Array[BitArraySet](instructionsLength)
         val workqueue = IntQueue.empty
         val AllDead = BitArraySet.empty
-        finalPCs foreach { pc => liveVariables(pc) = AllDead; workqueue.enqueue(pc) }
+        finalPCs foreach { pc =>
+            liveVariables(pc) = AllDead; workqueue.enqueue(pc)
+        }
         // required to handle endless loops!
         cfJoins foreach { pc =>
             val instruction = instructions(pc)
@@ -589,7 +590,7 @@ final class Code private (
         val isReached = new Array[Boolean](instructionsLength)
         isReached(0) = true // the first instruction is always reached!
 
-        lazy val cfg = CFGFactory(this, classHierarchy)
+        lazy val cfg = CFGFactory(using this, classHierarchy)
 
         var pc = 0
         while (pc < instructionsLength) {
@@ -616,7 +617,7 @@ final class Code private (
                     runtimeSuccessor(nextPC)
 
                 case _ =>
-                    val nextInstructions = instruction.nextInstructions(pc)(this, classHierarchy)
+                    val nextInstructions = instruction.nextInstructions(pc)(using this, classHierarchy)
                     nextInstructions.foreach(runtimeSuccessor)
                     if (nextInstructions.length > 1) {
                         cfForks +!= pc
@@ -703,7 +704,7 @@ final class Code private (
     /**
      * Returns a view of all handlers (exception and finally handlers) for the
      * instruction with the given program counter (`pc`) that may catch an exception; as soon
-     * as a finally handler is found no further handlers will be returned!
+     * as a finally-handler is found no further handlers will be returned!
      *
      * In case of multiple exception handlers that are identical (in particular
      * in case of the finally handlers) only the first one is returned as that
@@ -742,7 +743,7 @@ final class Code private (
 
     /**
      * Returns a view of all potential exception handlers (if any) for the
-     * instruction with the given program counter (`pc`). `Finally` handlers
+     * instruction with the given program counter (`pc`). `Finally`-handlers
      * (`catchType == None`) are not returned but will stop the evaluation (as all further
      * exception handlers have no further meaning w.r.t. the runtime)!
      * In case of identical caught exceptions only the
@@ -779,7 +780,7 @@ final class Code private (
                     val isSubtype = isASubtypeOf(exception, catchType)
                     if (isSubtype.isYes) {
                         ehs += eh
-                        /* we found a definitiv matching handler*/
+                        /* we found a definitively matching handler*/
                         false
                     } else if (isSubtype.isUnknown) {
                         if (!handledExceptions.contains(catchType)) {
@@ -794,7 +795,7 @@ final class Code private (
                     }
                 } else {
                     ehs += eh
-                    /* we are done; we found a finally handler... */
+                    /* we are done; we found a finally-handler... */
                     false
                 }
             } else {
@@ -852,7 +853,7 @@ final class Code private (
      *                   array.
      */
     @inline final def pcOfNextInstruction(currentPC: Int): /*PC*/ Int = {
-        instructions(currentPC).indexOfNextInstruction(currentPC)(this)
+        instructions(currentPC).indexOfNextInstruction(currentPC)(using this)
         // OLD: ITERATING OVER THE ARRAY AND CHECKING FOR NON-NULL IS NO LONGER SUPPORTED!
         //    @inline final def pcOfNextInstruction(currentPC: PC): PC = {
         //        val max_pc = instructions.size
@@ -1002,7 +1003,7 @@ final class Code private (
     /**
      * Computes the set of PCs for which a stack map frame is required. Calling this method
      * (i.e., the generation of stack map tables in general) is only defined for Java > 5 code;
-     * i.e., cocde which does not use JSR/RET; therefore the behavior for Java 5 or earlier code
+     * i.e., code which does not use JSR/RET; therefore the behavior for Java 5 or earlier code
      * is deliberately undefined.
      *
      * @param classHierarchy The computation of the stack map table generally requires the
@@ -1031,6 +1032,7 @@ final class Code private (
                     case _ =>
                         stackMapTablePCs ++=
                             instruction.asControlTransferInstruction.jumpTargets(pc)(
+                                using
                                 code = this,
                                 classHierarchy = classHierarchy
                             )
@@ -1367,7 +1369,7 @@ final class Code private (
      *
      * @param  pc           The program counter of an instruction that strictly dominates all
      *                      succeeding instructions up until the next instruction (as determined
-     *                      by [[#cfJoins]] where two or more paths join. If the pc belongs to an instruction
+     *                      by [[#cfJoins]]) where two or more paths join. If the pc belongs to an instruction
      *                      where multiple paths join, `false` will be returned.
      *
      * @param  anInvocation When the analysis finds a method call, it calls this method
@@ -1441,7 +1443,7 @@ final class Code private (
         atPC:           Int,
         classHierarchy: ClassHierarchy = ClassHierarchy.PreInitializedClassHierarchy
     ): Int = {
-        stackDepthAt(atPC, CFGFactory(this, classHierarchy))
+        stackDepthAt(atPC, CFGFactory(using this, classHierarchy))
     }
 
     /**
@@ -1563,7 +1565,7 @@ final class Code private (
      *  }) // .flatten should equal (Seq(...))
      * }}}
      */
-    def collectWithIndex[B: ClassTag](f: PartialFunction[PCAndInstruction, B]): List[B] = {
+    def collectWithIndex[B](f: PartialFunction[PCAndInstruction, B]): List[B] = {
         val max_pc = instructions.length
         var pc = 0
         val vs = List.newBuilder[B]
@@ -1668,12 +1670,12 @@ object Code {
 
         var localVariableTablesCount = 0
         var lineNumberTablesCount = 0
-        attributes foreach { a =>
-            if (a.isInstanceOf[LocalVariableTable]) {
+        attributes foreach {
+            case _: LocalVariableTable =>
                 localVariableTablesCount += 1
-            } else if (a.isInstanceOf[UnpackedLineNumberTable]) {
+            case _: UnpackedLineNumberTable =>
                 lineNumberTablesCount += 1
-            }
+            case _ =>
         }
 
         if (localVariableTablesCount <= 1 && lineNumberTablesCount <= 1) {
@@ -1707,7 +1709,7 @@ object Code {
     def unapply(
         code: Code
     ): Option[(Int, Int, Array[Instruction], ExceptionHandlers, Attributes)] = {
-        import code._
+        import code.*
         Some((maxStack, maxLocals, instructions, exceptionHandlers, attributes))
     }
 
@@ -1729,7 +1731,7 @@ object Code {
         var pc = 0
         var maxRegisterIndex = -1
         var modifiedByWide = false
-        do {
+        while {
             val i: Instruction = instructions(pc)
             if (i == WIDE) {
                 modifiedByWide = true
@@ -1750,7 +1752,9 @@ object Code {
                 pc = i.indexOfNextInstruction(pc, modifiedByWide)
                 modifiedByWide = false
             }
-        } while (pc < instructionsLength)
+
+            pc < instructionsLength
+        } do ()
 
         maxRegisterIndex + 1 /* the first register has index 0 */
     }
@@ -1774,6 +1778,7 @@ object Code {
         classHierarchy:    ClassHierarchy    = ClassHierarchy.PreInitializedClassHierarchy
     ): CFG[Instruction, Code] = {
         CFGFactory(
+            using
             Code(Int.MaxValue, Int.MaxValue, instructions, exceptionHandlers),
             classHierarchy
         )

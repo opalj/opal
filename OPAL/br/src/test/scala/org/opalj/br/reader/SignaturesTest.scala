@@ -84,7 +84,7 @@ class SignaturesTest extends AnyFunSuite {
             val r = SignatureParser.parseClassSignature(s)
             assert(r ne null)
         }
-        ClassFileSignatures.par.foreach(parse _)
+        ClassFileSignatures.par.foreach(parse)
     }
 
     test("parse various field type signatures in parallel") {
@@ -92,7 +92,7 @@ class SignaturesTest extends AnyFunSuite {
             val r = SignatureParser.parseFieldTypeSignature(s)
             assert(r ne null)
         }
-        FieldTypeSignatures.par.foreach(parse _)
+        FieldTypeSignatures.par.foreach(parse)
     }
 
     test("parse various method type signatures in parallel") {
@@ -100,7 +100,7 @@ class SignaturesTest extends AnyFunSuite {
             val r = SignatureParser.parseMethodTypeSignature(s)
             assert(r ne null)
         }
-        MethodTypeSignatures.par.foreach(parse _)
+        MethodTypeSignatures.par.foreach(parse)
     }
 
     //

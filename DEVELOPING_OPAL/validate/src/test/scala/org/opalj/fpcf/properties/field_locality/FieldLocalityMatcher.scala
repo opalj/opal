@@ -29,7 +29,7 @@ class FieldLocalityMatcher(val property: FieldLocality) extends AbstractProperty
      *         why the analysis failed.
      */
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,

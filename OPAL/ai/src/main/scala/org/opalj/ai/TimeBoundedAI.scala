@@ -2,6 +2,8 @@
 package org.opalj
 package ai
 
+import scala.compiletime.uninitialized
+
 import org.opalj.util.Milliseconds
 import org.opalj.util.Nanoseconds
 
@@ -18,15 +20,15 @@ class TimeBoundedAI[D <: Domain](
     val maxEffort: Nanoseconds = new Milliseconds(150L).toNanoseconds
 ) extends AI[D] {
 
-    private[this] final val CheckInterval = 100
+    private final val CheckInterval = 100
 
-    private[this] var evaluationCount = -1
+    private var evaluationCount = -1
 
-    private[this] var startTime: Long = _
+    private var startTime: Long = uninitialized
 
-    private[this] var interrupted: Boolean = false
+    private var interrupted: Boolean = false
 
-    private[this] var interruptTime: Long = 0
+    private var interruptTime: Long = 0
 
     def abortedAfter: Nanoseconds = new Nanoseconds(interruptTime - startTime)
 

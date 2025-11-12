@@ -19,12 +19,10 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type ElementValue <: AnyRef
-    implicit val elementValueType: ClassTag[ElementValue] // TODO: Replace in Scala 3 by `type ElementValue : ClassTag`
+    type ElementValue <: AnyRef: ClassTag
     type ElementValues = ArraySeq[ElementValue]
 
-    type ElementValuePair <: AnyRef
-    implicit val elementValuePairType: ClassTag[ElementValuePair] // TODO: Replace in Scala 3 by `type ExceptionValuePair : ClassTag`
+    type ElementValuePair <: AnyRef: ClassTag
     type ElementValuePairs = ArraySeq[ElementValuePair]
 
     def ElementValuePair(

@@ -25,7 +25,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
     /**
      * Queries should regularly check if they are interrupted using this method.
      */
-    final def isInterrupted(): Boolean = Thread.currentThread().isInterrupted()
+    final def isInterrupted: Boolean = Thread.currentThread().isInterrupted
 
     // ================================ ABSTRACT FUNCTIONALITY ================================
 
@@ -71,7 +71,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
     /**
      * Returns an explanation of the feature (group) using Markdown as its formatting language.
      *
-     * By default the name of the class is used to lookup the resource "className.markdown"
+     * By default, the name of the class is used to look up the resource "className.markdown"
      * which is expected to be found along the extractor.
      */
     protected def mdDescription: String = {
@@ -79,7 +79,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
         if (descriptionResourceURL == null)
             descriptionResourceURL = this.getClass.getResource(s"$id.md")
         try {
-            processSource(Source.fromURL(descriptionResourceURL)(Codec.UTF8)) { _.mkString }
+            processSource(Source.fromURL(descriptionResourceURL)(using Codec.UTF8)) { _.mkString }
         } catch {
             case t: Throwable => s"not available: $descriptionResourceURL; ${t.getMessage}"
         }
@@ -87,9 +87,9 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
 
     /**
      * Returns an HTML description of this feature query that is targeted at end users; by default
-     * it calls `mdDescription` to try to find a markdown document that describes this feature and
+     * it calls `mdDescription` to try to find a Markdown document that describes this feature and
      * then uses TxtMark to convert the document. If a document is returned the web engine's
-     * user style sheet is set to [[org.opalj.hermes.FeatureQueries.MDCSS]]; in case of an URL no
+     * user style sheet is set to [[org.opalj.hermes.FeatureQueries.MDCSS]]; in case of a URL no
      * stylesheet is set.
      *
      * @return An HTML document/a link to an HTML document that describes this query.

@@ -13,11 +13,11 @@ class LoadClassFilesInParallelTest extends AnyFlatSpec with Matchers {
 
     behavior of "OPAL when reading class files (in parallel)"
 
-    private[this] def commonValidator(classFile: ClassFile): Unit = {
+    private def commonValidator(classFile: ClassFile): Unit = {
         classFile.thisType should not be null
     }
 
-    private[this] def publicInterfaceValidator(classFile: ClassFile): Unit = {
+    private def publicInterfaceValidator(classFile: ClassFile): Unit = {
         commonValidator(classFile)
         // the body of no method should be available
         classFile.methods.forall(m => m.body.isEmpty)

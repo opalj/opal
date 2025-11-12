@@ -1,5 +1,6 @@
 import java.io.FileWriter
 
+import sbt.Keys.javaOptions
 import sbt.Test
 import sbtassembly.AssemblyPlugin.autoImport._
 import sbtunidoc.ScalaUnidocPlugin
@@ -8,7 +9,8 @@ import xerial.sbt.Sonatype.sonatypeCentralHost
 name := "OPAL Library"
 
 // SNAPSHOT
-ThisBuild / version := "5.0.1-SNAPSHOT"
+ThisBuild / version := "6.0.1-SNAPSHOT"
+// RELEASED version in ThisBuild := "6.0.0" // October 9th, 2025
 // RELEASED version in ThisBuild := "5.0.0" // January 23rd, 2023
 // RELEASED version in ThisBuild := "4.0.0" // May 7th, 2021
 // SNAPSHOT version in ThisBuild := "3.0.0-SNAPSHOT" // available since June 7th, 2019
@@ -29,7 +31,7 @@ ThisBuild / licenses := Seq("BSD-2-Clause" -> url("https://opensource.org/licens
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-ThisBuild / scalaVersion := "2.13.11"
+ThisBuild / scalaVersion := "3.7.3"
 
 ScalacConfiguration.globalScalacOptions
 
@@ -62,9 +64,7 @@ ScalaUnidoc / unidoc / scalacOptions := {
 
 ScalaUnidoc / unidoc / scalacOptions ++=
     Opts.doc.sourceUrl(
-        "https://raw.githubusercontent.com/opalj/opal/" +
-            (if (isSnapshot.value) "develop" else "master") +
-            "/€{FILE_PATH}.scala"
+        "github://opalj/opal/" + (if (isSnapshot.value) "develop" else "master")
     )
 ScalaUnidoc / unidoc / scalacOptions ++= Opts.doc.version(version.value)
 ScalaUnidoc / unidoc / scalacOptions ++= Opts.doc.title("The OPAL Framework")
@@ -106,7 +106,7 @@ lazy val buildSettings =
     Defaults.coreDefaultSettings ++
         PublishingOverwrite.onSnapshotOverwriteSettings ++
         Seq(libraryDependencies ++= Dependencies.testlibs) ++
-        Seq(inConfig(IntegrationTest)(Defaults.testSettings): _*) ++
+        Seq(inConfig(IntegrationTest)(Defaults.testSettings) *) ++
         Seq(
             unmanagedSourceDirectories
                 .withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil
@@ -150,7 +150,7 @@ lazy val opal = `OPAL`
 
 lazy val `OPAL` = (project in file("."))
 //  .configure(_.copy(id = "OPAL"))
-    .settings(Defaults.coreDefaultSettings ++ Seq(publishArtifact := false): _*)
+    .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)) *)
     .enablePlugins(ScalaUnidocPlugin)
     .disablePlugins(HeaderPlugin) // The root project has no sources and no configured license header
     .settings(
@@ -180,6 +180,7 @@ lazy val `OPAL` = (project in file("."))
         //  bp, (just temporarily...)
         tools,
         hermes,
+        ce,
         validate, // Not deployed to maven central
         demos // Not deployed to maven central
     )
@@ -194,18 +195,28 @@ lazy val `OPAL` = (project in file("."))
 lazy val common = `Common`
 
 lazy val `Common` = (project in file("OPAL/common"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Common",
         Compile / doc / scalacOptions := Opts.doc.title("OPAL-Common"),
-        libraryDependencies ++= Dependencies.common(scalaVersion.value)
+        libraryDependencies ++= Dependencies.common(scalaVersion.value),
+        // This tasks flips all `false` flags in the ReleaseFlags file to `true` when compiling production
+        // (non-SNAPSHOT) builds in order to elide assertions. A separate task later resets the file for development.
+        Compile / sourceGenerators += Def.task {
+            if (!(ThisBuild / version).value.endsWith("-SNAPSHOT")) {
+                val file = (Compile / sourceDirectory).value / "scala" / "org" / "opalj" / "ReleaseFlags.scala"
+                IO.write(file, releaseFlags.replace("= false", "= true"))
+                streams.value.log.info("Disabling assertions")
+                Seq(file)
+            } else Seq.empty
+        }.taskValue
     )
     .configs(IntegrationTest)
 
 lazy val si = `StaticAnalysisInfrastructure`
 
 lazy val `StaticAnalysisInfrastructure` = (project in file("OPAL/si"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Static Analysis Infrastructure",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Static Analysis Infrastructure"),
@@ -217,7 +228,7 @@ lazy val `StaticAnalysisInfrastructure` = (project in file("OPAL/si"))
 lazy val bi = `BytecodeInfrastructure`
 
 lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Bytecode Infrastructure",
         libraryDependencies ++= Dependencies.bi,
@@ -252,7 +263,7 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
 lazy val br = `BytecodeRepresentation`
 
 lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Bytecode Representation",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Representation"),
@@ -266,7 +277,7 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
 lazy val da = `BytecodeDisassembler`
 
 lazy val `BytecodeDisassembler` = (project in file("OPAL/da"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Bytecode Disassembler",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Disassembler"),
@@ -281,7 +292,7 @@ lazy val `BytecodeDisassembler` = (project in file("OPAL/da"))
 lazy val bc = `BytecodeCreator`
 
 lazy val `BytecodeCreator` = (project in file("OPAL/bc"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Bytecode Creator",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Creator")
@@ -292,11 +303,10 @@ lazy val `BytecodeCreator` = (project in file("OPAL/bc"))
 lazy val ai = `AbstractInterpretationFramework`
 
 lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Abstract Interpretation Framework",
-        Compile / doc / scalacOptions := (Opts.doc
-            .title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
+        Compile / doc / scalacOptions := (Opts.doc.title("OPAL - Abstract Interpretation Framework")),
         run / fork := true
     )
     .dependsOn(br % "it->it;it->test;test->test;compile->compile")
@@ -305,7 +315,7 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
 lazy val ifds = `IFDS`
 
 lazy val `IFDS` = (project in file("OPAL/ifds"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "IFDS",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
@@ -318,7 +328,7 @@ lazy val `IFDS` = (project in file("OPAL/ifds"))
 lazy val ide = `IDE`
 
 lazy val `IDE` = (project in file("OPAL/ide"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "IDE",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IDE"),
@@ -332,11 +342,10 @@ lazy val `IDE` = (project in file("OPAL/ide"))
 lazy val tac = `ThreeAddressCode`
 
 lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Three Address Code",
-        Compile / doc / scalacOptions := (Opts.doc
-            .title("OPAL - Three Address Code") ++ Seq("-groups", "-implicits")),
+        Compile / doc / scalacOptions := (Opts.doc.title("OPAL - Three Address Code")),
         assembly / assemblyJarName := "OPALTACDisassembler.jar",
         assembly / mainClass := Some("org.opalj.tac.TAC"),
         run / fork := true,
@@ -349,7 +358,7 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
 lazy val ba = `BytecodeAssembler`
 
 lazy val `BytecodeAssembler` = (project in file("OPAL/ba"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Bytecode Assembler",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Assembler")
@@ -365,7 +374,7 @@ lazy val `BytecodeAssembler` = (project in file("OPAL/ba"))
 lazy val de = `DependenciesExtractionLibrary`
 
 lazy val `DependenciesExtractionLibrary` = (project in file("OPAL/de"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Dependencies Extraction Library",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Dependencies Extraction Library")
@@ -376,7 +385,7 @@ lazy val `DependenciesExtractionLibrary` = (project in file("OPAL/de"))
 lazy val av = `ArchitectureValidation`
 
 lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Architecture Validation",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation")
@@ -388,7 +397,7 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
 lazy val apk = `APK`
 
 lazy val `APK` = (project in file("OPAL/apk"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "APK",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - APK"),
@@ -402,7 +411,7 @@ lazy val `APK` = (project in file("OPAL/apk"))
 lazy val framework = `Framework`
 
 lazy val `Framework` = (project in file("OPAL/framework"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Framework",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Framework"),
@@ -418,7 +427,7 @@ lazy val `Framework` = (project in file("OPAL/framework"))
 /* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG ANALYSIS AGAIN!
 lazy val bp = `BugPicker`
 lazy val `BugPicker` = (project in file("TOOLS/bp"))
-  .settings(buildSettings: _*)
+  .settings(buildSettings *)
   .settings(
     name := "BugPicker",
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - BugPicker"),
@@ -431,7 +440,7 @@ lazy val `BugPicker` = (project in file("TOOLS/bp"))
 lazy val hermes = `Hermes`
 
 lazy val `Hermes` = (project in file("TOOLS/hermes"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Hermes",
         libraryDependencies ++= Dependencies.hermes,
@@ -443,7 +452,7 @@ lazy val `Hermes` = (project in file("TOOLS/hermes"))
 lazy val tools = `Tools`
 
 lazy val `Tools` = (project in file("DEVELOPING_OPAL/tools"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Tools",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Developer Tools"),
@@ -470,7 +479,7 @@ lazy val `Tools` = (project in file("DEVELOPING_OPAL/tools"))
 lazy val validate = `Validate`
 
 lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Validate",
         publishArtifact := false,
@@ -479,7 +488,7 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
     )
     .dependsOn(
         tools % "it->it;it->test;test->test;compile->compile",
-        demos  % "it->it;it->test;test->test;compile->compile",
+        demos % "it->it;it->test;test->test;compile->compile",
         hermes % "it->it;test->test;compile->compile"
     )
     .configs(IntegrationTest)
@@ -487,7 +496,7 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
 lazy val demos = `Demos`
 
 lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
-    .settings(buildSettings: _*)
+    .settings(buildSettings *)
     .settings(
         name := "Demos",
         publishArtifact := false,
@@ -498,11 +507,39 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
     .dependsOn(framework)
     .configs(IntegrationTest)
 
+lazy val ce = `ConfigurationExplorer`
+
+lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
+    .settings(buildSettings *)
+    .settings(
+        fork := true,
+        javaOptions += s"-Dbuild.version=${version.value}",
+        name := "Configuration Explorer",
+        libraryDependencies ++= Dependencies.ce,
+        Compile / doc := {
+            // Overrides doc method to include config documentation at doc
+            val originalDoc = (Compile / doc).value
+            (Compile / compile).value
+            (Compile / run).toTask("").value
+            originalDoc
+        },
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer")
+    )
+    .dependsOn(
+        br % "compile->compile",
+        apk % "runtime->compile",
+        demos % "runtime->compile",
+        // bp % "runtime->compile",
+        hermes % "runtime->compile"
+    )
+    .configs(IntegrationTest)
+
 /* ***************************************************************************
  *
- * TASKS, etc
+ * TASKS, etc.
  *
  */
+
 // To run the task: compile:generateSite
 val generateSite = Compile / taskKey[File]("creates the OPAL website")
 
@@ -525,6 +562,20 @@ compile := {
     r
 }
 
+// This task resets the ReleaseFlags file that was rewritten in the `Common` subproject above when compiling production
+// (non-SNAPSHOT) builds to elide assertions. This restores standard development behavior, i.e., enabled assertions.
+val releaseFlagsFile = file("OPAL/common/src/main/scala/org/opalj/ReleaseFlags.scala")
+val releaseFlags = IO.read(releaseFlagsFile)
+lazy val reenableAssertions = taskKey[Unit]("Re-enables assertions")
+
+reenableAssertions := {
+    if (!(ThisBuild / version).value.endsWith("-SNAPSHOT")) {
+        IO.write(releaseFlagsFile, releaseFlags)
+        streams.value.log.info("Enabling assertions")
+    }
+}
+reenableAssertions := (reenableAssertions triggeredBy (Common / Compile / compile)).value
+
 //
 //
 // Generation of the ProjectDependencies visualizations
@@ -545,8 +596,8 @@ runProjectDependencyGeneration := {
         s"-u $uid:$gid"
     }.getOrElse("")
 
-    val mmd = new StringBuilder();
-    mmd.append("%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear' } } }%%\n")
+    val mmd = new StringBuilder()
+    mmd.append("%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear', 'padding': 10, 'wrappingWidth': 205 } } }%%\n")
     mmd.append("flowchart BT\n")
 
     val excludedProjects = Seq("OPAL", "Validate", "Tools")
@@ -577,9 +628,10 @@ runProjectDependencyGeneration := {
     for {
         (subproject, ref) <- allProjects
         if !excludedProjects.contains(subproject.id)
-        dependency <- subproject.referenced
+        dependency <- subproject.dependencies
+        if dependency.configuration.forall(_.contains("compile->compile"))
     } {
-        val project = allProjects.find { case (p, r) => r == dependency }.get._1
+        val project = allProjects.find { case (p, r) => r == dependency.project }.get._1
         mmd.append(s"    ${subproject.id} --> ${project.id}\n")
     }
 

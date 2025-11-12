@@ -22,7 +22,7 @@ case class CONSTANT_NameAndType_info(
 
     override def asCPNode(implicit cp: Constant_Pool): Node =
         <div class="cp_entry">
-            {this.getClass().getSimpleName}
+            {this.getClass.getSimpleName}
             (
             <div class="cp_ref">
                 name_index={name_index}
@@ -40,12 +40,12 @@ case class CONSTANT_NameAndType_info(
         </div>
 
     override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
-        val descriptor = cp(descriptor_index).toString(cp)
+        val descriptor = cp(descriptor_index).toString
         if (descriptor.charAt(0) != '(') {
             Seq(
                 parseFieldType(cp(descriptor_index).asString).asSpan(""),
                 Text(" "),
-                <span class="name">{cp(name_index).toString(cp)} </span>
+                <span class="name">{cp(name_index).toString} </span>
             )
         } else {
             val name = cp(name_index).asString
@@ -55,9 +55,9 @@ case class CONSTANT_NameAndType_info(
     }
 
     override def toString(implicit cp: Constant_Pool): String = {
-        val descriptor = cp(descriptor_index).toString(cp)
+        val descriptor = cp(descriptor_index).toString
         if (descriptor.charAt(0) != '(')
-            parseFieldType(cp(descriptor_index).asString).asJava + " " + cp(name_index).toString(cp)
+            parseFieldType(cp(descriptor_index).asString).asJava + " " + cp(name_index).toString
         else {
             val methodName = cp(name_index).asString
             var index = 1 // we are not interested in the leading '('

@@ -48,19 +48,19 @@ object ExceptionUsage extends ProjectsAnalysisApplication {
 
         implicit val ch: ClassHierarchy = project.classHierarchy
 
-        if (project.classFile(ClassType("java/lang/Object")).isEmpty) {
+        if (project.classFile(ClassType.Object).isEmpty) {
             OPALLogger.error(
                 "analysis configuration",
                 "It seems as if the JDK was not loaded; the results of the analysis might not be useful."
-            )(project.logContext)
+            )(using project.logContext)
         }
 
         val usages = (for {
             classFile <- project.allProjectClassFiles.par
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             result = BaseAI(method, new ExceptionUsageAnalysisDomain(project, method))
         } yield {
-            import scala.collection.mutable._
+            import scala.collection.mutable.*
 
             def typeName(value: result.domain.DomainSingleOriginReferenceValue): String =
                 value.upperTypeBound.map(_.toJava).mkString(" with ")
@@ -171,7 +171,7 @@ case class ExceptionUsage(
 
     override def toString: String = {
         val lineNumber = method.body.get.lineNumber(definitionSite).map("line=" + _ + ";").getOrElse("")
-        import Console._
+        import Console.*
         method.toJava(
             usageInformation.mkString(s"$BOLD[$lineNumber;pc=$definitionSite]$exceptionType => ", ", ", RESET)
         )

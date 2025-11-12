@@ -64,7 +64,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         handleInstantiatedTypes(instantiatedTypes, 0)
     }
 
-    private[this] def handleInstantiatedTypes(
+    private def handleInstantiatedTypes(
         instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes],
         numProcessedTypes: Int
     ): PropertyComputationResult = {
@@ -90,7 +90,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         Results(c, resultsForReachableMethods(newReachableMethods))
     }
 
-    private[this] def continuation(
+    private def continuation(
         numProcessedTypes: Int
     )(
         eps: SomeEPS
@@ -123,7 +123,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
                 method,
                 Callers.key,
                 {
-                    case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
+                    case InterimUBP(ub: Callers) if !ub.hasCallersWithUnknownContext =>
                         Some(InterimEUBP(method, ub.updatedWithUnknownContext()))
 
                     case _: InterimEP[_, _] => None

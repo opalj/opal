@@ -40,17 +40,17 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
         // 1. create graph
         for {
             classFile <- project.allProjectClassFiles
-            if !isInterrupted()
+            if !isInterrupted
             classType = classFile.thisType
             field <- classFile.fields
             fieldType = field.fieldType
         } {
             if (fieldType.isClassType) {
-                g add (classType.id, fieldType.asClassType.id)
+                g.add(classType.id, fieldType.asClassType.id)
             } else if (fieldType.isArrayType) {
                 val elementType = fieldType.asArrayType.elementType
                 if (elementType.isClassType) {
-                    g add (classType.id, elementType.asClassType.id)
+                    g.add(classType.id, elementType.asClassType.id)
                 }
             }
         }
@@ -58,7 +58,7 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
         // 2. search for strongly connected components
         for {
             scc <- g.sccs(filterSingletons = true)
-            if !isInterrupted()
+            if !isInterrupted
             /* An scc is never empty! */
             sccCategory = Math.min(scc.size, 5) - 1
             classTypeID <- scc

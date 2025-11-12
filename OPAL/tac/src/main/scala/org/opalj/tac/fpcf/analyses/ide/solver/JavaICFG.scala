@@ -41,7 +41,7 @@ trait JavaICFG extends ICFG[JavaStatement, Method] {
      * @return True, if `method` can be called from outside the library.
      */
     def canBeCalledFromOutside(method: DeclaredMethod): Boolean = {
-        val FinalEP(_, callers) = propertyStore(method, Callers.key)
+        val FinalEP(_, callers) = propertyStore(method, Callers.key): @unchecked
         callers.hasCallersWithUnknownContext
     }
 

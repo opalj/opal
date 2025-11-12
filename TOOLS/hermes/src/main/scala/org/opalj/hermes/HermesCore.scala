@@ -9,7 +9,7 @@ import java.io.File
 import java.io.FileWriter
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.analyses.Project
 
@@ -25,8 +25,7 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleLongProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import pureconfig._
 
 /**
  * Implements the core functionality to evaluate a set of feature queries against a set of
@@ -47,12 +46,12 @@ trait HermesCore extends HermesConfig {
 
     /** The list of all registered feature queries. */
     lazy val registeredQueries: List[Query] = {
-        Config.as[List[Query]]("org.opalj.hermes.queries.registered")
+        ConfigSource.fromConfig(Config).at("org.opalj.hermes.queries.registered").loadOrThrow[List[Query]]
     }
 
     /** The list of enabled feature queries. */
     lazy val featureQueries: List[FeatureQuery] = {
-        registeredQueries.flatMap(q => if (q.isEnabled) q.reify(this) else None)
+        registeredQueries.flatMap(q => if (q.isEnabled) q.reify(using this) else None)
     }
 
     /**
@@ -81,7 +80,8 @@ trait HermesCore extends HermesConfig {
 
     /** The set of all project configurations. */
     lazy val projectConfigurations: List[ProjectConfiguration] = {
-        val pcs = Config.as[List[ProjectConfiguration]]("org.opalj.hermes.projects")
+        val pcs =
+            ConfigSource.fromConfig(Config).at("org.opalj.hermes.projects").loadOrThrow[List[ProjectConfiguration]]
         if (pcs.map(_.id).toSet.size != pcs.size) {
             throw new RuntimeException("some project names are not unique")
         }
@@ -151,7 +151,7 @@ trait HermesCore extends HermesConfig {
             projectAnalysisStartTime: Long
         ): Boolean = {
             if (project.projectClassFilesCount == 0) {
-                updateProjectData { projectFeatures.id.setValue("! " + projectFeatures.id.getValue()) }
+                updateProjectData { projectFeatures.id.setValue("! " + projectFeatures.id.getValue) }
                 false
             } else {
                 true
@@ -166,7 +166,7 @@ trait HermesCore extends HermesConfig {
                 for {
                     // Using an iterator is required to avoid eager initialization of all projects!
                     projectFeatures <- featureMatrix.iterator.asScala
-                    if !Thread.currentThread.isInterrupted()
+                    if !Thread.currentThread.isInterrupted
                     projectConfiguration = projectFeatures.projectConfiguration
                     projectAnalysisStartTime = System.nanoTime()
                     projectInstantiation = projectConfiguration.instantiate
@@ -175,7 +175,7 @@ trait HermesCore extends HermesConfig {
                     if isValid(projectFeatures, project, projectAnalysisStartTime)
                     (featureQuery, features) <- projectFeatures.featureGroups.par
                     featuresMap = features.map(f => (f.getValue.id, f)).toMap
-                    if !Thread.currentThread.isInterrupted()
+                    if !Thread.currentThread.isInterrupted
                 } {
                     val featureAnalysisStartTime = System.nanoTime()
                     val features = featureQuery(projectConfiguration, project, rawClassFiles)
@@ -290,7 +290,7 @@ trait HermesCore extends HermesConfig {
 
     def exportMapping(writer: BufferedWriter): Unit = {
         registeredQueries.iterator.filter(_.isEnabled) foreach { q =>
-            val fq = q.reify(this).get
+            val fq = q.reify(using this).get
             writer.write(q.query)
             writer.write("=")
             writer.write(
@@ -389,7 +389,6 @@ trait HermesCore extends HermesConfig {
                             jvmTypeName,
                             field = fieldEntry
                         )
-                    case _ => throw new UnknownError(s"unsupported location type: $l")
                 }
                 csvGenerator.flush()
                 csvGenerator.writeEndArray()

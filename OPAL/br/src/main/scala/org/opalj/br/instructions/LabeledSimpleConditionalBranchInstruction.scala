@@ -4,7 +4,7 @@ package br
 package instructions
 
 /**
- * An conditional branch instruction where the jump target is identified using a `Symbol`.
+ * A conditional branch instruction where the jump target is identified using a `Symbol`.
  *
  * @author Malte Limmeroth
  * @author Michael Eichberg
@@ -27,7 +27,7 @@ trait LabeledSimpleConditionalBranchInstruction
     override def resolveJumpTargets(
         pc:  PC,
         pcs: Map[InstructionLabel, PC]
-    ): SimpleConditionalBranchInstruction[_]
+    ): SimpleConditionalBranchInstruction[?]
 
     override def toString(currentPC: Int): String = {
         s"${getClass.getSimpleName}(true=$branchTarget, false=↓)"

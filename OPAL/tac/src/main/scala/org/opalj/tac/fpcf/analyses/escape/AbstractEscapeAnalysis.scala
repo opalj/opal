@@ -31,6 +31,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * An abstract escape analysis for a [[org.opalj.tac.common.DefinitionSiteLike]] or a
@@ -57,7 +58,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * Retrieves the TAC and starts the analysis, if there is already a (intermediate) version of
      * it. Otherwise, continue when a TAC is available.
      */
-    protected[this] def doDetermineEscape(
+    protected def doDetermineEscape(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
@@ -76,15 +77,15 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Analyzes each TAC statement of the given method. This methods assumes that there is at least
+     * Analyzes each TAC statement of the given method. This method assumes that there is at least
      * an intermediate result for the TAC present.
      */
-    protected[this] def analyzeTAC()(
+    protected def analyzeTAC()(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
     ): ProperPropertyComputationResult = {
-        assert(state.tacai.isDefined)
+        elidedAssert(state.tacai.isDefined)
         // for every use-site, check its escape state
         for (use <- state.uses) {
             checkStmtForEscape(state.tacai.get.stmts(use))
@@ -97,7 +98,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * It sets the tacai option in the analysis `state`.
      * If the TAC is non-final, a dependency to it will be added to the `state`.
      */
-    private[this] def retrieveTAC(
+    private def retrieveTAC(
         m: Method
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         val tacai = propertyStore(m, TACAI.key)
@@ -116,7 +117,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * with definition site defSite.
      * It might set the mostRestrictiveProperty.
      */
-    private[this] def checkStmtForEscape(
+    private def checkStmtForEscape(
         stmt: Stmt[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         (stmt.astID: @switch) match {
@@ -167,7 +168,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handlePutField(
+    protected def handlePutField(
         putField: PutField[V]
     )(
         implicit
@@ -178,7 +179,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     /**
      * Same as [[handlePutField]].
      */
-    protected[this] def handleArrayStore(
+    protected def handleArrayStore(
         arrayStore: ArrayStore[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
@@ -190,7 +191,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * @see [[org.opalj.tac.fpcf.analyses.escape.ExceptionAwareEscapeAnalysis]] which overrides
      *      this very simple behavior.
      */
-    protected[this] def handleThrow(
+    protected def handleThrow(
         aThrow: Throw[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
@@ -200,7 +201,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleStaticMethodCall(
+    protected def handleStaticMethodCall(
         call: StaticMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
@@ -210,7 +211,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleVirtualMethodCall(
+    protected def handleVirtualMethodCall(
         call: VirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
@@ -220,7 +221,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleNonVirtualMethodCall(
+    protected def handleNonVirtualMethodCall(
         call: NonVirtualMethodCall[V]
     )(
         implicit
@@ -241,7 +242,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         }
     }
 
-    protected[this] def handleInvokedynamicMethodCall(
+    protected def handleInvokedynamicMethodCall(
         call: InvokedynamicMethodCall[V]
     )(
         implicit
@@ -249,22 +250,22 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         state:   AnalysisState
     ): Unit
 
-    protected[this] def handleThisLocalOfConstructor(
+    protected def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
-    protected[this] def handleParameterOfConstructor(
+    protected def handleParameterOfConstructor(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
-    protected[this] def handleNonVirtualAndNonConstructorCall(
+    protected def handleNonVirtualAndNonConstructorCall(
         call: NonVirtualMethodCall[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
     /**
      * [[org.opalj.tac.ExprStmt]] can contain function calls, so they have to handle them.
      */
-    protected[this] def handleExprStmt(
+    protected def handleExprStmt(
         exprStmt: ExprStmt[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         handleExpression(exprStmt.expr, hasAssignment = false)
@@ -273,7 +274,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     /**
      * [[org.opalj.tac.Assignment]]s can contain function calls, so they have to handle them.
      */
-    protected[this] def handleAssignment(
+    protected def handleAssignment(
         assignment: Assignment[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         handleExpression(assignment.expr, hasAssignment = true)
@@ -285,7 +286,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * [[org.opalj.tac.fpcf.analyses.escape.AbstractEscapeAnalysis.handleOtherKindsOfExpressions]]
      * will be called.
      */
-    protected[this] def handleExpression(
+    protected def handleExpression(
         expr:          Expr[V],
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
@@ -309,7 +310,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleVirtualFunctionCall(
+    protected def handleVirtualFunctionCall(
         call:          VirtualFunctionCall[V],
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
@@ -320,7 +321,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleStaticFunctionCall(
+    protected def handleStaticFunctionCall(
         call:          StaticFunctionCall[V],
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
@@ -331,7 +332,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleNonVirtualFunctionCall(
+    protected def handleNonVirtualFunctionCall(
         call:          NonVirtualFunctionCall[V],
         hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
@@ -342,7 +343,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      *
      * $JustIntraProcedural
      */
-    protected[this] def handleInvokedynamicFunctionCall(
+    protected def handleInvokedynamicFunctionCall(
         call:          InvokedynamicFunctionCall[V],
         hasAssignment: Boolean
     )(
@@ -356,7 +357,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * [[org.opalj.tac.ExprStmt]], but if a future analysis requires handling other expressions, it
      * can override this method.
      */
-    protected[this] def handleOtherKindsOfExpressions(
+    protected def handleOtherKindsOfExpressions(
         expr: Expr[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit
 
@@ -366,7 +367,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * Otherwise, the `maybe` version of the current escape state is returned as
      * [[org.opalj.fpcf.InterimResult]].
      */
-    protected[this] def returnResult(
+    protected def returnResult(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
@@ -390,7 +391,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     /**
      * A continuation function, that handles the updates of property values for entity `other`.
      */
-    protected[this] def c(
+    protected def c(
         someEPS: SomeEPS
     )(
         implicit
@@ -415,7 +416,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Extracts information from the given entity and should call [[doDetermineEscape]] afterwards.
+     * Extracts information from the given entity and should call [[doDetermineEscape]] afterward.
      * For some entities a result might be returned immediately.
      */
     def determineEscape(e: Entity): ProperPropertyComputationResult =
@@ -428,27 +429,27 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
                 throw new IllegalArgumentException(s"$e is unsupported")
         }
 
-    protected[this] def determineEscapeOfDS(
+    protected def determineEscapeOfDS(
         dsl: (Context, DefinitionSiteLike)
     ): ProperPropertyComputationResult = {
         val ctx = createContext(dsl, dsl._2.method)
-        doDetermineEscape(ctx, createState)
+        doDetermineEscape(using ctx, createState)
     }
 
-    protected[this] def determineEscapeOfFP(
+    protected def determineEscapeOfFP(
         fp: (Context, VirtualFormalParameter)
     ): ProperPropertyComputationResult
 
-    protected[this] def createState: AnalysisState
+    protected def createState: AnalysisState
 
-    protected[this] lazy val virtualFormalParameters: VirtualFormalParameters = {
+    protected lazy val virtualFormalParameters: VirtualFormalParameters = {
         project.get(VirtualFormalParametersKey)
     }
 
-    protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
-    protected[this] def createContext(
+    protected def createContext(
         entity:       (Context, Entity),
         targetMethod: DeclaredMethod
     ): AnalysisContext

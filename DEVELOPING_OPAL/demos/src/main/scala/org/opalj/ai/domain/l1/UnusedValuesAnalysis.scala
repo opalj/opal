@@ -8,7 +8,7 @@ import java.io.File
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.ListSet
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI

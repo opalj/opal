@@ -37,7 +37,7 @@ class TypeImmutabilityMatcher(
     }
 
     override def validateProperty(
-        project:    Project[_],
+        project:    Project[?],
         as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,
@@ -57,7 +57,7 @@ class TransitiveImmutableTypeMatcher
 class DependentlyImmutableTypeMatcher
     extends TypeImmutabilityMatcher(org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType(SortedSet.empty)) {
     override def validateProperty(
-        project:    Project[_],
+        project:    Project[?],
         as:         Set[ClassType],
         entity:     scala.Any,
         a:          AnnotationLike,
@@ -65,12 +65,12 @@ class DependentlyImmutableTypeMatcher
     ): Option[String] = {
         if (!properties.exists(p =>
                 p match {
-                    case DependentlyImmutableType(latticeParameters) =>
+                    case org.opalj.br.fpcf.properties.immutability.DependentlyImmutableType(latticeParameters) =>
                         val annotationType = a.annotationType.asFieldType.asClassType
                         val annotationParameters =
                             getValue(project, annotationType, a.elementValuePairs, "parameter").asArrayValue.values
                                 .map(x => x.asStringValue.value)
-                        annotationParameters.toSet.equals(latticeParameters.toSet)
+                        annotationParameters.toSet.equals(latticeParameters)
                     case _ => p == property
                 }
             )

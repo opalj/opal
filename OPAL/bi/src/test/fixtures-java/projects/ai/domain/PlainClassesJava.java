@@ -13,7 +13,7 @@ public class PlainClassesJava {
         return String.class;
     }
 
-    public Class<?> staticPrimitveClassValue() {
+    public Class<?> staticPrimitiveClassValue() {
         return int.class;
     }
 

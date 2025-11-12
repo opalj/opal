@@ -34,21 +34,21 @@ import org.opalj.tac.fpcf.analyses.cg.TypeIterator
  */
 trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
 
-    protected[this] type ElementType
-    protected[this] type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
-    protected[this] type State <: TACAIBasedAnalysisState[ContextType]
-    protected[this] type DependerType
+    protected type ElementType
+    protected type PointsToSet >: Null <: PointsToSetLike[ElementType, ?, PointsToSet]
+    protected type State <: TACAIBasedAnalysisState[ContextType]
+    protected type DependerType
 
-    protected[this] implicit val typeIterator: TypeIterator
+    protected implicit val typeIterator: TypeIterator
 
-    protected[this] implicit val definitionSites: DefinitionSites = p.get(DefinitionSitesKey)
-    protected[this] implicit val formalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
-    protected[this] implicit val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
+    protected implicit val definitionSites: DefinitionSites = p.get(DefinitionSitesKey)
+    protected implicit val formalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
+    protected implicit val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
 
-    protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet]
-    protected[this] def emptyPointsToSet: PointsToSet
+    protected val pointsToPropertyKey: PropertyKey[PointsToSet]
+    protected def emptyPointsToSet: PointsToSet
 
-    protected[this] def createPointsToSet(
+    protected def createPointsToSet(
         pc:            Int,
         callContext:   ContextType,
         allocatedType: ReferenceType,
@@ -56,13 +56,13 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis with ContextualAnalysis
         isEmptyArray:  Boolean = false
     ): PointsToSet
 
-    @inline protected[this] def getTypeOf(element: ElementType): ReferenceType
+    @inline protected def getTypeOf(element: ElementType): ReferenceType
 
-    @inline protected[this] def getTypeIdOf(element: ElementType): Int
+    @inline protected def getTypeIdOf(element: ElementType): Int
 
-    @inline protected[this] def isEmptyArray(element: ElementType): Boolean
+    @inline protected def isEmptyArray(element: ElementType): Boolean
 
-    @inline protected[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
+    @inline protected def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
         if (eOptP.hasUBP)
             eOptP.ub
         else

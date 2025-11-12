@@ -5,7 +5,7 @@ package de
 import scala.collection.Map
 import scala.collection.Set
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.PerformanceEvaluation.time
@@ -38,7 +38,7 @@ object DependencyStore {
         val dc = time {
             val dc = new DependencyCollectingDependencyProcessor(Some(classFiles.size * 10))
             val de = createDependencyExtractor(dc)
-            classFiles.par.foreach { de.process(_) }
+            classFiles.par.foreach { de.process }
             dc
         } { ns => OPALLogger.info("progress", "collecting dependencies took " + ns.toSeconds) }
 

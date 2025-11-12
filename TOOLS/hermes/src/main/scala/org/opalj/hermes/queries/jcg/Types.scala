@@ -29,16 +29,16 @@ import org.opalj.da.ClassFile
 class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
     val Class = ClassType("java/lang/Class")
-    val Object = ClassType("java/lang/Object")
+    val Object = ClassType.Object
 
     override def featureIDs: Seq[String] = {
         Seq(
             "TC1", /* 0 --- checkcast (instr.) */
-            "TC2", /* 1 --- virutal invocation of java.lang.Class.cast that's not followed by a checkcast instr. */
+            "TC2", /* 1 --- virtual invocation of java.lang.Class.cast that's not followed by a checkcast instr. */
             "TC3", /* 2 --- equality check between two objects of type java.lang.Class */
             "TC4", /* 3 --- instanceof (instr.) */
-            "TC5", /* 4 --- virutal invocation of java.lang.Class.isInstance */
-            "TC6" /* 5 --- virutal invocation of java.lang.Class.isAssignableFrom */
+            "TC5", /* 4 --- virtual invocation of java.lang.Class.isInstance */
+            "TC6" /* 5 --- virtual invocation of java.lang.Class.isAssignableFrom */
         )
     }
 
@@ -52,9 +52,9 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInstruction <- body
         } {

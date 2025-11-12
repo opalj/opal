@@ -46,10 +46,10 @@ abstract class InterpretationHandler extends FPCFAnalysis with StringAnalysisCon
         eps match {
             case FinalEP(_, _) if eps.pk.equals(TACAI.key) =>
                 state.tacDependee = eps.asInstanceOf[FinalEP[Method, TACAI]]
-                processStatementForState(state)
+                processStatementForState(using state)
 
             case _ =>
-                createResult()(state)
+                createResult()(using state)
         }
     }
 
@@ -69,7 +69,7 @@ abstract class InterpretationHandler extends FPCFAnalysis with StringAnalysisCon
             throw new IllegalArgumentException(s"Obtained a pc that does not represent a definition site: ${state.pc}")
         }
 
-        processStatement(state)(state.tac.stmts(defSiteOpt.get))
+        processStatement(using state)(state.tac.stmts(defSiteOpt.get))
     }
 
     protected def processStatement(implicit state: InterpretationState): Stmt[V] => ProperPropertyComputationResult

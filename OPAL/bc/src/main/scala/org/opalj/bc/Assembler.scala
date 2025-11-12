@@ -8,9 +8,9 @@ import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
 import org.opalj.bc.MethodFilter.logContext
-import org.opalj.bi.{ConstantPoolTags => CPTags}
 import org.opalj.bi.ACC_STRICT
-import org.opalj.da._
+import org.opalj.bi.ConstantPoolTags as CPTags
+import org.opalj.da.*
 import org.opalj.da.ClassFileReader.LineNumberTable_attribute
 import org.opalj.log.OPALLogger
 
@@ -31,8 +31,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeShort(name_index)
         }
@@ -46,8 +46,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import cr._
-            import out._
+            import cr.*
+            import out.*
             writeByte(tag)
             writeShort(class_index)
             writeShort(name_and_type_index)
@@ -62,8 +62,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeShort(string_index)
         }
@@ -77,8 +77,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeInt(value)
         }
@@ -92,8 +92,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeFloat(value)
         }
@@ -107,8 +107,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeLong(value)
         }
@@ -122,8 +122,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeDouble(value)
         }
@@ -138,8 +138,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeShort(name_index)
             writeShort(descriptor_index)
@@ -156,8 +156,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeUTF(value)
         }
@@ -172,8 +172,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeByte(reference_kind)
             writeShort(reference_index)
@@ -189,8 +189,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeShort(descriptor_index)
         }
@@ -205,8 +205,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeShort(bootstrap_method_attr_index)
             writeShort(name_and_type_index)
@@ -221,8 +221,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeShort(name_index)
         }
@@ -236,8 +236,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeShort(name_index)
         }
@@ -251,8 +251,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import ci._
-            import out._
+            import ci.*
+            import out.*
             writeByte(tag)
             writeShort(bootstrap_method_attr_index)
             writeShort(name_and_type_index)
@@ -306,7 +306,7 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import out._
+            import out.*
             val tag = ev.tag
             writeByte(tag)
             tag match {
@@ -322,7 +322,7 @@ object Assembler {
                     writeShort(as[ClassValue](ev).class_info_index)
                 case '@' =>
                     val av = as[AnnotationValue](ev)
-                    serialize(av.annotation)(RichAnnotation, out, segmentInformation)
+                    serialize(av.annotation)(using RichAnnotation, out, segmentInformation)
                 case '[' =>
                     val av = as[ArrayValue](ev)
                     writeShort(av.values.length)
@@ -339,8 +339,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import a._
-            import out._
+            import a.*
+            import out.*
             writeShort(type_index)
             writeShort(element_value_pairs.length)
             element_value_pairs.foreach { evp =>
@@ -358,7 +358,7 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import out._
+            import out.*
             val target_type = ta.target_type
             val target_typeTag = target_type.tag
             writeByte(target_typeTag)
@@ -381,7 +381,7 @@ object Assembler {
                     writeByte(tt.formal_parameter_index)
 
                 case 0x17 =>
-                    val TATThrows(throws_type_index) = target_type
+                    val TATThrows(throws_type_index) = target_type: @unchecked
                     writeShort(throws_type_index)
 
                 case 0x40 | 0x41 =>
@@ -443,14 +443,14 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import out._
+            import out.*
             val tag = vti.tag
             (tag: @scala.annotation.switch) match {
                 case VerificationTypeInfo.ITEM_Object =>
                     val ovi = as[ObjectVariableInfo](vti)
                     writeByte(tag)
                     writeShort(ovi.cpool_index)
-                case VerificationTypeInfo.ITEM_Unitialized =>
+                case VerificationTypeInfo.ITEM_Uninitialized =>
                     val uvi = as[UninitializedVariableInfo](vti)
                     writeByte(tag)
                     writeShort(uvi.offset)
@@ -469,8 +469,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import a._
-            import out._
+            import a.*
+            import out.*
             writeShort(attribute_name_index)
             writeInt(attribute_length)
             a match {
@@ -590,7 +590,7 @@ object Assembler {
                     writeShort(e.method_index)
 
                 case c: Code_attribute =>
-                    import c._
+                    import c.*
                     writeShort(max_stack)
                     writeShort(max_locals)
                     val code_length = code.instructions.length
@@ -611,7 +611,7 @@ object Assembler {
                     e.exception_index_table.foreach(writeShort)
 
                 case i: InnerClasses_attribute =>
-                    import i._
+                    import i.*
                     writeShort(classes.size)
                     classes foreach { c =>
                         writeShort(c.inner_class_info_index)
@@ -709,8 +709,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import f._
-            import out._
+            import f.*
+            import out.*
             writeShort(access_flags)
             writeShort(name_index)
             writeShort(descriptor_index)
@@ -727,8 +727,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import m._
-            import out._
+            import m.*
+            import out.*
             writeShort(access_flags)
             writeShort(name_index)
             writeShort(descriptor_index)
@@ -746,8 +746,8 @@ object Assembler {
             out:                DataOutputStream,
             segmentInformation: (String, Int) => Unit
         ): Unit = {
-            import classFile._
-            import out._
+            import classFile.*
+            import out.*
             implicit val cp: Constant_Pool = classFile.constant_pool
             writeInt(org.opalj.bi.ClassFileMagic)
             writeShort(minor_version)
@@ -834,7 +834,7 @@ object Assembler {
     ): Array[Byte] = {
         val data = new ByteArrayOutputStream(classFile.size)
         val out = new DataOutputStream(data)
-        serialize(classFile)(RichClassFile, out, segmentInformation)
+        serialize(classFile)(using RichClassFile, out, segmentInformation)
         out.flush()
         data.toByteArray
     }

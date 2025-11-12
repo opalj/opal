@@ -14,6 +14,6 @@ case object LSUB extends SubtractInstruction {
 
     final val mnemonic = "lsub"
 
-    final val computationalType = ComputationalTypeLong
+    final val computationalType: ComputationalTypeLong.type = ComputationalTypeLong
 
 }

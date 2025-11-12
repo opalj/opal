@@ -2,6 +2,8 @@
 package org.opalj
 package hermes
 
+import org.opalj.util.elidedAssert
+
 /**
  * Represents the immutable results of a feature query.
  *
@@ -13,7 +15,6 @@ package hermes
  *         primarily useful when exploring the project and is optional.
  *         I.e., `extensions.size` can be  smaller than `count`. The maximum number
  *         of stored locations is set using the global setting: `org.opalj.hermes.maxLocations`.
- *
  * @author Michael Eichberg
  */
 abstract case class Feature[S] private (
@@ -21,7 +22,7 @@ abstract case class Feature[S] private (
     count:      Int,
     extensions: List[Location[S]]
 ) {
-    assert(count >= extensions.size)
+    elidedAssert(count >= extensions.size)
 }
 
 /**
@@ -34,7 +35,7 @@ object Feature {
     def apply[S](
         id:         String,
         count:      Int               = 0,
-        extensions: List[Location[S]] = List.empty
+        extensions: List[Location[S]] = List.empty[Location[S]]
     )(
         implicit hermes: HermesConfig
     ): Feature[S] = {

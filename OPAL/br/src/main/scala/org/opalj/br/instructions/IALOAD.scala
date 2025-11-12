@@ -14,5 +14,5 @@ case object IALOAD extends ArrayLoadInstruction with PrimitiveArrayAccess {
 
     final val mnemonic = "iaload"
 
-    final val elementTypeComputationalType = ComputationalTypeInt
+    final val elementTypeComputationalType: ComputationalTypeInt.type = ComputationalTypeInt
 }

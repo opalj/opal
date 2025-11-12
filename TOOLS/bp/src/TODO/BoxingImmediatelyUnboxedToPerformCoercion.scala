@@ -3,9 +3,9 @@ package org.opalj
 package frb
 package analyses
 
-import br._
-import br.analyses._
-import br.instructions._
+import br.*
+import br.analyses.*
+import br.instructions.*
 
 /**
  * This analysis reports code such as this:
@@ -42,14 +42,14 @@ object BoxingImmediatelyUnboxedToPerformCoercion {
         // For each method doing INVOKESPECIAL followed by INVOKEVIRTUAL on the same
         // java.lang class, where the called method's name ends in "Value"...
         val theTypes = scala.collection.mutable.HashSet(
-            ClassType("java/lang/Boolean"),
-            ClassType("java/lang/Byte"),
-            ClassType("java/lang/Character"),
-            ClassType("java/lang/Short"),
-            ClassType("java/lang/Integer"),
-            ClassType("java/lang/Long"),
-            ClassType("java/lang/Float"),
-            ClassType("java/lang/Double")
+            ClassType.Boolean,
+            ClassType.Byte,
+            ClassType.Character,
+            ClassType.Short,
+            ClassType.Integer,
+            ClassType.Long,
+            ClassType.Float,
+            ClassType.Double
         )
         val theMethods = scala.collection.mutable.HashSet(
             "booleanValue",

@@ -17,7 +17,7 @@ import org.opalj.da.ClassFile
 
 /**
  * Groups test case features that perform a polymorphic method calls over package boundaries. This is
- * particulary relevant for package visible types and/or package visible methods.
+ * particularly relevant for package visible types and/or package visible methods.
  *
  * @note The features represent the __PackageBoundaries__ test cases from the Call Graph Test Project (JCG).
  *
@@ -41,13 +41,13 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
             callerPackage = callerType.packageName
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case iv: INVOKEVIRTUAL => iv
             }: PartialFunction[Instruction, INVOKEVIRTUAL])
         } {
@@ -64,9 +64,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                 val rtCt = receiver.asClassType
                 val rcf = project.classFile(rtCt)
 
-                val isPackageVisibleMethod = rcf.map {
-                    _.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
-                }.getOrElse(false)
+                val isPackageVisibleMethod = rcf.exists(_.findMethod(name, methodDescriptor).exists(_.isPackagePrivate))
 
                 val matchesPreconditions = isPackageVisibleMethod &&
                     isMethodOverriddenInDiffPackage(
@@ -86,11 +84,11 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
                         }
                     ) {
                         instructionsLocations(1) += l
-                        1 /* it exists a subtype `S` within the same package as the declared typed `D`
+                        /* there exists a subtype `S` within the same package as the declared typed `D`
                         that inherits transitively from type `D`, such that `S` <: `S'` <: `D` where
                         `S'` overrides the package private method `D.m` */
                     } else {
-                        // it exists an target in another package that overrides the method
+                        // there exists a target in another package that overrides the method
                         instructionsLocations(0) += l
                     }
                 }
@@ -109,11 +107,11 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
     ) = {
         project.classHierarchy.existsSubclass(rtCt, project) { sct =>
             (sct.thisType.packageName ne callerPackage) &&
-            sct.findMethod(name, methodDescriptor).map(_.isPackagePrivate).getOrElse(false)
+            sct.findMethod(name, methodDescriptor).exists(_.isPackagePrivate)
         }
     }
 
-    private[this] def isMethodOverriddenInDiffPackage[S](
+    private def isMethodOverriddenInDiffPackage[S](
         declaredType:     ClassType,
         targetType:       ClassType,
         name:             String,

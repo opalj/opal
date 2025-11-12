@@ -7,6 +7,8 @@ package cg
 package xta
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.br.ArrayType
 import org.opalj.br.ClassType
@@ -49,6 +51,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.util.elidedAssert
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -69,7 +72,7 @@ class InstantiatedTypesAnalysis private[analyses] (
     val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
 
-    private[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    private implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 
@@ -113,7 +116,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         processCallers(declaredMethod, declaredType, ArrayBuffer(instantiatedTypes), callersEOptP, callersUB, null)
     }
 
-    private[this] def processCallers(
+    private def processCallers(
         declaredMethod: DeclaredMethod,
         declaredType:   ClassType,
         partialResults: ArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]],
@@ -139,14 +142,14 @@ class InstantiatedTypesAnalysis private[analyses] (
         }
     }
 
-    private[this] def processCaller(
+    private def processCaller(
         declaredMethod: DeclaredMethod,
         declaredType:   ClassType,
         callContext:    Context,
         isDirect:       Boolean,
         partialResults: ArrayBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]]
-    ): Unit = {
-        // a constructor is called from an unknown context, there could be an initialization.
+    ): Unit = boundary {
+        // A constructor is called from an unknown context, there could be an initialization.
         if (!callContext.hasContext) {
             partialResults += partialResult(declaredType, ExternalWorld)
             return;
@@ -154,36 +157,36 @@ class InstantiatedTypesAnalysis private[analyses] (
 
         val caller = callContext.method
 
-        // indirect calls, e.g. via reflection, are to be treated as instantiations as well
+        // Indirect calls, e.g. via reflection, are to be treated as instantiations as well
         if (!isDirect) {
             partialResults += partialResult(declaredType, caller)
             return;
         }
 
-        // a constructor is called by a non-constructor method, there will be an initialization.
+        // A constructor is called by a non-constructor method, there will be an initialization.
         if (caller.name != "<init>") {
             partialResults += partialResult(declaredType, caller)
             return;
         }
 
-        // the constructor is called from another constructor. it is only an new instantiated
-        // type if it was no super call. Thus the caller must be a subtype
+        // The constructor is called from another constructor. It is only a newly instantiated
+        // type if it was no super call. Thus, the caller must be a direct subtype.
         if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType)) {
             partialResults += partialResult(declaredType, caller)
             return;
         }
 
-        // actually it must be the direct subtype! -- we did the first check to return early
+        // Actually it must be the direct subtype! -- we did the first check to return early
         project.classFile(caller.declaringClassType.asClassType).foreach { cf =>
             cf.superclassType.foreach { supertype =>
                 if (supertype != declaredType) {
                     partialResults += partialResult(declaredType, caller)
-                    return;
+                    break();
                 }
             }
         }
 
-        // if the caller is not available, we have to assume that it was no super call
+        // If the caller is not available, we have to assume that it was no super call
         if (!caller.hasSingleDefinedMethod) {
             partialResults += partialResult(declaredType, caller)
             return;
@@ -191,7 +194,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
         val callerMethod = caller.definedMethod
 
-        // if the caller has no body, we have to assume that it was no super call
+        // If the caller has no body, we have to assume that it was no super call
         if (callerMethod.body.isEmpty) {
             partialResults += partialResult(declaredType, caller)
             return;
@@ -208,24 +211,24 @@ class InstantiatedTypesAnalysis private[analyses] (
             case pcAndInstr @ PCAndInstruction(_, `supercall`) => pcAndInstr
         }
 
-        assert(pcsOfSuperCalls.nonEmpty)
+        elidedAssert(pcsOfSuperCalls.nonEmpty)
 
-        // there can be only one super call, so there must be an explicit call
+        // There can be only one super call, so there must be an explicit call
         if (pcsOfSuperCalls.size > 1) {
             partialResults += partialResult(declaredType, caller)
             return;
         }
 
-        // there is exactly the current call as potential super call, it still might no super
-        // call if the class has another constructor that calls the super. In that case
-        // there must either be a new of the `declaredType` or it is a super call.
+        // There is exactly the current call as potential super call, it still might be no super
+        // call if the class has another constructor that calls the super. In that case,
+        // there must either be a NEW of the `declaredType` or it is a super call.
         val newInstr = NEW(declaredType)
         val hasNew = callerMethod.body.get.exists(pcInst => pcInst.instruction == newInstr)
         if (hasNew)
             partialResults += partialResult(declaredType, caller)
     }
 
-    private[this] def continuation(
+    private def continuation(
         declaredMethod: DeclaredMethod,
         declaredType:   ClassType,
         seenCallers:    Callers
@@ -299,24 +302,23 @@ class InstantiatedTypesAnalysisScheduler(
         val packageIsClosed = p.get(ClosedPackagesKey)
         val declaredFields = p.get(DeclaredFieldsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
-        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
+        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq*)
 
         // While processing entry points and fields, we keep track of all array types we see, as
         // well as subtypes and lower-dimensional types. These types also need to be
-        // pre-initialized. Note: This set only contains ArrayTypes whose element type is an
+        // pre-initialized. Note: This set only contains ArrayTypes whose element-type is an
         // ClassType. Arrays of primitive types can be ignored.
         val seenArrayTypes = UIDSet.newBuilder[ArrayType]
 
         import p.classHierarchy
 
         def initialize(setEntity: TypeSetEntity, types: UIDSet[ReferenceType]): Unit = {
-            ps.preInitialize(setEntity, InstantiatedTypes.key) {
-                case UBP(typeSet) =>
-                    InterimEUBP(setEntity, typeSet.updated(types))
-                case _: EPK[_, _] =>
-                    InterimEUBP(setEntity, InstantiatedTypes(types))
-                case eps =>
-                    sys.error(s"unexpected property: $eps")
+            ps.preInitialize(setEntity, InstantiatedTypes.key) { pc =>
+                (pc: @unchecked) match
+                    case UBP(typeSet: InstantiatedTypes) =>
+                        InterimEUBP(setEntity, typeSet.updated(types))
+                    case _: EPK[_, _] =>
+                        InterimEUBP(setEntity, InstantiatedTypes(types))
             }
         }
 
@@ -377,7 +379,7 @@ class InstantiatedTypesAnalysisScheduler(
         @inline def fieldIsRelevant(f: Field): Boolean = {
             // Only fields which are ArrayType or ClassType are relevant.
             f.fieldType.isReferenceType &&
-            // If the field is an ArrayType, then the array's element type must be a ClassType.
+            // If the field is an ArrayType, then the array's element-type must be a ClassType.
             // In other words: We don't care about arrays of primitive types (e.g. int[]) which
             // do not have to be pre-initialized.
             (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isClassType)

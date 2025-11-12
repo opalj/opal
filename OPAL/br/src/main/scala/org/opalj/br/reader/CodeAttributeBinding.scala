@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.Code_attributeReader
 
 /**
@@ -19,7 +17,6 @@ trait CodeAttributeBinding
     with AttributeBinding {
 
     type ExceptionTableEntry = br.ExceptionHandler
-    override implicit val exceptionTableEntryType: ClassTag[ExceptionTableEntry] = ClassTag(classOf[br.ExceptionHandler])
 
     type Code_attribute = br.Code
 

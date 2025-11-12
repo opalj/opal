@@ -21,7 +21,7 @@ case class RuntimeInvisibleParameterAnnotations_attribute(
             <summary class="attribute">Runtime Invisible Parameter Annotations [size: {
                 parameters_annotations.size
             } item(s)]</summary>
-            {parametersAnnotationstoXHTML(cp)}
+            {parametersAnnotationstoXHTML}
         </details>
     }
 

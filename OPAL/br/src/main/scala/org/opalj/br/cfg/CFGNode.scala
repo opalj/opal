@@ -5,6 +5,7 @@ package cfg
 import scala.collection.mutable
 
 import org.opalj.graphs.Node
+import org.opalj.util.elidedAssert
 
 /**
  * The common super trait of all nodes belonging to a method's control flow graph.
@@ -32,7 +33,7 @@ trait CFGNode extends Node {
     // MANAGING PREDECESSORS
     //
 
-    private[this] var _predecessors: Set[CFGNode] = Set.empty
+    private var _predecessors: Set[CFGNode] = Set.empty
 
     def addPredecessor(predecessor: CFGNode): Unit = {
         //  if (predecessor eq this) throw new IllegalArgumentException()
@@ -74,7 +75,7 @@ trait CFGNode extends Node {
 
     override final def foreachSuccessor(f: Node => Unit): Unit = _successors foreach f
 
-    private[this] var _successors: Set[CFGNode] = Set.empty
+    private var _successors: Set[CFGNode] = Set.empty
 
     def addSuccessor(successor: CFGNode): Unit = {
         //  if (successor eq this) throw new IllegalArgumentException(s"$this => $successor")
@@ -136,7 +137,7 @@ trait CFGNode extends Node {
      *        graph containing subroutines.
      */
     private[cfg] def subroutineFrontier(code: Code, bbs: Array[BasicBlock]): List[BasicBlock] = {
-        assert(this.isStartOfSubroutine)
+        elidedAssert(this.isStartOfSubroutine)
 
         var frontier: List[BasicBlock] = Nil
 

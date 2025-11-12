@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.ArraySeq
 import scala.collection.immutable.HashMap
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 /**
  * ==Design Goals==
@@ -22,7 +22,7 @@ import scala.jdk.CollectionConverters._
  * ==Integration With Scala's Collection Library==
  * Hence, OPAL's collection library complements Scala's default collection library and is not
  * intended to replace it. Integration with Scala's collection library is primarily provided
- * by means of iterators (OPAL's `Iterator`s inherit from Scala's `Iterator`s). Furthermore
+ * by means of iterators (OPAL's `Iterator`s inherit from Scala's `Iterator`s). Furthermore,
  * the companion object of each of OPAL's collection classes generally provides factory methods
  * that facilitate the conversion from Scala collection classes to OPAL collection classes.
  *
@@ -33,7 +33,7 @@ import scala.jdk.CollectionConverters._
  */
 package object collection {
 
-    type SomeIntSet = IntSet[_]
+    type SomeIntSet = IntSet[?]
 
     //
     // Helpers related to Lists
@@ -69,8 +69,8 @@ package object collection {
     //
 
     /**
-     * Converts a multi-map (a Map that contains Maps) based on
-     * `java.util.concurrent.ConcurrentHashMap`s into a corresponding multi-map
+     * Converts a multimap (a Map that contains Maps) based on
+     * `java.util.concurrent.ConcurrentHashMap`s into a corresponding multimap
      * based on `scala.collection.immutable.HashMap`s.
      * E.g.,
      * {{{

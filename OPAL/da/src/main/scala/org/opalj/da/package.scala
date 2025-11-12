@@ -84,7 +84,7 @@ package object da {
 
         val explicitAccessFlags =
             VisibilityModifier.get(access_flags) match {
-                case None => if (accessFlags.length() == 0) "default" else accessFlags + " default"
+                case None => if (accessFlags.isEmpty) "default" else accessFlags + " default"
                 case _    => accessFlags
             }
 
@@ -100,7 +100,7 @@ package object da {
     }
 
     def asJavaReferenceType(cpIndex: Int)(implicit cp: Constant_Pool): FieldTypeInfo = {
-        val t = cp(cpIndex).toString(cp)
+        val t = cp(cpIndex).toString
         if (t.charAt(0) == '[')
             parseFieldType(t)
         else
@@ -112,7 +112,7 @@ package object da {
     )(
         implicit cp: Constant_Pool
     ): ClassTypeInfo = {
-        asJavaClassType(cp(cpIndex).toString(cp))
+        asJavaClassType(cp(cpIndex).toString)
     }
 
     def asJavaClassType(t: String): ClassTypeInfo = ClassTypeInfo(t.replace('/', '.'))
@@ -259,10 +259,10 @@ package object da {
     }
 
     def abbreviateType(definingType: String, memberType: String): Node = {
-        val classAttrtibute = "type " + (if (definingType.indexOf('[') == -1) "object" else "array")
+        val classAttribute = "type " + (if (definingType.indexOf('[') == -1) "object" else "array")
 
         val abbreviatedMemberType = org.opalj.bytecode.abbreviateType(definingType, memberType, '.')
-        <span class={classAttrtibute} data-type={memberType}> {abbreviatedMemberType} </span>
+        <span class={classAttribute} data-type={memberType}> {abbreviatedMemberType} </span>
     }
 
     def byteArrayToNode(info: Array[Byte]): Node = {

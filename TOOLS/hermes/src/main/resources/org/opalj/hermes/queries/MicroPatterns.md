@@ -42,7 +42,7 @@ A class with one or more public constructors, and at least one static field of t
 A class which has exactly one, mutable, instance field.
 
 ### Compound Box
-A class with exactly one non primitive instance field.
+A class with exactly one non-primitive instance field.
 
 ### Canopy
 A class with exactly one instance field that it assigned exactly once, during instance construction.

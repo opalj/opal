@@ -38,8 +38,8 @@ import org.opalj.log.OPALLogger
  */
 object SimpleAIKey
     extends ProjectInformationKey[
-        Method => AIResult { val domain: Domain with RecordDefUse },
-        /*DomainFactory*/ Method => Domain with RecordDefUse
+        Method => AIResult { val domain: Domain & RecordDefUse },
+        /*DomainFactory*/ Method => Domain & RecordDefUse
     ] {
 
     /**
@@ -59,7 +59,7 @@ object SimpleAIKey
      */
     override def compute(
         project: SomeProject
-    ): Method => AIResult { val domain: Domain with RecordDefUse } = {
+    ): Method => AIResult { val domain: Domain & RecordDefUse } = {
         implicit val logContext: LogContext = project.logContext
 
         val domainFactory =
@@ -78,7 +78,7 @@ object SimpleAIKey
                     (m: Method) => new DefaultDomainWithCFGAndDefUse(project, m)
             }
 
-        val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain with RecordDefUse }]
+        val aiResults = TrieMap.empty[Method, AIResult { val domain: Domain & RecordDefUse }]
         (m: Method) => aiResults.getOrElseUpdate(m, BaseAI(m, domainFactory(m)))
         /*
         (m: Method) => {
@@ -86,7 +86,7 @@ object SimpleAIKey
                 case Some(taCode) => taCode
                 case None =>
                     val brCode = m.body.get
-                    // Basically, we use double checked locking; we really don't want to
+                    // Basically, we use double-checked locking; we really don't want to
                     // transform the code more than once!
                     brCode.synchronized {
                         aiResults.get(m) match {

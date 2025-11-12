@@ -23,8 +23,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
 
     type StackMapTable_attribute >: Null <: Attribute
 
-    type StackMapFrame <: AnyRef
-    implicit val stackMapFrameType: ClassTag[StackMapFrame] // TODO: Replace in Scala 3 by `type StackMapFrame : ClassTag`
+    type StackMapFrame <: AnyRef: ClassTag
     type StackMapFrames = ArraySeq[StackMapFrame]
 
     def StackMapFrame(cp: Constant_Pool, in: DataInputStream): StackMapFrame
@@ -51,7 +50,7 @@ trait StackMapTable_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parserFactory() = (
+    private def parserFactory() = (
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,

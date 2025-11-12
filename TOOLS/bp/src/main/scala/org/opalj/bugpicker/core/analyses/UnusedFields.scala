@@ -21,7 +21,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 
 /**
- * Identifies fields (static or instance) that are not used and which are also not useable.
+ * Identifies fields (static or instance) that are not used and which are also not usable.
  *
  * @author Michael Eichberg
  */

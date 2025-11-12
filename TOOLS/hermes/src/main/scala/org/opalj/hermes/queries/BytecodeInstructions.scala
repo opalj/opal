@@ -18,7 +18,7 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
 
     // Let's do some caching...
     final val JVMInstructions: List[(Int, String)] = bytecode.JVMInstructions
-    private[this] final val OpcodesToOrdinalNumbers = new Array[Int](256)
+    private final val OpcodesToOrdinalNumbers = new Array[Int](256)
 
     override val htmlDescription: Either[String, URL] = {
         Right(URI.create("https://www.opal-project.de/bi/JVMInstructions.xml").toURL)
@@ -43,9 +43,9 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInstruction <- body
         } {

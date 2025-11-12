@@ -30,7 +30,7 @@ case class Method_Info(
     /**
      * The simple name of the method.
      */
-    def name(implicit cp: Constant_Pool): String = cp(name_index).toString(cp)
+    def name(implicit cp: Constant_Pool): String = cp(name_index).toString
 
     /**
      * The method descriptor as used by the Java VM. E.g., the method `void doIt()`

@@ -37,7 +37,7 @@ class MethodTypes(implicit hermes: HermesConfig) extends FeatureQuery {
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classLocation = ClassFileLocation(source, classFile)
             m <- classFile.methods
         } {

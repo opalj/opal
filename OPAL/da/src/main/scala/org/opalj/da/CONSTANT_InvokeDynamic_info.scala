@@ -22,7 +22,7 @@ case class CONSTANT_InvokeDynamic_info(
 
     override def asCPNode(implicit cp: Constant_Pool): Node = {
         <div class="cp_entry">
-            {this.getClass().getSimpleName}
+            {this.getClass.getSimpleName}
             (<div class="attributes_ref">
                  bootstrap_method_attr_index={bootstrap_method_attr_index}
              </div>
@@ -49,7 +49,7 @@ case class CONSTANT_InvokeDynamic_info(
     override def toString(implicit cp: Constant_Pool): String = {
         "CONSTANT_InvokeDynamic_info(" +
             s"$bootstrap_method_attr_index," +
-            s"${cp(name_and_type_index).toString(cp)}/*$name_and_type_index */ " +
+            s"${cp(name_and_type_index).toString}/*$name_and_type_index */ " +
             ")"
     }
 }

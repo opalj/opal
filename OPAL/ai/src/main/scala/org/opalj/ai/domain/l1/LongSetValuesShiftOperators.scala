@@ -15,7 +15,7 @@ package l1
  * @author David Becker
  */
 trait LongSetValuesShiftOperators extends LongValuesDomain {
-    this: LongSetValues with ConcreteIntegerValues =>
+    this: LongSetValues & ConcreteIntegerValues =>
 
     /*override*/
     def lshl(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {

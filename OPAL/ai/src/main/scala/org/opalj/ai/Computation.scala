@@ -19,7 +19,7 @@ package ai
  * or threw an exception ([[throwsException]]). Only if `returnsNormally` returns
  * `true` the methods `result` and `hasResult` are defined.
  *
- * @tparam V The result of the computation. Typically a `DomainValue`;
+ * @tparam V The result of the computation. Typically, a `DomainValue`;
  *      if the computation is executed for its side
  *      effect (e.g., as in case of a `monitorenter` or `monitorexit` instruction)
  *      the type of `V` maybe `Nothing`.
@@ -264,7 +264,7 @@ object ComputationWithResultAndException {
 
 object ComputationWithResult {
 
-    def unapply[V](c: Computation[V, _]): Option[V] = {
+    def unapply[V](c: Computation[V, ?]): Option[V] = {
         if (c.hasResult) Some(c.result) else None
     }
 
@@ -272,7 +272,7 @@ object ComputationWithResult {
 
 object ComputationWithException {
 
-    def unapply[E](c: Computation[_, E]): Option[E] = {
+    def unapply[E](c: Computation[?, E]): Option[E] = {
         if (c.throwsException) Some(c.exceptions) else None
     }
 }

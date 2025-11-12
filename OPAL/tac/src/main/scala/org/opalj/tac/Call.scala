@@ -16,7 +16,7 @@ import org.opalj.value.ValueInformation
  *
  * @author Michael Eichberg
  */
-trait Call[+V <: Var[V]] {
+trait Call[+V] {
 
     /** The declaring class; can be an array type for all methods defined by `java.lang.Object`. */
     def declaringClass: ReferenceType
@@ -56,7 +56,7 @@ trait Call[+V <: Var[V]] {
 
 object Call {
 
-    def unapply[V <: Var[V]](
+    def unapply[V](
         call: Call[V]
     ): Some[(ReferenceType, Boolean, String, MethodDescriptor)] = {
         Some((call.declaringClass, call.isInterface, call.name, call.descriptor))

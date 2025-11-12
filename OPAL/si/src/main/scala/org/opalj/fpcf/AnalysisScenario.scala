@@ -21,25 +21,19 @@ import org.opalj.util.getObjectReflectively
  */
 class AnalysisScenario[A](val ps: PropertyStore) {
 
-    private[this] var scheduleComputed: Boolean = false
+    private var scheduleComputed: Boolean = false
 
-    private[this] var allCS: Set[ComputationSpecification[A]] = Set.empty
+    private var allCS: Set[ComputationSpecification[A]] = Set.empty
 
-    private[this] var derivedProperties: Set[PropertyBounds] = Set.empty
-    private[this] var eagerlyDerivedProperties: Set[PropertyBounds] = Set.empty
-    private[this] var collaborativelyDerivedProperties: Set[PropertyBounds] = Set.empty
-    private[this] var lazilyDerivedProperties: Set[PropertyBounds] = Set.empty
+    private var derivedProperties: Set[PropertyBounds] = Set.empty
+    private var eagerlyDerivedProperties: Set[PropertyBounds] = Set.empty
+    private var lazilyDerivedProperties: Set[PropertyBounds] = Set.empty
 
-    private[this] var initializationData: Map[ComputationSpecification[A], Any] = Map.empty
+    private var initializationData: Map[ComputationSpecification[A], Any] = Map.empty
 
-    private[this] var usedProperties: Set[PropertyBounds] = Set.empty
+    private var usedProperties: Set[PropertyBounds] = Set.empty
 
-    private[this] var eagerCS: Set[ComputationSpecification[A]] = Set.empty
-    private[this] var lazyCS: Set[ComputationSpecification[A]] = Set.empty
-    private[this] var triggeredCS: Set[ComputationSpecification[A]] = Set.empty
-    private[this] var transformersCS: Set[ComputationSpecification[A]] = Set.empty
-
-    private[this] var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = {
+    private var derivedBy: Map[PropertyKind, (PropertyBounds, Set[ComputationSpecification[A]])] = {
         Map.empty
     }
 
@@ -52,13 +46,6 @@ class AnalysisScenario[A](val ps: PropertyStore) {
     def +=(cs: ComputationSpecification[A]): this.type = {
         if (scheduleComputed) {
             throw new IllegalStateException("process was already computed");
-        }
-
-        cs.computationType match {
-            case EagerComputation     => eagerCS += cs
-            case TriggeredComputation => triggeredCS += cs
-            case LazyComputation      => lazyCS += cs
-            case Transformer          => transformersCS += cs
         }
 
         allCS += cs
@@ -85,8 +72,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         allCS foreach { cs =>
             // all derived properties depend on all used properties
             cs.derives foreach { derived =>
-                psDeps addVertice derived
-                cs.uses(ps) foreach { use => psDeps addEdge (derived, use) }
+                psDeps.addVertex(derived)
+                cs.uses(ps) foreach { use => psDeps.addEdge(derived, use) }
             }
         }
         psDeps
@@ -112,11 +99,11 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             derivedBy
         }
         allCS foreach { cs =>
-            compDeps addVertice cs
+            compDeps.addVertex(cs)
             cs.uses(ps) foreach { usedPK =>
                 derivedBy.get(usedPK).iterator.flatten.foreach { providerCS =>
                     if (providerCS ne cs) {
-                        compDeps addEdge (cs, providerCS)
+                        compDeps.addEdge(cs, providerCS)
                     }
                 }
             }
@@ -126,24 +113,26 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             val cssIt = css.iterator
             val headCS = cssIt.next()
             var lastCS = headCS
-            do {
+            while {
                 val nextCS = cssIt.next()
-                compDeps addEdge (lastCS -> nextCS)
+                compDeps.addEdge(lastCS -> nextCS)
                 lastCS = nextCS
-            } while (cssIt.hasNext)
-            compDeps addEdge (lastCS -> headCS)
+
+                cssIt.hasNext
+            } do ()
+            compDeps.addEdge(lastCS -> headCS)
         }
 
         compDeps
     }
 
-    private[this] def processCS(cs: ComputationSpecification[A]): Unit = {
+    private def processCS(cs: ComputationSpecification[A]): Unit = {
         // 1. check the most basic constraints
         cs.derivesLazily foreach { lazilyDerivedProperty =>
             if (derivedProperties.contains(lazilyDerivedProperty)) {
                 val pkName = PropertyKey.name(lazilyDerivedProperty.pk.id)
                 val m = s"can not register $cs: $pkName is already computed by another analysis"
-                throw new SpecificationViolation(m)
+                throw SpecificationViolation(m)
             }
         }
 
@@ -155,7 +144,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                 val m =
                     s"can not register $cs: " +
                         s"$pkName is not computed collaboratively by all analyses"
-                throw new SpecificationViolation(m)
+                throw SpecificationViolation(m)
             }
         }
 
@@ -163,7 +152,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
             if (derivedProperties.contains(eagerlyDerivedProperty)) {
                 val pkName = PropertyKey.name(eagerlyDerivedProperty.pk.id)
                 val m = s"can not register $cs: $pkName is already computed by another analysis"
-                throw new SpecificationViolation(m)
+                throw SpecificationViolation(m)
             }
         }
 
@@ -194,7 +183,6 @@ class AnalysisScenario[A](val ps: PropertyStore) {
 
         eagerlyDerivedProperties ++= cs.derivesEagerly
         handleDerivedProperties(cs.derivesEagerly)
-        collaborativelyDerivedProperties ++= cs.derivesCollaboratively
         handleDerivedProperties(cs.derivesCollaboratively)
         lazilyDerivedProperties ++= cs.derivesLazily.toList
         handleDerivedProperties(cs.derivesLazily.toSet)
@@ -243,7 +231,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
                     if (alreadyComputedPropertyKinds.contains(derivedProperty.pk.id)) {
                         val pkName = PropertyKey.name(derivedProperty.pk.id)
                         val m = s"can not register $cs: $pkName was computed in a previous phase"
-                        throw new SpecificationViolation(m)
+                        throw SpecificationViolation(m)
                     }
                 }
             }

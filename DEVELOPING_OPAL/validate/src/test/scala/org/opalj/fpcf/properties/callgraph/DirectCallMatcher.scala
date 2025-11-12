@@ -28,7 +28,7 @@ class DirectCallMatcher extends AbstractRepeatablePropertyMatcher {
     override val containerAnnotationType: ClassType = ClassType("org/opalj/fpcf/properties/callgraph/DirectCalls")
 
     override def validateSingleProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
@@ -86,7 +86,7 @@ class DirectCallMatcher extends AbstractRepeatablePropertyMatcher {
         val resolvedTargets = {
             val av = a.elementValuePairs collectFirst {
                 case ElementValuePair("resolvedTargets", ArrayValue(ab)) =>
-                    ab.toIndexedSeq.map(_.asInstanceOf[StringValue].value)
+                    ab.map(_.asInstanceOf[StringValue].value)
             }
             av.getOrElse(List())
         }
@@ -116,7 +116,7 @@ class DirectCallMatcher extends AbstractRepeatablePropertyMatcher {
 
         if (missingCalleesSet.nonEmpty) {
             // TODO more detailed reporting?
-            Some(s"${missingCalleesSet.size} unresolved targets for call to ${methodName} in line ${lineNumber}")
+            Some(s"${missingCalleesSet.size} unresolved targets for call to $methodName in line $lineNumber")
         } else {
             None
         }

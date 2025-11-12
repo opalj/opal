@@ -9,6 +9,7 @@ import org.opalj.br.ClassType
 import org.opalj.br.MethodSignature
 import org.opalj.br.MethodTemplate
 import org.opalj.collection.immutable.UShortPair
+import org.opalj.util.elidedAssert
 
 /**
  * Builder for [[org.opalj.br.ClassFile]] objects.
@@ -67,7 +68,7 @@ class CLASS[T](
                 map + ((m.signature, t))
             }
 
-        assert(annotationsMap.size == brAnnotatedMethods.size, "duplicate method signatures found")
+        elidedAssert(annotationsMap.size == brAnnotatedMethods.size, "duplicate method signatures found")
 
         var brMethods = brAnnotatedMethods.map[MethodTemplate](m => m._1)
         if (!(
@@ -110,7 +111,7 @@ class CLASS[T](
         val brAnnotations: Seq[(br.Method, T)] =
             for {
                 m <- classFile.methods
-                Some(a) <- annotationsMap.get(m.signature).toSeq
+                case Some(a) <- annotationsMap.get(m.signature).toSeq
             } yield {
                 (m, a: T @unchecked)
             }
@@ -130,7 +131,7 @@ class CLASS[T](
     def toDA(
         implicit classHierarchy: ClassHierarchy = br.ClassHierarchy.PreInitializedClassHierarchy
     ): (da.ClassFile, Map[br.Method, T]) = {
-        val (brClassFile, annotations) = toBR(classHierarchy)
+        val (brClassFile, annotations) = toBR
         (ba.toDA(brClassFile), annotations)
     }
 

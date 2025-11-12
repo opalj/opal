@@ -24,6 +24,6 @@ case class LineNumberTable_attribute(
         </details>
     }
 
-    def line_number_tableToXHTML(): Seq[Node] = line_number_table.map(_.toXHTML())
+    def line_number_tableToXHTML(): Seq[Node] = line_number_table.map(_.toXHTML)
 
 }

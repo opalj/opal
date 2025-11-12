@@ -5,7 +5,6 @@ package hermes
 import java.net.URL
 
 import org.opalj.br.analyses.Project
-import org.opalj.da
 
 /**
  * The resources of the instantiated project.

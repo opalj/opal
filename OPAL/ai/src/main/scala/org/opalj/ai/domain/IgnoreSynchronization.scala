@@ -9,9 +9,9 @@ package domain
  * @author Michael Eichberg
  */
 trait IgnoreSynchronization extends MonitorInstructionsDomain {
-    this: ValuesDomain with ReferenceValuesDomain with ExceptionsFactory with Configuration =>
+    this: ValuesDomain & ReferenceValuesDomain & ExceptionsFactory & Configuration =>
 
-    protected[this] def sideEffectOnlyOrExceptions(
+    protected def sideEffectOnlyOrExceptions(
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {

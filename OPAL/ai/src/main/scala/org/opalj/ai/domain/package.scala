@@ -48,7 +48,7 @@ import org.opalj.collection.immutable.UIDSet
  * ==Thread Safety==
  * Unless explicitly documented, a domain is never thread-safe. The general programming
  * model is to use one `Domain` object per code block/method and therefore, thread-safety
- * is not required for `Domain`s that are used for the evaluation of methods. However
+ * is not required for `Domain`s that are used for the evaluation of methods. However,
  * domains that are used to adapt/transfer values should be thread safe
  * (see [[org.opalj.ai.domain.ValuesCoordinatingDomain]] for further details).
  *

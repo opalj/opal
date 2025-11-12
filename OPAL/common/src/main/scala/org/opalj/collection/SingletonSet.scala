@@ -13,6 +13,6 @@ object SingletonSet {
 
     def unapply[T](s: Set[T]): Option[T] = if (s.size == 1) s.headOption else None
 
-    def unapply(s: IntSet[_]): Option[Int] = if (s.size == 1) Some(s.head) else None
+    def unapply(s: IntSet[?]): Option[Int] = if (s.size == 1) Some(s.head) else None
 
 }

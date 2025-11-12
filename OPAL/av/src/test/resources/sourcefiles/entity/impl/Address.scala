@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package entity.impl
 
+import scala.compiletime.uninitialized
+
 import entity.AbstractEntity
 import entity.annotation.Column
 import entity.annotation.Entity
@@ -18,7 +20,7 @@ class Address extends AbstractEntity {
 
     @Id
     @Column(name = "id", nullable = false)
-    var id: Int = _
+    var id: Int = uninitialized
 
     @Column(name = "street", nullable = false)
     var street: String = ""

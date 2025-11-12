@@ -18,7 +18,7 @@ import org.opalj.br.ClassType
 import org.opalj.br.ExceptionHandler
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustTakes
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.util.InMemoryClassLoader
 
 /**
@@ -54,13 +54,16 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     it should "fail with unresolvable labels in branch instructions" in {
         assertThrows[java.util.NoSuchElementException](CODE(IFGE(Symbol("label"))))
         assertThrows[java.util.NoSuchElementException](
-            CODE(Symbol("default"), LOOKUPSWITCH(Symbol("default"), ArraySeq((0, Symbol("label")))))
+            CODE(Symbol("default"), LOOKUPSWITCH(Symbol("default"), ArraySeq[(Int, InstructionLabel)]((0, Symbol("label")))))
         )
         assertThrows[java.util.NoSuchElementException](
             CODE(
                 Symbol("default"),
                 Symbol("label1"),
-                LOOKUPSWITCH(Symbol("default"), ArraySeq((0, Symbol("label1")), (0, Symbol("label2"))))
+                LOOKUPSWITCH(
+                    Symbol("default"),
+                    ArraySeq[(Int, InstructionLabel)]((0, Symbol("label1")), (0, Symbol("label2")))
+                )
             )
         )
     }
@@ -94,7 +97,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
                     theCode.exceptionHandlers.mkString("Exception Handlers:\n\t\t", "\n\t\t", "\n")
                 )
                 info(
-                    theCode.liveVariables(PreInitializedClassHierarchy).zipWithIndex
+                    theCode.liveVariables(using PreInitializedClassHierarchy).zipWithIndex
                         .filter(_._1 != null).map(_.swap)
                         .mkString("Live variables:\n\t\t", "\n\t\t", "\n")
                 )
@@ -468,8 +471,8 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     }
 
     it should "not remove live code after simple conditional branch instructions" in {
-        import ClassType.{Object => OObject}
-        import ClassType.{RuntimeException => ORuntimeException}
+        import ClassType.Object as CObject
+        import ClassType.RuntimeException as CRuntimeException
         val codeElements = Array[CodeElement[AnyRef]](
             LabelElement(0),
             TRY(Symbol("eh")),
@@ -477,13 +480,13 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             LabelElement(1),
             ACONST_NULL,
             LabelElement(2),
-            INVOKEVIRTUAL(OObject, "equals", MethodDescriptor(OObject, BooleanType)),
+            INVOKEVIRTUAL(CObject, "equals", MethodDescriptor(CObject, BooleanType)),
             LabelElement(5),
             ICONST_0,
             LabelElement(6),
             IRETURN,
             TRYEND(Symbol("eh")),
-            CATCH(Symbol("eh"), 1, Some(ORuntimeException)),
+            CATCH(Symbol("eh"), 1, Some(CRuntimeException)),
             LabelElement(7),
             POP,
             LabelElement(8),
@@ -503,7 +506,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         val expectedInstructions = Array(
             /* 00 */ ACONST_NULL,
             /* 01 */ ACONST_NULL,
-            /* 02 */ INVOKEVIRTUAL(OObject, "equals", MethodDescriptor(OObject, BooleanType)),
+            /* 02 */ INVOKEVIRTUAL(CObject, "equals", MethodDescriptor(CObject, BooleanType)),
             /* 03 */ null,
             /* 04 */ null,
             /* 05 */ ICONST_0,
@@ -520,7 +523,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
             /* 16 */ IRETURN
         )
         assert(c.instructions === expectedInstructions)
-        assert(c.exceptionHandlers.head == ExceptionHandler(0, 7, 7, Some(ORuntimeException)))
+        assert(c.exceptionHandlers.head == ExceptionHandler(0, 7, 7, Some(CRuntimeException)))
     }
 
     it should "allow explicitly specified ExceptionHandlers that include the last PC" in {
@@ -549,22 +552,22 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     }
 
     it should "allow inline ExceptionHandlers that include the last PC" in {
-        import ClassType.{RuntimeException => ORuntimeException}
-        import ClassType.{Object => OObject}
+        import ClassType.RuntimeException as CRuntimeException
+        import ClassType.Object as CObject
         val codeElements = Array[CodeElement[AnyRef]](
             GOTO(Symbol("NORMAL_CF")), // => 0,1,2
-            CATCH(Symbol("eh"), 1, Some(ORuntimeException)),
+            CATCH(Symbol("eh"), 1, Some(CRuntimeException)),
             POP, // => 3
             ICONST_2, // => 4
             IRETURN, // => 5
             Symbol("NORMAL_CF"),
             TRY(Symbol("eh")),
             ACONST_NULL, // => 6
-            INVOKEVIRTUAL(OObject, "hashCode", MethodDescriptor.JustReturnsInteger), // => 7,8,9
+            INVOKEVIRTUAL(CObject, "hashCode", MethodDescriptor.JustReturnsInteger), // => 7,8,9
             IRETURN, // => 10
             TRYEND(Symbol("eh"))
         )
         val code = CODE[AnyRef](codeElements)
-        assert(code.exceptionHandlers.head == ExceptionHandler(6, 11, 3, Some(ORuntimeException)))
+        assert(code.exceptionHandlers.head == ExceptionHandler(6, 11, 3, Some(CRuntimeException)))
     }
 }

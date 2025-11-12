@@ -23,7 +23,7 @@ import org.opalj.br.fpcf.ContextProviderKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ContextProvider
-import org.opalj.br.fpcf.properties._
+import org.opalj.br.fpcf.properties.*
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.GlobalEscape
@@ -43,6 +43,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 class InterProceduralEscapeAnalysisContext(
@@ -79,8 +80,8 @@ class InterProceduralEscapeAnalysis private[analyses] (
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
 
-    private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
-    private[this] val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
+    private val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
+    private val simpleContexts: SimpleContexts = project.get(SimpleContextsKey)
 
     override def determineEscapeOfFP(
         fp: (Context, VirtualFormalParameter)
@@ -131,7 +132,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
             case VirtualFormalParameter(dm: DefinedMethod, _) =>
                 val ctx = createContext(fp, dm)
-                doDetermineEscape(ctx, createState)
+                doDetermineEscape(using ctx, createState)
 
             case VirtualFormalParameter(_: VirtualDeclaredMethod, _) =>
                 throw new IllegalArgumentException()
@@ -186,7 +187,7 @@ object EagerInterProceduralEscapeAnalysis
 
         val methods = declaredMethods.declaredMethods
         val callersProperties = ps(methods.to(Iterable), Callers)
-        assert(callersProperties.forall(_.isFinal))
+        elidedAssert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map {
             v => v.e -> v.ub
@@ -220,7 +221,7 @@ object LazyInterProceduralEscapeAnalysis
 
     /**
      * Registers the analysis as a lazy computation, that is, the method
-     * will call `ProperytStore.scheduleLazyComputation`.
+     * will call `PropertyStore.scheduleLazyComputation`.
      */
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)

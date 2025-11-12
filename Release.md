@@ -20,10 +20,8 @@
  1. upload the latest version of the OPAL-Disassembler to `artifacts`
  1. update *MyOPALProject* using the latest released version of OPAL
  1. force the recreation of the OPAL Docker Container and publish it to DockerHub
- 1. update OPAL-Disassembler ATOM Plug-in 
  1. update OPAL-Integration IntelliJ Plug-in 
  1. update OPAL-Explorer Visual Studio Code Plug-in
- 1. update BugPicker
  
 # Preparing the next release 
  1. merge changes from master back to develop (in particular version information)

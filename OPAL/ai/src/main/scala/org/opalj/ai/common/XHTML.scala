@@ -3,14 +3,14 @@ package org.opalj
 package ai
 package common
 
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Text
 import scala.xml.Unparsed
 
-import org.opalj.br._
-import org.opalj.br.instructions._
+import org.opalj.br.*
+import org.opalj.br.instructions.*
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.io.writeAndOpen
 
@@ -26,7 +26,7 @@ import org.opalj.io.writeAndOpen
  */
 object XHTML {
 
-    import org.opalj.ai.util.XHTML._
+    import org.opalj.ai.util.XHTML.*
 
     /**
      * Stores the time when the last dump was created.
@@ -34,18 +34,18 @@ object XHTML {
      * We generate dumps on errors only if the specified time has passed by to avoid that
      * we are drowned in dumps. Often, a single bug causes many dumps to be created.
      */
-    private[this] val _lastDump = new java.util.concurrent.atomic.AtomicLong(0L)
+    private val _lastDump = new java.util.concurrent.atomic.AtomicLong(0L)
 
-    private[this] def lastDump_=(currentTimeMillis: Long): Unit = {
+    private def lastDump_=(currentTimeMillis: Long): Unit = {
         _lastDump.set(currentTimeMillis)
     }
 
-    private[this] def lastDump = _lastDump.get()
+    private def lastDump = _lastDump.get()
 
     def dumpOnFailure[T, D <: Domain](
         classFile:           ClassFile,
         method:              Method,
-        ai:                  AI[_ >: D],
+        ai:                  AI[? >: D],
         theDomain:           D,
         minimumDumpInterval: Long = 500L
     )(
@@ -58,12 +58,12 @@ object XHTML {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f(result)
         } catch {
-            case ct: ControlThrowable => throw ct
-            case e: Throwable         =>
+            case b: Break[?]  => throw b
+            case e: Throwable =>
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
-                    val title = Some("Generated due to exception: " + e.getMessage())
+                    val title = Some("Generated due to exception: " + e.getMessage)
                     val code = method.body.get
                     val dump =
                         XHTML.dump(
@@ -75,7 +75,7 @@ object XHTML {
                         )(result.cfJoins, operandsArray, localsArray)
                     writeAndOpen(dump, "StateOfIncompleteAbstractInterpretation", ".html")
                 } else {
-                    Console.err.println("[info] dump suppressed: " + e.getMessage())
+                    Console.err.println("[info] dump suppressed: " + e.getMessage)
                 }
                 throw e
         }
@@ -103,8 +103,8 @@ object XHTML {
             if (result.wasAborted) throw new RuntimeException("interpretation aborted")
             f
         } catch {
-            case ct: ControlThrowable => throw ct
-            case e: Throwable         =>
+            case b: Break[?]  => throw b
+            case e: Throwable =>
                 val currentTime = System.currentTimeMillis()
                 if ((currentTime - this.lastDump) > minimumDumpInterval) {
                     this.lastDump = currentTime
@@ -127,7 +127,7 @@ object XHTML {
         resultHeader: String,
         result:       AIResult
     ): Node = {
-        import result._
+        import result.*
 
         val title = method.toJava
 
@@ -254,7 +254,7 @@ object XHTML {
                             cfJoins,
                             operandsArray,
                             localsArray
-                        )(Some(idsLookup))
+                        )(using Some(idsLookup))
                     }
                 </tbody>
             </table>
@@ -344,7 +344,7 @@ object XHTML {
         </tr>
     }
 
-    def dumpStack(operands: Operands[_ <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
+    def dumpStack(operands: Operands[? <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
         if (operands eq null)
             <em>Information about operands is not available.</em>
         else {
@@ -354,7 +354,7 @@ object XHTML {
         }
     }
 
-    def dumpLocals(locals: Locals[_ <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
+    def dumpLocals(locals: Locals[? <: AnyRef])(implicit ids: Option[AnyRef => Int]): Node = {
 
         def mapLocal(local: AnyRef): Node = {
             if (local eq null)

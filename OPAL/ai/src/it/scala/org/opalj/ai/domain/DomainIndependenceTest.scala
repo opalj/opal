@@ -3,6 +3,9 @@ package org.opalj
 package ai
 package domain
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -31,7 +34,7 @@ import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParalle
 @RunWith(classOf[JUnitRunner])
 class DomainIndependenceTest extends AnyFlatSpec with Matchers {
 
-    private[this] implicit val logContext: LogContext = GlobalLogContext
+    private implicit val logContext: LogContext = GlobalLogContext
 
     // We use this domain for the comparison of the values; it has the same
     // expressive power as the other domains.
@@ -110,7 +113,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
 
     it should "always calculate the same result" in {
 
-        def corresponds(r1: AIResult, r2: AIResult): Option[String] = {
+        def corresponds(r1: AIResult, r2: AIResult): Option[String] = boundary {
             r1.operandsArray.corresponds(r2.operandsArray) { (lOperands, rOperands) =>
                 (lOperands == null && rOperands == null) ||
                 (lOperands != null && rOperands != null &&
@@ -118,9 +121,9 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                     val lVD = lValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                     val rVD = rValue.adapt(ValuesDomain, -1 /*Irrelevant*/ )
                     if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
-                        return Some(
+                        break(Some(
                             Console.RED_B + "the operand stack value " + lVD + " and " + rVD + " do not correspond "
-                        )
+                        ))
                     else
                         true
                 })
@@ -142,15 +145,15 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                                     (rVD.isInstanceOf[ValuesDomain.ReturnAddressValue] &&
                                     !lVD.isInstanceOf[ValuesDomain.ReturnAddressValue])
                                 )
-                                    return Some(
+                                    break(Some(
                                         Console.BLUE_B + "the register value " + lVD + " does not correspond with " + rVD
-                                    )
+                                    ))
                                 else
                                     true
                             } else if (!(lVD.abstractsOver(rVD) && rVD.abstractsOver(lVD)))
-                                return Some(
+                                break(Some(
                                     Console.BLUE_B + "the register value " + lVD + " does not correspond with " + rVD
-                                )
+                                ))
                             else
                                 true
                         }
@@ -166,7 +169,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
         val comparisonCount = new java.util.concurrent.atomic.AtomicInteger(0)
 
         for {
-            (classFile, source) <- org.opalj.br.reader.readJREClassFiles().par
+            (classFile, _) <- org.opalj.br.reader.readJREClassFiles().par
             method <- classFile.methods
             body <- method.body
         } {
@@ -182,7 +185,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
             val r3 = a3(method, new Domain3(body))
             aiCount.incrementAndGet()
 
-            def abort(ai: InstructionCountBoundedAI[_], r: AIResult): Unit = {
+            def abort(ai: InstructionCountBoundedAI[?], r: AIResult): Unit = {
                 fail(
                     "the abstract interpretation of " +
                         method.toJava(
@@ -206,7 +209,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                     info(
                         classFile.thisType.toJava + "{ " +
                             method.signatureToJava(false) +
-                            "(Instructions " + method.body.get.instructions.size + ")}\n" +
+                            "(Instructions " + method.body.get.instructions.length + ")}\n" +
                             Console.BLUE + "\t// domain r1 is not deterministic (concurrency bug?)\n" +
                             Console.RESET
                     )
@@ -214,7 +217,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                     info(
                         classFile.thisType.toJava + "{ " +
                             method.signatureToJava(false) +
-                            "(Instructions " + method.body.get.instructions.size + ")} \n" +
+                            "(Instructions " + method.body.get.instructions.length + ")} \n" +
                             "\t// the results of r1 and r2 do not correspond\n" +
                             "\t// " + Console.BOLD + m + Console.RESET + "\n"
                     )
@@ -226,7 +229,9 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
                 failed.incrementAndGet()
                 info(
                     classFile.thisType.toJava + "{ " +
-                        method.signatureToJava(false) + "(Instructions " + method.body.get.instructions.size + ")} \n" +
+                        method.signatureToJava(
+                            false
+                        ) + "(Instructions " + method.body.get.instructions.length + ")} \n" +
                         "\t// the results of r2 and r3 do not correspond\n" +
                         "\t// " + Console.BOLD + m + Console.RESET + "\n"
                 )

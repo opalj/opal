@@ -7,6 +7,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
+import org.opalj.ai.AIResult
 import org.opalj.ai.BaseAI
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -31,7 +32,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
 
     def checkProject(
         project:               SomeProject,
-        domainFactory:         (SomeProject, Method) => Domain with RecordDefUse,
+        domainFactory:         (SomeProject, Method) => Domain & RecordDefUse,
         performanceEvaluation: PerformanceEvaluation
     ): Unit = {
         import performanceEvaluation.time
@@ -43,7 +44,8 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
         project.parForeachMethodWithBody() { mi =>
             val m = mi.method
             val body = m.body.get
-            val aiResult = time(Symbol("ai")) { BaseAI(m, domainFactory(project, m)) }
+            val aiResult: AIResult { val domain: Domain & RecordDefUse } =
+                time(Symbol("ai")) { BaseAI(m, domainFactory(project, m)) }
             try {
 
                 val TACode(params, tacAICode, _, cfg, _) = time(Symbol("tacode")) {
@@ -98,7 +100,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
     }
 
     protected def domainFactories = {
-        Seq[(String, (SomeProject, Method) => Domain with RecordDefUse)](
+        Seq[(String, (SomeProject, Method) => Domain & RecordDefUse)](
             (
                 "l0.PrimitiveTACAIDomain",
                 (p: SomeProject, m: Method) => new PrimitiveTACAIDomain(p.classHierarchy, m)

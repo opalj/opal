@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.LocalVariableTable_attributeReader
 
 /**
@@ -19,8 +17,6 @@ trait LocalVariableTable_attributeBinding
 
     type LocalVariableTable_attribute = br.LocalVariableTable
     type LocalVariableTableEntry = br.LocalVariable
-    override implicit val localVariableTableEntryType: ClassTag[LocalVariableTableEntry] =
-        ClassTag(classOf[br.LocalVariable])
 
     override def LocalVariableTableEntry(
         cp:               Constant_Pool,
@@ -30,7 +26,7 @@ trait LocalVariableTable_attributeBinding
         descriptor_index: Constant_Pool_Index,
         index:            Int
     ): LocalVariable = {
-        new LocalVariable(
+        LocalVariable(
             start_pc,
             length,
             cp(name_index).asString,

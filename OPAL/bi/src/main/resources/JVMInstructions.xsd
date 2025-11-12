@@ -687,7 +687,7 @@
     <simpleType name="JVM_ReferenceType-reference">
         <annotation>
             <documentation xml:lang="en"> Each reference is either an objectref, an arrayref or a
-                null value. An instruction is specified as operating on an reference, if further
+                null value. An instruction is specified as operating on a reference, if further
                 information is not available. </documentation>
         </annotation>
         <restriction base="opal:JVM_ReferenceType">

@@ -14,6 +14,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 sealed trait ForNameClassesMetaInformation extends PropertyMetaInformation {
     final type Self = ForNameClasses
@@ -29,7 +30,7 @@ sealed class ForNameClasses private[properties] (
     final val classes:        UIDSet[ReferenceType]
 ) extends OrderedProperty with ForNameClassesMetaInformation {
 
-    assert(orderedClasses == null || orderedClasses.size == classes.size)
+    elidedAssert(orderedClasses == null || orderedClasses.size == classes.size)
 
     override def checkIsEqualOrBetterThan(e: Entity, other: ForNameClasses): Unit = {
         if (other.classes != null && !classes.subsetOf(other.classes)) {
@@ -79,7 +80,9 @@ object ForNameClasses extends ForNameClassesMetaInformation {
             (ps: PropertyStore, reason: FallbackReason, _: Entity) =>
                 reason match {
                     case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
-                        OPALLogger.error("call graph analysis", "no analysis executed for Class.forName")(ps.logContext)
+                        OPALLogger.error("call graph analysis", "no analysis executed for Class.forName")(
+                            using ps.logContext
+                        )
                         NoForNameClasses
                     case _ =>
                         throw new IllegalStateException(s"analysis required for property: $name")

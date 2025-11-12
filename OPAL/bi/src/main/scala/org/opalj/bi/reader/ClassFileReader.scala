@@ -28,8 +28,10 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters._
-import scala.util.control.ControlThrowable
+import scala.jdk.CollectionConverters.*
+import scala.util.boundary
+import scala.util.boundary.Break
+import scala.util.boundary.break
 
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.concurrent.BoundedExecutionContext
@@ -40,6 +42,8 @@ import org.opalj.control.fillArrayOfInt
 import org.opalj.io.process
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 
 import org.apache.commons.text.similarity.LevenshteinDistance
 
@@ -180,7 +184,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         error("class file reader", s"processing $source failed", t)
     }
 
-    private[this] var classFilePostProcessors = ArraySeq.empty[List[ClassFile] => List[ClassFile]]
+    private var classFilePostProcessors = ArraySeq.empty[List[ClassFile] => List[ClassFile]]
 
     /**
      * Register a class file post processor. A class file post processor
@@ -241,7 +245,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         def unsupportedVersion =
             s"unsupported class file version: $major_version.$minor_version" +
                 " (Supported: 45(Java 1.1) <= version <= " +
-                s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)}))"
+                s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)})); " +
+                "analyses might still work, but fail or produce incorrect results when unsupported features are used"
 
         // let's make sure that we support this class file's version
         if (major_version < 45) // at least JDK 1.1 or we back out
@@ -254,7 +259,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         ) {
             // Just log an error message for newer version, we might still be able to handle the
             // class if it doesn't use any features introduced in an unsupported version
-            error("class file reader", unsupportedVersion)
+            logOnce(Warn("class file reader", unsupportedVersion))
         }
 
         val cp = Constant_Pool(in)
@@ -336,7 +341,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         }
     }
 
-    protected[this] def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): List[ClassFile] = {
+    protected def ClassFile(jarFile: ZipFile, jarEntry: ZipEntry): List[ClassFile] = {
         process(jarFile.getInputStream(jarEntry)) { in => ClassFile(new DataInputStream(new BufferedInputStream(in))) }
     }
 
@@ -351,7 +356,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         if (jarFile.length() == 0)
             throw new IOException(s"the file $jarFile is empty");
 
-        val levenshteinDistance = new LevenshteinDistance()
+        val levenshteinDistance = LevenshteinDistance.getDefaultInstance
 
         process(new ZipFile(jarFile)) { zf =>
             val jarEntry = zf.getEntry(jarFileEntryName)
@@ -416,7 +421,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     // and
     // https://github.com/delphi-hub/delphi-crawler/blob/develop/src/main/scala/de/upb/cs/swt/delphi/crawler/tools/ClassStreamReader.scala
     def ClassFiles(in: => JarInputStream): List[(ClassFile, String)] = process(in) { in =>
-        var je: JarEntry = in.getNextJarEntry()
+        var je: JarEntry = in.getNextJarEntry
 
         var futures: List[Future[List[(ClassFile, String)]]] = Nil
 
@@ -444,12 +449,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 }(
                     // we can't use the OPALExecutionContext here, because the number of
                     // threads is bounded and (depending on the nesting level, we may need
-                    // more threads..)
-                    ExecutionContext.global
+                    // more threads...)
+                    using ExecutionContext.global
                 )
 
             }
-            je = in.getNextJarEntry()
+            je = in.getNextJarEntry
         }
 
         futures.flatMap(f => Await.result(f, Duration.Inf))
@@ -509,15 +514,15 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                                 val classFiles = ClassFile(jarFile, jarEntry)
                                 classFiles foreach (classFile => classFileHandler(classFile, url))
                             } catch {
-                                case ct: ControlThrowable => throw ct
-                                case t: Throwable         => exceptionHandler(jarEntryName, t)
+                                case b: Break[?]  => throw b
+                                case t: Throwable => exceptionHandler(jarEntryName, t)
                             }
                         } else if (isClassFileRepository(jarEntryName, Some(jarFile.getName))) {
                             innerJarEntries.add(jarEntry)
                         }
                     }
                 }
-            }(org.opalj.concurrent.OPALHTBoundedExecutionContext)
+            }(using org.opalj.concurrent.OPALHTBoundedExecutionContext)
             futureIndex += 1
         }
         while ({ futureIndex -= 1; futureIndex } >= 0) {
@@ -537,8 +542,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 din.close()
                 ClassFiles(nextJarFileURL, jarData, classFileHandler, exceptionHandler)
             } catch {
-                case ct: ControlThrowable => throw ct
-                case t: Throwable         => exceptionHandler(nextJarFileURL, t)
+                case b: Break[?]  => throw b
+                case t: Throwable => exceptionHandler(nextJarFileURL, t)
             }
         }
     }
@@ -565,23 +570,23 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
             jarFile.delete()
         } catch {
-            case ct: ControlThrowable => throw ct
-            case t: Throwable         => exceptionHandler(pathToEntry, t)
+            case b: Break[?]  => throw b
+            case t: Throwable => exceptionHandler(pathToEntry, t)
         }
     }
 
-    private[this] def processJar(
+    private def processJar(
         file:             File,
         exceptionHandler: ExceptionHandler = defaultExceptionHandler
     ): List[(ClassFile, URL)] = {
         try {
             process(new ZipFile(file)) { zf => ClassFiles(zf, exceptionHandler) }
         } catch {
-            case e: Exception => { exceptionHandler(file, e); Nil }
+            case e: Exception => exceptionHandler(file, e); Nil
         }
     }
 
-    private[this] def processClassFile(
+    private def processClassFile(
         file:             File,
         exceptionHandler: ExceptionHandler = defaultExceptionHandler
     ): List[(ClassFile, URL)] = {
@@ -590,7 +595,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 new DataInputStream(new BufferedInputStream(new FileInputStream(file)))
             ) { in => ClassFile(in).map(classFile => (classFile, file.toURI.toURL)) }
         } catch {
-            case e: Exception => { exceptionHandler(file, e); Nil }
+            case e: Exception => exceptionHandler(file, e); Nil
         }
     }
 
@@ -628,7 +633,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 files foreach { file =>
                     val filename = file.getName
                     if (file.isFile) {
-                        if (file.length() == 0) Nil
+                        if (file.length() == 0) {}
                         else if (isClassFileRepository(filename, None)) jarFiles += file
                         else if (filename.endsWith(".class")) classFiles += file
                     } else if (file.isDirectory) {
@@ -686,13 +691,12 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                             traversePath(subPath)
                         }
                     } catch {
-                        case e: Exception => {
+                        case e: Exception =>
                             error(
                                 "class file reader",
                                 "failed processing Java 9+ Runtime Image (jrt:/)",
                                 e
                             )
-                        }
                     }
                 } else if (p.getFileName.toString.endsWith(".class")) {
                     val cf = ClassFile(() => Files.newInputStream(p))
@@ -744,6 +748,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             // We need a fresh/privately owned execution context with a fixed number of threads
             // to avoid that – if the processor also uses the fixed size pool –
             // we potentially run out of threads!
+            using
             BoundedExecutionContext(
                 "ClassFileReader.processClassFiles",
                 NumberOfThreadsForIOBoundTasks
@@ -767,7 +772,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         classFileFilter:  ClassFile => Boolean,
         className:        ClassFile => String,
         exceptionHandler: ExceptionHandler = defaultExceptionHandler
-    ): Either[(ClassFile, URL), Set[String]] = {
+    ): Either[(ClassFile, URL), Set[String]] = boundary {
         var classNames = Set.empty[String]
         files.filter(_.exists()) foreach { file =>
             if (file.isFile && file.length() > 0) {
@@ -792,14 +797,14 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                     val (cf, _) = cfSource
                     classNames += className(cf)
                     classFileFilter(cf)
-                } foreach { e => return Left(e); }
+                } foreach { e => break(Left(e)); }
             } else if (file.isDirectory) {
                 file.listFiles { (dir: File, name: String) =>
                     dir.isDirectory || isClassFileRepository(file.toString, None)
                 } foreach { f =>
                     findClassFile(List(f), progressReporter, classFileFilter, className, exceptionHandler) match {
                         case Left(cf) =>
-                            return Left(cf);
+                            break(Left(cf));
                         case Right(moreClassNames) =>
                             classNames ++= moreClassNames
                         /*nothing else to do... let's continue*/

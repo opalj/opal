@@ -4,6 +4,8 @@ package ai
 package domain
 package l2
 
+import scala.compiletime.uninitialized
+
 import org.opalj.br.Method
 
 /**
@@ -15,9 +17,9 @@ import org.opalj.br.Method
  * @author Michael Eichberg
  */
 trait PerformInvocationsWithRecursionDetection extends PerformInvocations with TheMemoryLayout {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with TheProject with TheMethod with Configuration =>
+    callingDomain: ValuesFactory & ReferenceValuesDomain & TheProject & TheMethod & Configuration =>
 
-    override type CalledMethodDomain <: TargetDomain with ChildPerformInvocationsWithRecursionDetection with MethodCallResults
+    override type CalledMethodDomain <: Domain & TargetDomain & ChildPerformInvocationsWithRecursionDetection & MethodCallResults
 
     val coordinatingDomain: CalledMethodsStore.BaseDomain
 
@@ -27,9 +29,9 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations with T
 
     // The childCalledMethodsStore is valid for one invocation only and is set by
     // doInvoke...
-    private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = null
+    private[l2] var childCalledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = uninitialized
 
-    override protected[this] def doInvoke(
+    override protected def doInvoke(
         pc:       Int,
         method:   Method,
         operands: Operands,
@@ -47,7 +49,7 @@ trait PerformInvocationsWithRecursionDetection extends PerformInvocations with T
 }
 
 trait ChildPerformInvocationsWithRecursionDetection extends PerformInvocationsWithRecursionDetection {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheMethod =>
+    callingDomain: ValuesFactory & ReferenceValuesDomain & Configuration & TheProject & TheMethod =>
 
     val callerDomain: PerformInvocationsWithRecursionDetection
 

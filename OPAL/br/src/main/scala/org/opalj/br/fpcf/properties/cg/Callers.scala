@@ -17,6 +17,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.util.elidedAssert
 
 /**
  * For a given [[org.opalj.br.DeclaredMethod]], and for each call site (represented by the PC),
@@ -350,8 +351,8 @@ class CallersImplWithOtherCalls(
     val size:                          Int,
     private val specialCallSitesFlags: Byte // last bit vm lvl, second last bit unknown context
 ) extends CallersImplementation {
-    assert(encodedCallers.nonEmpty)
-    assert(specialCallSitesFlags >= 0 && specialCallSitesFlags <= 3)
+    elidedAssert(encodedCallers.nonEmpty)
+    elidedAssert(specialCallSitesFlags >= 0 && specialCallSitesFlags <= 3)
 
     override def hasVMLevelCallers: Boolean = (specialCallSitesFlags & 1) != 0
 
@@ -407,8 +408,8 @@ object CallersImplWithOtherCalls {
         hasVMLevelCallers:            Boolean,
         hasCallersWithUnknownContext: Boolean
     ): CallersImplWithOtherCalls = {
-        assert(hasVMLevelCallers | hasCallersWithUnknownContext)
-        assert(encodedCallers.nonEmpty)
+        elidedAssert(hasVMLevelCallers | hasCallersWithUnknownContext)
+        elidedAssert(encodedCallers.nonEmpty)
 
         val vmLvlCallers = if (hasVMLevelCallers) 1 else 0
         val unknownContext = if (hasCallersWithUnknownContext) 2 else 0
@@ -437,7 +438,7 @@ object Callers extends CallersPropertyMetaInformation {
     }
 
     def toLong(contextId: Int, pc: Int, isDirect: Boolean): Long = {
-        assert(pc >= 0 && pc <= 0xFFFF)
+        elidedAssert(pc >= 0 && pc <= 0xFFFF)
         (contextId.toLong << 16) | pc.toLong | (if (isDirect) Long.MinValue else 0)
     }
 

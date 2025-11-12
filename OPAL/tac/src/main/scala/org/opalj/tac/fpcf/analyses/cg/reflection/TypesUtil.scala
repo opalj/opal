@@ -91,7 +91,7 @@ object TypesUtil {
         className.filter(project.classFile(_).isDefined)
     }
 
-    @inline private[this] def referenceTypeFromFQN(fqn: String): Option[ReferenceType] = {
+    @inline private def referenceTypeFromFQN(fqn: String): Option[ReferenceType] = {
         if (
             fqn.matches("(^\\[+[BCDFIJSZ]$)|(^[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*$)|(^\\[+L[A-Za-z](\\w|\\$)*(\\.[A-Za-z](\\w|\\$)*)*;$)")
         )
@@ -271,13 +271,13 @@ object TypesUtil {
         possibleTypes
     }
 
-    private[this] def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
+    private def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
         expr.isStaticFunctionCall &&
         (expr.asStaticFunctionCall.declaringClass eq ClassType.Class) &&
         expr.asStaticFunctionCall.name == "forName"
     }
 
-    private[this] def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
+    private def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
         expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
         expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ClassType.Class)
     }

@@ -47,7 +47,7 @@ trait DynamicConstantRewriting
 
     this: ClassFileBinding =>
 
-    import org.opalj.br.reader.DynamicConstantRewriting._
+    import org.opalj.br.reader.DynamicConstantRewriting.*
 
     val performRewriting: Boolean = {
         val rewrite: Boolean =
@@ -146,7 +146,7 @@ trait DynamicConstantRewriting
             return updatedClassFile;
 
         val load = instructions(pc)
-        val LDCDynamic(bootstrapMethod, name, descriptor) = load
+        val LDCDynamic(bootstrapMethod, name, descriptor) = load: @unchecked
         val instructionLength = if (load.opcode == LDC.opcode) 2 else 3
 
         // Generate instructions to load the constant and add matching return
@@ -180,7 +180,7 @@ trait DynamicConstantRewriting
                 info("rewriting dynamic constant", s"Java: $load => $head")
         } else if (instructionLength == 3) { // Replace ldc(2)_w with invocation
             val newMethodName =
-                newTargetMethodName(cp, methodNameIndex, methodDescriptorIndex, pc, "load_dynamic_contstant")
+                newTargetMethodName(cp, methodNameIndex, methodDescriptorIndex, pc, "load_dynamic_constant")
             val newMethod = Method(
                 ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask,
                 newMethodName,

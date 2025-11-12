@@ -40,9 +40,9 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
         val trivialLocations = new LocationsContainer[S]
         val nontrivialLocations = new LocationsContainer[S]
 
-        project.parForeachMethodWithBody(isInterrupted = this.isInterrupted _) { mi =>
-            val MethodInfo(source, m @ MethodWithBody(code)) = mi
-            val classForNameCalls = code collect ({
+        project.parForeachMethodWithBody(isInterrupted = () => this.isInterrupted) { mi =>
+            val MethodInfo(source, m @ MethodWithBody(body)) = mi: @unchecked
+            val classForNameCalls = body.collect({
                 case i @ INVOKESTATIC(Class, false, "forName", ForName1MD | ForName3MD) => i
             }: PartialFunction[Instruction, INVOKESTATIC])
             if (classForNameCalls.nonEmpty) {
@@ -53,18 +53,18 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
                     instruction = pcAndInstruction.value
                     pc = pcAndInstruction.pc
                     classNameParameterIndex = instruction.parametersCount - 1
-                    operands = aiResult.operandsArray(pc) // if i is dead... opeands is null
+                    operands = aiResult.operandsArray(pc) // if i is dead... operands is null
                     if operands ne null
                     classNameParameter = operands(classNameParameterIndex)
                 } {
                     classNameParameter match {
-                        case aiResult.domain.StringValue(className) =>
+                        case aiResult.domain.StringValue(_) =>
                             trivialLocations += InstructionLocation(methodLocation, pc)
                         case aiResult.domain.MultipleReferenceValues(classNameParameters) =>
                             val classNames = classNameParameters.collect {
                                 case aiResult.domain.StringValue(className) => className
                             }
-                            // check if we have a concrete string in all cases..
+                            // check if we have a concrete string in all cases...
                             val locations = if (classNames.size == classNameParameters.size) {
                                 trivialLocations
                             } else {

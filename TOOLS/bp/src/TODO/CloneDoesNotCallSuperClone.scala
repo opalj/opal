@@ -5,9 +5,9 @@ package analyses
 
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 
-import br._
-import br.analyses._
-import br.instructions._
+import br.*
+import br.analyses.*
+import br.instructions.*
 
 /**
  * This analysis reports `clone()` methods that do not contain a call to `super.clone`.

@@ -15,8 +15,6 @@ import scala.collection.mutable.ListBuffer
  * @note To get call-by-signature information use the [[org.opalj.br.analyses.Project]]'s `get`
  * method and pass in `this` object.
  *
- * @see [[CallBySignatureResolution]] for further information.
- *
  * @author Michael Reif
  */
 object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, Nothing] {
@@ -64,7 +62,7 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
                 i = i + 1
             }
 
-            cbsTargets.put(method, ArraySeq.empty ++ targets)
+            cbsTargets.put(method, ArraySeq.empty[ClassType] ++ targets)
         }
 
         new CallBySignatureTargets(cbsTargets)

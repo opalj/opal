@@ -9,6 +9,8 @@ import java.net.URL
 import scala.Console.BLUE
 import scala.Console.BOLD
 import scala.Console.RESET
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
@@ -21,6 +23,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NEW
+import org.opalj.util.elidedAssert
 
 import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
 
@@ -74,7 +77,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                     }
                 }
                 if pcs.nonEmpty
-                result <- inifiniteRecursions(maxRecursionDepth, project, method, pcs)
+                result <- infiniteRecursions(maxRecursionDepth, project, method, pcs)
             } yield { result }
 
         (project, BasicReport(result.map(_.toString).mkString("\n")))
@@ -87,15 +90,14 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
      * `maxRecursionDepth` determines after how many non-recursive calls the analysis
      * is aborted.
      */
-    def inifiniteRecursions(
+    def infiniteRecursions(
         maxRecursionDepth: Int,
         project:           SomeProject,
         method:            Method,
         pcs:               List[Int /*PC*/ ]
-    ): Option[InfiniteRecursion] = {
-
-        assert(maxRecursionDepth > 1)
-        assert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
+    ): Option[InfiniteRecursion] = boundary {
+        elidedAssert(maxRecursionDepth > 1)
+        elidedAssert(pcs.toSet.size == pcs.size, s"the seq $pcs contains duplicates")
 
         val body = method.body.get
         val parametersCount =
@@ -115,8 +117,8 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                 if operandsArray(pc) ne null
                 nextCallOperands: domain.Operands = operandsArray(pc).take(parametersCount)
             } {
-                // IntegerRangeValues and ReferenceValues have useable equals semantics
-                if (!callOperandsList.exists { _ == nextCallOperands })
+                // IntegerRangeValues and ReferenceValues have usable equals semantics
+                if (!callOperandsList.contains(nextCallOperands))
                     callOperandsList = nextCallOperands :: callOperandsList
             }
             callOperandsList
@@ -167,7 +169,7 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                                 case _                      => false
                             }
                         )
-                            return Some(InfiniteRecursion(method, callOperands));
+                            break(Some(InfiniteRecursion(method, callOperands)));
 
                         // these operands are not relevant...
                         false
@@ -176,19 +178,11 @@ object InfiniteRecursions extends ProjectsAnalysisApplication {
                     }
                 }
 
-            callOperandsList foreach { callOperands =>
-                val result = analyze(depth + 1, callOperands)
-                if (result.nonEmpty)
-                    return result;
-            }
+            callOperandsList foreach { callOperands => analyze(depth + 1, callOperands) }
             None
         }
 
-        previousCallOperandsList foreach { callOperands =>
-            val result = analyze(0, callOperands)
-            if (result.nonEmpty)
-                return result;
-        }
+        previousCallOperandsList foreach { callOperands => analyze(0, callOperands) }
         // no recursion...
         None
     }
@@ -217,7 +211,7 @@ class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
     with domain.TheProject
     with domain.TheMethod
 
-case class InfiniteRecursion(method: Method, operands: List[_ <: AnyRef]) {
+case class InfiniteRecursion(method: Method, operands: List[? <: AnyRef]) {
 
     override def toString: String = {
         val declaringClassOfMethod = method.classFile.thisType.toJava

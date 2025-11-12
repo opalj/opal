@@ -22,9 +22,9 @@ class IdentityPairTest extends AnyFunSpec with Matchers {
         val b = "foo" + "Bar"
         require(a ne b)
         require(a == b)
-        val p1 = new IdentityPair(a, b) // #1
-        val p2 = new IdentityPair(a, a) // #2
-        val p3 = new IdentityPair(a, b) // #3
+        val p1 = IdentityPair(a, b) // #1
+        val p2 = IdentityPair(a, a) // #2
+        val p3 = IdentityPair(a, b) // #3
 
         it("should return the given values") {
             assert(p1._1 eq a)

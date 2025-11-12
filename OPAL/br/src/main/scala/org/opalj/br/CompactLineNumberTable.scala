@@ -2,7 +2,7 @@
 package org.opalj
 package br
 
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 import scala.collection.immutable.ArraySeq
 
 /**

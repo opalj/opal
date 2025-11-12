@@ -9,7 +9,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.value.ValueInformation
 
-trait VirtualCall[+V <: Var[V]] { this: Call[V] =>
+trait VirtualCall[+V] { this: Call[V] =>
 
     def receiver: Expr[V]
 

@@ -33,7 +33,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
         Seq( /* IDM = interface default method */
             "J8DIM1", /* 0 --- call on interface which must be resolved to an IDM */
             "J8DIM2", /* 1 --- call on interface (with IDM) that must not be resolved to it */
-            "J8DIM3", /* 2 --- call on class which transitively calls an method that potentially could target an IDM */
+            "J8DIM3", /* 2 --- call on class which transitively calls a method that potentially could target an IDM */
             "J8DIM4", /* 3 --- call on class type which must be resolved to an IDM */
             "J8DIM5", /* 4 --- call that's dispatched to IDM where the class inherits from multiple interfaces with that idm (sig. wise) */
             "J8SIM1", /* 5 --- call to static interface method */
@@ -50,12 +50,12 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
 
         for {
             (classFile, source) <- project.projectClassFilesWithSources
-            if !isInterrupted()
+            if !isInterrupted
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
-            method @ MethodWithBody(body) <- classFile.methods
+            case method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect ({
+            pcAndInvocation <- body.collect({
                 case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   => iv
                 case ii: INVOKEINTERFACE if isPotentialCallOnDefaultMethod(ii, project) => ii
                 case is: INVOKESTATIC if is.isInterface                                 => is
@@ -67,7 +67,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind match {
-                case ii @ INVOKEINTERFACE(dc, name, md) => {
+                case INVOKEINTERFACE(dc, name, md) => {
                     val subtypes = project.classHierarchy.allSubtypes(dc.asClassType, false)
                     val hasDefaultMethodTarget = subtypes.exists { ct =>
                         val target = project.instanceCall(callerType, ct, name, md)
@@ -84,7 +84,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                         1 /* interface has default method, but it's always overridden */
                     }
                 }
-                case iv @ INVOKEVIRTUAL(dc, name, md) => {
+                case INVOKEVIRTUAL(dc, name, md) => {
                     val subtypes = project.classHierarchy.allSubtypes(dc.asClassType, true)
                     var subtypeWithMultipleInterfaces = false
                     val hasDefaultMethodTarget = subtypes.exists { ct =>
@@ -122,7 +122,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                     }
 
                 }
-                case is @ INVOKESTATIC(dc, true, name, md) => {
+                case INVOKESTATIC(dc, true, name, md) => {
                     val cf = project.classFile(dc)
                     if (cf.nonEmpty) {
                         val method = cf.get.findMethod(name, md)
@@ -144,7 +144,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
     }
 
     // This method determines whether the called interface method might be dispatched to a default method.
-    private[this] def isPotentialCallOnDefaultMethod[S](
+    private def isPotentialCallOnDefaultMethod[S](
         mii:     MethodInvocationInstruction,
         project: Project[S]
     ): Boolean = {

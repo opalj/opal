@@ -5,6 +5,9 @@ package fpcf
 package analyses
 package alias
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.ReferenceType
 
 /**
@@ -17,9 +20,9 @@ import org.opalj.br.ReferenceType
  */
 trait AliasSetLike[ElementType, T <: AliasSetLike[ElementType, T]] {
 
-    private[this] var _pointsToAny: Boolean = false
+    private var _pointsToAny: Boolean = false
 
-    private[this] var _pointsTo: Set[ElementType] = Set.empty[ElementType]
+    private var _pointsTo: Set[ElementType] = Set.empty[ElementType]
 
     /**
      * Add the given element to the set of elements the associated [[org.opalj.br.fpcf.properties.alias.AliasSourceElement]] can point to.
@@ -85,7 +88,7 @@ trait AliasSetLike[ElementType, T <: AliasSetLike[ElementType, T]] {
      * @param other The other set to check for intersections.
      * @return A tuple containing two elements that are in both this set and the other set.
      */
-    def findTwoIntersections(other: T): (Option[ElementType], Option[ElementType]) = {
+    def findTwoIntersections(other: T): (Option[ElementType], Option[ElementType]) = boundary {
 
         var firstIntersection: Option[ElementType] = None
 
@@ -95,7 +98,7 @@ trait AliasSetLike[ElementType, T <: AliasSetLike[ElementType, T]] {
                 if (firstIntersection.isEmpty) {
                     firstIntersection = Some(element)
                 } else {
-                    return (firstIntersection, Some(element))
+                    break((firstIntersection, Some(element)));
                 }
             }
         })

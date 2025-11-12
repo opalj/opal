@@ -100,7 +100,8 @@ class ForwardClassForNameTaintProblem(project: SomeProject)
 object ForwardClassForNameTaintAnalysisScheduler
     extends IFDSAnalysisScheduler[TaintFact, Method, JavaStatement, JavaICFG] {
 
-    override def init(p: SomeProject, ps: PropertyStore) = new ForwardClassForNameTaintAnalysis(p)
+    override def init(p: SomeProject, ps: PropertyStore): ForwardClassForNameTaintAnalysis =
+        new ForwardClassForNameTaintAnalysis(p)
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint
 

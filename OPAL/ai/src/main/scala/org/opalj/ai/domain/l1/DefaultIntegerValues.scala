@@ -15,7 +15,7 @@ import org.opalj.br.ComputationalTypeInt
  * @author Michael Eichberg
  */
 trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with IntegerValues {
-    domain: Configuration with ExceptionsFactory =>
+    domain: Configuration & ExceptionsFactory =>
 
     /**
      * Represents an unspecific, unknown Integer value.

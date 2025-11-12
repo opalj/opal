@@ -3,6 +3,8 @@ package org.opalj
 package collection
 package immutable
 
+import scala.annotation.nowarn
+
 import org.junit.runner.RunWith
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
@@ -111,7 +113,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("create IntTrieSet from List (i.e., with duplicates)") = forAll { (l: List[Int]) =>
         val its = l.foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
-        val lWithoutDuplicates = l.toSet.toList
+        val lWithoutDuplicates = l.distinct
         (its.size == lWithoutDuplicates.size) :| "matching size" &&
             its.iterator.toList.sorted == lWithoutDuplicates.sorted
     }
@@ -340,8 +342,8 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
         val s1 = ias1.foldLeft(IntTrieSet.empty)(_ + _)
         val s2 = ias2.foldLeft(IntTrieSet.empty)(_ + _)
         val expected = s1.foldLeft(IntTrieSet.empty)((c, n) => if (s2.contains(n)) c + n else c)
-        (s1 intersect s2) == expected &&
-            (s2 intersect s1) == expected
+        s1.intersect(s2) == expected &&
+            s2.intersect(s1) == expected
     }
 
     property("- (all elements)") = forAll { (s: IntArraySet) =>
@@ -387,7 +389,6 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             assert(IntTrieSet.empty.subsetOf(IntTrieSet(1, 2)))
             assert(IntTrieSet.empty.subsetOf(IntTrieSet(1, 2, 3)))
             assert(IntTrieSet.empty.subsetOf(IntTrieSet(1, 3, 4, 5)))
-
         }
 
         it("should correctly work for set1 related comparisons") {
@@ -786,7 +787,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var opalS = org.opalj.collection.immutable.IntTrieSet.empty
-                    for { i <- 0 to 1000000 } {
+                    for { _ <- 0 to 1000000 } {
                         val v = rngGen.nextInt()
                         opalS += v
                     }
@@ -799,7 +800,7 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var scalaS = Set.empty[Int]
-                    for { i <- 0 to 1000000 } {
+                    for { _ <- 0 to 1000000 } {
                         val v = rngGen.nextInt()
                         scalaS += v
                     }
@@ -827,13 +828,14 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i <- 1 to 3 } rngGen.nextInt();
-            val setValues = (for { i <- 1 to 1000 } yield Math.abs(rngGen.nextInt())).toArray
-            val queryValues = (for { i <- 1 to 1000 } yield Math.abs(rngQuery.nextInt())).toArray
+            for { _ <- 1 to 3 } rngGen.nextInt();
+            val setValues = (for { _ <- 1 to 1000 } yield Math.abs(rngGen.nextInt())).toArray
+            val queryValues = (for { _ <- 1 to 1000 } yield Math.abs(rngQuery.nextInt())).toArray
 
             PerformanceEvaluation.time {
-                for { runs <- 0 until 10000000 } {
+                for { _ <- 0 until 10000000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
+                    @nowarn("msg=unused")
                     var hits = 0
                     for { i <- 0 to rngGen.nextInt(8) } {
                         s += setValues(i)
@@ -854,13 +856,14 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i <- 1 to 3 } rngGen.nextInt();
-            val setValues = (for { i <- 1 to 1000 } yield Math.abs(rngGen.nextInt())).toArray
-            val queryValues = (for { i <- 1 to 1000 } yield Math.abs(rngQuery.nextInt())).toArray
+            for { _ <- 1 to 3 } rngGen.nextInt();
+            val setValues = (for { _ <- 1 to 1000 } yield Math.abs(rngGen.nextInt())).toArray
+            val queryValues = (for { _ <- 1 to 1000 } yield Math.abs(rngQuery.nextInt())).toArray
 
             PerformanceEvaluation.time {
-                for { runs <- 0 until 10000000 } {
+                for { _ <- 0 until 10000000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
+                    @nowarn("msg=unused")
                     var hits = 0
                     for { i <- 0 to 8 + rngGen.nextInt(8) } {
                         s += setValues(i)
@@ -881,13 +884,14 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i <- 1 to 16 } rngGen.nextInt();
-            val setValues = (for { i <- 1 to 10000 } yield Math.abs(rngGen.nextInt())).toArray
-            val queryValues = (for { i <- 1 to 10000 } yield Math.abs(rngQuery.nextInt())).toArray
+            for { _ <- 1 to 16 } rngGen.nextInt();
+            val setValues = (for { _ <- 1 to 10000 } yield Math.abs(rngGen.nextInt())).toArray
+            val queryValues = (for { _ <- 1 to 10000 } yield Math.abs(rngQuery.nextInt())).toArray
 
             PerformanceEvaluation.time {
-                for { runs <- 0 until 1000000 } {
+                for { _ <- 0 until 1000000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
+                    @nowarn("msg=unused")
                     var hits = 0
                     for { i <- 0 to 16 + rngGen.nextInt(16) } {
                         s += setValues(i)
@@ -906,15 +910,16 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
             // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-            for { i <- 1 to 3333 } rngGen.nextInt();
-            val setValues = (for { i <- 1 to 10000 } yield rngGen.nextInt()).toArray
-            val queryValues = (for { i <- 1 to 10000 } yield rngQuery.nextInt()).toArray
+            for { _ <- 1 to 3333 } rngGen.nextInt();
+            val setValues = (for { _ <- 1 to 10000 } yield rngGen.nextInt()).toArray
+            val queryValues = (for { _ <- 1 to 10000 } yield rngQuery.nextInt()).toArray
 
             var sizeOfAllSets: Int = 0
             var largestSet: Int = 0
             PerformanceEvaluation.time {
                 for { runs <- 0 until 10000 } {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
+                    @nowarn("msg=unused")
                     var hits = 0
                     for { i <- 1 to runs } {
                         s += setValues(i)
@@ -934,10 +939,10 @@ class IntTrieSetTest extends AnyFunSpec with Matchers {
 
             val allSets = PerformanceEvaluation.memory {
                 for {
-                    set <- 0 until 2500
+                    _ <- 0 until 2500
                 } yield {
                     var s = org.opalj.collection.immutable.IntTrieSet.empty
-                    for { i <- 0 to 10000 } {
+                    for { _ <- 0 to 10000 } {
                         s += rngGen.nextInt()
                     }
                     s

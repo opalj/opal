@@ -5,7 +5,7 @@ package tac
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 
 /**
@@ -21,7 +21,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
 
     val ControlSequencesClassFile = project.classFile(ControlSequencesType).get
 
-    import RelationalOperators._
+    import RelationalOperators.*
 
     val ICMPNEMethod = ControlSequencesClassFile.findMethod("icmpne").head
     val ICMPEQMethod = ControlSequencesClassFile.findMethod("icmpeq").head
@@ -64,7 +64,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), NE, SimpleVar(1, ComputationalTypeInt), 8)
             ))
@@ -77,7 +77,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), EQ, SimpleVar(1, ComputationalTypeInt), 8)
             ))
@@ -90,7 +90,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), GE, SimpleVar(1, ComputationalTypeInt), 8)
             ))
@@ -103,7 +103,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), LT, SimpleVar(1, ComputationalTypeInt), 8)
             ))
@@ -116,7 +116,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), LE, SimpleVar(1, ComputationalTypeInt), 8)
             ))
@@ -129,7 +129,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(resultAST(
                 If(2, SimpleVar(0, ComputationalTypeInt), GT, SimpleVar(1, ComputationalTypeInt), 8)
             ))

@@ -7,6 +7,7 @@ import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.VisibilityModifier
+import org.opalj.util.elidedAssert
 
 /**
  * Encapsulates the information about a '''non-abstract''', '''non-static''' method which is
@@ -25,8 +26,8 @@ import org.opalj.bi.VisibilityModifier
  */
 final class MethodDeclarationContext(val method: Method) extends Ordered[MethodDeclarationContext] {
 
-    assert(!method.isStatic)
-    assert(!method.isInitializer)
+    elidedAssert(!method.isStatic)
+    elidedAssert(!method.isInitializer)
 
     def declaringClassType: ClassType = method.declaringClassFile.thisType
     def packageName: String = declaringClassType.packageName
@@ -66,16 +67,16 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
      * even though the underlying method is not the same one.)
      */
     def compare(that: MethodDeclarationContext): Int = {
-        val result = this.method compare that.method
+        val result = this.method.compare(that.method)
         if (result == 0)
-            this.packageName compareTo that.packageName
+            this.packageName.compareTo(that.packageName)
         else
             result
     }
 
     def compareWithPublicMethod(thatMethod: Method): Int = {
-        assert(thatMethod.isPublic, s"${thatMethod.toJava} is not public")
-        this.method compare thatMethod
+        elidedAssert(thatMethod.isPublic, s"${thatMethod.toJava} is not public")
+        this.method.compare(thatMethod)
     }
 
     /**
@@ -95,7 +96,7 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
         val method = this.method
         val result = method.compare(name, descriptor)
         if (result == 0 && method.hasDefaultVisibility) {
-            this.packageName compareTo packageName
+            this.packageName.compareTo(packageName)
         } else {
             result
         }
@@ -137,8 +138,8 @@ final class MethodDeclarationContext(val method: Method) extends Ordered[MethodD
 
     /**
      * Returns true if a method with the same signature as this method that is defined in
-     * the given package directly overrides this encapsultated method. This property
-     * always holds if this method has public or protected visiblity. If this method
+     * the given package directly overrides this encapsulated method. This property
+     * always holds if this method has public or protected visibility. If this method
      * has package visibility, the other (implicit) method has to be defined in
      * this method's package.
      */

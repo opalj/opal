@@ -49,7 +49,7 @@ object CodeElement {
     implicit def instructionToInstructionElement(
         instruction: LabeledInstruction
     ): InstructionElement = {
-        new InstructionElement(instruction)
+        InstructionElement(instruction)
     }
 
     /**
@@ -65,5 +65,5 @@ object CodeElement {
     /**
      * Converts a `Symbol` (label) to [[org.opalj.ba.LabelElement]].
      */
-    implicit def symbolToLabelElement(label: Symbol): LabelElement = new LabelElement(label)
+    implicit def symbolToLabelElement(label: Symbol): LabelElement = LabelElement(label)
 }

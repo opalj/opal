@@ -23,7 +23,7 @@ The circumstances of the virtual call are as follows:
 parameter,
 2) A type ```public class Type``` which declares a method ```public void method()```,
 3) Another type ```public class Subtype extends Type``` which also declares a method ```public void method()```,
-4) An additional type ```public class SomeType``` which also delcares a method ```public void method()```.
+4) An additional type ```public class SomeType``` which also declares a method ```public void method()```.
 Since the calling context of ```Type.method()``` in ```Demo.entrypoint(Type t)``` is unknown. The call-graph
 construction must assume that the parameter ```type``` can hold all possible subtypes of ```Type``` .
 ```java
@@ -84,7 +84,7 @@ The circumstances of the virtual call are as follows:
 parameter,
 2) A type ```public class Type``` which declares a method ```public void method()```,
 3) Another type ```public class Subtype extends Type``` which also declares a method ```public void method()```,
-4) An additional type ```public class SomeType``` which also delcares a method ```public void method()```.
+4) An additional type ```public class SomeType``` which also declares a method ```public void method()```.
 Since the calling context of ```Type.method()``` in ```Demo.callOnField()``` is unknown, i.e.,
 the field is public and non-final and, therefore, can be re-assigned by library users. The call-graph 
 construction must assume that all possible subtypes of ```Type``` can be assigned to the field.
@@ -144,7 +144,7 @@ public class SomeType {
 [//]: # (LIBRARY)
 Tests library interface invocation for CBS edges under the following circumstances:
 1) a ```public class PotentialSuperclass``` that can be inherited,
-1) a ```public class DismissedSuperclass``` that cannot be inherited and, therefore, can't be target,
+1) a ```public class DismissedSuperclass``` that cannot be inherited and, therefore, can't be a target,
 1) a ```public interface``` that can be inherited,
 1) all of the previous mentioned classes/interfaces declare the method ```public void method()```. 
 ```java
@@ -201,7 +201,7 @@ Tests library interface invocation for CBS edges under the following circumstanc
 1) a ```package visible class PotentialSuperclass``` in package ```lib4.collude``` that can be
 inherited from a class within the same package, i.e. when a new class is added to the same package,
 2) a ```package visible class InternalClass``` in package ```lib4.internal``` that can be inherited 
-(analogously to 1) ),
+(analogously to 1),
 3) a ```package visible interface``` in package ```lib4.collude``` that can be inherited from classes in the same package,
 4) all of the previous mentioned classes/interfaces declare the method ```public void method()```. 
 ```java
@@ -258,7 +258,7 @@ Tests library interface invocation for CBS edges under the following circumstanc
 1) a ```public class PotentialSuperclass``` in package ```lib5.internal``` that can be
 inherited from and, therefore, provides the method ```public void method()``` from its superclass,
 2) a ```package visible class InternalClass``` in package ```lib5.internal``` that can be inherited 
-(analogously to 1) ),
+(analogously to 1),
 3) a ```package visible interface``` in package ```lib5.collude``` that can be inherited from classes in the same package,
 4) all of the previous mentioned classes/interfaces declare the method ```public void method()```. 
 ```java

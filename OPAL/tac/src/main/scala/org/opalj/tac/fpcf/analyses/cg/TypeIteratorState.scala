@@ -13,6 +13,7 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
+import org.opalj.util.elidedAssert
 
 /**
  * A trait to implement state classes that have to manage the state of a [[TypeIterator]], i.e.,
@@ -21,7 +22,7 @@ import org.opalj.fpcf.SomeEPS
  * @author Dominik Helm
  */
 trait TypeIteratorState extends AnalysisState {
-    private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
+    private val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
         mutable.Map.empty
     }
 
@@ -29,12 +30,12 @@ trait TypeIteratorState extends AnalysisState {
     // dependers (the use sites) and their dependees (the respective definition sites).
     // For each dependee (def-site) we store the corresponding EOptionP, such that we can
     // efficiently perform updates here.
-    // If we get an update for a dependee, we have to update all points-to sets for the
+    // If we get an update for a dependee, we have to update all points-to sets for
     // its dependers (_dependeeToDependers(dependee).
-    private[this] val _dependeeToDependers: mutable.Map[EPK[Entity, Property], mutable.Set[Entity]] = {
+    private val _dependeeToDependers: mutable.Map[EPK[Entity, Property], mutable.Set[Entity]] = {
         mutable.Map.empty
     }
-    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[EPK[Entity, Property]]] = {
+    private val _dependerToDependees: mutable.Map[Entity, mutable.Set[EPK[Entity, Property]]] = {
         mutable.Map.empty
     }
 
@@ -85,7 +86,7 @@ trait TypeIteratorState extends AnalysisState {
             if (_dependeeToDependers(dependee).isEmpty) {
                 removeDependee(dependee)
             }
-            assert((!_dependeeToDependers.contains(dependee) && !_dependees.contains(dependee)) ||
+            elidedAssert((!_dependeeToDependers.contains(dependee) && !_dependees.contains(dependee)) ||
                 (_dependeeToDependers(dependee).nonEmpty && _dependees.contains(dependee)))
         }
 
@@ -96,7 +97,7 @@ trait TypeIteratorState extends AnalysisState {
     }
 
     final def hasDependee(dependee: EPK[Entity, Property]): Boolean = {
-        assert(!_dependeeToDependers.contains(dependee) || _dependeeToDependers(dependee).nonEmpty)
+        elidedAssert(!_dependeeToDependers.contains(dependee) || _dependeeToDependers(dependee).nonEmpty)
         _dependees.contains(dependee)
     }
 
@@ -105,7 +106,7 @@ trait TypeIteratorState extends AnalysisState {
     }
 
     private final def hasDependees: Boolean = {
-        assert(
+        elidedAssert(
             (_dependees.isEmpty == _dependeeToDependers.isEmpty) &&
             (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)
         )
@@ -121,7 +122,7 @@ trait TypeIteratorState extends AnalysisState {
         var allDependees = super.dependees
 
         _dependees.valuesIterator.foreach { d =>
-            assert(_dependeeToDependers.contains(d.toEPK))
+            elidedAssert(_dependeeToDependers.contains(d.toEPK))
             allDependees += d
         }
 
@@ -135,7 +136,7 @@ trait TypeIteratorState extends AnalysisState {
     final def updateDependency(eps: SomeEPS): Unit = {
         val dependeeEPK = eps.toEPK
 
-        assert(_dependees.contains(dependeeEPK))
+        elidedAssert(_dependees.contains(dependeeEPK))
         _dependees(dependeeEPK) = eps
     }
 

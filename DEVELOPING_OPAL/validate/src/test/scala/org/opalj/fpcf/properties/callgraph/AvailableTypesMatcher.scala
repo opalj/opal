@@ -26,7 +26,7 @@ import org.opalj.log.OPALLogger
 class AvailableTypesMatcher extends AbstractPropertyMatcher {
 
     override def validateProperty(
-        p:          Project[_],
+        p:          Project[?],
         as:         Set[ClassType],
         entity:     Any,
         a:          AnnotationLike,
@@ -65,7 +65,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
                     )
                     UIDSet.empty[ReferenceType]
             }
-        }.toSet
+        }
 
         val expectedTypeNames: Seq[String] =
             getValue(p, a.annotationType.asClassType, a.elementValuePairs, "value").asArrayValue.values

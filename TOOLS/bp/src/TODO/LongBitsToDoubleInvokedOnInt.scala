@@ -3,9 +3,9 @@ package org.opalj
 package frb
 package analyses
 
-import br._
-import br.analyses._
-import br.instructions._
+import br.*
+import br.analyses.*
+import br.instructions.*
 
 /**
  * This analysis reports code that passes a 32bit `int` to `Double.longBitsToDouble()`,
@@ -28,9 +28,8 @@ class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] 
     override def description: String =
         "Reports code passing ints to Double.longBitsToDouble(long)"
 
-    private val doubleType = ClassType("java/lang/Double")
     private val longBitsToDoubleDescriptor =
-        MethodDescriptor(IndexedSeq(LongType), DoubleType)
+        MethodDescriptor(IndexedSeq(LongType), ClassType.Double)
 
     /**
      * Runs this analysis on the given project.
@@ -54,7 +53,7 @@ class LongBitsToDoubleInvokedOnInt[Source] extends FindRealBugsAnalysis[Source] 
             pc <- body.matchPair {
                 case (
                         I2L,
-                        INVOKESTATIC(`doubleType`, "longBitsToDouble", `longBitsToDoubleDescriptor`)
+                        INVOKESTATIC(`ClassType.Double`, "longBitsToDouble", `longBitsToDoubleDescriptor`)
                     ) => true
                 case _ => false
             }

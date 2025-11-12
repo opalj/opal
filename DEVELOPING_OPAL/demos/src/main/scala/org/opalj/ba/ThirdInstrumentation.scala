@@ -45,16 +45,16 @@ import org.opalj.log.LogContext
  */
 object ThirdInstrumentation extends App {
 
-    val PrintStreamType = ClassType("java/io/PrintStream")
+    val PrintStreamType = ClassType.PrintStream
     val SystemType = ClassType.System
-    val CollectionType = ClassType("java/util/Collection")
+    val CollectionType = ClassType.Collection
     val RuntimeExceptionType = ClassType.RuntimeException
     val PrintlnDescriptor = JustTakes(ClassType.Object)
 
     val TheType = ClassType("org/opalj/ba/SimpleInstrumentationDemo")
 
-    // Let's load the class ( we need the RT Jar to compute appropriate supertypes for
-    // local variables and stack values during instrumentation.
+    // Let's load the class (we need JavaBase to compute appropriate supertypes for
+    // local variables and stack values during instrumentation).
     val f = new File(this.getClass.getResource("SimpleInstrumentationDemo.class").getFile)
     val p = Project(f.getParentFile, org.opalj.bytecode.JavaBase)
     implicit val classHierarchy: ClassHierarchy = p.classHierarchy // STRICTLY REQUIRED WHEN A StackMapTable NEEDS TO BE COMPUTED!
@@ -66,12 +66,12 @@ object ThirdInstrumentation extends App {
                 m.copy() // these are native and abstract methods
 
             case Some(code) =>
-                val cfg = CFGFactory(code, classHierarchy)
+                val cfg = CFGFactory(using code, classHierarchy)
                 val lCode = LabeledCode(code)
                 var removeDeadCode = false
                 if (m.name == "killMe1") {
                     for {
-                        PCAndInstruction(pc, LoadString("kill me")) <- code // the search can be done either based on the original code or the lcode
+                        case PCAndInstruction(pc, LoadString("kill me")) <- code // the search can be done either based on the original code or the lcode
                     } {
                         val stackDepth = code.stackDepthAt(pc, cfg)
                         val cleanStackAndReturn = new Array[CodeElement[AnyRef]](stackDepth + 1)
@@ -87,7 +87,7 @@ object ThirdInstrumentation extends App {
                     removeDeadCode = true
                 } else if (m.name == "killMe2") {
                     for {
-                        PCAndInstruction(pc, LoadString("kill me")) <- code
+                        case PCAndInstruction(pc, LoadString("kill me")) <- code
                     } {
                         // NOTE: when we throw an exception, we don't have to take of the
                         //       size of the stack!
@@ -113,10 +113,10 @@ object ThirdInstrumentation extends App {
                 // whenever a method is called, we output its signature
                 lCode.insert(
                     // Note, we generally don't want to use Before, here!
-                    // If we would use "Before" and would have a method like:
+                    // If we used "Before" and would have a method like:
                     // do {
                     // } while(...)
-                    // It could happen that the output would be printed each time the loop
+                    // , it could happen that the output would be printed each time the loop
                     // is evaluated.
                     0,
                     InsertionPosition.At,
@@ -132,13 +132,13 @@ object ThirdInstrumentation extends App {
                 lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
 
                 for {
-                    PCAndInstruction(pc, GETSTATIC(SystemType, "out", _)) <- code
+                    case PCAndInstruction(pc, GETSTATIC(SystemType, "out", _)) <- code
                 } {
                     lCode.replace(pc, Seq(GETSTATIC(SystemType, "err", PrintStreamType)))
                 }
 
                 for {
-                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
+                    case PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
                     if aiResult.operandsArray(pc).head.asDomainReferenceValue.isValueASubtypeOf(CollectionType).isYes
                 } {
                     lCode.insert(
@@ -155,7 +155,7 @@ object ThirdInstrumentation extends App {
 
                 // Let's write out whether a value is positive (0...Int.MaxValue) or negative;
                 // i.e., let's see how we add conditional logic.
-                for (PCAndInstruction(pc, IRETURN) <- code) {
+                for (case PCAndInstruction(pc, IRETURN) <- code) {
                     val gtTarget = Symbol(s"$pc:>")
                     val printlnTarget = Symbol(s"$pc:println")
                     lCode.insert(
@@ -164,7 +164,7 @@ object ThirdInstrumentation extends App {
                         Seq(
                             DUP, // duplicate the value
                             GETSTATIC(SystemType, "out", PrintStreamType), // receiver
-                            SWAP, // the int value is on top now..
+                            SWAP, // the int value is on top now...
                             IFGT(gtTarget),
                             // value is less than 0
                             LoadString("negative"), // top is the parameter, receiver is 2nd top most
@@ -230,7 +230,7 @@ object ThirdInstrumentation extends App {
             if (!ite.getCause.isInstanceOf[RuntimeException]) {
                 Console.err.println("Big Bug!")
             } else {
-                Console.out.println("Dead code successfully removedt!")
+                Console.out.println("Dead code successfully removed!")
             }
     }
 }

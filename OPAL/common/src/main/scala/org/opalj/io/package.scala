@@ -61,7 +61,7 @@ package object io {
 
     /**
      * Writes the given string (`data`) to a temporary file using the given prefix and suffix.
-     * Afterwards the system's native application that claims to be able to handle
+     * Afterward, the system's native application that claims to be able to handle
      * files with the given suffix is opened. If this fails, the string is printed to
      * the console.
      *

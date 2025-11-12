@@ -51,7 +51,7 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
 
     private val verification_type_info_reader = {
 
-        import VerificationTypeInfoItem._
+        import VerificationTypeInfoItem.*
 
         val r = new Array[(Constant_Pool, DataInputStream) => VerificationTypeInfo](9)
 
@@ -73,7 +73,7 @@ trait VerificationTypeInfoReader extends Constant_PoolAbstractions {
         r(ITEM_Object.id) =
             (cp: Constant_Pool, in: DataInputStream) => ObjectVariableInfo(cp, in.readUnsignedShort)
 
-        r(ITEM_Unitialized.id) =
+        r(ITEM_Uninitialized.id) =
             (cp: Constant_Pool, in: DataInputStream) =>
                 UninitializedVariableInfo(in.readUnsignedShort)
 
@@ -90,5 +90,5 @@ object VerificationTypeInfoItem extends Enumeration {
     final val ITEM_Null = Value(5)
     final val ITEM_UninitializedThis = Value(6)
     final val ITEM_Object = Value(7)
-    final val ITEM_Unitialized = Value(8)
+    final val ITEM_Uninitialized = Value(8)
 }

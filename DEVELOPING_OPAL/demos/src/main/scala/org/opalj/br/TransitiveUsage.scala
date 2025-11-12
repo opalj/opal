@@ -36,10 +36,10 @@ object TransitiveUsage extends ProjectsAnalysisApplication {
 
     protected def createConfig(args: Array[String]): TransitiveUsageConfig = new TransitiveUsageConfig(args)
 
-    private[this] var visitedTypes = Set.empty[ClassType]
+    private var visitedTypes = Set.empty[ClassType]
 
     // Types which are extracted but which are not yet analyzed.
-    private[this] var extractedTypes = Set.empty[ClassType]
+    private var extractedTypes = Set.empty[ClassType]
 
     // To extract all usages we reuse the infrastructure that enables us to extract
     // dependencies. In this case we just record referred to types and do not actually

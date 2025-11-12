@@ -15,7 +15,7 @@ class BasePropertyStoreMockup extends PropertyStore {
 
     implicit val logContext: LogContext = GlobalLogContext
 
-    val ctx: Map[Class[_], AnyRef] = Map(classOf[Config] -> BaseConfig)
+    val ctx: Map[Class[?], AnyRef] = Map(classOf[Config] -> BaseConfig)
 
     //
     // Methods which are not required by the following tests...

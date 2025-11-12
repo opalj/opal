@@ -26,6 +26,7 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.NoResult
@@ -38,6 +39,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.cg.TypeConsumerAnalysis
+import org.opalj.tac.fpcf.properties.NoTACAI
 
 /**
  * Applies the impact of preconfigured methods to the points-to analysis.
@@ -51,10 +53,10 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     final val project: SomeProject
 ) extends PointsToAnalysisBase with TypeConsumerAnalysis {
 
-    private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+    private implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private lazy val virtualFormalParameters = project.get(VirtualFormalParametersKey)
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
+    private val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
         ConfiguredMethods.reader.read(
             p.config,
             "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
@@ -110,7 +112,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             NoResult
     }
 
-    private[this] def handleCallers(
+    private def handleCallers(
         newCallers:                 EOptionP[DeclaredMethod, Callers],
         oldCallers:                 Callers,
         data:                       Array[EntityAssignment],
@@ -137,13 +139,13 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         Results(results)
     }
 
-    private[this] def handleNativeMethod(
+    private def handleNativeMethod(
         callContext:                ContextType,
         data:                       Array[EntityAssignment],
         filterNonInstantiableTypes: Boolean
     ): Iterator[ProperPropertyComputationResult] = {
         implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, null)
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, FinalEP(null, NoTACAI))
 
         var pc = -1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
@@ -152,14 +154,14 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             pc = handlePut(lhs, pc, nextPC)
         }
 
-        createResults(state).iterator
+        createResults.iterator
     }
 
-    @inline override protected[this] def toEntity(defSite: Int)(implicit state: State): Entity = {
+    @inline override protected def toEntity(defSite: Int)(implicit state: State): Entity = {
         getDefSite(defSite)
     }
 
-    private[this] def canBeInstantiated(ct: ClassType): Boolean = {
+    private def canBeInstantiated(ct: ClassType): Boolean = {
         val cfOption = project.classFile(ct)
         cfOption.isDefined && {
             val cf = cfOption.get
@@ -167,7 +169,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         }
     }
 
-    private[this] def handleGet(
+    private def handleGet(
         rhs:                        EntityDescription,
         pc:                         Int,
         nextPC:                     Int,
@@ -217,7 +219,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     )
                     state.includeSharedPointsToSet(defSiteObject, pts, PointsToSetLike.noFilter)
                     if (asd.arrayComponentTypes.nonEmpty) {
-                        val arrayEntity = ArrayEntity(pts.getNewestElement())
+                        val arrayEntity = ArrayEntity(pts.getNewestElement)
                         var arrayPTS: PointsToSet = emptyPointsToSet
                         asd.arrayComponentTypes.foreach { componentTypeString =>
                             val componentType = ClassType(componentTypeString)
@@ -251,7 +253,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         nextPC
     }
 
-    private[this] def handlePut(
+    private def handlePut(
         lhs:    EntityDescription,
         pc:     Int,
         nextPC: Int

@@ -8,6 +8,8 @@ import scala.reflect.ClassTag
 import java.util.Arrays
 import scala.collection.AbstractIterator
 
+import org.opalj.util.elidedAssert
+
 /**
  * Conceptually, a map where the (implicit) keys are positive `Int` values and the values are
  * non-`null`; `null` values are not permitted!
@@ -87,7 +89,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
      */
     @throws[IndexOutOfBoundsException]("if the key is negative")
     final def update(key: Int, value: T): Unit = {
-        assert(value ne null, "ArrayMap only supports non-null values")
+        elidedAssert(value ne null, "ArrayMap only supports non-null values")
         val data = this.data
         val max = data.length
         if (key < max) {
@@ -144,7 +146,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
         new AbstractIterator[(Int, T)] {
 
-            private[this] def getNextIndex(startIndex: Int): Int = {
+            private def getNextIndex(startIndex: Int): Int = {
                 val data = self.data
                 val max = data.length
                 var i = startIndex
@@ -153,10 +155,10 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
                     if (data(i) ne null)
                         return i;
                 }
-                return max;
+                max
             }
 
-            private[this] var i = getNextIndex(-1)
+            private var i = getNextIndex(-1)
 
             def hasNext: Boolean = i < data.length
 
@@ -183,7 +185,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: ArrayMap[_] =>
+            case that: ArrayMap[?] =>
                 val thisData = this.data.asInstanceOf[Array[Object]]
                 val thisLength = thisData.length
                 val thatData = that.data.asInstanceOf[Array[Object]]

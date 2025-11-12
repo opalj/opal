@@ -104,7 +104,7 @@ public class StaticMethodFlows {
     // Note: All array tests use different types for isolation, since values written to ArrayTypes
     // are available globally, across test boundaries.
 
-    // In this test, two different types are written to an array. The array is accessed in
+    // In this test, two different types are written to an array. The array is accessed
     // in arrayTest_sink, which should make both types available in this method.
     @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A;")
     public static void arrayTest() {
@@ -322,7 +322,7 @@ public class StaticMethodFlows {
     // information regarding their type hierarchy. In this test, we consider two sinks with parameters of external
     // types ArrayList and Map.
 
-    static class MyList extends ArrayList { }
+    static class MyList extends ArrayList<Object> { }
 
     @AvailableTypes({
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A",
@@ -338,7 +338,7 @@ public class StaticMethodFlows {
         sink(new MyList());
         // LinkedList is an external type for which it is unknwon whether it extends Map or ArrayList.
         // It should propagate to both sinks.
-        sink(new LinkedList());
+        sink(new LinkedList<>());
 
         externalTypeFilter_sink(null);
         externalTypeFilter_sink2(null);
@@ -347,12 +347,12 @@ public class StaticMethodFlows {
     @AvailableTypes({
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$MyList",
             "java/util/LinkedList"})
-    private static void externalTypeFilter_sink(ArrayList list) { }
+    private static void externalTypeFilter_sink(ArrayList<?> list) { }
 
     @AvailableTypes({
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$MyList",
             "java/util/LinkedList"})
-    private static void externalTypeFilter_sink2(Map map) { }
+    private static void externalTypeFilter_sink2(Map<?, ?> map) { }
 
     // === Return optimization ===
     // Even though the source method here has a non-void return type, the analysis should not consider the call
@@ -435,7 +435,7 @@ public class StaticMethodFlows {
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B",
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C",
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$Container"})
-    public static void genericContainer_sink3(Container c) {
+    public static void genericContainer_sink3(Container<?> c) {
         // This method's parameter is a raw type.
         Object obj = c.get();
         sink(obj);

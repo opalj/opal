@@ -10,21 +10,12 @@
 -deprecation
 -feature
 -unchecked
-// -Xfuture deprecated in Scala 2.13. Replaced by -Xsource
--Xsource:3
 -Xfatal-warnings
--Wnumeric-widen
--Xlint:nullary-unit
-// -Xlint:nullary-override
--Wunused:imports,privates,locals,implicits
-// Buggy (Scala 2.12.5) "-Ywarn-unused:params,patvars"
--Xlint:infer-any
--Wdead-code
--Xlint:inaccessible
--Xlint:adapted-args
--Ybackend-parallelism 8
-// Scala 2.13 is not able to turn certain `match` expressions to `tableswitch` statements.
-// Therefore, we suppress the warnings of switch annotations. This issue is fixed in Scala 3.
-// TODO: remove this option in Scala 3
--Wconf:cat=unused-nowarn:s,msg=could\snot\semit\sswitch:s
-// (Should be turned-off during development; i.e., assertions are enabled at development time) -Xdisable-assertions
+-Wunused:privates,locals,implicits,patvars,imports
+
+// Might add in the future
+//-Wnonunit-statement
+//-Wsafe-init
+//-Yexplicit-nulls
+//-language:noAutoTupling
+//-language:strictEquality

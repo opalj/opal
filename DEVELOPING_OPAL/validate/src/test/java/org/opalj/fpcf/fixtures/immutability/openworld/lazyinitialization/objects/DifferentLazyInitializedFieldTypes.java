@@ -41,7 +41,7 @@ public class DifferentLazyInitializedFieldTypes {
     private long inGetterSynchronizedLazyInitializedLongField;
 
     public synchronized long getInGetterSynchronizedLazyInitializedLongField(){
-        if(inGetterSynchronizedLazyInitializedLongField == 0l)
+        if(inGetterSynchronizedLazyInitializedLongField == 0L)
             inGetterSynchronizedLazyInitializedLongField = 5;
         return inGetterSynchronizedLazyInitializedLongField;
     }
@@ -51,8 +51,8 @@ public class DifferentLazyInitializedFieldTypes {
     private Long lazyintializedLongObject;
 
     public synchronized Long getLongObject(){
-        if(lazyintializedLongObject == 0l)
-            lazyintializedLongObject = 5l;
+        if(lazyintializedLongObject == 0L)
+            lazyintializedLongObject = 5L;
         return lazyintializedLongObject;
     }
 

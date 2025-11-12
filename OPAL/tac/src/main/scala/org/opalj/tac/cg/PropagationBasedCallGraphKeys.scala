@@ -33,8 +33,7 @@ import org.opalj.tac.fpcf.analyses.fieldaccess.reflection.ReflectionRelatedField
  *      [[org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis]].
  *
  *      Note, that initial instantiated types ([[org.opalj.br.analyses.cg.InitialInstantiatedTypesKey]])
- *      and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured before
- *      hand.
+ *      and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured beforehand.
  *      Furthermore, you can configure the analysis mode (Library or Application) in the configuration
  *      of these keys.
  *
@@ -67,7 +66,7 @@ trait PropagationBasedCallGraphKey extends CallGraphKey {
         ) ::: (if (isLibrary) List(LibraryInstantiatedTypesBasedEntryPointsAnalysis) else Nil)
     }
 
-    override def getTypeIterator(project: SomeProject) =
+    override def getTypeIterator(project: SomeProject): PropagationBasedTypeIterator =
         new PropagationBasedTypeIterator(project, typeSetEntitySelector())
 }
 

@@ -32,9 +32,9 @@ import org.opalj.util.InMemoryClassLoader
  */
 object SecondInstrumentation extends App {
 
-    val PrintStreamType = ClassType("java/io/PrintStream")
-    val SystemType = ClassType("java/lang/System")
-    val CollectionType = ClassType("java/util/Collection")
+    val PrintStreamType = ClassType.PrintStream
+    val SystemType = ClassType.System
+    val CollectionType = ClassType.Collection
     val PrintlnDescriptor = JustTakes(ClassType.Object)
 
     val TheType = ClassType("org/opalj/ba/SimpleInstrumentationDemo")
@@ -59,7 +59,7 @@ object SecondInstrumentation extends App {
                 val lCode = LabeledCode(code)
                 var modified = false
                 for {
-                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
+                    case PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
                     param = operandsArray(pc).head
                     // if param.asDomainReferenceValue.valueType.get == CollectionType
                     if param.asDomainReferenceValue.isValueASubtypeOf(CollectionType).isYes

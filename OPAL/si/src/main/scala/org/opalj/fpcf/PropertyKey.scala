@@ -29,21 +29,21 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
-    private[this] val propertyKeys = new Array[SomePropertyKey](SupportedPropertyKinds)
+    private val propertyKeys = new Array[SomePropertyKey](SupportedPropertyKinds)
 
-    private[this] val propertyKeyNames = new Array[String](SupportedPropertyKinds)
+    private val propertyKeyNames = new Array[String](SupportedPropertyKinds)
 
     /*
      * @note [[PropertyKey]]s of simple properties don't have fallback property computations.
      *       This fact is also used to distinguish these two property kinds.
      */
-    private[this] val fallbackPropertyComputations = {
+    private val fallbackPropertyComputations = {
         new Array[(PropertyStore, FallbackReason, Entity) => Property](SupportedPropertyKinds)
     }
 
-    private[this] val lastKeyId = new AtomicInteger(-1)
+    private val lastKeyId = new AtomicInteger(-1)
 
-    private[this] def nextKeyId(): Int = {
+    private def nextKeyId(): Int = {
         val nextKeyId = this.lastKeyId.incrementAndGet()
         if (nextKeyId >= PropertyKind.SupportedPropertyKinds) {
             throw new IllegalStateException(
@@ -54,7 +54,7 @@ object PropertyKey {
         nextKeyId
     }
 
-    private[this] def setKeyName(keyId: Int, name: String): Unit = {
+    private def setKeyName(keyId: Int, name: String): Unit = {
         propertyKeyNames(keyId) = name
         var i = 0
         while (i < keyId) {

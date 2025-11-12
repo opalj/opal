@@ -194,7 +194,7 @@ class Class {
 [//]: # (MAIN: id.Class)
 Tests a method reference that results in an invokedynamic that uses an *INVOKEVIRTUAL* method handle
 which is given by the method reference of ```cls::version``` where the actually called method is
-implentend with ```id.Class```'s superclass ```id.SuperClass```.
+implemented with ```id.Class```'s superclass ```id.SuperClass```.
 
 ```java
 // id/Class.java
@@ -225,8 +225,8 @@ Test cases in the presence of lambdas.
 
 ##Lambda1
 [//]: # (MAIN: id.Class)
-Tests the invocation of a lamdba that results in an invokedynamic with an *INVOKESTATIC* method handle
-which points to an synthetic method. Please not that all primitive integers are autoboxed to
+Tests the invocation of a lambda that results in an invokedynamic with an *INVOKESTATIC* method handle
+which points to a synthetic method. Please note that all primitive integers are autoboxed to
 ```java.lang.Integer``` which then fits the lambdas (cf. ```isEven```) type.
 ```java
 // id/Class.java

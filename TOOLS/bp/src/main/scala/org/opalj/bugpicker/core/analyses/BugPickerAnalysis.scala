@@ -8,9 +8,8 @@ import java.net.URL
 import java.util.Date
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
 import scala.xml.Unparsed
@@ -49,7 +48,7 @@ import org.opalj.util.Milliseconds
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
  * Wrapper around several analyses that analyze the control- and data-flow to identify
@@ -69,7 +68,7 @@ import net.ceedubs.ficus.Ficus._
  */
 class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
-    import BugPickerAnalysis._
+    import BugPickerAnalysis.*
 
     override def title: String = "BugPicker"
 
@@ -307,7 +306,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
 
             if (!result.wasAborted) {
                 if (debug) {
-                    import result._
+                    import result.*
                     val domainName = domain.getClass.getName
                     org.opalj.io.writeAndOpen(
                         org.opalj.ai.common.XHTML.dump(
@@ -415,12 +414,12 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
                         } catch {
                             case afe: InterpretationFailedException =>
                                 val ms = method.fullyQualifiedSignature
-                                val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[_]].currentEvaluationCount
+                                val steps = afe.ai.asInstanceOf[BoundedInterruptableAI[?]].currentEvaluationCount
                                 val message =
                                     s"the analysis of $ms failed/was aborted after $steps steps"
                                 exceptions add (AnalysisException(message, afe))
-                            case ct: ControlThrowable => throw ct
-                            case t: Throwable         =>
+                            case b: Break[?]                        => throw b
+                            case t: Throwable                       =>
                                 val ms = method.fullyQualifiedSignature
                                 val message = s"the analysis of ${ms} failed"
                                 exceptions add (AnalysisException(message, t))
@@ -446,7 +445,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             s"the analysis took ${analysisTime.toSeconds} " +
                 s"and found ${identifiedIssues.size} unique issues"
         )
-        import scala.collection.JavaConverters._
+        import scala.collection.JavaConverters.*
         (analysisTime, identifiedIssues, exceptions.asScala)
     }
 }

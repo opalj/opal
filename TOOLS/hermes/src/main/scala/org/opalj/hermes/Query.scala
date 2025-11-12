@@ -2,8 +2,12 @@
 package org.opalj
 package hermes
 
+import scala.compiletime.uninitialized
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
+
+import pureconfig.*
 
 /**
  * Container for feature queries.
@@ -14,11 +18,11 @@ import org.opalj.log.OPALLogger.error
  *
  * @author Michael Eichberg
  */
-class Query(val query: String, private[this] var activate: Boolean = true) {
+case class Query(query: String, private var activate: Boolean = true) derives ConfigReader {
 
     def isEnabled: Boolean = activate
 
-    private[this] var reifiedQuery: Option[FeatureQuery] = null
+    private var reifiedQuery: Option[FeatureQuery] = uninitialized
 
     def reify(implicit hermes: HermesConfig): Option[FeatureQuery] = this.synchronized {
         if (reifiedQuery ne null) {
@@ -32,7 +36,7 @@ class Query(val query: String, private[this] var activate: Boolean = true) {
                 Some(queryClassConstructor.newInstance(hermes).asInstanceOf[FeatureQuery])
             } catch {
                 case t: Throwable =>
-                    error("application configuration", s"failed to load: $query", t)(GlobalLogContext)
+                    error("application configuration", s"failed to load: $query", t)(using GlobalLogContext)
                     activate = false
                     None
             }

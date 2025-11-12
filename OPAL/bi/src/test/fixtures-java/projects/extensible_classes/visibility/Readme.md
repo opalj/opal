@@ -43,7 +43,7 @@ open and closed packages.
     </tr>
     <tr>
         <td>Class</td>
-        <td>pacakge visible</td>
+        <td>package visible</td>
         <td>✘</td>
         <td>✔</td>
         <td>✘</td>
@@ -56,7 +56,7 @@ open and closed packages.
         <td>✘</td>
     </tr>
     <tr>
-        <td>PublicClassWithPrivateConstrutor</td>
+        <td>PublicClassWithPrivateConstructor</td>
         <td>public</td>
         <td>✔ (effectively)</td>
         <td>✘</td>
@@ -71,7 +71,7 @@ open and closed packages.
     </tr>
     <tr>
         <td>Enum</td>
-        <td>pacakge visible</td>
+        <td>package visible</td>
         <td>✔</td>
         <td>✘</td>
         <td>✘</td>
@@ -85,7 +85,7 @@ open and closed packages.
     </tr>
     <tr>
         <td>Annotation</td>
-        <td>pacakge visible</td>
+        <td>package visible</td>
         <td>✔</td>
         <td>✘</td>
         <td>✘</td>

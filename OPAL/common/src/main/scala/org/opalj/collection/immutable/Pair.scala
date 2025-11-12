@@ -5,7 +5,7 @@ package immutable
 
 object Pair {
 
-    def apply(v1: Int, v2: Int): IntIntPair = new IntIntPair(v1, v2)
+    def apply(v1: Int, v2: Int): IntIntPair = IntIntPair(v1, v2)
 
     def apply[T <: AnyRef](v1: Long, v2: T) = new LongRefPair[T](v1, v2)
 

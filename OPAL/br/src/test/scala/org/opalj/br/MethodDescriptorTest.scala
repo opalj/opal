@@ -12,13 +12,13 @@ class MethodDescriptorTest extends AnyFunSuite {
 
     test("Parsing: ()V") {
         val md = MethodDescriptor("()V")
-        assert(md.parameterTypes.size.toInt == 0)
+        assert(md.parameterTypes.size == 0)
         assert(md.returnType.isVoidType)
     }
 
     test("Parsing: (III)I") {
         val md = MethodDescriptor("(III)I")
-        assert(md.parameterTypes.size.toInt == 3)
+        assert(md.parameterTypes.size == 3)
         assert(md.parameterTypes(0).isIntegerType)
         assert(md.parameterTypes(1).isIntegerType)
         assert(md.parameterTypes(2).isIntegerType)
@@ -27,14 +27,14 @@ class MethodDescriptorTest extends AnyFunSuite {
 
     test("Parsing: ([I)[I") {
         val md = MethodDescriptor("([I)[I")
-        assert(md.parameterTypes.size.toInt == 1)
+        assert(md.parameterTypes.size == 1)
         assert(md.parameterTypes(0).isArrayType)
         assert(md.returnType.isArrayType)
     }
 
     test("Parsing: ([[[III)[I") {
         val md = MethodDescriptor("([[[III)[I")
-        assert(md.parameterTypes.size.toInt == 3)
+        assert(md.parameterTypes.size == 3)
         assert(md.parameterTypes(0).isArrayType)
         assert(md.parameterTypes(1).isIntegerType)
         assert(md.parameterTypes(2).isIntegerType)
@@ -43,7 +43,7 @@ class MethodDescriptorTest extends AnyFunSuite {
 
     test("Parsing: (IDLjava/lang/Thread;)Ljava/lang/Object;") {
         val md = MethodDescriptor("(IDLjava/lang/Thread;)Ljava/lang/Object;")
-        assert(md.parameterTypes.size.toInt == 3)
+        assert(md.parameterTypes.size == 3)
         assert(md.parameterTypes(0).isIntegerType)
         assert(md.parameterTypes(1).isDoubleType)
         assert(md.parameterTypes(2).isClassType)
@@ -52,7 +52,7 @@ class MethodDescriptorTest extends AnyFunSuite {
 
     test("Parsing: (IDLjava/lang/Thread;[J)[Ljava/lang/Object;") {
         val md = MethodDescriptor("(IDLjava/lang/Thread;[J)[Ljava/lang/Object;")
-        assert(md.parameterTypes.size.toInt == 4)
+        assert(md.parameterTypes.size == 4)
         assert(md.parameterTypes(0).isIntegerType)
         assert(md.parameterTypes(1).isDoubleType)
         assert(md.parameterTypes(2).isClassType)
@@ -66,7 +66,7 @@ class MethodDescriptorTest extends AnyFunSuite {
                         ClassType(_),
                         ArrayType(LongType)
                     ),
-                    ArrayType(ClassType("java/lang/Object"))
+                    ArrayType(ClassType.Object)
                 ) => true
             case _ => false
         })

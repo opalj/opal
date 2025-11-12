@@ -53,12 +53,12 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     final val typeSetEntitySelector: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
-    private[this] val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
-    private[this] val virtualFormalParameters = project.get(VirtualFormalParametersKey)
+    private val declaredFields: DeclaredFields = p.get(DeclaredFieldsKey)
+    private val virtualFormalParameters = project.get(VirtualFormalParametersKey)
 
     private type State = ConfiguredNativeMethodsTypePropagationState[ContextType]
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Array[EntityAssignment]] =
+    private val nativeMethodData: Map[DeclaredMethod, Array[EntityAssignment]] =
         ConfiguredMethods
             .reader
             .read(p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis")
@@ -114,7 +114,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
         val returnType = declaredMethod.descriptor.returnType.asReferenceType
 
-        // If we have an array return type, we want the ArrayType and its element type to be considered
+        // If we have an array return type, we want the ArrayType and its element-type to be considered
         val types =
             if (returnType.isArrayType && returnType.asArrayType.elementType.isClassType)
                 Array(returnType, returnType.asArrayType.elementType.asClassType)
@@ -293,13 +293,13 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
             val previouslySeenTypes = state.ownInstantiatedTypes.size
             state.updateOwnInstantiatedTypesDependee(theEPS)
-            val unseenTypes = UIDSet(theEPS.ub.dropOldest(previouslySeenTypes).toSeq: _*)
+            val unseenTypes = UIDSet(theEPS.ub.dropOldest(previouslySeenTypes).toSeq*)
 
             implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
 
-            processParameterAssignments(unseenTypes)(state, partialResults)
+            processParameterAssignments(unseenTypes)(using state, partialResults)
 
-            returnResults(partialResults)(state)
+            returnResults(partialResults)(using state)
         case _ =>
             sys.error("received unexpected update")
     }

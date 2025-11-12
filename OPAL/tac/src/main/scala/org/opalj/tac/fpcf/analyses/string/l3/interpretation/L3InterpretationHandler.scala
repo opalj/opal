@@ -40,7 +40,7 @@ class L3InterpretationHandler(implicit override val project: SomeProject) extend
         case ExprStmt(_, _: FieldRead[V]) =>
             StringInterpreter.computeFinalResult(StringFlowFunctionProperty.identity)
 
-        case stmt => super.processStatement(state)(stmt)
+        case stmt => super.processStatement(using state)(stmt)
     }
 }
 
@@ -50,5 +50,5 @@ object L3InterpretationHandler {
 
     def uses: Set[PropertyBounds] = L2InterpretationHandler.uses ++ PropertyBounds.ubs(FieldWriteAccessInformation)
 
-    def apply(project: SomeProject): L3InterpretationHandler = new L3InterpretationHandler()(project)
+    def apply(project: SomeProject): L3InterpretationHandler = new L3InterpretationHandler()(using project)
 }

@@ -43,7 +43,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    val ConstructorT: ClassType = ClassType("java/lang/reflect/Constructor")
+    val ConstructorT: ClassType = ClassType.Constructor
 
     def process(p: SomeProject): PropertyComputationResult = {
         val analyses = List(
@@ -91,7 +91,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
     val key:                String
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
-    private[this] final val tamiFlexLogData = project.get(TamiFlexKey)
+    private final val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(
         calleeContext:   ContextType,
@@ -113,7 +113,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         Results(indirectCalls.partialResults(callerContext))
     }
 
-    private[this] def handleMethodInvoke(
+    private def handleMethodInvoke(
         context:      ContextType,
         pc:           Int,
         receiver:     Expr[V],
@@ -141,9 +141,9 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         } else { // Class.newInstance
             (None, Some(Seq.empty))
         }
-        val persistentReceiver = methodInvokeReceiver.flatMap(r => persistentUVar(r)(tac.stmts))
+        val persistentReceiver = methodInvokeReceiver.flatMap(r => persistentUVar(r)(using tac.stmts))
         val persistentParams: Seq[Option[(ValueInformation, IntTrieSet)]] =
-            methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(tac.stmts))).getOrElse(Seq.empty)
+            methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(using tac.stmts))).getOrElse(Seq.empty)
 
         for (target <- targets) {
             indirectCalls.addCall(context, pc, target, persistentParams, persistentReceiver)
