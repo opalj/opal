@@ -145,12 +145,17 @@ trait LazyInitializationAnalysis private[fieldassignability]
         if (state.initializerWrites.nonEmpty)
             return Assignable;
 
-        // E.g. multiple lazy initialization patterns cannot be supported in a collaborative setting
+        // Multiple lazy initialization patterns cannot be supported in a collaborative setting
         if (state.nonInitializerWrites.iterator.distinctBy(_._1.method).size > 1)
             return Assignable;
 
         // We do not support multiple-write lazy initializations yet
         if (state.nonInitializerWrites(context).size > 1)
+            return Assignable;
+
+        // A lazy init does not allow reads outside the lazy initialization method, effectively also preventing analysis
+        // of patterns with multiple lazy-init functions.
+        if (state.initializerReads.nonEmpty || state.nonInitializerReads.exists(_._1.method ne context.method))
             return Assignable;
 
         val method = context.method.definedMethod
@@ -204,11 +209,6 @@ trait LazyInitializationAnalysis private[fieldassignability]
             )
                 return Assignable;
         }
-
-        // A lazy init does not allow considering reads outside the lazy initialization method, effectively also
-        // preventing analysis multi-lazy-init patterns.
-        if (state.initializerReads.nonEmpty || state.nonInitializerReads.exists(_._1.method ne context.method))
-            return Assignable;
 
         if (doFieldReadsEscape(state.nonInitializerReads(context).map(_._1), guardIndex, writeIndex, tac))
             return Assignable;
