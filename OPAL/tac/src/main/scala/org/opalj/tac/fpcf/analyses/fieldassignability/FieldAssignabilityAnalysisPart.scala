@@ -10,7 +10,6 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 
-
 /**
  * @author Maximilian Rüsch
  */
@@ -22,16 +21,18 @@ trait FieldAssignabilityAnalysisPart private[fieldassignability]
     def completePatternWithInitializerRead()(implicit state: AnalysisState): Option[FieldAssignability]
 
     def completePatternWithNonInitializerRead(
-        context: Context,
-        readPC:  Int
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        readPC:   Int,
+        receiver: Option[V]
     )(implicit state: AnalysisState): Option[FieldAssignability]
 
     def completePatternWithInitializerWrite()(implicit state: AnalysisState): Option[FieldAssignability]
 
     def completePatternWithNonInitializerWrite(
-        context: Context,
-        tac:     TACode[TACMethodParameter, V],
-        writePC: PC,
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        writePC:  PC,
         receiver: Option[V]
     )(implicit state: AnalysisState): Option[FieldAssignability]
 }

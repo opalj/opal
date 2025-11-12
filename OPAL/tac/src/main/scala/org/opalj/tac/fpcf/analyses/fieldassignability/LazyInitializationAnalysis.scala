@@ -111,8 +111,10 @@ trait LazyInitializationAnalysis private[fieldassignability]
         state.potentialLazyInit.map(_ => Assignable)
 
     override def completePatternWithNonInitializerRead(
-        context: Context,
-        readPC:  Int
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        readPC:   Int,
+        receiver: Option[V]
     )(implicit state: AnalysisState): Option[FieldAssignability] = {
         // No lazy init pattern exists, or it was not discovered yet
         if (state.potentialLazyInit.isEmpty)

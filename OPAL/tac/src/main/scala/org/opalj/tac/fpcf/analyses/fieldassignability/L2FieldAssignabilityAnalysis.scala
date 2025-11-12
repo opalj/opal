@@ -91,26 +91,11 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
         receiver: Option[V]
     )(implicit state: State): FieldAssignability = {
         val assignability = determineAssignabilityFromParts(part =>
-            part.completePatternWithNonInitializerRead(context, readPC)(using state.asInstanceOf[part.AnalysisState])
+            part.completePatternWithNonInitializerRead(context, tac, readPC, receiver)(using
+                state.asInstanceOf[part.AnalysisState]
+            )
         )
-        if (assignability.contains(Assignable))
-            return Assignable;
-
-        // Completes the analysis of the clone pattern by recognizing unsafe read-write paths on the same field
-        val pathFromReadToSomeWriteExists = state.nonInitializerWrites(context).exists {
-            case (writePC, writeReceiver) =>
-                val writeReceiverVar = writeReceiver.map(uVarForDefSites(_, tac.pcToIndex))
-                if (writeReceiverVar.isDefined && isSameInstance(tac, receiver.get, writeReceiverVar.get).isNo) {
-                    false
-                } else {
-                    pathExists(readPC, writePC, tac)
-                }
-        }
-
-        if (pathFromReadToSomeWriteExists)
-            Assignable
-        else
-            NonAssignable
+        assignability.getOrElse(NonAssignable)
     }
 
     override def analyzeInitializerWrite(
