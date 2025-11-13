@@ -13,7 +13,6 @@ import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.tac.SelfReferenceParameter
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * Determines the assignability of a field based on whether it is possible for a path to exist from a read to a write
@@ -25,7 +24,7 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
  *
  * @author Maximilian Rüsch
  */
-trait ExtensiveReadWritePathAnalysis private[fieldassignability]
+trait SimpleReadWritePathAnalysis private[fieldassignability]
     extends FieldAssignabilityAnalysisPart {
 
     override def completePatternWithInitializerRead(
@@ -40,12 +39,8 @@ trait ExtensiveReadWritePathAnalysis private[fieldassignability]
 
         // Analyzing read-write paths interprocedurally is not supported yet. For static fields, initializer writes are
         // harmless (i.e. executed before) when the read is in a constructor, so the class is already initialized.
-        if (state.initializerWrites.exists(_._1.method ne context.method)) {
-            if (state.field.isNotStatic)
-                return Some(Assignable);
-            else if (!context.method.definedMethod.isConstructor)
-                return Some(Assignable);
-        }
+        if (state.initializerWrites.exists(_._1.method ne context.method))
+            return Some(Assignable);
 
         val pathFromReadToSomeWriteExists = state.initializerWrites(context).exists {
             case (writePC, _) =>
@@ -88,26 +83,12 @@ trait ExtensiveReadWritePathAnalysis private[fieldassignability]
 
         // Analyzing read-write paths interprocedurally is not supported yet. However, for static fields, all
         // reads that take place in instance constructors are harmless.
-        if (state.field.isNotStatic && state.initializerReads.exists(_._1.method ne context.method))
-            return Some(Assignable);
-        if (state.field.isStatic && state.initializerReads.exists {
-                case (readContext, _) =>
-                    (readContext.method ne context.method) && (
-                        !readContext.method.hasSingleDefinedMethod ||
-                        readContext.method.definedMethod.isStaticInitializer
-                    )
-            }
-        )
+        if (state.initializerReads.exists(_._1.method ne context.method))
             return Some(Assignable);
 
         val pathFromSomeReadToWriteExists = state.initializerReads(context).exists {
-            case (readPC, readReceiver) =>
-                val readReceiverVar = readReceiver.map(uVarForDefSites(_, tac.pcToIndex))
-                if (readReceiverVar.isDefined && isSameInstance(tac, receiver.get, readReceiverVar.get).isNo) {
-                    false
-                } else {
-                    pathExists(readPC, writePC, tac)
-                }
+            case (readPC, _) =>
+                pathExists(readPC, writePC, tac)
         }
 
         if (pathFromSomeReadToWriteExists)

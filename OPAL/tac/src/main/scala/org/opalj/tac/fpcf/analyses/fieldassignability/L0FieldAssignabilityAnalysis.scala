@@ -22,7 +22,13 @@ class L0FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
     type AnalysisState = State
     override def createState(field: Field): AnalysisState = State(field)
 
-    override protected lazy val parts = Seq.empty[FieldAssignabilityAnalysisPart]
+    private class L0ReadWritePathPart(val project: SomeProject) extends SimpleReadWritePathAnalysis {
+        override type AnalysisState = L0FieldAssignabilityAnalysis.this.AnalysisState
+    }
+
+    override protected lazy val parts = Seq(
+        L0ReadWritePathPart(project)
+    )
 }
 
 object EagerL0FieldAssignabilityAnalysis extends AbstractEagerFieldAssignabilityAnalysisScheduler {

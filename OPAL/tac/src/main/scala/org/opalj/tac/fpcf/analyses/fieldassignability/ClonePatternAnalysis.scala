@@ -22,27 +22,6 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 trait ClonePatternAnalysis private[fieldassignability]
     extends FieldAssignabilityAnalysisPart {
 
-    /**
-     * @note To be provided by the part user.
-     */
-    protected val isSameInstance: (tac: TACode[TACMethodParameter, V], firstVar: V, secondVar: V) => Answer
-
-    /**
-     * Determines whether a use site of a written instance is "safe", i.e. is recognizable as a pattern that does not
-     * make the field assignable in combination with the given write itself.
-     *
-     * @note To be provided by the part user.
-     */
-    protected val isWrittenInstanceUseSiteSafe: (tac: TACode[TACMethodParameter, V], writePC: Int, use: Int) => Boolean
-
-    /**
-     * Provided with two PCs, determines irreflexively whether there exists a path from the first PC to the second PC in
-     * the context of the provided TAC and attached CFG.
-     *
-     * @note To be provided by the part user.
-     */
-    protected val pathExists: (fromPC: Int, toPC: Int, tac: TACode[TACMethodParameter, V]) => Boolean
-
     override def completePatternWithInitializerRead(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],

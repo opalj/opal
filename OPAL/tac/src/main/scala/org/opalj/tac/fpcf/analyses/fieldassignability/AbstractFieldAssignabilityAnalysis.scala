@@ -367,20 +367,6 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
         createResult()
     }
-
-    /**
-     * Provided with two PCs, determines whether there exists a path from the first PC to the second PC in the context
-     * of the provided TAC and attached CFG. This check is not reflexive.
-     *
-     * IMPROVE abort on path found instead of computing all reachable BBs
-     */
-    protected def pathExists(fromPC: Int, toPC: Int, tac: TACode[TACMethodParameter, V]): Boolean = {
-        val firstBB = tac.cfg.bb(tac.pcToIndex(fromPC))
-        val secondBB = tac.cfg.bb(tac.pcToIndex(toPC))
-
-        if (firstBB == secondBB) fromPC < toPC
-        else firstBB.reachable().contains(secondBB)
-    }
 }
 
 sealed trait AbstractFieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
