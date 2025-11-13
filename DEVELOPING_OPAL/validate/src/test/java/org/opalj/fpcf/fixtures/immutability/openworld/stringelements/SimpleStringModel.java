@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.immutability.openworld.stringelements;
 
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
-import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.L2FieldAssignabilityAnalys
 public final class SimpleStringModel {
 
     @TransitivelyImmutableField(value = "The array values are not mutated after the assignment ", analyses = {})
-    @NonTransitivelyImmutableField(value = "The analysis can not recognize transitive immutable arrays",
+    @MutableField(value = "The analysis can not recognize transitive immutable arrays, and the field is assignable",
             analyses = { FieldImmutabilityAnalysis.class })
     @NonAssignableField(value = "The field is final", analyses = {})
     @AssignableField(value = "The field is written read and written in two different initializers",
