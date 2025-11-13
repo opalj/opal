@@ -59,6 +59,7 @@ import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
@@ -135,8 +136,8 @@ object Purity extends ProjectsAnalysisApplication {
                 case Some(fA) => support ::= getScheduler(fA, eager)
                 case None     => analysis match {
                         case LazyL0PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis
-                        case LazyL1PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis // TODO find LazyL1FieldAssignabilityAnalysis
-                        case LazyL2PurityAnalysis => support ::= LazyL0FieldAssignabilityAnalysis // TODO find LazyL1FieldAssignabilityAnalysis
+                        case LazyL1PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
+                        case LazyL2PurityAnalysis => support ::= LazyL1FieldAssignabilityAnalysis
                     }
             }
 

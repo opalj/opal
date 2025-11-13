@@ -45,10 +45,10 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
     )
 }
 
-object EagerL2FieldAssignabilityAnalysis extends AbstractEagerFieldAssignabilityAnalysisScheduler {
-    override def newAnalysis(p: SomeProject): AbstractFieldAssignabilityAnalysis = new L2FieldAssignabilityAnalysis(p)
+object EagerL1FieldAssignabilityAnalysis extends AbstractEagerFieldAssignabilityAnalysisScheduler {
+    override def newAnalysis(p: SomeProject): AbstractFieldAssignabilityAnalysis = new L1FieldAssignabilityAnalysis(p)
 }
 
-object LazyL2FieldAssignabilityAnalysis extends AbstractLazyFieldAssignabilityAnalysisScheduler {
-    override def newAnalysis(p: SomeProject): AbstractFieldAssignabilityAnalysis = new L2FieldAssignabilityAnalysis(p)
+object LazyL1FieldAssignabilityAnalysis extends AbstractLazyFieldAssignabilityAnalysisScheduler {
+    override def newAnalysis(p: SomeProject): AbstractFieldAssignabilityAnalysis = new L1FieldAssignabilityAnalysis(p)
 }

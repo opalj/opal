@@ -19,6 +19,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.fieldaccess.EagerFieldAccessInformationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL0FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.LazyL2FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
@@ -71,7 +72,7 @@ class PurityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL1PurityAnalysis,
-                // TODO find LazyL1FieldAssignabilityAnalysis,
+                LazyL1FieldAssignabilityAnalysis,
                 LazyFieldImmutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
                 LazyTypeImmutabilityAnalysis,
