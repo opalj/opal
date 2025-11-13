@@ -10,9 +10,6 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.tac.SelfReferenceParameter
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
@@ -25,36 +22,22 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
  *
  * @author Maximilian Rüsch
  */
-trait ExtensiveReadWritePathAnalysis private[fieldassignability]
+sealed trait ReadWritePathAnalysisPart private[fieldassignability]
     extends FieldAssignabilityAnalysisPart {
 
     /**
-     * Analyzing read-write paths interprocedurally is not fully supported yet. Instead, this identifies particular
-     * cases where read-write paths are provably impossible, given the information present in the framework / TAC.
+     * As a pre-stage to a full interprocedural read-write path analysis, users of this trait use this extension to
+     * specify whether it is provable that no execution path exists from the read path to the write path.
      *
-     * IMPROVE: The analysis of these accesses does not change over time, thus cache this derivation in the state
+     * IMPROVE: Results to not currently change over time, thus cache this derivation in the state
      *
      * @note Assumes that the two contexts point to different methods, i.e. that intraprocedural path existence is
      *       handled separately.
      */
-    private def canPathExistFromInitializerReadsToInitializerWrites(
+    protected def provablyNoPathExistsFromInitializerReadsToInitializerWrites(
         readContext:  Context,
         writeContext: Context
-    )(implicit state: AnalysisState): Boolean = {
-        if (state.field.isStatic) {
-            // Writes to static fields in instance constructors are forbidden, see the write analysis.
-
-            // We can only guarantee that no paths exist when the writing static initializer is guaranteed to run before
-            // the reading method, which is in turn only guaranteed when the writing static initializer is in the same
-            // type as the field declaration, i.e. it is run when the field is used for the first time.
-
-            // Note that this also implies that there may be no supertype static initializer that can read the field,
-            // preventing read-write paths in the inheritance chain.
-            writeContext.method.declaringClassType ne state.field.classFile.thisType
-        } else {
-            true
-        }
-    }
+    )(implicit state: AnalysisState): Boolean
 
     override def completePatternWithInitializerRead(
         context:  Context,
@@ -70,7 +53,7 @@ trait ExtensiveReadWritePathAnalysis private[fieldassignability]
         if (state.initializerWrites.exists {
                 case (writeContext, _) =>
                     (writeContext.method ne context.method) &&
-                        canPathExistFromInitializerReadsToInitializerWrites(context, writeContext)
+                        !provablyNoPathExistsFromInitializerReadsToInitializerWrites(context, writeContext)
             }
         )
             return Some(Assignable);
@@ -119,7 +102,7 @@ trait ExtensiveReadWritePathAnalysis private[fieldassignability]
         if (state.initializerReads.exists {
                 case (readContext, _) =>
                     (readContext.method ne context.method) &&
-                        canPathExistFromInitializerReadsToInitializerWrites(readContext, context)
+                        !provablyNoPathExistsFromInitializerReadsToInitializerWrites(readContext, context)
             }
         )
             return Some(Assignable);
@@ -146,4 +129,44 @@ trait ExtensiveReadWritePathAnalysis private[fieldassignability]
         writePC:  PC,
         receiver: Option[V]
     )(implicit state: AnalysisState): Option[FieldAssignability] = None
+}
+
+/**
+ * @inheritdoc
+ *
+ * The simple path analysis considers every interprocedural path to be harmful, causing the field to be assignable.
+ */
+trait SimpleReadWritePathAnalysis private[fieldassignability] extends ReadWritePathAnalysisPart {
+
+    override protected final def provablyNoPathExistsFromInitializerReadsToInitializerWrites(
+        readContext:  Context,
+        writeContext: Context
+    )(implicit state: AnalysisState): Boolean = false
+}
+
+/**
+ * @inheritdoc
+ *
+ * The extensive path analysis considers interprocedural static field writes as safe when the writing static initializer
+ * is in the same class as the field declaration.
+ */
+trait ExtensiveReadWritePathAnalysis private[fieldassignability]
+    extends ReadWritePathAnalysisPart {
+
+    override protected final def provablyNoPathExistsFromInitializerReadsToInitializerWrites(
+        readContext:  Context,
+        writeContext: Context
+    )(implicit state: AnalysisState): Boolean = {
+        if (state.field.isStatic && writeContext.method.definedMethod.isStaticInitializer) {
+            // We can only guarantee that no paths exist when the writing static initializer is guaranteed to run before
+            // the reading method, which is in turn only guaranteed when the writing static initializer is in the same
+            // type as the field declaration, i.e. it is run when the field is used for the first time.
+
+            // Note that this also implies that there may be no supertype static initializer that can read the field,
+            // preventing read-write paths in the inheritance chain.
+            writeContext.method.declaringClassType eq state.field.classFile.thisType
+        } else {
+            false
+        }
+    }
 }
