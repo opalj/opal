@@ -79,7 +79,7 @@ trait FieldAssignabilityAnalysisPart private[fieldassignability]
             (isFresh(firstVar), isFresh(secondVar)),
             (firstVar.definedBy == SelfReferenceParameter, secondVar.definedBy == SelfReferenceParameter),
             (firstVar.definedBy.forall(_ < OriginOfThis), secondVar.definedBy.forall(_ < OriginOfThis))
-            )
+        )
         if (instanceInfo.contains((true, false)) &&
             instanceInfo.contains((false, true)) &&
             !instanceInfo.contains(true, true)
