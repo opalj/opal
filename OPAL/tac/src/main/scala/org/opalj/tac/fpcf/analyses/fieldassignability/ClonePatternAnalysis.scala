@@ -13,7 +13,8 @@ import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
- * Determines whether a field write access corresponds to a lazy initialization of the field.
+ * Determines the assignability of a field based on whether a clone pattern is detected. Aborts the analysis when
+ * rejecting a clone pattern match would lead to unsoundness based on the available properties.
  *
  * @note Requires that the 3-address code's expressions are not deeply nested.
  *
