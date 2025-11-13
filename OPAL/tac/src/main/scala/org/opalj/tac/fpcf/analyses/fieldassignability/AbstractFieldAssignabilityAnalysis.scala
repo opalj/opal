@@ -86,7 +86,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
 
     protected lazy val parts: Seq[FieldAssignabilityAnalysisPart]
 
-    protected def determineAssignabilityFromParts(
+    private def determineAssignabilityFromParts(
         partFunc: FieldAssignabilityAnalysisPart => Option[FieldAssignability]
     ): Option[FieldAssignability] = {
         var assignability: Option[FieldAssignability] = None
@@ -148,33 +148,61 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         handleWriteAccessInformation(propertyStore(declaredFields(field), FieldWriteAccessInformation.key))(using state)
     }
 
-    def analyzeInitializerRead(
+    private def analyzeInitializerRead(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         readPC:   PC,
         receiver: Option[V]
-    )(implicit state: AnalysisState): FieldAssignability
+    )(implicit state: AnalysisState): FieldAssignability = {
+        val assignability = determineAssignabilityFromParts(part =>
+            part.completePatternWithInitializerRead(context, tac, readPC, receiver)(using
+                state.asInstanceOf[part.AnalysisState]
+            )
+        )
+        assignability.getOrElse(NonAssignable)
+    }
 
-    def analyzeNonInitializerRead(
+    private def analyzeNonInitializerRead(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         readPC:   PC,
         receiver: Option[V]
-    )(implicit state: AnalysisState): FieldAssignability
+    )(implicit state: AnalysisState): FieldAssignability = {
+        val assignability = determineAssignabilityFromParts(part =>
+            part.completePatternWithNonInitializerRead(context, tac, readPC, receiver)(using
+                state.asInstanceOf[part.AnalysisState]
+            )
+        )
+        assignability.getOrElse(NonAssignable)
+    }
 
-    def analyzeInitializerWrite(
+    private def analyzeInitializerWrite(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         writePC:  PC,
         receiver: Option[V]
-    )(implicit state: AnalysisState): FieldAssignability
+    )(implicit state: AnalysisState): FieldAssignability = {
+        val assignability = determineAssignabilityFromParts(part =>
+            part.completePatternWithInitializerWrite(context, tac, writePC, receiver)(using
+                state.asInstanceOf[part.AnalysisState]
+            )
+        )
+        assignability.getOrElse(Assignable)
+    }
 
-    def analyzeNonInitializerWrite(
+    private def analyzeNonInitializerWrite(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         writePC:  PC,
         receiver: Option[V]
-    )(implicit state: AnalysisState): FieldAssignability
+    )(implicit state: AnalysisState): FieldAssignability = {
+        val assignability = determineAssignabilityFromParts(part =>
+            part.completePatternWithNonInitializerWrite(context, tac, writePC, receiver)(using
+                state.asInstanceOf[part.AnalysisState]
+            )
+        )
+        assignability.getOrElse(Assignable)
+    }
 
     def createResult()(implicit state: AnalysisState): ProperPropertyComputationResult = {
         if (state.hasDependees && (state.fieldAssignability ne Assignable))

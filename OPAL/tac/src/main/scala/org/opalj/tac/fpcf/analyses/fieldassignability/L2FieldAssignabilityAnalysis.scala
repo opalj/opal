@@ -6,13 +6,8 @@ package analyses
 package fieldassignability
 
 import org.opalj.br.Field
-import org.opalj.br.PC
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.immutability.Assignable
-import org.opalj.br.fpcf.properties.immutability.FieldAssignability
-import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.tac.SelfReferenceParameter
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
@@ -59,62 +54,6 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
         new L2ClonePatternPart(project),
         new L2ReadWritePathPart(project)
     )
-
-    override def analyzeInitializerRead(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        readPC:   PC,
-        receiver: Option[V]
-    )(implicit state: State): FieldAssignability = {
-        val assignability = determineAssignabilityFromParts(part =>
-            part.completePatternWithInitializerRead(context, tac, readPC, receiver)(using
-                state.asInstanceOf[part.AnalysisState]
-            )
-        )
-        assignability.getOrElse(NonAssignable)
-    }
-
-    override def analyzeNonInitializerRead(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        readPC:   PC,
-        receiver: Option[V]
-    )(implicit state: State): FieldAssignability = {
-        val assignability = determineAssignabilityFromParts(part =>
-            part.completePatternWithNonInitializerRead(context, tac, readPC, receiver)(using
-                state.asInstanceOf[part.AnalysisState]
-            )
-        )
-        assignability.getOrElse(NonAssignable)
-    }
-
-    override def analyzeInitializerWrite(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        writePC:  PC,
-        receiver: Option[V]
-    )(implicit state: State): FieldAssignability = {
-        val assignability = determineAssignabilityFromParts(part =>
-            part.completePatternWithInitializerWrite(context, tac, writePC, receiver)(using
-                state.asInstanceOf[part.AnalysisState]
-            )
-        )
-        assignability.getOrElse(Assignable)
-    }
-
-    override def analyzeNonInitializerWrite(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        writePC:  PC,
-        receiver: Option[V]
-    )(implicit state: State): FieldAssignability = {
-        val assignability = determineAssignabilityFromParts(part =>
-            part.completePatternWithNonInitializerWrite(context, tac, writePC, receiver)(using
-                state.asInstanceOf[part.AnalysisState]
-            )
-        )
-        assignability.getOrElse(Assignable)
-    }
 
     /**
      * Identifies easy cases of definitively answering instance equality, considering that (at least) as long as DU-UD

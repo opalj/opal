@@ -6,14 +6,7 @@ package analyses
 package fieldassignability
 
 import org.opalj.br.Field
-import org.opalj.br.PC
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.immutability.Assignable
-import org.opalj.br.fpcf.properties.immutability.FieldAssignability
-import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 
 /**
  * A field assignability analysis that treats every field access (reads and writes) as unsafe and thus immediately
@@ -30,34 +23,6 @@ class L0FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
     override def createState(field: Field): AnalysisState = State(field)
 
     override protected lazy val parts = Seq.empty[FieldAssignabilityAnalysisPart]
-
-    override def analyzeInitializerRead(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        readPC:   PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): FieldAssignability = Assignable
-
-    override def analyzeNonInitializerRead(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        readPC:   PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): FieldAssignability = NonAssignable
-
-    override def analyzeInitializerWrite(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        writePC:  PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): FieldAssignability = NonAssignable // TODO handle constructor escapes
-
-    override def analyzeNonInitializerWrite(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        writePC:  PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): FieldAssignability = Assignable
 }
 
 object EagerL0FieldAssignabilityAnalysis extends AbstractEagerFieldAssignabilityAnalysisScheduler {
