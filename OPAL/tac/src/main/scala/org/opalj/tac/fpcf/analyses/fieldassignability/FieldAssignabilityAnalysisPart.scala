@@ -18,7 +18,12 @@ trait FieldAssignabilityAnalysisPart private[fieldassignability]
 
     type AnalysisState <: AbstractFieldAssignabilityAnalysisState
 
-    def completePatternWithInitializerRead()(implicit state: AnalysisState): Option[FieldAssignability]
+    def completePatternWithInitializerRead(
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        readPC:   PC,
+        receiver: Option[V]
+    )(implicit state: AnalysisState): Option[FieldAssignability]
 
     def completePatternWithNonInitializerRead(
         context:  Context,
@@ -27,7 +32,12 @@ trait FieldAssignabilityAnalysisPart private[fieldassignability]
         receiver: Option[V]
     )(implicit state: AnalysisState): Option[FieldAssignability]
 
-    def completePatternWithInitializerWrite()(implicit state: AnalysisState): Option[FieldAssignability]
+    def completePatternWithInitializerWrite(
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        writePC:  PC,
+        receiver: Option[V]
+    )(implicit state: AnalysisState): Option[FieldAssignability]
 
     def completePatternWithNonInitializerWrite(
         context:  Context,

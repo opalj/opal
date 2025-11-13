@@ -22,11 +22,6 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 trait ClonePatternAnalysis private[fieldassignability]
     extends FieldAssignabilityAnalysisPart {
 
-    val considerLazyInitialization: Boolean =
-        project.config.getBoolean(
-            "org.opalj.fpcf.analyses.L2FieldAssignabilityAnalysis.considerLazyInitialization"
-        )
-
     /**
      * @note To be provided by the part user.
      */
@@ -48,7 +43,12 @@ trait ClonePatternAnalysis private[fieldassignability]
      */
     protected val pathExists: (fromPC: Int, toPC: Int, tac: TACode[TACMethodParameter, V]) => Boolean
 
-    override def completePatternWithInitializerRead()(implicit state: AnalysisState): Option[FieldAssignability] = None
+    override def completePatternWithInitializerRead(
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        readPC:   PC,
+        receiver: Option[V]
+    )(implicit state: AnalysisState): Option[FieldAssignability] = None
 
     override def completePatternWithNonInitializerRead(
         context:  Context,
@@ -72,7 +72,12 @@ trait ClonePatternAnalysis private[fieldassignability]
             None
     }
 
-    override def completePatternWithInitializerWrite()(implicit state: AnalysisState): Option[FieldAssignability] = None
+    override def completePatternWithInitializerWrite(
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        writePC:  PC,
+        receiver: Option[V]
+    )(implicit state: AnalysisState): Option[FieldAssignability] = None
 
     override def completePatternWithNonInitializerWrite(
         context:  Context,

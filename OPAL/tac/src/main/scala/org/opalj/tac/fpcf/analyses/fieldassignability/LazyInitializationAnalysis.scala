@@ -107,7 +107,12 @@ trait LazyInitializationAnalysis private[fieldassignability]
             bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominatorIndex < potentiallyDominatedIndex
     }
 
-    override def completePatternWithInitializerRead()(implicit state: AnalysisState): Option[FieldAssignability] =
+    override def completePatternWithInitializerRead(
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        readPC:   PC,
+        receiver: Option[V]
+    )(implicit state: AnalysisState): Option[FieldAssignability] =
         state.potentialLazyInit.map(_ => Assignable)
 
     override def completePatternWithNonInitializerRead(
@@ -134,7 +139,12 @@ trait LazyInitializationAnalysis private[fieldassignability]
         None
     }
 
-    override def completePatternWithInitializerWrite()(implicit state: AnalysisState): Option[FieldAssignability] = None
+    override def completePatternWithInitializerWrite(
+        context:  Context,
+        tac:      TACode[TACMethodParameter, V],
+        writePC:  PC,
+        receiver: Option[V]
+    )(implicit state: AnalysisState): Option[FieldAssignability] = None
 
     override def completePatternWithNonInitializerWrite(
         context:  Context,
