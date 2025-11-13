@@ -10,11 +10,13 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 
 /**
- * Determines the assignability of a field.
+ * Determines the assignability of a field based on a more complex analysis of read-write paths than
+ * [[L0FieldAssignabilityAnalysis]].
  *
- * @note Requires that the 3-address code's expressions are not deeply nested
+ * @note May soundly overapproximate the assignability if the TAC is deeply nested.
  *
  * @author Maximilian Rüsch
+ * @author Dominik Helm
  */
 class L1FieldAssignabilityAnalysis private[fieldassignability] (val project: SomeProject)
     extends AbstractFieldAssignabilityAnalysis

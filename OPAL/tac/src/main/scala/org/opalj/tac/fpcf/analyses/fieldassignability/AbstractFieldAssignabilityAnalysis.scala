@@ -75,9 +75,13 @@ trait AbstractFieldAssignabilityAnalysisState {
 }
 
 /**
- * TODO document
+ * Base trait for all field assignability analyses. Analyses are comprised of a sequence of
+ * [[FieldAssignabilityAnalysisPart]], which are provided one-by-one with accesses of the field under analysis.
  *
- * @note This analysis is only ''soundy'' if the project does not contain native methods.
+ * @note Analysis derived from this trait are only ''soundy'' if the project does not contain native methods, as long as
+ *       the [[FieldReadAccessInformation]] and [[FieldWriteAccessInformation]] do not recognize such accesses.
+ *
+ * @see [[FieldAssignabilityAnalysisPart]]
  *
  * @author Maximilian Rüsch
  * @author Dominik Helm

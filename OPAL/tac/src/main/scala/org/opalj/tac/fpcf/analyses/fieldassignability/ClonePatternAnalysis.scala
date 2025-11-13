@@ -16,8 +16,6 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
  * Determines the assignability of a field based on whether a clone pattern is detected. Aborts the analysis when
  * rejecting a clone pattern match would lead to unsoundness based on the available properties.
  *
- * @note Requires that the 3-address code's expressions are not deeply nested.
- *
  * @author Maximilian Rüsch
  */
 trait ClonePatternAnalysis private[fieldassignability]

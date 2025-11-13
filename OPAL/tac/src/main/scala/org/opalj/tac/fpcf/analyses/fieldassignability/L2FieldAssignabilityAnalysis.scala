@@ -10,13 +10,11 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 
 /**
- * Determines the assignability of a field.
+ * Determines the assignability of a field based on a more complex analysis of read-write paths than
+ * [[L0FieldAssignabilityAnalysis]], and recognizes lazy initialization and clone / factory patterns as safe.
  *
- * @note Requires that the 3-address code's expressions are not deeply nested.
- * @author Tobias Roth
- * @author Dominik Helm
- * @author Florian Kübler
- * @author Michael Eichberg
+ * @note Requires that the 3-address code's expressions are not deeply nested; see [[LazyInitializationAnalysis]].
+ *
  * @author Maximilian Rüsch
  */
 class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: SomeProject)

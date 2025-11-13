@@ -9,8 +9,9 @@ import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
 
 /**
- * A field assignability analysis that treats every field access (reads and writes) as unsafe and thus immediately
- * marks the field as assignable if one such read / write is detected.
+ * Determines the assignability of a field based on a simple analysis of read -> write paths.
+ *
+ * @note May soundly overapproximate the assignability if the TAC is deeply nested.
  *
  * @author Maximilian Rüsch
  * @author Dominik Helm
