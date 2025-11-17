@@ -8,13 +8,13 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 @MutableType("The type is extensible")
 @TransitivelyImmutableClass("Class has no instance fields")
-public class ClassWithPublicFinalFields {
+public class StaticFieldWithDefaultValue {
 
     @NonTransitivelyImmutableField("Field is not assignable")
-    @NonAssignableField("The field is public, final, and its value is only set once since it is static")
+    @NonAssignableField("The field is public, final, and its value is only set once in the static initializer")
     public static final Object DEFAULT = new Object();
 
-    public ClassWithPublicFinalFields() {
-        System.out.println(ClassWithPublicFinalFields.DEFAULT);
+    public StaticFieldWithDefaultValue() {
+        System.out.println(StaticFieldWithDefaultValue.DEFAULT);
     }
 }
