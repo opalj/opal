@@ -4,47 +4,21 @@ package tac
 package fpcf
 package analyses
 package fieldassignability
+package part
 
-import org.opalj.br.PC
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 
 /**
+ * A collection of common tools for field assignability analysis parts, as well as a convenience type bound for state.
+ * Implementors should call `registerPart` (see [[PartAnalysisAbstractions]] and for some example
+ * [[LazyInitializationAnalysis]]) to realise the part as a mixin for [[AbstractFieldAssignabilityAnalysis]] subclasses.
+ *
  * @author Maximilian Rüsch
  */
 trait FieldAssignabilityAnalysisPart private[fieldassignability]
-    extends FPCFAnalysis {
+    extends FPCFAnalysis with PartAnalysisAbstractions {
 
-    type AnalysisState <: AbstractFieldAssignabilityAnalysisState
-
-    def completePatternWithInitializerRead(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        readPC:   PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): Option[FieldAssignability]
-
-    def completePatternWithNonInitializerRead(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        readPC:   Int,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): Option[FieldAssignability]
-
-    def completePatternWithInitializerWrite(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        writePC:  PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): Option[FieldAssignability]
-
-    def completePatternWithNonInitializerWrite(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        writePC:  PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): Option[FieldAssignability]
+    override type AnalysisState <: AbstractFieldAssignabilityAnalysisState
 
     /**
      * Provided with two PCs, determines whether there exists a path from the first PC to the second PC in the context

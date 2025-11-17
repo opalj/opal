@@ -7,7 +7,10 @@ package fieldassignability
 
 import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.part.ClonePatternAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.part.ExtensiveReadWritePathAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.part.LazyInitializationAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.part.LazyInitializationAnalysisState
 
 /**
  * Determines the assignability of a field based on a more complex analysis of read-write paths than
@@ -19,28 +22,14 @@ import org.opalj.br.fpcf.FPCFAnalysis
  */
 class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: SomeProject)
     extends AbstractFieldAssignabilityAnalysis
-    with FPCFAnalysis {
+    with LazyInitializationAnalysis
+    with ClonePatternAnalysis
+    with ExtensiveReadWritePathAnalysis {
 
     case class State(field: Field) extends AbstractFieldAssignabilityAnalysisState
         with LazyInitializationAnalysisState
     type AnalysisState = State
     override def createState(field: Field): AnalysisState = State(field)
-
-    private class L2LazyInitializationPart(val project: SomeProject) extends LazyInitializationAnalysis {
-        override type AnalysisState = L2FieldAssignabilityAnalysis.this.AnalysisState
-    }
-    private class L2ClonePatternPart(val project: SomeProject) extends ClonePatternAnalysis {
-        override type AnalysisState = L2FieldAssignabilityAnalysis.this.AnalysisState
-    }
-    private class L2ReadWritePathPart(val project: SomeProject) extends ExtensiveReadWritePathAnalysis {
-        override type AnalysisState = L2FieldAssignabilityAnalysis.this.AnalysisState
-    }
-
-    override protected lazy val parts: Seq[FieldAssignabilityAnalysisPart] = List(
-        L2LazyInitializationPart(project),
-        L2ClonePatternPart(project),
-        L2ReadWritePathPart(project)
-    )
 }
 
 object EagerL1FieldAssignabilityAnalysis extends AbstractEagerFieldAssignabilityAnalysisScheduler {

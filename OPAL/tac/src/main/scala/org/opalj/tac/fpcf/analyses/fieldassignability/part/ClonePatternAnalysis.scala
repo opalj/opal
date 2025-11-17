@@ -4,6 +4,7 @@ package tac
 package fpcf
 package analyses
 package fieldassignability
+package part
 
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.Context
@@ -21,14 +22,12 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 trait ClonePatternAnalysis private[fieldassignability]
     extends FieldAssignabilityAnalysisPart {
 
-    override def completePatternWithInitializerRead(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        readPC:   PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): Option[FieldAssignability] = None
+    registerPart(PartInfo(
+        onNonInitializerRead = onNonInitializerRead(_, _, _, _)(using _),
+        onNonInitializerWrite = onNonInitializerWrite(_, _, _, _)(using _),
+    ))
 
-    override def completePatternWithNonInitializerRead(
+    private def onNonInitializerRead(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         readPC:   Int,
@@ -50,14 +49,7 @@ trait ClonePatternAnalysis private[fieldassignability]
             None
     }
 
-    override def completePatternWithInitializerWrite(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        writePC:  PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): Option[FieldAssignability] = None
-
-    override def completePatternWithNonInitializerWrite(
+    private def onNonInitializerWrite(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         writePC:  PC,

@@ -4,6 +4,7 @@ package tac
 package fpcf
 package analyses
 package fieldassignability
+package part
 
 import org.opalj.br.PC
 import org.opalj.br.fpcf.properties.Context
@@ -25,6 +26,11 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 sealed trait ReadWritePathAnalysisPart private[fieldassignability]
     extends FieldAssignabilityAnalysisPart {
 
+    registerPart(PartInfo(
+        onInitializerRead = onInitializerRead(_, _, _, _)(using _),
+        onInitializerWrite = onInitializerWrite(_, _, _, _)(using _),
+    ))
+
     /**
      * Allows users of this trait to specify whether the write context is provably unreachable from the read context.
      * Implementations must be sound, and abort with 'false' if the result cannot be determined at the current time.
@@ -37,7 +43,7 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
         writeContext: Context
     )(implicit state: AnalysisState): Boolean
 
-    override def completePatternWithInitializerRead(
+    private def onInitializerRead(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         readPC:   PC,
@@ -68,14 +74,7 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
             Some(NonAssignable)
     }
 
-    override def completePatternWithNonInitializerRead(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        readPC:   PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): Option[FieldAssignability] = None
-
-    override def completePatternWithInitializerWrite(
+    private def onInitializerWrite(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         writePC:  PC,
@@ -120,13 +119,6 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
         else
             Some(NonAssignable)
     }
-
-    override def completePatternWithNonInitializerWrite(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        writePC:  PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): Option[FieldAssignability] = None
 }
 
 /**

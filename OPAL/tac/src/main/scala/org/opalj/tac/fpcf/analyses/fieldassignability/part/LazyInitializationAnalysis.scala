@@ -4,6 +4,7 @@ package tac
 package fpcf
 package analyses
 package fieldassignability
+package part
 
 import scala.annotation.switch
 
@@ -34,23 +35,6 @@ import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.LazilyInitialized
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.tac.CaughtException
-import org.opalj.tac.ClassConst
-import org.opalj.tac.Compare
-import org.opalj.tac.Expr
-import org.opalj.tac.FieldWriteAccessStmt
-import org.opalj.tac.GetField
-import org.opalj.tac.GetStatic
-import org.opalj.tac.If
-import org.opalj.tac.MonitorEnter
-import org.opalj.tac.MonitorExit
-import org.opalj.tac.PrimitiveTypecastExpr
-import org.opalj.tac.SelfReferenceParameter
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
-import org.opalj.tac.Throw
-import org.opalj.tac.VirtualFunctionCall
 
 trait LazyInitializationAnalysisState extends AbstractFieldAssignabilityAnalysisState {
     var potentialLazyInit: Option[(Context, Int, Int, TACode[TACMethodParameter, V])] = None
@@ -71,6 +55,12 @@ trait LazyInitializationAnalysis private[fieldassignability]
     extends FieldAssignabilityAnalysisPart {
 
     override type AnalysisState <: LazyInitializationAnalysisState
+
+    registerPart(PartInfo(
+        onInitializerRead = onInitializerRead(_, _, _, _)(using _),
+        onNonInitializerRead = onNonInitializerRead(_, _, _, _)(using _),
+        onNonInitializerWrite = onNonInitializerWrite(_, _, _, _)(using _)
+    ))
 
     val considerLazyInitialization: Boolean =
         project.config.getBoolean(
@@ -107,7 +97,7 @@ trait LazyInitializationAnalysis private[fieldassignability]
             bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominatorIndex < potentiallyDominatedIndex
     }
 
-    override def completePatternWithInitializerRead(
+    private def onInitializerRead(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         readPC:   PC,
@@ -115,7 +105,7 @@ trait LazyInitializationAnalysis private[fieldassignability]
     )(implicit state: AnalysisState): Option[FieldAssignability] =
         state.potentialLazyInit.map(_ => Assignable)
 
-    override def completePatternWithNonInitializerRead(
+    private def onNonInitializerRead(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         readPC:   Int,
@@ -139,14 +129,7 @@ trait LazyInitializationAnalysis private[fieldassignability]
         None
     }
 
-    override def completePatternWithInitializerWrite(
-        context:  Context,
-        tac:      TACode[TACMethodParameter, V],
-        writePC:  PC,
-        receiver: Option[V]
-    )(implicit state: AnalysisState): Option[FieldAssignability] = None
-
-    override def completePatternWithNonInitializerWrite(
+    private def onNonInitializerWrite(
         context:  Context,
         tac:      TACode[TACMethodParameter, V],
         writePC:  PC,

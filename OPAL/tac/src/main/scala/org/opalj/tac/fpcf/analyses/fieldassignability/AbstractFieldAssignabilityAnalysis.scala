@@ -44,6 +44,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
+import org.opalj.tac.fpcf.analyses.fieldassignability.part.PartAnalysisAbstractions
 import org.opalj.tac.fpcf.properties.TACAI
 
 trait AbstractFieldAssignabilityAnalysisState {
@@ -76,28 +77,32 @@ trait AbstractFieldAssignabilityAnalysisState {
 
 /**
  * Base trait for all field assignability analyses. Analyses are comprised of a sequence of
- * [[FieldAssignabilityAnalysisPart]], which are provided one-by-one with accesses of the field under analysis.
+ * [[part.FieldAssignabilityAnalysisPart]], which are provided one-by-one with accesses of the field under analysis.
  *
  * @note Analysis derived from this trait are only ''soundy'' if the project does not contain native methods, as long as
  *       the [[FieldReadAccessInformation]] and [[FieldWriteAccessInformation]] do not recognize such accesses.
  *
- * @see [[FieldAssignabilityAnalysisPart]]
+ * @see [[part.FieldAssignabilityAnalysisPart]]
  *
  * @author Maximilian Rüsch
  * @author Dominik Helm
  */
-trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
+trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis with PartAnalysisAbstractions {
 
-    protected lazy val parts: Seq[FieldAssignabilityAnalysisPart]
+    private var parts: Seq[PartInfo] = Seq.empty
+
+    override def registerPart(partInfo: PartInfo): Unit = {
+        parts = parts :+ partInfo
+    }
 
     private def determineAssignabilityFromParts(
-        partFunc: FieldAssignabilityAnalysisPart => Option[FieldAssignability]
+        hookFunc: PartInfo => Option[FieldAssignability]
     ): Option[FieldAssignability] = {
         var assignability: Option[FieldAssignability] = None
         for {
-            part <- parts
+            partInfo <- parts
             if !assignability.contains(Assignable)
-            partAssignability = partFunc(part)
+            partAssignability = hookFunc(partInfo)
             if partAssignability.isDefined
         } {
             if (assignability.isDefined)
@@ -126,7 +131,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         }
     }
 
-    type AnalysisState <: AbstractFieldAssignabilityAnalysisState
+    override type AnalysisState <: AbstractFieldAssignabilityAnalysisState
 
     def createState(field: Field): AnalysisState
 
@@ -158,12 +163,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         readPC:   PC,
         receiver: Option[V]
     )(implicit state: AnalysisState): FieldAssignability = {
-        val assignability = determineAssignabilityFromParts(part =>
-            part.completePatternWithInitializerRead(context, tac, readPC, receiver)(using
-                state.asInstanceOf[part.AnalysisState]
-            )
-        )
-        assignability.getOrElse(NonAssignable)
+        val result = determineAssignabilityFromParts(_.onInitializerRead(context, tac, readPC, receiver, state))
+        result.getOrElse(NonAssignable)
     }
 
     private def analyzeNonInitializerRead(
@@ -172,12 +173,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         readPC:   PC,
         receiver: Option[V]
     )(implicit state: AnalysisState): FieldAssignability = {
-        val assignability = determineAssignabilityFromParts(part =>
-            part.completePatternWithNonInitializerRead(context, tac, readPC, receiver)(using
-                state.asInstanceOf[part.AnalysisState]
-            )
-        )
-        assignability.getOrElse(NonAssignable)
+        val result = determineAssignabilityFromParts(_.onNonInitializerRead(context, tac, readPC, receiver, state))
+        result.getOrElse(NonAssignable)
     }
 
     private def analyzeInitializerWrite(
@@ -186,12 +183,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         writePC:  PC,
         receiver: Option[V]
     )(implicit state: AnalysisState): FieldAssignability = {
-        val assignability = determineAssignabilityFromParts(part =>
-            part.completePatternWithInitializerWrite(context, tac, writePC, receiver)(using
-                state.asInstanceOf[part.AnalysisState]
-            )
-        )
-        assignability.getOrElse(Assignable)
+        val result = determineAssignabilityFromParts(_.onInitializerWrite(context, tac, writePC, receiver, state))
+        result.getOrElse(Assignable)
     }
 
     private def analyzeNonInitializerWrite(
@@ -200,12 +193,8 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         writePC:  PC,
         receiver: Option[V]
     )(implicit state: AnalysisState): FieldAssignability = {
-        val assignability = determineAssignabilityFromParts(part =>
-            part.completePatternWithNonInitializerWrite(context, tac, writePC, receiver)(using
-                state.asInstanceOf[part.AnalysisState]
-            )
-        )
-        assignability.getOrElse(Assignable)
+        val result = determineAssignabilityFromParts(_.onNonInitializerWrite(context, tac, writePC, receiver, state))
+        result.getOrElse(Assignable)
     }
 
     def createResult()(implicit state: AnalysisState): ProperPropertyComputationResult = {
