@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.openworld.lazyinitialization.scala_lazy_val;
 
-import org.opalj.tac.fpcf.analyses.fieldassignability.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
@@ -19,13 +18,13 @@ public class LazyCell {
     @TransitivelyImmutableField(value = "The field is lazily initialized and has a primitive type", analyses = {})
     @LazilyInitializedField(value = "The field is only set once in a synchronized way.", analyses = {})
     @AssignableField(value = "The analyses cannot recognize lazy initialization over multiple methods",
-            analyses = { L0FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class })
+            analyses = { L2FieldAssignabilityAnalysis.class })
     private volatile boolean bitmap_0 = false;
 
     @TransitivelyImmutableField(value = "The field is lazily initialized and has a primitive type", analyses = {})
     @LazilyInitializedField(value = "The field is only set once in a synchronized way.", analyses = {})
     @AssignableField(value = "The analysis cannot recognize lazy initialization over multiple methods",
-            analyses = { L0FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class })
+            analyses = { L2FieldAssignabilityAnalysis.class })
     Integer value_0;
 
     private Integer value_lazy_compute() {
