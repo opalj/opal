@@ -40,8 +40,6 @@ sealed trait FieldAssignability extends OrderedProperty with FieldAssignabilityP
 
 object FieldAssignability extends FieldAssignabilityPropertyMetaInformation {
 
-    var notEscapes: Boolean = false
-
     final val PropertyKeyName = "opalj.FieldAssignability"
 
     final val key: PropertyKey[FieldAssignability] = {
