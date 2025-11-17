@@ -7,7 +7,7 @@ package fieldassignability
 
 import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.fpcf.analyses.fieldassignability.part.SimpleReadWritePathAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.part.ExtensiveReadWritePathAnalysis
 
 /**
  * Determines the assignability of a field based on a simple analysis of read -> write paths.
@@ -19,7 +19,7 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.part.SimpleReadWritePathAn
  */
 class L0FieldAssignabilityAnalysis private[fieldassignability] (val project: SomeProject)
     extends AbstractFieldAssignabilityAnalysis
-    with SimpleReadWritePathAnalysis {
+    with ExtensiveReadWritePathAnalysis {
 
     case class State(field: Field) extends AbstractFieldAssignabilityAnalysisState
     type AnalysisState = State
