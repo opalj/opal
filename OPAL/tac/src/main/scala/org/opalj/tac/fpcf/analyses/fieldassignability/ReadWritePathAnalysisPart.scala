@@ -14,7 +14,7 @@ import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * Determines the assignability of a field based on whether it is possible for a path to exist from a read to a write
- * of the same field on the same instance.
+ * of the same field on the same instance (or class for static fields).
  *
  * This part will always return a value, and will soundly abort if it cannot guarantee that no such path exists. This
  * may be the case e.g. if a path from some read of the field to the write exists, but the analysis cannot prove that
@@ -26,15 +26,13 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
     extends FieldAssignabilityAnalysisPart {
 
     /**
-     * As a pre-stage to a full interprocedural read-write path analysis, users of this trait use this extension to
-     * specify whether it is provable that no execution path exists from the read path to the write path.
-     *
-     * IMPROVE: Results to not currently change over time, thus cache this derivation in the state
+     * Allows users of this trait to specify whether the write context is provably unreachable from the read context.
+     * Implementations must be sound, and abort with 'false' if the result cannot be determined at the current time.
      *
      * @note Assumes that the two contexts point to different methods, i.e. that intraprocedural path existence is
      *       handled separately.
      */
-    protected def provablyNoPathExistsFromInitializerReadsToInitializerWrites(
+    protected def isContextUnreachableFrom(
         readContext:  Context,
         writeContext: Context
     )(implicit state: AnalysisState): Boolean
@@ -53,7 +51,7 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
         if (state.initializerWrites.exists {
                 case (writeContext, _) =>
                     (writeContext.method ne context.method) &&
-                        !provablyNoPathExistsFromInitializerReadsToInitializerWrites(context, writeContext)
+                        !isContextUnreachableFrom(context, writeContext)
             }
         )
             return Some(Assignable);
@@ -102,7 +100,7 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
         if (state.initializerReads.exists {
                 case (readContext, _) =>
                     (readContext.method ne context.method) &&
-                        !provablyNoPathExistsFromInitializerReadsToInitializerWrites(readContext, context)
+                        !isContextUnreachableFrom(readContext, context)
             }
         )
             return Some(Assignable);
@@ -138,7 +136,7 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
  */
 trait SimpleReadWritePathAnalysis private[fieldassignability] extends ReadWritePathAnalysisPart {
 
-    override protected final def provablyNoPathExistsFromInitializerReadsToInitializerWrites(
+    override protected final def isContextUnreachableFrom(
         readContext:  Context,
         writeContext: Context
     )(implicit state: AnalysisState): Boolean = false
@@ -153,11 +151,12 @@ trait SimpleReadWritePathAnalysis private[fieldassignability] extends ReadWriteP
 trait ExtensiveReadWritePathAnalysis private[fieldassignability]
     extends ReadWritePathAnalysisPart {
 
-    override protected final def provablyNoPathExistsFromInitializerReadsToInitializerWrites(
+    override protected final def isContextUnreachableFrom(
         readContext:  Context,
         writeContext: Context
     )(implicit state: AnalysisState): Boolean = {
-        if (state.field.isStatic && writeContext.method.definedMethod.isStaticInitializer) {
+        val writeMethod = writeContext.method.definedMethod
+        if (state.field.isStatic && writeMethod.isStaticInitializer) {
             // We can only guarantee that no paths exist when the writing static initializer is guaranteed to run before
             // the reading method, which is in turn only guaranteed when the writing static initializer is in the same
             // type as the field declaration, i.e. it is run when the field is used for the first time.
