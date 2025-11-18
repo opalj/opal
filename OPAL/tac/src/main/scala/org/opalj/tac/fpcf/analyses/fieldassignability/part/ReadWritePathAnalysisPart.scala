@@ -28,7 +28,7 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
 
     registerPart(PartInfo(
         onInitializerRead = onInitializerRead(_, _, _, _)(using _),
-        onInitializerWrite = onInitializerWrite(_, _, _, _)(using _),
+        onInitializerWrite = onInitializerWrite(_, _, _, _)(using _)
     ))
 
     /**

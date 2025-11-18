@@ -24,7 +24,7 @@ trait ClonePatternAnalysis private[fieldassignability]
 
     registerPart(PartInfo(
         onNonInitializerRead = onNonInitializerRead(_, _, _, _)(using _),
-        onNonInitializerWrite = onNonInitializerWrite(_, _, _, _)(using _),
+        onNonInitializerWrite = onNonInitializerWrite(_, _, _, _)(using _)
     ))
 
     private def onNonInitializerRead(

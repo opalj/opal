@@ -27,11 +27,11 @@ trait PartAnalysisAbstractions private[fieldassignability]
         (SomeEPS, AnalysisState) => Option[FieldAssignability]
 
     private[fieldassignability] case class PartInfo(
-        onInitializerRead: PartHook = (_, _, _, _, _) => None,
-        onNonInitializerRead: PartHook = (_, _, _, _, _) => None,
-        onInitializerWrite: PartHook = (_, _, _, _, _) => None,
-        onNonInitializerWrite: PartHook = (_, _, _, _, _) => None,
-        continuation: PartContinuation = (_, _) => None,
+        onInitializerRead:     PartHook         = (_, _, _, _, _) => None,
+        onNonInitializerRead:  PartHook         = (_, _, _, _, _) => None,
+        onInitializerWrite:    PartHook         = (_, _, _, _, _) => None,
+        onNonInitializerWrite: PartHook         = (_, _, _, _, _) => None,
+        continuation:          PartContinuation = (_, _) => None
     )
 
     def registerPart(partInfo: PartInfo): Unit
