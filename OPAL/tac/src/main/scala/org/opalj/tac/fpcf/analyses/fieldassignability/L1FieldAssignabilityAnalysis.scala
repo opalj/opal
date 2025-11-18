@@ -7,7 +7,10 @@ package fieldassignability
 
 import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.fpcf.analyses.fieldassignability.part.ExtensiveReadWritePathAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.tac.fpcf.analyses.fieldassignability.part.CalleesBasedReadWritePathAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.part.CalleesBasedReadWritePathAnalysisState
 
 /**
  * Determines the assignability of a field based on a more complex analysis of read-write paths than
@@ -20,14 +23,17 @@ import org.opalj.tac.fpcf.analyses.fieldassignability.part.ExtensiveReadWritePat
  */
 class L1FieldAssignabilityAnalysis private[fieldassignability] (val project: SomeProject)
     extends AbstractFieldAssignabilityAnalysis
-    with ExtensiveReadWritePathAnalysis {
+    with CalleesBasedReadWritePathAnalysis {
 
     case class State(field: Field) extends AbstractFieldAssignabilityAnalysisState
+        with CalleesBasedReadWritePathAnalysisState
     type AnalysisState = State
     override def createState(field: Field): AnalysisState = State(field)
 }
 
 object EagerL1FieldAssignabilityAnalysis extends AbstractEagerFieldAssignabilityAnalysisScheduler {
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(Callees)
+
     override def newAnalysis(p: SomeProject): AbstractFieldAssignabilityAnalysis = new L1FieldAssignabilityAnalysis(p)
 }
 

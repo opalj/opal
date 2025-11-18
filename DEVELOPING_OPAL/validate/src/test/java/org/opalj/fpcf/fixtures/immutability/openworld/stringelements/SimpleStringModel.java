@@ -8,6 +8,7 @@ import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 import org.opalj.tac.fpcf.analyses.FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.fieldassignability.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.fieldassignability.L2FieldAssignabilityAnalysis;
 
 /**
@@ -19,9 +20,8 @@ public final class SimpleStringModel {
     @TransitivelyImmutableField(value = "The array values are not mutated after the assignment ", analyses = {})
     @MutableField(value = "The analysis can not recognize transitive immutable arrays, and the field is assignable",
             analyses = { FieldImmutabilityAnalysis.class })
-    @NonAssignableField(value = "The field is final", analyses = {})
-    @AssignableField(value = "The field is written read and written in two different initializers",
-            analyses = { L2FieldAssignabilityAnalysis.class })
+    @NonAssignableField(value = "The field is final and it is written in two different initializers that do not call each other",
+            analyses = { L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class })
     private final char value[];
 
     public char[] getValue() {
