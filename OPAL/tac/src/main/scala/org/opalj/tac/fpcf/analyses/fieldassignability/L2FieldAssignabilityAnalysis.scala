@@ -201,6 +201,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                     // IMPROVE: Can we use field access information to care about reflective accesses here?
                     stmt.isPutField && stmt.asPutField.name != state.field.name ||
                     stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
+                    stmt.isMethodCall && stmt.asMethodCall.name == "<clinit>" ||
                     // CHECK do we really need the taCode here?
                     !dominates(index, fieldWriteInMethodIndex, taCode) || stmt.isArrayStore // TODO check
 
@@ -287,8 +288,8 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 fieldReadAccessInformation.numIndirectAccesses - seenIndirectAccesses
             ).exists { readAccess =>
                 val method = contextProvider.contextFromId(readAccess._1).method
-
-                method.definedMethod.classFile != state.field.classFile ||
+                    //determines whether
+              //  (method.definedMethod.classFile != state.field.classFile && writeAccess._1.definedMethod.isInitializer && method.definedMethod.isInitializer) ||
                     (writeAccess._1 eq method) && {
                         val taCode = state.tacDependees(method.asDefinedMethod).ub.tac.get
 
@@ -380,6 +381,12 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
         val code = taCode.stmts
         val cfg = taCode.cfg
+        println(s"code(writeIndex): ${code(writeIndex)}")
+        if(!code(writeIndex).isFieldWriteAccessStmt) {
+            println(s"special case: ${code(writeIndex)}")
+            return Assignable
+        }
+        //    return Assignable
         val write = code(writeIndex).asFieldWriteAccessStmt
         val writeBB = cfg.bb(writeIndex).asBasicBlock
         val resultCatchesAndThrows = findCatchesAndThrows(taCode)

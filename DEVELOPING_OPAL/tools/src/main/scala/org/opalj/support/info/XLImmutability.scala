@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.support.info
+package org.opalj
+package support
+package info
 
 import java.io.BufferedWriter
 import java.io.File
@@ -63,7 +65,6 @@ import org.opalj.br.fpcf.properties.immutability.TypeImmutability
 import org.opalj.br.fpcf.properties.immutability.UnsafelyLazilyInitialized
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldImmutabilityAnalysis
@@ -100,7 +101,8 @@ object XLImmutability {
         withoutConsiderLazyInitialization: Boolean,
         configurationName:                 Option[String],
         times:                             Int,
-        callgraphKey:                      CallGraphKey
+        callgraphKey:                      CallGraphKey,
+        analyzeNativeCode:                  Boolean
     ): BasicReport = {
 
         val classFiles = projectDir match {
@@ -118,10 +120,10 @@ object XLImmutability {
             else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         implicit var config: Config =
-            //if (isLibrary)
+            if (isLibrary)
                 ConfigFactory.load("LibraryProject.conf")
-            //else
-            //    ConfigFactory.load("CommandLineProject.conf")
+            else
+                ConfigFactory.load("CommandLineProject.conf")
 
         config = config.withValue(
             "org.opalj.fpcf.analyses.L3FieldAssignabilityAnalysis.considerLazyInitialization",
@@ -143,7 +145,7 @@ object XLImmutability {
 
         val allProjectClassTypes = project.allProjectClassFiles.iterator.map(_.thisType).toSet
 
-        val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.flatMap { _.fields }.toSet
+        val allFieldsInProjectClassFiles = project.allProjectClassFiles.iterator.filter(x => x.thisType.packageName.startsWith("java/lang") || x.thisType.packageName.startsWith("java/net")).flatMap { _.fields }.toSet
 
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
@@ -155,12 +157,17 @@ object XLImmutability {
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazySimpleEscapeAnalysis,
-                LazyFieldLocalityAnalysis,
-              //  AllocationSiteBasedScriptEngineDetectorScheduler,
-              //  AllocationSiteBasedTriggeredTajsConnectorScheduler,
-                AllocationSiteBasedSVFConnectorDetectorScheduler,
+                LazyFieldLocalityAnalysis
+            ) ++ {
+                if(analyzeNativeCode)
+                    List(AllocationSiteBasedSVFConnectorDetectorScheduler)
+                else
+                    Nil.asInstanceOf[List[FPCFAnalysisScheduler]]
+            }
 
-            ) ++ AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
+        //++ AllocationSiteBasedPointsToCallGraphKey.allCallGraphAnalyses(project)
+
+
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
             if (level == 0)
@@ -177,19 +184,20 @@ object XLImmutability {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) => {
                 implicit val lg: LogContext = project.logContext
-                if (numThreads == 0) {
+              //  if (numThreads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                } else {
-                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
-                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                }
+              //  } else {
+              //      org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
+              //      org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+              //  }
             }
         )
 
         val propertyStore = project.get(PropertyStoreKey)
+
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
-      //  project.get(callgraphKey)
+        project.get(callgraphKey)
 
         time {
             analysesManager.runAll(
@@ -702,13 +710,13 @@ object XLImmutability {
             | [-withoutConsiderGenericity]
             | [-withoutConsiderLazyInitialization]
             | [-times <1...n>] (times of execution. n is a natural number)
+            | -xl Analyze native code
             |""".stripMargin
         }
 
         var i = 0
         var cp: File = null
         var resultFolder: Path = null
-        var numThreads = 0
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var withoutJDK: Boolean = false
@@ -720,6 +728,7 @@ object XLImmutability {
         var times = 1
         var multiProjects = false
         var configurationName: Option[String] = None
+        var analyzeNativeCode = false
 
         def readNextArg(): String = {
             i = i + 1
@@ -752,7 +761,6 @@ object XLImmutability {
                         println(usage)
                         throw new IllegalArgumentException(s"unknown parameter: $result")
                     }
-                case "-threads"                           => numThreads = readNextArg().toInt
                 case "-cp"                                => cp = new File(readNextArg())
                 case "-resultFolder"                      => resultFolder = FileSystems.getDefault.getPath(readNextArg())
                 case "-projectDir"                        => projectDir = Some(readNextArg())
@@ -760,6 +768,7 @@ object XLImmutability {
                 case "-closedWorld"                       => closedWorldAssumption = true
                 case "-isLibrary"                         => isLibrary = true
                 case "-noJDK"                             => withoutJDK = true
+                case "-xl"                                => analyzeNativeCode = true
                 case "-callGraph"                         => callGraphName = Some(readNextArg())
                 case "-level"                             => level = Integer.parseInt(readNextArg())
                 case "-times"                             => times = Integer.parseInt(readNextArg())
@@ -797,7 +806,7 @@ object XLImmutability {
                     evaluate(
                         subp,
                         analysis,
-                        numThreads,
+                        1,
                         projectDir,
                         libDir,
                         resultFolder,
@@ -807,14 +816,15 @@ object XLImmutability {
                         withoutConsiderLazyInitialization,
                         configurationName,
                         nIndex,
-                        callGraphKey
+                        callGraphKey,
+                        analyzeNativeCode
                     )
                 }
             } else {
                 evaluate(
                     cp,
                     analysis,
-                    numThreads,
+                    1,
                     projectDir,
                     libDir,
                     resultFolder,
@@ -824,7 +834,8 @@ object XLImmutability {
                     withoutConsiderLazyInitialization,
                     configurationName,
                     nIndex,
-                    callGraphKey
+                    callGraphKey,
+                    analyzeNativeCode
                 )
             }
             nIndex = nIndex + 1

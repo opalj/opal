@@ -48,6 +48,7 @@ abstract class NativeAnalysis(
                              ) extends PointsToAnalysisBase with APIBasedAnalysis {
 
   case class SVFConnectorState(
+                                callerContext:          ContextType,
                                 calleeContext:          ContextType,
                                 pc:                     Integer,
                                 project:                SomeProject,
@@ -62,6 +63,7 @@ abstract class NativeAnalysis(
 
 
   def runSVF(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized{
+    println("run svf")
     if (svfConnectorState.svfModuleName == null || svfConnectorState.svfModuleName.isEmpty) {
       throw new RuntimeException("LLVM_LIB_PATH not set. Please specify the .bc module to analyze. ")
     }
@@ -77,6 +79,8 @@ abstract class NativeAnalysis(
             val allNativeMethods = project.allProjectClassFiles.
                 flatMap(_.methods).filter(_.isNative).map(method=>
                     ("Java/" + method.classFile.thisType.fqn + "/" + method.name) -> method).toMap
+            if(!allNativeMethods.contains(methodName.replace("_", "/"))) //TODO
+              return result.toArray
             val method = allNativeMethods(methodName.replace("_", "/"))
             val formalparamater = formalParameters(declaredMethods(method))(argumentIndex+1)
             val pointsToSet = currentPointsTo("formalParameter", formalparamater,  PointsToSetLike.noFilter)
@@ -98,7 +102,8 @@ abstract class NativeAnalysis(
         }
 
       override def nativeToJavaCallDetected(basePTS: Array[Long], className: String, methodName: String, methodSignature: String, argsPTSs: Array[Array[Long]]): Array[Long] = {
-          var possibleMethods = Iterable.empty[Method]
+        println("native to java call detected")
+        var possibleMethods = Iterable.empty[Method]
           var objectTypeOptional: Option[ObjectType] = None
 
           for (ptElement <- basePTS) {
@@ -206,14 +211,16 @@ abstract class NativeAnalysis(
       }
 
       override def jniNewObject(className: String, context: String): Long = {
-
+        println(s"jni new object. Classname: $className")
+        if(className==null)
+          return -1111;
         val referenceType = ObjectType(
             if (className.startsWith("L") && className.endsWith(";"))
                 className.replace(";", "").substring(1)
             else
                 className
         )
-
+        println("jni new object - create points to set")
         val newPointsToSet = createPointsToSet(
           svfConnectorState.n,
           NoContext.asInstanceOf[ContextType],
@@ -221,20 +228,26 @@ abstract class NativeAnalysis(
           false,
           false
         )
+        println(s"jni new object - svf connnector state before n: ${svfConnectorState.n}")
         svfConnectorState.n = svfConnectorState.n - 1
+        println(s"jni new object - svf connnector state after n: ${svfConnectorState.n}")
         var result: Long = -1
+        println(s"jni new object - new points to set")
         newPointsToSet.forNewestNElements(1) {
           element =>
           {
             result = element.asInstanceOf[Long]
           }
         }
+        println(s"jni new object - result: $result")
         javaJNITranslator.storePointsToSet(result, newPointsToSet)
-          assert(result>0)
+        assert(result>0)
+        println(s"jni new object id: $result")
         result
       }
 
       override def getField(baseLongArray: Array[Long], className: String, fieldName: String): Array[Long] = {
+        println("get field")
 
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
           new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
@@ -301,9 +314,37 @@ abstract class NativeAnalysis(
       }
 
       override def setField(baseLongArray: Array[Long], className: String, fieldName: String, rhs: Array[Long]): Unit = {
+        println("set field")
 
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
           new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
+
+        try { //TODO remove try
+          project.classFile(svfConnectorState.calleeContext.method.declaringClassType).get.fields.filter(_.name.contains(fieldName)).map(declaredFields(_)).foreach(declaredField => {
+            svfConnectorState.
+                indirectFieldAccesses.addFieldWrite(svfConnectorState.callerContext, svfConnectorState.pc, declaredField, None, None)
+          })
+
+        } catch {
+          case e: Exception =>
+        }
+
+
+
+        println(s"fieldName: $fieldName")
+        println(s"ca")
+/*
+        val className2 = className.replace(";","").substring(1); //"Ljava/io/PrintStream"
+        println(s"className2: $className2")
+        val objectTpe = ObjectType(className)
+        println(s"objectType: $objectTpe")
+        val fields = project.classFile(objectTpe).get.fields
+        fields.filter(_.name==fieldName).map(declaredFields(_)).foreach(declaredField=>{
+          svfConnectorState.
+              indirectFieldAccesses.addFieldWrite(svfConnectorState.calleeContext, 5, declaredField, None, None)
+        }) */
+
+
 
         var rhsPointsToSet = emptyPointsToSet
         for (l <- rhs) {
@@ -361,6 +402,7 @@ abstract class NativeAnalysis(
       }
 
       override def getArrayElement(baseLongArray: Array[Long]): Array[Long] = {
+        println("get array element")
         implicit val pointsToAnalysisState: PointsToAnalysisState[ElementType, PointsToSet, ContextType] =
           new PointsToAnalysisState(NoContext.asInstanceOf[ContextType], null)
 
@@ -455,16 +497,45 @@ abstract class NativeAnalysis(
         ("Java/"+javaDeclaredMethod.declaringClassType.fqn.replace("_", "_1")+
             "/"+javaDeclaredMethod.name).replace("/", "_")
 
-    var functionSelection = functions.filter(_.equals(javaMethodFullName))
+    var functionSelection = functions.filter(_.equals(javaMethodFullName))/*.filter(
+      function =>
+          {
+            if(parameterPointsToSets.isEmpty)
+              !function.contains("__") || function.endsWith("__")
+            else true
+          }
+
+    ) */
+
     if (functionSelection.isEmpty) {
       // collect overloaded functions
-      functionSelection = functions.filter(_.startsWith(javaMethodFullName+"__"))
+      functionSelection = functions.filter(_.startsWith(javaMethodFullName+"__"))/*.filter(
+        function => {
+          if (parameterPointsToSets.isEmpty)
+            !function.contains("__") || function.endsWith("__")
+          else
+            !function.endsWith("__")
+        }
+      ) */
     }
     if (functionSelection.isEmpty) {
       //throw new RuntimeException("native method not found :"+javaMethodFullName)
       //println(s"native method not found : $javaMethodFullName")
     }
+
+
+
+
     for (f <- functionSelection) {
+      println(
+        s"""
+           | f: $f
+           | basePTS: ${basePTS.mkString("\n")}
+           | ----
+           | parameterPointsToSets: ${parameterPointsToSets.mkString("\n")}
+           | ---
+           |""".stripMargin)
+
       val resultPTS = svfConnectorState.svfModule.processFunction(f, basePTS.toArray, parameterPointsToSets, listener)
         PointsToInteractionLogger.javaToNativeCalls.put(f, resultPTS)
       if (resultPTS.isEmpty) {
@@ -485,16 +556,18 @@ abstract class NativeAnalysis(
                        pc:            Int,
                        isDirect:      Boolean
                      ): ProperPropertyComputationResult = this.synchronized{
-    implicit val svfConnectorState = SVFConnectorState(calleeContext, pc, project)
-    svfjava.SVFJava.init()
-    svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName)
-    if(calleeContext.method.name.contains("setOut")){
-      println("set out--------->")
-      println(calleeContext.method.name)
-      runSVF(svfConnectorState)
-    }
-
-    else Results()
+    println("handle new caller")
+    implicit val svfConnectorState = SVFConnectorState(callerContext, calleeContext, pc, project)
+        //svfConnectorState.svfModuleName = "/Users/tobiasroth/Test/native/sun-nio.bc" //"/Users/tobiasroth/Test/native/java-nio.bc" // "/Users/tobiasroth/Test/native/java-net.bc" //"/Users/tobiasroth/Test/native/java-util.bc" //getNativeFileName(calleeContext)
+        svfjava.SVFJava.init()
+        svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName, false)
+        //if(calleeContext.method.name.contains("setOut")){
+        // println("set out--------->")
+        println(s"method name: ${calleeContext.method.name}")
+        println(calleeContext.method.name)
+        runSVF(svfConnectorState)
+        //}
+        //else Results()
   }
 
   def svfConnectorContinuation(eps: SomeEPS)(implicit svfConnectorState: SVFConnectorState): ProperPropertyComputationResult = this.synchronized{
@@ -502,11 +575,34 @@ abstract class NativeAnalysis(
     eps match {
       case UBP(_: PointsToSet @unchecked) =>
         svfConnectorState.connectorDependees += eps
-          svfjava.SVFJava.init()
-          svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName)
+          //svfjava.SVFJava.init()
+          //svfConnectorState.svfModule = SVFModule.createSVFModule(svfConnectorState.svfModuleName, false)
         runSVF(svfConnectorState)
 
       case _ => throw new Exception(s"message: ${eps.toString}")
     }
   }
+  //def getNativeFileName(calleeContext: ContextType): String = {
+    //val packageName = calleeContext.method.declaringClassType.packageName
+    //val nativeFileName =
+    //"/Users/tobiasroth/Test/native/java-lang.bc"
+  //  {if(packageName.startsWith("java/net"))
+      //"/Users/tobiasroth/Test/native/java-net.bc"
+   // else if(packageName.startsWith("java/nio"))
+     // "/Users/tobiasroth/Test/native/java-nio.bc"
+  //  else if(packageName.startsWith("sun/rmi"))
+  //    "/Users/tobiasroth/Test/native/sun-rmi.bc"
+   // else if(packageName.startsWith("sun"))
+   //   "/Users/tobiasroth/Test/native/sun-util.bc"
+   // else if(packageName.startsWith("java/io"))
+   //   "/Users/tobiasroth/Test/native/java-io.bc"
+   /*   else if(packageName.startsWith("sun/awt"))
+        "/Users/tobiasroth/Test/native/sun-awt.bc"
+      else if(packageName.startsWith("java/awt"))
+        "/Users/tobiasroth/Test/native/java-awt.bc" */
+      //else
+        //"/Users/tobiasroth/Test/native/java-lang.bc"//}
+    //nativeFileName
+  //}
+
 }

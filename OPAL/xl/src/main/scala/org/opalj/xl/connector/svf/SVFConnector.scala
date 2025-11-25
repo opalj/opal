@@ -60,7 +60,16 @@ abstract class SVFConnector( final val project: SomeProject) extends PointsToAna
 
     def process(project: SomeProject): PropertyComputationResult = {
 
-        val analyses = project.allProjectClassFiles.flatMap(_.methods).filter(_.isNative).filter(_.name.contains("setOut0")).map(method => {
+        val analyses = project.allProjectClassFiles.flatMap(_.methods).filter(_.isNative)
+           /*filter(x =>
+                x.classFile.thisType.packageName.contains("java/lang") ||
+                    x.classFile.thisType.packageName.contains("java/util") /*||
+                    x.classFile.thisType.packageName.contains("java/math") */
+            ). */
+            //filter(!_.classFile.thisType.simpleName.contains("ClassLoader"))
+            //filter(_.classFile.thisType.simpleName.contains("TimeZone"))
+           // filter(!_.asMethod.classFile.thisType.fqn.contains("ThreadImpl")) //TODO remove
+            .map(method => { //.filter(_.name.contains("setOut0"))
             new NativeAnalysis(project, declaredMethods(method)) with PointsToBase
         })
         Results(analyses.map(_.registerAPIMethod()))
