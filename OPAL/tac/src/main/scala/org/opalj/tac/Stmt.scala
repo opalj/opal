@@ -94,6 +94,8 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def isPutStatic: Boolean = false
     def isPutField: Boolean = false
     def isMethodCall: Boolean = false
+
+    def isFieldWriteAccessStmt: Boolean = false
 }
 
 /**
@@ -657,6 +659,7 @@ sealed abstract class FieldWriteAccessStmt[+V <: Var[V]] extends Stmt[V] {
     def value: Expr[V]
 
     override final def asFieldWriteAccessStmt: this.type = this
+    override final def isFieldWriteAccessStmt: Boolean = true
 
     /**
      * Identifies the field if it can be found.
