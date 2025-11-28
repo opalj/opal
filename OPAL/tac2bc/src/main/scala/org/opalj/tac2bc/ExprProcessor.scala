@@ -138,7 +138,7 @@ object ExprProcessor {
         tacContext:   Tac2BcContext
     ): Unit = {
         code += INSTANCEOF(instanceOf.cmpTpe)
-        tacContext.emitStmt(instanceOf.value.asVar.definedBy.head, parentIdx = stmtIdx)
+        tacContext.resolveDefSite(instanceOf.value.asVar.definedBy.head, parentIdx = stmtIdx)
     }
 
     def processPrefixExpr(
@@ -164,7 +164,7 @@ object ExprProcessor {
         if (prefixExpr.operand.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(prefixExpr.operand.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(prefixExpr.operand.asVar.definedBy.head)
+            tacContext.resolveDefSite(prefixExpr.operand.asVar.definedBy.head)
     }
 
     def processCompare(
@@ -186,9 +186,9 @@ object ExprProcessor {
         }
 
         // Process the left expression
-        tacContext.emitStmt(compare.left.asVar.definedBy.head)
+        tacContext.resolveDefSite(compare.left.asVar.definedBy.head)
         // Process the right expression
-        tacContext.emitStmt(compare.right.asVar.definedBy.head)
+        tacContext.resolveDefSite(compare.right.asVar.definedBy.head)
     }
 
     def processInvokedynamicFunctionCall(
@@ -209,7 +209,7 @@ object ExprProcessor {
             if(param.asVar.definedBy.head < 0) {
                 ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
             } else {
-                tacContext.emitStmt(param.asVar.definedBy.iterator.min, parentIdx = stmtIdx)
+                tacContext.resolveDefSite(param.asVar.definedBy.iterator.min, parentIdx = stmtIdx)
             }
         }
     }
@@ -232,7 +232,7 @@ object ExprProcessor {
 
         // Process each parameter
         for (count <- newArrayExpr.counts)
-            tacContext.emitStmt(count.asVar.definedBy.head)
+            tacContext.resolveDefSite(count.asVar.definedBy.head)
     }
 
     def processArrayLoad(
@@ -263,14 +263,14 @@ object ExprProcessor {
         if (arrayLoadExpr.index.asVar.definedBy.head < 0) {
             ExprProcessor.loadVariable(arrayLoadExpr.index.asVar, tacToLVIndex, code)
         } else {
-            tacContext.emitStmt(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
+            tacContext.resolveDefSite(arrayLoadExpr.index.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
         }
 
         // Load the array reference onto the stack
         if (arrayLoadExpr.arrayRef.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(arrayLoadExpr.arrayRef.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
+            tacContext.resolveDefSite(arrayLoadExpr.arrayRef.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
     }
 
     // Helper function to infer the element type from the array reference expression
@@ -293,7 +293,7 @@ object ExprProcessor {
         if (arrayLength.arrayRef.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(arrayLength.arrayRef.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(arrayLength.arrayRef.asVar.definedBy.head, delayStmtVisit)
+            tacContext.resolveDefSite(arrayLength.arrayRef.asVar.definedBy.head, delayStmtVisit)
     }
 
     def processNewExpr(
@@ -333,7 +333,7 @@ object ExprProcessor {
             if(param.asVar.definedBy.head < 0)
                 ExprProcessor.loadVariable(param.asVar, tacToLVIndex, code)
             else
-                tacContext.emitStmt(definedByIdx, parentIdx = stmtIndex)
+                tacContext.resolveDefSite(definedByIdx, parentIdx = stmtIndex)
         }
 
         // 2. With receiver
@@ -343,7 +343,7 @@ object ExprProcessor {
             if(receiver.asVar.definedBy.head < 0)
                 ExprProcessor.loadVariable(receiver.asVar, tacToLVIndex, code)
             else
-                tacContext.emitStmt(definedByIdx, parentIdx = stmtIndex)
+                tacContext.resolveDefSite(definedByIdx, parentIdx = stmtIndex)
         }
     }
 
@@ -432,7 +432,7 @@ object ExprProcessor {
         if (getField.objRef.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(getField.objRef.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(getField.objRef.asVar.definedBy.head, parentIdx = stmtIndex)
+            tacContext.resolveDefSite(getField.objRef.asVar.definedBy.head, parentIdx = stmtIndex)
     }
 
     def processGetStatic(
@@ -453,10 +453,9 @@ object ExprProcessor {
         // Loop handling: If a variable is used more than once and isn’t an end node, spill it to a local.
         if(tacContext.getVarFromId(stmtIdx) != null) {
             if(tacContext.getVarFromId(stmtIdx).asVar.usedBy.size > 1 && !tacContext.isStmtMarkedAsEndNode(stmtIdx)) {
-                ExprProcessor.storeVariable(binaryExpr.left.asVar, tacToLVIndex, code)
+                tacContext.emitStore(stmtIdx)
             }
         }
-
         code += {
             (binaryExpr.cTpe, binaryExpr.op) match {
                 // Double
@@ -508,7 +507,7 @@ object ExprProcessor {
                 if (uvar.definedBy.head < 0)
                     ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
                 else
-                    tacContext.emitStmt(uvar.definedBy.iterator.min, delayStmtVisit = true, nestedStmt = true, parentIdx = stmtIdx)
+                    tacContext.resolveDefSite(uvar.definedBy.iterator.min, delayStmtVisit = true, nestedStmt = true, parentIdx = stmtIdx)
         }
 
         binaryExpr.left match {
@@ -517,7 +516,7 @@ object ExprProcessor {
                 if (uvar.definedBy.head < 0)
                     ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
                 else
-                    tacContext.emitStmt(uvar.definedBy.iterator.min, nestedStmt = true, parentIdx = stmtIdx)
+                    tacContext.resolveDefSite(uvar.definedBy.iterator.min, nestedStmt = true, parentIdx = stmtIdx)
         }
     }
 
@@ -563,7 +562,7 @@ object ExprProcessor {
         if (primitiveTypecastExpr.operand.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(primitiveTypecastExpr.operand.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(primitiveTypecastExpr.operand.asVar.definedBy.head, parentIdx = stmtIndex)
+            tacContext.resolveDefSite(primitiveTypecastExpr.operand.asVar.definedBy.head, parentIdx = stmtIndex)
 
     }
 }

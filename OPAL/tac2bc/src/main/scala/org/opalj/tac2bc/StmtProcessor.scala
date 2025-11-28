@@ -230,7 +230,7 @@ object StmtProcessor {
         stmtIndex:      Int
     ): Unit = {
         if (expr.isConst || expr.isNewArray || expr.isNew || tacContext.isStmtMarkedAsEndNode(stmtIndex)) {
-            tacContext.emitVarUse(targetVar, delayStmtVisit, nestedStmt)
+            tacContext.processEndNode(targetVar, delayStmtVisit, nestedStmt)
         } else {
             ExprProcessor.processExpression(expr, tacToLVIndex, code, tacContext, stmtIndex, delayStmtVisit, nestedStmt)
         }
@@ -322,7 +322,7 @@ object StmtProcessor {
         if (expr.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(expr.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(expr.asVar.definedBy.head, parentIdx = stmtIndex)
+            tacContext.resolveDefSite(expr.asVar.definedBy.head, parentIdx = stmtIndex)
     }
 
     def processArrayStore(
@@ -351,11 +351,11 @@ object StmtProcessor {
         }
 
         // Load the value to be stored onto the stack
-        tacContext.emitStmt(value.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
+        tacContext.resolveDefSite(value.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
         // Load the index onto the stack
-        tacContext.emitStmt(index.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
+        tacContext.resolveDefSite(index.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
         // Load the arrayRef onto the stack
-        tacContext.emitStmt(arrayRef.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
+        tacContext.resolveDefSite(arrayRef.asVar.definedBy.head, delayStmtVisit = true, parentIdx = stmtIdx)
     }
 
     def processNop(code: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
@@ -388,7 +388,7 @@ object StmtProcessor {
             ExprProcessor.storeVariable(value.asVar, tacToLVIndex, code)
         }
         code += CHECKCAST(cmpTpe)
-        tacContext.emitStmt(value.asVar.definedBy.head, parentIdx = stmtIndex)
+        tacContext.resolveDefSite(value.asVar.definedBy.head, parentIdx = stmtIndex)
     }
 
     def processRet(returnAddresses: PCs, code: mutable.ListBuffer[CodeElement[Nothing]]): Unit = {
@@ -479,7 +479,7 @@ object StmtProcessor {
         if (value.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(value.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(value.asVar.definedBy.head, parentIdx = stmtIndex)
+            tacContext.resolveDefSite(value.asVar.definedBy.head, parentIdx = stmtIndex)
     }
 
     def processPutField(
@@ -498,13 +498,13 @@ object StmtProcessor {
         if (value.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(value.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(value.asVar.definedBy.head, parentIdx = stmtIndex)
+            tacContext.resolveDefSite(value.asVar.definedBy.head, parentIdx = stmtIndex)
 
         // Load the object reference onto the stack
         if (objRef.asVar.definedBy.head < 0)
             ExprProcessor.loadVariable(objRef.asVar, tacToLVIndex, code)
         else
-            tacContext.emitStmt(objRef.asVar.definedBy.head, parentIdx = stmtIndex)
+            tacContext.resolveDefSite(objRef.asVar.definedBy.head, parentIdx = stmtIndex)
 
     }
 
@@ -581,7 +581,7 @@ object StmtProcessor {
                 if (uvar.definedBy.head < 0)
                     ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
                 else
-                    tacContext.emitStmt(uvar.definedBy.iterator.min, delayStmtVisit = true, parentIdx = stmtIndex)
+                    tacContext.resolveDefSite(uvar.definedBy.iterator.min, delayStmtVisit = true, parentIdx = stmtIndex)
         }
 
         // process the left expr
@@ -591,7 +591,7 @@ object StmtProcessor {
                 if (uvar.definedBy.head < 0)
                     ExprProcessor.loadVariable(uvar, tacToLVIndex, code)
                 else
-                    tacContext.emitStmt(uvar.definedBy.iterator.min, parentIdx = stmtIndex)
+                    tacContext.resolveDefSite(uvar.definedBy.iterator.min, parentIdx = stmtIndex)
         }
     }
 }

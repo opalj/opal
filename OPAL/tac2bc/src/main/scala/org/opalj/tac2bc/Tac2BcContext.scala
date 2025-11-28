@@ -45,10 +45,10 @@ class Tac2BcContext(
      * @param nestedStmt       If true, store/load instructions inside this statement are suppressed because it is nested within another.
      * @param parentIdx        The index of the parent statement, used to detect end nodes.
      */
-    def emitStmt(defIdx: Int,
-                 delayStmtVisit: Boolean = false,
-                 nestedStmt: Boolean = false,
-                 parentIdx: Int = -1): Unit = {
+    def resolveDefSite(defIdx: Int,
+                       delayStmtVisit: Boolean = false,
+                       nestedStmt: Boolean = false,
+                       parentIdx: Int = -1): Unit = {
         val variable = getVarFromId(defIdx)
         val stmt = tacStmts(defIdx)._1
         val stmtIndex = tacStmts(defIdx)._2
@@ -62,7 +62,7 @@ class Tac2BcContext(
 
         // If this def has multiple defs or uses, load from locals; otherwise, process it normally
         if (getDefSize(childIdx, defIdx) > 1 || getUseSites(defIdx) > 1) {
-            emitVarDef(variable)
+            emitLoad(variable)
         } else {
             StmtProcessor.processStmt(stmt, tacToLVIndex, labels, code, this, stmtIndex, delayStmtVisit, nestedStmt)
         }
@@ -75,9 +75,9 @@ class Tac2BcContext(
      * @param delayStmtVisit   If true, label emission for this statement is delayed until after all its child expressions have been processed.
      * @param nestedStmt       If true, store/load instructions inside this statement are suppressed because it is nested within another.
      */
-    def emitVarUse(variable: Var[V],
-                   delayStmtVisit: Boolean = false,
-                   nestedStmt: Boolean): Unit = {
+    def processEndNode(variable: Var[V],
+                       delayStmtVisit: Boolean = false,
+                       nestedStmt: Boolean): Unit = {
         if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
         val defSites = getIndicesFromVariable(variable)
         val defIdx = defSites.head
@@ -94,12 +94,20 @@ class Tac2BcContext(
     }
 
     /**
-     * Handles variables with multiple definition sites.
+     * Loads the variable onto the operand stack and marks it as loaded.
      */
-    def emitVarDef(variable: Var[V]): Unit = {
+    def emitLoad(variable: Var[V]): Unit = {
         if (!savedDefSites.contains(variable)) saveVariableInfo(variable)
         ExprProcessor.loadVariable(variable, tacToLVIndex, code)
         loadedStmt += variable
+    }
+
+    /**
+     * Stores the variable defined at the given index.
+     */
+    def emitStore(defIdx: Int): Unit = {
+        val variable = getVarFromId(defIdx)
+        ExprProcessor.storeVariable(variable, tacToLVIndex, code)
     }
 
     /**
