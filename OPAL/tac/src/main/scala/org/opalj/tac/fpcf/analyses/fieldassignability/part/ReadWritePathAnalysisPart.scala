@@ -6,17 +6,12 @@ package analyses
 package fieldassignability
 package part
 
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.PC
-import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.properties.Context
-import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
@@ -171,96 +166,5 @@ trait ExtensiveReadWritePathAnalysis private[fieldassignability]
         // Note that this also implies that there may be no supertype static initializer that can read the field,
         // preventing read-write paths in the inheritance chain.
         writeMethod.isStaticInitializer && (writeContext.method.declaringClassType eq state.field.classFile.thisType)
-    }
-}
-
-trait CalleesBasedReadWritePathAnalysisState extends AbstractFieldAssignabilityAnalysisState {
-    private[part] var calleeDependees: Map[Context, EOptionP[DeclaredMethod, Callees]] = Map.empty
-}
-
-/**
- * Based on failure of the [[ExtensiveReadWritePathAnalysis]], marks two constructor method contexts as unreachable
- * when (based on the available call graph) the reading constructor does either not invoke any other constructors or
- * any such invocation comes after the read.
- *
- * This result is considered sound as once a call string leaves a constructor, it cannot reenter a constructor on the
- * same instance. Thus, when the reading constructor does not call any other constructor, it is impossible for the
- * instance under construction to reach the writing constructor.
- */
-trait CalleesBasedReadWritePathAnalysis private[fieldassignability]
-    extends ExtensiveReadWritePathAnalysis {
-
-    override type AnalysisState <: CalleesBasedReadWritePathAnalysisState
-
-    implicit val contextProvider: ContextProvider
-
-    override protected final def isContextUnreachableFrom(
-        readPC:       Int,
-        readContext:  Context,
-        writeContext: Context
-    )(implicit state: AnalysisState): Boolean = {
-        if (super.isContextUnreachableFrom(readPC, readContext, writeContext))
-            return true;
-
-        val readMethod = readContext.method.definedMethod
-        val writeMethod = writeContext.method.definedMethod
-        if (!readMethod.isConstructor || !writeMethod.isConstructor)
-            return false;
-
-        val readCalleesProperty = state.calleeDependees.get(readContext) match {
-            case Some(callees) => callees
-            case None          =>
-                val callees = ps(readContext.method, Callees.key)
-                state.calleeDependees = state.calleeDependees.updated(readContext, callees)
-                callees
-        }
-
-        if (readCalleesProperty.hasUBP) {
-            if (readCalleesProperty.ub.hasIncompleteCallSites(readContext)) {
-                false
-            } else {
-                val tac = state.tacDependees(readContext.method.asDefinedMethod).ub.tac.get
-
-                readCalleesProperty.ub.callSites(readContext).forall {
-                    case (callSitePC, potentialCallees) =>
-                        // Either the reading constructor is not calling any other constructors ...
-                        potentialCallees.forall(!_.method.definedMethod.isConstructor) ||
-                            // or the call is irrelevant since there is no way it is executed after the read
-                            !pathExists(readPC, callSitePC, tac)
-                }
-            }
-        } else {
-            true
-        }
-    }
-
-    override protected def onContinue(eps: SomeEPS)(implicit state: AnalysisState): Option[FieldAssignability] = {
-        eps match {
-            case UBP(callees: Callees) =>
-                val contexts = state.calleeDependees.iterator.filter(_._2.e eq eps.e).map(_._1).toSeq
-                val dangerousCallSiteFound = contexts.exists { context =>
-                    state.calleeDependees =
-                        state.calleeDependees.updated(context, eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]])
-
-                    callees.hasIncompleteCallSites(context) || {
-                        val tac = state.tacDependees(context.method.asDefinedMethod).ub.tac.get
-                        callees.callSites(context).exists {
-                            case (callSitePC, potentialCallees) =>
-                                // Either the reading constructor is not calling any other constructors ...
-                                potentialCallees.exists(_.method.definedMethod.isConstructor) ||
-                                    // or the call is irrelevant since there is no read after which it is executed
-                                    state.initializerReads(context).exists(read => pathExists(read._1, callSitePC, tac))
-                        }
-                    }
-                }
-
-                if (dangerousCallSiteFound)
-                    Some(Assignable)
-                else
-                    Some(NonAssignable)
-
-            case _ =>
-                super.onContinue(eps)
-        }
     }
 }

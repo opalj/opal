@@ -7,9 +7,8 @@ package fieldassignability
 
 import org.opalj.br.Field
 import org.opalj.br.analyses.SomeProject
-import org.opalj.tac.fpcf.analyses.fieldassignability.part.CalleesBasedReadWritePathAnalysis
-import org.opalj.tac.fpcf.analyses.fieldassignability.part.CalleesBasedReadWritePathAnalysisState
 import org.opalj.tac.fpcf.analyses.fieldassignability.part.ClonePatternAnalysis
+import org.opalj.tac.fpcf.analyses.fieldassignability.part.ExtensiveReadWritePathAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.part.LazyInitializationAnalysis
 import org.opalj.tac.fpcf.analyses.fieldassignability.part.LazyInitializationAnalysisState
 
@@ -25,11 +24,10 @@ class L2FieldAssignabilityAnalysis private[fieldassignability] (val project: Som
     extends AbstractFieldAssignabilityAnalysis
     with LazyInitializationAnalysis
     with ClonePatternAnalysis
-    with CalleesBasedReadWritePathAnalysis {
+    with ExtensiveReadWritePathAnalysis {
 
     case class State(field: Field) extends AbstractFieldAssignabilityAnalysisState
         with LazyInitializationAnalysisState
-        with CalleesBasedReadWritePathAnalysisState
     type AnalysisState = State
     override def createState(field: Field): AnalysisState = State(field)
 }
