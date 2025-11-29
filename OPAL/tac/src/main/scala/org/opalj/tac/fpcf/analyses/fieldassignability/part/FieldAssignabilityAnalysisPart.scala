@@ -79,6 +79,9 @@ trait FieldAssignabilityAnalysisPart private[fieldassignability]
             // ... we identify easy instances of field reads (interaction with potentially disruptive reads
             // is checked separately; note that this inference relies on a flat TAC) OR ...
             stmt.isAssignment && stmt.asAssignment.expr.isGetField ||
+            // ... we identify easy instances of calls to the native final method "getClass", which we assume to be safe
+            // even though its implementation is fixed by the JVM spec OR ...
+            stmt.isAssignment && stmt.asAssignment.expr.isVirtualFunctionCall && stmt.asAssignment.expr.asVirtualFunctionCall.name == "getClass" ||
             // ... we easily identify the use site to initialize an object (fine as initializer reads outside the
             // current method are forbidden) OR ...
             stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
