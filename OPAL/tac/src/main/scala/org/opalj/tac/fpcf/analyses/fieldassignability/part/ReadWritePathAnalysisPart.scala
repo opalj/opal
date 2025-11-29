@@ -11,7 +11,6 @@ import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.immutability.Assignable
 import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
-import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
@@ -29,8 +28,7 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
 
     registerPart(PartInfo(
         onInitializerRead = onInitializerRead(_, _, _, _)(using _),
-        onInitializerWrite = onInitializerWrite(_, _, _, _)(using _),
-        continuation = onContinue(_)(using _)
+        onInitializerWrite = onInitializerWrite(_, _, _, _)(using _)
     ))
 
     /**
@@ -46,8 +44,6 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
         readContext:  Context,
         writeContext: Context
     )(implicit state: AnalysisState): Boolean
-
-    protected def onContinue(eps: SomeEPS)(implicit state: AnalysisState): Option[FieldAssignability] = None
 
     private def onInitializerRead(
         context:  Context,
@@ -130,34 +126,17 @@ sealed trait ReadWritePathAnalysisPart private[fieldassignability]
 /**
  * @inheritdoc
  *
- * The simple path analysis considers every interprocedural path to be harmful, causing the field to be assignable.
- */
-trait SimpleReadWritePathAnalysis private[fieldassignability] extends ReadWritePathAnalysisPart {
-
-    override protected def isContextUnreachableFrom(
-        readPC:       Int,
-        readContext:  Context,
-        writeContext: Context
-    )(implicit state: AnalysisState): Boolean = false
-}
-
-/**
- * @inheritdoc
- *
  * The extensive path analysis considers interprocedural static field writes as safe when the writing static initializer
- * is in the same class as the field declaration.
+ * is in the same class as the field declaration, and otherwise soundly aborts.
  */
 trait ExtensiveReadWritePathAnalysis private[fieldassignability]
-    extends SimpleReadWritePathAnalysis {
+    extends ReadWritePathAnalysisPart {
 
     override protected def isContextUnreachableFrom(
         readPC:       Int,
         readContext:  Context,
         writeContext: Context
     )(implicit state: AnalysisState): Boolean = {
-        if (super.isContextUnreachableFrom(readPC, readContext, writeContext))
-            return true;
-
         val writeMethod = writeContext.method.definedMethod
         // We can only guarantee that no paths exist when the writing static initializer is guaranteed to run before
         // the reading method, which is in turn only guaranteed when the writing static initializer is in the same
