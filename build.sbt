@@ -9,7 +9,8 @@ import xerial.sbt.Sonatype.sonatypeCentralHost
 name := "OPAL Library"
 
 // SNAPSHOT
-ThisBuild / version := "6.0.1-SNAPSHOT"
+ThisBuild / version := "7.0.1-SNAPSHOT"
+// RELEASED ThisBuild / version := "7.0.0" // December 16th, 2025
 // RELEASED version in ThisBuild := "6.0.0" // October 9th, 2025
 // RELEASED version in ThisBuild := "5.0.0" // January 23rd, 2023
 // RELEASED version in ThisBuild := "4.0.0" // May 7th, 2021
@@ -149,7 +150,7 @@ lazy val buildSettings =
 lazy val opal = `OPAL`
 
 lazy val `OPAL` = (project in file("."))
-//  .configure(_.copy(id = "OPAL"))
+    //  .configure(_.copy(id = "OPAL"))
     .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)) *)
     .enablePlugins(ScalaUnidocPlugin)
     .disablePlugins(HeaderPlugin) // The root project has no sources and no configured license header
