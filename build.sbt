@@ -9,7 +9,7 @@ import xerial.sbt.Sonatype.sonatypeCentralHost
 name := "OPAL Library"
 
 // SNAPSHOT
-ThisBuild / version := "7.0.0"
+ThisBuild / version := "7.0.0" // December 16th, 2025
 // RELEASED version in ThisBuild := "6.0.0" // October 9th, 2025
 // RELEASED version in ThisBuild := "5.0.0" // January 23rd, 2023
 // RELEASED version in ThisBuild := "4.0.0" // May 7th, 2021

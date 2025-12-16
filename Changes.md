@@ -1,7 +1,7 @@
 # Changes
 
-## 7.0.0
-- *we are now using Scala 3.7.4*
+## 7.0.0 - Released December 16th 2025
+- *we are now using Scala 3.7.3*
 - *we are now using sbt 1.11.7*
 - various API changes due to new major Scala version
 - fixed typos and minor code style issues
