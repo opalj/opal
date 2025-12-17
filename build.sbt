@@ -524,13 +524,6 @@ lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
         javaOptions += s"-Dbuild.version=${version.value}",
         name := "Configuration Explorer",
         libraryDependencies ++= Dependencies.ce,
-        Compile / doc := {
-            // Overrides doc method to include config documentation at doc
-            val originalDoc = (Compile / doc).value
-            (Compile / compile).value
-            (Compile / run).toTask("").value
-            originalDoc
-        },
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Configuration Explorer")
     )
     .dependsOn(
