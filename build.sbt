@@ -174,8 +174,6 @@ lazy val `OPAL` = (project in file("."))
         ifds,
         ide,
         tac,
-        de,
-        av,
         apk,
         framework,
         //  bp, (just temporarily...)
@@ -370,31 +368,6 @@ lazy val `BytecodeAssembler` = (project in file("OPAL/ba"))
     )
     .configs(IntegrationTest)
 
-// The project "DependenciesExtractionLibrary" depends on the abstract interpretation framework to
-// be able to resolve calls using MethodHandle/MethodType/"invokedynamic"/...
-lazy val de = `DependenciesExtractionLibrary`
-
-lazy val `DependenciesExtractionLibrary` = (project in file("OPAL/de"))
-    .settings(buildSettings *)
-    .settings(
-        name := "Dependencies Extraction Library",
-        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Dependencies Extraction Library")
-    )
-    .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
-    .configs(IntegrationTest)
-
-lazy val av = `ArchitectureValidation`
-
-lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
-    .settings(buildSettings *)
-    .settings(
-        name := "Architecture Validation",
-        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation")
-        // Test / publishArtifact := true
-    )
-    .dependsOn(de % "it->it;it->test;test->test;compile->compile")
-    .configs(IntegrationTest)
-
 lazy val apk = `APK`
 
 lazy val `APK` = (project in file("OPAL/apk"))
@@ -420,7 +393,6 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     )
     .dependsOn(
         ba % "it->it;it->test;test->test;compile->compile",
-        av % "it->it;it->test;test->test;compile->compile",
         tac % "it->it;it->test;test->test;compile->compile"
     )
     .configs(IntegrationTest)

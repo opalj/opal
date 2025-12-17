@@ -29,11 +29,7 @@ OPAL consists of several projects:
 
 * **IDE** (OPAL/ide): A generic implementation for IDE analyses.
 
-* **Three Address Code** (OPAL/tac): Provides two 3-address code based intermediate representation. A naive one which is directly created based on the bytecode, and a higher-level SSA-like representation which directly provides a CFG as well as Def-Use information using the results of a basic abstract interpretation. 
-
-* **Dependencies Extraction** (OPAL/de): Provides support for extracting and analyzing a project's source code dependencies. This project is the foundation for projects to, e.g., check architectures.
-
-* **Architecture Validation** (OPAL/av): A small framework to check a project's implemented architecture against a specified one.
+* **Three Address Code** (OPAL/tac): Provides two 3-address code based intermediate representation. A naive one which is directly created based on the bytecode, and a higher-level SSA-like representation which directly provides a CFG as well as Def-Use information using the results of a basic abstract interpretation.
 
 * **Framework** (OPAL/framework): Basically just aggregates all subprojects to make it possible to easily get a consistent snapshot of all subprojects. In general, it is recommended to declare a dependency on this project when you want to use OPAL.
 
