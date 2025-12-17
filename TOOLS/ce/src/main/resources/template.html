@@ -84,7 +84,6 @@
         .preview {
             font-weight: normal;
             font-size: 1.0em;
-            margin-left: 2em;
             color: var(--text-secondary);
         }
 
@@ -95,8 +94,22 @@
             margin-left: 1em;
             flex-flow: column;
             color: var(--text-primary);
-            height: 100vh;
+            height: 92vh;
             overflow-y:auto;
+        }
+
+        #config-content a {
+          color: var(--text-primary);
+          text-decoration: underline solid 1px;
+          -webkit-text-decoration-line: underline; /* Safari */
+          text-decoration-line: underline;
+          text-underline-offset: 2px;
+        }
+
+        #index-input {
+            width: 45vw;
+            border: 0.1em solid var(--border-default);
+            border-radius: 0.5em;
         }
 
         .expandButton {
@@ -196,10 +209,11 @@
 <body style="padding-right:0em;padding-left:0em;">
 <div id="header" class="body-small">
     <div class="header-container-left"><a href="" class="logo-container"><span class="project-name h300">The
-                        OPAL Framework</span></a><span class="text-button"><a href="./config.html"><div class="projectVersion">$version</div></a></span>
-        <div id="version-dropdown" class="dropdown-menu"></div>
+                        OPAL Framework</span></a>
     </div>
-    <div class="header-container-right"><button id="search-toggle" class="icon-button"></button><span
+    <div class="header-container-right"><div id="textfilter">
+        <input class="scaladoc-searchbar-input" autocomplete="off" autocapitalize="none" placeholder="Search Configuration" id="index-input" type="text" accesskey="/" onkeyup="searchConfig()"/>
+    </div><span
             id="theme-toggle" class="icon-button"></span><span id="mobile-menu-toggle"
                                                                class="icon-button hamburger"></span></div>
 </div>
@@ -214,21 +228,6 @@
 <div id="config-content" class="body-medium">
     $body
 </div>
-<!--div id="content-scroll-container" style="-webkit-overflow-scrolling: touch;">
-    <div id="content-container" style="-webkit-overflow-scrolling: touch;">
-        <div id="content">
-            $body
-        </div>
-    </div>
-</div-->
-<div id="footer" class="body-small">
-    <div class="left-container">Based on</div>
-    <div class="right-container">
-        <div class="text"></div>
-    </div>
-    <div class="text-mobile"></div>
-</div>
-<div id="scaladoc-searchBar"></div>
 
 <script>
     document.querySelectorAll('.key').forEach(key => {
