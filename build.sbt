@@ -160,7 +160,14 @@ lazy val `OPAL` = (project in file("."))
             validate,
             demos,
             tools
-        )
+        ),
+        Compile / unidoc := {
+            // Overrides doc method to include config documentation at doc
+            val originalDoc = (Compile / unidoc).value
+            (ConfigurationExplorer / Compile / compile).value
+            (ConfigurationExplorer / Compile / run).toTask("").value
+            originalDoc
+        }
     )
     .aggregate(
         common,
