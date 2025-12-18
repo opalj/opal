@@ -178,7 +178,6 @@ lazy val `OPAL` = (project in file("."))
         av,
         apk,
         framework,
-        //  bp, (just temporarily...)
         tools,
         hermes,
         ce,
@@ -425,19 +424,6 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     )
     .configs(IntegrationTest)
 
-/* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG ANALYSIS AGAIN!
-lazy val bp = `BugPicker`
-lazy val `BugPicker` = (project in file("TOOLS/bp"))
-  .settings(buildSettings *)
-  .settings(
-    name := "BugPicker",
-    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - BugPicker"),
-    fork := true
-  )
-  .dependsOn(framework % "it->it;it->test;test->test;compile->compile")
-  .configs(IntegrationTest)
- */
-
 lazy val hermes = `Hermes`
 
 lazy val `Hermes` = (project in file("TOOLS/hermes"))
@@ -530,7 +516,6 @@ lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
         br % "compile->compile",
         apk % "runtime->compile",
         demos % "runtime->compile",
-        // bp % "runtime->compile",
         hermes % "runtime->compile"
     )
     .configs(IntegrationTest)

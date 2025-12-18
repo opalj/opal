@@ -71,8 +71,3 @@ The architecture validation framework facilitates the development of tools for s
 Provides support for the analysis of APKs, with automatic conversion from dalvik to java byte code.
 
     libraryDependencies += "de.opal-project" % "apk_3" % "7.0.0"
-
-
-[comment]: # "Exploring the Abstract Interpretation Framework"
-
-[comment]: # "To get a good, first idea what the abstract interpretation framework can do, you can use the *BugPicker*. It enables you to perform some local abstract interpretations. To get good results it is usually necessary to load the JDK and all related libraries."
