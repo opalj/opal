@@ -86,8 +86,12 @@ import org.opalj.util.PerformanceEvaluation.time
  *         tools such as IDEs. E.g., in Eclipse `IResource`'s are used to identify the
  *         location of a resource (e.g., a source or class file.)
  *
- * @param all[Project|Library]ClassFiles The class files associated with this project, defined in the analyzed project
- *                                       itself and/or in libraries.
+ * @param allClassFiles The class files associated with this project, defined in the analyzed project itself and/or in
+ *                      libraries.
+ *
+ * @param allProjectClassFiles The class files associated with this project, defined in the analyzed project itself.
+ *
+ * @param allLibraryClassFiles The class files associated with library dependencies of this projects.
  *
  * @param libraryClassFilesAreInterfacesOnly If `true`, only the public interfaces of the methods of the library's
  *                                           classes are available; if `false` all methods are reified including bodies.
@@ -99,12 +103,26 @@ import org.opalj.util.PerformanceEvaluation.time
  * @param allSourceElements `Iterable` over all source elements of the project. The set of all source elements consists
  *                          of (in this order): all methods + all fields + all class files.
  *
- * @param [project|library]classFilesCount The number of classes (including inner and anonymous classes as well as
- *         interfaces, annotations, etc.) defined in the analyzed project and/or in libraries.
+ * @param classFilesCount The number of classes (including inner and anonymous classes as well as interfaces,
+ *                        annotations, etc.) defined in the analyzed project and/or in libraries.
  *
- * @param [project|library]methodsCount The number of methods defined in the analyzed project and/or in libraries.
+ * @param projectClassFilesCount The number of classes (including inner and anonymous classes as well as interfaces,
+ *                               annotations, etc.) defined in the analyzed project.
  *
- * @param [project|library]fieldsCount The number of fields defined in the analyzed project and/or in libraries.
+ * @param libraryClassFilesCount The number of classes (including inner and anonymous classes as well as interfaces,
+ *                               annotations, etc.) defined in libraries.
+ *
+ * @param methodsCount The number of methods defined in the analyzed project and/or in libraries.
+ *
+ * @param projectMethodsCount The number of methods defined in the analyzed project.
+ *
+ * @param libraryMethodsCount The number of methods defined in libraries.
+ *
+ * @param fieldsCount The number of fields defined in the analyzed project and/or in libraries.
+ *
+ * @param projectFieldsCount The number of fields defined in the analyzed project.
+ *
+ * @param libraryFieldsCount The number of fields defined in libraries.
  *
  * @param codeSize The number of bytes used for method bodies for all reified methods.
  *
@@ -121,8 +139,11 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @param nests For all nest members, the respective nest host (see JVM specification, §5.4.4)
  *
- * @param [Method|Var]HandleSubtypes All subtypes of the class MethodHandle resp. VarHandle
- *        (cf. JVM specification, §2.9.3) which are defined in the analyzed project and libraries.
+ * @param MethodHandleSubtypes All subtypes of the class MethodHandle (cf. JVM specification, §2.9.3) which are defined
+ *                             in the analyzed project and libraries.
+ *
+ * @param VarHandleSubtypes All subtypes of the class VarHandle (cf. JVM specification, §2.9.3) which are defined in the
+ *                          analyzed project and libraries.
  *
  * @param config The configuration used for this project. Configuration includes transformations to be applied to the
  *               analyzed code, algorithms used for scheduling analyses, analysis specific configuration and
@@ -1547,6 +1568,8 @@ object Project {
      * The global logger will be used for logging messages.
      *
      * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     *
+     * @param file A single class file, jar file, jmod file, or directory from which to create the project.
      */
     def apply(file: File): Project[URL] = {
         Project.apply(file, OPALLogger.globalLogger())
@@ -1558,6 +1581,10 @@ object Project {
      * The specified logger will be used for logging messages.
      *
      * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     *
+     * @param file A single class file, jar file, jmod file, or directory from which to create the project.
+     *
+     * @param projectLogger An OPALLogger to log messages for the project.
      */
     def apply(file: File, projectLogger: OPALLogger): Project[URL] = {
         apply(JavaClassFileReader().ClassFiles(file), projectLogger = projectLogger)
@@ -1569,6 +1596,10 @@ object Project {
      * The global log context will be used for logging messages.
      *
      * The given configuration will be used for setting up the project.
+     *
+     * @param file A single class file, jar file, jmod file, or directory from which to create the project.
+     *
+     * @param config The configuration to use for setting up the project.
      */
     def apply(file: File, config: Config): Project[URL] = {
         val reader = JavaClassFileReader(using GlobalLogContext, config)
@@ -1589,6 +1620,12 @@ object Project {
      * The specified log context will be used for logging messages.
      *
      * The given configuration will be used for setting up the project.
+     *
+     * @param file A single class file, jar file, jmod file, or directory from which to create the project.
+     *
+     * @param config The configuration to use for setting up the project.
+     *
+     * @param logContext The LogContext to log messages for the project.
      */
     def apply(file: File, config: Config, logContext: LogContext): Project[URL] = {
         val reader = JavaClassFileReader(using logContext, config)
@@ -1606,12 +1643,22 @@ object Project {
     /**
      * Creates a `Project` from several class files, jar files, jmod files, or directories containing class-, jar-, and
      * jmod files.
-     * For files in specified as libary files, method bodies will not be loaded, only the methods' interfaces will be
+     * For files in specified as library files, method bodies will not be loaded, only the methods' interfaces will be
      * available.
      *
      * The given configuration will be used for setting up the project.
      *
      * The specified log context will be used for logging messages.
+     *
+     * @param projectFiles Any files considered to be part of the analyzed project, which will be loaded including
+     *                     method bodies.
+     *
+     * @param libraryFiles Any files considered to be part of library dependencies of the analyzed project, for which
+     *                     only interfaces (signatures) will be loaded.
+     *
+     * @param config The configuration to use for setting up the project.
+     *
+     * @param logContext The LogContext to log messages for the project.
      */
     def apply(
         projectFiles: Array[File],
@@ -1637,9 +1684,10 @@ object Project {
      *
      * The default configuration (compiled from reference.conf files) will be used for setting up the project.
      *
-     * @param projectClassFilesWithSources The list of class files of this project that are considered
-     *      to belong to the application/library that will be analyzed.
-     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     * @param projectClassFilesWithSources The list of class files of this project that are considered to belong to the
+     *                                     application/library that will be analyzed.
+     *                                     [Thread Safety] The underlying data structure has to support concurrent
+     *                                     access.
      */
     def apply[Source](
         projectClassFilesWithSources: Iterable[(ClassFile, Source)]
@@ -1657,9 +1705,12 @@ object Project {
      *
      * The default configuration (compiled from reference.conf files) will be used for setting up the project.
      *
-     * @param projectClassFilesWithSources The list of class files of this project that are considered
-     *      to belong to the application/library that will be analyzed.
-     *      [Thread Safety] The underlying data structure has to support concurrent access.
+     * @param projectClassFilesWithSources The list of class files of this project that are considered to belong to the
+     *                                     application/library that will be analyzed.
+     *                                     [Thread Safety] The underlying data structure has to support concurrent
+     *                                     access.
+     *
+     * @param projectLogger An OPALLogger to log messages for the project.
      */
     def apply[Source](
         projectClassFilesWithSources: Iterable[(ClassFile, Source)],
@@ -1681,6 +1732,12 @@ object Project {
      * The global log context will be used for logging messages.
      *
      * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     *
+     * @param projectFile A single class file, jar file, jmod file, or directory considered to constitute the analyzed
+     *                    project, which will be loaded including method bodies.
+     *
+     * @param libraryFile A single class file, jar file, jmod file, or directory considered to constitute the library
+     *                    dependencies of the analyzed project, for which only interfaces (signatures) will be loaded.
      */
     def apply(
         projectFile: File,
@@ -1714,6 +1771,12 @@ object Project {
      * The global logger will be used for logging messages.
      *
      * The default configuration (compiled from reference.conf files) will be used for setting up the project.
+     *
+     * @param projectFiles Any files considered to be part of the analyzed project, which will be loaded including
+     *                     method bodies.
+     *
+     * @param libraryFiles Any files considered to be part of library dependencies of the analyzed project, for which
+     *                     only interfaces (signatures) will be loaded.
      */
     def apply(
         projectFiles: Array[File],
@@ -1730,6 +1793,11 @@ object Project {
     /**
      * Creates a new `Project` consisting of the previous Project and an additional class file, jar file, jmod file, or
      * directory containing class-, jar-, and jmod files, which is fully loaded including method bodies.
+     *
+     * @param project An existing project to be extended with additional code files.
+     *
+     * @param file A single class file, jar file, jmod file, or directory to additionally be considered to be part of
+     *             the analyzed project.
      */
     def extend(project: Project[URL], file: File): Project[URL] = {
         project.extend(JavaClassFileReader().ClassFiles(file))
@@ -1737,6 +1805,8 @@ object Project {
 
     /**
      * Creates a new `Project` consisting of the previous project and additional already processed class files.
+     *
+     * @param project An existing project to be extended with additional code files.
      *
      * @param projectClassFilesWithSources The list of additional class files of this project that are considered
      *      to belong to the application/library that will be analyzed.
@@ -1759,6 +1829,8 @@ object Project {
     /**
      * Creates a new `Project` consisting of the previous project and additional already processed class files,
      * separated into additional project- and library class files.
+     *
+     * @param project An existing project to be extended with additional code files.
      *
      * @param projectClassFilesWithSources The list of additional class files of this project that are considered
      *      to belong to the application/library that will be analyzed.
@@ -1795,6 +1867,10 @@ object Project {
      * @param libraryClassFilesWithSources The list of class files of this project that make up
      *      the libraries used by the project that will be analyzed.
      *      [Thread Safety] The underlying data structure has to support concurrent access.
+     *
+     * @param libraryClassFilesAreInterfacesOnly If `true` then only the non-private interface of the classes belonging
+     *                                           to the library was loaded. I.e., this setting just reflects the way how
+     *                                           the class files were loaded; it does not change the classes!
      */
     def apply[Source](
         projectClassFilesWithSources:       Iterable[(ClassFile, Source)],
@@ -1815,6 +1891,13 @@ object Project {
      * configuration is — by default – used as a fallback, so not all values have to be updated.
      *
      * If you just want to clear the derived data, using `Project.recreate` is more efficient.
+     *
+     * @param project The project to be recreated with a new configuration.
+     *
+     * @param config The configuration to apply to the new project. Default is an empty configuration.
+     *
+     * @param useOldConfigAsFallback If true (default), any keys not found in the `config` parameter are taken from the
+     *                               configuration of the old `project`.
      */
     def recreate[Source](
         project:                Project[Source],
