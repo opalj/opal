@@ -77,7 +77,7 @@ abstract class InvokedynamicRewritingTest extends AnyFunSuite {
 
         val logContext = new StandardLogContext
         OPALLogger.register(logContext)
-        val project = Project(libraryPath, logContext, config)
+        val project = Project(libraryPath, config, logContext)
         val proxyFactoryCalls = this.proxyFactoryCalls(project)
         assert(proxyFactoryCalls.nonEmpty, "there should be calls to the proxy factories")
 

@@ -602,11 +602,11 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     /**
      * Loads class files from the given file location.
      *  - If the file denotes a single ".class" file this class file is loaded.
-     *  - If the file object denotes a ".jar|.war|.ear|.zip" file, all class files in the
-     *    jar file will be loaded.
+     *  - If the file object denotes a ".jmod|.jar|.war|.ear|.zip" file, all class files in the
+     *    archive file will be loaded.
      *  - If the file object specifies a directory object, all ".class" files
      *    in the directory and in all subdirectories are loaded as well as all
-     *    class files stored in ".jar" files in one of the directories. This class loads
+     *    class files stored in archive files in one of the directories. This class loads
      *    all class files in parallel. However, this does not affect analyses working on the
      *    resulting `List`.
      */
