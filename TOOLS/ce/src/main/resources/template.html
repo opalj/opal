@@ -1,58 +1,123 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
     <title>The OPAL Framework $version</title>
     <meta content="The OPAL Framework $version" name="description"/>
     <meta content="The OPAL Framework $version" name="keywords"/>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
-    <link href="lib/index.css" media="screen" type="text/css" rel="stylesheet"/>
-    <link href="lib/template.css" media="screen" type="text/css" rel="stylesheet"/>
-    <link href="lib/print.css" media="print" type="text/css" rel="stylesheet"/>
-    <link href="lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css"/>
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+    <script type="text/javascript" src="scripts/theme.js"></script>
+    <script type="text/javascript" src="scripts/searchData.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/scastieConfiguration.js" defer="true"></script>
+    <link rel="stylesheet" href="styles/theme/bundle.css">
+    <link rel="stylesheet" href="styles/theme/components/bundle.css">
+    <link rel="stylesheet" href="styles/theme/components/button/bundle.css">
+    <link rel="stylesheet" href="styles/theme/layout/bundle.css">
+    <link rel="stylesheet" href="styles/nord-light.css">
+    <link rel="stylesheet" href="styles/dotty-icons.css">
+    <link rel="stylesheet" href="styles/filter-bar.css">
+    <link rel="stylesheet" href="styles/code-snippets.css">
+    <link rel="stylesheet" href="styles/searchbar.css">
+    <link rel="stylesheet" href="styles/social-links.css">
+    <link rel="stylesheet" href="styles/versions-dropdown.css">
+    <link rel="stylesheet" href="styles/content-contributors.css">
+    <link rel="stylesheet" href="styles/fontawesome.css">
+
+    <script type="text/javascript" src="hljs/highlight.pack.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/hljs-scala3.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/ux.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/common/component.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/common/utils.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/components/FilterBar.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/components/DocumentableList.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/components/Input.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/components/FilterGroup.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/components/Filter.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/scaladoc-scalajs.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/contributors.js" defer="true"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js" defer="true"></script>
+    <script type="text/javascript" src="https://d3js.org/d3.v6.min.js" defer="true"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/graphlib-dot@0.6.2/dist/graphlib-dot.min.js"
+            defer="true"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dagre-d3/0.6.1/dagre-d3.min.js"
+            defer="true"></script>
+    <script type="text/javascript" src="https://scastie.scala-lang.org/embedded.js" defer="true"></script>
+    <script type="text/javascript" src="scripts/data.js" defer="true"></script>
+    <link rel="stylesheet" href="styles/apistyles.css">
+    <script>var pathToRoot = "";</script>
+
     <style>
         body {
             font-family: sans-serif;
             padding: 1em;
+            background: var(--background-default);
         }
 
         hr {
-            margin-top : 2em;
-            margin-bottom: 2em;
+            margin-top : 0.75em;
+            margin-bottom: 0.75em;
             border-width: 1px;
-            color: #DCDCDE;
+            color: var(--border-default);
         }
 
         .value {
             padding: 1em;
-            border: 0.1em solid #DCDCDE;
+            border: 0.1em solid var(--border-default);
             border-radius: 0.5em;
             margin-left: 2em;
             display: none;
+            position:relative;
         }
         .value.expanded {
             display: block;
         }
 
         .key {
-            color: #28272D;
-            background-color: #FBFAFD;
             margin: 1em 0em;
+            position:relative;
         }
 
         .preview {
             font-weight: normal;
-            font-size: 0.65em;
-            color: #626168;
+            font-size: 1.0em;
+            color: var(--text-secondary);
+        }
+
+        #config-content {
+            padding-top: calc(6 * var(--base-spacing));
+            padding-bottom: calc(6 * var(--base-spacing));
+            padding-right: 2em;
+            margin-left: 1em;
+            flex-flow: column;
+            color: var(--text-primary);
+            height: 92vh;
+            overflow-y:auto;
+        }
+
+        #config-content a {
+          color: var(--text-primary);
+          text-decoration: underline solid 1px;
+          -webkit-text-decoration-line: underline; /* Safari */
+          text-decoration-line: underline;
+          text-underline-offset: 2px;
+        }
+
+        #index-input {
+            width: 45vw;
+            border: 0.1em solid var(--border-default);
+            border-radius: 0.5em;
         }
 
         .expandButton {
             float: right;
-            color: #626168;
-            font-size: 0.5em;
+            color: var(--text-secondary);
+            font-size: 0.65em;
             padding: 0.4em;
-            border: 0.1em solid #DCDCDE;
+            border: 0.1em solid var(--border-default);
             border-radius: 0.25em;
             border-collapse: collapse;
         }
@@ -103,6 +168,7 @@
         }
 
     </style>
+
     <script type="module">
         import { highlightSearchTerm } from "https://cdn.jsdelivr.net/npm/highlight-search-term@1.0.2/src/index.js";
         const search = document.getElementById("index-input");
@@ -140,19 +206,27 @@
         };
     </script>
 </head>
-<body>
-<div id="search">
-    <span id="doc-title">The OPAL Framework<span id="doc-version">5.0.1-SNAPSHOT</span></span> <span class="close-results"><span class="left">&lt;</span> Back</span>
-    <div id="textfilter">
-        <span class="input"><input autocapitalize="none" placeholder="Search" id="index-input" type="text" accesskey="/" onkeyup="searchConfig()"/><i class="clear material-icons"></i><i id="search-icon" class="material-icons"></i></span>
+<body style="padding-right:0em;padding-left:0em;">
+<div id="header" class="body-small">
+    <div class="header-container-left"><a href="" class="logo-container"><span class="project-name h300">The
+                        OPAL Framework</span></a>
     </div>
+    <div class="header-container-right"><div id="textfilter">
+        <input class="scaladoc-searchbar-input" autocomplete="off" autocapitalize="none" placeholder="Search Configuration" id="index-input" type="text" accesskey="/" onkeyup="searchConfig()"/>
+    </div><span
+            id="theme-toggle" class="icon-button"></span><span id="mobile-menu-toggle"
+                                                               class="icon-button hamburger"></span></div>
 </div>
-<div id="content-scroll-container" style="-webkit-overflow-scrolling: touch;">
-    <div id="content-container" style="-webkit-overflow-scrolling: touch;">
-        <div id="content">
-            $body
-        </div>
-    </div>
+<div id="mobile-menu">
+    <div class="mobile-menu-header body-small"><span class="mobile-menu-logo"><span
+            class="project-name h300">The OPAL Framework $version</span></span><button id="mobile-menu-close"
+                                                                              class="icon-button close"></button></div>
+    <div class="mobile-menu-container body-medium"><input id="mobile-scaladoc-searchbar-input"
+                                                          class="scaladoc-searchbar-input" type="search" placeholder="Find anything"><span
+            id="mobile-theme-toggle" class="mobile-menu-item mode"></span></div>
+    </div><span id="mobile-sidebar-toggle" class="floating-button"></span>
+<div id="config-content" class="body-medium">
+    $body
 </div>
 
 <script>
