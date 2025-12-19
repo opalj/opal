@@ -41,8 +41,6 @@ OPAL consists of several projects:
 
 * **APK** (OPAL/apk) Provides support for parsing Android APK packages, supporting DEX and native code.
 
-* **Hermes** (OPAL/TOOLS/hermes): A framework to run various code queries against sets of projects.
-
 ## Developer Tools
 
 OPAL also comes with a growing number of tools that are intended to help developers to become familiar with Java Bytecode and/or OPAL. These projects are found in the folder `DEVELOPING_OPAL/tools` and can be run using the SBT console.
@@ -51,7 +49,7 @@ OPAL also comes with a growing number of tools that are intended to help develop
 The following applies to the "Master/Develop" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have at least Java 16 (running OPAL, i.e., not compiling the test fixtures, should still work with Java 8), Scala 2.13.11, and SBT 1.6.2 installed and running and that SBT can use at least 4GB of RAM (-Xmx4G). Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have at least Java 16 (running OPAL, i.e., not compiling the test fixtures, should still work with Java 8), Scala 3.7.3, and SBT 1.11.7 installed and running and that SBT can use at least 4GB of RAM (-Xmx4G). Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder.
 
 * Call `sbt cleanBuild`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.

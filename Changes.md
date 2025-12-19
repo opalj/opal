@@ -1,22 +1,29 @@
 # Changes
 
+## 7.0.0 - Released December 16th 2025
+- *we are now using Scala 3.7.3*
+- *we are now using sbt 1.11.7*
+- various API changes due to new major Scala version
+- fixed typos and minor code style issues
+- introduced custom assertions, Scala 3 no longer supports -Xdisable-assertions
+
 ## 6.0.0 - Released October 9th 2025
 - *we are now using sbt 1.9.7*
 - *we are now using scalafmt instead of Scalariform*
-  - introduce auto formatting via `sbt format`
-  - add pre-commit hook to verify (`sbt checkFormat`) and apply formatting
+    - introduce auto formatting via `sbt format`
+    - add pre-commit hook to verify (`sbt checkFormat`) and apply formatting
 - *unify command line interface for all OPAL runners using Scallop*
-  - all runners support the same syntax and shared subsets of arguments
-  - override custom configuration options via CLI arguments
+    - all runners support the same syntax and shared subsets of arguments
+    - override custom configuration options via CLI arguments
 - full support for Java 20 up to 25
-  - support for Java 25 main entry method definitions
-  - rename ObjectType to ClassType according to JVM 24 specification
+    - support for Java 25 main entry method definitions
+    - rename ObjectType to ClassType according to JVM 24 specification
 - OPAL can now select default analyses for properties
 - support for Android call graph generation
 - introduce declared fields
-  - explicitly provide information about field accesses (reads and writes) via dedicated analysis
-  - handle reflective field accesses
-  - field access information is computed as a triggered analysis
+    - explicitly provide information about field accesses (reads and writes) via dedicated analysis
+    - handle reflective field accesses
+    - field access information is computed as a triggered analysis
 - add alias properties and corresponding analysis
 - made points-to analysis modules configurable
 - move non-Java specific code into SI subproject (analysis manager, registry and schedulers, project and project information keys)
@@ -33,33 +40,33 @@
 ## 5.0.0 - Released January 23rd 2023
 - *we are now using sbt 1.6.2*
 - *we are now using Scala 2.13*
-  - Scala 2.13 changes:
-    - replace Unicode arrows (⇒,→,←) by ASCII arrows (=>,->,<-)
-    - replace Traversable by scala.collection.Iterable
-    - replace TraversableOnce by scala.collection.IterableOnce
-    - changes to OPAL's custom data structures:
-      - replace RefIterator by scala.collection.iterator
-      - replace Chain by scala.collection.immutable.List
-      - replace RefArray and IntArray by scala.collection.immutable.ArraySeq
-      - replace RefArrayStack by scala.collection.immutable.Stack
-      - replace RefAppendChain by scala.collection.mutable.ArrayDeque
-      - replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
+    - Scala 2.13 changes:
+        - replace Unicode arrows (⇒,→,←) by ASCII arrows (=>,->,<-)
+        - replace Traversable by scala.collection.Iterable
+        - replace TraversableOnce by scala.collection.IterableOnce
+        - changes to OPAL's custom data structures:
+            - replace RefIterator by scala.collection.iterator
+            - replace Chain by scala.collection.immutable.List
+            - replace RefArray and IntArray by scala.collection.immutable.ArraySeq
+            - replace RefArrayStack by scala.collection.immutable.Stack
+            - replace RefAppendChain by scala.collection.mutable.ArrayDeque
+            - replace RefArrayBuffer by scala.collection.mutable.ArrayBuffer
 - full support for Java 17 up to 19
-  - support for Java 17 Sealed Classes
-  - added isStrict attribute to classes
-  - ignore isStrict attribute on classes and methods for Java >= 17
+    - support for Java 17 Sealed Classes
+    - added isStrict attribute to classes
+    - ignore isStrict attribute on classes and methods for Java >= 17
 - completed framework for call graph analyses
-  - introduced TypeIterator to uniformly access type information
-  - using contexts instead of methods to enable context-sensitive analysis (0-1-CFA, 1-1-CFA)
-  - support library analysis with CFA
+    - introduced TypeIterator to uniformly access type information
+    - using contexts instead of methods to enable context-sensitive analysis (0-1-CFA, 1-1-CFA)
+    - support library analysis with CFA
 - introduced new immutability analyses
-  - replaced FieldMutabilityAnalysis with FieldAssignabilityAnalysis
-    - support for thread-safe and unsafe lazy initialization
-    - support for clone pattern
-  - introduced new FieldImmutabilityAnalysis to integrate field assignability with mutability of values
-    - support for transitive and non-transitive immutability
-    - support for immutability dependent on generic type parameters
-  - updated ClassImmutabilityAnalysis and TypeImmutabilityAnalysis to use new FieldImmutability properties
+    - replaced FieldMutabilityAnalysis with FieldAssignabilityAnalysis
+        - support for thread-safe and unsafe lazy initialization
+        - support for clone pattern
+    - introduced new FieldImmutabilityAnalysis to integrate field assignability with mutability of values
+        - support for transitive and non-transitive immutability
+        - support for immutability dependent on generic type parameters
+    - updated ClassImmutabilityAnalysis and TypeImmutabilityAnalysis to use new FieldImmutability properties
 - added EntrypointsFinder for Android apps
 - allow flushing caches for ClassTypes/ArrayTypes to free memory when creating many projects in a row
 
@@ -73,9 +80,9 @@
 - parallel implementation for the PropertyStore
 - FPCF analyses now use sets for their dependencies
 - added preliminary framework for FPCF call graphs
-  - includes CHA, RTA, XTA/MTA/FTA/CTA and points-to based call graphs
-  - also includes modules for reflection, static initializers, finalizers, serialization, threads, selected native methods and to load dynamic data on reflective calls recorded by TamiFlex
-  - allows resolution of calls by method signature for library analyses
+    - includes CHA, RTA, XTA/MTA/FTA/CTA and points-to based call graphs
+    - also includes modules for reflection, static initializers, finalizers, serialization, threads, selected native methods and to load dynamic data on reflective calls recorded by TamiFlex
+    - allows resolution of calls by method signature for library analyses
 - added an analysis to collect information about the usage of a class within a project
 - added `LongTrieSet`, `LongLinkedTrieSet` and `LongTrieSetWithList` to optimize storage of Long values
 - removed `PrecomputedPartialResult`
@@ -136,7 +143,7 @@
 - fixed issues in some tests which open a huge number of files
 - fixed a rare issue in the identification of closed strongly connected components
 - completely reimplemented the property store
-  - added various analyses related to deriving the purity of methods, the immutability of classes, escape information etc.
+    - added various analyses related to deriving the purity of methods, the immutability of classes, escape information etc.
 - very much improved OPAL's collection library w.r.t. optimized data structures for Int values
 
 ## 1.0.0 - Released Oct. 25th 2017

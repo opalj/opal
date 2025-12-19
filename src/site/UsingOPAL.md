@@ -25,18 +25,18 @@ OPAL consists of multiple subprojects and tools which are described in the follo
 ### Framework
 Combines all of OPAL's subproject for ease of use.
 
-    libraryDependencies += "de.opal-project" % "framework_2.13" % "6.0.0"
+    libraryDependencies += "de.opal-project" % "framework_3" % "7.0.0"
 
 ### Common
 Contains general data structures and algorithms particular useful in the context of static analysis. E.g., graph algorithms, such as
 an implementation of Tarjan's algorithm for finding strongly connected components. The implementations are designed with scalability in mind and should be able to process millions of nodes.
 
-    libraryDependencies += "de.opal-project" % "common_2.13" % "6.0.0"
+    libraryDependencies += "de.opal-project" % "common_3" % "7.0.0"
 
 ### Static Analysis Framework
-The static analysis framework is a generally useful framework for developing static analyses. The framework has wide-ranging support for very different types of static analyses and automatically parallels their execution. The framework only depends on `Common` and can be flexibly combined with other static analyses frameworks (e.g., BCEL, SOOT, Wala, ASM,... ) 
+The static analysis framework is a generally useful framework for developing static analyses. The framework has wide-ranging support for very different types of static analyses and automatically parallels their execution. The framework only depends on `Common` and can be flexibly combined with other static analyses frameworks (e.g., BCEL, SOOT, Wala, ASM,... )
 
-    libraryDependencies += "de.opal-project" % "static-analysis-infrastructure_2.13" % "6.0.0"
+    libraryDependencies += "de.opal-project" % "static-analysis-infrastructure_3" % "7.0.0"
 
 ### Bytecode Representation
 The bytecode toolkit implements a generic infrastructure for parsing Java class files. Additionally,
@@ -44,35 +44,30 @@ it provides a default representation for Java bytecode that can be used to analy
 representation provides extensive support for pattern matching on Java bytecode to facilitate writing
 basic analyses.
 
-    libraryDependencies += "de.opal-project" % "bytecode-representation_2.13" % "6.0.0"
+    libraryDependencies += "de.opal-project" % "bytecode-representation_3" % "7.0.0"
 
 ### Bytecode Assembler
 The Bytecode Assembler provides an embedded DSL for assembling Java class files. It handles tasks like
 stack map table generation, exception table generation, and bytecode generation.
 
-    libraryDependencies += "de.opal-project" % "bytecode-assembler_2.13" % "6.0.0"
+    libraryDependencies += "de.opal-project" % "bytecode-assembler_3" % "7.0.0"
 
 ### Abstract Interpretation Framework
 The abstract interpretation framework is a highly-customizable framework for the lightweight abstract interpretation of the Java bytecode. The framework was designed with ease of use and customizability in mind.
 
-    libraryDependencies += "de.opal-project" % "abstract-interpretation-framework_2.13" % "6.0.0"
+    libraryDependencies += "de.opal-project" % "abstract-interpretation-framework_3" % "7.0.0"
 
 ### Three-Address Code
 The three-address-code toolkit provides a more human-readable representation of the bytecode that includes additional information derived by the abstract interpretation framework.
 
-    libraryDependencies += "de.opal-project" % "three-address-code_2.13" % "6.0.0"
+    libraryDependencies += "de.opal-project" % "three-address-code_3" % "7.0.0"
 
 ### Architecture Validation Framework
 The architecture validation framework facilitates the development of tools for specifying and validating software architectures.
 
-    libraryDependencies += "de.opal-project" % "architecture-validation_2.13" % "6.0.0"
+    libraryDependencies += "de.opal-project" % "architecture-validation_3" % "7.0.0"
 
 ### APK
 Provides support for the analysis of APKs, with automatic conversion from dalvik to java byte code.
 
-    libraryDependencies += "de.opal-project" % "apk_2.13" % "6.0.0"
-
-
-[comment]: # "Exploring the Abstract Interpretation Framework"
-
-[comment]: # "To get a good, first idea what the abstract interpretation framework can do, you can use the *BugPicker*. It enables you to perform some local abstract interpretations. To get good results it is usually necessary to load the JDK and all related libraries."
+    libraryDependencies += "de.opal-project" % "apk_3" % "7.0.0"
