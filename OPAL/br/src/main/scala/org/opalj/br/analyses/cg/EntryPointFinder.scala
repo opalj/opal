@@ -7,10 +7,10 @@ package cg
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 
-import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.Ficus.*
 
 /**
- * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
+ * The EntryPointFinder trait is a common trait for all analyses that can derive a program's entry
  * points. The concrete entry point finder that is used to determines a programs entry points directly
  * impacts the computation of a programs call graph.
  *
@@ -173,7 +173,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
     override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
         val declaredMethods = project.get(DeclaredMethodsKey)
 
-        val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
+        val isClosedPackage = (pkg) => project.get(ClosedPackagesKey).isClosed(pkg)
         val isExtensible = project.get(TypeExtensibilityKey)
         val classHierarchy = project.classHierarchy
 
@@ -243,7 +243,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  *  }}}
  *
  * Please note that the first entry point, by adding the "+" to the declaring class' name, considers
- * all "add" methods from all subtypes independently from the respective method's descriptor. In
+ * all "add" methods from all subtypes independently of the respective method's descriptor. In
  * contrast, the second entry does specify a descriptor and does not consider List's subtypes (by
  * not suffixing a plus to the declaringClass) which implies that only the remove method with this
  * descriptor is considered as entry point.
@@ -252,13 +252,14 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
  */
 trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
+    import pureconfig._
+
     // don't make this a val for initialization reasons
-    @inline private[this] def additionalEPConfigKey: String = {
+    @inline private def additionalEPConfigKey: String = {
         InitialEntryPointsKey.ConfigKeyPrefix + "entryPoints"
     }
 
     override def collectEntryPoints(project: SomeProject): Iterable[DeclaredMethod] = {
-        import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
         implicit val logContext: LogContext = project.logContext
 
@@ -276,7 +277,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         }
         val configEntryPoints: List[EntryPointContainer] =
             try {
-                project.config.as[List[EntryPointContainer]](additionalEPConfigKey)
+                ConfigSource.fromConfig(project.config).at(additionalEPConfigKey).loadOrThrow[List[EntryPointContainer]]
             } catch {
                 case e: Throwable =>
                     OPALLogger.error(
@@ -295,7 +296,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
             val considerSubtypes = configuredType.endsWith("+")
             val typeName = if (considerSubtypes) {
-                configuredType.substring(0, configuredType.size - 1)
+                configuredType.substring(0, configuredType.length - 1)
             } else {
                 configuredType
             }
@@ -308,7 +309,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                     case _: IllegalArgumentException =>
                         OPALLogger.warn(
                             "project configuration",
-                            s"illegal method descriptor: $typeName { $name or ${md}}"
+                            s"illegal method descriptor: $typeName { $name or $md}"
                         )
                         None
                 }
@@ -370,12 +371,12 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         super.collectEntryPoints(project) ++ entryPoints
     }
 
-    /* Required by Ficus' `ArbitraryTypeReader`*/
+    /* Required by pureconfig */
     private case class EntryPointContainer(
         declaringClass: String,
         name:           String,
         descriptor:     Option[String]
-    )
+    ) derives ConfigReader
 }
 
 /**

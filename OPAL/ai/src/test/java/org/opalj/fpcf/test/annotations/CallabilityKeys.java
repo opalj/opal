@@ -6,7 +6,7 @@ package org.opalj.fpcf.test.annotations;
  * Represents all possible property variants of the [[LibraryLeakage]] property
  * defined in the [[LibraryLeakageAnalysis]].
  * 
- * @Note This enum is used for test-only purposes. It is used as parameter in
+ * @note This enum is used for test-only purposes. It is used as parameter in
  * the [[LibraryLeakageAnalysis]] annotation. Make sure, that the names
  * of the different variants of the Overridden property matches the enumeration
  * names exactly.
@@ -17,7 +17,7 @@ package org.opalj.fpcf.test.annotations;
 public enum CallabilityKeys {
 	
 	/**
-	 * This has to be used if a method can't be inherit by any immediate non-abstract 
+	 * This has to be used if a method can't be inherited by any immediate non-abstract
 	 * subclass and due to this is overridden in every concrete subclass.
 	 */
 	NotClientCallable,

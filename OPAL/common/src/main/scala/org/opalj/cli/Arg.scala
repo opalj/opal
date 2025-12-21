@@ -23,7 +23,7 @@ trait Arg[+T, R] {
 
     def apply(opalConfig: Config, value: Option[R]): Config = opalConfig
 
-    def commands(): IterableOnce[Arg[_, _]] = Iterator(this)
+    def commands(): IterableOnce[Arg[?, ?]] = Iterator(this)
 }
 
 abstract class ConvertedArg[T: ValueConverter, R] extends Arg[T, R] {

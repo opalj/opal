@@ -5,7 +5,7 @@ package checking
 
 import scala.collection.Set
 
-import org.opalj.br._
+import org.opalj.br.*
 
 /**
  * @author Marco Torsello
@@ -34,7 +34,7 @@ case object AnyAnnotations extends AnnotationsPredicate {
  * @author Marco Torsello
  */
 case class HasAtLeastTheAnnotations(
-    annotationPredicates: Set[_ <: AnnotationPredicate]
+    annotationPredicates: Set[? <: AnnotationPredicate]
 ) extends AnnotationsPredicate {
 
     def apply(others: Iterable[Annotation]): Boolean = {
@@ -53,7 +53,7 @@ object HasAtLeastTheAnnotations {
  * @author Marco Torsello
  */
 case class HasTheAnnotations(
-    annotationPredicates: Set[_ <: AnnotationPredicate]
+    annotationPredicates: Set[? <: AnnotationPredicate]
 ) extends AnnotationsPredicate {
 
     def apply(others: Iterable[Annotation]): Boolean = {
@@ -74,7 +74,7 @@ object HasTheAnnotations {
  * @author Marco Torsello
  */
 case class HasAtLeastOneAnnotation(
-    annotationPredicates: Set[_ <: AnnotationPredicate]
+    annotationPredicates: Set[? <: AnnotationPredicate]
 ) extends AnnotationsPredicate {
 
     def apply(annotations: Iterable[Annotation]): Boolean = {

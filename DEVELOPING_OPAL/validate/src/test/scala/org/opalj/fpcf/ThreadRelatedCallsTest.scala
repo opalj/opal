@@ -32,7 +32,7 @@ class ThreadRelatedCallsTest extends PropertiesTest {
             case Some(_) => throw new IllegalArgumentException()
             case None    => CHACallGraphKey.getTypeIterator(p)
         }
-        val requiredDomains: Set[Class[_ <: AnyRef]] = Set(classOf[DefaultReferenceValuesDomainWithCFGAndDefUse[_]])
+        val requiredDomains: Set[Class[? <: AnyRef]] = Set(classOf[DefaultReferenceValuesDomainWithCFGAndDefUse[?]])
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               => requiredDomains
             case Some(requirements) => requirements ++ requiredDomains

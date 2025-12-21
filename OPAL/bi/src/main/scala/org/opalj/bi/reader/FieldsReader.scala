@@ -16,8 +16,7 @@ trait FieldsReader extends Constant_PoolAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type Field_Info <: AnyRef
-    implicit val fieldInfoType: ClassTag[Field_Info] // TODO: Replace in Scala 3 by `type Field_Info : ClassTag`
+    type Field_Info <: AnyRef: ClassTag
     type Fields = ArraySeq[Field_Info]
 
     type Attributes

@@ -68,7 +68,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
             "Finds calls to methods provided by the Java Reflection and Crypto APIs and tries to resolve passed string values"
 
         private val analysisLevelArg =
-            new AnalysisLevelArg(StringAnalysisArg.description, StringAnalysisArg.levels: _*) {
+            new AnalysisLevelArg(StringAnalysisArg.description, StringAnalysisArg.levels*) {
                 override val defaultValue: Option[String] = Some("L2")
                 override val withNone = false
             }
@@ -87,7 +87,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
 
         private val onlyMethodHandleArg = new PlainArg[Boolean] {
             override val name: String = "onlyMethodHandle"
-            override val description: String = "Only identify MethdoHandle reflection API calls"
+            override val description: String = "Only identify MethdodHandle reflection API calls"
             override val defaultValue: Option[Boolean] = Some(false)
         }
 
@@ -103,7 +103,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
         )
         init()
 
-        val analyses: Seq[FPCFAnalysisScheduler[_]] = {
+        val analyses: Seq[FPCFAnalysisScheduler[?]] = {
             StringAnalysisArg.getAnalyses(apply(analysisLevelArg)).map(getScheduler(_, eager = false))
         }
 
@@ -149,7 +149,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
             "javax.crypto.SecretKeyFactory#getInstance"
         )
 
-        private def getRelevantMethods(): Set[String] = {
+        private def getRelevantMethods: Set[String] = {
             var result = Set.empty[String]
 
             if (!(apply(onlyCryptoArg) || apply(onlyMethodHandleArg)))
@@ -162,7 +162,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
             result
         }
 
-        val relevantMethodNames = getRelevantMethods()
+        val relevantMethodNames = getRelevantMethods
     }
 
     protected type ConfigType = APICallsConfig
@@ -290,7 +290,7 @@ object APICallsStringAnalysis extends ProjectsAnalysisApplication {
         } { t => println(s"Elapsed Time: ${t.toMilliseconds}") }
 
         val resultMap =
-            Map.from(analysisConfig.relevantMethodNames.map((_, ListBuffer.empty[FinalEP[_, StringConstancyProperty]])))
+            Map.from(analysisConfig.relevantMethodNames.map((_, ListBuffer.empty[FinalEP[?, StringConstancyProperty]])))
         detectedValues.foreach {
             case (e, callName) =>
                 resultMap(callName).append(ps(e, StringConstancyProperty.key).asFinal)

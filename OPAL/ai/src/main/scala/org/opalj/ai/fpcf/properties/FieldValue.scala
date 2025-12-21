@@ -58,7 +58,7 @@ object FieldValue extends FieldValueMetaInformation {
         // fallback property computation...
         (ps: PropertyStore, r: FallbackReason, f: Field) => {
             val p = ps.context(classOf[Project]).asInstanceOf[SomeProject]
-            val vi = ValueInformation.forProperValue(f.fieldType)(p.classHierarchy)
+            val vi = ValueInformation.forProperValue(f.fieldType)(using p.classHierarchy)
             ValueBasedFieldValueInformation(vi)
         }
     )

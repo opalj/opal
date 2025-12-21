@@ -5,7 +5,7 @@ package domain
 
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 import scala.xml.NodeSeq
 
 import org.scalatest.flatspec.AnyFlatSpec
@@ -13,9 +13,9 @@ import org.scalatest.matchers.should.Matchers
 
 import org.opalj.ai.util.XHTML
 import org.opalj.bi.TestResources
-import org.opalj.br.{TestSupport => BRTestSupport}
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
+import org.opalj.br.TestSupport as BRTestSupport
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.BytecodeInstructionsCache
@@ -38,7 +38,7 @@ import org.opalj.util.PerformanceEvaluation
  */
 abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec with Matchers {
 
-    private[this] implicit val logContext: LogContext = GlobalLogContext
+    private implicit val logContext: LogContext = GlobalLogContext
 
     type AnalyzedDomain <: Domain
 
@@ -93,8 +93,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 methodsCount.incrementAndGet()
                 None
             } catch {
-                case ct: ControlThrowable => throw ct
-                case t: Throwable         =>
+                case b: Break[?]  => throw b
+                case t: Throwable =>
                     // basically, we want to catch everything!
                     Some((project.source(classFile).get.toString, classFile, method, t))
             }
@@ -106,9 +106,9 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
             val exceptions = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
             project.parForeachMethodWithBody() { (m) =>
                 val MethodInfo(source, method) = m
-                analyzeClassFile(source.toString, method) foreach { exceptions.add(_) }
+                analyzeClassFile(source.toString, method) foreach { exceptions.add }
             }
-            import scala.jdk.CollectionConverters._
+            import scala.jdk.CollectionConverters.*
             exceptions.asScala
         }
 
@@ -144,11 +144,11 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                     project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
                     ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds +
                     ")" + collectedExceptions.size +
-                    " exceptions occured (details: " + file.toString + ")."
+                    " exceptions occurred (details: " + file.toString + ")."
             )
         } else {
             info(
-                s"$projectName: no exceptions occured during the interpretation of " +
+                s"$projectName: no exceptions occurred during the interpretation of " +
                     methodsCount.get + " methods (of " + project.methodsCount + ") in " +
                     project.classFilesCount + " classes (real time: " + getTime(Symbol("OVERALL")).toSeconds +
                     ", ai (∑CPU Times): " + getTime(Symbol("AI")).toSeconds + ")"
@@ -165,13 +165,13 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
 
     behavior of domainName
 
-    it should ("be useable to perform an abstract interpretation of the JRE's classes") in {
+    it should ("be usable to perform an abstract interpretation of the JRE's classes") in {
         val project = BRTestSupport.createJREProject()
 
         analyzeProject("JDK", project, 4d)
     }
 
-    it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-08-14-2014") in {
+    it should ("be usable to perform an abstract interpretation of OPAL-SNAPSHOT-08-14-2014") in {
 
         import reader.AllClassFiles
         val classFilesFolder = TestResources.locateTestResources("classfiles", "bi")
@@ -187,7 +187,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
         analyzeProject("OPAL-SNAPSHOT-08-14-2014", project, 1.5d)
     }
 
-    it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-0.3.jar") in {
+    it should ("be usable to perform an abstract interpretation of OPAL-SNAPSHOT-0.3.jar") in {
         val classFiles = TestResources.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
         val project = Project(reader.ClassFiles(classFiles), Iterable.empty, true)
 

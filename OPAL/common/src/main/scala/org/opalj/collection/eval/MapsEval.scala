@@ -3,6 +3,8 @@ package org.opalj
 package collection
 package eval
 
+import scala.annotation.nowarn
+
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -41,9 +43,10 @@ object MapsEval extends App {
 
     // SCALA maps
     //
+    @nowarn("msg=deprecated")
     val anyRefMap = scala.collection.mutable.AnyRefMap.empty[T, Object]
     val trieMap = scala.collection.concurrent.TrieMap.empty[T, Object]
-    // immmutable maps...
+    // immutable maps...
     var hashMap = scala.collection.immutable.HashMap.empty[T, Object]
     var treeMap = scala.collection.immutable.TreeMap.empty[T, Object]
 
@@ -63,9 +66,9 @@ object MapsEval extends App {
 
     time {
         ls.foreach { s =>
-            anyRefMap += (s -> theObject) // <= faster then adding it using pairs...
+            anyRefMap += (s -> theObject) // <= faster than adding it using pairs...
             // anyRefMap += ((s, theObject()))
-        }
+        }: @nowarn("msg=deprecated")
     } { t => println("mutable AnyRefMap.add: " + t.toSeconds) }
 
     time {
@@ -90,8 +93,8 @@ object MapsEval extends App {
                 (1 to Repetitions).foreach { i => ls.foreach { s => t += jConcurrentMap.get(s).hashCode } }
             }
         })
-        ts.foreach(t => t.start)
-        ts.foreach(t => t.join)
+        ts.foreach(t => t.start())
+        ts.foreach(t => t.join())
     } { t => println("Java ConcurrentHashMap.get: " + t.toSeconds) }
 
     time {
@@ -100,8 +103,8 @@ object MapsEval extends App {
                 (1 to Repetitions).foreach { i => ls.foreach { s => t += jHashMap.get(s).hashCode } }
             }
         })
-        ts.foreach(t => t.start)
-        ts.foreach(t => t.join)
+        ts.foreach(t => t.start())
+        ts.foreach(t => t.join())
     } { t => println("Java HashMap.get: " + t.toSeconds) }
 
     time {
@@ -110,8 +113,8 @@ object MapsEval extends App {
                 (1 to Repetitions).foreach { i => ls.foreach { s => t += anyRefMap(s).hashCode } }
             }
         })
-        ts.foreach(t => t.start)
-        ts.foreach(t => t.join)
+        ts.foreach(t => t.start())
+        ts.foreach(t => t.join())
     } { t => println("AnyRefMap.get: " + t.toSeconds) }
 
     time {
@@ -120,8 +123,8 @@ object MapsEval extends App {
                 (1 to Repetitions).foreach { i => ls.foreach { s => t += trieMap(s).hashCode } }
             }
         })
-        ts.foreach(t => t.start)
-        ts.foreach(t => t.join)
+        ts.foreach(t => t.start())
+        ts.foreach(t => t.join())
     } { t => println("concurrent.TrieMap.get: " + t.toSeconds) }
 
     time {
@@ -130,8 +133,8 @@ object MapsEval extends App {
                 (1 to Repetitions).foreach { i => ls.foreach { s => t += anyRefMap(s).hashCode } }
             }
         })
-        ts.foreach(t => t.start)
-        ts.foreach(t => t.join)
+        ts.foreach(t => t.start())
+        ts.foreach(t => t.join())
     } { t => println("immutable HashMap.get: " + t.toSeconds) }
 
     time {
@@ -140,8 +143,8 @@ object MapsEval extends App {
                 (1 to Repetitions).foreach { i => ls.foreach { s => t += treeMap(s).hashCode } }
             }
         })
-        ts.foreach(t => t.start)
-        ts.foreach(t => t.join)
+        ts.foreach(t => t.start())
+        ts.foreach(t => t.join())
     } { t => println("immutable TreeMap.get: " + t.toSeconds) }
 
     println(s"\n Run: $t")

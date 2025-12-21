@@ -282,7 +282,7 @@ class ReflectionMethodAllocationsAnalysis(
             PointsToSetLike.noFilter
         )
 
-        Results(createResults(state))
+        Results(createResults)
     }
 }
 

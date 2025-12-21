@@ -7,7 +7,7 @@ import java.io.File
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.ArraySeq
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.PC
@@ -21,10 +21,10 @@ import org.opalj.br.fpcf.analyses.ContextProvider
 import org.opalj.br.fpcf.analyses.immutability.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.immutability.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
-import org.opalj.br.fpcf.properties.{Purity => PurityProperty}
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.Pure
+import org.opalj.br.fpcf.properties.Purity as PurityProperty
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.FinalP
@@ -46,7 +46,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
 /**
- * Identifies calls to pure/side-effect free methods where the results are not used subsequently.
+ * Identifies calls to pure/side-effect-free methods where the results are not used subsequently.
  *
  * @author Dominik Helm
  */
@@ -54,7 +54,7 @@ object UnusedResults extends ProjectsAnalysisApplication {
 
     protected class UnusedResultsConfig(args: Array[String]) extends MultiProjectAnalysisConfig(args)
         with CGBasedCommandLineConfig {
-        val description = "Finds invocations of pure/side-effect free methods where the result is not used"
+        val description = "Finds invocations of pure/side-effect-free methods where the result is not used"
     }
 
     protected type ConfigType = UnusedResultsConfig
@@ -68,9 +68,9 @@ object UnusedResults extends ProjectsAnalysisApplication {
         analysisConfig: UnusedResultsConfig,
         execution:      Int
     ): (Project[URL], BasicReport) = {
-        implicit val (project, _) = analysisConfig.setupProject(cp)()
+        implicit val (project: Project[URL], _) = analysisConfig.setupProject(cp)()
         implicit val (ps, _) = analysisConfig.setupPropertyStore(project)
-        analysisConfig.setupCallGaph(project)
+        analysisConfig.setupCallGraph(project)
 
         val issues = new ConcurrentLinkedQueue[String]
 

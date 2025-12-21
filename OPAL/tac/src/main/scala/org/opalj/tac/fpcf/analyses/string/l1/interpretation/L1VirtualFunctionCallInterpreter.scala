@@ -48,8 +48,9 @@ class L1VirtualFunctionCallInterpreter(
     override def interpretExpr(instr: T, call: E)(implicit
         state: InterpretationState
     ): ProperPropertyComputationResult = {
-        val at = Option.unless(!instr.isAssignment)(instr.asAssignment.targetVar.asVar.toPersistentForm(state.tac.stmts))
-        val pt = call.receiver.asVar.toPersistentForm(state.tac.stmts)
+        val at =
+            Option.unless(!instr.isAssignment)(instr.asAssignment.targetVar.asVar.toPersistentForm(using state.tac.stmts))
+        val pt = call.receiver.asVar.toPersistentForm(using state.tac.stmts)
 
         call.name match {
             case "append" if StringInterpreter.isStringBuilderBufferCall(call)  => interpretAppendCall(at, pt, call)
@@ -127,7 +128,7 @@ private[string] trait L1AppendCallInterpreter extends AssignmentLikeBasedStringI
         state: InterpretationState
     ): ProperPropertyComputationResult = {
         // .head because we want to evaluate only the first argument of append
-        val paramVar = call.params.head.asVar.toPersistentForm(state.tac.stmts)
+        val paramVar = call.params.head.asVar.toPersistentForm(using state.tac.stmts)
 
         val ptWeb = PDUWeb(state.pc, pt)
         val combinedWeb = if (at.isDefined) ptWeb.combine(PDUWeb(state.pc, at.get)) else ptWeb

@@ -16,6 +16,6 @@ case object LSHL extends ShiftInstruction {
 
     final def operator = "<<"
 
-    final val computationalType = ComputationalTypeLong
+    final val computationalType: ComputationalTypeLong.type = ComputationalTypeLong
 
 }

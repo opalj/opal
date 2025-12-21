@@ -5,6 +5,9 @@ package fpcf
 package analyses
 package immutability
 
+import scala.util.boundary
+import scala.util.boundary.break
+
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
@@ -36,6 +39,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.util.elidedAssert
 
 /**
  * Determines the immutability of a specific type by checking if all subtypes of a specific
@@ -75,7 +79,7 @@ class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnaly
         }
     }
 
-    def step2(t: ClassType): ProperPropertyComputationResult = {
+    def step2(t: ClassType): ProperPropertyComputationResult = boundary {
         val directSubtypes = classHierarchy.directSubtypesOf(t)
 
         val cf = project.classFile(t)
@@ -139,8 +143,9 @@ class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnaly
             directSubtypes foreach { subtype =>
                 ps(subtype, TypeImmutability.key) match {
                     case FinalP(TransitivelyImmutableType) =>
-                    case UBP(MutableType)                  =>
-                        return Result(t, MutableType);
+
+                    case UBP(MutableType) =>
+                        break(Result(t, MutableType));
 
                     case FinalP(NonTransitivelyImmutableType) =>
                         joinedImmutability = joinedImmutability.meet(NonTransitivelyImmutableType)
@@ -200,7 +205,7 @@ class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnaly
                                 }
                             }
                             if (joinedImmutability == maxImmutability) {
-                                assert(maxImmutability == NonTransitivelyImmutableType)
+                                elidedAssert(maxImmutability == NonTransitivelyImmutableType)
                                 Result(t, maxImmutability)
                             } else {
                                 InterimResult(
@@ -222,7 +227,8 @@ class TypeImmutabilityAnalysis(final val project: SomeProject) extends FPCFAnaly
                         case UBP(x) if x == MutableType || x == MutableClass =>
                             Result(t, MutableType) // MutableType)
 
-                        case FinalEP(e, x) if x == NonTransitivelyImmutableType || x == NonTransitivelyImmutableClass =>
+                        case FinalEP(e, x)
+                            if x == NonTransitivelyImmutableType || x == NonTransitivelyImmutableClass =>
                             maxImmutability = NonTransitivelyImmutableType
                             dependencies = dependencies - e
                             nextResult()

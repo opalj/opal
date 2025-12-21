@@ -19,7 +19,7 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  *
  * @author Michael Eichberg
  */
-trait AIProject[Source, D <: Domain with OptionalReport] {
+trait AIProject[Source, D <: Domain & OptionalReport] {
 
     /**
      * Returns the abstract interpreter that should be used for performing the abstract
@@ -70,7 +70,7 @@ trait AIProject[Source, D <: Domain with OptionalReport] {
      *
      * @note This method is intended to be overridden by subtraits that need to get
      *      hold on the specified analysis parameters. In this case (in the subtrait)
-     *      it is recommended to first analyze the parameters and afterwards to call
+     *      it is recommended to first analyze the parameters and afterward to call
      *      this method using `super.analyze(...)`.
      */
     def analyze(project: Project[Source], parameters: Seq[String]): ReportableAnalysisResult = {

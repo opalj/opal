@@ -6,6 +6,8 @@ package reader
 import java.lang.invoke.LambdaMetafactory
 import scala.collection.IndexedSeqView
 import scala.collection.immutable.ArraySeq
+import scala.util.boundary
+import scala.util.boundary.break
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
@@ -19,7 +21,7 @@ import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.MethodDescriptor.LambdaAltMetafactoryDescriptor
 import org.opalj.br.MethodDescriptor.LambdaMetafactoryDescriptor
 import org.opalj.br.collection.mutable.InstructionsBuilder
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.br.instructions.ClassFileFactory.AlternativeFactoryMethodName
 import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
 import org.opalj.collection.immutable.UIDSet
@@ -28,6 +30,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.log.StandardLogMessage
+import org.opalj.util.elidedAssert
 
 /**
  * Provides support for rewriting Java 8/Scala lambda or method reference expressions that
@@ -55,10 +58,10 @@ trait InvokedynamicRewriting
     with BootstrapArgumentLoading {
     this: ClassFileBinding =>
 
-    import InvokedynamicRewriting._
+    import InvokedynamicRewriting.*
 
     val performInvokedynamicRewriting: Boolean = {
-        import InvokedynamicRewriting.{InvokedynamicRewritingConfigKey => Key}
+        import InvokedynamicRewriting.InvokedynamicRewritingConfigKey as Key
         val rewrite: Boolean =
             try {
                 config.getBoolean(Key)
@@ -82,7 +85,7 @@ trait InvokedynamicRewriting
     }
 
     val logLambdaExpressionsRewrites: Boolean = {
-        import InvokedynamicRewriting.{LambdaExpressionsLogRewritingsConfigKey => Key}
+        import InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey as Key
         val logRewrites: Boolean =
             try {
                 config.getBoolean(Key)
@@ -106,7 +109,7 @@ trait InvokedynamicRewriting
     }
 
     val logStringConcatRewrites: Boolean = {
-        import InvokedynamicRewriting.{StringConcatLogRewritingsConfigKey => Key}
+        import InvokedynamicRewriting.StringConcatLogRewritingsConfigKey as Key
         val logRewrites: Boolean =
             try {
                 config.getBoolean(Key)
@@ -130,7 +133,7 @@ trait InvokedynamicRewriting
     }
 
     val logObjectMethodsRewrites: Boolean = {
-        import InvokedynamicRewriting.{ObjectMethodsLogRewritingsConfigKey => Key}
+        import InvokedynamicRewriting.ObjectMethodsLogRewritingsConfigKey as Key
         val logRewrites: Boolean =
             try {
                 config.getBoolean(Key)
@@ -154,7 +157,7 @@ trait InvokedynamicRewriting
     }
 
     val logUnknownInvokeDynamics: Boolean = {
-        import InvokedynamicRewriting.{InvokedynamicLogUnknownInvokeDynamicsConfigKey => Key}
+        import InvokedynamicRewriting.InvokedynamicLogUnknownInvokeDynamicsConfigKey as Key
         val logUnknownInvokeDynamics: Boolean =
             try {
                 config.getBoolean(Key)
@@ -340,13 +343,13 @@ trait InvokedynamicRewriting
             if (args.isEmpty)
                 (
                     None,
-                    ArraySeq.empty[ConstantValue[_]].view
+                    ArraySeq.empty[ConstantValue[?]].view
                 )
             else args.head match {
                 case recipe: ConstantString =>
                     (
                         Some(recipe),
-                        args.view.slice(from = 1, until = args.length).asInstanceOf[IndexedSeqView[ConstantValue[_]]]
+                        args.view.slice(from = 1, until = args.length).asInstanceOf[IndexedSeqView[ConstantValue[?]]]
                     )
                 case _ =>
                     if (logUnknownInvokeDynamics) {
@@ -367,7 +370,7 @@ trait InvokedynamicRewriting
             name:       String,
             descriptor: MethodDescriptor,
             recipeO:    Option[ConstantString],
-            constants:  IndexedSeqView[ConstantValue[_]]
+            constants:  IndexedSeqView[ConstantValue[?]]
         ): MethodTemplate = {
             // A guess on the number of append operations required, need not be precise
             val numEntries =
@@ -406,7 +409,7 @@ trait InvokedynamicRewriting
             }
 
             // Generate instructions to append a static constant to the StringBuilder
-            def appendConstant(constant: ConstantValue[_]): Int = {
+            def appendConstant(constant: ConstantValue[?]): Int = {
                 val (constantStack, newClassFile) =
                     loadBootstrapArgument(constant, body, updatedClassFile)
                 updatedClassFile = newClassFile
@@ -486,7 +489,7 @@ trait InvokedynamicRewriting
 
                     if (nextInsert < recipe.length) {
                         if (nextInsert == nextParam) {
-                            assert(recipe.charAt(nextInsert) == '\u0001')
+                            elidedAssert(recipe.charAt(nextInsert) == '\u0001')
                             val paramType = descriptor.parameterType(paramIndex)
                             appendParam(paramType, lvIndex)
                             val opSize = paramType.computationalType.operandSize
@@ -495,7 +498,7 @@ trait InvokedynamicRewriting
                             paramIndex += 1
                             nextParam = recipe.indexOf('\u0001', nextParam + 1)
                         } else {
-                            assert(recipe.charAt(nextInsert) == '\u0002')
+                            elidedAssert(recipe.charAt(nextInsert) == '\u0002')
                             val constant = constants(constantIndex)
                             val constantStack = appendConstant(constant)
                             maxStack = Math.max(maxStack, constantStack + 1)
@@ -577,7 +580,7 @@ trait InvokedynamicRewriting
         instructions:          Array[Instruction],
         pc:                    PC,
         invokedynamic:         INVOKEDYNAMIC
-    ): ClassFile = {
+    ): ClassFile = boundary {
         val INVOKEDYNAMIC(bootstrapMethod, targetMethodName, _) = invokedynamic
 
         val newMethodName =
@@ -593,7 +596,7 @@ trait InvokedynamicRewriting
                             s"$t - unresolvable INVOKEDYNAMIC: $invokedynamic"
                         )
                     }
-                    return classFile;
+                    break(classFile);
                 }
 
         val newInvokestatic = INVOKESTATIC(
@@ -621,7 +624,7 @@ trait InvokedynamicRewriting
      *
      * @param classFile The classfile to parse
      * @param instructions The instructions of the method we are currently parsing
-     * @param pc The program counter of the current instuction
+     * @param pc The program counter of the current instruction
      * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced
      */
@@ -658,7 +661,7 @@ trait InvokedynamicRewriting
 
         val instructionsBuilder = new InstructionsBuilder(7)
         val (maxStack, newClassFile) = loadBootstrapArgument(
-            bootstrapArguments.head.asInstanceOf[ConstantValue[_]],
+            bootstrapArguments.head.asInstanceOf[ConstantValue[?]],
             instructionsBuilder,
             classFile
         )
@@ -707,7 +710,7 @@ trait InvokedynamicRewriting
      *
      * @param classFile The classfile to parse
      * @param instructions The instructions of the method we are currently parsing
-     * @param pc The program counter of the current instuction
+     * @param pc The program counter of the current instruction
      * @param invokedynamic The INVOKEDYNAMIC instruction we want to replace
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced
      */
@@ -720,7 +723,7 @@ trait InvokedynamicRewriting
         methodNameIndex:       Constant_Pool_Index,
         methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
-        val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[ConstantValue[_]]
+        val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[ConstantValue[?]]
 
         val body = new InstructionsBuilder(18)
 
@@ -913,7 +916,8 @@ trait InvokedynamicRewriting
 
         val (markerInterfaces, bridges, serializable) = extractAltMetafactoryArguments(altMetafactoryArgs)
 
-        val MethodCallMethodHandle(targetMethodOwner: ClassType, targetMethodName, targetMethodDescriptor) = implMethod
+        val MethodCallMethodHandle(targetMethodOwner: ClassType, targetMethodName, targetMethodDescriptor) =
+            implMethod: @unchecked
 
         // In case of nested classes, we have to change the invoke instruction from
         // invokespecial to invokevirtual, because the special handling used for private
@@ -978,10 +982,10 @@ trait InvokedynamicRewriting
 
         *** INVOKEINTERFACE ***
         It is similar to INVOKEVIRTUAL, but the method definition is defined in an
-        interface. Therefore, the same rule like INVOKEVIRTUAL applies.
+        interface. Therefore, the same rule as for INVOKEVIRTUAL applies.
 
         *** INVOKESTATIC ***
-        Because we call a static method, we don't have an instance. Therefore we don't
+        Because we call a static method, we don't have an instance. Therefore, we don't
         need a receiver field.
 
         *** INVOKESPECIAL ***
@@ -990,9 +994,9 @@ trait InvokedynamicRewriting
           in called class -> no rewrite necessary
         - private method invocation: The private method must be in the same class as
           the callee -> no rewrite needed
-        - Invokation of methods using super keyword -> Not needed, because a synthetic
+        - Invocation of methods using super keyword -> Not needed, because a synthetic
           method in the callee class is created which handles the INVOKESPECIAL.
-          Therefore the receiverType is also the callee class.
+          Therefore, the receiverType is also the callee class.
 
           E.g.
               public static class Superclass {
@@ -1011,7 +1015,7 @@ trait InvokedynamicRewriting
           The class Subclass contains a synthetic method `access`, which has an
           INVOKESPECIAL instruction calling Superclass.someMethod. The generated
           Lambda Proxyclass calls Subclass.access, so the receiverType must be
-          Subclass insteaed of Superclass.
+          Subclass instead of Superclass.
 
           More information:
             http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
@@ -1024,7 +1028,7 @@ trait InvokedynamicRewriting
             } else if (invokedynamic.methodDescriptor.parameterTypes.nonEmpty &&
                        invokedynamic.methodDescriptor.parameterTypes.head.isClassType
             ) {
-                // If we have an instance of a object and use a method reference,
+                // If we have an instance of an object and use a method reference,
                 // get the receiver type from the invokedynamic instruction.
                 // It is the first parameter of the functional interface parameter
                 // list.
@@ -1032,7 +1036,7 @@ trait InvokedynamicRewriting
             } else if (instantiatedMethodType.parameterTypes.nonEmpty &&
                        instantiatedMethodType.parameterTypes.head.isClassType
             ) {
-                // If we get a instance method reference like `LinkedHashSet::addAll`, get
+                // If we get an instance method reference like `LinkedHashSet::addAll`, get
                 // the receiver type from the functional interface. The first parameter is
                 // the instance where the method should be called.
                 instantiatedMethodType.parameterTypes.head.asClassType
@@ -1066,8 +1070,6 @@ trait InvokedynamicRewriting
                     } else {
                         handle.isInterface
                     }
-
-                case other => throw new UnknownError("unexpected handle: " + other)
             }
 
         // Creates forwarding method for private method `m` that can be accessed by the proxy class.
@@ -1144,7 +1146,7 @@ trait InvokedynamicRewriting
                 m.name == targetMethodName && m.descriptor == targetMethodDescriptor
             }
 
-            assert(targetMethod.isDefined)
+            elidedAssert(targetMethod.isDefined)
             val m = targetMethod.get
 
             if (m.isPrivate) {
@@ -1272,13 +1274,13 @@ trait InvokedynamicRewriting
         }
 
         var argCount = 0
-        val ConstantInteger(flags) = altMetafactoryArgs(argCount)
+        val ConstantInteger(flags) = altMetafactoryArgs(argCount): @unchecked
         argCount += 1
 
         // Extract the marker interfaces. They are the first in the argument list if the flag
         // FLAG_MARKERS is present.
         if ((flags & LambdaMetafactory.FLAG_MARKERS) > 0) {
-            val ConstantInteger(markerCount) = altMetafactoryArgs(argCount)
+            val ConstantInteger(markerCount) = altMetafactoryArgs(argCount): @unchecked
             argCount += 1
             markerInterfaces = altMetafactoryArgs.iterator
                 .slice(argCount, argCount + markerCount)
@@ -1287,9 +1289,9 @@ trait InvokedynamicRewriting
             argCount += markerCount
         }
 
-        // bridge methods come afterwards if FLAG_BRIDGES is set.
+        // bridge methods come afterward if FLAG_BRIDGES is set.
         if ((flags & LambdaMetafactory.FLAG_BRIDGES) > 0) {
-            val ConstantInteger(bridgesCount) = altMetafactoryArgs(argCount)
+            val ConstantInteger(bridgesCount) = altMetafactoryArgs(argCount): @unchecked
             argCount += 1
             bridges = altMetafactoryArgs.iterator
                 .slice(argCount, argCount + bridgesCount)

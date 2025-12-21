@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+    <title>The OPAL Framework $version</title>
+    <meta content="The OPAL Framework $version" name="description"/>
+    <meta content="The OPAL Framework $version" name="keywords"/>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <link href="lib/index.css" media="screen" type="text/css" rel="stylesheet"/>
+    <link href="lib/template.css" media="screen" type="text/css" rel="stylesheet"/>
+    <link href="lib/print.css" media="print" type="text/css" rel="stylesheet"/>
+    <link href="lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css"/>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 1em;
+        }
+
+        hr {
+            margin-top : 2em;
+            margin-bottom: 2em;
+            border-width: 1px;
+            color: #DCDCDE;
+        }
+
+        .value {
+            padding: 1em;
+            border: 0.1em solid #DCDCDE;
+            border-radius: 0.5em;
+            margin-left: 2em;
+            display: none;
+        }
+        .value.expanded {
+            display: block;
+        }
+
+        .key {
+            color: #28272D;
+            background-color: #FBFAFD;
+            margin: 1em 0em;
+        }
+
+        .preview {
+            font-weight: normal;
+            font-size: 0.65em;
+            color: #626168;
+        }
+
+        .expandButton {
+            float: right;
+            color: #626168;
+            font-size: 0.5em;
+            padding: 0.4em;
+            border: 0.1em solid #DCDCDE;
+            border-radius: 0.25em;
+            border-collapse: collapse;
+        }
+
+        /* Enforces hiding of value divs with search results on user request */
+        @layer manual {
+            .force-collapsed {
+                display: none !important;
+            }
+        }
+
+        /* Enforces showing of: */
+        @layer search { /* (Enforces precedence of showing results vs. hiding non-results (next rule)) */
+            .search-result, /* - keys and `p`s that contain the search term */
+            .search-result + .value, /* - value divs where the respective key contained the search term */
+            .search-result + .value > p, /* `p`s in value divs where the respective key contained the search term */
+
+            .value:has(.search-result), /* - value divs where any child contains the search term */
+            .key:has(+ .value .search-result) { /* - keys where the respective value div has any child containing the search term */
+                display: block !important;
+            }
+        }
+        /* Hides: */
+        .search-no-result, /* - keys and `p`s that don't contain the search term */
+        .value:has(.search-no-result) { /* - value divs not matched by the @layer rule above when search is performed */
+            display: none !important;
+        }
+        /* Hides separator rules where: */
+        /* - the following key does not contain the search term */
+        /* - the value div following the key does not contain the search term
+        /* - when search is performed */
+        hr:not(:scope + .search-result):not(:scope + .key + .value:has(.search-result)):has(+ .key + .value .search-no-result) {
+            display: none;
+        }
+
+        /* Highlights the occurrences of the search term */
+        ::highlight(search) {
+          color: black;
+          background-color: yellow;
+        }
+
+        /* Sets the correct text for the expand box */
+        .key > .expandButton::before {
+            content: "Show";
+        }
+        .key:has(+ .value.expanded, + .value .search-result):not(:has(+ .value.force-collapsed)) > .expandButton::before {
+            content: "Hide";
+        }
+
+    </style>
+    <script type="module">
+        import { highlightSearchTerm } from "https://cdn.jsdelivr.net/npm/highlight-search-term@1.0.2/src/index.js";
+        const search = document.getElementById("index-input");
+        search.addEventListener("input", () => {
+            highlightSearchTerm({
+                search: search.value,
+                selector: ".key, p",
+            });
+        });
+    </script>
+    <script>
+        function searchConfig() {
+            const searchString = document.getElementById("index-input").value.trim().toLowerCase();
+            const contentContainer = document.getElementById("content-container");
+            if (searchString === "") {
+                document.querySelectorAll('.key, p').forEach(element => {
+                        element.classList.remove('search-result');
+                        element.classList.remove('search-no-result');
+                });
+                document.querySelectorAll('.value').forEach(element => {
+                        element.classList.remove('force-expanded');
+                        element.classList.remove('force-collapsed');
+                });
+            } else {
+                document.querySelectorAll('.key, p').forEach(element => {
+                    if (element.textContent.toLowerCase().includes(searchString)) {
+                        element.classList.add('search-result');
+                        element.classList.remove('search-no-result');
+                    } else {
+                        element.classList.add('search-no-result');
+                        element.classList.remove('search-result');
+                    }
+                });
+            }
+        };
+    </script>
+</head>
+<body>
+<div id="search">
+    <span id="doc-title">The OPAL Framework<span id="doc-version">5.0.1-SNAPSHOT</span></span> <span class="close-results"><span class="left">&lt;</span> Back</span>
+    <div id="textfilter">
+        <span class="input"><input autocapitalize="none" placeholder="Search" id="index-input" type="text" accesskey="/" onkeyup="searchConfig()"/><i class="clear material-icons"></i><i id="search-icon" class="material-icons"></i></span>
+    </div>
+</div>
+<div id="content-scroll-container" style="-webkit-overflow-scrolling: touch;">
+    <div id="content-container" style="-webkit-overflow-scrolling: touch;">
+        <div id="content">
+            $body
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.key').forEach(key => {
+        const expandButton = key.querySelector('.expandButton');
+
+        if(expandButton) {
+            const value = key.nextElementSibling;
+            key.style.cursor = 'pointer';
+
+            key.addEventListener('click', () => {
+                if(key.classList.contains('search-result') || key.classList.contains('search-no-result'))
+                    value.classList.toggle('force-collapsed');
+                else
+                    value.classList.toggle('expanded');
+
+            });
+        }
+    });
+    document.querySelectorAll('.value:has(+ .key), .value ~ .value').forEach(value => {
+        value.classList.remove('expanded');
+    });
+</script>
+
+</body>
+</html>

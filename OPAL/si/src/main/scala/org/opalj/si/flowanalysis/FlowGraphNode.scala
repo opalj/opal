@@ -3,6 +3,8 @@ package org.opalj
 package si
 package flowanalysis
 
+import scala.util.hashing.MurmurHash3
+
 sealed trait RegionType extends Product
 
 sealed trait AcyclicRegionType extends RegionType
@@ -44,7 +46,7 @@ case class Region(regionType: RegionType, override val nodeIds: Set[Int], entry:
         s"Region(${regionType.productPrefix}; ${nodeIds.toList.sorted.mkString(",")}; ${entry.toString})"
 
     // Performance optimizations
-    private lazy val _hashCode = scala.util.hashing.MurmurHash3.productHash(this)
+    private lazy val _hashCode = MurmurHash3.productHash(this)
     override def hashCode(): Int = _hashCode
     override def canEqual(obj: Any): Boolean = obj.hashCode() == _hashCode
 }

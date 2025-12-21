@@ -5,7 +5,7 @@ package reader
 
 import scala.collection.concurrent.TrieMap
 
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 
 class BytecodeInstructionsCache {
 
@@ -13,12 +13,12 @@ class BytecodeInstructionsCache {
     // String caching
     //
 
-    private[this] val methodNames = TrieMap.empty[String, String]
+    private val methodNames = TrieMap.empty[String, String]
     def MethodName(name: String): String = {
         methodNames.getOrElseUpdate(name, name.intern)
     }
 
-    private[this] val fieldNames = TrieMap.empty[String, String]
+    private val fieldNames = TrieMap.empty[String, String]
     def FieldName(name: String): String = {
         fieldNames.getOrElseUpdate(name, name.intern)
     }
@@ -27,7 +27,7 @@ class BytecodeInstructionsCache {
     // Branch offset based caching
     //
 
-    private[this] val gotoInstructions = {
+    private val gotoInstructions = {
         val instructions = new Array[GOTO](2000)
         for (i <- instructions.indices) instructions(i) = new GOTO(i - 1000)
         instructions
@@ -37,7 +37,7 @@ class BytecodeInstructionsCache {
         else { new GOTO(branchtarget) }
     }
 
-    private[this] val ifnullInstructions = {
+    private val ifnullInstructions = {
         val instructions = new Array[IFNULL](1000)
         for (i <- instructions.indices) instructions(i) = new IFNULL(i - 150)
         instructions
@@ -47,7 +47,7 @@ class BytecodeInstructionsCache {
         else { new IFNULL(branchtarget) }
     }
 
-    private[this] val ifnonnullInstructions = {
+    private val ifnonnullInstructions = {
         val instructions = new Array[IFNONNULL](500)
         for (i <- instructions.indices) instructions(i) = new IFNONNULL(i - 150)
         instructions
@@ -57,7 +57,7 @@ class BytecodeInstructionsCache {
         else { new IFNONNULL(branchtarget) }
     }
 
-    private[this] val ifacmpeqInstructions = {
+    private val ifacmpeqInstructions = {
         val instructions = new Array[IF_ACMPEQ](1000)
         for (i <- instructions.indices) instructions(i) = new IF_ACMPEQ(i - 150)
         instructions
@@ -66,7 +66,7 @@ class BytecodeInstructionsCache {
         if (branchtarget >= -150 && branchtarget < 850) ifacmpeqInstructions(branchtarget + 150)
         else { new IF_ACMPEQ(branchtarget) }
 
-    private[this] val ifacmpneInstructions = {
+    private val ifacmpneInstructions = {
         val instructions = new Array[IF_ACMPNE](500)
         for (i <- instructions.indices) instructions(i) = new IF_ACMPNE(i - 150)
         instructions
@@ -75,7 +75,7 @@ class BytecodeInstructionsCache {
         if (branchtarget >= -150 && branchtarget < 350) ifacmpneInstructions(branchtarget + 150)
         else { new IF_ACMPNE(branchtarget) }
 
-    private[this] val ifneInstructions = {
+    private val ifneInstructions = {
         val instructions = new Array[IFNE](256 + 512)
         for (i <- instructions.indices) instructions(i) = new IFNE(i - 256)
         instructions
@@ -85,7 +85,7 @@ class BytecodeInstructionsCache {
         else { new IFNE(branchtarget) }
     }
 
-    private[this] val ifeqInstructions = {
+    private val ifeqInstructions = {
         val instructions = new Array[IFEQ](256 + 512)
         for (i <- instructions.indices) instructions(i) = new IFEQ(i - 256)
         instructions
@@ -95,7 +95,7 @@ class BytecodeInstructionsCache {
         else { new IFEQ(branchtarget) }
     }
 
-    private[this] val ifltInstructions = {
+    private val ifltInstructions = {
         val instructions = new Array[IFLT](128 + 256)
         for (i <- instructions.indices) instructions(i) = new IFLT(i - 128)
         instructions
@@ -105,7 +105,7 @@ class BytecodeInstructionsCache {
         else { new IFLT(branchtarget) }
     }
 
-    private[this] val ifgtInstructions = {
+    private val ifgtInstructions = {
         val instructions = new Array[IFGT](128 + 256)
         for (i <- instructions.indices) instructions(i) = new IFGT(i - 128)
         instructions
@@ -115,7 +115,7 @@ class BytecodeInstructionsCache {
         else { new IFGT(branchtarget) }
     }
 
-    private[this] val ifleInstructions = {
+    private val ifleInstructions = {
         val instructions = new Array[IFLE](128 + 256)
         for (i <- instructions.indices) instructions(i) = new IFLE(i - 128)
         instructions
@@ -125,7 +125,7 @@ class BytecodeInstructionsCache {
         else { new IFLE(branchtarget) }
     }
 
-    private[this] val ifgeInstructions = {
+    private val ifgeInstructions = {
         val instructions = new Array[IFGE](128 + 256)
         for (i <- instructions.indices) instructions(i) = new IFGE(i - 128)
         instructions
@@ -135,7 +135,7 @@ class BytecodeInstructionsCache {
         else { new IFGE(branchtarget) }
     }
 
-    private[this] val ificmpneInstructions = {
+    private val ificmpneInstructions = {
         val instructions = new Array[IF_ICMPNE](256 + 512)
         for (i <- instructions.indices) instructions(i) = new IF_ICMPNE(i - 256)
         instructions
@@ -145,7 +145,7 @@ class BytecodeInstructionsCache {
         else { new IF_ICMPNE(branchtarget) }
     }
 
-    private[this] val ificmpeqInstructions = {
+    private val ificmpeqInstructions = {
         val instructions = new Array[IF_ICMPEQ](256 + 512)
         for (i <- instructions.indices) instructions(i) = new IF_ICMPEQ(i - 256)
         instructions
@@ -155,7 +155,7 @@ class BytecodeInstructionsCache {
         else { new IF_ICMPEQ(branchtarget) }
     }
 
-    private[this] val ificmpltInstructions = {
+    private val ificmpltInstructions = {
         val instructions = new Array[IF_ICMPLT](128 + 256)
         for (i <- instructions.indices) instructions(i) = new IF_ICMPLT(i - 128)
         instructions
@@ -165,7 +165,7 @@ class BytecodeInstructionsCache {
         else { new IF_ICMPLT(branchtarget) }
     }
 
-    private[this] val ificmpgtInstructions = {
+    private val ificmpgtInstructions = {
         val instructions = new Array[IF_ICMPGT](128 + 256)
         for (i <- instructions.indices) instructions(i) = new IF_ICMPGT(i - 128)
         instructions
@@ -175,7 +175,7 @@ class BytecodeInstructionsCache {
         else { new IF_ICMPGT(branchtarget) }
     }
 
-    private[this] val ificmpleInstructions = {
+    private val ificmpleInstructions = {
         val instructions = new Array[IF_ICMPLE](128 + 256)
         for (i <- instructions.indices) instructions(i) = new IF_ICMPLE(i - 128)
         instructions
@@ -185,7 +185,7 @@ class BytecodeInstructionsCache {
         else { new IF_ICMPLE(branchtarget) }
     }
 
-    private[this] val ificmpgeInstructions = {
+    private val ificmpgeInstructions = {
         val instructions = new Array[IF_ICMPGE](128 + 256)
         for (i <- instructions.indices) instructions(i) = new IF_ICMPGE(i - 128)
         instructions
@@ -198,7 +198,7 @@ class BytecodeInstructionsCache {
     // "Value" based caching
     //
 
-    private[this] val sipushInstructions = {
+    private val sipushInstructions = {
         val instructions = new Array[SIPUSH](20000)
         for (i <- instructions.indices) instructions(i) = new SIPUSH(i - 10000)
         instructions
@@ -211,7 +211,7 @@ class BytecodeInstructionsCache {
     // Local variable index based caching
     //
 
-    private[this] val retInstructions = {
+    private val retInstructions = {
         val instructions = new Array[RET](32)
         for (i <- instructions.indices) instructions(i) = new RET(i)
         instructions
@@ -222,7 +222,7 @@ class BytecodeInstructionsCache {
 
     // References/Return Address...
     //
-    private[this] val aloadInstructions = {
+    private val aloadInstructions = {
         val instructions = new Array[ALOAD](256)
         for (i <- instructions.indices) instructions(i) = new ALOAD(i)
         instructions
@@ -231,7 +231,7 @@ class BytecodeInstructionsCache {
         if (lvIndex < 256) aloadInstructions(lvIndex)
         else { new ALOAD(lvIndex) }
 
-    private[this] val astoreInstructions = {
+    private val astoreInstructions = {
         val instructions = new Array[ASTORE](256)
         for (i <- instructions.indices) instructions(i) = new ASTORE(i)
         instructions
@@ -242,7 +242,7 @@ class BytecodeInstructionsCache {
 
     // Integer...
     //
-    private[this] val iloadInstructions = {
+    private val iloadInstructions = {
         val instructions = new Array[ILOAD](128)
         for (i <- instructions.indices) instructions(i) = new ILOAD(i)
         instructions
@@ -251,7 +251,7 @@ class BytecodeInstructionsCache {
         if (lvIndex < 128) iloadInstructions(lvIndex)
         else { new ILOAD(lvIndex) }
 
-    private[this] val istoreInstructions = {
+    private val istoreInstructions = {
         val instructions = new Array[ISTORE](128)
         for (i <- instructions.indices) instructions(i) = new ISTORE(i)
         instructions
@@ -262,7 +262,7 @@ class BytecodeInstructionsCache {
 
     // Long...
     //
-    private[this] val lloadInstructions = {
+    private val lloadInstructions = {
         val instructions = new Array[LLOAD](48)
         for (i <- instructions.indices) instructions(i) = new LLOAD(i)
         instructions
@@ -271,7 +271,7 @@ class BytecodeInstructionsCache {
         if (lvIndex < 48) lloadInstructions(lvIndex)
         else { new LLOAD(lvIndex) }
 
-    private[this] val lstoreInstructions = {
+    private val lstoreInstructions = {
         val instructions = new Array[LSTORE](48)
         for (i <- instructions.indices) instructions(i) = new LSTORE(i)
         instructions
@@ -282,7 +282,7 @@ class BytecodeInstructionsCache {
 
     // Float...
     //
-    private[this] val floadInstructions = {
+    private val floadInstructions = {
         val instructions = new Array[FLOAD](256)
         for (i <- instructions.indices) instructions(i) = new FLOAD(i)
         instructions
@@ -291,7 +291,7 @@ class BytecodeInstructionsCache {
         if (lvIndex < 256) floadInstructions(lvIndex)
         else { new FLOAD(lvIndex) }
 
-    private[this] val fstoreInstructions = {
+    private val fstoreInstructions = {
         val instructions = new Array[FSTORE](256)
         for (i <- instructions.indices) instructions(i) = new FSTORE(i)
         instructions
@@ -302,7 +302,7 @@ class BytecodeInstructionsCache {
 
     // Double...
     //
-    private[this] val dloadInstructions = {
+    private val dloadInstructions = {
         val instructions = new Array[DLOAD](256)
         for (i <- instructions.indices) instructions(i) = new DLOAD(i)
         instructions
@@ -312,7 +312,7 @@ class BytecodeInstructionsCache {
         else { new DLOAD(lvIndex) }
     }
 
-    private[this] val dstoreInstructions = {
+    private val dstoreInstructions = {
         val instructions = new Array[DSTORE](256)
         for (i <- instructions.indices) instructions(i) = new DSTORE(i)
         instructions
@@ -326,22 +326,22 @@ class BytecodeInstructionsCache {
     // ReferenceType based caching
     //
 
-    private[this] val newInstructions = TrieMap.empty[ClassType, NEW]
+    private val newInstructions = TrieMap.empty[ClassType, NEW]
     def NEW(classType: ClassType): NEW = {
         newInstructions.getOrElseUpdate(classType, new NEW(classType))
     }
 
-    private[this] val checkcastInstructions = TrieMap.empty[ReferenceType, CHECKCAST]
+    private val checkcastInstructions = TrieMap.empty[ReferenceType, CHECKCAST]
     def CHECKCAST(referenceType: ReferenceType): CHECKCAST = {
         checkcastInstructions.getOrElseUpdate(referenceType, new CHECKCAST(referenceType))
     }
 
-    private[this] val instanceOfInstructions = TrieMap.empty[ReferenceType, INSTANCEOF]
+    private val instanceOfInstructions = TrieMap.empty[ReferenceType, INSTANCEOF]
     def INSTANCEOF(referenceType: ReferenceType): INSTANCEOF = {
         instanceOfInstructions.getOrElseUpdate(referenceType, new INSTANCEOF(referenceType))
     }
 
-    private[this] val anewarrayInstructions = TrieMap.empty[ReferenceType, ANEWARRAY]
+    private val anewarrayInstructions = TrieMap.empty[ReferenceType, ANEWARRAY]
     def ANEWARRAY(referenceType: ReferenceType): ANEWARRAY = {
         anewarrayInstructions.getOrElseUpdate(referenceType, new ANEWARRAY(referenceType))
     }

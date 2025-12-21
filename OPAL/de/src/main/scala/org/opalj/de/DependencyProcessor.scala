@@ -2,7 +2,7 @@
 package org.opalj
 package de
 
-import br._
+import br.*
 
 /**
  * A dependency processor processes dependencies between two source elements.
@@ -33,7 +33,7 @@ trait DependencyProcessor {
      * Called for each dependency of a source element on an array type.
      *
      * @note A dependency on an array type also introduces another dependency on the
-     *      element type of the array type and the dependency extractor will
+     *      element-type of the array type and the dependency extractor will
      *      notify the dependency processor about such dependencies.
      *
      * @param source The source element that has a dependency on the array type.

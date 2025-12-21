@@ -46,9 +46,9 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
 
     protected def createConfig(args: Array[String]): ConfigType
 
-    protected def analysisClass(analysisConfig: ConfigType): IFDSAnalysisScheduler[_, _, _, _]
+    protected def analysisClass(analysisConfig: ConfigType): IFDSAnalysisScheduler[?, ?, ?, ?]
 
-    protected def printAnalysisResults(analysis: IFDSAnalysis[_, _, _, _], ps: PropertyStore): Unit = ()
+    protected def printAnalysisResults(analysis: IFDSAnalysis[?, ?, ?, ?], ps: PropertyStore): Unit = ()
 
     protected type AdditionalResultsType
 
@@ -59,7 +59,7 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
     ): Unit = {
         val (project, _) = analysisConfig.setupProject(cp)
         val (ps, _) = analysisConfig.setupPropertyStore(project)
-        analysisConfig.setupCallGaph(project)
+        analysisConfig.setupCallGraph(project)
 
         var analysisTime: Milliseconds = Milliseconds.None
         println("Start: " + new java.util.Date)
@@ -86,7 +86,7 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
 
         if (analysisConfig.get(OutputFileArg).isDefined) {
             val pw = new PrintWriter(analysisConfig(OutputFileArg))
-            pw.println(s"Time: ${analysisTime}ms")
+            pw.println(s"Time: ${analysisTime}")
             pw.println(s"Calls of normalFlow: ${statistics.normalFlow}")
             pw.println(s"Calls of callFlow: ${statistics.callFlow}")
             pw.println(s"Calls of returnFlow: ${statistics.returnFlow}")
@@ -97,7 +97,7 @@ abstract class IFDSEvaluationRunner extends ProjectsAnalysisApplication {
         }
     }
 
-    protected def additionalEvaluationResult(analysis: IFDSAnalysis[_, _, _, _]): Option[AdditionalResultsType] = None
+    protected def additionalEvaluationResult(analysis: IFDSAnalysis[?, ?, ?, ?]): Option[AdditionalResultsType] = None
 
     protected def writeAdditionalEvaluationResultsToFile(
         writer:                      PrintWriter,

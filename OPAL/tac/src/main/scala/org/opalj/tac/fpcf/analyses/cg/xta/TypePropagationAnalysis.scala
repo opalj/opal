@@ -7,7 +7,7 @@ package cg
 package xta
 
 import scala.collection.mutable.ArrayBuffer
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.br.ClassType
 import org.opalj.br.Code
@@ -44,6 +44,7 @@ import org.opalj.fpcf.SomePartialResult
 import org.opalj.tac.cg.TypeIteratorKey
 import org.opalj.tac.fpcf.properties.NoTACAI
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 
 /**
  * This analysis handles the type propagation of XTA, MTA, FTA and CTA call graph
@@ -59,12 +60,12 @@ final class TypePropagationAnalysis private[analyses] (
     selectTypeSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
-    private[this] val debug = false
-    private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
+    private val debug = false
+    private val _trace: TypePropagationTrace = new TypePropagationTrace()
 
     private type State = TypePropagationState[ContextType]
 
-    private[this] implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
+    private implicit val declaredFields: DeclaredFields = project.get(DeclaredFieldsKey)
 
     // We need to also propagate types if the method has no body, e.g. for native methods with configured data.
     // Those methods set the TAC EPS to null. Access to state.tac will always be guarded by if(state.methodHasBody).
@@ -125,7 +126,7 @@ final class TypePropagationAnalysis private[analyses] (
             case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID =>
                 state.methodReadsArrays = true
 
-            case stmt: Stmt[_] if stmt.astID == ArrayStore.ASTID =>
+            case stmt: Stmt[?] if stmt.astID == ArrayStore.ASTID =>
                 state.methodWritesArrays = true
 
             case _ =>
@@ -136,32 +137,34 @@ final class TypePropagationAnalysis private[analyses] (
 
         case EUBP(e: DeclaredMethod, _: Callees) =>
             if (debug) {
-                assert(e == state.callContext.method)
+                elidedAssert(e == state.callContext.method)
                 _trace.traceCalleesUpdate(e)
             }
-            handleUpdateOfCallees(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])(state)
+            handleUpdateOfCallees(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])(using state)
 
         case EUBP(e: Method, _: MethodFieldReadAccessInformation) =>
             if (debug) {
-                assert(e == state.callContext.method.definedMethod)
+                elidedAssert(e == state.callContext.method.definedMethod)
                 _trace.traceReadAccessUpdate(e)
             }
-            handleUpdateOfReadAccesses(eps.asInstanceOf[EPS[Method, MethodFieldReadAccessInformation]])(state)
+            handleUpdateOfReadAccesses(eps.asInstanceOf[EPS[Method, MethodFieldReadAccessInformation]])(using state)
 
         case EUBP(e: Method, _: MethodFieldWriteAccessInformation) =>
             if (debug) {
-                assert(e == state.callContext.method.definedMethod)
+                elidedAssert(e == state.callContext.method.definedMethod)
                 _trace.traceWriteAccessUpdate(e)
             }
-            handleUpdateOfWriteAccesses(eps.asInstanceOf[EPS[Method, MethodFieldWriteAccessInformation]])(state)
+            handleUpdateOfWriteAccesses(eps.asInstanceOf[EPS[Method, MethodFieldWriteAccessInformation]])(using state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity =>
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
-            handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
+            handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(using state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) =>
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
-            handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
+            handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(
+                using state
+            )
 
         case _ =>
             sys.error("received unexpected update")
@@ -203,7 +206,7 @@ final class TypePropagationAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         val previouslySeenTypes = state.ownInstantiatedTypes.size
         state.updateOwnInstantiatedTypesDependee(eps)
-        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
+        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq*)
 
         implicit val partialResults: ArrayBuffer[SomePartialResult] = ArrayBuffer.empty[SomePartialResult]
         for (fpe <- state.forwardPropagationEntities.iterator().asScala) {
@@ -226,7 +229,7 @@ final class TypePropagationAnalysis private[analyses] (
         val typeSetEntity = eps.e
         val previouslySeenTypes = state.seenTypes(typeSetEntity)
         state.updateBackwardPropagationDependee(eps)
-        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
+        val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq*)
 
         val filters = state.backwardPropagationFilters(typeSetEntity)
         val propagationResult = propagateTypes(state.typeSetEntity, unseenTypes, filters)
@@ -276,11 +279,11 @@ final class TypePropagationAnalysis private[analyses] (
         } {
             // Some sanity checks ...
             // Methods with multiple defined methods should never appear as callees.
-            assert(!callee.hasMultipleDefinedMethods)
+            elidedAssert(!callee.hasMultipleDefinedMethods)
             // Instances of DefinedMethod we see should only be those where the method is defined in the class file of
             // the declaring class type (i.e., it is not a DefinedMethod instance of some inherited method).  However,
             // in inconsistent bytecode scenarios, the call graph may resolve to a non-implemented abstract method.
-            assert(!callee.hasSingleDefinedMethod ||
+            elidedAssert(!callee.hasSingleDefinedMethod ||
                 (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType) ||
                 callee.asDefinedMethod.definedMethod.isAbstract)
 
@@ -522,11 +525,11 @@ final class TypePropagationAnalysis private[analyses] (
 
         val filteredTypes = newTypes.foldLeft(UIDSet.newBuilder[ReferenceType]) { (builder, nt) =>
             val fitr = filters.iterator
-            var canditateMatches = false
-            while (!canditateMatches && fitr.hasNext) {
+            var candidateMatches = false
+            while (!candidateMatches && fitr.hasNext) {
                 val tf = fitr.next()
                 if (candidateMatchesTypeFilter(nt, tf)) {
-                    canditateMatches = true
+                    candidateMatches = true
                     builder += nt
                 }
             }

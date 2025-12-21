@@ -52,7 +52,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                         Set(in) ++ definedBy.map { ArrayElement(_, arrayIndex.get) }
                     } else
                         // Taint the whole array if the index is unknown
-                        Set(in) ++ definedBy.map { Variable }
+                        Set(in) ++ definedBy.map { Variable.apply }
                 } else if (arrayIndex.isDefined && definedBy.size == 1 &&
                            in == ArrayElement(definedBy.head, arrayIndex.get)
                 ) {
@@ -178,7 +178,7 @@ abstract class AbstractJavaForwardTaintProblem(project: SomeProject)
                 val param = allParams(
                     JavaIFDSProblem.remapParamAndVariableIndex(index, callee.isStatic)
                 )
-                flows ++= param.asVar.definedBy.iterator.map(Variable)
+                flows ++= param.asVar.definedBy.iterator.map(Variable.apply)
 
             // Taint element of actual parameter if element of formal parameter is tainted
             case ArrayElement(index, taintedIndex) if index < 0 && index > -100 =>

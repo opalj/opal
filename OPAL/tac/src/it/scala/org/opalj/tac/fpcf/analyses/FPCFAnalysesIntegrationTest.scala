@@ -7,6 +7,7 @@ package analyses
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.GZIPInputStream
+import scala.compiletime.uninitialized
 import scala.io.Source
 
 import org.junit.runner.RunWith
@@ -42,7 +43,7 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.getObjectReflectively
 
 /**
- * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results
+ * Simple test to ensure that the FPCF analyses do not cause exceptions and that their results
  * remain stable.
  *
  * @author Dominik Helm
@@ -50,7 +51,7 @@ import org.opalj.util.getObjectReflectively
 @RunWith(classOf[JUnitRunner])
 class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
-    private[this] val analysisConfigurations = getConfig
+    private val analysisConfigurations = getConfig
 
     PropertyStore.updateDebug(true)
 
@@ -75,9 +76,9 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
                         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
                             case None =>
-                                Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                                Set(classOf[l1.DefaultDomainWithCFGAndDefUse[?]])
                             case Some(requirements) =>
-                                requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                                requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[?]]
                         }
                     } else {
                         // Recreate project keeping all ProjectInformationKeys other than the
@@ -196,7 +197,7 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
             } else if (line.startsWith("=>")) {
                 readProperties = true
             } else {
-                if (!line.isEmpty) {
+                if (line.nonEmpty) {
                     if (curConfig != null) configurations :+= curConfig
                     curConfig = (line, Set.empty, Seq.empty)
                 }
@@ -215,6 +216,6 @@ class FPCFAnalysesIntegrationTest extends AnyFunSpec {
  */
 object FPCFAnalysesIntegrationTest {
     var factory: () => SomeProject = () => null
-    var p: SomeProject = _
-    var ps: PropertyStore = _
+    var p: SomeProject = uninitialized
+    var ps: PropertyStore = uninitialized
 }

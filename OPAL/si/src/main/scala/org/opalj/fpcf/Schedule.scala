@@ -6,6 +6,7 @@ import org.opalj.fpcf.scheduling.CleanupSpec
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.elidedAssert
 
 /**
  * Encapsulates a computed schedule and enables the execution of it. Primarily takes care
@@ -64,7 +65,7 @@ case class Schedule[A](
                 ps.setupPhase(configuration, phase.toDelete)
 
                 afterPhaseSetup(configuration)
-                assert(ps.isIdle, "the property store is not idle after phase setup")
+                elidedAssert(ps.isIdle, "the property store is not idle after phase setup")
 
                 var executedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
@@ -81,13 +82,13 @@ case class Schedule[A](
                 afterPhaseScheduling(css)
 
                 ps.waitOnPhaseCompletion()
-                assert(ps.isIdle, "the property store is not idle after phase completion")
+                elidedAssert(ps.isIdle, "the property store is not idle after phase completion")
 
                 executedAnalyses.foreach { csAnalysis =>
                     val (cs, a) = csAnalysis
                     cs.afterPhaseCompletion(ps, a)
                 }
-                assert(ps.isIdle, "the property store is not idle after phase completion")
+                elidedAssert(ps.isIdle, "the property store is not idle after phase completion")
                 allExecutedAnalyses :::= executedAnalyses.reverse
             } { t =>
                 if (trace)

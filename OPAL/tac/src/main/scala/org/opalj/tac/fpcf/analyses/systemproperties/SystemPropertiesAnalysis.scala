@@ -75,8 +75,8 @@ class SystemPropertiesAnalysis private[analyses] (
             SomeProject,
             SystemProperties
         ]): Option[InterimEP[SomeProject, SystemProperties]] = {
-            currentVal match {
-                case UBP(ub) =>
+            (currentVal: @unchecked) match {
+                case UBP(ub: SystemProperties) =>
                     val newUB = ub.meet(SystemProperties(values))
                     if (newUB eq ub) None
                     else Some(InterimEUBP(project, newUB))
@@ -106,7 +106,7 @@ class SystemPropertiesAnalysis private[analyses] (
 
             case eps @ EUBP(_: VariableContext, ub: StringConstancyProperty) =>
                 state.updateStringDependee(eps.asInstanceOf[EPS[VariableContext, StringConstancyProperty]])
-                returnResults(Set(ub.tree))(state)
+                returnResults(Set(ub.tree))(using state)
 
             case _ =>
                 throw new IllegalArgumentException(s"unexpected eps $eps")
@@ -115,10 +115,10 @@ class SystemPropertiesAnalysis private[analyses] (
 
     def getPossibleStrings(pc: Int, value: Expr[V])(implicit state: State): Set[StringTreeNode] = {
         ps(
-            VariableContext(pc, value.asVar.toPersistentForm(state.tac.stmts), state.callContext),
+            VariableContext(pc, value.asVar.toPersistentForm(using state.tac.stmts), state.callContext),
             StringConstancyProperty.key
         ) match {
-            case eps @ UBP(ub) =>
+            case eps @ UBP(ub: StringConstancyProperty) =>
                 state.updateStringDependee(eps)
                 Set(ub.tree)
 

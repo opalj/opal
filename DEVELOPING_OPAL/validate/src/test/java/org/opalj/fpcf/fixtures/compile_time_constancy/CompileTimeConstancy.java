@@ -3,7 +3,6 @@ package org.opalj.fpcf.fixtures.compile_time_constancy;
 
 import org.opalj.fpcf.properties.compile_time_constancy.CompileTimeConstant;
 import org.opalj.fpcf.properties.compile_time_constancy.CompileTimeVarying;
-import org.opalj.fpcf.properties.static_data_usage.UsesConstantDataOnly;
 import org.opalj.fpcf.properties.static_data_usage.UsesNoStaticData;
 import org.opalj.fpcf.properties.static_data_usage.UsesVaryingData;
 

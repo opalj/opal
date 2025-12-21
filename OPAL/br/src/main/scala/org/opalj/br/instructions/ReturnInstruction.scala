@@ -126,7 +126,7 @@ object ReturnInstructions {
             val instruction = instructions(pc)
             if (instruction.isReturnInstruction)
                 returnPCs += pc
-            pc = instruction.indexOfNextInstruction(pc)(code)
+            pc = instruction.indexOfNextInstruction(pc)(using code)
         }
         Some(returnPCs)
     }
@@ -148,6 +148,6 @@ object MethodCompletionInstruction {
 
 object NoMethodCompletionInstruction {
 
-    def unappy(i: Instruction): Boolean = !MethodCompletionInstruction.unapply(i)
+    def unapply(i: Instruction): Boolean = !MethodCompletionInstruction.unapply(i)
 
 }

@@ -4,9 +4,9 @@ package org.opalj
 import scala.annotation.tailrec
 import scala.language.experimental.macros
 import scala.reflect.ClassTag
-import scala.reflect.macros.blackbox.Context
 
 import scala.collection.immutable.ArraySeq
+import scala.quoted.*
 
 /**
  * Defines common control abstractions.
@@ -21,22 +21,22 @@ package object control {
      *
      * @note '''This is a macro.'''
      */
-    final def foreachNonNullValue[T <: AnyRef](
+    inline final def foreachNonNullValue[T <: AnyRef](
         a: Array[T]
     )(
         f: (Int, T) => Unit
-    ): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
+    ): Unit = ${ ControlAbstractionsImplementation.foreachNonNullValue[T]('a)('f) }
 
     /**
      * Allocation free, local iteration over all elements of an array.
      *
      * @note '''This is a macro.'''
      */
-    final def foreachWithIndex[T <: AnyRef](
+    inline final def foreachWithIndex[T <: AnyRef](
         a: Array[T]
     )(
         f: (T, Int) => Unit
-    ): Unit = macro ControlAbstractionsImplementation.foreachWithIndex[T]
+    ): Unit = ${ ControlAbstractionsImplementation.foreachWithIndex[T]('a)('f) }
 
     /**
      * Executes the given function `f` for the first `n` values of the given list.
@@ -44,12 +44,12 @@ package object control {
      *
      * @note '''This is a macro.'''
      */
-    final def forFirstN[T <: AnyRef](
+    inline final def forFirstN[T <: AnyRef](
         l: List[T],
         n: Int
     )(
         f: T => Unit
-    ): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
+    ): Unit = ${ ControlAbstractionsImplementation.forFirstN[T]('l, 'n)('f) }
 
     /**
      * Evaluates the given expression `f` with type `T` the given number of
@@ -64,7 +64,7 @@ package object control {
      *
      * @note '''This is a macro.'''
      *
-     * @param times The number of times the expression f` is evaluated. The `times`
+     * @param times The number of times the expression `f` is evaluated. The `times`
      *      expression is evaluated exactly once.
      * @param f An expression that is evaluated the given number of times unless an
      *      exception is thrown. Hence, even though `f` is not a by-name parameter,
@@ -115,17 +115,17 @@ package object control {
      *      times stored in an `IndexedSeq`. If `times` is zero an empty sequence is
      *      returned.
      */
-    def fillIntArray(
+    inline def fillIntArray(
         times: Int
     )(
-        f: Int
-    ): ArraySeq[Int] = macro ControlAbstractionsImplementation.fillIntArray
+        f: => Int
+    ): ArraySeq[Int] = ${ ControlAbstractionsImplementation.fillIntArray('times)('f) }
 
-    def fillArrayOfInt(
+    inline def fillArrayOfInt(
         times: Int
     )(
-        f: Int
-    ): Array[Int] = macro ControlAbstractionsImplementation.fillArrayOfInt
+        f: => Int
+    ): Array[Int] = ${ ControlAbstractionsImplementation.fillArrayOfInt('times)('f) }
 
     /**
      * Iterates over the given range of integer values `[from,to]` and calls the given
@@ -135,12 +135,12 @@ package object control {
      *
      * @note '''This is a macro.'''
      */
-    def iterateTo(
+    inline def iterateTo(
         from: Int,
         to:   Int
     )(
         f: Int => Unit
-    ): Unit = macro ControlAbstractionsImplementation.iterateTo
+    ): Unit = ${ ControlAbstractionsImplementation.iterateTo('from, 'to)('f) }
 
     /**
      * Iterates over the given range of integer values `[from,until)` and calls the given
@@ -148,17 +148,17 @@ package object control {
      *
      * If `from` is smaller than `until`, `f` will not be called.
      */
-    def iterateUntil(
+    inline def iterateUntil(
         from:  Int,
         until: Int
     )(
         f: Int => Unit
-    ): Unit = macro ControlAbstractionsImplementation.iterateUntil
+    ): Unit = ${ ControlAbstractionsImplementation.iterateUntil('from, 'until)('f) }
 
     /**
      * Runs the given function f the given number of times.
      */
-    def repeat(times: Int)(f: Unit): Unit = macro ControlAbstractionsImplementation.repeat
+    inline def repeat(times: Int)(f: => Unit): Unit = ${ ControlAbstractionsImplementation.repeat('times)('f) }
 
     /**
      * Finds the value identified by the given comparator, if any.
@@ -210,109 +210,91 @@ package control {
      */
     private object ControlAbstractionsImplementation {
 
-        def foreachNonNullValue[T <: AnyRef: c.WeakTypeTag](
-            c: Context
+        def foreachNonNullValue[T <: AnyRef](
+            a: Expr[Array[T]]
         )(
-            a: c.Expr[Array[T]]
-        )(
-            f: c.Expr[(Int, T) => Unit]
-        ): c.Expr[Unit] = {
-            import c.universe._
-
-            reify {
-                val array = a.splice // evaluate only once!
+            f: Expr[(Int, T) => Unit]
+        )(using Quotes, Type[T]): Expr[Unit] = {
+            '{
+                val array = ${ a } // evaluate only once!
                 val arrayLength = array.length
                 var i = 0
                 while (i < arrayLength) {
                     val arrayEntry = array(i)
-                    if (arrayEntry ne null) f.splice(i, arrayEntry)
+                    if (arrayEntry ne null) ${ f }(i, arrayEntry)
                     i += 1
                 }
             }
         }
 
-        def foreachWithIndex[T <: AnyRef: c.WeakTypeTag](
-            c: Context
+        def foreachWithIndex[T <: AnyRef](
+            a: Expr[Array[T]]
         )(
-            a: c.Expr[Array[T]]
-        )(
-            f: c.Expr[(T, Int) => Unit]
-        ): c.Expr[Unit] = {
-            import c.universe._
-
-            reify {
-                val array = a.splice // evaluate only once!
+            f: Expr[(T, Int) => Unit]
+        )(using Quotes, Type[T]): Expr[Unit] = {
+            '{
+                val array = ${ a } // evaluate only once!
                 val arrayLength = array.length
                 var i = 0
                 while (i < arrayLength) {
                     val arrayEntry = array(i)
-                    f.splice(arrayEntry, i)
+                    ${ f }(arrayEntry, i)
                     i += 1
                 }
             }
         }
 
-        def forFirstN[T <: AnyRef: c.WeakTypeTag](
-            c: Context
+        def forFirstN[T <: AnyRef](
+            l: Expr[List[T]],
+            n: Expr[Int]
         )(
-            l: c.Expr[List[T]],
-            n: c.Expr[Int]
-        )(
-            f: c.Expr[T => Unit]
-        ): c.Expr[Unit] = {
-            import c.universe._
-
-            reify {
-                var remainingList = l.splice
-                val max = n.splice
+            f: Expr[T => Unit]
+        )(using Quotes, Type[T]): Expr[Unit] = {
+            '{
+                var remainingList = ${ l }
+                val max = ${ n }
                 var i = 0
                 while (i < max) {
                     val head = remainingList.head
                     remainingList = remainingList.tail
-                    f.splice(head)
+                    ${ f }(head)
                     i += 1
                 }
             }
         }
 
-        def fillRefArray[T <: AnyRef: ClassTag](
-            c: Context
+        /*def fillRefArray[T <: AnyRef: ClassTag](
+            times: Expr[Int]
         )(
-            times: c.Expr[Int]
-        )(
-            f: c.Expr[T]
-        ): c.Expr[ArraySeq[T]] = {
-            import c.universe._
-
-            reify {
-                val size = times.splice // => times is evaluated only once
+            f: Expr[T]
+        )(using Quotes, Type[T]): Expr[ArraySeq[T]] = {
+            '{
+                val size = ${times} // => times is evaluated only once
                 if (size == 0) {
                     ArraySeq.empty[T]
                 } else {
                     val array = new Array[AnyRef](size)
                     var i = 0
                     while (i < size) {
-                        val value = f.splice // => we evaluate f the given number of times
+                        val value = ${f} // => we evaluate f the given number of times
                         array(i) = value
                         i += 1
                     }
                     ArraySeq.unsafeWrapArray[T](array.asInstanceOf[Array[T]])
                 }
             }
-        }
+        }*/
 
-        def fillIntArray(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[ArraySeq[Int]] = {
-            import c.universe._
-
-            reify {
-                val size = times.splice // => times is evaluated only once
+        def fillIntArray(times: Expr[Int])(f: Expr[Int])(using Quotes): Expr[ArraySeq[Int]] = {
+            '{
+                val size = ${ times } // => times is evaluated only once
                 if (size == 0) {
                     ArraySeq.empty[Int]
                 } else {
                     val array = new Array[Int](size)
                     var i = 0
                     while (i < size) {
-                        val value = f.splice // => we evaluate f the given number of times
+                        val value = ${ f } // => we evaluate f the given number of times
                         array(i) = value
                         i += 1
                     }
@@ -321,18 +303,16 @@ package control {
             }
         }
 
-        def fillArrayOfInt(c: Context)(times: c.Expr[Int])(f: c.Expr[Int]): c.Expr[Array[Int]] = {
-            import c.universe._
-
-            reify {
-                val size = times.splice // => times is evaluated only once
+        def fillArrayOfInt(times: Expr[Int])(f: Expr[Int])(using Quotes): Expr[Array[Int]] = {
+            '{
+                val size = ${ times } // => times is evaluated only once
                 if (size == 0) {
                     Array.empty
                 } else {
                     val array = new Array[Int](size)
                     var i = 0
                     while (i < size) {
-                        val value = f.splice // => we evaluate f the given number of times
+                        val value = ${ f } // => we evaluate f the given number of times
                         array(i) = value
                         i += 1
                     }
@@ -342,52 +322,42 @@ package control {
         }
 
         def iterateTo(
-            c: Context
+            from: Expr[Int],
+            to:   Expr[Int]
         )(
-            from: c.Expr[Int],
-            to:   c.Expr[Int]
-        )(
-            f: c.Expr[(Int) => Unit]
-        ): c.Expr[Unit] = {
-            import c.universe._
-
-            reify {
-                var i = from.splice
-                val max = to.splice // => to is evaluated only once
+            f: Expr[(Int) => Unit]
+        )(using Quotes): Expr[Unit] = {
+            '{
+                var i = ${ from }
+                val max = ${ to } // => to is evaluated only once
                 while (i <= max) {
-                    f.splice(i) // => we evaluate f the given number of times
+                    ${ f }(i) // => we evaluate f the given number of times
                     i += 1
                 }
             }
         }
 
         def iterateUntil(
-            c: Context
+            from:  Expr[Int],
+            until: Expr[Int]
         )(
-            from:  c.Expr[Int],
-            until: c.Expr[Int]
-        )(
-            f: c.Expr[(Int) => Unit]
-        ): c.Expr[Unit] = {
-            import c.universe._
-
-            reify {
-                var i = from.splice
-                val max = until.splice // => until is evaluated only once
+            f: Expr[(Int) => Unit]
+        )(using Quotes): Expr[Unit] = {
+            '{
+                var i = ${ from }
+                val max = ${ until } // => until is evaluated only once
                 while (i < max) {
-                    f.splice(i) // => we evaluate f the given number of times
+                    ${ f }(i) // => we evaluate f the given number of times
                     i += 1
                 }
             }
         }
 
-        def repeat(c: Context)(times: c.Expr[Int])(f: c.Expr[Unit]): c.Expr[Unit] = {
-            import c.universe._
-
-            reify {
-                var i = times.splice
+        def repeat(times: Expr[Int])(f: Expr[Unit])(using Quotes): Expr[Unit] = {
+            '{
+                var i = ${ times }
                 while (i > 0) {
-                    f.splice // => we evaluate f the given number of times
+                    ${ f } // => we evaluate f the given number of times
                     i -= 1
                 }
             }

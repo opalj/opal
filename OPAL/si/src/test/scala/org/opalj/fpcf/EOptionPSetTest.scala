@@ -13,13 +13,6 @@ import org.opalj.fpcf.fixtures.Palindromes
 
 class EOptionPSetTest extends AnyFunSuite {
 
-    test("always has a definitive size") {
-        val e1 = InterimEUBP(new Object, Marker.IsMarked)
-
-        val set = EOptionPSet[Entity, Property](e1)
-        assert(set.hasDefiniteSize)
-    }
-
     test("we can iterate over the singleton value stored in an EOptionPSet") {
         val e1 = InterimEUBP(new Object, Marker.IsMarked)
         val set = EOptionPSet[Entity, Property](e1)
@@ -54,7 +47,7 @@ class EOptionPSetTest extends AnyFunSuite {
         assert(set.getOrQueryAndUpdate(e1, Marker.Key) == ie1Marker) // the same value is returned...
         assert(set.getOrQueryAndUpdate(e2, Palindromes.PalindromeKey) == ie2Pal) // the same value is returned...
 
-        set.updateAll() // updates both objects to final values..
+        set.updateAll() // updates both objects to final values
 
         assert(set.isEmpty, ps.data) // all updates result in final values - hence, they are deleted
 

@@ -46,7 +46,6 @@ import org.opalj.br.fpcf.properties.immutability.FieldAssignability
 import org.opalj.br.fpcf.properties.immutability.NonAssignable
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
@@ -191,7 +190,7 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         case FinalP(AtMost(_)) =>
             true
 
-        case _: FinalEP[(Context, DefinitionSite), EscapeProperty] =>
+        case FinalP(_) =>
             true // Escape state is worse than via return
 
         case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) =>
@@ -238,14 +237,14 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         }
     }
 
-    protected[this] def handleFieldWriteAccessInformation(
+    protected def handleFieldWriteAccessInformation(
         newEP: EOptionP[DeclaredField, FieldWriteAccessInformation]
     )(implicit state: AnalysisState): Boolean = {
         val assignable = if (newEP.hasUBP) {
             val newFai = newEP.ub
             val (seenDirectAccesses, seenIndirectAccesses) = state.fieldWriteAccessDependee match {
-                case Some(UBP(fai)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
-                case _              => (0, 0)
+                case Some(UBP(fai: FieldWriteAccessInformation)) => (fai.numDirectAccesses, fai.numIndirectAccesses)
+                case _                                           => (0, 0)
             }
             state.fieldWriteAccessDependee = Some(newEP)
 

@@ -39,7 +39,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     final val project: SomeProject
 ) extends ReachableMethodAnalysis {
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
+    private val nativeMethodData: Map[DeclaredMethod, Option[Array[EntityAssignment]]] = {
         ConfiguredMethods.reader
             .read(p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis")
             .nativeMethods.map { v => (v.method, v.pointsTo) }.toMap
@@ -86,7 +86,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
             getInstantiatedTypesUB(propertyStore(project, InstantiatedTypes.key))
 
         val newInstantiatedTypes = UIDSet(
-            ArraySeq.unsafeWrapArray(instantiatedTypes.filterNot(instantiatedTypesUB.contains)): _*
+            ArraySeq.unsafeWrapArray(instantiatedTypes.filterNot(instantiatedTypesUB.contains))*
         )
 
         if (newInstantiatedTypes.isEmpty)

@@ -16,6 +16,6 @@ case object LUSHR extends ShiftInstruction {
 
     final val operator = ">>>"
 
-    final val computationalType = ComputationalTypeLong
+    final val computationalType: ComputationalTypeLong.type = ComputationalTypeLong
 
 }

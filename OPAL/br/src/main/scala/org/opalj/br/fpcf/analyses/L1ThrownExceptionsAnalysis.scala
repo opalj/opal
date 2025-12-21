@@ -8,7 +8,7 @@ import org.opalj.br.ClassType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
+import org.opalj.br.collection.mutable.TypesSet as BRMutableTypesSet
 import org.opalj.br.fpcf.properties.Context
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
@@ -69,6 +69,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.util.elidedAssert
 
 /**
  * Analysis of thrown exceptions; computes the [[org.opalj.br.fpcf.properties.ThrownExceptions]]
@@ -80,7 +81,7 @@ class L1ThrownExceptionsAnalysis(
     final val project: SomeProject
 ) extends FPCFAnalysis {
 
-    protected[this] implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
+    protected implicit val contextProvider: ContextProvider = project.get(ContextProviderKey)
 
     private[analyses] def lazilyDetermineThrownExceptions(
         e: Entity
@@ -141,18 +142,18 @@ class L1ThrownExceptionsAnalysis(
                     callees.ub.callees(context, pc).foreach { callee =>
                         if (callee != context)
                             ps(callee, ThrownExceptions.key) match {
-                                case MethodIsAbstract |
+                                case UBP(MethodIsAbstract |
                                     MethodBodyIsNotAvailable |
                                     MethodIsNative |
                                     UnknownExceptionIsThrown |
                                     AnalysisLimitation |
-                                    UnresolvedInvokeDynamicInstruction =>
+                                    UnresolvedInvokeDynamicInstruction) =>
                                     result = MethodCalledThrowsUnknownExceptions
 
                                 case eps @ UBP(te: ThrownExceptions) =>
                                     // Copy the concrete exception types to our initial
                                     // exceptions set. Upper type bounds are only used
-                                    // for `SomeExecption`, which are handled above, and
+                                    // for `SomeException`, which are handled above, and
                                     // don't have to be added to this set.
                                     initialExceptions ++= te.types.concreteTypes
                                     if (eps.isRefinable) {
@@ -181,8 +182,7 @@ class L1ThrownExceptionsAnalysis(
                     false
 
                 case INVOKESPECIAL.opcode | INVOKESTATIC.opcode =>
-                    val MethodInvocationInstruction(declaringClass, _, name, descriptor) =
-                        instruction
+                    val MethodInvocationInstruction(declaringClass, _, name, descriptor) = instruction: @unchecked
 
                     if ((declaringClass eq ClassType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
@@ -207,7 +207,7 @@ class L1ThrownExceptionsAnalysis(
                     false
 
                 // let's determine if the register 0 is updated (i.e., if the register which
-                // stores the this reference in case of instance methods is updated)
+                // stores the this-reference in case of instance methods is updated)
                 case ISTORE_0.opcode | LSTORE_0.opcode |
                     DSTORE_0.opcode | FSTORE_0.opcode |
                     ASTORE_0.opcode =>
@@ -227,7 +227,7 @@ class L1ThrownExceptionsAnalysis(
                         isStaticMethod || // <= the receiver is some object
                             isLocalVariable0Updated || // <= we don't know the receiver object at all
                             cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
-                            instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
+                            instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null...
                     true
 
                 case PUTFIELD.opcode =>
@@ -243,7 +243,7 @@ class L1ThrownExceptionsAnalysis(
                                     code.pcOfPreviousInstruction(predecessorPC)
                                 val valueInstruction = instructions(predecessorPC)
 
-                                instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
+                                instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null...
                                     valueInstruction.isInstanceOf[StackManagementInstruction] ||
                                     // we have to ensure that our "this" reference is not used for something else... =>
                                     valueInstruction.numberOfPoppedOperands(NotRequired) > 0
@@ -306,7 +306,7 @@ class L1ThrownExceptionsAnalysis(
         val areAllExceptionsCollected = code.forall(collectAllExceptions(_, _))
 
         if (!areAllExceptionsCollected) {
-            assert(
+            elidedAssert(
                 result ne null,
                 "all exceptions are expected to be collected but the set is null"
             )
@@ -345,7 +345,7 @@ class L1ThrownExceptionsAnalysis(
                 case te: ThrownExceptions =>
                     exceptions = exceptions ++ te.types.concreteTypes
 
-                case c: Callees =>
+                case _: Callees =>
                     callPCs.foreach(handleCall(eps.asInstanceOf[EPS[DeclaredMethod, Callees]], _))
                     if (result != null)
                         return Result(context, result);

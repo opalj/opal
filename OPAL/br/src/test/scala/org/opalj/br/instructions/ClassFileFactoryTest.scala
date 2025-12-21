@@ -20,7 +20,6 @@ import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.log.GlobalLogContext
 
 /**
  * @author Arne Lottmann
@@ -45,7 +44,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             .withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.FALSE))
             .withValue(logRewritingsConfigKey, ConfigValueFactory.fromAnyRef(java.lang.Boolean.TRUE))
 
-        Project(jarFile, GlobalLogContext, config)
+        Project(jarFile, config)
     }
 
     val StaticMethods = ClassType("proxy/StaticMethods")
@@ -261,7 +260,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         }
                     parameters.foreach { requiredParameter =>
                         val remainingInstructions =
-                            instructions.slice(currentInstruction, instructions.size)
+                            instructions.slice(currentInstruction, instructions.length)
                         val consumedInstructions =
                             requiredParameter match {
                                 case IntegerType      => requireIntLoad(remainingInstructions)
@@ -783,7 +782,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 it("they are not constructor references") {
                     for {
-                        MethodWithBody(body) <- lambdas.methods
+                        case MethodWithBody(body) <- lambdas.methods
                         invokedynamic <- body.instructions.collect { case i: INVOKEDYNAMIC => i }
                     } {
                         val targetMethodHandle =
@@ -801,7 +800,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
                 it("nor are they virtual method calls") {
                     for {
-                        MethodWithBody(body) <- lambdas.methods
+                        case MethodWithBody(body) <- lambdas.methods
                         invokedynamic <- body.instructions.collect { case i: INVOKEDYNAMIC => i }
                     } {
                         val targetMethodHandle =
@@ -930,7 +929,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
         }
 
-        describe("should be able to profixy $newInstance methods") {
+        describe("should be able to proxify $newInstance methods") {
             it("by picking an alternate name for the factory method") {
                 val lambdas = lambdasProject.allProjectClassFiles.find(_.fqn == "lambdas/Lambdas").get
                 val theType = ClassType("ClassFileFactoryTest$newInstanceName")
@@ -1504,7 +1503,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     null,
                     LDC(ConstantString(instantiatedMethodType.toJVMDescriptor)),
                     null,
-                    // Add the caputeredArgs
+                    // Add the capturedArgs
                     BIPUSH(2),
                     null,
                     ANEWARRAY(ClassType.Object),

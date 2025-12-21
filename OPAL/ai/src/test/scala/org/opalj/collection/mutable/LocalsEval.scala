@@ -31,7 +31,7 @@ object LocalsEval extends App {
 
     def evalUsingLocals(elems: Int): Unit = {
         var lastAvg = 0L
-        println(s"$elems elments stored in vector")
+        println(s"$elems elements stored in vector")
         val data_v = time(
             e,
             eMax,
@@ -67,7 +67,7 @@ object LocalsEval extends App {
 
     def evalUsingArray(elems: Int): Unit = {
         var lastAvg = 0L
-        println(s"$elems elments stored in array")
+        println(s"$elems elements stored in array")
         val data_a = time(
             e,
             eMax,

@@ -8,9 +8,10 @@ import com.typesafe.config.Config
 import org.opalj.log.LogContext
 
 /**
- * Single Phase Scheduling (SPS) Strategy.
  * Schedules all computations in a single batch without considering dependencies.
  */
+object SinglePhaseScheduling extends SinglePhaseScheduling
+
 abstract class SinglePhaseScheduling extends SchedulingStrategy {
 
     override def schedule[A](ps: PropertyStore, allCS: Set[ComputationSpecification[A]])(implicit
@@ -21,5 +22,3 @@ abstract class SinglePhaseScheduling extends SchedulingStrategy {
         List(computePhase(ps, allCS, Set.empty))
     }
 }
-
-object SinglePhaseScheduling extends SinglePhaseScheduling

@@ -36,14 +36,14 @@ case class Module_attribute(
     }
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
-        val name = cp(module_name_index).toString(cp)
+        val name = cp(module_name_index).toString
         val flags =
             AccessFlags.toStrings(module_flags, AccessFlagsContexts.MODULE).mkString("{", " ", "}")
         val version =
             if (module_version_index == 0)
                 "N/A"
             else
-                cp(module_version_index).toString(cp)
+                cp(module_version_index).toString
         val module = s"Module(name=$name, flags=$flags, version=$version)"
 
         <details>
@@ -87,12 +87,12 @@ case class RequiresEntry(
     def toString(implicit cp: Constant_Pool): String = {
 
         val flags = AccessFlags.toString(requires_flags, MODULE)
-        val requiredPackage = cp(requires_index).toString(cp)
+        val requiredPackage = cp(requires_index).toString
         val versionInfo =
             if (requires_version_index == 0)
                 ""
             else
-                "// " + cp(requires_version_index).toString(cp)
+                "// " + cp(requires_version_index).toString
 
         s"requires $flags $requiredPackage;$versionInfo"
     }
@@ -119,7 +119,7 @@ case class ExportsEntry(
                     .mkString(" to ", ", ", ";")
         }
 
-        s"exports $flags ${cp(exports_index).toString(cp)}$exports_to"
+        s"exports $flags ${cp(exports_index).toString}$exports_to"
     }
 }
 
@@ -140,7 +140,7 @@ case class OpensEntry(
                 opens_to_index_table.view.map(cp(_).toString).sorted.mkString(" to ", ", ", ";")
         }
 
-        s"opens $flags ${cp(opens_index).toString(cp)}$opens_to"
+        s"opens $flags ${cp(opens_index).toString}$opens_to"
     }
 }
 
@@ -155,6 +155,6 @@ case class ProvidesEntry(
         val provides_with =
             provides_with_index_table.view.map(cp(_).toString).sorted.mkString(" with ", ", ", ";")
 
-        s"provides ${cp(provides_index).toString(cp)}$provides_with"
+        s"provides ${cp(provides_index).toString}$provides_with"
     }
 }

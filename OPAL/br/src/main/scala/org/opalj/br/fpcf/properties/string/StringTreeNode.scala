@@ -6,7 +6,10 @@ package properties
 package string
 
 import scala.util.Try
+import scala.util.hashing.MurmurHash3
 import scala.util.matching.Regex
+
+import org.opalj.util.elidedAssert
 
 /**
  * A single node that can be nested to create string trees that represent a set of possible string values. Its canonical
@@ -89,7 +92,7 @@ sealed trait StringTreeNode {
      * @return The modified string tree if something could be replaced or the same instance otherwise.
      */
     final def replaceParameters(parameters: Map[Int, StringTreeNode]): StringTreeNode = {
-        assert(parameters.nonEmpty)
+        elidedAssert(parameters.nonEmpty)
         if (parameterIndices.isEmpty || parameters.keySet.intersect(parameterIndices).isEmpty)
             this
         else
@@ -150,7 +153,7 @@ sealed trait CachedSimplifyNode extends StringTreeNode {
 }
 
 sealed trait CachedHashCode extends Product {
-    override lazy val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
+    override lazy val hashCode: Int = MurmurHash3.productHash(this)
     override def canEqual(obj: Any): Boolean = obj.hashCode() == hashCode
 }
 

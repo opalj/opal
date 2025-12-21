@@ -13,7 +13,6 @@ import scala.collection.immutable.LongMap
 
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
-import org.opalj.ai.domain
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -87,7 +86,6 @@ object IfNullParameterAnalysis extends ProjectsAnalysisApplication {
                 method <- classFile.methods
                 if method.body.isDefined
                 if method.descriptor.parameterTypes.exists { _.isReferenceType }
-                originalType = method.returnType
             } yield {
                 val ai = new InterruptableAI[Domain]
 
@@ -112,7 +110,7 @@ object IfNullParameterAnalysis extends ProjectsAnalysisApplication {
                 // all thrown exceptions and to throw away those that are
                 // thrown in both cases, the remaining ones constitute
                 // the difference.
-                var result = LongMap.empty[Set[_ <: AnyRef]]
+                var result = LongMap.empty[Set[? <: AnyRef]]
                 var d2ThrownExceptions = domain2.allThrownExceptions
                 domain1.allThrownExceptions.foreach { e =>
                     val (pc, d1thrownException) = e
@@ -124,9 +122,10 @@ object IfNullParameterAnalysis extends ProjectsAnalysisApplication {
                                     domain1,
                                     // We need to keep the original location, otherwise
                                     // the correlation analysis would miserably fail!
-                                    ex.asInstanceOf[domain2.DomainSingleOriginReferenceValue].origin
+                                    ex.asInstanceOf[domain2.DomainSingleOriginReferenceValue]
+                                        .origin
                                 ).asInstanceOf[domain1.ExceptionValue]
-                            ).toSet[domain1.DomainReferenceValue]
+                            )
                         val diff =
                             d1thrownException.diff(adaptedD2ThrownException) ++
                                 adaptedD2ThrownException.diff(d1thrownException)

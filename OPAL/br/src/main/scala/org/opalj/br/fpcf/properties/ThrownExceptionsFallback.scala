@@ -5,7 +5,7 @@ package fpcf
 package properties
 
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.collection.mutable.{TypesSet => BRMutableTypesSet}
+import org.opalj.br.collection.mutable.TypesSet as BRMutableTypesSet
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodBodyIsNotAvailable
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodIsNative
 import org.opalj.br.fpcf.properties.ThrownExceptions.NoExceptions
@@ -51,6 +51,7 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.si.Project
+import org.opalj.util.elidedAssert
 
 /**
  * A very straight forward flow-insensitive analysis which can successfully analyze methods
@@ -124,7 +125,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                     result = ThrownExceptions.UnknownExceptionIsThrown
                     false
                 case INVOKESPECIAL.opcode =>
-                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction
+                    val INVOKESPECIAL(declaringClass, _, name, descriptor) = instruction: @unchecked
                     if ((declaringClass eq ClassType.Object) && (
                             (name == "<init>" && descriptor == MethodDescriptor.NoArgsAndReturnVoid) ||
                             (name == "hashCode" && descriptor == MethodDescriptor.JustReturnsInteger) ||
@@ -148,7 +149,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                     false
 
                 // let's determine if the register 0 is updated (i.e., if the register which
-                // stores the this reference in case of instance methods is updated)
+                // stores the this-reference in case of instance methods is updated)
                 case ISTORE_0.opcode | LSTORE_0.opcode |
                     DSTORE_0.opcode | FSTORE_0.opcode |
                     ASTORE_0.opcode =>
@@ -167,7 +168,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                         isStaticMethod || // <= the receiver is some object
                             isLocalVariable0Updated || // <= we don't know the receiver object at all
                             cfJoins.contains(pc) || // <= we cannot locally decide who is the receiver
-                            instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null..
+                            instructions(code.pcOfPreviousInstruction(pc)) != ALOAD_0 // <= the receiver may be null...
                     true
 
                 case PUTFIELD.opcode =>
@@ -183,7 +184,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
                                     code.pcOfPreviousInstruction(predecessorPC)
                                 val valueInstruction = instructions(predecessorPC)
 
-                                instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null..
+                                instructions(predecessorOfPredecessorPC) != ALOAD_0 || // <= the receiver may be null...
                                     valueInstruction.isInstanceOf[StackManagementInstruction] ||
                                     // we have to ensure that our "this" reference is not used for something else... =>
                                     valueInstruction.numberOfPoppedOperands(NotRequired) > 0
@@ -244,7 +245,7 @@ object ThrownExceptionsFallback extends ((PropertyStore, FallbackReason, Entity)
         }
         val areAllExceptionsCollected = code.forall(collectAllExceptions(_, _))
         if (!areAllExceptionsCollected) {
-            assert(result ne null)
+            elidedAssert(result ne null)
             return result;
         }
         if (fieldAccessMayThrowNullPointerException ||

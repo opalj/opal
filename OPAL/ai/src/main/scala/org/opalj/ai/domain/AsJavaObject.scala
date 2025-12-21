@@ -31,7 +31,7 @@ trait AsJavaObject { domain: ReferenceValuesDomain =>
      * Every domain that supports the creation of a Java object's based on a domain
      * value is expected to implement this method and to test if it can create
      * a precise representation of the given value. If not, the implementation has to delegate
-     * the responsibility to the super method to creat an abstract representation.
+     * the responsibility to the super method to create an abstract representation.
      * {{{
      * abstract override def toJavaObject(value : DomainValue): Option[Object] = {
      *  if(value...)

@@ -5,7 +5,7 @@ package ai
 import java.io.File
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.ClassType
@@ -21,7 +21,7 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.LoadString
 
 /**
- * The analysis demonstrates how to find values passed to Chipher.getInstance:
+ * The analysis demonstrates how to find values passed to Cipher.getInstance:
  * {{{
  * static Chipher getInstance(String transformation)
  * static Cipher  getInstance(String transformation, Provider provider)
@@ -56,7 +56,7 @@ object CipherGetInstanceStrings extends ProjectsAnalysisApplication {
             val result = BaseAI(m, new DefaultDomainWithCFGAndDefUse(project, m))
             val code = result.domain.code
             for {
-                PCAndInstruction(pc, INVOKESTATIC(ClassType.JavaSecurityCipher, false, "getInstance", _)) <- code
+                case PCAndInstruction(pc, INVOKESTATIC(ClassType.JavaSecurityCipher, false, "getInstance", _)) <- code
                 vos <- result.domain.operandOrigin(pc, 0)
             } {
                 // getInstance is static, algorithm is first param
@@ -66,7 +66,7 @@ object CipherGetInstanceStrings extends ProjectsAnalysisApplication {
                     case invoke @ INVOKEINTERFACE(ClassType.JavaSecurityKey, "getAlgorithm", JustReturnsString) =>
                         report.add(m.toJava(s"return value of ($pc): ${invoke.toString}"))
 
-                    case get @ GETFIELD(_, _, _) => println("uknown value: " + get)
+                    case get @ GETFIELD(_, _, _) => println("known value: " + get)
                     case i                       => println("unsupported instruction: " + i)
                 }
             }

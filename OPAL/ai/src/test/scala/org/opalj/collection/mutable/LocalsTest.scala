@@ -19,9 +19,9 @@ class LocalsTest extends AnyFlatSpec with Matchers {
     behavior of "a Locals data structure"
 
     it should ("be empty if it has size 0") in {
-        Locals(0).isEmpty should be(true)
+        Locals[AnyRef](0).isEmpty should be(true)
 
-        Locals(0).nonEmpty should be(false)
+        Locals[AnyRef](0).nonEmpty should be(false)
     }
 
     it should ("be non-empty if it has more than one element") in {
@@ -44,7 +44,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to return the value stored (upated(index,value)) at an index") in {
+    it should ("be able to return the value stored (updated(index,value)) at an index") in {
         for {
             i <- 1 to 100
             v = Locals[Integer](i)
@@ -54,7 +54,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         }
     }
 
-    it should ("be able to return the values stored (upated(index,value1,value2)) at an index") in {
+    it should ("be able to return the values stored (updated(index,value1,value2)) at an index") in {
         for {
             i <- 2 to 100
             v = Locals[Integer](i)
@@ -96,7 +96,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
                 v = v.updated(i, i)
             }
             val l1 = v.map(String.valueOf(_)).iterator.toList
-            val l2 = (0 until size).map(String.valueOf(_))
+            val l2 = (0 until size).map { String.valueOf }
             l1 should equal(l2)
         }
     }
@@ -212,7 +212,9 @@ class LocalsTest extends AnyFlatSpec with Matchers {
             val v = Locals[Integer](size)
             for { i <- 0 until size } { v.set(i, i) }
 
-            val newV = v.mapKV[Integer] { (i, v) => assert(i == v); i }
+            val newV = v.mapKV[Integer] { (i, v) =>
+                assert(i == v); i
+            }
 
             for { i <- 0 until size } {
                 newV(i) should be(i)
@@ -230,7 +232,7 @@ class LocalsTest extends AnyFlatSpec with Matchers {
         v.hashCode should not be (0)
     }
 
-    it should ("be compareable to a non-full Locals collections") in {
+    it should ("be comparable to a non-full Locals collections") in {
         val size = 25
         val v1 = Locals[Integer](size)
         val v2 = Locals[Integer](size)

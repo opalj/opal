@@ -5,16 +5,18 @@ package br
 import scala.annotation.tailrec
 
 import java.lang.ref.WeakReference
-import java.util.{Arrays => JArrays}
+import java.util.Arrays as JArrays
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.SortedSet
+import scala.compiletime.uninitialized
 import scala.math.Ordered
 
 import org.opalj.collection.UIDValue
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet2
+import org.opalj.util.elidedAssert
 
 /**
  * Represents a JVM type.
@@ -215,7 +217,7 @@ sealed trait Type extends UIDValue with Ordered[Type] {
      * between the representation used by the analysis and the representation required
      * by the called method.
      */
-    def toJavaClass: java.lang.Class[_]
+    def toJavaClass: java.lang.Class[?]
 
     /**
      * The unique id of this type. Types are associated with globally unique ids to
@@ -249,7 +251,7 @@ sealed trait Type extends UIDValue with Ordered[Type] {
 
 object Type {
 
-    def apply(clazz: Class[_]): Type = {
+    def apply(clazz: Class[?]): Type = {
         if (clazz.isPrimitive) {
             clazz match {
                 case java.lang.Boolean.TYPE   => BooleanType
@@ -302,7 +304,7 @@ sealed abstract class VoidType private () extends Type with ReturnTypeSignature 
 
     override def toJVMTypeName: String = "V"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Void.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Void.TYPE
 
     override def toString: String = "VoidType"
 
@@ -509,21 +511,21 @@ sealed abstract class NumericType protected () extends BaseType {
      * superset of the range of values captured by values of type `targetType`. Here,
      * strict superset means that – except of rounding issues – the value is conceptually
      * representable by `this` type. For example, a conversion from a `long` value to a
-     * `double` value may loose some precision related to the least significant bits,
+     * `double` value may lose some precision related to the least significant bits,
      * but the value is still representable.
      *
-     * In general, the result of `isWiderThan` is comparable to the result of determing
+     * In general, the result of `isWiderThan` is comparable to the result of determining
      * if a conversion of a value of this type to the given type is an explicit/implicit
      * widening conversion.
      *
      * @example
      * {{{
-     * assert(IntegerType.isWiderThan(IntegerType) == false)
-     * assert(IntegerType.isWiderThan(LongType) == false)
-     * assert(IntegerType.isWiderThan(ByteType) == true)
-     * assert(LongType.isWiderThan(FloatType) == false)
-     * assert(ByteType.isWiderThan(CharType) == false)
-     * assert(LongType.isWiderThan(ShortType) == true)
+     * elidedAssert(IntegerType.isWiderThan(IntegerType) == false)
+     * elidedAssert(IntegerType.isWiderThan(LongType) == false)
+     * elidedAssert(IntegerType.isWiderThan(ByteType) == true)
+     * elidedAssert(LongType.isWiderThan(FloatType) == false)
+     * elidedAssert(ByteType.isWiderThan(CharType) == false)
+     * elidedAssert(LongType.isWiderThan(ShortType) == true)
      * }}}
      */
     def isWiderThan(targetType: NumericType): Boolean
@@ -551,7 +553,7 @@ case object CTIntType extends CTIntType {
     override def toBinaryJavaName: String = throw new UnsupportedOperationException()
     def toJVMTypeName: String = throw new UnsupportedOperationException()
     def toJava: String = throw new UnsupportedOperationException()
-    def toJavaClass: Class[_] = throw new UnsupportedOperationException()
+    def toJavaClass: Class[?] = throw new UnsupportedOperationException()
 }
 
 /**
@@ -588,7 +590,7 @@ sealed abstract class ByteType private () extends IntLikeType {
 
     override def toJVMTypeName: String = "B"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Byte.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Byte.TYPE
 
     override def toString: String = "ByteType"
 
@@ -599,7 +601,7 @@ sealed abstract class ByteType private () extends IntLikeType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id |
                 ShortType.id |
@@ -636,7 +638,7 @@ sealed abstract class CharType private () extends IntLikeType {
 
     override def toJVMTypeName: String = "C"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Character.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Character.TYPE
 
     override def toString: String = "CharType"
 
@@ -647,7 +649,7 @@ sealed abstract class CharType private () extends IntLikeType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id                  => IntToByte
             case ShortType.id                 => IntToShort
@@ -687,7 +689,7 @@ sealed abstract class DoubleType private () extends NumericType {
 
     final val WrapperType = ClassType.Double
 
-    override def toJavaClass: java.lang.Class[_] =
+    override def toJavaClass: java.lang.Class[?] =
         java.lang.Double.TYPE
 
     override def toString: String = "DoubleType"
@@ -699,7 +701,7 @@ sealed abstract class DoubleType private () extends NumericType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => Double2Byte
             case CharType.id    => Double2Char
@@ -740,7 +742,7 @@ sealed abstract class FloatType private () extends NumericType {
 
     override def toJVMTypeName: String = "F"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Float.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Float.TYPE
 
     override def toString: String = "FloatType"
 
@@ -752,7 +754,7 @@ sealed abstract class FloatType private () extends NumericType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => Float2Byte
             case CharType.id    => Float2Char
@@ -789,7 +791,7 @@ sealed abstract class ShortType private () extends IntLikeType {
 
     override def toJVMTypeName: String = "S"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Short.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Short.TYPE
 
     override def toString: String = "ShortType"
 
@@ -800,7 +802,7 @@ sealed abstract class ShortType private () extends IntLikeType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => IntToByte
             case ShortType.id   => NoConversion
@@ -837,7 +839,7 @@ sealed abstract class IntegerType private () extends IntLikeType {
 
     override def toJVMTypeName: String = "I"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Integer.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Integer.TYPE
 
     override def toString: String = "IntegerType"
 
@@ -852,7 +854,7 @@ sealed abstract class IntegerType private () extends IntLikeType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => IntToByte
             case ShortType.id   => IntToShort
@@ -893,7 +895,7 @@ sealed abstract class LongType private () extends NumericType {
 
     override def toJVMTypeName: String = "J"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Long.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Long.TYPE
 
     override def toString: String = "LongType"
 
@@ -905,7 +907,7 @@ sealed abstract class LongType private () extends NumericType {
     )(
         implicit typeConversionFactory: TypeConversionFactory[T]
     ): T = {
-        import typeConversionFactory._
+        import typeConversionFactory.*
         (targetType.id: @scala.annotation.switch) match {
             case ByteType.id    => Long2Byte
             case CharType.id    => Long2Char
@@ -951,7 +953,7 @@ sealed abstract class BooleanType private () extends BaseType with CTIntType {
 
     override def toJVMTypeName: String = "Z"
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Boolean.TYPE
+    override def toJavaClass: java.lang.Class[?] = java.lang.Boolean.TYPE
 
     override def toString: String = "BooleanType"
 
@@ -974,7 +976,7 @@ final class ClassType private ( // DO NOT MAKE THIS A CASE CLASS!
     final val fqn: String
 ) extends ReferenceType {
 
-    assert(fqn.indexOf('.') == -1, s"invalid class type name: $fqn")
+    elidedAssert(fqn.indexOf('.') == -1, s"invalid class type name: $fqn")
 
     final val packageName: String = ClassType.packageName(fqn).intern()
 
@@ -998,7 +1000,7 @@ final class ClassType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = s"L$fqn;"
 
-    override def toJavaClass: java.lang.Class[_] = classOf[Type].getClassLoader().loadClass(toJava)
+    override def toJavaClass: java.lang.Class[?] = classOf[Type].getClassLoader.loadClass(toJava)
 
     def unboxValue[T](implicit typeConversionFactory: TypeConversionFactory[T]): T = {
         ClassType.unboxValue(this)
@@ -1034,9 +1036,9 @@ final class ClassType private ( // DO NOT MAKE THIS A CASE CLASS!
 object ClassType {
 
     // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
-    @volatile private[this] var classTypes: Array[ClassType] = new Array[ClassType](0)
+    @volatile private var classTypes: Array[ClassType] = new Array[ClassType](0)
 
-    private[this] def updateClassTypes(): Unit = {
+    private def updateClassTypes(): Unit = {
         if (nextId.get > classTypes.length) {
             val newClassTypes = JArrays.copyOf(this.classTypes, nextId.get)
             cacheRWLock.readLock().lock()
@@ -1102,7 +1104,7 @@ object ClassType {
             // Refill the cache using the classTypes array
             classTypes.foreach { ct => cache.put(ct.fqn, new WeakReference[ClassType](ct)) }
 
-            // Reset ID counter to highest id in the cache
+            // Reset ID counter to the highest id in the cache
             nextId.set(highestPredefinedTypeId + 1)
         } finally {
             writeLock.unlock()
@@ -1110,11 +1112,11 @@ object ClassType {
 
     }
 
-    private[this] val nextId = new AtomicInteger(0)
-    private[this] val cacheRWLock = new ReentrantReadWriteLock();
-    private[this] val cache = new WeakHashMap[String, WeakReference[ClassType]]()
+    private val nextId = new AtomicInteger(0)
+    private val cacheRWLock = new ReentrantReadWriteLock();
+    private val cache = new WeakHashMap[String, WeakReference[ClassType]]()
 
-    @volatile private[this] var classTypeCreationListener: ClassType => Unit = null
+    @volatile private var classTypeCreationListener: ClassType => Unit = uninitialized
 
     /**
      * Sets the listener and immediately calls it (multiple times) to inform the listener
@@ -1151,7 +1153,7 @@ object ClassType {
      *         comparison is explicitly supported.
      */
     def apply(fqn: String): ClassType = {
-        assert(!fqn.endsWith(";")) // Catch errors where we accidentally use a JVMTypeName instead
+        elidedAssert(!fqn.endsWith(";")) // Catch errors where we accidentally use a JVMTypeName instead
 
         val readLock = cacheRWLock.readLock()
         readLock.lock()
@@ -1230,7 +1232,7 @@ object ClassType {
 
     // THE FOLLOWING CLASS TYPES ARE PREDEFINED BECAUSE OF
     // THEIR PERVASIVE USAGE AND THEIR EXPLICIT MENTIONING IN THE
-    // THE JVM SPEC. OR THEIR IMPORTANCE FOR THE RUNTIME ENVIRONMENT
+    // JVM SPEC. OR THEIR IMPORTANCE FOR THE RUNTIME ENVIRONMENT
     final val Object = ClassType("java/lang/Object")
     final val ObjectId = 0
     require(Object.id == ObjectId)
@@ -1384,12 +1386,12 @@ object ClassType {
      * Implicit mapping from a wrapper type to its primitive type.
      * @example
      * {{{
-     * scala> import org.opalj.br._
+     * scala> import org.opalj.br.*
      * scala> ClassType.primitiveType(ClassType.Integer.id)
      * res1: org.opalj.br.FieldType = IntegerType
      * }}}
      */
-    private[this] lazy val primitiveType: Array[BaseType] = {
+    private lazy val primitiveType: Array[BaseType] = {
         val a = new Array[BaseType](Double.id + 1)
         a(Boolean.id) = BooleanType
         a(Byte.id) = ByteType
@@ -1416,7 +1418,7 @@ object ClassType {
      *
      * @example
      * {{{
-     * scala> import org.opalj.br._
+     * scala> import org.opalj.br.*
      * scala> ClassType.primitiveType(ClassType.Integer)
      * res0: Option[org.opalj.br.BaseType] = Some(IntegerType)
      * }}}
@@ -1483,7 +1485,7 @@ object ClassType {
  * type. If, starting from any array type, one considers its component type, and then
  * (if that is also an array type) the component type of that type, and so on, eventually
  * one must reach a component type that is not an array type; this is called the '''element
- * type of the array type'''. The element type of an array type is necessarily either a
+ * type of the array type'''. The element-type of an array type is necessarily either a
  * primitive type, or a class type, or an interface type.
  *
  * @author Michael Eichberg
@@ -1500,7 +1502,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def mostPreciseClassType: ClassType = ClassType.Object
 
     /**
-     * Returns this array type's element type. E.g., the element type of an
+     * Returns this array type's element-type. E.g., the element-type of an
      * array of arrays of arrays of `int` is `int`.
      */
     def elementType: FieldType = {
@@ -1542,7 +1544,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 
     override def toJVMTypeName: String = "[" + componentType.toJVMTypeName
 
-    override def toJavaClass: java.lang.Class[_] = java.lang.Class.forName(toBinaryJavaName)
+    override def toJavaClass: java.lang.Class[?] = java.lang.Class.forName(toBinaryJavaName)
 
     override def adapt[T](
         targetType: Type
@@ -1565,9 +1567,9 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
 object ArrayType {
 
     // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
-    @volatile private[this] var arrayTypes: Array[ArrayType] = new Array[ArrayType](0)
+    @volatile private var arrayTypes: Array[ArrayType] = new Array[ArrayType](0)
 
-    private[this] def updateArrayTypes(): Unit = {
+    private def updateArrayTypes(): Unit = {
         if (-nextId.get > arrayTypes.length) {
             val newArrayTypes = JArrays.copyOf(this.arrayTypes, -nextId.get)
             cache.synchronized {
@@ -1640,9 +1642,9 @@ object ArrayType {
         }
     }
 
-    private[this] val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
+    private val cache = new WeakHashMap[FieldType, WeakReference[ArrayType]]()
 
-    private[this] val nextId = new AtomicInteger(-1)
+    private val nextId = new AtomicInteger(-1)
 
     /**
      * Factory method to create objects of type `ArrayType`.
@@ -1672,7 +1674,7 @@ object ArrayType {
      * dimension.
      */
     @tailrec def apply(dimension: Int, componentType: FieldType): ArrayType = {
-        assert(dimension >= 1, s"dimension=$dimension, componentType=$componentType")
+        elidedAssert(dimension >= 1, s"dimension=$dimension, componentType=$componentType")
 
         val at = apply(componentType)
         if (dimension > 1)
@@ -1690,7 +1692,7 @@ object ArrayType {
 }
 
 /**
- * Facilitates matching against an array's element type.
+ * Facilitates matching against an array's element-type.
  *
  * @author Michael Eichberg
  */

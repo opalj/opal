@@ -3,7 +3,8 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
-import scala.reflect.runtime.universe._
+import scala.reflect.classTag
+import scala.reflect.runtime.universe.*
 
 import java.io.ByteArrayInputStream
 import scala.collection.immutable.ArraySeq
@@ -13,13 +14,13 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bc.Assembler
-import org.opalj.bi._
+import org.opalj.bi.*
 import org.opalj.br.ClassType
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodAttributeBuilder
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.instructions._
-import org.opalj.br.reader.Java8Framework.{ClassFile => J8ClassFile}
+import org.opalj.br.instructions.*
+import org.opalj.br.reader.Java8Framework.ClassFile as J8ClassFile
 import org.opalj.util.InMemoryClassLoader
 
 /**
@@ -58,7 +59,7 @@ class MethodBuilderTest extends AnyFlatSpec {
 
         val simpleMethodClazz = loader.loadClass("SimpleMethodClass")
         val simpleMethodInstance = simpleMethodClazz.getDeclaredConstructor().newInstance()
-        val mirror = runtimeMirror(loader).reflect(simpleMethodInstance)
+        val mirror = runtimeMirror(loader).reflect(simpleMethodInstance)(using classTag[AnyRef])
         val method = mirror.symbol.typeSignature.member(TermName("testMethod")).asMethod
 
         assert(mirror.reflectMethod(method)("test") == null)
@@ -67,8 +68,8 @@ class MethodBuilderTest extends AnyFlatSpec {
     val brClassFile = J8ClassFile(() => new java.io.ByteArrayInputStream(rawClassFile)).head
 
     val testMethod = brClassFile.methods.find { m =>
-        val expectedMethodDescritor = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/String;")
-        m.name == "testMethod" && m.descriptor == expectedMethodDescritor
+        val expectedMethodDescriptor = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/String;")
+        m.name == "testMethod" && m.descriptor == expectedMethodDescriptor
     }
 
     it should "have the correct signature: (Ljava/lang/String;)Ljava/lang/String;" in {
@@ -204,7 +205,7 @@ class MethodBuilderTest extends AnyFlatSpec {
         try {
             val attributeMethodClass = loader.loadClass("AttributeMethodClass")
             val attributeTestInstance = attributeMethodClass.getDeclaredConstructor().newInstance()
-            val mirror = runtimeMirror(loader).reflect(attributeTestInstance)
+            val mirror = runtimeMirror(loader).reflect(attributeTestInstance)(using classTag[AnyRef])
             val method = mirror.symbol.typeSignature.member(TermName("tryCatchFinallyTest")).asMethod
             assert(mirror.reflectMethod(method)(-1) == 0)
             assert(mirror.reflectMethod(method)(0) == 1)
@@ -354,7 +355,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             LabelElement(PCLabel(22))
         )
 
-        assert(c.instructions.size == 45)
+        assert(c.instructions.length == 45)
     }
 
     it should "aggressively remove useless try markers if no exceptions are thrown" in {
@@ -407,7 +408,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             LabelElement(PCLabel(23))
         )
 
-        assert(c.instructions.size == 12)
+        assert(c.instructions.length == 12)
     }
 
     it should "not remove live code in nested exception handlers" in {
@@ -462,7 +463,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             LabelElement(PCLabel(23))
         )
 
-        assert(c.instructions.size == 26)
+        assert(c.instructions.length == 26)
     }
 
 }

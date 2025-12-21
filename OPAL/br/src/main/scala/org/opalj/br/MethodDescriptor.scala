@@ -6,7 +6,6 @@ import scala.annotation.switch
 
 import scala.collection.Seq
 import scala.collection.immutable.ArraySeq
-import scala.math.Ordered
 
 /**
  * A method descriptor represents the parameters that the method takes and
@@ -246,7 +245,7 @@ private final class SingleArgumentMethodDescriptor(
         (other.parametersCount: @switch) match {
             case 0 => 1
             case 1 =>
-                val c = parameterType compare other.parameterType(0)
+                val c = parameterType.compare(other.parameterType(0))
                 if (c != 0)
                     c
                 else
@@ -283,11 +282,11 @@ private final class TwoArgumentsMethodDescriptor(
         (other.parametersCount: @switch) match {
             case 0 | 1 => 1
             case 2     =>
-                var c = firstParameterType compare other.parameterType(0)
+                var c = firstParameterType.compare(other.parameterType(0))
                 if (c != 0)
                     c
                 else {
-                    c = secondParameterType compare other.parameterType(1)
+                    c = secondParameterType.compare(other.parameterType(1))
                     if (c != 0) {
                         c
                     } else {
@@ -434,8 +433,8 @@ object SingleArgumentMethodDescriptor {
 object TheArgument {
 
     /**
-     * Returns `Some(FieldType)` of the first paramter type if the given method
-     * descriptor just defines a single paramter.
+     * Returns `Some(FieldType)` of the first parameter type if the given method
+     * descriptor just defines a single parameter.
      *
      * @author Michael Eichberg
      */
@@ -704,7 +703,7 @@ object MethodDescriptor {
         apply(parameterTypesBuilder.result(), returnType)
     }
 
-    private[this] def parseParameterType(md: String, startIndex: Int): (FieldType, Int) = {
+    private def parseParameterType(md: String, startIndex: Int): (FieldType, Int) = {
         val td = md.charAt(startIndex)
         (td: @scala.annotation.switch) match {
             case 'L' =>

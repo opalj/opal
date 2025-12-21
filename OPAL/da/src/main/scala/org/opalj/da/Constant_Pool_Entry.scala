@@ -41,7 +41,7 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
     /**
      * Creates a resolved representation of this constant pool entry that is well-suited as an
      * output in combination with an instruction (e.g., an `ldc`, `get|putfield`,
-     * `invokXYZ`,...). I.e., a representation that contains no more pointers in the CP.
+     * `invokeXYZ`,...). I.e., a representation that contains no more pointers in the CP.
      */
     def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq
 

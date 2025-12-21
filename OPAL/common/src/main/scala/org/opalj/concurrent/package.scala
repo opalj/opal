@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.immutable.ArraySeq
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.concurrent.ExecutionContext
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
@@ -115,7 +115,7 @@ package object concurrent {
         "OPAL",
         s"using at most $NumberOfThreadsForIOBoundTasks thread(s) for IO bound tasks " +
             "(can be changed by setting the system property org.opalj.threads.IOBoundTasks; " +
-            "the number should be betweeen 1 and 2 times the number of (hyperthreaded) cores)"
+            "the number should be between 1 and 2 times the number of (hyperthreaded) cores)"
     )
 
     //
@@ -256,8 +256,8 @@ package object concurrent {
                 try {
                     f(data(i))
                 } catch {
-                    case ct: ControlThrowable =>
-                        val t = new Throwable("unsupported non-local return", ct)
+                    case b: Break[?] =>
+                        val t = new Throwable("unsupported non-local return", b)
                         addSuppressed(t)
                     case t: Throwable =>
                         addSuppressed(t)

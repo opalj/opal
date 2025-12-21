@@ -3,7 +3,7 @@ package org.opalj
 package av
 package checking
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.ConcreteSourceElement
 
 /**
@@ -15,7 +15,7 @@ trait AnnotationPredicate extends SourceElementPredicate[ConcreteSourceElement] 
 
     def apply(other: Annotation): Boolean
 
-    def toDescription(): String
+    def toDescription: String
 
 }
 
@@ -30,7 +30,7 @@ case object AnyAnnotation extends AnnotationPredicate {
 
     override def apply(other: ConcreteSourceElement): Boolean = true
 
-    override def toDescription(): String = "/*any annotation*/";
+    override def toDescription: String = "/*any annotation*/";
 
 }
 
@@ -40,7 +40,7 @@ case object AnyAnnotation extends AnnotationPredicate {
  *
  * ==Example==
  * {{{
- * scala> import org.opalj.br._
+ * scala> import org.opalj.br.*
  * scala> val foo = ClassType("java/lang/Foo")
  * scala> val aw = org.opalj.av.checking.AnnotatedWith(foo)
  * aw: org.opalj.av.checking.AnnotatedWith = @java.lang.Foo
@@ -61,7 +61,7 @@ case class HasAnnotation(annotationType: FieldType) extends AnnotationPredicate 
         sourceElement.annotations.exists(this(_))
     }
 
-    override def toDescription(): String = "@" + annotationType.toJava
+    override def toDescription: String = "@" + annotationType.toJava
 
 }
 
@@ -81,8 +81,8 @@ object HasAnnotation {
  * them into consideration use a [[HasAnnotation]] predicate.
  *
  * {{{
- * scala> import org.opalj.br._
- * scala> import org.opalj.av.checking._
+ * scala> import org.opalj.br.*
+ * scala> import org.opalj.av.checking.*
  * scala> val foo = ClassType("java/lang/Foo")
  *
  * scala> val am = AnnotationPredicate("java.lang.Foo",Map("clazz" -> StringValue("")))
@@ -132,7 +132,7 @@ case class AnnotatedWith(
             val thatEVPs = that.elementValuePairs
 
             thatEVPs.size == thisEVPs.size &&
-                thisEVPs.forall(thisEVP => thatEVPs.exists(_ == thisEVP))
+                thisEVPs.forall(thisEVP => thatEVPs.contains(thisEVP))
         }
     }
 
@@ -140,7 +140,7 @@ case class AnnotatedWith(
         sourceElement.annotations.exists(this(_))
     }
 
-    override def toDescription(): String = {
+    override def toDescription: String = {
         elementValuePairs.map(_.toJava).mkString("@" + annotationType.toJava + "(", ",", ")")
     }
 
@@ -154,7 +154,7 @@ case class AnnotatedWith(
  */
 object AnnotatedWith {
 
-    type SomeClass = Class[_]
+    type SomeClass = Class[?]
 
     /**
      * @param annotationType The type of the annotation. The given value must not be
@@ -191,7 +191,7 @@ object AnnotatedWith {
     ): AnnotatedWith = {
         new AnnotatedWith(
             ClassType(annotationTypeName.asString),
-            elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2)).toSeq
+            elementValuePairs.map(kv => ElementValuePair(kv._1, kv._2))
         )
     }
 }

@@ -44,7 +44,7 @@ object MethodReceivers extends ProjectsAnalysisApplication {
     ): (Project[URL], BasicReport) = {
         val (project, _) = analysisConfig.setupProject(cp)
 
-        val performAI: (Method) => AIResult { val domain: Domain with RecordDefUse } =
+        val performAI: (Method) => AIResult { val domain: Domain & RecordDefUse } =
             if (!analysisConfig.get(NoPropertyStoreArg).getOrElse(false)) {
                 analysisConfig.setupPropertyStore(project)
                 val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -66,9 +66,9 @@ object MethodReceivers extends ProjectsAnalysisApplication {
 
         project.parForeachMethodWithBody() { mi =>
             val m = mi.method
-            lazy val aiResult = performAI(m).asInstanceOf[AIResult { val domain: Domain with Origin }]
+            lazy val aiResult = performAI(m).asInstanceOf[AIResult { val domain: Domain & Origin }]
             for {
-                PCAndInstruction(pc, i) <- m.body.get
+                case PCAndInstruction(pc, i) <- m.body.get
                 if i.isMethodInvocationInstruction
                 invocationInstruction = i.asMethodInvocationInstruction
                 if invocationInstruction.isVirtualMethodCall

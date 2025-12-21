@@ -6,7 +6,7 @@ package analyses
 package ide
 package solver
 
-import scala.collection.mutable.{Set => MutableSet}
+import scala.collection.mutable.Set as MutableSet
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject

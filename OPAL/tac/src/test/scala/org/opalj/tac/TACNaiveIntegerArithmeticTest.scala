@@ -5,7 +5,7 @@ package tac
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 
 /**
@@ -21,8 +21,8 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
 
     val ArithmeticExpressionsClassFile = project.classFile(ArithmeticExpressionsType).get
 
-    import BinaryArithmeticOperators._
-    import UnaryArithmeticOperators._
+    import BinaryArithmeticOperators.*
+    import UnaryArithmeticOperators.*
 
     val IntegerAddMethod = ArithmeticExpressionsClassFile.findMethod("integerAdd").head
     val IntegerAndMethod = ArithmeticExpressionsClassFile.findMethod("integerAnd").head
@@ -74,7 +74,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -97,7 +97,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -120,7 +120,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -143,7 +143,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
@@ -164,7 +164,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(-1, SimpleVar(-2, ComputationalTypeInt), Param(ComputationalTypeInt, "p_1")),
@@ -185,7 +185,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -208,7 +208,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -231,7 +231,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -254,7 +254,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -277,7 +277,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -300,7 +300,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -323,7 +323,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,
@@ -346,7 +346,7 @@ class TACNaiveIntegerArithmeticTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
 
             assert(statements.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             statements.shouldEqual(binaryAST(
                 Assignment(
                     2,

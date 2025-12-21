@@ -25,18 +25,19 @@ import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
 import org.opalj.br.analyses.ProjectLike
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
  * Represents an expression. In general, every expression should be a simple expression, where
  * the child expressions are just [[Var]]s or [[Const]]s.
- * However, when the code is going to be transformed to human readable code (e.g., Java oder
+ * However, when the code is going to be transformed to human-readable code (e.g., Java oder
  * Scala), then it is possible to build up complex/nested expressions '''after''' all
  * transformations and static analyses have been performed.
  *
  * @tparam V
  */
-trait Expr[+V <: Var[V]] extends ASTNode[V] {
+trait Expr[+V] extends ASTNode[V] {
 
     /**
      * The computational type of the underlying value.
@@ -139,7 +140,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
 /**
  * An `instance of` expression as defined by the JVM specification.
  */
-case class InstanceOf[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Expr[V] {
+case class InstanceOf[+V](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Expr[V] {
 
     override final def asInstanceOf: this.type = this
     override final def astID: Int = InstanceOf.ASTID
@@ -176,7 +177,7 @@ object InstanceOf { final val ASTID = -2 }
 /**
  * A comparison of two values.
  */
-case class Compare[+V <: Var[V]](
+case class Compare[+V](
     pc:        PC,
     left:      Expr[V],
     condition: RelationalOperator,
@@ -215,7 +216,7 @@ case class Compare[+V <: Var[V]](
 }
 object Compare { final val ASTID = -4 }
 
-trait ValueExpr[+V <: Var[V]] extends Expr[V] {
+trait ValueExpr[+V] extends Expr[V] {
 
     override final def isValueExpression: Boolean = true
 
@@ -370,7 +371,7 @@ object NullExpr { final val ASTID = -13 }
  * @param cTpe  The computational type of the result of the binary expression if the expression
  *              succeeds.
  */
-case class BinaryExpr[+V <: Var[V]](
+case class BinaryExpr[+V](
     pc:    PC,
     cTpe:  ComputationalType,
     op:    BinaryArithmeticOperator,
@@ -418,7 +419,7 @@ object BinaryExpr { final val ASTID = -14 }
 /**
  * @param cTpe The computational type of the result of the prefix expression.
  */
-case class PrefixExpr[+V <: Var[V]](
+case class PrefixExpr[+V](
     pc:      PC,
     cTpe:    ComputationalType,
     op:      UnaryArithmeticOperator,
@@ -453,7 +454,7 @@ case class PrefixExpr[+V <: Var[V]](
 }
 object PrefixExpr { final val ASTID = -15 }
 
-case class PrimitiveTypecastExpr[+V <: Var[V]](
+case class PrimitiveTypecastExpr[+V](
     pc:        PC,
     targetTpe: BaseType,
     operand:   Expr[V]
@@ -523,7 +524,7 @@ case class New(pc: PC, tpe: ClassType) extends Expr[Nothing] {
 }
 object New { final val ASTID = -17 }
 
-trait ArrayExpr[+V <: Var[V]] extends Expr[V] {
+trait ArrayExpr[+V] extends Expr[V] {
     override final def isValueExpression: Boolean = false
     override final def isVar: Boolean = false
 }
@@ -533,7 +534,7 @@ trait ArrayExpr[+V <: Var[V]] extends Expr[V] {
  *               respective dimension.
  * @param tpe The type of the array. The number of dimensions is always `>= count.size`.
  */
-case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) extends ArrayExpr[V] {
+case class NewArray[+V](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) extends ArrayExpr[V] {
 
     override final def isNewArray: Boolean = true
     override final def asNewArray: this.type = this
@@ -572,7 +573,7 @@ case class NewArray[+V <: Var[V]](pc: PC, counts: Seq[Expr[V]], tpe: ArrayType) 
 }
 object NewArray { final val ASTID = -18 }
 
-case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) extends ArrayExpr[V] {
+case class ArrayLoad[+V](pc: PC, index: Expr[V], arrayRef: Expr[V]) extends ArrayExpr[V] {
 
     override final def isArrayLoad: Boolean = true
     override final def asArrayLoad: this.type = this
@@ -604,13 +605,13 @@ case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) ex
 }
 object ArrayLoad { final val ASTID = -19 }
 
-case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends ArrayExpr[V] {
+case class ArrayLength[+V](pc: PC, arrayRef: Expr[V]) extends ArrayExpr[V] {
 
     override final def asArrayLength: this.type = this
     override final def astID: Int = ArrayLength.ASTID
     override final def cTpe: ComputationalType = ComputationalTypeInt
 
-    override final def isSideEffectFree: Boolean = { assert(arrayRef.isVar); false /* potential NPE */ }
+    override final def isSideEffectFree: Boolean = { elidedAssert(arrayRef.isVar); false /* potential NPE */ }
 
     override final def subExprCount: Int = 1
     override final def subExpr(index: Int): Expr[V] = arrayRef
@@ -634,7 +635,7 @@ case class ArrayLength[+V <: Var[V]](pc: PC, arrayRef: Expr[V]) extends ArrayExp
 }
 object ArrayLength { final val ASTID = -20 }
 
-abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
+abstract class FieldRead[+V] extends Expr[V] {
 
     override final def cTpe: ComputationalType = declaredFieldType.computationalType
     override final def isValueExpression: Boolean = false
@@ -656,7 +657,7 @@ abstract class FieldRead[+V <: Var[V]] extends Expr[V] {
 
 }
 
-case class GetField[+V <: Var[V]](
+case class GetField[+V](
     pc:                PC,
     declaringClass:    ClassType,
     name:              String,
@@ -681,7 +682,7 @@ case class GetField[+V <: Var[V]](
     }
 
     final def isSideEffectFree: Boolean = {
-        assert(objRef.isValueExpression)
+        elidedAssert(objRef.isValueExpression)
         // IMPROVE if the access is non-null, it is side-effect free
         false
     }
@@ -748,7 +749,7 @@ object GetStatic { final val ASTID = -22 }
  *
  * @tparam V The type of the [[Var]]s.
  */
-case class InvokedynamicFunctionCall[+V <: Var[V]](
+case class InvokedynamicFunctionCall[+V](
     pc:              PC,
     bootstrapMethod: BootstrapMethod,
     name:            String,
@@ -801,7 +802,7 @@ case class InvokedynamicFunctionCall[+V <: Var[V]](
 }
 object InvokedynamicFunctionCall { final val ASTID = -23 }
 
-sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
+sealed abstract class FunctionCall[+V] extends Expr[V] with Call[V] {
 
     override final def cTpe: ComputationalType = descriptor.returnType.computationalType
     override final def isValueExpression: Boolean = false
@@ -811,7 +812,7 @@ sealed abstract class FunctionCall[+V <: Var[V]] extends Expr[V] with Call[V] {
     override final def isStaticCall: Boolean = isStaticFunctionCall
 }
 
-sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V] {
+sealed abstract class InstanceFunctionCall[+V] extends FunctionCall[V] {
 
     override final def allParams: Seq[Expr[V]] = receiver +: params
 
@@ -843,7 +844,7 @@ sealed abstract class InstanceFunctionCall[+V <: Var[V]] extends FunctionCall[V]
  * @param params The parameters of the method call (including the implicit `this` reference.)
  * @tparam V The type of the Var used by this representation.
  */
-case class NonVirtualFunctionCall[+V <: Var[V]](
+case class NonVirtualFunctionCall[+V](
     pc:             PC,
     declaringClass: ClassType,
     isInterface:    Boolean,
@@ -873,7 +874,7 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
         p:  ProjectLike,
         ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
-        resolveCallTarget(callingContext)(p).toSet
+        resolveCallTarget(callingContext).toSet
     }
 
     override private[tac] def remapIndexes(
@@ -915,7 +916,7 @@ case class NonVirtualFunctionCall[+V <: Var[V]](
 }
 object NonVirtualFunctionCall { final val ASTID = -24 }
 
-case class VirtualFunctionCall[+V <: Var[V]](
+case class VirtualFunctionCall[+V](
     pc:             PC,
     declaringClass: ReferenceType,
     isInterface:    Boolean,
@@ -970,7 +971,7 @@ case class VirtualFunctionCall[+V <: Var[V]](
 }
 object VirtualFunctionCall { final val ASTID = -25 }
 
-case class StaticFunctionCall[+V <: Var[V]](
+case class StaticFunctionCall[+V](
     pc:             PC,
     declaringClass: ClassType,
     isInterface:    Boolean,
@@ -1064,14 +1065,14 @@ object StaticFunctionCall { final val ASTID = -26 }
  * @tparam V Specifies the type of `Var` used by the three address representation. `V` is also
  *           the self type.
  */
-trait Var[+V <: Var[V]] extends ValueExpr[V] { this: V =>
+trait Var[+V] extends ValueExpr[V] { this: V =>
 
     override final def isVar: Boolean = true
     override final def asVar: V = this
     override final def astID: Int = Var.ASTID
 
     /**
-     * A ''human readable'' name of the local variable.
+     * A ''human-readable'' name of the local variable.
      */
     def name: String
 }

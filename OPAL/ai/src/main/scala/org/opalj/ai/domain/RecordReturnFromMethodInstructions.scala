@@ -24,7 +24,7 @@ package domain
 trait RecordReturnFromMethodInstructions extends ai.ReturnInstructionsDomain {
     domain: ValuesDomain =>
 
-    @volatile private[this] var returnFromMethodInstructions: PCs = NoPCs
+    @volatile private var returnFromMethodInstructions: PCs = NoPCs
 
     def allReturnFromMethodInstructions: PCs = returnFromMethodInstructions
 

@@ -5,7 +5,7 @@ package domain
 
 import java.net.URL
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.junit.runner.RunWith
 import org.scalatest.funspec.AnyFunSpec
@@ -34,7 +34,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
     private object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
-    import DominatorsPerformanceEvaluation.{time => dTime}
+    import DominatorsPerformanceEvaluation.time as dTime
 
     class RecordCFGDomain[I](val method: Method, val project: Project[URL])
         extends CorrelationalDomain
@@ -58,7 +58,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
 
     def terminateAfter[T >: Null <: AnyRef](millis: Long, msg: => String)(f: => T): T = {
         @volatile var result: T = null
-        val t = new Thread(new Runnable { def run(): Unit = { result = f } })
+        val t = new Thread(() => { result = f })
         t.start()
         t.join(millis)
         t.interrupt()
@@ -85,7 +85,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 }
 
                 val bbBRCFG = dTime(Symbol("BasicBlocksBasedBRCFG")) {
-                    CFGFactory(method.body.get, project.classHierarchy)
+                    CFGFactory(using method.body.get, project.classHierarchy)
                 }
                 val bbAICFG = dTime(Symbol("BasicBlocksBasedAICFG")) { domain.bbCFG }
 
@@ -170,7 +170,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                         }
                     } catch {
                         case t: Throwable =>
-                            t.printStackTrace
+                            t.printStackTrace()
                             fail(s"getting the control dependency information for $pc failed", t)
                     }
                 }
@@ -187,8 +187,8 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                 var root: Throwable = exception
                 while (root.getCause != null) root = root.getCause
                 val location =
-                    if (root.getStackTrace() != null && root.getStackTrace().length > 0) {
-                        root.getStackTrace().take(5).map { stackTraceElement =>
+                    if (root.getStackTrace != null && root.getStackTrace.length > 0) {
+                        root.getStackTrace.take(5).map { stackTraceElement =>
                             stackTraceElement.getClassName +
                                 " { " +
                                 stackTraceElement.getMethodName + ":" + stackTraceElement.getLineNumber +
@@ -201,7 +201,7 @@ class RecordCFGTest extends AnyFunSpec with Matchers {
                     s"[${root.getClass.getSimpleName}: ${root.getMessage}; location: $location] "
             }
 
-            val failuresHeader = s"${failures.size} exceptions occured in: \n"
+            val failuresHeader = s"${failures.size} exceptions occurred in: \n"
             val failuresInfo = failureMessages.mkString(failuresHeader, "\n", "\n")
             fail(failuresInfo)
         }

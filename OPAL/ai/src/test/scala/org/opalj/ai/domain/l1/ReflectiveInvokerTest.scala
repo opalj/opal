@@ -5,13 +5,14 @@ package domain
 package l1
 
 import scala.collection.immutable.ArraySeq
+import scala.compiletime.uninitialized
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
-import br._
+import br.*
 
 /**
  * Tests the ReflectiveInvoker trait.
@@ -22,7 +23,7 @@ import br._
 @RunWith(classOf[JUnitRunner])
 class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
-    private[this] val IrrelevantPC = Int.MinValue
+    private val IrrelevantPC = Int.MinValue
 
     class ReflectiveInvokerTestDomain
         extends CorrelationalDomain
@@ -51,7 +52,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
         override def warnOnFailedReflectiveCalls: Boolean = false
 
-        var lastObject: Object = _
+        var lastObject: Object = uninitialized
 
         def lastValue(): Object = lastObject
 
@@ -74,11 +75,11 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     def createDomain() = new ReflectiveInvokerTestDomain
 
-    behavior of "the RefleciveInvoker trait"
+    behavior of "the ReflectiveInvoker trait"
 
     it should "be able to call a static method" in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val stringValue = StringValue(IrrelevantPC, "A")
         val declaringClass = ClassType.String
@@ -92,9 +93,9 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
         javaResult should be("A")
     }
 
-    it should "be able to call a static method with a primitve parameter" in {
+    it should "be able to call a static method with a primitive parameter" in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val integerValue = IntegerValue(IrrelevantPC, 1)
         val declaringClass = ClassType.String
@@ -110,11 +111,11 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     it should "be able to call a virtual method without parameters" in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val stringValue = StringValue(IrrelevantPC, "Test")
         val declaringClass = ClassType.String
-        val descriptor = MethodDescriptor(FieldTypes.empty, IntegerType)
+        val descriptor = MethodDescriptor(FieldTypes.empty[FieldType], IntegerType)
         val operands = List(stringValue)
 
         // int String.length()
@@ -125,7 +126,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     //    it should ("be able to call a method that returns a primitive value") in {
     //        val domain = createDomain()
-    //        import domain._
+    //        import domain.*
     //
     //        val stringValue = StringValue(IrrelevantPC, "Test")
     //        val declaringClass = ClassType.String
@@ -139,7 +140,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     it should ("be able to call a virtual method with multiple parameters") in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val receiver = StringValue(IrrelevantPC, "Test")
         val declaringClass = ClassType.String
@@ -160,7 +161,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     it should ("be able to handle methods that return void") in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val declaringClass = ClassType.StringBuilder
         val descriptor = MethodDescriptor(FieldTypes(IntegerType), VoidType)
@@ -176,11 +177,11 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     it should ("return None when the receiver can't be transformed to a Java object ") in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val instanceValue = TypedValue(IrrelevantPC, ClassType.String)
         val declaringClass = ClassType.String
-        val descriptor = MethodDescriptor(FieldTypes.empty, IntegerType)
+        val descriptor = MethodDescriptor(FieldTypes.empty[FieldType], IntegerType)
         val operands = List(instanceValue)
 
         // int String.length()
@@ -190,7 +191,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     it should ("return None when a parameter can't be transformed to a Java object ") in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val declaringClass = ClassType.String
         val descriptor = MethodDescriptor(FieldTypes(IntegerType), ClassType.String)
@@ -203,7 +204,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     it should ("return None when the class is not in the classpath") in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val declaringClass = ClassType("ANonExistingClass")
         val descriptor = MethodDescriptor(FieldTypes(IntegerType), ClassType.String)
@@ -215,7 +216,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     it should ("return None when the method is not declared") in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val receiver = StringValue(IrrelevantPC, "A")
         val declaringClass = ClassType.String
@@ -227,7 +228,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     it should ("return Some(NullPointerException) when the receiver is null and we want to invoke an instance method") in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val receiver = NullValue(IrrelevantPC)
         val declaringClass = ClassType.String
@@ -241,7 +242,7 @@ class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     it should ("return the exception that is thrown by the invoked method") in {
         val domain = createDomain()
-        import domain._
+        import domain.*
 
         val receiver = StringValue(IrrelevantPC, "Test")
         val declaringClass = ClassType.String

@@ -4,6 +4,7 @@ package ai
 package domain
 
 import scala.collection.immutable.ArraySeq
+import scala.compiletime.uninitialized
 
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
@@ -11,9 +12,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
-import org.opalj.ai.domain.l0._
+import org.opalj.ai.domain.l0.*
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 /**
@@ -25,9 +26,9 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
 @RunWith(classOf[JUnitRunner])
 class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
-    private[this] val IrrelevantPC = Int.MinValue
+    private val IrrelevantPC = Int.MinValue
 
-    import MethodsPlainTest._
+    import MethodsPlainTest.*
 
     behavior of "the abstract interpreter"
 
@@ -44,7 +45,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that returns a fixed integer value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iOne").get
         /*val result =*/
         BaseAI(method, domain)
@@ -54,7 +55,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that returns a fixed long value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lOne").get
         /*val result =*/
         BaseAI(method, domain)
@@ -64,7 +65,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that returns a fixed double value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dOne").get
         /*val result =*/
         BaseAI(method, domain)
@@ -74,7 +75,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that returns a fixed float value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fOne").get
         /*val result =*/
         BaseAI(method, domain)
@@ -107,7 +108,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // RETURNS PARAMETER
     it should "be able to analyze a method that just returns a parameter value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "identity").get
         /*val result =*/
         BaseAI(method, domain)
@@ -127,7 +128,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // BINARY OPERATIONS ON INT
     it should "be able to analyze a method that adds two int values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iAdd").get
         /*val result =*/
         BaseAI(method, domain)
@@ -136,7 +137,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that ands two int values" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iAnd").get
         /*val result =*/
         BaseAI(method, domain)
@@ -146,7 +147,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that divides two int values" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iDiv").get
         /*val result =*/
         BaseAI(method, domain)
@@ -155,7 +156,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that multiplies two int values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iMul").get
         /*val result =*/
         BaseAI(method, domain)
@@ -165,7 +166,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that ors two int values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iOr").get
         /*val result =*/
         BaseAI(method, domain)
@@ -175,7 +176,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that shift left an int values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iShl").get
         /*val result =*/
         BaseAI(method, domain)
@@ -185,7 +186,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that shift right an int values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iShr").get
         /*val result =*/
         BaseAI(method, domain)
@@ -194,16 +195,16 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that reminder an int values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iRem").get
         /*val result =*/
         BaseAI(method, domain)
 
         domain.returnedValue should be(Some(AnIntegerValue))
     }
-    it should "be able to analyze a method that substracts two int values" in {
+    it should "be able to analyze a method that subtracts two int values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iSub").get
         /*val result =*/
         BaseAI(method, domain)
@@ -213,7 +214,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that logical shift right an int values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iushr").get
         /*val result =*/
         BaseAI(method, domain)
@@ -223,7 +224,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that XORs an int values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iushr").get
         /*val result =*/
         BaseAI(method, domain)
@@ -235,7 +236,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // BINARY OPERATIONS ON LONG
     it should "be able to analyze a method that adds two long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lAdd").get
         /*val result =*/
         BaseAI(method, domain)
@@ -244,7 +245,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that ands two long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lAnd").get
         /*val result =*/
         BaseAI(method, domain)
@@ -254,7 +255,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that divides two long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lDiv").get
         /*val result =*/
         BaseAI(method, domain)
@@ -263,7 +264,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that multiplies two long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lMul").get
         /*val result =*/
         BaseAI(method, domain)
@@ -273,7 +274,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that ors two long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lOr").get
         /*val result =*/
         BaseAI(method, domain)
@@ -283,7 +284,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that shift left an long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lShl").get
         /*val result =*/
         BaseAI(method, domain)
@@ -293,7 +294,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that shift right an long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lShr").get
         /*val result =*/
         BaseAI(method, domain)
@@ -302,16 +303,16 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that reminder an long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lRem").get
         /*val result =*/
         BaseAI(method, domain)
 
         domain.returnedValue should be(Some(ALongValue))
     }
-    it should "be able to analyze a method that substracts two long values" in {
+    it should "be able to analyze a method that subtracts two long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lSub").get
         /*val result =*/
         BaseAI(method, domain)
@@ -321,7 +322,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that logical shift right an long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lushr").get
         /*val result =*/
         BaseAI(method, domain)
@@ -331,7 +332,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that XORs an long values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lushr").get
         /*val result =*/
         BaseAI(method, domain)
@@ -343,7 +344,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // BINARY OPERATIONS ON DOUBLE
     it should "be able to analyze a method that adds two double values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dAdd").get
         /*val result =*/
         BaseAI(method, domain)
@@ -353,7 +354,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that divides two double values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dDiv").get
         /*val result =*/
         BaseAI(method, domain)
@@ -362,7 +363,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that multiplies two double values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dMul").get
         /*val result =*/
         BaseAI(method, domain)
@@ -372,16 +373,16 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that reminder an double values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dRem").get
         /*val result =*/
         BaseAI(method, domain)
 
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
-    it should "be able to analyze a method that substracts two double values" in {
+    it should "be able to analyze a method that subtracts two double values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dSub").get
         /*val result =*/
         BaseAI(method, domain)
@@ -393,7 +394,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // BINARY OPERATIONS ON FLOAT
     it should "be able to analyze a method that adds two float values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fAdd").get
         /*val result =*/
         BaseAI(method, domain)
@@ -403,7 +404,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that divides two float values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fDiv").get
         /*val result =*/
         BaseAI(method, domain)
@@ -412,7 +413,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that multiplies two float values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fMul").get
         /*val result =*/
         BaseAI(method, domain)
@@ -422,16 +423,16 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that reminder an float values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fRem").get
         /*val result =*/
         BaseAI(method, domain)
 
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
-    it should "be able to analyze a method that substracts two float values" in {
+    it should "be able to analyze a method that subtracts two float values" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fSub").get
         /*val result =*/
         BaseAI(method, domain)
@@ -443,7 +444,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // INTEGER VALUE TO X CONVERSION
     it should "be able to analyze a method that casts an int to a byte" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iToByte").get
         /*val result =*/
         BaseAI(method, domain)
@@ -452,7 +453,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an int to a char" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iToChar").get
         /*val result =*/
         BaseAI(method, domain)
@@ -461,7 +462,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an int to a double" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iToDouble").get
         /*val result =*/
         BaseAI(method, domain)
@@ -470,7 +471,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an int to a float" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iToFloat").get
         /*val result =*/
         BaseAI(method, domain)
@@ -479,7 +480,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an int to a long" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iToLong").get
         /*val result =*/
         BaseAI(method, domain)
@@ -489,7 +490,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that casts an int to a short" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iToShort").get
         /*val result =*/
         BaseAI(method, domain)
@@ -501,7 +502,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // LONG VALUE TO X  CONVERSION
     it should "be able to analyze a method that casts an long to a double" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lToDouble").get
         /*val result =*/
         BaseAI(method, domain)
@@ -510,7 +511,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an long to a float" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lToFloat").get
         /*val result =*/
         BaseAI(method, domain)
@@ -519,7 +520,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an long to a int" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lToInt").get
         /*val result =*/
         BaseAI(method, domain)
@@ -532,7 +533,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a method that casts an double to a float" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dToFloat").get
         /*val result =*/
         BaseAI(method, domain)
@@ -541,7 +542,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an double to a int" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dToInt").get
         /*val result =*/
         BaseAI(method, domain)
@@ -550,7 +551,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an double to a long" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dToLong").get
         /*val result =*/
         BaseAI(method, domain)
@@ -561,7 +562,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // FLOAT VALUE TO X  CONVERSION
     it should "be able to analyze a method that casts an float to a double" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fToDouble").get
         /*val result =*/
         BaseAI(method, domain)
@@ -570,7 +571,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an float to a int" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fToInt").get
         /*val result =*/
         BaseAI(method, domain)
@@ -579,7 +580,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a method that casts an float to a long" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fToLong").get
         /*val result =*/
         BaseAI(method, domain)
@@ -589,9 +590,9 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     //
     // UNARY EXPRESSIONS
-    it should "be able to analyze a method that returns a negativ float value" in {
+    it should "be able to analyze a method that returns a negative float value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "fNeg").get
         /*val result =*/
         BaseAI(method, domain)
@@ -599,9 +600,9 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         domain.returnedValue should be(Some(FloatValue(IrrelevantPC)))
     }
 
-    it should "be able to analyze a method that returns a negativ double value" in {
+    it should "be able to analyze a method that returns a negative double value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "dNeg").get
         /*val result =*/
         BaseAI(method, domain)
@@ -609,9 +610,9 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         domain.returnedValue should be(Some(DoubleValue(IrrelevantPC)))
     }
 
-    it should "be able to analyze a method that returns a negativ long value" in {
+    it should "be able to analyze a method that returns a negative long value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "lNeg").get
         /*val result =*/
         BaseAI(method, domain)
@@ -619,9 +620,9 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
         domain.returnedValue should be(Some(ALongValue))
     }
 
-    it should "be able to analyze a method that returns a negativ int value" in {
+    it should "be able to analyze a method that returns a negative int value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "iNeg").get
         /*val result =*/
         BaseAI(method, domain)
@@ -642,7 +643,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to correctly handle an instance of" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "asSimpleMethodsInstance").get
         /*val result =*/
         BaseAI(method, domain)
@@ -663,7 +664,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a classical getter method" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "getValue").get
         /*val result =*/
         BaseAI(method, domain)
@@ -683,7 +684,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a classical static getter method" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "getSValue").get
         /*val result =*/
         BaseAI(method, domain)
@@ -694,7 +695,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // LOADS AND STORES
     it should "be able to analyze integer load and store commands" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "localInt").get
         /*val result =*/
         BaseAI(method, domain)
@@ -704,7 +705,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze odd long load and store commands" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "localLongOdd").get
         /*val result =*/
         BaseAI(method, domain)
@@ -714,7 +715,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze even long load and store commands" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "localLongEven").get
         /*val result =*/
         BaseAI(method, domain)
@@ -724,7 +725,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze odd double load and store commands" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "localDoubleOdd").get
         /*val result =*/
         BaseAI(method, domain)
@@ -734,7 +735,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze even double load and store commands" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "localDoubleEven").get
         /*val result =*/
         BaseAI(method, domain)
@@ -744,7 +745,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze float load and store commands" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "localFloat").get
         /*val result =*/
         BaseAI(method, domain)
@@ -777,7 +778,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of byte value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushBipush").get
         /*val result =*/
         BaseAI(method, domain)
@@ -786,7 +787,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of short value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushSipush").get
         /*val result =*/
         BaseAI(method, domain)
@@ -795,7 +796,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of double const0 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushDoubleConst0").get
         /*val result =*/
         BaseAI(method, domain)
@@ -804,7 +805,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of double const1 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushDoubleConst1").get
         /*val result =*/
         BaseAI(method, domain)
@@ -813,7 +814,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of float const0 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushFloatConst0").get
         /*val result =*/
         BaseAI(method, domain)
@@ -822,7 +823,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of float const1 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushFloatConst1").get
         /*val result =*/
         BaseAI(method, domain)
@@ -831,7 +832,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of float const2 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushFloatConst2").get
         /*val result =*/
         BaseAI(method, domain)
@@ -840,7 +841,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of int const-1 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushIntConstn1").get
         /*val result =*/
         BaseAI(method, domain)
@@ -849,7 +850,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of int const0 value" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushIntConst0").get
         /*val result =*/
         BaseAI(method, domain)
@@ -858,7 +859,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of int const1 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushIntConst1").get
         /*val result =*/
         BaseAI(method, domain)
@@ -867,7 +868,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of int const2 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushIntConst2").get
         /*val result =*/
         BaseAI(method, domain)
@@ -876,7 +877,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of int const3 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushIntConst3").get
         /*val result =*/
         BaseAI(method, domain)
@@ -885,7 +886,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of int const4 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushIntConst4").get
         /*val result =*/
         BaseAI(method, domain)
@@ -894,7 +895,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of int const5value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushIntConst5").get
         /*val result =*/
         BaseAI(method, domain)
@@ -903,7 +904,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of long const0 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushLongConst0").get
         /*val result =*/
         BaseAI(method, domain)
@@ -912,7 +913,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a push of long const1 value" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "pushLongConst1").get
         /*val result =*/
         BaseAI(method, domain)
@@ -1061,7 +1062,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze the loading and storing of byte values in an array" in {
         val domain = new RecordingDomain
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "byteArray").get
         val result = BaseAI(method, domain)
 
@@ -1072,7 +1073,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze to load and store a char in an array" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "charArray").get
         /*val result =*/
         BaseAI(method, domain)
@@ -1082,7 +1083,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze to load and store a double in an array" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "doubleArray").get
         /*val result =*/
         BaseAI(method, domain)
@@ -1092,7 +1093,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze to load and store a float in an array" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "floatArray").get
         /*val result =*/
         BaseAI(method, domain)
@@ -1102,7 +1103,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to analyze a load and store of an int in an array" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "intArray").get
         /*val result =*/
         BaseAI(method, domain)
@@ -1111,7 +1112,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze a load and store of a long in an array" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "longArray").get
         /*val result =*/
         BaseAI(method, domain)
@@ -1120,7 +1121,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     }
     it should "be able to analyze loads and stores of short values in an array" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "shortArray").get
         /*val result =*/
         BaseAI(method, domain)
@@ -1132,7 +1133,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
     // OTHER
     it should "be able to analyze a method that multiplies a value by two" in {
         val domain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "twice").get
         /*val result =*/
         BaseAI(method, domain)
@@ -1142,7 +1143,7 @@ class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     it should "be able to return the correct type of an object if an object that is passed in is directly returned" in {
         implicit val domain: RecordingDomain = new RecordingDomain;
-        import domain._
+        import domain.*
         val method = classFile.methods.find(_.name == "asIs").get
         val t = ClassType("some/Foo")
         val locals = new Array[Value](1)
@@ -1196,7 +1197,7 @@ private object MethodsPlainTest {
         with DefaultHandlingForThrownExceptions
         with PredefinedClassHierarchy {
 
-        var returnedValue: Option[DomainValue] = _
+        var returnedValue: Option[DomainValue] = uninitialized
 
         override def areturn(pc: Int, value: DomainValue): Computation[Nothing, ExceptionValue] = {
             returnedValue = Some(value)

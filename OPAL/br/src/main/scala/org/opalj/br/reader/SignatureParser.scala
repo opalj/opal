@@ -3,7 +3,7 @@ package org.opalj
 package br
 package reader
 
-import scala.util.parsing.combinator._
+import scala.util.parsing.combinator.*
 
 // IMPROVE consider making the signature parser abstract and use the factory pattern as in the case of all other major structures
 

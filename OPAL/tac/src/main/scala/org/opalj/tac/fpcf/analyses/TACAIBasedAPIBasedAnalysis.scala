@@ -44,7 +44,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
         }
     }
 
-    private[this] def continueDirectCallWithTAC(
+    private def continueDirectCallWithTAC(
         calleeContext: ContextType,
         callerContext: ContextType,
         pc:            Int
@@ -85,7 +85,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
             )
     }
 
-    private[this] def processNewCaller(
+    private def processNewCaller(
         calleeContext: ContextType,
         callerContext: ContextType,
         pc:            Int,
@@ -120,7 +120,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
         }
     }
 
-    private[this] def continueIndirectCallWithTACOrCallees(
+    private def continueIndirectCallWithTACOrCallees(
         calleeContext: ContextType,
         callerContext: ContextType,
         pc:            Int,
@@ -155,7 +155,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
             )
     }
 
-    private[this] def retrieveCall(callStmt: Stmt[V]): Call[V] = callStmt match {
+    private def retrieveCall(callStmt: Stmt[V]): Call[V] = callStmt match {
         case VirtualFunctionCallStatement(call)    => call
         case NonVirtualFunctionCallStatement(call) => call
         case StaticFunctionCallStatement(call)     => call

@@ -21,8 +21,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
 
     type LineNumberTable_attribute >: Null <: Attribute
 
-    type LineNumberTableEntry <: AnyRef
-    implicit val lineNumberTableEntryType: ClassTag[LineNumberTableEntry] // TODO: Replace in Scala 3 by `type LineNumberTableEntry : ClassTag`
+    type LineNumberTableEntry <: AnyRef: ClassTag
     type LineNumbers = ArraySeq[LineNumberTableEntry]
 
     def LineNumberTable_attribute(
@@ -51,7 +50,7 @@ trait LineNumberTable_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parserFactory() = (
+    private def parserFactory() = (
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,

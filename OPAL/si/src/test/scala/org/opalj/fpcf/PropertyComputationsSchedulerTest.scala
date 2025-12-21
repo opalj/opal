@@ -154,7 +154,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
             ConfigValueFactory.fromAnyRef(schedulingStrategy.getClass.getName)
         )
         new PropertyStoreConfigurationRecorder() {
-            override val ctx: Map[Class[_], AnyRef] = Map(classOf[Config] -> config)
+            override val ctx: Map[Class[?], AnyRef] = Map(classOf[Config] -> config)
         }
     }
 
@@ -179,7 +179,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
                 batches should be(Symbol("Empty"))
             }
 
-            it("should produce an empty configuration in an empty scenary") {
+            it("should produce an empty configuration in an empty scenario") {
                 val ps = setupPropertyStoreConfigurationRecorder(strategy)
                 val scenario = AnalysisScenario(Set.empty, ps)
                 val schedule = scenario.computeSchedule(ps)

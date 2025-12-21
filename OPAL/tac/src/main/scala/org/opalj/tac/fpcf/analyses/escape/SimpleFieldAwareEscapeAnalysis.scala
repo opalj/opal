@@ -22,14 +22,14 @@ import org.opalj.collection.immutable.IntTrieSet
  */
 trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
 
-    override protected[this] def handlePutField(
+    override protected def handlePutField(
         putField: PutField[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.usesDefSite(putField.value))
             handleFieldLike(putField.objRef.asVar.definedBy)
     }
 
-    override protected[this] def handleArrayStore(
+    override protected def handleArrayStore(
         arrayStore: ArrayStore[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         if (state.usesDefSite(arrayStore.value))
@@ -40,7 +40,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
      * A worklist algorithm, check the def sites of the reference of the field, or array, to which
      * the current entity was assigned.
      */
-    private[this] def handleFieldLike(
+    private def handleFieldLike(
         referenceDefSites: IntTrieSet
     )(implicit state: AnalysisState): Unit = {
         // the definition sites to handle
@@ -92,7 +92,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                                     workset += x
                             }
                         // we are not inter-procedural
-                        case Assignment(_, _, _: FunctionCall[_]) =>
+                        case Assignment(_, _, _: FunctionCall[?]) =>
                             state.meetMostRestrictive(AtMost(NoEscape))
                         case Assignment(_, _, _: Const) =>
                         case s                          =>

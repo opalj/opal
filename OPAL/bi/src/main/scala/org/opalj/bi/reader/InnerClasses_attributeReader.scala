@@ -19,8 +19,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type InnerClassesEntry <: AnyRef
-    implicit val innerClassesEntryType: ClassTag[InnerClassesEntry] // TODO: Replace in Scala 3 by `type InnerClassesEntry : ClassTag`
+    type InnerClassesEntry <: AnyRef: ClassTag
     type InnerClasses = ArraySeq[InnerClassesEntry]
 
     type InnerClasses_attribute >: Null <: Attribute
@@ -59,7 +58,7 @@ trait InnerClasses_attributeReader extends AttributeReader {
      * }
      * </pre>
      */
-    private[this] def parserFactory() = (
+    private def parserFactory() = (
         cp:                   Constant_Pool,
         ap:                   AttributeParent,
         ap_name_index:        Constant_Pool_Index,

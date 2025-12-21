@@ -13,7 +13,7 @@ case object ACONST_NULL
     with ImplicitValue
     with InstructionMetaInformation {
 
-    final def computationalType = ComputationalTypeReference
+    final def computationalType: ComputationalTypeReference.type = ComputationalTypeReference
 
     final val value: Null = null
 

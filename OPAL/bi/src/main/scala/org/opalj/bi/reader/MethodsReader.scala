@@ -19,8 +19,7 @@ trait MethodsReader extends Constant_PoolAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type Method_Info <: AnyRef
-    implicit val methodInfoType: ClassTag[Method_Info] // TODO: Replace in Scala 3 by `type Method_Info : ClassTag`
+    type Method_Info <: AnyRef: ClassTag
     type Methods = ArraySeq[Method_Info]
 
     type Attributes

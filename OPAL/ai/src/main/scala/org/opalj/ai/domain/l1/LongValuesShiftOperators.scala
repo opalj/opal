@@ -13,7 +13,7 @@ import org.opalj.br.LongType
  * @author Riadh Chtara
  */
 trait LongValuesShiftOperators extends LongValuesDomain {
-    this: ConcreteLongValues with ConcreteIntegerValues =>
+    this: ConcreteLongValues & ConcreteIntegerValues =>
 
     override def lshl(
         pc:         Int,

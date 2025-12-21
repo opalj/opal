@@ -71,10 +71,12 @@ class Int2ListTest extends AnyFunSpec with Matchers {
                 PerformanceEvaluation.memory {
                     PerformanceEvaluation.time {
                         var i = Elements
-                        do {
+                        while {
                             l = Math.abs(rngGen.nextInt()) +: l
                             i -= 1
-                        } while (i > 0)
+
+                            i > 0
+                        } do ()
                     } { t => if (i >= 8) info(s"creation took ${t.toSeconds}") }
                 } { mu => if (i >= 8) info(s"required $mu bytes") }
 
@@ -86,7 +88,9 @@ class Int2ListTest extends AnyFunSpec with Matchers {
                 var sumForFirstThird = 0
                 PerformanceEvaluation.time {
                     l.forFirstN(Elements / 3)(sumForFirstThird += _)
-                } { t => if (i >= 8) info(s"forFirstN(1/3*Elements) sum took ${t.toSeconds}") }
+                } { t =>
+                    if (i >= 8) info(s"forFirstN(1/3*Elements) sum was $sumForFirstThird and took ${t.toSeconds}")
+                }
 
                 val sumIterator =
                     PerformanceEvaluation.time {

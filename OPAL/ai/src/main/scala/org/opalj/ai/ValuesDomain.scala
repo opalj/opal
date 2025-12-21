@@ -8,6 +8,7 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsIllegalValue
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsReturnAddressValue
@@ -49,7 +50,7 @@ trait ValuesDomain { domain =>
 
     /**
      * Creates a domain value from the given value information that represents a
-     * properly domain value.
+     * proper domain value.
      * A representation of a proper value is created even if the value information is provided
      * for an '''uninitialized''' value.
      *
@@ -71,7 +72,7 @@ trait ValuesDomain { domain =>
      * Abstracts over the concrete type of `Value`. Needs to be refined by traits that
      * inherit from `Domain` and which extend `Domain`'s `Value` trait.
      */
-    type DomainValue >: Null <: Value with AnyRef
+    type DomainValue >: Null <: Value & AnyRef
 
     /**
      * The class tag for the type `DomainValue`.
@@ -96,7 +97,7 @@ trait ValuesDomain { domain =>
      *
      * ==Use Of Value/Dependencies On Value==
      * '''In general, subclasses and users of a `Domain` should not have/declare
-     * a direct dependency on `Value`'''. Instead they should use `DomainValue` as otherwise
+     * a direct dependency on `Value`'''. Instead, they should use `DomainValue` as otherwise
      * extensibility of a `Domain` may be hampered or even be impossible. The only
      * exceptions are, of course, classes that directly inherit from this class.
      *
@@ -212,7 +213,7 @@ trait ValuesDomain { domain =>
          *
          * Conceptually, the join of an object with itself has to return the object
          * itself. Note, that this is a conceptual requirement as such a call
-         * (`this.doJoin(..,this)`) will not be performed by the abstract interpretation
+         * (`this.doJoin(...,this)`) will not be performed by the abstract interpretation
          * framework; this case is handled by the [[join]] method.
          * However, if the join object is also used by the implementation of the domain
          * itself, it may be necessary to explicitly handle self-joins.
@@ -229,7 +230,7 @@ trait ValuesDomain { domain =>
          *          '''The given `value` and this value are guaranteed to have
          *          the same computational type, but are not reference equal.'''
          */
-        protected[this] def doJoin(pc: Int, value: DomainValue): Update[DomainValue]
+        protected def doJoin(pc: Int, value: DomainValue): Update[DomainValue]
 
         /**
          * Checks that the given value and this value are compatible with regard to
@@ -248,7 +249,7 @@ trait ValuesDomain { domain =>
          *          [[doJoin]].
          */
         def join(pc: Int, that: DomainValue): Update[DomainValue] = {
-            assert(that ne this, "join is only defined for objects that are different")
+            elidedAssert(that ne this, "join is only defined for objects that are different")
 
             if ((that eq TheIllegalValue) || (this.computationalType ne that.computationalType))
                 MetaInformationUpdateIllegalValue
@@ -307,12 +308,12 @@ trait ValuesDomain { domain =>
          *
          * @param   other Another `DomainValue` with the same computational type as this value.
          *          (The `IllegalValue` has no computational type and, hence, a comparison with
-         *          an IllegalValue is not well defined.)
+         *          an IllegalValue is not well-defined.)
          *
          * @see `abstractsOver`
          */
         def isMorePreciseThan(other: DomainValue): Boolean = {
-            assert(this.computationalType eq other.computationalType)
+            elidedAssert(this.computationalType eq other.computationalType)
 
             if (this eq other)
                 return false;
@@ -393,7 +394,7 @@ trait ValuesDomain { domain =>
 
     }
 
-    type DomainReferenceValue >: Null <: ReferenceValue with DomainTypedValue[ReferenceType]
+    type DomainReferenceValue >: Null <: ReferenceValue & DomainTypedValue[ReferenceType]
 
     /**
      * The class tag can be used to create type safe arrays or to extract the concrete type
@@ -468,7 +469,7 @@ trait ValuesDomain { domain =>
     type LocalsArray = org.opalj.ai.TheLocalsArray[Locals] // the package name is required by unidoc
 
     /**
-     * Represents a value that has no well defined state/type. Such values are either
+     * Represents a value that has no well-defined state/type. Such values are either
      * the result of a join of two incompatible values or if the variable was identified
      * as being dead. `IllegalValue`'s are only found in registers (in the locals).
      *
@@ -507,7 +508,7 @@ trait ValuesDomain { domain =>
      * This type needs to be refined whenever the class `IllegalValue`
      * is refined or the type `DomainValue` is refined.
      */
-    type DomainIllegalValue <: IllegalValue with DomainValue
+    type DomainIllegalValue <: IllegalValue & DomainValue
 
     /**
      * The '''singleton''' instance of the `IllegalValue`.
@@ -564,7 +565,7 @@ trait ValuesDomain { domain =>
         override def toString: String = "ReturnAddresses"
 
     }
-    type DomainReturnAddressValues <: ReturnAddressValues with DomainValue
+    type DomainReturnAddressValues <: ReturnAddressValues & DomainValue
 
     /**
      *  The singleton instance of `ReturnAddressValues`
@@ -613,7 +614,7 @@ trait ValuesDomain { domain =>
      * type DomainReturnAddressValue = ReturnAddressValue
      * }}}
      */
-    type DomainReturnAddressValue <: ReturnAddressValue with DomainValue
+    type DomainReturnAddressValue <: ReturnAddressValue & DomainValue
 
     /**
      * Factory method to create an instance of a `ReturnAddressValue`.
@@ -639,8 +640,8 @@ trait ValuesDomain { domain =>
             return v1;
 
         v1.join(pc, v2) match {
-            case NoUpdate      => v1
-            case SomeUpdate(v) => v
+            case NoUpdate                   => v1
+            case SomeUpdate(v: DomainValue) => v
         }
     }
 
@@ -663,8 +664,8 @@ trait ValuesDomain { domain =>
         valuesIterator foreach { value =>
             if (summary ne value) {
                 summary.join(pc, value.summarize(pc)) match {
-                    case NoUpdate               => /*nothing to do*/
-                    case SomeUpdate(newSummary) => summary = newSummary.summarize(pc)
+                    case NoUpdate                            => /*nothing to do*/
+                    case SomeUpdate(newSummary: DomainValue) => summary = newSummary.summarize(pc)
                 }
             }
         }

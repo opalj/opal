@@ -6,13 +6,12 @@ package analyses
 package cg
 package xta
 
-import scala.annotation.elidable
-
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.time.Instant
 import scala.collection.mutable
+import scala.compiletime.uninitialized
 
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
@@ -24,6 +23,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
+import org.opalj.util.elidedAssert
 
 /**
  * This is used in [[TypePropagationAnalysis]] and logs all individual steps of the type propagation
@@ -64,7 +64,6 @@ private[xta] class TypePropagationTrace {
         case _                    => e.toString
     }
 
-    @elidable(elidable.ASSERTION)
     def traceInit(
         method: DeclaredMethod
     )(implicit ps: PropertyStore, typeIterator: TypeIterator): Unit = {
@@ -77,7 +76,7 @@ private[xta] class TypePropagationTrace {
             val calleesEOptP = ps(method, Callees.key)
             if (calleesEOptP.hasUBP)
                 calleesEOptP.ub.callSites(typeIterator.newContext(method)).flatMap(_._2)
-            else Iterator.empty[Context]
+            else Iterable.empty[Context]
         }
         traceMsg(
             s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, " +
@@ -86,25 +85,21 @@ private[xta] class TypePropagationTrace {
         _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
     }
 
-    @elidable(elidable.ASSERTION)
     def traceCalleesUpdate(receiver: DeclaredMethod): Unit = {
         traceMsg(s"callee property update: ${simplifiedName(receiver)}")
         _trace.events += TypePropagationTrace.CalleesUpdate(receiver)
     }
 
-    @elidable(elidable.ASSERTION)
     def traceReadAccessUpdate(receiver: Method): Unit = {
         traceMsg(s"read access property update: ${simplifiedName(receiver)}")
         _trace.events += TypePropagationTrace.ReadAccessUpdate(receiver)
     }
 
-    @elidable(elidable.ASSERTION)
     def traceWriteAccessUpdate(receiver: Method): Unit = {
         traceMsg(s"write access property update: ${simplifiedName(receiver)}")
         _trace.events += TypePropagationTrace.WriteAccessUpdate(receiver)
     }
 
-    @elidable(elidable.ASSERTION)
     def traceTypeUpdate(receiver: DeclaredMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
         traceMsg(
             s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}"
@@ -112,7 +107,6 @@ private[xta] class TypePropagationTrace {
         _trace.events += TypePropagationTrace.TypeSetUpdate(receiver, source, types)
     }
 
-    @elidable(elidable.ASSERTION)
     def traceTypePropagation(targetEntity: Entity, propagatedTypes: UIDSet[ReferenceType]): Unit = {
         traceMsg(s"propagate {${propagatedTypes.map(simplifiedName).mkString(", ")}} to ${simplifiedName(targetEntity)}")
         _trace.events.last.typePropagations += TypePropagationTrace.TypePropagation(targetEntity, propagatedTypes)
@@ -134,14 +128,14 @@ object TypePropagationTrace {
     case class WriteAccessUpdate(receiver: Entity) extends UpdateEvent
 
     // Global variable holding the type propagation trace of the last executed XTA analysis.
-    var LastTrace: Trace = _
+    var LastTrace: Trace = uninitialized
     var WriteTextualTrace: Boolean = false
 
     // Tracing and assert are on the same level of elision. Thus, if assertions are turned on, the tracing is also
     // turned on.
     def isEnabled: Boolean = {
         try {
-            assert(false)
+            elidedAssert(false)
             false
         } catch {
             case _: AssertionError => true

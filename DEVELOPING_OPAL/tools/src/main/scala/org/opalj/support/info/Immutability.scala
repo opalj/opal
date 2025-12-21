@@ -109,7 +109,7 @@ object Immutability extends ProjectsAnalysisApplication {
         }
 
         private val analysisLevelArg =
-            new AnalysisLevelArg(FieldAssignabilityArg.description, FieldAssignabilityArg.levels: _*) {
+            new AnalysisLevelArg(FieldAssignabilityArg.description, FieldAssignabilityArg.levels*) {
                 override val defaultValue: Option[String] = Some("L2")
                 override val withNone = false
             }
@@ -139,12 +139,12 @@ object Immutability extends ProjectsAnalysisApplication {
         val analysis: Analyses = apply(analysisArg)
         val ignoreLazyInitialization: Boolean = apply(ignoreLazyInitializationArg)
 
-        val assignabilityAnalysis: FPCFAnalysisScheduler[_] =
+        val assignabilityAnalysis: FPCFAnalysisScheduler[?] =
             get(analysisLevelArg, FieldAssignabilityArg.parse("L2")) match {
                 case fA => getScheduler(fA, false)
             }
 
-        val escapeAnalysis: FPCFAnalysisScheduler[_] = get(EscapeArg, EscapeArg.parse("L0")) match {
+        val escapeAnalysis: FPCFAnalysisScheduler[?] = get(EscapeArg, EscapeArg.parse("L0")) match {
             case escape => getScheduler(escape, false)
         }
     }
@@ -177,7 +177,7 @@ object Immutability extends ProjectsAnalysisApplication {
             _.fields
         }.toSet
 
-        var dependencies: List[FPCFAnalysisScheduler[_]] =
+        var dependencies: List[FPCFAnalysisScheduler[?]] =
             List(
                 EagerFieldAccessInformationAnalysis,
                 analysisConfig.assignabilityAnalysis,
@@ -267,7 +267,7 @@ object Immutability extends ProjectsAnalysisApplication {
             unpack:  EPS[Entity, OrderedProperty] => String,
             kind:    P
         ): Seq[String] = {
-            unpackAndSort(results.getOrElse(kind, Iterator.empty), unpack)
+            unpackAndSort(results.getOrElse(kind, Iterable.empty), unpack)
         }
 
         def filteredResults[P <: Property, T](
@@ -361,11 +361,11 @@ object Immutability extends ProjectsAnalysisApplication {
         val allInterfaces = project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val transitivelyImmutableClassesInterfaces = unpackAndSort(
-            transitivelyImmutables.filter(eps => allInterfaces.contains(eps.e.asInstanceOf[ClassType])),
+            transitivelyImmutables.iterator.filter(eps => allInterfaces.contains(eps.e.asInstanceOf[ClassType])),
             unpackClass
         )
         val transitivelyImmutableClasses = unpackAndSort(
-            transitivelyImmutables.filter(eps => !allInterfaces.contains(eps.e.asInstanceOf[ClassType])),
+            transitivelyImmutables.iterator.filter(eps => !allInterfaces.contains(eps.e.asInstanceOf[ClassType])),
             unpackClass
         )
 
@@ -500,7 +500,7 @@ object Immutability extends ProjectsAnalysisApplication {
                |
                | results folder: ${analysisConfig.get(OutputDirArg)}
                |
-               | CofigurationName: ${analysisConfig(ConfigurationNameArg)}
+               | ConfigurationName: ${analysisConfig(ConfigurationNameArg)}
                |
                | AI domain: ${analysisConfig(DomainArg)}
                |

@@ -27,9 +27,10 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
+import org.opalj.util.elidedAssert
 
 /**
- * Special handling for constructor calls, as the receiver of an constructor is always an
+ * Special handling for constructor calls, as the receiver of a constructor is always an
  * allocation site.
  * The constructor of Object does not escape the self reference by definition. For other
  * constructors, the inter-procedural chain will be processed until it reaches the Object
@@ -44,19 +45,19 @@ import org.opalj.fpcf.SomeInterimEP
  */
 trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
 
-    override type AnalysisContext <: AbstractEscapeAnalysisContext with PropertyStoreContainer with VirtualFormalParametersContainer with DeclaredMethodsContainer
+    override type AnalysisContext <: AbstractEscapeAnalysisContext & PropertyStoreContainer & VirtualFormalParametersContainer & DeclaredMethodsContainer
 
-    abstract override protected[this] def handleThisLocalOfConstructor(
+    abstract override protected def handleThisLocalOfConstructor(
         call: NonVirtualMethodCall[V]
     )(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
     ): Unit = {
-        assert(call.name == "<init>", "method is not a constructor")
-        assert(state.usesDefSite(call.receiver), "call receiver does not use def-site")
+        elidedAssert(call.name == "<init>", "method is not a constructor")
+        elidedAssert(state.usesDefSite(call.receiver), "call receiver does not use def-site")
 
-        // the object constructor will not escape the this local
+        // the object constructor will not escape the this-local
         if (call.declaringClass eq ClassType.Object)
             return;
 
@@ -70,7 +71,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         )
         constructor match {
             case Success(callee) =>
-                // check if the this local escapes in the callee
+                // check if the this-local escapes in the callee
 
                 val fp = context.virtualFormalParameters(context.declaredMethods(callee))(0)
                 val fpEntity = (
@@ -86,7 +87,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         }
     }
 
-    private[this] def handleEscapeState(
+    private def handleEscapeState(
         eOptionP: EOptionP[Entity, Property]
     )(
         implicit state: AnalysisState
@@ -153,7 +154,7 @@ trait ConstructorSensitiveEscapeAnalysis extends AbstractEscapeAnalysis {
         }
     }
 
-    abstract override protected[this] def c(
+    abstract override protected def c(
         someEPS: SomeEPS
     )(
         implicit

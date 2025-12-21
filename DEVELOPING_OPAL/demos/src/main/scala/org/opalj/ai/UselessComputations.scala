@@ -67,10 +67,10 @@ object UselessComputations extends ProjectsAnalysisApplication {
         val results = {
             val results = for {
                 classFile <- project.allProjectClassFiles.par
-                method @ MethodWithBody(body) <- classFile.methods
+                case method @ MethodWithBody(body) <- classFile.methods
                 result = BaseAI(method, new AnalysisDomain(project, method))
             } yield {
-                import result._
+                import result.*
                 val results = collectPCWithOperands(domain)(body, operandsArray) {
                     case (
                             pc,
@@ -80,13 +80,13 @@ object UselessComputations extends ProjectsAnalysisApplication {
                         UselessComputation(method, pc, "useless comparison with null")
                     case (
                             pc,
-                            _: IFICMPInstruction[_],
+                            _: IFICMPInstruction[?],
                             Seq(domain.ConcreteIntegerValue(a), domain.ConcreteIntegerValue(b), _*)
                         ) =>
                         UselessComputation(method, pc, "comparison of constant values: " + a + ", " + b)
                     case (
                             pc,
-                            _: IF0Instruction[_],
+                            _: IF0Instruction[?],
                             Seq(domain.ConcreteIntegerValue(a), _*)
                         ) =>
                         UselessComputation(method, pc, "comparison of 0 with constant value: " + a)
@@ -122,7 +122,7 @@ case class UselessComputation(method: Method, pc: Int, message: String) {
     def line: Option[Int] = method.body.get.lineNumber(pc)
 
     override def toString: String = {
-        import Console._
+        import Console.*
 
         val line = this.line.map("(line:" + _ + ")").getOrElse("")
 

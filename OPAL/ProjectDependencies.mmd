@@ -1,4 +1,4 @@
-%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear' } } }%%
+%%{ init: { 'flowchart': { 'defaultRenderer': 'elk', 'curve': 'linear', 'padding': 10, 'wrappingWidth': 205 } } }%%
 flowchart BT
     Framework[Framework<br>framework]
     ThreeAddressCode[Three Address Code<br>tac]
@@ -7,7 +7,7 @@ flowchart BT
     IDE[IDE<br>ide]
     BytecodeInfrastructure[Bytecode Infrastructure<br>bi]
     AbstractInterpretationFramework[Abstract Interpretation Framework<br>ai]
-    Hermes[Hermes<br>hermes]
+    ConfigurationExplorer[Configuration Explorer<br>ce]
     Common[Common<br>common]
     BytecodeDisassembler[Bytecode Disassembler<br>da]
     StaticAnalysisInfrastructure[Static Analysis Infrastructure<br>si]
@@ -20,7 +20,6 @@ flowchart BT
 
     style Common fill:#9cbecc,color:black
     style Framework fill:#c0ffc0
-    style Hermes fill:#ffd7cf
 
     Framework --> BytecodeAssembler
     Framework --> ArchitectureValidation
@@ -33,7 +32,7 @@ flowchart BT
     IDE --> BytecodeRepresentation
     BytecodeInfrastructure --> Common
     AbstractInterpretationFramework --> BytecodeRepresentation
-    Hermes --> Framework
+    ConfigurationExplorer --> BytecodeRepresentation
     BytecodeDisassembler --> BytecodeInfrastructure
     StaticAnalysisInfrastructure --> Common
     IFDS --> IDE

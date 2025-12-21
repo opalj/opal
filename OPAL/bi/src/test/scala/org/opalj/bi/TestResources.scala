@@ -4,6 +4,8 @@ package bi
 
 import java.io.File
 import scala.collection.immutable.ArraySeq
+import scala.util.boundary
+import scala.util.boundary.break
 
 import org.opalj.io.JARsFileFilter
 import org.opalj.util.ScalaMajorVersion
@@ -27,9 +29,9 @@ object TestResources {
         resourceFile => { Some("../../" + resourceFile) },
         // if the current path is set to "DEVELOPING_OPAL/<SUB-PROJECT>/<BIN>"
         resourceFile => { Some("../../../OPAL/" + resourceFile) },
-        // if we are in the sub-project's root folder
+        // if we are in the subproject's root folder
         resourceFile => { Some("../" + subProjectFolder + resourceFile) },
-        // if we are in a "developing opal" sub-project's root folder
+        // if we are in a "developing opal" subproject's root folder
         resourceFile => { Some("../../OPAL/" + resourceFile) },
         // if the current path is set to "target/scala-.../classes"
         resourceFile => { Some("./" + resourceFile) },
@@ -56,7 +58,7 @@ object TestResources {
      *
      * @param   subProjectFolder The root folder of the OPAL subproject; e.g., "ai".
      */
-    def locateTestResources(resourceName: String, subProjectFolder: String): File = {
+    def locateTestResources(resourceName: String, subProjectFolder: String): File = boundary {
         val resourceFiles /*CANDIDATES*/ = Array(
             s"$subProjectFolder/$unmanagedResourcesFolder$resourceName",
             s"$subProjectFolder/$managedResourcesFolder/$resourceName"
@@ -65,7 +67,7 @@ object TestResources {
             resourceFiles foreach { rf =>
                 pathFunction(rf) foreach { fCandidate =>
                     val f = new File(fCandidate)
-                    if (f.exists) return f; // <======== NORMAL RETURN
+                    if (f.exists) break(f); // <======== NORMAL RETURN
                 }
             }
         }

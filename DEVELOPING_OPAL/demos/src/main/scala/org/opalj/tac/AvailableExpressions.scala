@@ -3,11 +3,11 @@ package org.opalj
 package tac
 
 import org.opalj.ai.cli.AIBasedCommandLineConfig
-import org.opalj.br._
-import org.opalj.br.analyses._
-import org.opalj.br.cfg._
+import org.opalj.br.*
+import org.opalj.br.analyses.*
+import org.opalj.br.cfg.*
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.value._
+import org.opalj.value.*
 
 /**
  * Computes the available arithmetic binary expressions.
@@ -48,7 +48,7 @@ object AvailableExpressions extends MethodAnalysisApplication {
 
         val seed = Set.empty[Fact]
 
-        def transfer(inFacts: Facts, stmt: Stmt[_], index: PC, succId: CFG.SuccessorId): Facts = {
+        def transfer(inFacts: Facts, stmt: Stmt[?], index: PC, succId: CFG.SuccessorId): Facts = {
             // Recall that we work on an SSA like representation which typically does not have
             // simple alias creating statements of the form x_1 = x_0!
             stmt match {

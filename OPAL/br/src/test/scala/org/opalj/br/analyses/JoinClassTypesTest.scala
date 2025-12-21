@@ -19,16 +19,16 @@ import org.opalj.log.GlobalLogContext
 @RunWith(classOf[JUnitRunner])
 class JoinClassTypesTest extends AnyFunSpec with Matchers {
 
-    final val classhierachy = {
+    final val classhierarchy = {
         // val thisClass = classOf[org.opalj.br.analyses.JoinClassTypesTest]
-        val thisClass = this.getClass()
+        val thisClass = this.getClass
         val in = thisClass.getResourceAsStream("ClassHierarchyUpperBounds.ths")
         if (in == null)
             throw new UnknownError("class hierarchy could not be loaded")
         ClassHierarchy(
             Iterable.empty,
             List(() => in)
-        )(GlobalLogContext)
+        )(using GlobalLogContext)
     }
 
     implicit def stringToUIDSetClassType(str: String): UIDSet[ClassType] = UIDSet(ClassType(str))
@@ -49,11 +49,11 @@ class JoinClassTypesTest extends AnyFunSpec with Matchers {
         reflexive: Boolean,
         expected:  UIDSet[ClassType]
     ) = {
-        val result = classhierachy.joinClassTypes(param1, param2, reflexive)
+        val result = classhierarchy.joinClassTypes(param1, param2, reflexive)
         if (result != expected)
             fail(
-                s"${param1} join${if (reflexive) "(reflexive)" else ""}" +
-                    s" ${param2} is ${mkString(result)};" +
+                s"$param1 join${if (reflexive) "(reflexive)" else ""}" +
+                    s" $param2 is ${mkString(result)};" +
                     s" expected ${mkString(expected)}"
             )
     }
@@ -64,7 +64,7 @@ class JoinClassTypesTest extends AnyFunSpec with Matchers {
         reflexive: Boolean,
         expected:  UIDSet[ClassType]
     ) = {
-        val result = classhierachy.joinClassTypes(param1, param2, reflexive)
+        val result = classhierarchy.joinClassTypes(param1, param2, reflexive)
         if (result != expected)
             fail(
                 s"$param1 join${if (reflexive) "(reflexive)" else ""}" +
@@ -79,28 +79,28 @@ class JoinClassTypesTest extends AnyFunSpec with Matchers {
         reflexive: Boolean,
         expected:  ClassType
     ) = {
-        val result = classhierachy.joinClassTypesUntilSingleUpperBound(param1, param2, reflexive)
+        val result = classhierarchy.joinClassTypesUntilSingleUpperBound(param1, param2, reflexive)
         if (result != expected)
             fail(s"$param1 join $param2 ${if (reflexive) "(reflexive)" else ""}" +
-                s" with joinClassTypesUntilSingleUpperBound(ClassType, ClassType, Boolean) is ${result};" +
-                s" expected ${expected}")
+                s" with joinObjectTypesUntilSingleUpperBound(ClassType, ObjectType, Boolean) is $result;" +
+                s" expected $expected")
     }
 
     def testJoinClassTypesUntilSingleUpperBound(
         param:    UIDSet[ClassType],
         expected: ClassType
     ) = {
-        val result = classhierachy.joinClassTypesUntilSingleUpperBound(param)
+        val result = classhierarchy.joinClassTypesUntilSingleUpperBound(param)
         if (result != expected)
             fail(s"join of ${mkString(param)}" +
-                s" using joinClassTypesUntilSingleUpperBound(UIDSet[ClassType]) is ${result};" +
-                s" expected ${expected}")
+                s" using joinObjectTypesUntilSingleUpperBound(UIDSet[ClassType]) is $result;" +
+                s" expected $expected")
 
     }
 
-    describe("the behavior of the method joinClassTypes(ClassType,ClassType) of ClassHierachy") {
+    describe("the behavior of the method joinClassTypes(ClassType,ClassType) of ClassHierarchy") {
         // uncomment to display the test graph:
-        // io.writeAndOpen((toDot.generateDot(Set(classhierachy.toGraph))), "test", ".dot")
+        // io.writeAndOpen((toDot.generateDot(Set(classhierarchy.toGraph))), "test", ".dot")
 
         describe("the behavior of joins with classes") {
 
@@ -598,7 +598,7 @@ class JoinClassTypesTest extends AnyFunSpec with Matchers {
         }
     }
 
-    describe("the behavior of the method joinClassTypesUntilSingleUpperBound of ClassHierachy") {
+    describe("the behavior of the method joinClassTypesUntilSingleUpperBound of ClassHierarchy") {
         describe("the behavior of joins with classes") {
             describe("the behavior of joins with sets containing one class") {
                 it("join class with itself should result in the same class") {

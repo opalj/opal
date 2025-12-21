@@ -13,6 +13,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import org.opalj.util.elidedAssert
 
 /**
  * Represent the set of types that have allocations reachable from the respective entry points.
@@ -31,7 +32,7 @@ case class TypeBasedPointsToSet private[properties] (
     with OrderedProperty
     with TypeBasedPointsToSetPropertyMetaInformation {
 
-    assert(orderedTypes == null || orderedTypes.size == types.size)
+    elidedAssert(orderedTypes == null || orderedTypes.size == types.size)
 
     final def key: PropertyKey[TypeBasedPointsToSet] = TypeBasedPointsToSet.key
 
@@ -72,7 +73,7 @@ case class TypeBasedPointsToSet private[properties] (
         var newOrderedTypes = orderedTypes
         var typesUnion = types
 
-        other.orderedTypes.take(other.numElements - seenElements).map { t =>
+        other.orderedTypes.take(other.numElements - seenElements).foreach { t =>
             if (!types.contains(t)) {
                 newOrderedTypes ::= t
                 typesUnion += t
@@ -112,7 +113,7 @@ case class TypeBasedPointsToSet private[properties] (
         var newOrderedTypes = orderedTypes
         var typesUnion = types
 
-        other.orderedTypes.take(other.numElements - seenElements).map { t =>
+        other.orderedTypes.take(other.numElements - seenElements).foreach { t =>
             if (typeFilter(t) && !types.contains(t)) {
                 newOrderedTypes ::= t
                 typesUnion += t
@@ -147,7 +148,7 @@ case class TypeBasedPointsToSet private[properties] (
         TypeBasedPointsToSet(newOrderedTypes, newTypes)
     }
 
-    override def getNewestElement(): ReferenceType = orderedTypes.head
+    override def getNewestElement: ReferenceType = orderedTypes.head
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {

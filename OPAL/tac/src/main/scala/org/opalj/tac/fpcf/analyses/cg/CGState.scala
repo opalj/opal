@@ -23,7 +23,7 @@ class CGState[TheContextType <: Context](
     override type ContextType = TheContextType
 
     // maps a definition site to the receiver var
-    private[this] val _virtualCallSites: mutable.Map[CallSite, (V, Set[ReferenceType])] =
+    private val _virtualCallSites: mutable.Map[CallSite, (V, Set[ReferenceType])] =
         mutable.Map.empty
 
     def callSiteData(callSite: CallSite): (V, Set[ReferenceType]) = {
@@ -44,6 +44,6 @@ class CGState[TheContextType <: Context](
  * @author Maximilian Rüsch
  */
 class TACAIBasedCGState[ContextType <: Context](
-    callContext:                               ContextType,
-    override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+    callContext:      ContextType,
+    var _tacDependee: EOptionP[Method, TACAI]
 ) extends CGState[ContextType](callContext) with TACAIBasedAnalysisState[ContextType]

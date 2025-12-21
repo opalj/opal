@@ -16,11 +16,9 @@ trait StackMapFrameReader extends Constant_PoolAbstractions {
     // TYPE DEFINITIONS AND FACTORY METHODS
     //
 
-    type StackMapFrame <: AnyRef
-    implicit val stackMapFrameType: ClassTag[StackMapFrame] // TODO: Replace in Scala 3 by `type StackMapFrame : ClassTag`
+    type StackMapFrame <: AnyRef: ClassTag
 
-    type VerificationTypeInfo <: AnyRef
-    implicit val verificationTypeInfoType: ClassTag[VerificationTypeInfo] // TODO: Replace in Scala 3 by `type VerificationTypeInfo : ClassTag`
+    type VerificationTypeInfo <: AnyRef: ClassTag
     type VerificationTypeInfoLocals = ArraySeq[VerificationTypeInfo]
     type VerificationTypeInfoStack = ArraySeq[VerificationTypeInfo]
 

@@ -3,6 +3,7 @@ package org.opalj
 
 import java.io.File
 import java.net.URL
+import java.nio.file.FileSystems
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
@@ -44,7 +45,7 @@ package object issues {
      * Shortens an absolute path to one relative to the current working directory.
      */
     def absoluteToRelative(path: String): String = {
-        path.stripPrefix(System.getProperty("user.dir") + System.getProperty("file.separator"))
+        path.stripPrefix(System.getProperty("user.dir") + FileSystems.getDefault.getSeparator)
     }
 
     /**
@@ -68,18 +69,17 @@ package object issues {
      * to avoid using up too much screen space in the console.
      */
     def urlToLocationIdentifier(url: URL): String = {
-        url.getProtocol() match {
-            case "file" => absoluteToRelative(url.getPath())
-            case "jar"  => prettifyJarUrl(url.toExternalForm())
-            case _      => url.toExternalForm()
+        url.getProtocol match {
+            case "file" => absoluteToRelative(url.getPath)
+            case "jar"  => prettifyJarUrl(url.toExternalForm)
+            case _      => url.toExternalForm
         }
     }
 
-    def fileToLocationIdentifier(file: File): String = file.getAbsolutePath()
+    def fileToLocationIdentifier(file: File): String = file.getAbsolutePath
 
     /**
-     * Given a `LocalVariable` object and its current value a human readable `String`
-     * is created.
+     * Given a `LocalVariable` object and its current value, a human-readable String is created.
      */
     def localVariableToString(localVariable: LocalVariable, value: AnyRef): String = {
         if ((localVariable.fieldType eq BooleanType) &&

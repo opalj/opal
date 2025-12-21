@@ -156,7 +156,6 @@ object MultiplePhaseScheduling {
 }
 
 /**
- * Maximum Phase Scheduling (MPS) Strategy.
  * Breaks down computations into as many phases as possible based on dependencies and computation types.
  */
 object MaximumPhaseScheduling extends MultiplePhaseScheduling {

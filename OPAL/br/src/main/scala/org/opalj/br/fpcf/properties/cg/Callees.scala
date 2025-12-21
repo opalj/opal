@@ -151,7 +151,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     /**
      * Returns for a given call site pc and indirect target method the receiver information.
      * If the receiver can not be determined, the `scala.Option` will be empty, otherwise it will
-     * contain all [[br.PCs]] and the the negative indices of parameters that may define the value of
+     * contain all [[br.PCs]] and the negative indices of parameters that may define the value of
      * the receiver.
      * The parameter at index 0 always corresponds to the *this* local and is `null` for static
      * methods.
@@ -192,11 +192,11 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
  * Callees class used for final results where the callees are already aggregated.
  */
 sealed class ConcreteCallees(
-    private[this] val directCalleesIds:        IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
-    private[this] val indirectCalleesIds:      IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
-    private[this] val _incompleteCallSites:    IntMap[br.PCs], // Caller Context => PCs
-    private[this] val _indirectCallReceivers:  IntMap[IntMap[IntMap[Option[(ValueInformation, br.PCs)]]]], // Caller Context => PC => Callee => Receiver
-    private[this] val _indirectCallParameters: IntMap[IntMap[IntMap[Seq[Option[(ValueInformation, br.PCs)]]]]] // Caller Context => PC => Callee => Parameters
+    private val directCalleesIds:        IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
+    private val indirectCalleesIds:      IntMap[IntMap[IntTrieSet]], // Caller Context => PC => Callees
+    private val _incompleteCallSites:    IntMap[br.PCs], // Caller Context => PCs
+    private val _indirectCallReceivers:  IntMap[IntMap[IntMap[Option[(ValueInformation, br.PCs)]]]], // Caller Context => PC => Callee => Receiver
+    private val _indirectCallParameters: IntMap[IntMap[IntMap[Seq[Option[(ValueInformation, br.PCs)]]]]] // Caller Context => PC => Callee => Parameters
 ) extends Callees {
 
     override def incompleteCallSites(callerContext: Context)(implicit propertyStore: PropertyStore): IntIterator = {
@@ -269,7 +269,7 @@ sealed class ConcreteCallees(
         propertyStore:   PropertyStore,
         contextProvider: ContextProvider
     ): IntMap[Iterator[Context]] = {
-        var res = IntMap(directCallSites(callerContext).to(LazyList): _*)
+        var res = IntMap(directCallSites(callerContext).to(LazyList)*)
 
         for ((pc, indirect) <- indirectCallSites(callerContext)) {
             res = res.updateWith(pc, indirect, (direct, indirect) => direct ++ indirect)

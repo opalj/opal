@@ -12,6 +12,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.si.Project
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 sealed trait MethodReturnValuePropertyMetaInformation extends PropertyMetaInformation {
@@ -40,7 +41,7 @@ trait MethodReturnValue extends Property with MethodReturnValuePropertyMetaInfor
  */
 case class TheMethodReturnValue(theReturnValue: ValueInformation) extends MethodReturnValue {
 
-    assert(theReturnValue ne null, "returnValue must not be null")
+    elidedAssert(theReturnValue ne null, "returnValue must not be null")
 
     override def returnValue: Option[ValueInformation] = Some(theReturnValue)
 
@@ -70,7 +71,7 @@ object MethodReturnValue extends MethodReturnValuePropertyMetaInformation {
         (ps: PropertyStore, _: FallbackReason, m: Method) => {
             val p = ps.context(classOf[Project]).asInstanceOf[SomeProject]
             MethodReturnValue(
-                Some(ValueInformation.forProperValue(m.descriptor.returnType)(p.classHierarchy))
+                Some(ValueInformation.forProperValue(m.descriptor.returnType)(using p.classHierarchy))
             )
         }
     )

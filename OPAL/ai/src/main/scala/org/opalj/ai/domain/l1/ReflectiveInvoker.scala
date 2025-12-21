@@ -5,8 +5,10 @@ package domain
 package l1
 
 import java.lang.reflect.InvocationTargetException
+import scala.util.boundary
+import scala.util.boundary.break
 
-import org.opalj.br._
+import org.opalj.br.*
 
 /**
  * Support the invocation of methods (using Java reflection) of Java objects that
@@ -37,8 +39,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
         name:           String,
         descriptor:     MethodDescriptor,
         operands:       Operands
-    ): Option[MethodCallResult] = {
-
+    ): Option[MethodCallResult] = boundary {
         val (method, jReceiver, jOperands) =
             try {
                 val declaredParametersCount = descriptor.parametersCount
@@ -52,7 +53,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                     val jObject =
                         toJavaObject(pc, op) match {
                             case Some(jObject) => jObject
-                            case _             => return None /* <------- EARLY RETURN FROM METHOD */
+                            case _             => break(None); /* <------- EARLY RETURN FROM METHOD */
                         }
                     if (operandCount > declaredParametersCount) {
                         // this is also the last operand
@@ -63,7 +64,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                 }
                 val jParameterClassTypes = descriptor.parameterTypes map (_.toJavaClass)
                 val method =
-                    declaringClass.toJavaClass.getDeclaredMethod(name, jParameterClassTypes: _*)
+                    declaringClass.toJavaClass.getDeclaredMethod(name, jParameterClassTypes*)
                 (method, jReceiver, jOperands)
             } catch {
                 case e: ClassNotFoundException =>
@@ -89,7 +90,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
             }
 
         try {
-            val result = method.invoke(jReceiver, jOperands: _*)
+            val result = method.invoke(jReceiver, jOperands*)
             (descriptor.returnType.id: @scala.annotation.switch) match {
                 case VoidType.id =>
                     Some(ComputationWithSideEffectOnly)
@@ -140,7 +141,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
             // The exception happens as part of the execution of the underlying method;
             // hence, we want to capture it and use it in the following!
             case _: NullPointerException      => Some(justThrows(NullPointerException(pc)))
-            case e: InvocationTargetException => Some(justThrows(toDomainValue(pc, e.getCause())))
+            case e: InvocationTargetException => Some(justThrows(toDomainValue(pc, e.getCause)))
         }
     }
 }

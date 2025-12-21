@@ -11,6 +11,7 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.analyses.cg.AnalysisState
 import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.util.elidedAssert
 import org.opalj.value.ValueInformation
 
 /**
@@ -25,8 +26,8 @@ trait TACAIBasedAnalysisState[TheContextType <: Context]
 
     def callContext: ContextType
 
-    protected[this] var _tacDependee: EOptionP[Method, TACAI]
-    assert(_tacDependee != null && _tacDependee.hasUBP)
+    protected var _tacDependee: EOptionP[Method, TACAI]
+    elidedAssert(_tacDependee != null && _tacDependee.hasUBP)
 
     abstract override def hasOpenDependencies: Boolean = _tacDependee.isRefinable || super.hasOpenDependencies
     final def isTACDependeeRefinable: Boolean = _tacDependee.isRefinable

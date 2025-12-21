@@ -60,7 +60,7 @@ case class NEW(classType: ClassType) extends ConstantLengthInstruction with NoLa
 
     override def toString: String = "NEW " + classType.toJava
 
-    override final def toString(currentPC: Int): String = toString()
+    override final def toString(currentPC: Int): String = toString
 }
 
 /**

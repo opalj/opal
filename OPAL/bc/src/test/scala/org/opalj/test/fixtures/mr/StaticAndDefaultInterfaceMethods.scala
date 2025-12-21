@@ -93,7 +93,7 @@ object StaticAndDefaultInterfaceMethods extends App {
     val assembledSuperIntfPath =
         Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/staticanddefaultinterfacemethods/SuperIntf.class")
     val assembledSuperIntfFile = Files.write(assembledSuperIntfPath, assembledSuperIntf)
-    println("Created class file: " + assembledSuperIntfFile.toAbsolutePath())
+    println("Created class file: " + assembledSuperIntfFile.toAbsolutePath)
 
     val intfCF = ClassFile(
         Array[Constant_Pool_Entry](
@@ -152,7 +152,7 @@ object StaticAndDefaultInterfaceMethods extends App {
     val assembledIntfPath =
         Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/staticanddefaultinterfacemethods/Intf.class")
     val assembledIntfFile = Files.write(assembledIntfPath, assembledIntf)
-    println("Created class file: " + assembledIntfFile.toAbsolutePath())
+    println("Created class file: " + assembledIntfFile.toAbsolutePath)
 
     val subIntfCF = ClassFile(
         Array[Constant_Pool_Entry](
@@ -175,5 +175,5 @@ object StaticAndDefaultInterfaceMethods extends App {
     val assembledSubIntfPath =
         Paths.get("OPAL/bc/src/test/resources/StaticAndDefaultInterfaceMethods/mr/staticanddefaultinterfacemethods/SubIntf.class")
     val assembledSubIntfFile = Files.write(assembledSubIntfPath, assembledSubIntf)
-    println("Created class file: " + assembledSubIntfFile.toAbsolutePath())
+    println("Created class file: " + assembledSubIntfFile.toAbsolutePath)
 }

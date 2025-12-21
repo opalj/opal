@@ -14,6 +14,6 @@ case object LNEG extends NegateInstruction {
 
     final val mnemonic = "lneg"
 
-    final val computationalType = ComputationalTypeLong
+    final val computationalType: ComputationalTypeLong.type = ComputationalTypeLong
 
 }

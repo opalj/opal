@@ -23,6 +23,7 @@ import org.opalj.collection.binarySearch
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.insertedAt
 import org.opalj.log.OPALLogger
+import org.opalj.util.elidedAssert
 
 /**
  * Represents a single class file which either defines a class type or an interface type.
@@ -83,8 +84,12 @@ final class ClassFile private (
     val attributes:     Attributes
 ) extends ConcreteSourceElement {
 
-    methods.foreach { m => assert(m.declaringClassFile == null); m.declaringClassFile = this }
-    fields.foreach { f => assert(f.declaringClassFile == null); f.declaringClassFile = this }
+    methods.foreach { m =>
+        elidedAssert(m.declaringClassFile == null); m.declaringClassFile = this
+    }
+    fields.foreach { f =>
+        elidedAssert(f.declaringClassFile == null); f.declaringClassFile = this
+    }
 
     /**
      * Compares this class file with the given one; returns (the first) differences if any. The
@@ -245,11 +250,11 @@ final class ClassFile private (
      * @note This method is primarily intended to be used to perform load-time transformations!
      */
     def _UNSAFE_replaceMethod(oldMethod: Method, newMethod: MethodTemplate): this.type = {
-        assert(oldMethod.name == newMethod.name)
-        assert(oldMethod.descriptor == newMethod.descriptor)
+        elidedAssert(oldMethod.name == newMethod.name)
+        elidedAssert(oldMethod.descriptor == newMethod.descriptor)
 
         val index = binarySearch[Method, JVMMethod](this.methods, oldMethod)
-        val newPreparedMethod: Method = newMethod.prepareClassFileAttachement()
+        val newPreparedMethod: Method = newMethod.prepareClassFileAttachment()
         newPreparedMethod.declaringClassFile = this
         val methods = this.methods.unsafeArray.asInstanceOf[Array[AnyRef]]
         methods(index) = newPreparedMethod
@@ -271,9 +276,9 @@ final class ClassFile private (
      * @note This method is primarily intended to be used to perform load-time transformations!
      */
     def _UNSAFE_addMethod(methodTemplate: MethodTemplate): ClassFile = {
-        val newMethod = methodTemplate.prepareClassFileAttachement()
+        val newMethod = methodTemplate.prepareClassFileAttachment()
 
-        assert(this.findMethod(newMethod.name, newMethod.descriptor).isEmpty)
+        elidedAssert(this.findMethod(newMethod.name, newMethod.descriptor).isEmpty)
 
         val index = binarySearch[Method, JVMMethod](this.methods, newMethod)
         if (index >= 0)
@@ -304,7 +309,7 @@ final class ClassFile private (
 
     def methodBodies: Iterator[Code] = methods.iterator.flatMap(_.body)
 
-    import ClassFile._
+    import ClassFile.*
 
     def minorVersion: UShort = version.minor
 
@@ -494,7 +499,7 @@ final class ClassFile private (
                     )
                     .map[ClassType](_.innerClassType)
             }.getOrElse {
-                ArraySeq.empty
+                ArraySeq.empty[ClassType]
             }
 
         // THE FOLLOWING CODE IS NECESSARY TO COPE WITH BYTECODE GENERATED
@@ -522,7 +527,7 @@ final class ClassFile private (
                         classTypes.foreach { classType =>
                             classFileRepository.classFile(classType) match {
                                 case Some(classFile) =>
-                                    nestedTypes ++= classFile.nestedClasses(classFileRepository)
+                                    nestedTypes ++= classFile.nestedClasses(using classFileRepository)
                                 case None =>
                                     OPALLogger.warn(
                                         "class file reader",
@@ -535,8 +540,8 @@ final class ClassFile private (
                     }
 
                     // let's filter those classes that are known innerclasses of this type's
-                    // (indirect) outertype (they cannot be innerclasses of this class..)
-                    var nestedClassesOfOuterClass = outerClass.nestedClasses(classFileRepository)
+                    // (indirect) outertype (they cannot be innerclasses of this class...)
+                    var nestedClassesOfOuterClass = outerClass.nestedClasses(using classFileRepository)
                     while (nestedClassesOfOuterClass.nonEmpty &&
                            !nestedClassesOfOuterClass.contains(thisType) &&
                            !nestedClassesOfOuterClass.exists(nestedClassesCandidates.contains)
@@ -584,7 +589,7 @@ final class ClassFile private (
     )(
         implicit classFileRepository: ClassFileRepository
     ): Unit = {
-        nestedClasses(classFileRepository) foreach { nestedType =>
+        nestedClasses foreach { nestedType =>
             classFileRepository.classFile(nestedType) foreach { nestedClassFile =>
                 f(nestedClassFile)
                 nestedClassFile.foreachNestedClass(f)
@@ -640,9 +645,9 @@ final class ClassFile private (
      * (This does not include the static initializer.)
      */
     def constructors: Iterator[Method] = new Iterator[Method] {
-        private[this] var i = -1
+        private var i = -1
 
-        private[this] def gotoNextConstructor(): Unit = {
+        private def gotoNextConstructor(): Unit = {
             i += 1
             if (i >= methods.size) {
                 i = -1
@@ -825,7 +830,7 @@ final class ClassFile private (
 
     /**
      * Returns the method which directly overrides a method with the given properties. The result
-     * is `Success(<Method>)`` if we can find a method; `Empty` if no method can be found and
+     * is `Success(<Method>)` if we can find a method; `Empty` if no method can be found and
      * `Failure` if a method is found which supposedly overrides the specified method,
      * but which is less visible.
      *
@@ -838,7 +843,7 @@ final class ClassFile private (
         name:        String,
         descriptor:  MethodDescriptor
     ): Result[Method] = {
-        assert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
+        elidedAssert(visibility.isEmpty || visibility.get != ACC_PRIVATE)
 
         findMethod(name, descriptor).filter(m => !m.isStatic) match {
 
@@ -891,7 +896,7 @@ final class ClassFile private (
     }
 
     override def toString: String = {
-        val superIntefaces =
+        val superInterfaces =
             if (interfaceTypes.nonEmpty)
                 interfaceTypes.iterator.map[String](_.toJava).mkString("\t\twith ", " with ", "\n")
             else
@@ -901,7 +906,7 @@ final class ClassFile private (
             AccessFlags.toStrings(accessFlags, AccessFlagsContexts.CLASS).mkString("", " ", " ") +
             thisType.toJava + "\n" +
             superclassType.map("\textends " + _.toJava + "\n").getOrElse("") +
-            superIntefaces +
+            superInterfaces +
             annotationsToJava(runtimeVisibleAnnotations, "\t@{ ", " }\n") +
             annotationsToJava(runtimeInvisibleAnnotations, "\t@{ ", " }\n") +
             "\t[version=" + majorVersion + "." + minorVersion + "]\n)"
@@ -949,8 +954,8 @@ object ClassFile {
             thisType,
             superclassType,
             interfaceTypes,
-            fields.sorted[JVMField].map[Field](f => f.prepareClassFileAttachement()),
-            methods.sorted[JVMMethod].map[Method](f => f.prepareClassFileAttachement()),
+            fields.sorted[JVMField].map[Field](f => f.prepareClassFileAttachment()),
+            methods.sorted[JVMMethod].map[Method](f => f.prepareClassFileAttachment()),
             attributes
         )
     }
@@ -982,7 +987,7 @@ object ClassFile {
     def unapply(
         classFile: ClassFile
     ): Option[(Int, ClassType, Option[ClassType], Seq[ClassType])] = {
-        import classFile._
+        import classFile.*
         Some((accessFlags, thisType, superclassType, interfaceTypes))
     }
 }

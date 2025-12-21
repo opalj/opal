@@ -8,8 +8,9 @@ import scala.reflect.ClassTag
 
 import scala.collection.immutable.SortedSet
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.collection.SingletonSet
+import org.opalj.util.elidedAssert
 import org.opalj.value.IsIntegerValue
 
 /**
@@ -26,7 +27,7 @@ trait IntegerSetValues
     extends IntegerValuesDomain
     with ConcreteIntegerValues
     with IntegerRangeValuesFactory {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
+    domain: CorrelationalDomainSupport & Configuration & ExceptionsFactory =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -101,7 +102,7 @@ trait IntegerSetValues
     // IMPROVE Use optimized collection (without (un)boxing).
     def IntegerSet(values: SortedSet[Int]): DomainTypedValue[CTIntType]
 
-    type DomainBaseTypesBasedSet <: BaseTypesBasedSetLike with DomainValue
+    type DomainBaseTypesBasedSet <: BaseTypesBasedSetLike & DomainValue
     val DomainBaseTypesBasedSet: ClassTag[DomainBaseTypesBasedSet]
 
     trait BaseTypesBasedSetLike extends IntegerLikeValue { this: DomainTypedValue[CTIntType] =>
@@ -119,7 +120,7 @@ trait IntegerSetValues
         override final def upperBound: Int = Byte.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
-            assert(this ne other)
+            elidedAssert(this ne other)
             other match {
                 case _: U7BitSetLike  => U7BitSet()
                 case _: U15BitSetLike => U15BitSet()
@@ -139,7 +140,7 @@ trait IntegerSetValues
         override final def upperBound: Int = Short.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
-            assert(this ne other)
+            elidedAssert(this ne other)
             other match {
                 case _: U7BitSetLike | _: U15BitSetLike => U15BitSet()
                 case _: CharSetLike                     => CharValue(pc)
@@ -156,7 +157,7 @@ trait IntegerSetValues
         override final def upperBound: Int = Char.MaxValue
 
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
-            assert(this ne other)
+            elidedAssert(this ne other)
             other match {
                 case _: U7BitSetLike | _: U15BitSetLike | _: CharSetLike => CharValue(pc)
                 case _                                                   => IntegerValue(pc)
@@ -168,7 +169,7 @@ trait IntegerSetValues
         override final def lowerBound: Int = Byte.MinValue
         override final def upperBound: Int = Byte.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
-            assert(this ne other)
+            elidedAssert(this ne other)
             other match {
                 case _: U7BitSetLike  => ByteValue(pc)
                 case _: U15BitSetLike => ShortValue(pc)
@@ -183,7 +184,7 @@ trait IntegerSetValues
         override final def lowerBound: Int = Short.MinValue
         override final def upperBound: Int = Short.MaxValue
         def fuse(pc: PC, other: BaseTypesBasedSetLike): domain.DomainValue = {
-            assert(this ne other)
+            elidedAssert(this ne other)
             other match {
                 case _: U7BitSetLike  => ShortValue(pc)
                 case _: U15BitSetLike => ShortValue(pc)
@@ -194,7 +195,7 @@ trait IntegerSetValues
         }
     }
 
-    protected[this] def approximateSet(
+    protected def approximateSet(
         origin:     ValueOrigin,
         lowerBound: Int,
         upperBound: Int
@@ -233,10 +234,10 @@ trait IntegerSetValues
         lowerBound: Int,
         upperBound: Int
     ): DomainTypedValue[CTIntType] = {
-        assert(lowerBound <= upperBound)
+        elidedAssert(lowerBound <= upperBound)
 
         if (upperBound.toLong - lowerBound.toLong <= maxCardinalityOfIntegerSets)
-            IntegerSet(SortedSet[Int](lowerBound to upperBound: _*))
+            IntegerSet(SortedSet[Int]((lowerBound to upperBound)*))
         else
             approximateSet(origin, lowerBound, upperBound)
     }
@@ -579,7 +580,7 @@ trait IntegerSetValues
         operands: Operands,
         locals:   Locals
     ): (Operands, Locals) = {
-        assert(value1 ne value2, "the values are definitively equal; impossible refinement \"!=\"")
+        elidedAssert(value1 ne value2, "the values are definitively equal; impossible refinement \"!=\"")
 
         intValue(value1) { v1 =>
             value2 match {
@@ -612,7 +613,7 @@ trait IntegerSetValues
         //        println("intEstablishIsLessThan"+System.identityHashCode(left).toHexString + left+" .... "+System.identityHashCode(right).toHexString + right)
         //        println(locals.map(v => System.identityHashCode(v).toHexString+"."+v).mkString("", ";   ", ""))
 
-        assert(left ne right, "the values are definitively equal; impossible refinement \"<\"")
+        elidedAssert(left ne right, "the values are definitively equal; impossible refinement \"<\"")
 
         val result = (left, right) match {
             case (IntegerSetLike(ls), IntegerSetLike(rs)) =>
@@ -620,7 +621,7 @@ trait IntegerSetValues
                 val newLs = ls.filter(_ < rsMax)
                 val (operands1, locals1) =
                     if (newLs.size != ls.size) {
-                        if (newLs.size == 0) {
+                        if (newLs.isEmpty) {
                             val message = s"constraint: $left < $right led to impossible value"
                             throw new IllegalStateException(message)
                         }
@@ -815,13 +816,13 @@ trait IntegerSetValues
         }
     }
 
-    protected[this] def createIntegerValueOrArithmeticException(
+    protected def createIntegerValueOrArithmeticException(
         pc:        PC,
         exception: Boolean,
         results:   SortedSet[Int]
     ): IntegerValueOrArithmeticException = {
 
-        assert(exception || results.nonEmpty)
+        elidedAssert(exception || results.nonEmpty)
 
         if (results.nonEmpty) {
             val newValue = IntegerSet(pc, results)

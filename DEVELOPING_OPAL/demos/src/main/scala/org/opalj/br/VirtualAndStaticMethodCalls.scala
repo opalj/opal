@@ -9,7 +9,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 

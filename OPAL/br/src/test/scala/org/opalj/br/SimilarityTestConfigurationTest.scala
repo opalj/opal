@@ -120,7 +120,7 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
                 )
             }
         }
-        // the following class has less attributes
+        // the following class has fewer attributes
         val noLongerDeprecatedClass = simpleClass.copy(attributes = ArraySeq(SourceFile("abc")))
 
         // normal test fails
@@ -151,7 +151,7 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
                 (newLeft, newRight)
             }
         }
-        // the following class has less attributes
+        // the following class has fewer attributes
         val noLongerDeprecatedClass = simpleClass.copy(attributes = ArraySeq(SourceFile("abc")))
 
         // normal test fails
@@ -180,7 +180,7 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
                 )
             }
         }
-        // the following class has less fields
+        // the following class has fewer fields
         val classWithLessFields = simpleClass.copy(fields = ArraySeq(simpleField))
 
         // normal test fails

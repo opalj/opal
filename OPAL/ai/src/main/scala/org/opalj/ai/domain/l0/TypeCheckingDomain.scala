@@ -147,7 +147,7 @@ final class TypeCheckingDomain(
     override def isValueASubtypeOf(value: DomainValue, supertype: ReferenceType): Answer = {
         asReferenceValue(value) match {
             case _: NullValueLike => Unknown
-            case otherRefValue    => otherRefValue.isValueASubtypeOf(supertype)(classHierarchy)
+            case otherRefValue    => otherRefValue.isValueASubtypeOf(supertype)(using classHierarchy)
         }
     }
 

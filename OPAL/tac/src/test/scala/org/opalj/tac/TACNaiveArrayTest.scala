@@ -5,7 +5,7 @@ package tac
 import org.junit.runner.RunWith
 import org.scalatestplus.junit.JUnitRunner
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.TestSupport.biProject
 
 /**
@@ -88,7 +88,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             stmts.shouldEqual(Array(
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 5)),
@@ -156,7 +156,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             stmts.shouldEqual(Array[Stmt[IdBasedVar]](
                 Assignment(-1, SimpleVar(-1, ComputationalTypeReference), Param(ComputationalTypeReference, "this")),
                 Assignment(0, SimpleVar(0, ComputationalTypeInt), IntConst(0, 4)),
@@ -195,7 +195,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             stmts.shouldEqual(expectedAST(ComputationalTypeDouble, ArrayType(DoubleType), DoubleConst(6, 1.0d)))
             javaLikeCode.shouldEqual(expectedJLC("double", "1.0d"))
         }
@@ -206,7 +206,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             stmts.shouldEqual(expectedAST(ComputationalTypeFloat, ArrayType(FloatType), FloatConst(6, 2.0f)))
             javaLikeCode.shouldEqual(expectedJLC("float", "2.0f"))
         }
@@ -217,7 +217,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             stmts.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(IntegerType), IntConst(6, 2)))
             javaLikeCode.shouldEqual(expectedJLC("int", "2"))
         }
@@ -228,7 +228,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             stmts.shouldEqual(expectedAST(ComputationalTypeLong, ArrayType(LongType), LongConst(6, 1)))
             javaLikeCode.shouldEqual(expectedJLC("long", "1l"))
         }
@@ -239,7 +239,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             stmts.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ShortType), IntConst(6, 2)))
             javaLikeCode.shouldEqual(expectedJLC("short", "2"))
         }
@@ -250,7 +250,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             stmts.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(ByteType), IntConst(6, 2)))
             javaLikeCode.shouldEqual(expectedJLC("byte", "2"))
         }
@@ -261,7 +261,7 @@ class TACNaiveArrayTest extends TACNaiveTest {
             val javaLikeCode = ToTxt.stmtsToTxtStmt(stmts, false)
 
             assert(stmts.nonEmpty)
-            assert(javaLikeCode.length > 0)
+            assert(javaLikeCode.nonEmpty)
             stmts.shouldEqual(expectedAST(ComputationalTypeInt, ArrayType(CharType), IntConst(6, 2)))
             javaLikeCode.shouldEqual(expectedJLC("char", "2"))
         }

@@ -73,11 +73,11 @@ object FieldAndArrayUsageAnalysis extends ProjectsAnalysisApplication {
         val (defSites, ass) = time {
             val defSites = project.get(DefinitionSitesKey)
             (defSites, defSites.getAllocationSites)
-        } { t => info("progress", s"allocationSites took ${t.toSeconds}")(project.logContext) }
+        } { t => info("progress", s"allocationSites took ${t.toSeconds}")(using project.logContext) }
 
         val propertyStore = time {
             project.get(PropertyStoreKey)
-        } { t => info("progress", s"initialization of property store took ${t.toSeconds}")(project.logContext) }
+        } { t => info("progress", s"initialization of property store took ${t.toSeconds}")(using project.logContext) }
         time {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(
@@ -85,13 +85,13 @@ object FieldAndArrayUsageAnalysis extends ProjectsAnalysisApplication {
                 LazyL0BaseAIAnalysis,
                 TACAITransformer /* LazyL0TACAIAnalysis */
             )
-        } { t => info("progress", s"escape analysis took ${t.toSeconds}")(project.logContext) }
+        } { t => info("progress", s"escape analysis took ${t.toSeconds}")(using project.logContext) }
         for {
             as <- ass
             pc = as.pc
             m = as.method
             body = m.definedMethod.body.get if m.hasSingleDefinedMethod // This analysis does not support virtual def sites
-            FinalP(tacai) = propertyStore(m.definedMethod, org.opalj.tac.fpcf.properties.TACAI.key)
+            FinalP(tacai) = propertyStore(m.definedMethod, org.opalj.tac.fpcf.properties.TACAI.key): @unchecked
             code = tacai.tac.get
             stmts = code.stmts
             index = stmts indexWhere { stmt => stmt.pc == pc }
@@ -175,7 +175,7 @@ object FieldAndArrayUsageAnalysis extends ProjectsAnalysisApplication {
                                             }
 
                                             for {
-                                                Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) <- stmts
+                                                case Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) <- stmts
                                                 if arrayRef2.isVar
                                                 if arrayRef2.asVar.definedBy.exists(defSitesOfArray.contains)
                                             } {

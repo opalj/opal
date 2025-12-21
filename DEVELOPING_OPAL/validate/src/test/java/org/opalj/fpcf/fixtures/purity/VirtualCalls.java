@@ -48,7 +48,7 @@ public class VirtualCalls {
         return bc.abstractMethod(5);
     }
 
-    @SideEffectFree("Calls side-effect free final method")
+    @SideEffectFree("Calls side-effect-free final method")
     @Impure(value = "Calls impure final method", analyses = L0PurityAnalysis.class)
     public int abstractMethodCall2(SubClassB b) {
         BaseClass bc = b;
@@ -67,7 +67,7 @@ public class VirtualCalls {
         return bc.abstractMethod(5);
     }
 
-    @Impure("abstractMethod could be overriden in a subtype of BaseClass that is not available")
+    @Impure("abstractMethod could be overridden in a subtype of BaseClass that is not available")
     public int abstractMethodCall4(BaseClass bc) {
         if (bc == null)
             return 0;
@@ -82,14 +82,14 @@ public class VirtualCalls {
         return bc.abstractMethod(i);
     }
 
-    @SideEffectFree(value = "Calls side-effect free method on object with precise type")
+    @SideEffectFree(value = "Calls side-effect-free method on object with precise type")
     @Impure(value = "Analysis doesn't handle virtual calls", analyses = L0PurityAnalysis.class)
     public int sideEffectFreeAbstractMethodCall(int i) {
         BaseClass bc = new SubClassB();
         return bc.abstractMethod(i);
     }
 
-    @Impure("nonAbstractMethod could be overriden in a subtype of BaseClass that is not available")
+    @Impure("nonAbstractMethod could be overridden in a subtype of BaseClass that is not available")
     public int impureNonAbstractMethodCall(BaseClass bc) {
         if (bc == null)
             return 0;

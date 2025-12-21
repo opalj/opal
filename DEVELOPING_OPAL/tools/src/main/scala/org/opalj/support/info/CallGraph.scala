@@ -32,6 +32,7 @@ import org.opalj.cli.OutputFileArg
 import org.opalj.cli.PlainArg
 import org.opalj.cli.ResultFileArg
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.CallGraphArg
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CGBasedCommandLineConfig
@@ -40,6 +41,7 @@ import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
+import org.opalj.util.Seconds
 
 /**
  * Computes a call graph and reports its size.
@@ -93,8 +95,8 @@ object CallGraph extends ProjectsAnalysisApplication {
         execution:      Int
     ): (Project[URL], BasicReport) = {
         val (project, projectTime) = analysisConfig.setupProject()
-        implicit val (ps, propertyStoreTime) = analysisConfig.setupPropertyStore(project)
-        val (cg, callGraphTime) = analysisConfig.setupCallGaph(project)
+        implicit val (ps: PropertyStore, propertyStoreTime: Seconds) = analysisConfig.setupPropertyStore(project)
+        val (cg, callGraphTime) = analysisConfig.setupCallGraph(project)
 
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm =>
@@ -104,7 +106,7 @@ object CallGraph extends ProjectsAnalysisApplication {
 
         val algorithm = analysisConfig(CallGraphArg)
 
-        if (algorithm.isInstanceOf[PointsToCallGraphKey]) {
+        if (algorithm.get.isInstanceOf[PointsToCallGraphKey]) {
             val ptss = ps.entities(AllocationSitePointsToSet.key).toList
 
             println(s"PTSs ${ptss.size}")
@@ -112,11 +114,11 @@ object CallGraph extends ProjectsAnalysisApplication {
 
             val byType = ptss.groupBy(_.e.getClass)
 
-            def getNum(tpe: Class[_ <: Entity]): Int = {
+            def getNum(tpe: Class[? <: Entity]): Int = {
                 byType.get(tpe).map(_.size).getOrElse(0)
             }
 
-            def getEntries(tpe: Class[_ <: Entity]): Int = {
+            def getEntries(tpe: Class[? <: Entity]): Int = {
                 byType.get(tpe).map(_.map(_.ub.numElements).sum).getOrElse(0)
             }
 

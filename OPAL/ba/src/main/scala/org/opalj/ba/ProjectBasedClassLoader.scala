@@ -18,9 +18,8 @@ class ProjectBasedInMemoryClassLoader(
 ) extends ClassLoader(parent) {
 
     @throws[ClassNotFoundException]
-    override def findClass(name: String): Class[_] = {
+    override def findClass(name: String): Class[?] = {
         project.classFile(ClassType(name.replace('.', '/'))) match {
-
             case Some(cf) =>
                 val bytes = Assembler(ba.toDA(cf))
                 defineClass(name, bytes, 0, bytes.length)

@@ -56,9 +56,9 @@ class CallGraphAnalysis private[cg] (
     override val project: SomeProject
 ) extends ReachableMethodAnalysis with TypeConsumerAnalysis {
 
-    private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
-    private[this] lazy val getCBSTargets = project.get(CallBySignatureKey)
-    private[this] val resovleCallBySignature =
+    private val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
+    private lazy val getCBSTargets = project.get(CallBySignatureKey)
+    private val resolveCallBySignature =
         project.config.getBoolean("org.opalj.br.analyses.cg.callBySignatureResolution")
 
     def c(state: TACAIBasedCGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -104,7 +104,7 @@ class CallGraphAnalysis private[cg] (
                                 tgtR,
                                 calls
                             )
-                    }(state)
+                    }(using state)
                 }
 
                 if (eps.isFinal) {
@@ -113,7 +113,7 @@ class CallGraphAnalysis private[cg] (
                     state.updateDependency(eps)
                 }
 
-                returnResult(calls)(state)
+                returnResult(calls)(using state)
         }
     }
 
@@ -129,9 +129,9 @@ class CallGraphAnalysis private[cg] (
         processMethod(state, new DirectCalls())
     }
 
-    protected[this] def doHandleVirtualCall(
+    protected def doHandleVirtualCall(
         callContext:                   ContextType,
-        call:                          Call[V] with VirtualCall[V],
+        call:                          Call[V] & VirtualCall[V],
         pc:                            Int,
         specializedDeclaringClassType: ReferenceType,
         isPrecise:                     Boolean,
@@ -141,7 +141,7 @@ class CallGraphAnalysis private[cg] (
         val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
 
         val cbsTargets: Set[ReferenceType] =
-            if (!isPrecise && resovleCallBySignature && call.isInterface &&
+            if (!isPrecise && resolveCallBySignature && call.isInterface &&
                 call.declaringClass.isClassType
             ) {
                 val cf = project.classFile(call.declaringClass.asClassType)
@@ -265,10 +265,10 @@ class CallGraphAnalysis private[cg] (
                 )
 
             case VirtualFunctionCallStatement(call) =>
-                handleVirtualCall(state.callContext, call, call.pc, calls)(state)
+                handleVirtualCall(state.callContext, call, call.pc, calls)(using state)
 
             case call: VirtualMethodCall[V] =>
-                handleVirtualCall(state.callContext, call, call.pc, calls)(state)
+                handleVirtualCall(state.callContext, call, call.pc, calls)(using state)
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) =>
                 calls.addIncompleteCallSite(idc.pc)
@@ -282,7 +282,7 @@ class CallGraphAnalysis private[cg] (
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
-            case idc: InvokedynamicMethodCall[_] =>
+            case idc: InvokedynamicMethodCall[?] =>
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
@@ -291,10 +291,10 @@ class CallGraphAnalysis private[cg] (
             case _ => // nothing to do
         }
 
-        returnResult(calls, enforceCalleesResult = true)(state)
+        returnResult(calls, enforceCalleesResult = true)(using state)
     }
 
-    protected[this] def returnResult(
+    protected def returnResult(
         calleesAndCallers:    DirectCalls,
         enforceCalleesResult: Boolean = false
     )(implicit state: TACAIBasedCGState[ContextType]): ProperPropertyComputationResult = {
@@ -375,14 +375,14 @@ class CallGraphAnalysis private[cg] (
     }
 
     /**
-     * Computes the calles of the given `method` including the known effect of the `call` and
+     * Computes the callees of the given `method` including the known effect of the `call` and
      * the call sites associated ith this call (in order to process updates of instantiated types).
      * There can be multiple "call sites", in case the three-address code has computed multiple
      * type bounds for the receiver.
      */
-    private[this] def handleVirtualCall(
+    private def handleVirtualCall(
         callContext:       ContextType,
-        call:              Call[V] with VirtualCall[V],
+        call:              Call[V] & VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
@@ -413,10 +413,10 @@ class CallGraphAnalysis private[cg] (
         }
     }
 
-    protected[this] def handlePreciseCall(
+    protected def handlePreciseCall(
         calleeType:        ClassType,
         callContext:       ContextType,
-        call:              Call[V] with VirtualCall[V],
+        call:              Call[V] & VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: TACAIBasedCGState[ContextType]): Unit = {
@@ -451,7 +451,7 @@ object CallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
         if (entryPoints.isEmpty)
             OPALLogger.logOnce(
                 Error("project configuration", "the project has no entry points")
-            )(p.logContext)
+            )(using p.logContext)
 
         entryPoints.foreach { ep =>
             ps.preInitialize(ep, Callers.key) {

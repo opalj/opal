@@ -37,7 +37,7 @@ package object xta {
     def candidateMatchesTypeFilter(candidateType: ReferenceType, filterType: ReferenceType)(
         implicit
         classHierarchy: ClassHierarchy,
-        project:        Project[_]
+        project:        Project[?]
     ): Boolean = {
         val answer = classHierarchy.isASubtypeOf(candidateType, filterType)
 

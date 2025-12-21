@@ -3,8 +3,6 @@ package org.opalj
 package br
 package reader
 
-import scala.reflect.ClassTag
-
 import org.opalj.bi.reader.Record_attributeReader
 
 /**
@@ -20,7 +18,6 @@ trait Record_attributeBinding
     type Record_attribute = br.Record
 
     type RecordComponent = br.RecordComponent
-    override implicit val recordComponentType: ClassTag[RecordComponent] = ClassTag(classOf[br.RecordComponent])
 
     override def Record_attribute(
         cp:                   Constant_Pool,

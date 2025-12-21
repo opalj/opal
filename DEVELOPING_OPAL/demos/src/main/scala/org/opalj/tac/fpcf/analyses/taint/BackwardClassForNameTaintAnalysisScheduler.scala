@@ -128,7 +128,7 @@ object BackwardClassForNameTaintAnalysisScheduler
         p:  SomeProject,
         ps: PropertyStore
     ): BackwardClassForNameTaintAnalysisScheduler = {
-        new BackwardClassForNameTaintAnalysisScheduler()(p)
+        new BackwardClassForNameTaintAnalysisScheduler()(using p)
     }
 
     override def property: IFDSPropertyMetaInformation[JavaStatement, TaintFact] = Taint

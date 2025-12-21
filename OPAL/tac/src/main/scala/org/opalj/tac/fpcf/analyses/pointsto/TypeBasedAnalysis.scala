@@ -18,16 +18,16 @@ import org.opalj.fpcf.PropertyKey
  */
 trait TypeBasedAnalysis extends AbstractPointsToBasedAnalysis {
 
-    override protected[this] type ElementType = ReferenceType
-    override protected[this] type PointsToSet = TypeBasedPointsToSet
+    override protected type ElementType = ReferenceType
+    override protected type PointsToSet = TypeBasedPointsToSet
 
-    override protected[this] val pointsToPropertyKey: PropertyKey[TypeBasedPointsToSet] = {
+    override protected val pointsToPropertyKey: PropertyKey[TypeBasedPointsToSet] = {
         TypeBasedPointsToSet.key
     }
 
-    override protected[this] def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
+    override protected def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
-    override protected[this] def createPointsToSet(
+    override protected def createPointsToSet(
         pc:            Int,
         callContext:   ContextType,
         allocatedType: ReferenceType,
@@ -35,9 +35,9 @@ trait TypeBasedAnalysis extends AbstractPointsToBasedAnalysis {
         isEmptyArray:  Boolean = false
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
 
-    @inline protected[this] def getTypeOf(element: ReferenceType): ReferenceType = element
+    @inline protected def getTypeOf(element: ReferenceType): ReferenceType = element
 
-    @inline protected[this] def getTypeIdOf(element: ReferenceType): Int = element.id
+    @inline protected def getTypeIdOf(element: ReferenceType): Int = element.id
 
-    @inline protected[this] def isEmptyArray(element: ReferenceType): Boolean = false
+    @inline protected def isEmptyArray(element: ReferenceType): Boolean = false
 }

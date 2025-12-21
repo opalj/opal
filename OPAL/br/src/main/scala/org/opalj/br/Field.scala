@@ -3,7 +3,6 @@ package org.opalj
 package br
 
 import scala.collection.immutable.ArraySeq
-import scala.math.Ordered
 
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_TRANSIENT
@@ -57,9 +56,9 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      */
     def attributes: Attributes
 
-    // This method is only to be called by ..br.ClassFile to associate this method
+    // This method is only to be called by br.ClassFile to associate this method
     // with the respective class file.
-    private[br] def prepareClassFileAttachement(): Field = {
+    private[br] def prepareClassFileAttachment(): Field = {
         new Field(
             null /*will be set by class file*/,
             accessFlags,
@@ -113,8 +112,8 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     /**
      * Returns this field's constant value.
      */
-    def constantFieldValue: Option[ConstantFieldValue[_]] = {
-        attributes collectFirst { case cv: ConstantFieldValue[_] => cv }
+    def constantFieldValue: Option[ConstantFieldValue[?]] = {
+        attributes collectFirst { case cv: ConstantFieldValue[?] => cv }
     }
 
     def signatureToJava(withAccessFlags: Boolean = false): String = {
@@ -136,7 +135,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
      */
     def compare(other: JVMField): Int = {
         if (this.name eq other.name) {
-            this.fieldType compare other.fieldType
+            this.fieldType.compare(other.fieldType)
         } else if (this.name < other.name) {
             -1
         } else {
@@ -150,7 +149,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     //
     //
 
-    override def toString(): String = {
+    override def toString: String = {
         import AccessFlagsContexts.FIELD
         val jAccessFlags = AccessFlags.toStrings(accessFlags, FIELD).mkString(" ")
         val jDescriptor = fieldType.toJava + " " + name
@@ -162,7 +161,7 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
             }
 
         if (attributes.nonEmpty) {
-            field + attributes.map(_.getClass().getSimpleName()).mkString("«", ", ", "»")
+            field + attributes.map(_.getClass.getSimpleName()).mkString("«", ", ", "»")
         } else {
             field
         }
@@ -206,8 +205,8 @@ final class Field private[br] (
         s"${declaringClassFile.thisType.toJava}{ ${signatureToJava(true)} $message }"
     }
 
-    override def toString(): String = {
-        super.toString() + " // in " + declaringClassFile.thisType.toJava
+    override def toString: String = {
+        super.toString + " // in " + declaringClassFile.thisType.toJava
     }
 }
 

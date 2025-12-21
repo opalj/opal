@@ -9,18 +9,18 @@ import java.net.URL
 import scala.Console.GREEN
 import scala.Console.RED
 import scala.Console.RESET
-import scala.collection.{Map => AMap}
-import scala.collection.{Set => ASet}
+import scala.collection.Map as AMap
+import scala.collection.Set as ASet
 import scala.collection.immutable
 import scala.collection.mutable
-import scala.collection.mutable.{Map => MutableMap}
+import scala.collection.mutable.Map as MutableMap
 import scala.io.Source
 import scala.util.matching.Regex
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.analyses.Project
 import org.opalj.br.reader.Java8Framework.ClassFiles
-import org.opalj.de._
+import org.opalj.de.*
 import org.opalj.de.DependencyTypes.toUsageDescription
 import org.opalj.io.processSource
 import org.opalj.log.GlobalLogContext
@@ -39,7 +39,7 @@ import scala.collection.parallel.CollectionConverters.IterableIsParallelizable
  * evaluated.
  *
  * The intended way to create a specification is to create a new anonymous Specification
- * class that contains the specification of the architecture. Afterwards the specification
+ * class that contains the specification of the architecture. Afterward, the specification
  * object can be used to get the list of architectural violations.
  *
  * {{{
@@ -94,21 +94,21 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
     import project.logContext
 
-    private[this] def logProgress(logMessage: String): Unit = {
+    private def logProgress(logMessage: String): Unit = {
         OPALLogger.progress(if (useAnsiColors) GREEN + logMessage + RESET else logMessage)
     }
 
-    private[this] def logWarn(logMessage: String): Unit = {
+    private def logWarn(logMessage: String): Unit = {
         val message = if (useAnsiColors) RED + logMessage + RESET else logMessage
         OPALLogger.warn("project warn", message)
     }
 
-    private[this] def logInfo(logMessage: String): Unit = {
+    private def logInfo(logMessage: String): Unit = {
         OPALLogger.info("project info", logMessage)
     }
 
     @volatile
-    private[this] var theEnsembles: MutableMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
+    private var theEnsembles: MutableMap[Symbol, (SourceElementsMatcher, ASet[VirtualSourceElement])] =
         scala.collection.mutable.HashMap.empty
 
     /**
@@ -120,7 +120,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         theEnsembles
 
     // calculated after all class files have been loaded
-    private[this] val theOutgoingDependencies: MutableMap[
+    private val theOutgoingDependencies: MutableMap[
         VirtualSourceElement,
         AMap[VirtualSourceElement, DependencyTypesSet]
     ] =
@@ -135,7 +135,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         theOutgoingDependencies
 
     // calculated after all class files have been loaded
-    private[this] val theIncomingDependencies: mutable.Map[VirtualSourceElement, immutable.Set[(
+    private val theIncomingDependencies: mutable.Map[VirtualSourceElement, immutable.Set[(
         VirtualSourceElement,
         DependencyType
     )]] = {
@@ -151,11 +151,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         theIncomingDependencies
 
     // calculated after the extension of all ensembles is determined
-    private[this] val matchedSourceElements: mutable.HashSet[VirtualSourceElement] = mutable.HashSet.empty
+    private val matchedSourceElements: mutable.HashSet[VirtualSourceElement] = mutable.HashSet.empty
 
-    private[this] val allSourceElements: mutable.HashSet[VirtualSourceElement] = mutable.HashSet.empty
+    private val allSourceElements: mutable.HashSet[VirtualSourceElement] = mutable.HashSet.empty
 
-    private[this] var unmatchedSourceElements: ASet[VirtualSourceElement] = mutable.HashSet.empty
+    private var unmatchedSourceElements: ASet[VirtualSourceElement] = mutable.HashSet.empty
 
     /**
      * Adds a new ensemble definition to this architecture specification.
@@ -209,12 +209,12 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      */
     @throws(classOf[SpecificationError])
     implicit def StringToSourceElementMatcher(matcher: String): SourceElementsMatcher = {
-        if (matcher endsWith ".*")
-            PackageMatcher(matcher.substring(0, matcher.length() - 2))
-        else if (matcher endsWith ".**")
-            PackageMatcher(matcher.substring(0, matcher.length() - 3), true)
-        else if (matcher endsWith "*")
-            ClassMatcher(matcher.substring(0, matcher.length() - 1), matchPrefix = true)
+        if (matcher.endsWith(".*"))
+            PackageMatcher(matcher.substring(0, matcher.length() - 2).replace('.', '/'))
+        else if (matcher.endsWith(".**"))
+            PackageMatcher(matcher.substring(0, matcher.length() - 3).replace('.', '/'), true)
+        else if (matcher.endsWith("*"))
+            ClassMatcher(matcher.substring(0, matcher.length() - 1).replace('.', '/'), true)
         else if (matcher.indexOf('*') == -1)
             ClassMatcher(matcher.replace('.', '/'))
         else
@@ -435,7 +435,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             this(
                 sourceEnsemble,
                 annotationPredicates,
-                annotationPredicates.map(_.toDescription()).mkString("(", " - ", ")"),
+                annotationPredicates.map(_.toDescription).mkString("(", " - ", ")"),
                 matchAny
             )
 
@@ -466,7 +466,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                             case _       => IndexedSeq.empty
                         }
 
-                    case _ => IndexedSeq.empty
+                    case _: VirtualModule => IndexedSeq.empty
                 }
 
                 //              if !annotations.foldLeft(false) {
@@ -517,7 +517,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         methodPredicate: SourceElementPredicate[Method]
     ) extends PropertyChecker {
 
-        override def property: String = methodPredicate.toDescription()
+        override def property: String = methodPredicate.toDescription
 
         override def ensembles: Seq[Symbol] = Seq(sourceEnsemble)
 
@@ -577,11 +577,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     case s: VirtualClass => project.classFile(s.classType.asClassType).get
                     case _               => throw SpecificationError(sourceElement.toJava + " is not a class")
                 }
-                if sourceClassFile.superclassType.exists(s =>
-                    !allLocalTargetSourceElements.exists(v =>
-                        v.classType.asClassType.equals(s)
-                    )
-                )
+                if sourceClassFile.superclassType.exists { s =>
+                    !allLocalTargetSourceElements.exists(v => v.classType.asClassType.equals(s))
+                }
             } yield {
                 PropertyViolation(
                     project,
@@ -665,7 +663,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             matchAny:             Boolean = false
         ): Unit = {
             architectureCheckers =
-                new LocalOutgoingAnnotatedWithConstraint(
+                LocalOutgoingAnnotatedWithConstraint(
                     contextEnsembleSymbol,
                     annotationPredicates,
                     property,
@@ -677,7 +675,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             methodPredicate: SourceElementPredicate[Method]
         ): Unit = {
             architectureCheckers =
-                new LocalOutgoingShouldImplementMethodConstraint(
+                LocalOutgoingShouldImplementMethodConstraint(
                     contextEnsembleSymbol,
                     methodPredicate
                 ) :: architectureCheckers
@@ -779,7 +777,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     val (ensembleSymbol, (sourceElementMatcher, _)) = ensemble
                     // if a sourceElementMatcher is reused!
                     sourceElementMatcher.synchronized {
-                        val extension = sourceElementMatcher.extension(project)
+                        val extension = sourceElementMatcher.extension(using project)
                         if (extension.isEmpty && sourceElementMatcher != NoSourceElementsMatcher)
                             logWarn(s"   $ensembleSymbol (${extension.size})")
                         else
@@ -795,7 +793,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
             logInfo("   => Matched source elements: " + matchedSourceElements.size)
             logInfo("   => Other source elements: " + unmatchedSourceElements.size)
-        } { ns => logProgress("3. determing the extension of the ensembles took " + ns.toSeconds) }
+        } { ns => logProgress("3. determining the extension of the ensembles took " + ns.toSeconds) }
 
         // Check all rules
         //
@@ -834,7 +832,7 @@ object Specification {
         if (file.isDirectory)
             throw SpecificationError("the specified jar file is a directory: " + jarName)
 
-        OPALLogger.info("creating project", s"loading $jarName")(GlobalLogContext)
+        OPALLogger.info("creating project", s"loading $jarName")(using GlobalLogContext)
 
         Project.JavaClassFileReader().ClassFiles(file)
     }
@@ -861,7 +859,7 @@ object Specification {
         if (file.isDirectory)
             throw SpecificationError("the specified jar file is a directory: " + jarName)
 
-        OPALLogger.info("creating project", s"loading library $jarName")(GlobalLogContext)
+        OPALLogger.info("creating project", s"loading library $jarName")(using GlobalLogContext)
 
         Project.JavaLibraryClassFileReader.ClassFiles(file)
     }
@@ -875,7 +873,7 @@ object Specification {
 
     /**
      * Returns a list of paths contained inside the given classpath file.
-     * A classpath file should contain paths as text seperated by a path-separator character.
+     * A classpath file should contain paths as text separated by a path-separator character.
      * On UNIX systems, this character is <code>':'</code>; on Microsoft Windows systems it
      * is <code>';'</code>.
      *

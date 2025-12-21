@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 trait TacBasedAliasAnalysis extends AbstractAliasAnalysis {
 
-    override protected[this] type AnalysisState <: TacBasedAliasAnalysisState
+    override protected type AnalysisState <: TacBasedAliasAnalysisState
 
     override def doDetermineAlias(
         implicit
@@ -44,7 +44,7 @@ trait TacBasedAliasAnalysis extends AbstractAliasAnalysis {
      *
      * @return The result of the computation.
      */
-    protected[this] def analyzeTAC()(
+    protected def analyzeTAC()(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
@@ -53,7 +53,7 @@ trait TacBasedAliasAnalysis extends AbstractAliasAnalysis {
     /**
      * Retrieves the TACAI for the given method.
      */
-    private[this] def retrieveTAC(
+    private def retrieveTAC(
         m: Method
     )(
         implicit
@@ -76,7 +76,7 @@ trait TacBasedAliasAnalysis extends AbstractAliasAnalysis {
     /**
      * Continues the computation when a TACAI property is updated.
      */
-    override protected[this] def continuation(
+    override protected def continuation(
         someEPS: SomeEPS
     )(
         implicit
@@ -100,7 +100,7 @@ trait TacBasedAliasAnalysis extends AbstractAliasAnalysis {
     /**
      * @return `true` if both TACs are defined. If one of the elements is not method bound, it is not considered.
      */
-    private[this] def bothTacaisDefined(
+    private def bothTacaisDefined(
         implicit
         context: AnalysisContext,
         state:   AnalysisState
@@ -119,10 +119,10 @@ trait TacBasedAliasAnalysis extends AbstractAliasAnalysis {
  */
 trait TacBasedAliasAnalysisState extends AliasAnalysisState {
 
-    private[this] var _tacai1: Option[TACode[TACMethodParameter, V]] = None
-    private[this] var _tacai2: Option[TACode[TACMethodParameter, V]] = None
+    private var _tacai1: Option[TACode[TACMethodParameter, V]] = None
+    private var _tacai2: Option[TACode[TACMethodParameter, V]] = None
 
-    private[this] var _tacEPSToMethod: Map[SomeEPS, Method] = Map()
+    private var _tacEPSToMethod: Map[SomeEPS, Method] = Map()
 
     /**
      * Updates the TACAI for the given method.

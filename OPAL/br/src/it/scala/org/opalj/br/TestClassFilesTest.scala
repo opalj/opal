@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bi.TestResources.allBITestJARs
-import org.opalj.br.reader._
+import org.opalj.br.reader.*
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.io.process
 
@@ -54,7 +54,7 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
                 if (twinDiff.nonEmpty)
                     fail(s"the $classFile is not jvm equal to its twin: " + twinDiff.get)
 
-                for (MethodWithBody(body) <- classFile.methods.par) {
+                for (case MethodWithBody(body) <- classFile.methods.par) {
                     body.belongsToSubroutine() should not be (null)
 
                     testedMethods.set(true)
@@ -63,7 +63,7 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
                     var lastPC = -1
                     body iterate { (pc, instruction) =>
                         assert(
-                            instruction.isIsomorphic(pc, pc)(body),
+                            instruction.isIsomorphic(pc, pc)(using body),
                             s"$instruction should be isomorphic to itself"
                         )
                         isomorphicCount += 1
@@ -71,11 +71,11 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
                         if (lastPC >= 0 && instruction.opcode != body.instructions(lastPC).opcode) {
                             notIsomorphicCount += 1
                             assert(
-                                !instruction.isIsomorphic(pc, lastPC)(body),
+                                !instruction.isIsomorphic(pc, lastPC)(using body),
                                 s"$instruction should not be isomorphic to ${body.instructions(lastPC)}"
                             )
                             assert(
-                                !body.instructions(lastPC).isIsomorphic(lastPC, pc)(body),
+                                !body.instructions(lastPC).isIsomorphic(lastPC, pc)(using body),
                                 s"${body.instructions(lastPC)} should not be isomorphic to $instruction"
                             )
                         }

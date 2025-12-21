@@ -216,12 +216,12 @@ case class FieldReadAccessInformation(
 }
 
 case class FieldWriteAccessInformation(
-    protected val encodedDirectAccesses:                 LongLinkedSet,
-    protected[this] val encodedDirectAccessReceivers:    LongMap[AccessReceiver],
-    protected[this] val encodedDirectAccessParameters:   LongMap[AccessParameter],
-    protected val encodedIndirectAccesses:               LongLinkedSet,
-    protected[this] val encodedIndirectAccessReceivers:  LongMap[AccessReceiver],
-    protected[this] val encodedIndirectAccessParameters: LongMap[AccessParameter]
+    protected val encodedDirectAccesses:           LongLinkedSet,
+    protected val encodedDirectAccessReceivers:    LongMap[AccessReceiver],
+    protected val encodedDirectAccessParameters:   LongMap[AccessParameter],
+    protected val encodedIndirectAccesses:         LongLinkedSet,
+    protected val encodedIndirectAccessReceivers:  LongMap[AccessReceiver],
+    protected val encodedIndirectAccessParameters: LongMap[AccessParameter]
 ) extends FieldAccessInformation[FieldWriteAccessInformation]
     with FieldAccessInformationPropertyMetaInformation[FieldWriteAccessInformation] {
 

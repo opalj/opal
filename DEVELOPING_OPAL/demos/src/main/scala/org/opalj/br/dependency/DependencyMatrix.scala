@@ -4,7 +4,7 @@ package de
 
 import java.io.File
 
-import org.opalj.br._
+import org.opalj.br.*
 import org.opalj.br.analyses.ProjectsAnalysisApplication
 import org.opalj.br.fpcf.cli.MultiProjectAnalysisConfig
 import org.opalj.util.PerformanceEvaluation.time

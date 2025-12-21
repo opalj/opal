@@ -10,13 +10,14 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
-import scala.util.control.ControlThrowable
+import scala.util.boundary.Break
 
 import com.typesafe.config.Config
 
 import org.opalj.control.foreachWithIndex
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.log.LogContext
+import org.opalj.util.elidedAssert
 
 /**
  * Yet another parallel property store.
@@ -29,7 +30,7 @@ import org.opalj.log.LogContext
  * @author Dominik Helm
  */
 class PKECPropertyStore(
-    final val ctx:                   Map[Class[_], AnyRef],
+    final val ctx:                   Map[Class[?], AnyRef],
     val taskManager:                 PKECTaskManager,
     val THREAD_COUNT:                Int,
     override val MaxEvaluationDepth: Int
@@ -44,13 +45,13 @@ class PKECPropertyStore(
     val ps: Array[ConcurrentHashMap[Entity, EPKState]] =
         Array.fill(PropertyKind.SupportedPropertyKinds) { new ConcurrentHashMap() }
 
-    private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] =
+    private val triggeredComputations: Array[Array[SomePropertyComputation]] =
         new Array(PropertyKind.SupportedPropertyKinds)
 
-    private[this] val queues: Array[LinkedBlockingQueue[QualifiedTask]] =
+    private val queues: Array[LinkedBlockingQueue[QualifiedTask]] =
         Array.fill(THREAD_COUNT) { new LinkedBlockingQueue[QualifiedTask]() }
 
-    private[this] val initialQueues: Array[java.util.ArrayDeque[QualifiedTask]] =
+    private val initialQueues: Array[java.util.ArrayDeque[QualifiedTask]] =
         Array.fill(THREAD_COUNT) { new java.util.ArrayDeque[QualifiedTask](50000 / THREAD_COUNT) }
 
     override def shutdown(): Unit = {}
@@ -64,16 +65,16 @@ class PKECPropertyStore(
     //
     // --------------------------------------------------------------------------------------------
 
-    private[this] var quiescenceCounter = 0
+    private var quiescenceCounter = 0
     override def quiescenceCount: Int = quiescenceCounter
 
-    private[this] val scheduledTasks = new AtomicInteger(0)
+    private val scheduledTasks = new AtomicInteger(0)
     override def scheduledTasksCount: Int = scheduledTasks.get()
 
-    private[this] val scheduledOnUpdateComputations = new AtomicInteger(0)
+    private val scheduledOnUpdateComputations = new AtomicInteger(0)
     override def scheduledOnUpdateComputationsCount: Int = scheduledOnUpdateComputations.get
 
-    private[this] val fallbacksForComputedProperties = new AtomicInteger(0)
+    private val fallbacksForComputedProperties = new AtomicInteger(0)
     override def fallbacksUsedForComputedPropertiesCount: Int = fallbacksForComputedProperties.get
     override private[fpcf] def incrementFallbacksUsedForComputedPropertiesCounter(): Unit = {
         fallbacksForComputedProperties.getAndIncrement()
@@ -170,13 +171,13 @@ class PKECPropertyStore(
     //
     // --------------------------------------------------------------------------------------------
 
-    override protected[this] def doScheduleEagerComputationForEntity[E <: Entity](
+    override protected def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
     )(pc: PropertyComputation[E]): Unit = {
         schedulePropertyComputation(e, pc)
     }
 
-    override protected[this] def doRegisterTriggeredComputation[E <: Entity, P <: Property](
+    override protected def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],
         pc: PropertyComputation[E]
     ): Unit = {
@@ -193,7 +194,7 @@ class PKECPropertyStore(
         triggeredComputations(pkId) = newComputations
     }
 
-    override protected[this] def doSet(e: Entity, p: Property): Unit = {
+    override protected def doSet(e: Entity, p: Property): Unit = {
         val epkState = EPKState(FinalEP(e, p), null, null)
 
         val oldP = ps(p.id).put(e, epkState)
@@ -202,7 +203,7 @@ class PKECPropertyStore(
         }
     }
 
-    override protected[this] def doPreInitialize[E <: Entity, P <: Property](
+    override protected def doPreInitialize[E <: Entity, P <: Property](
         e:  E,
         pk: PropertyKey[P]
     )(pc: EOptionP[E, P] => InterimEP[E, P]): Unit = {
@@ -217,7 +218,7 @@ class PKECPropertyStore(
                 case epkState =>
                     pc(epkState.eOptP.asInstanceOf[EOptionP[E, P]])
             }
-        assert(newInterimEP.isRefinable)
+        elidedAssert(newInterimEP.isRefinable)
         val newEPKState = EPKState(newInterimEP, null, null)
         propertiesOfKind.put(e, newEPKState)
     }
@@ -238,7 +239,7 @@ class PKECPropertyStore(
         }
     }
 
-    private[this] def schedulePropertyComputation[E <: Entity](
+    private def schedulePropertyComputation[E <: Entity](
         e:  E,
         pc: PropertyComputation[E]
     ): Unit = {
@@ -268,11 +269,11 @@ class PKECPropertyStore(
                 r.asResults.foreach { handleResult }
 
             case IncrementalResult.id =>
-                val IncrementalResult(ir, npcs) = r
+                val IncrementalResult(ir, npcs) = r: @unchecked
                 handleResult(ir)
                 npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc =>
                     val (pc, e) = npc
-                    schedulePropertyComputation(e, pc)
+                    schedulePropertyComputation(e, pc.asInstanceOf[PropertyComputation[Entity]])
                 }
 
             //
@@ -283,11 +284,11 @@ class PKECPropertyStore(
                 handleFinalResult(r.asResult.finalEP)
 
             case MultiResult.id =>
-                val MultiResult(results) = r
+                val MultiResult(results) = r: @unchecked
                 results.iterator.foreach { finalEP => handleFinalResult(finalEP) }
 
             case InterimResult.id =>
-                val interimR = r.asInterimResult
+                val interimR = r.asInterimResult: @unchecked
                 handleInterimResult(
                     interimR.eps,
                     interimR.c,
@@ -295,11 +296,11 @@ class PKECPropertyStore(
                 )
 
             case PartialResult.id =>
-                val PartialResult(e, pk, u) = r
+                val PartialResult(e, pk, u) = r: @unchecked
                 handlePartialResult(u, e, pk)
 
             case InterimPartialResult.id =>
-                val InterimPartialResult(prs, dependees, c) = r
+                val InterimPartialResult(prs, dependees, c) = r: @unchecked
 
                 prs foreach { pr =>
                     handlePartialResult(
@@ -328,13 +329,18 @@ class PKECPropertyStore(
         }
     }
 
-    private[this] def handleFinalResult(
+    private def handleFinalResult(
         finalEP:       FinalEP[Entity, Property],
         unnotifiedPKs: Set[PropertyKind] = Set.empty
     ): Unit = {
         val SomeEPS(e, pk) = finalEP
         var isFresh = false
-        val ePKState = ps(pk.id).computeIfAbsent(e, { _ => isFresh = true; EPKState(finalEP, null, null) })
+        val ePKState = ps(pk.id).computeIfAbsent(
+            e,
+            { _ =>
+                isFresh = true; EPKState(finalEP, null, null)
+            }
+        )
         if (isFresh) triggerComputations(e, pk.id)
         else ePKState.setFinal(finalEP, unnotifiedPKs)
     }
@@ -346,22 +352,27 @@ class PKECPropertyStore(
         }
     }
 
-    private[this] def handleInterimResult(
-        interimEP: InterimEP[Entity, _ >: Null <: Property],
+    private def handleInterimResult(
+        interimEP: InterimEP[Entity, ? >: Null <: Property],
         c:         ProperOnUpdateContinuation,
         dependees: Set[SomeEOptionP]
     ): Unit = {
         val SomeEPS(e, pk) = interimEP
         var isFresh = false
         val ePKState =
-            ps(pk.id).computeIfAbsent(e, { _ => isFresh = true; EPKState(interimEP, c, dependees) })
+            ps(pk.id).computeIfAbsent(
+                e,
+                { _ =>
+                    isFresh = true; EPKState(interimEP, c, dependees)
+                }
+            )
         if (isFresh) {
             triggerComputations(e, pk.id)
             updateDependees(ePKState, dependees)
         } else ePKState.interimUpdate(interimEP, c, dependees)
     }
 
-    private[this] def handlePartialResult(
+    private def handlePartialResult(
         update: UpdateComputation[Entity, Property],
         e:      Entity,
         pk:     PropertyKey[Property]
@@ -379,7 +390,7 @@ class PKECPropertyStore(
         }
     }
 
-    override protected[this] def doApply[E <: Entity, P <: Property](
+    override protected def doApply[E <: Entity, P <: Property](
         epk:  EPK[E, P],
         e:    E,
         pkId: Int
@@ -459,10 +470,10 @@ class PKECPropertyStore(
         }
     }
 
-    private[this] val activeTasks = new AtomicInteger(0)
-    private[this] val threads: Array[PKECThread] = Array.fill(THREAD_COUNT) { null }
+    private val activeTasks = new AtomicInteger(0)
+    private val threads: Array[PKECThread] = Array.fill(THREAD_COUNT) { null }
 
-    private[this] def startThreads(thread: Int => PKECThread): Unit = {
+    private def startThreads(thread: Int => PKECThread): Unit = {
         var tId = 0
         while (tId < THREAD_COUNT) {
             val t = thread(tId)
@@ -496,25 +507,23 @@ class PKECPropertyStore(
         activeTasks.addAndGet(initialQueues.iterator.map(_.size()).sum)
 
         while (subPhaseId < subPhaseFinalizationOrder.length) {
-            var continueCycles = false
-            do {
-                var continueFallbacks = false
-                do {
+            while {
+                while {
                     startThreads(new WorkerThread(_))
 
                     quiescenceCounter += 1
 
                     startThreads(new FallbackThread(_))
 
-                    continueFallbacks = activeTasks.get() > 0
-                } while (continueFallbacks)
+                    activeTasks.get() > 0
+                } do ()
 
                 startThreads(new CycleResolutionThread(_))
 
                 resolveCycles()
 
-                continueCycles = activeTasks.get() > 0
-            } while (continueCycles)
+                activeTasks.get() > 0
+            } do ()
 
             startThreads(new PartialPropertiesFinalizerThread(_))
 
@@ -529,12 +538,11 @@ class PKECPropertyStore(
     override protected def clearPK(id: Int): Unit = ps(id).clear()
 
     private[this] val interimStates: Array[ArrayBuffer[EPKState]] =
-        Array.fill(THREAD_COUNT)(null)
-    private[this] val successors: Array[EPKState => Iterable[EPKState]] =
+    private val successors: Array[EPKState => Iterable[EPKState]] =
         Array.fill(THREAD_COUNT)(null)
 
     // executed on the main thread only
-    private[this] def resolveCycles(): Unit = {
+    private def resolveCycles(): Unit = {
         val theInterimStates = new ArrayBuffer[EPKState](interimStates.iterator.map(_.size).sum)
         var tId = 0
         while (tId < THREAD_COUNT) {
@@ -568,7 +576,7 @@ class PKECPropertyStore(
                 while ({ curInitialTask = initialTasks.poll(); curInitialTask != null }) {
                     curInitialTask.apply()
                 }
-                // Subtract the processed tasks just once to avoid synchronization overhad for
+                // Subtract the processed tasks just once to avoid synchronization overhead for
                 // decrementing every time we process a task
                 activeTasks.addAndGet(-initialTaskSize)
 
@@ -603,7 +611,7 @@ class PKECPropertyStore(
                     }
                 }
             } catch {
-                case ct: ControlThrowable    => throw ct
+                case b: Break[?]             => throw b
                 case _: InterruptedException =>
                 case ex: Throwable           =>
                     collectException(ex)
@@ -761,7 +769,7 @@ class PKECPropertyStore(
         }
     }
 
-    private[this] def getResponsibleTId(e: Entity): Int = {
+    private def getResponsibleTId(e: Entity): Int = {
         Math.abs(e.hashCode() >> 5) % THREAD_COUNT
     }
 }
@@ -770,7 +778,7 @@ case class EPKState(
     var eOptP:     SomeEOptionP,
     var c:         OnUpdateContinuation,
     var dependees: Set[SomeEOptionP],
-    // Use Java's HashSet here, this is internal implementiton only and they are *way* faster
+    // Use Java's HashSet here, this is internal implementation only and they are *way* faster
     dependers:           java.util.HashSet[EPKState] = new java.util.HashSet(),
     suppressedDependers: java.util.HashSet[EPKState] = new java.util.HashSet()
 ) {
@@ -843,7 +851,7 @@ case class EPKState(
             } else {
                 updateComputation(theEOptP) match {
                     case Some(interimEP) =>
-                        if (ps.debug) assert(eOptP != interimEP)
+                        if (ps.debug) elidedAssert(eOptP != interimEP)
                         dependers.synchronized {
                             eOptP = interimEP
                             notifyAndClearDependers(theEOptP, dependers)
@@ -1001,11 +1009,11 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
     @volatile var MaxThreads: Int = org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
     def apply(
-        context: PropertyStoreContext[_ <: AnyRef]*
+        context: PropertyStoreContext[? <: AnyRef]*
     )(
         implicit logContext: LogContext
     ): PKECPropertyStore = {
-        val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
+        val contextMap: Map[Class[?], AnyRef] = context.map(_.asTuple).toMap
 
         val config =
             contextMap.get(classOf[Config]) match {

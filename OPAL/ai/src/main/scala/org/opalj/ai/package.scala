@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 
-import scala.language.existentials
 import scala.reflect.ClassTag
 
 import scala.collection.AbstractIterator
@@ -17,13 +16,14 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.AnyToAnyThis
+import org.opalj.util.elidedAssert
 
 /**
- * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
+ * Implementation of an abstract interpretation (AI) framework.
  *
- * Please note that OPAL/the abstract interpreter just refers to the classes and traits
+ * Please note that the abstract interpreter just refers to the classes and traits
  * defined in this package (`ai`). The classes and traits defined in the sub-packages
- * (in particular in `domain`) are not considered to be part of the core of OPAL/the
+ * (in particular in `domain`) are not considered to be part of the core of the
  * abstract interpreter.
  *
  * @note This framework assumes that the analyzed bytecode is valid; i.e., the JVM's
@@ -50,7 +50,7 @@ package object ai {
         implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
-            assert(false) // <= tests whether assertions are on or off...
+            elidedAssert(false) // <= tests whether assertions are on or off...
             info(FrameworkName, "Production Build")
         } catch {
             case _: AssertionError => info(FrameworkName, "Development Build with Assertions")
@@ -62,13 +62,13 @@ package object ai {
      *
      * @note This type alias serves comprehension purposes only.
      */
-    type SomeAI[D <: Domain] = AI[_ >: D]
+    type SomeAI[D <: Domain] = AI[? >: D]
 
     type PrimitiveValuesFactory =
-        IntegerValuesFactory with LongValuesFactory with FloatValuesFactory with DoubleValuesFactory
+        IntegerValuesFactory & LongValuesFactory & FloatValuesFactory & DoubleValuesFactory
     type ValuesFactory =
-        PrimitiveValuesFactory with ReferenceValuesFactory with ExceptionsFactory with TypedValuesFactory
-    type TargetDomain = ValuesDomain with ValuesFactory
+        PrimitiveValuesFactory & ReferenceValuesFactory & ExceptionsFactory & TypedValuesFactory
+    type TargetDomain = ValuesDomain & ValuesFactory
 
     final type PCs = org.opalj.br.PCs
 
@@ -85,13 +85,13 @@ package object ai {
      * In general, parameters are identified by using negative origin information as described below.
      * Given that
      *  - the maximum size of the method parameters array is 255 and
-     *  - that the first slot is required for the `this` reference in case of instance methods and
+     *  - that the first slot is required for the this-reference in case of instance methods and
      *  - that `long` and `double` values require two slots
      * the smallest number used to encode that the value is an actual parameter is `-256`.
      *
      * === AI Framework ===
      *
-     * In case of the ai framework, values passed to a method get indexes as follows:
+     * In case of the AI framework, values passed to a method get indexes as follows:
      *  `-1-(isStatic ? 0 : 1)-(the index of the parameter adjusted by the computational
      * type of the previous parameters)`.
      *
@@ -123,10 +123,9 @@ package object ai {
      *
      * Values in the range [ [[SpecialValuesOriginOffset]] (`-800,000,000`) ,
      * [[MethodExternalExceptionsOriginOffset]] (`-1,000,000`) ] are used to identify exceptions that
-     * are created outside of the method; i.e., by an instruction which does not belong
-     * to the method.
+     * are created outside the method; i.e., by an instruction which does not belong to the method.
      * Exceptions in the range ([[MethodExternalExceptionsOriginOffset]] (`-1,000,000`),
-     * [[ImmediateVMExceptionsOriginOffset]] (-100,000)] are used to identify values that are
+     * [[ImmediateVMExceptionsOriginOffset]] (-100,000)) are used to identify values that are
      * created by the VM due to an exception while evaluating an instruction.
      *
      * @see [[isImmediateVMException]], [[ValueOriginForImmediateVMException]], [[pcOfImmediateVMException]],
@@ -139,7 +138,7 @@ package object ai {
     @inline final def NoValueOrigins: ValueOrigins = IntTrieSet.empty
 
     /**
-     * Used to identify that the origin of the value is outside of the program.
+     * Used to identify that the origin of the value is outside the program.
      *
      * For example, the VM sometimes performs comparisons against predetermined fixed
      * values (specified in the JVM Spec.). The origin associated with such values is
@@ -185,17 +184,17 @@ package object ai {
      */
     final val SUBROUTINE = -900000009
 
-    assert(SUBROUTINE_START <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE_END <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE_RETURN_TO_TARGET <= SpecialValuesOriginOffset)
-    assert(SUBROUTINE <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_START <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_END <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_INFORMATION_BLOCK_SEPARATOR_BOUND <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_RETURN_ADDRESS_LOCAL_VARIABLE <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE_RETURN_TO_TARGET <= SpecialValuesOriginOffset)
+    elidedAssert(SUBROUTINE <= SpecialValuesOriginOffset)
 
     /**
      * Identifies the ''upper bound for those origin values that encode origin
      * information about formal parameters''. That is, respective values
-     * identify formal parameters of a method including the `this` parameter (in first position).
+     * identify formal parameters of a method including the this-parameter (in first position).
      */
     final val FormalParametersOriginOffset /*: ValueOrigin*/ = -1
 
@@ -241,13 +240,13 @@ package object ai {
      */
     final def ValueOriginForImmediateVMException(pc: PC): ValueOrigin = {
         val origin = ImmediateVMExceptionsOriginOffset - pc
-        assert(
+        elidedAssert(
             origin <= ImmediateVMExceptionsOriginOffset,
             s"[pc:$pc] " +
                 s"origin($origin) > " +
                 s"ImmediateVMExceptionsOriginOffset($ImmediateVMExceptionsOriginOffset)"
         )
-        assert(origin > MethodExternalExceptionsOriginOffset)
+        elidedAssert(origin > MethodExternalExceptionsOriginOffset)
         origin
     }
 
@@ -258,7 +257,7 @@ package object ai {
      * @see [[ValueOriginForImmediateVMException]] for further information.
      */
     final def pcOfImmediateVMException(valueOrigin: ValueOrigin): PC = {
-        assert(valueOrigin <= ImmediateVMExceptionsOriginOffset)
+        elidedAssert(valueOrigin <= ImmediateVMExceptionsOriginOffset)
         -valueOrigin + ImmediateVMExceptionsOriginOffset
     }
 
@@ -290,13 +289,13 @@ package object ai {
      */
     final def ValueOriginForMethodExternalException(pc: Int): Int = {
         val origin = MethodExternalExceptionsOriginOffset - pc
-        assert(
+        elidedAssert(
             origin <= MethodExternalExceptionsOriginOffset,
             s"[pc:$pc] " +
                 s"origin($origin) > " +
                 s"MethodExternalExceptionsOriginOffset($MethodExternalExceptionsOriginOffset)"
         )
-        assert(SpecialValuesOriginOffset < origin)
+        elidedAssert(SpecialValuesOriginOffset < origin)
         origin
     }
 
@@ -307,7 +306,7 @@ package object ai {
      * @see [[MethodExternalExceptionsOriginOffset]] for further information.
      */
     final def pcOfMethodExternalException(valueOrigin: Int): Int = {
-        assert(valueOrigin <= MethodExternalExceptionsOriginOffset)
+        elidedAssert(valueOrigin <= MethodExternalExceptionsOriginOffset)
         -valueOrigin + MethodExternalExceptionsOriginOffset
     }
 
@@ -357,7 +356,7 @@ package object ai {
 
     /**
      * Calculates the initial `ValueOrigin` associated with a method's explicit parameter.
-     * The index of the first parameter is 0. If the method is not static the this reference
+     * The index of the first parameter is 0. If the method is not static the this-reference
      * stored in local variable `0` has the origin `-1`.
      *
      * @param  isStatic `true` if method is static and, hence, has no implicit parameter for `this`.
@@ -369,7 +368,7 @@ package object ai {
         descriptor:     MethodDescriptor,
         parameterIndex: Int
     ): Int /*ValueOrigin*/ = {
-        assert(descriptor.parametersCount > 0)
+        elidedAssert(descriptor.parametersCount > 0)
 
         var origin = if (isStatic) -1 else -2 // this handles the case parameterIndex == 0
         val parameterTypes = descriptor.parameterTypes
@@ -383,11 +382,11 @@ package object ai {
 
     final type Operands[T >: Null <: ValuesDomain#DomainValue] = List[T]
     final type AnOperandsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Operands[T]]
-    final type TheOperandsArray[T >: Null <: d.Operands forSome { val d: ValuesDomain }] = Array[T]
+    final type TheOperandsArray[T >: Null <: ValuesDomain#Operands] = Array[T]
 
     final type Locals[T >: Null <: ValuesDomain#DomainValue] = org.opalj.collection.mutable.Locals[T]
     final type ALocalsArray[T >: Null <: ValuesDomain#DomainValue] = Array[Locals[T]]
-    final type TheLocalsArray[T >: Null <: d.Locals forSome { val d: ValuesDomain }] = Array[T]
+    final type TheLocalsArray[T >: Null <: ValuesDomain#Locals] = Array[T]
 
     /**
      * Creates a human-readable textual representation of the current memory layout.
@@ -484,11 +483,11 @@ package object ai {
     ): Iterator[aiResult.domain.DomainValue] = {
         new AbstractIterator[aiResult.domain.DomainValue] {
 
-            private[this] var parameterIndex: Int = 0
-            private[this] val totalParameters: Int = {
+            private var parameterIndex: Int = 0
+            private val totalParameters: Int = {
                 descriptor.parametersCount + (if (isStatic) 0 else 1)
             }
-            private[this] var localsIndex: Int = 0
+            private var localsIndex: Int = 0
 
             override def hasNext: Boolean = parameterIndex < totalParameters
 
@@ -529,16 +528,15 @@ package object ai {
      *      be performed once and the adapted value will be reused; this ensures that
      *      the relation between values remains stable.
      * @param calledMethod The method that will be evaluated using the given operands.
-     * @param targetDomain The [[Domain]] that will be use to perform the abstract
-     *      interpretation.
+     * @param targetDomain The [[Domain]] that will be used to perform the abstract interpretation.
      */
     def mapOperandsToParameters(
-        operands:     Operands[_ <: ValuesDomain#DomainValue],
+        operands:     Operands[? <: ValuesDomain#DomainValue],
         calledMethod: Method,
-        targetDomain: ValuesDomain with ValuesFactory
+        targetDomain: ValuesDomain & ValuesFactory
     ): Locals[targetDomain.DomainValue] = {
 
-        assert(
+        elidedAssert(
             operands.size == calledMethod.actualArgumentsCount,
             (if (calledMethod.isStatic) "static " else "/*virtual*/ ") +
                 s"${calledMethod.signatureToJava()}(Arguments: ${calledMethod.actualArgumentsCount}) " +
@@ -580,11 +578,11 @@ package object ai {
 
     /**
      * Maps the operands to the target domain while ensuring that two operands that
-     * are identical before are identical afterwards.
+     * are identical before are identical afterward.
      */
     def mapOperands(
-        theOperands:  Operands[_ <: ValuesDomain#DomainValue],
-        targetDomain: ValuesDomain with ValuesFactory
+        theOperands:  Operands[? <: ValuesDomain#DomainValue],
+        targetDomain: ValuesDomain & ValuesFactory
     ): Array[targetDomain.DomainValue] = {
         // implicit val domainValueTag: ClassTag[targetDomain.DomainValue] = targetDomain.DomainValueTag
         import targetDomain.DomainValueTag
@@ -644,7 +642,7 @@ package object ai {
                     result += r.asInstanceOf[B]
                 }
             }
-            pc = instruction.indexOfNextInstruction(pc)(code)
+            pc = instruction.indexOfNextInstruction(pc)(using code)
         }
         result.result()
     }
@@ -658,7 +656,7 @@ package object ai {
         f: (Int /*PC*/, Instruction, domain.Operands) => U
     ): Unit = {
         val instructions = code.instructions
-        val max_pc = instructions.size
+        val max_pc = instructions.length
         var pc = 0
         while (pc < max_pc) {
             val instruction = instructions(pc)
@@ -666,7 +664,7 @@ package object ai {
             if (operands ne null) {
                 f(pc, instruction, operands)
             }
-            pc = instruction.indexOfNextInstruction(pc)(code)
+            pc = instruction.indexOfNextInstruction(pc)(using code)
         }
     }
 

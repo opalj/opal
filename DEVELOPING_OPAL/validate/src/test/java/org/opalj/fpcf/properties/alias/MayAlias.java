@@ -37,7 +37,7 @@ import static java.lang.annotation.ElementType.TYPE_USE;
  *     </li>
  *     <li>
  *         parameterIndex: If the element is used as a parameter in a method call, this value is the index the element has in the parameter list.
- *         -1 is the this Parameter. Other parameter indices start wit 0 and increase by 1.
+ *         -1 is the this-parameter. Other parameter indices start wit 0 and increase by 1.
  *     </li>
  *     <li>
  *         fieldName: If the element is a fieldReference, this value is the name of the field.

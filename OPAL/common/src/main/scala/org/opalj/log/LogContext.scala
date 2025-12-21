@@ -35,7 +35,7 @@ trait LogContext {
 
     /**
      * The unique id associated with this log context. Each log context gets a unique id
-     * when it is registered with the OPALLogger. This id will not change afterwards.
+     * when it is registered with the OPALLogger. This id will not change afterward.
      */
     final def logContextId: Int = id
 
@@ -52,7 +52,7 @@ trait LogContext {
         newLogContext
     }
 
-    private[this] final val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
+    private final val messages = new ConcurrentHashMap[LogMessage, AtomicInteger]()
 
     /**
      * Increments the counter for the given message and returns the new value.

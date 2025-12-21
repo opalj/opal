@@ -19,7 +19,7 @@ case class ModuleMainClass_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <div class="simple_attribute">
             <span class="attribute_name">MainClass</span>
-            :&nbsp;{cp(main_class_index).toString(cp)}
+            :&nbsp;{cp(main_class_index).toString}
         </div>
     }
 }

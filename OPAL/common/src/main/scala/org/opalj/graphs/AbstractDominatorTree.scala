@@ -6,6 +6,8 @@ import scala.annotation.tailrec
 
 import scala.collection.immutable.ArraySeq
 
+import org.opalj.util.elidedAssert
+
 /**
  * Representation of a (post) dominator tree of, for example, a control flow graph.
  * To construct a '''(post)dominator tree''' use the companion objects' factory methods (`apply`).
@@ -50,7 +52,7 @@ abstract class AbstractDominatorTree {
 
     final def maxNode: Int = idom.length - 1
 
-    assert(startNode <= maxNode, s"start node ($startNode) out of range ([0,$maxNode])")
+    elidedAssert(startNode <= maxNode, s"start node ($startNode) out of range ([0,$maxNode])")
 
     /**
      * Returns the immediate dominator of the node with the given id.

@@ -12,7 +12,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.AllocationFreeMethod
 import org.opalj.br.fpcf.properties.AllocationFreeness
 import org.opalj.br.fpcf.properties.MethodWithAllocations
-import org.opalj.br.instructions._
+import org.opalj.br.instructions.*
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -39,7 +39,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
 
     import project.nonVirtualCall
 
-    private[this] val declaredMethods = project.get(DeclaredMethodsKey)
+    private val declaredMethods = project.get(DeclaredMethodsKey)
 
     /**
      * Retrieves and commits the methods allocation freeness as calculated for its declaring class
@@ -73,7 +73,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
         val method = definedMethod.definedMethod
         val declaringClassType = method.classFile.thisType
 
-        // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
+        // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if (declaringClassType ne definedMethod.declaringClassType)
             return baseMethodAllocationFreeness(definedMethod.asDefinedMethod);
@@ -142,10 +142,12 @@ class L0AllocationFreenessAnalysis private[analyses] (
                             }
                     }
 
-                case ASTORE_0.opcode if !method.isStatic =>
-                    if (mayOverwriteSelf) overwritesSelf = true
-                    else // A GETFIELD/PUTFIELD may result in a NPE raised (and therefore allocated)
-                        return Result(definedMethod, MethodWithAllocations)
+                case ASTORE_0.opcode =>
+                    if (!method.isStatic) {
+                        if (mayOverwriteSelf) overwritesSelf = true
+                        else // A GETFIELD/PUTFIELD may result in a NPE raised (and therefore allocated)
+                            return Result(definedMethod, MethodWithAllocations)
+                    }
 
                 case GETFIELD.opcode => // may allocate NPE (but not on `this`)
                     if (method.isStatic || overwritesSelf)
@@ -180,8 +182,8 @@ class L0AllocationFreenessAnalysis private[analyses] (
 
                 case ARETURN.opcode | IRETURN.opcode | FRETURN.opcode | DRETURN.opcode |
                     LRETURN.opcode | RETURN.opcode =>
-                // if we have a monitor instruction the method has allocations anyway..
-                // hence, we can ignore the monitor related implicit exception
+                // if we have a monitor instruction the method has allocations anyway...
+                // hence, we can ignore the monitor-related implicit exception
 
                 case _ =>
                     // All other instructions (IFs, Load/Stores, Arith., etc.) allocate no objects
@@ -197,7 +199,7 @@ class L0AllocationFreenessAnalysis private[analyses] (
         if (dependees.isEmpty)
             return Result(definedMethod, AllocationFreeMethod);
 
-        // This function computes the “allocation freeness for a method based on the allocation
+        // This function computes the allocation freeness for a method based on the allocation
         // freeness of its callees
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
             // Let's filter the entity.

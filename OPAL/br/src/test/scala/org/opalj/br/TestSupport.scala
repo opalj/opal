@@ -15,15 +15,14 @@ import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.AllEntryPointsFinder
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.reader.{ClassFileBinding => ClassFileReader}
 import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.ClassFileBinding as ClassFileReader
 import org.opalj.br.reader.Java11FrameworkWithCaching
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.br.reader.readJREClassFiles
 import org.opalj.br.reader.readRTJarClassFiles
 import org.opalj.bytecode.JavaBase
 import org.opalj.bytecode.JRELibraryFolder
-import org.opalj.log.GlobalLogContext
 import org.opalj.util.gc
 
 /**
@@ -116,7 +115,7 @@ object TestSupport {
             case None =>
                 (allBITestJARs().iterator ++ allBITestProjectFolders().iterator) map { biProjectJAR =>
                     val readerFactory =
-                        () => Project(biProjectJAR, GlobalLogContext, configForProject(biProjectJAR))
+                        () => Project(biProjectJAR, configForProject(biProjectJAR))
                     (biProjectJAR.getName, readerFactory)
                 }
         }
@@ -137,7 +136,7 @@ object TestSupport {
 
     /**
      * @note     Using this method in combination with Scalatest, where the test cases are generated
-     *           inside the loop, may lead to the situation that the project's are not gc'ed before
+     *           inside the loop, may lead to the situation that the projects are not gc'ed before
      *           the entire test has completed!
      */
     def foreachBIProject(

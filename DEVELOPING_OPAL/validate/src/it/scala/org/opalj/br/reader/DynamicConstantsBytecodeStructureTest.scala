@@ -16,7 +16,6 @@ import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.LDCDynamic
 import org.opalj.br.instructions.WIDE
-import org.opalj.log.GlobalLogContext
 
 /**
  * Test that code with dynamic constants is loaded without exceptions and after rewriting is still
@@ -76,7 +75,7 @@ class DynamicConstantsBytecodeStructureTest extends AnyFunSpec with Matchers {
                 rewrite = false,
                 logRewrites = false
             )
-            val project = Project(dynamicConstantsJar, GlobalLogContext, config)
+            val project = Project(dynamicConstantsJar, config)
             info(project.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
             it("should be able to perform abstract interpretation of rewritten dynamic constants " +
@@ -90,7 +89,7 @@ class DynamicConstantsBytecodeStructureTest extends AnyFunSpec with Matchers {
                 rewrite = true,
                 logRewrites = false
             )
-            val project = Project(dynamicConstantsJar, GlobalLogContext, config)
+            val project = Project(dynamicConstantsJar, config)
             info(project.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
             it("should be able to rewrite all dynamic constants in the dynamic constants test " +
