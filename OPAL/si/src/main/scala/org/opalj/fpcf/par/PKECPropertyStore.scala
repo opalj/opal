@@ -528,15 +528,16 @@ class PKECPropertyStore(
             startThreads(new PartialPropertiesFinalizerThread(_))
 
             subPhaseId += 1
-
             ps(AnalysisKeyId).clear()
         }
 
+        clearObsoletePropertyKinds()
         idle = true
     }
 
-    private val interimStates: Array[ArrayBuffer[EPKState]] =
-        Array.fill(THREAD_COUNT)(null)
+    override protected def clearPK(id: Int): Unit = ps(id).clear()
+
+    private[this] val interimStates: Array[ArrayBuffer[EPKState]] =
     private val successors: Array[EPKState => Iterable[EPKState]] =
         Array.fill(THREAD_COUNT)(null)
 

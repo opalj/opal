@@ -135,7 +135,8 @@ abstract class PropertyStore {
     //
     //
 
-    private val externalInformation = new ConcurrentHashMap[AnyRef, AnyRef]()
+    private[this] val externalInformation = new ConcurrentHashMap[AnyRef, AnyRef]()
+    protected[this] var currentPhaseDeletionMask: Array[Boolean] = Array.fill(PropertyKey.maxId + 1)(false)
 
     /**
      * Attaches or returns some information associated with the property store using a key object.
@@ -501,6 +502,26 @@ abstract class PropertyStore {
     protected def doSet(e: Entity, p: Property): Unit
 
     /**
+     * Removes [[PropertyKind]] from a [[PropertyStore]] using a pre-calculated [[currentPhaseDeletionMask]]. Calls [[clearPK]] which need to be implemented in the implementations of the [[PropertyStore]].
+     */
+    protected[fpcf] final def clearObsoletePropertyKinds(): Unit = {
+        val mask = currentPhaseDeletionMask
+        var index = 0
+        while (index < mask.length) {
+            if (mask(index)) {
+                clearPK(index)
+            }
+            index += 1
+        }
+    }
+
+    /**
+     * Placeholder to remove a given [[PropertyKey]] from a [[PropertyStore]]. Needs to be overriden in the implementation for access to the given [[PropertyStore]].
+     * @param id ID of the [[PropertyKey]] to be removed
+     */
+    protected def clearPK(id: Int): Unit
+
+    /**
      * Associates the given entity with the newly computed intermediate property P.
      *
      * '''Calling this method is only supported before any analysis is scheduled!'''
@@ -539,7 +560,17 @@ abstract class PropertyStore {
         )
     }
 
-    protected var subPhaseId: Int = 0
+    final def setupPhase(configuration: PropertyKindsConfiguration, toDelete: Set[Int]): Unit = {
+        setupPhase(
+            configuration.propertyKindsComputedInThisPhase,
+            configuration.propertyKindsComputedInLaterPhase,
+            configuration.suppressInterimUpdates,
+            configuration.collaborativelyComputedPropertyKindsFinalizationOrder,
+            toDelete
+        )
+    }
+
+    protected[this] var subPhaseId: Int = 0
 
     protected var hasSuppressedNotifications: Boolean = false
 
@@ -571,7 +602,8 @@ abstract class PropertyStore {
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind]                    = Set.empty,
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]] = Map.empty,
-        finalizationOrder:                 List[List[PropertyKind]]             = List.empty
+        finalizationOrder:                 List[List[PropertyKind]]             = List.empty,
+        toDelete:                          Set[Int]                             = Set.empty
     ): Unit = handleExceptions {
         if (!isIdle) {
             throw new IllegalStateException("computations are already running");
@@ -639,14 +671,23 @@ abstract class PropertyStore {
         hasSuppressedNotifications = suppressInterimUpdates.nonEmpty
 
         // Step 5
+        // Set up a new deletionMask by resetting it first, then filling it with the help of toDelete.
+        val mask = currentPhaseDeletionMask
+        java.util.Arrays.fill(mask, false)
+
+        toDelete.foreach(id => mask(id) = true)
+
+        // Step 6
         // Call `newPhaseInitialized` to enable subclasses to perform custom initialization steps
         // when a phase was set up.
         newPhaseInitialized(
             propertyKindsComputedInThisPhase,
             propertyKindsComputedInLaterPhase,
             suppressInterimUpdates,
-            finalizationOrder
+            finalizationOrder,
+            currentPhaseDeletionMask
         )
+
     }
 
     /**
@@ -657,7 +698,8 @@ abstract class PropertyStore {
         propertyKindsComputedInThisPhase:  Set[PropertyKind],
         propertyKindsComputedInLaterPhase: Set[PropertyKind],
         suppressInterimUpdates:            Map[PropertyKind, Set[PropertyKind]],
-        finalizationOrder:                 List[List[PropertyKind]]
+        finalizationOrder:                 List[List[PropertyKind]],
+        phaseDeletionMask:                 Array[Boolean]
     ): Unit = { /*nothing to do*/ }
 
     /**
