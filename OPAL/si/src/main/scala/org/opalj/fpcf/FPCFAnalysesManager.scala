@@ -4,6 +4,7 @@ package fpcf
 
 import com.typesafe.config.Config
 
+import org.opalj.fpcf.scheduling.CleanupSpec
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.debug
 import org.opalj.si.Project
@@ -33,20 +34,22 @@ class FPCFAnalysesManager private[fpcf] (val project: Project) {
     def executedSchedules: List[Schedule[FPCFAnalysis]] = schedules
 
     final def runAll[T <: FPCFAnalysis](
-        analyses: ComputationSpecification[T]*
+        cleanupSpec: CleanupSpec,
+        analyses:    ComputationSpecification[T]*
     ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = {
-        runAll(analyses.to(Iterable))
+        runAll(analyses.to(Iterable), cleanupSpec = Some(cleanupSpec))
     }
 
     final def runAll[T <: FPCFAnalysis](
         analyses:             Iterable[ComputationSpecification[T]],
-        afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
+        afterPhaseScheduling: List[ComputationSpecification[FPCFAnalysis]] => Unit = _ => (),
+        cleanupSpec:          Option[CleanupSpec]                                  = None
     ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = this.synchronized {
 
         val scenario =
             AnalysisScenario(analyses.asInstanceOf[Iterable[ComputationSpecification[FPCFAnalysis]]], propertyStore)
 
-        val schedule = scenario.computeSchedule(propertyStore, FPCFAnalysesRegistry.defaultAnalysis)
+        val schedule = scenario.computeSchedule(propertyStore, FPCFAnalysesRegistry.defaultAnalysis, cleanupSpec)
         schedules ::= schedule
 
         if (trace) { debug("analysis progress", "executing " + schedule) }

@@ -210,7 +210,8 @@ class AnalysisScenario[A](val ps: PropertyStore) {
      */
     def computeSchedule(
         propertyStore:   PropertyStore,
-        defaultAnalysis: PropertyBounds => Option[ComputationSpecification[A]] = _ => None
+        defaultAnalysis: PropertyBounds => Option[ComputationSpecification[A]] = _ => None,
+        cleanupSpec:     Option[CleanupSpec]                                   = None
     )(
         implicit logContext: LogContext
     ): Schedule[A] = {
@@ -284,7 +285,7 @@ class AnalysisScenario[A](val ps: PropertyStore) {
         Schedule(
             scheduledBatches,
             initializationData,
-            Some(CleanupSpec())
+            cleanupSpec
         )
     }
 }

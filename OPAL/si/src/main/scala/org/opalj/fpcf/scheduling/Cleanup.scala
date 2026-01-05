@@ -7,12 +7,13 @@ package scheduling
  * Class that allows to configure the cleanup of the PropertyStore inbetween phases programmatically
  * @param keep IDs of the PropertyKeys to be kept at the end
  * @param clear IDs of the PropertyKeys to be definitely removed
- * @param disable Allows the cleanup to be disabled since it is on by default
+ * @param enable Allows the cleanup to be enabled since it is off by default
  */
 final case class CleanupSpec(
-    keep:    Set[Int] = Set.empty,
-    clear:   Set[Int] = Set.empty,
-    disable: Boolean  = false
+    keep:                  Set[Int] = Set.empty,
+    clear:                 Set[Int] = Set.empty,
+    enable:                Boolean  = false,
+    cleanupAfterLastPhase: Boolean  = false
 )
 
 /**
@@ -24,13 +25,13 @@ object Cleanup {
      * Creates a [[CleanupSpec]] from given [[PropertyKey]]-names to keep and/or to clear. Also allows disabling the cleanup by setting 'disable' to 'true'.
      * @param keep Names of PropertyKeys to be kept after the analyses
      * @param clear Names of PropertyKeys to be removed after the analyses
-     * @param disable Setting this to 'true' disables the cleanup inbetween the phases
+     * @param enable Setting this to 'true' enables the cleanup inbetween the phases
      * @return A new [[CleanupSpec]]
      */
-    def fromArgs(keep: Set[String], clear: Set[String], disable: Boolean): CleanupSpec = {
+    def fromArgs(keep: Set[String], clear: Set[String], enable: Boolean): CleanupSpec = {
         val toKeep = keep.map(PropertyKey.idByName)
         val toClear = clear.map(PropertyKey.idByName)
-        CleanupSpec(toKeep, toClear, disable)
+        CleanupSpec(toKeep, toClear, enable)
     }
 
     /**
@@ -41,7 +42,7 @@ object Cleanup {
         ps:       PropertyStore,
         spec:     CleanupSpec
     ): List[PhaseConfiguration[A]] = {
-        if (spec.disable) return schedule
+        if (!spec.enable) return schedule
 
         val producedInAnyPhase: Set[Int] =
             schedule.iterator.flatMap(_.propertyKinds.propertyKindsComputedInThisPhase.map(_.id)).toSet
@@ -56,9 +57,17 @@ object Cleanup {
             index -= 1
         }
 
+        var alreadyCleared = Set.empty[Int]
+        val lastIndex = schedule.size - 1
         schedule.indices.iterator.map { index =>
             val producedHere = schedule(index)
-            val toDelete = ((producedInAnyPhase -- neededLater(index)) -- spec.keep) union spec.clear
+            val toDelete = if (index == lastIndex) {
+                spec.clear -- alreadyCleared
+            } else {
+                (((producedInAnyPhase -- neededLater(index)) -- alreadyCleared) -- spec.keep) union spec.clear
+            }
+
+            alreadyCleared ++= toDelete
             producedHere.copy(toDelete = toDelete)
         }.toList
     }
