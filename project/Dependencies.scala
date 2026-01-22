@@ -22,8 +22,6 @@ object Dependencies {
         val ficus = "1.5.2"
         val pureconfigcore = "0.17.9"
         val commonstext = "1.14.0"
-        val txtmark = "0.16"
-        val jacksonDF = "2.20.1"
         val fastutil = "8.5.18"
         val scallop = "5.2.0"
         val apkparser = "2.6.10"
@@ -55,12 +53,8 @@ object Dependencies {
         val commonstext = "org.apache.commons" % "commons-text" % version.commonstext
         val scalaparsercombinators =
             "org.scala-lang.modules" %% "scala-parser-combinators" % version.scalaparsercombinators
-        val txtmark = "es.nitaur.markdown" % "txtmark" % version.txtmark withSources () withJavadoc ()
-        val jacksonDF =
-            "com.fasterxml.jackson.dataformat" % "jackson-dataformat-csv" % version.jacksonDF withSources () withJavadoc ()
         val fastutil = "it.unimi.dsi" % "fastutil" % version.fastutil withSources () withJavadoc ()
         val scallop = "org.rogach" %% "scallop" % version.scallop
-        val javafxBase = "org.openjfx" % "javafx-base" % version.openjfx classifier osName
         val apkparser = "net.dongliu" % "apk-parser" % version.apkparser
         val scalagraphcore = "org.scala-graph" %% "graph-core" % version.scalagraphcore
         val scalagraphdot = "org.scala-graph" %% "graph-dot" % version.scalagraphdot
@@ -86,8 +80,7 @@ object Dependencies {
     val tac = Seq()
     val ifds = Seq()
     val ide = Seq()
-    val tools = Seq(txtmark, jacksonDF)
-    val hermes = Seq(txtmark, jacksonDF, javafxBase)
+    val tools = Seq()
     val apk = Seq(apkparser, scalaxml)
     val ce = Seq(commonstext)
 }

@@ -161,7 +161,6 @@ lazy val `OPAL` = (project in file("."))
     .disablePlugins(HeaderPlugin) // The root project has no sources and no configured license header
     .settings(
         ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
-            hermes,
             validate,
             demos,
             tools
@@ -183,9 +182,7 @@ lazy val `OPAL` = (project in file("."))
         av,
         apk,
         framework,
-        //  bp, (just temporarily...)
         tools,
-        hermes,
         ce,
         validate, // Not deployed to maven central
         demos // Not deployed to maven central
@@ -425,31 +422,6 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     )
     .configs(IntegrationTest)
 
-/* TEMPORARILY DISABLED THE BUGPICKER UNTIL WE HAVE A CG ANALYSIS AGAIN!
-lazy val bp = `BugPicker`
-lazy val `BugPicker` = (project in file("TOOLS/bp"))
-  .settings(buildSettings *)
-  .settings(
-    name := "BugPicker",
-    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - BugPicker"),
-    fork := true
-  )
-  .dependsOn(framework % "it->it;it->test;test->test;compile->compile")
-  .configs(IntegrationTest)
- */
-
-lazy val hermes = `Hermes`
-
-lazy val `Hermes` = (project in file("TOOLS/hermes"))
-    .settings(buildSettings *)
-    .settings(
-        name := "Hermes",
-        libraryDependencies ++= Dependencies.hermes,
-        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Hermes")
-    )
-    .dependsOn(framework % "it->it;it->test;test->test;compile->compile")
-    .configs(IntegrationTest)
-
 lazy val tools = `Tools`
 
 lazy val `Tools` = (project in file("DEVELOPING_OPAL/tools"))
@@ -487,8 +459,7 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
     )
     .dependsOn(
         tools % "it->it;it->test;test->test;compile->compile",
-        demos % "it->it;it->test;test->test;compile->compile",
-        hermes % "it->it;test->test;compile->compile"
+        demos % "it->it;it->test;test->test;compile->compile"
     )
     .configs(IntegrationTest)
 
@@ -525,9 +496,7 @@ lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
     .dependsOn(
         br % "compile->compile",
         apk % "runtime->compile",
-        demos % "runtime->compile",
-        // bp % "runtime->compile",
-        hermes % "runtime->compile"
+        demos % "runtime->compile"
     )
     .configs(IntegrationTest)
 
@@ -618,7 +587,6 @@ runProjectDependencyGeneration := {
     mmd.append("""
                  |    style Common fill:#9cbecc,color:black
                  |    style Framework fill:#c0ffc0
-                 |    style Hermes fill:#ffd7cf
                  |
                  |""".stripMargin)
 

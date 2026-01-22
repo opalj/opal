@@ -374,12 +374,10 @@ class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
             // Otherwise, the hermes resources are not included and hermes won't find
             // HermesCLI.txt for example
             val paths = Array(
-                new File("TOOLS/hermes/src/main/resources/").toURI.toURL,
                 new File("DEVELOPING_OPAL/tools/src/main/resources/").toURI.toURL,
                 new File("OPAL/ai/src/main/resources/").toURI.toURL,
                 new File("OPAL/ba/src/main/resources/").toURI.toURL,
                 new File("OPAL/bi/src/main/resources/").toURI.toURL,
-                new File("OPAL/bp/src/main/resources/").toURI.toURL,
                 new File("OPAL/br/src/main/resources/").toURI.toURL,
                 new File("OPAL/common/src/main/resources/").toURI.toURL
             ) ++ opalDependencies
