@@ -40,8 +40,6 @@ temp
 /ensime.sbt
 .vscode/settings.json
 /project/eclipse.sbt
-/DEVELOPING_OPAL/tools/mapping.hermes.txt
-/DEVELOPING_OPAL/tools/results.hermes.txt
 /OPAL/bi/src/test/fixtures-java/rt-jar-stubs-1.8.0-works.jar
 .bloop/
 .metals/

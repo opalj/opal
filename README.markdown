@@ -41,8 +41,6 @@ OPAL consists of several projects:
 
 * **APK** (OPAL/apk) Provides support for parsing Android APK packages, supporting DEX and native code.
 
-* **Hermes** (OPAL/TOOLS/hermes): A framework to run various code queries against sets of projects.
-
 ## Developer Tools
 
 OPAL also comes with a growing number of tools that are intended to help developers to become familiar with Java Bytecode and/or OPAL. These projects are found in the folder `DEVELOPING_OPAL/tools` and can be run using the SBT console.

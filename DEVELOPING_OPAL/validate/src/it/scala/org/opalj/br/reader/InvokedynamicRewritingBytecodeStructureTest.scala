@@ -24,7 +24,6 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.WIDE
 import org.opalj.br.reader.InvokedynamicRewriting.LambdaNameRegEx
 import org.opalj.br.reader.InvokedynamicRewriting.TargetMethodNameRegEx
-import org.opalj.log.GlobalLogContext
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
@@ -116,7 +115,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
                 rewrite = true,
                 logRewrites = false
             ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
-            val lambdas = Project(lambdasJar, GlobalLogContext, config)
+            val lambdas = Project(lambdasJar, config)
             info(lambdas.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
             it("should be able to perform abstract interpretation of rewritten Java lambda" +
@@ -135,7 +134,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
                 rewrite = true,
                 logRewrites = false
             ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
-            val stringConcat = Project(stringConcatJar, GlobalLogContext, config)
+            val stringConcat = Project(stringConcatJar, config)
             info(stringConcat.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
             it("should be able to perform abstract interpretation of rewritten Java string concat" +
@@ -154,7 +153,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
                 rewrite = true,
                 logRewrites = false
             ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
-            val records = Project(recordsJar, GlobalLogContext, config)
+            val records = Project(recordsJar, config)
             info(records.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
             it("should be able to perform abstract interpretation of rewritten Java 16 record" +
@@ -173,7 +172,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
                     rewrite = true,
                     logRewrites = false
                 ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
-                val jre = Project(jrePath, GlobalLogContext, config)
+                val jre = Project(jrePath, config)
                 info(jre.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
                 it("should be able to perform abstract interpretation of rewritten Java lambda " +
                     "expressions in the JRE") {
