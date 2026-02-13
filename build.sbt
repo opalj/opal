@@ -387,7 +387,8 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
     .settings(buildSettings *)
     .settings(
         name := "Architecture Validation",
-        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation")
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation"),
+        Test / baseDirectory := file(".")
         // Test / publishArtifact := true
     )
     .dependsOn(de % "it->it;it->test;test->test;compile->compile")
@@ -455,7 +456,8 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
         name := "Validate",
         publishArtifact := false,
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Validate"),
-        Test / compileOrder := CompileOrder.Mixed
+        Test / compileOrder := CompileOrder.Mixed,
+        Test / baseDirectory := file(".")
     )
     .dependsOn(
         tools % "it->it;it->test;test->test;compile->compile",
