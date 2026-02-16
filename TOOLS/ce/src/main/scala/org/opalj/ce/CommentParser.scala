@@ -137,7 +137,7 @@ object CommentParser {
                         val terminatingIndex = line.indexWhere(objectKeyTerminatingChars.contains)
 
                         // Splitting the key from the string (while splitting of the ':' or '=' as they are not needed anymore
-                        currentKey = line.substring(0, terminatingIndex - 1).trim.stripPrefix("\"").stripSuffix("\"")
+                        currentKey = line.substring(0, terminatingIndex).trim.stripPrefix("\"").stripSuffix("\"")
                         line = line.substring(terminatingIndex).stripPrefix(":").stripPrefix("=").trim
 
                         // Evaluating the type of value
