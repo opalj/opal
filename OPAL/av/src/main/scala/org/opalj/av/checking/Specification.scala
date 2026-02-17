@@ -814,11 +814,11 @@ object Specification {
     def ProjectDirectory(directoryName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(directoryName)
         if (!file.exists)
-            throw SpecificationError("the specified directory does not exist: " + directoryName)
+            throw SpecificationError("the specified directory does not exist: " + file.getAbsolutePath)
         if (!file.canRead)
-            throw SpecificationError("cannot read the specified directory: " + directoryName)
+            throw SpecificationError("cannot read the specified directory: " + file.getAbsolutePath)
         if (!file.isDirectory)
-            throw SpecificationError("the specified directory is not a directory: " + directoryName)
+            throw SpecificationError("the specified directory is not a directory: " + file.getAbsolutePath)
 
         Project.JavaClassFileReader().ClassFiles(file)
     }
@@ -826,11 +826,11 @@ object Specification {
     def ProjectJAR(jarName: String): Seq[(ClassFile, URL)] = {
         val file = new java.io.File(jarName)
         if (!file.exists)
-            throw SpecificationError("the specified directory does not exist: " + jarName)
+            throw SpecificationError("the specified directory does not exist: " + file.getAbsolutePath)
         if (!file.canRead)
-            throw SpecificationError("cannot read the specified JAR: " + jarName)
+            throw SpecificationError("cannot read the specified JAR: " + file.getAbsolutePath)
         if (file.isDirectory)
-            throw SpecificationError("the specified jar file is a directory: " + jarName)
+            throw SpecificationError("the specified jar file is a directory: " + file.getAbsolutePath)
 
         OPALLogger.info("creating project", s"loading $jarName")(using GlobalLogContext)
 

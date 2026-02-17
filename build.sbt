@@ -77,7 +77,9 @@ ThisBuild / javaOptions ++= Seq(
     "-Xnoclassgc",
     "-XX:NewRatio=1",
     "-XX:SurvivorRatio=8",
-    "-XX:+UseParallelGC"
+    "-XX:+UseParallelGC",
+    "-XX:+UseCompactObjectHeaders",
+    "-XX:+IgnoreUnrecognizedVMOptions"
 )
 
 addCommandAlias(
@@ -106,6 +108,9 @@ lazy val IntegrationTest = config("it") extend Test
 lazy val buildSettings =
     Defaults.coreDefaultSettings ++
         PublishingOverwrite.onSnapshotOverwriteSettings ++
+        Seq(
+            fork := true
+        ) ++
         Seq(libraryDependencies ++= Dependencies.testlibs) ++
         Seq(inConfig(IntegrationTest)(Defaults.testSettings) *) ++
         Seq(
@@ -311,8 +316,7 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
     .settings(buildSettings *)
     .settings(
         name := "Abstract Interpretation Framework",
-        Compile / doc / scalacOptions := (Opts.doc.title("OPAL - Abstract Interpretation Framework")),
-        run / fork := true
+        Compile / doc / scalacOptions := (Opts.doc.title("OPAL - Abstract Interpretation Framework"))
     )
     .dependsOn(br % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
@@ -324,7 +328,6 @@ lazy val `IFDS` = (project in file("OPAL/ifds"))
     .settings(
         name := "IFDS",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IFDS"),
-        fork := true,
         libraryDependencies ++= Dependencies.ifds
     )
     .dependsOn(ide % "it->it;it->test;test->test;compile->compile")
@@ -337,7 +340,6 @@ lazy val `IDE` = (project in file("OPAL/ide"))
     .settings(
         name := "IDE",
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - IDE"),
-        fork := true,
         libraryDependencies ++= Dependencies.ide
     )
     .dependsOn(si % "it->it;it->test;test->test;compile->compile")
@@ -353,7 +355,6 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
         Compile / doc / scalacOptions := (Opts.doc.title("OPAL - Three Address Code")),
         assembly / assemblyJarName := "OPALTACDisassembler.jar",
         assembly / mainClass := Some("org.opalj.tac.TAC"),
-        run / fork := true,
         libraryDependencies ++= Dependencies.tac
     )
     .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
@@ -393,7 +394,8 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
     .settings(buildSettings *)
     .settings(
         name := "Architecture Validation",
-        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation")
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation"),
+        Test / baseDirectory := file(".")
         // Test / publishArtifact := true
     )
     .dependsOn(de % "it->it;it->test;test->test;compile->compile")
@@ -419,8 +421,7 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     .settings(buildSettings *)
     .settings(
         name := "Framework",
-        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Framework"),
-        run / fork := true
+        Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Framework")
     )
     .dependsOn(
         ba % "it->it;it->test;test->test;compile->compile",
@@ -440,9 +441,7 @@ lazy val `Tools` = (project in file("DEVELOPING_OPAL/tools"))
         // library dependencies
         libraryDependencies ++= Dependencies.tools,
         assembly / assemblyJarName := "OPALInvokedynamicRectifier.jar",
-        assembly / mainClass := Some("org.opalj.support.tools.ProjectSerializer"),
-        // Required by Java/ScalaFX
-        fork := true
+        assembly / mainClass := Some("org.opalj.support.tools.ProjectSerializer")
     )
     .dependsOn(framework % "it->it;it->test;test->test;compile->compile")
     .configs(IntegrationTest)
@@ -464,7 +463,8 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
         name := "Validate",
         publishArtifact := false,
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Validate"),
-        Test / compileOrder := CompileOrder.Mixed
+        Test / compileOrder := CompileOrder.Mixed,
+        Test / baseDirectory := file(".")
     )
     .dependsOn(
         tools % "it->it;it->test;test->test;compile->compile",
@@ -480,8 +480,7 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
         name := "Demos",
         publishArtifact := false,
         Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Demos"),
-        Compile / unmanagedSourceDirectories := (Compile / javaSource).value :: (Compile / scalaSource).value :: Nil,
-        run / fork := true
+        Compile / unmanagedSourceDirectories := (Compile / javaSource).value :: (Compile / scalaSource).value :: Nil
     )
     .dependsOn(framework)
     .configs(IntegrationTest)
@@ -491,7 +490,6 @@ lazy val ce = `ConfigurationExplorer`
 lazy val `ConfigurationExplorer` = (project in file("TOOLS/ce"))
     .settings(buildSettings *)
     .settings(
-        fork := true,
         javaOptions += s"-Dbuild.version=${version.value}",
         name := "Configuration Explorer",
         libraryDependencies ++= Dependencies.ce,
